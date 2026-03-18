@@ -4,7 +4,8 @@ import distage.Lifecycle
 import doobie.postgres.implicits.*
 import doobie.implicits.*
 import izumi.functional.bio.{Applicative2, F, Monad2, Primitives2}
-import leaderboard.model.{Category, CategoryId, QueryFailure}
+import leaderboard.model.Category.CategoryId
+import leaderboard.model.{Category, QueryFailure}
 import leaderboard.sql.SQL
 import logstage.LogIO2
 
