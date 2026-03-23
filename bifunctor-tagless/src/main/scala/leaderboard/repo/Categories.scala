@@ -3,8 +3,8 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.postgres.implicits.*
 import doobie.implicits.*
-import izumi.functional.bio.{Applicative2, F, Monad2, Primitives2}
-import leaderboard.model.Category.CategoryId
+import izumi.functional.bio.{Error2, F, Primitives2}
+import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -16,20 +16,36 @@ trait Categories[F[_, _]] {
 }
 
 object Categories {
+  private def parentNotFound(parentId: CategoryId): QueryFailure =
+    QueryFailure("no query", new Exception(s"Parent category $parentId does not exist"))
 
-  final class Dummy[F[+_, +_]: Applicative2: Primitives2]
-    extends Lifecycle.LiftF[F[Nothing, _], Categories[F]](
+  private def rootCategoryCannotBePersisted: QueryFailure =
+    QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not be persisted"))
+
+  final class Dummy[F[+_, +_]: Error2: Primitives2]
+    extends Lifecycle.LiftF[F[QueryFailure, _], Categories[F]](
       for {
         state <- F.mkRef(Map.empty[CategoryId, Category])
       } yield {
         new Categories[F] {
-          override def upsertCategory(category: Category): F[Nothing, Unit] =
-            state.update_(_ + (category.id -> category))
+          override def upsertCategory(category: Category): F[QueryFailure, Unit] = {
+            if (category.id == rootCategoryId) {
+              F.fail(rootCategoryCannotBePersisted)
+            } else {
+              state.modify[Either[QueryFailure, Unit]] { current =>
+                if (category.parentId == rootCategoryId || current.contains(category.parentId)) {
+                  Right(()) -> (current + (category.id -> category))
+                } else {
+                  Left(parentNotFound(category.parentId)) -> current
+                }
+              }.fromEither
+            }
+          }
 
-          override def getCategory(id: CategoryId): F[Nothing, Option[Category]] =
-            state.get.map(_.get(id))
+          override def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] =
+              state.get.map(_.get(id))
 
-          override def getChildren(parentId: CategoryId): F[Nothing, List[Category]] =
+          override def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] =
             state.get.map(
               _.values
                 .filter(_.parentId == parentId)
@@ -40,7 +56,7 @@ object Categories {
       }
     )
 
-  final class Postgres[F[+_, +_]: Monad2](
+  final class Postgres[F[+_, +_]: Error2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Categories[F]](
@@ -65,39 +81,65 @@ object Categories {
         }
       } yield new Categories[F] {
 
-        override def upsertCategory(category: Category): F[QueryFailure, Unit] = {
-          sql
-            .execute("upsert-category") {
+        private def parentExists(parentId: CategoryId): F[QueryFailure, Boolean] =
+          if (parentId == rootCategoryId) {
+            F.pure(true)
+          } else {
+            sql.execute("category-parent-exists") {
               sql"""
-                insert into categories (id, parent_id, depth, name)
-                values (${category.id}, ${category.parentId}, ${category.depth}, ${category.name})
-                on conflict (id) do update set
-                  parent_id = excluded.parent_id,
-                  depth = excluded.depth,
-                  name = excluded.name
-              """.update.run
+                select exists(
+                  select 1
+                  from categories
+                  where id = $parentId
+                )
+              """.query[Boolean].unique
             }
-            .void
+          }
+
+        override def upsertCategory(category: Category): F[QueryFailure, Unit] = {
+          if (category.id == rootCategoryId) {
+            F.fail(rootCategoryCannotBePersisted)
+          } else {
+            parentExists(category.parentId).flatMap {
+              exists =>
+                if (!exists) {
+                  F.fail(parentNotFound(category.parentId))
+                } else {
+                  sql
+                    .execute("upsert-category") {
+                      sql"""
+                      insert into categories (id, parent_id, depth, name)
+                      values (${category.id}, ${category.parentId}, ${category.depth}, ${category.name})
+                      on conflict (id) do update set
+                        parent_id = excluded.parent_id,
+                        depth = excluded.depth,
+                        name = excluded.name
+                    """.update.run
+                    }
+                    .void
+                }
+            }
+          }
         }
 
         override def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] = {
           sql.execute("get-category") {
             sql"""
-              select id, parent_id, depth, name
-              from categories
-              where id = $id
-            """.query[Category].option
+                select id, parent_id, depth, name
+                from categories
+                where id = $id
+              """.query[Category].option
           }
         }
 
         override def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] = {
-          sql.execute("get-children") {
+          sql.execute(if (parentId == rootCategoryId) "get-root-children" else "get-children") {
             sql"""
-              select id, parent_id, depth, name
-              from categories
-              where parent_id = $parentId
-              order by depth asc, name asc
-            """.query[Category].to[List]
+                select id, parent_id, depth, name
+                from categories
+                where parent_id = $parentId
+                order by depth asc, name asc
+              """.query[Category].to[List]
           }
         }
       }
