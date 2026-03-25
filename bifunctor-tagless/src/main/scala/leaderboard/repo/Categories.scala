@@ -3,7 +3,7 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.postgres.implicits.*
 import doobie.implicits.*
-import izumi.functional.bio.{Error2, F, Primitives2}
+import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
 import leaderboard.sql.SQL
@@ -21,6 +21,21 @@ object Categories {
 
   private def rootCategoryCannotBePersisted: QueryFailure =
     QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not be persisted"))
+
+  def categoryExists[F[+_, +_]: Applicative2](sql: SQL[F])(parentId: CategoryId): F[QueryFailure, Boolean] =
+    if (parentId == rootCategoryId) {
+      F.pure(true)
+    } else {
+      sql.execute("category-parent-exists") {
+        sql"""
+                select exists(
+                  select 1
+                  from categories
+                  where id = $parentId
+                )
+              """.query[Boolean].unique
+      }
+    }
 
   final class Dummy[F[+_, +_]: Error2: Primitives2]
     extends Lifecycle.LiftF[F[QueryFailure, _], Categories[F]](
@@ -69,7 +84,9 @@ object Categories {
               parent_id uuid not null,
               depth int not null,
               name text not null,
-              primary key (id)
+              primary key (id),
+              constraint category_not_root
+                check (id <> $rootCategoryId)
             ) without oids
           """.update.run
         }
@@ -81,26 +98,11 @@ object Categories {
         }
       } yield new Categories[F] {
 
-        private def parentExists(parentId: CategoryId): F[QueryFailure, Boolean] =
-          if (parentId == rootCategoryId) {
-            F.pure(true)
-          } else {
-            sql.execute("category-parent-exists") {
-              sql"""
-                select exists(
-                  select 1
-                  from categories
-                  where id = $parentId
-                )
-              """.query[Boolean].unique
-            }
-          }
-
         override def upsertCategory(category: Category): F[QueryFailure, Unit] = {
           if (category.id == rootCategoryId) {
             F.fail(rootCategoryCannotBePersisted)
           } else {
-            parentExists(category.parentId).flatMap {
+            categoryExists(sql)(category.parentId).flatMap {
               exists =>
                 if (!exists) {
                   F.fail(parentNotFound(category.parentId))
