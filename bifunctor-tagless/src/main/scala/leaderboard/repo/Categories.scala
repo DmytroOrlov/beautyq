@@ -1,8 +1,9 @@
 package leaderboard.repo
 
 import distage.Lifecycle
-import doobie.postgres.implicits.*
+import doobie.Fragment
 import doobie.implicits.*
+import doobie.postgres.implicits.*
 import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
@@ -47,18 +48,20 @@ object Categories {
             if (category.id == rootCategoryId) {
               F.fail(rootCategoryCannotBePersisted)
             } else {
-              state.modify[Either[QueryFailure, Unit]] { current =>
-                if (category.parentId == rootCategoryId || current.contains(category.parentId)) {
-                  Right(()) -> (current + (category.id -> category))
-                } else {
-                  Left(parentNotFound(category.parentId)) -> current
-                }
-              }.fromEither
+              state
+                .modify[Either[QueryFailure, Unit]] {
+                  current =>
+                    if (category.parentId == rootCategoryId || current.contains(category.parentId)) {
+                      Right(()) -> (current + (category.id -> category))
+                    } else {
+                      Left(parentNotFound(category.parentId)) -> current
+                    }
+                }.fromEither
             }
           }
 
           override def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] =
-              state.get.map(_.get(id))
+            state.get.map(_.get(id))
 
           override def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] =
             state.get.map(
@@ -78,17 +81,17 @@ object Categories {
       for {
         _ <- log.info("Creating Categories table")
         _ <- sql.execute("ddl-categories") {
-          sql"""
-            create table if not exists categories (
-              id uuid not null,
-              parent_id uuid not null,
-              depth int not null,
-              name text not null,
-              primary key (id),
-              constraint category_not_root
-                check (id <> $rootCategoryId)
-            ) without oids
-          """.update.run
+          Fragment
+            .const("""
+          create table if not exists categories (
+                id uuid not null,
+                parent_id uuid not null,
+                depth int not null,
+                name text not null,
+                primary key (id),
+                constraint category_not_root
+                  check (id <> %s)
+              ) without oids""".formatted(rootCategoryIdSqlLiteral)).update.run
         }
         _ <- sql.execute("ddl-categories-parent-id-idx") {
           sql"""

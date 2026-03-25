@@ -5,9 +5,12 @@ import izumi.distage.model.definition.Activation
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
+import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.repo.{Ladder, Profiles}
+import leaderboard.repo.{Categories, Ladder, Profiles, Services}
 import leaderboard.services.Ranks
+import leaderboard.sql.SQL
+import logstage.LogIO2
 import leaderboard.zioenv.*
 import zio.{IO, ZIO}
 
@@ -16,16 +19,33 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
     pluginConfig    = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
       make[Rnd[IO]].from[Rnd.Impl[IO]]
+      include(new ModuleDef {
+        tag(Repo.Dummy)
+
+        make[Categories[IO]].fromResource[Categories.Dummy[IO]]
+        make[Services[IO]].fromResource[Services.Dummy[IO]]
+      })
+      include(new ModuleDef {
+        tag(Repo.Prod)
+
+        make[Categories[IO]].fromResource[Categories.Postgres[IO]]
+        make[Services[IO]].fromResource {
+          (_: Categories[IO], sql: SQL[IO], log: LogIO2[IO]) =>
+            new Services.Postgres[IO](sql, log)
+        }
+      })
     },
     // For testing, set up a docker container with postgres,
     // instead of trying to connect to an external database
     activation = Activation(Scene -> Scene.Managed),
-    // Instantiate Ladder & Profiles only once per test-run and
+    // Instantiate repos only once per test-run and
     // share them and all their dependencies across all tests.
     // this includes the Postgres Docker container above and table DDLs
     memoizationRoots = Set(
       DIKey[Ladder[IO]],
       DIKey[Profiles[IO]],
+      DIKey[Categories[IO]],
+      DIKey[Services[IO]],
     ),
   )
 }
@@ -45,10 +65,14 @@ trait ProdTest extends LeaderboardTest {
 final class LadderTestDummy extends LadderTest with DummyTest
 final class ProfilesTestDummy extends ProfilesTest with DummyTest
 final class RanksTestDummy extends RanksTest with DummyTest
+final class CategoriesTestDummy extends CategoriesTest with DummyTest
+final class ServicesTestDummy extends ServicesTest with DummyTest
 
 final class LadderTestPostgres extends LadderTest with ProdTest
 final class ProfilesTestPostgres extends ProfilesTest with ProdTest
 final class RanksTestPostgres extends RanksTest with ProdTest
+final class CategoriesTestPostgres extends CategoriesTest with ProdTest
+final class ServicesTestPostgres extends ServicesTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
 
@@ -172,6 +196,211 @@ abstract class RanksTest extends LeaderboardTest {
             assertIO(user2Rank < user1Rank)
           } else ZIO.unit
       } yield ()
+    }
+
+  }
+
+}
+
+abstract class CategoriesTest extends LeaderboardTest {
+
+  "Categories" should {
+
+    "upsert & get for an ordinary category" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          parentId <- rnd[CategoryId]
+          childId  <- rnd[CategoryId]
+          parent    = Category(parentId, rootCategoryId, 0, s"parent-$parentId")
+          child     = Category(childId, parentId, 1, s"child-$childId")
+          _        <- categories.upsertCategory(parent)
+          _        <- categories.upsertCategory(child)
+          res      <- categories.getCategory(child.id)
+          _        <- assertIO(res.contains(child))
+        } yield ()
+    }
+
+    "allow creating a top-level category with parentId == rootCategoryId" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          id       <- rnd[CategoryId]
+          category  = Category(id, rootCategoryId, 0, s"top-$id")
+          _        <- categories.upsertCategory(category)
+          res      <- categories.getCategory(category.id)
+          _        <- assertIO(res.contains(category))
+        } yield ()
+    }
+
+    "reject creating a category with id == rootCategoryId" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          parentId <- rnd[CategoryId]
+          result   <- categories.upsertCategory(Category(rootCategoryId, parentId, 1, "illegal-root")).either
+          _        <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "reject creating a category with a missing non-root parent" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          id       <- rnd[CategoryId]
+          parentId <- rnd[CategoryId]
+          result   <- categories.upsertCategory(Category(id, parentId, 1, s"orphan-$id")).either
+          _        <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "return only children of the requested parent" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          parent1Id <- rnd[CategoryId]
+          parent2Id <- rnd[CategoryId]
+          child1Id  <- rnd[CategoryId]
+          child2Id  <- rnd[CategoryId]
+          otherId   <- rnd[CategoryId]
+
+          parent1 = Category(parent1Id, rootCategoryId, 0, s"parent-a-$parent1Id")
+          parent2 = Category(parent2Id, rootCategoryId, 0, s"parent-b-$parent2Id")
+          child1  = Category(child1Id, parent1Id, 1, s"child-a-$child1Id")
+          child2  = Category(child2Id, parent1Id, 1, s"child-b-$child2Id")
+          other   = Category(otherId, parent2Id, 1, s"child-c-$otherId")
+
+          _   <- categories.upsertCategory(parent1)
+          _   <- categories.upsertCategory(parent2)
+          _   <- categories.upsertCategory(child1)
+          _   <- categories.upsertCategory(child2)
+          _   <- categories.upsertCategory(other)
+          res <- categories.getChildren(parent1Id)
+
+          _ <- assertIO(res.toSet == Set(child1, child2))
+        } yield ()
+    }
+
+    "return children sorted by depth asc and then name asc" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          parentId <- rnd[CategoryId]
+          id1      <- rnd[CategoryId]
+          id2      <- rnd[CategoryId]
+          id3      <- rnd[CategoryId]
+
+          parent = Category(parentId, rootCategoryId, 0, s"parent-sort-$parentId")
+          c1     = Category(id1, parentId, 1, "beta")
+          c2     = Category(id2, parentId, 1, "alpha")
+          c3     = Category(id3, parentId, 2, "aardvark")
+
+          _   <- categories.upsertCategory(parent)
+          _   <- categories.upsertCategory(c1)
+          _   <- categories.upsertCategory(c2)
+          _   <- categories.upsertCategory(c3)
+          res <- categories.getChildren(parentId)
+
+          _ <- assertIO(res == List(c2, c1, c3))
+        } yield ()
+    }
+
+  }
+
+}
+
+abstract class ServicesTest extends LeaderboardTest {
+
+  "Services" should {
+
+    "upsert & get for an ordinary service" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          serviceId  <- rnd[ServiceId]
+          category    = Category(categoryId, rootCategoryId, 0, s"service-parent-$categoryId")
+          service     = Service(serviceId, categoryId, s"service-$serviceId")
+          _          <- categories.upsertCategory(category)
+          _          <- services.upsertService(service)
+          res        <- services.getService(service.id)
+          _          <- assertIO(res.contains(service))
+        } yield ()
+    }
+
+    "reject creating a service with categoryId == rootCategoryId" in {
+      (rnd: Rnd[IO], services: Services[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          result    <- services.upsertService(Service(serviceId, rootCategoryId, "illegal-root-service")).either
+          _         <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "reject creating a service when category does not exist" in {
+      (rnd: Rnd[IO], services: Services[IO]) =>
+        for {
+          serviceId  <- rnd[ServiceId]
+          categoryId <- rnd[CategoryId]
+          result     <- services.upsertService(Service(serviceId, categoryId, s"orphan-service-$serviceId")).either
+          _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "allow creating a service for an existing category" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          serviceId  <- rnd[ServiceId]
+          category    = Category(categoryId, rootCategoryId, 0, s"existing-category-$categoryId")
+          service     = Service(serviceId, categoryId, s"existing-service-$serviceId")
+          _          <- categories.upsertCategory(category)
+          _          <- services.upsertService(service)
+          res        <- services.getService(service.id)
+          _          <- assertIO(res.contains(service))
+        } yield ()
+    }
+
+    "return only services of the requested category" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          category1Id <- rnd[CategoryId]
+          category2Id <- rnd[CategoryId]
+          service1Id  <- rnd[ServiceId]
+          service2Id  <- rnd[ServiceId]
+          otherId     <- rnd[ServiceId]
+
+          category1 = Category(category1Id, rootCategoryId, 0, s"services-parent-a-$category1Id")
+          category2 = Category(category2Id, rootCategoryId, 0, s"services-parent-b-$category2Id")
+          service1  = Service(service1Id, category1Id, s"service-a-$service1Id")
+          service2  = Service(service2Id, category1Id, s"service-b-$service2Id")
+          other     = Service(otherId, category2Id, s"service-c-$otherId")
+
+          _   <- categories.upsertCategory(category1)
+          _   <- categories.upsertCategory(category2)
+          _   <- services.upsertService(service1)
+          _   <- services.upsertService(service2)
+          _   <- services.upsertService(other)
+          res <- services.getServicesByCategory(category1Id)
+
+          _ <- assertIO(res.toSet == Set(service1, service2))
+        } yield ()
+    }
+
+    "return services sorted by name asc" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          id1        <- rnd[ServiceId]
+          id2        <- rnd[ServiceId]
+          id3        <- rnd[ServiceId]
+
+          category = Category(categoryId, rootCategoryId, 0, s"services-sort-$categoryId")
+          s1       = Service(id1, categoryId, "gamma")
+          s2       = Service(id2, categoryId, "alpha")
+          s3       = Service(id3, categoryId, "beta")
+
+          _   <- categories.upsertCategory(category)
+          _   <- services.upsertService(s1)
+          _   <- services.upsertService(s2)
+          _   <- services.upsertService(s3)
+          res <- services.getServicesByCategory(categoryId)
+
+          _ <- assertIO(res == List(s2, s3, s1))
+        } yield ()
     }
 
   }

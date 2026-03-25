@@ -1,6 +1,7 @@
 package leaderboard.repo
 
 import distage.Lifecycle
+import doobie.Fragment
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
@@ -64,18 +65,18 @@ object Services {
       for {
         _ <- log.info("Creating Services table")
         _ <- sql.execute("ddl-services") {
-          sql"""
-            create table if not exists services (
-              id uuid not null,
-              category_id uuid not null,
-              name text not null,
-              primary key (id),
-              constraint services_category_fk
-                foreign key (category_id) references categories(id),
-              constraint services_category_not_root
-                check (category_id <> $rootCategoryId)
-            ) without oids
-          """.update.run
+          Fragment
+            .const("""
+              create table if not exists services (
+                id uuid not null,
+                category_id uuid not null,
+                name text not null,
+                primary key (id),
+                constraint services_category_fk
+                  foreign key (category_id) references categories(id),
+                constraint services_category_not_root
+                  check (category_id <> %s)
+              ) without oids""".formatted(rootCategoryIdSqlLiteral)).update.run
         }
         _ <- sql.execute("ddl-services-category-id-idx") {
           sql"""
