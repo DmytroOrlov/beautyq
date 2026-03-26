@@ -7,7 +7,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.repo.{Categories, Ladder, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -44,6 +44,7 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
       DIKey[Ladder[IO]],
       DIKey[Profiles[IO]],
       DIKey[Categories[IO]],
+      DIKey[Masters[IO]],
       DIKey[Services[IO]],
     ),
   )
@@ -65,12 +66,14 @@ final class LadderTestDummy extends LadderTest with DummyTest
 final class ProfilesTestDummy extends ProfilesTest with DummyTest
 final class RanksTestDummy extends RanksTest with DummyTest
 final class CategoriesTestDummy extends CategoriesTest with DummyTest
+final class MastersTestDummy extends MastersTest with DummyTest
 final class ServicesTestDummy extends ServicesTest with DummyTest
 
 final class LadderTestPostgres extends LadderTest with ProdTest
 final class ProfilesTestPostgres extends ProfilesTest with ProdTest
 final class RanksTestPostgres extends RanksTest with ProdTest
 final class CategoriesTestPostgres extends CategoriesTest with ProdTest
+final class MastersTestPostgres extends MastersTest with ProdTest
 final class ServicesTestPostgres extends ServicesTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
@@ -399,6 +402,71 @@ abstract class ServicesTest extends LeaderboardTest {
           res <- services.getServicesByCategory(categoryId)
 
           _ <- assertIO(res == List(s2, s3, s1))
+        } yield ()
+    }
+
+  }
+
+}
+
+abstract class MastersTest extends LeaderboardTest {
+
+  "Masters" should {
+
+    "upsert & get" in {
+      (rnd: Rnd[IO], masters: Masters[IO]) =>
+        for {
+          id      <- rnd[MasterId]
+          master   = Master(id, s"name-$id")
+          _       <- masters.upsertMaster(master)
+          res     <- masters.getMaster(master.id)
+          _       <- assertIO(res.contains(master))
+        } yield ()
+    }
+
+    "getMasters returns inserted masters" in {
+      (rnd: Rnd[IO], masters: Masters[IO]) =>
+        for {
+          prefix <- rnd[MasterId].map(id => s"masters-list-$id")
+          id1    <- rnd[MasterId]
+          id2    <- rnd[MasterId]
+          m1      = Master(id1, s"$prefix-a")
+          m2      = Master(id2, s"$prefix-b")
+          _      <- masters.upsertMaster(m1)
+          _      <- masters.upsertMaster(m2)
+          res    <- masters.getMasters().map(_.filter(_.name.startsWith(prefix)))
+          _      <- assertIO(res.toSet == Set(m1, m2))
+        } yield ()
+    }
+
+    "getMasters sorted by name asc, then id asc" in {
+      (masters: Masters[IO]) =>
+        val prefix = s"masters-sort-${java.util.UUID.randomUUID()}"
+        val id1    = java.util.UUID.fromString("00000000-0000-0000-0000-000000000002")
+        val id2    = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val id3    = java.util.UUID.fromString("00000000-0000-0000-0000-000000000003")
+        val m1     = Master(id1, s"$prefix-beta")
+        val m2     = Master(id2, s"$prefix-alpha")
+        val m3     = Master(id3, s"$prefix-alpha")
+        for {
+          _   <- masters.upsertMaster(m1)
+          _   <- masters.upsertMaster(m2)
+          _   <- masters.upsertMaster(m3)
+          res <- masters.getMasters().map(_.filter(_.name.startsWith(prefix)))
+          _   <- assertIO(res == List(m2, m3, m1))
+        } yield ()
+    }
+
+    "upsert overwrites existing master with same id" in {
+      (rnd: Rnd[IO], masters: Masters[IO]) =>
+        for {
+          id      <- rnd[MasterId]
+          initial  = Master(id, "same-id")
+          updated  = Master(id, "same-id-updated")
+          _       <- masters.upsertMaster(initial)
+          _       <- masters.upsertMaster(updated)
+          res     <- masters.getMaster(id)
+          _       <- assertIO(res.contains(updated))
         } yield ()
     }
 
