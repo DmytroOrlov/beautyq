@@ -11,6 +11,7 @@ trait SQL[F[_, _]] {
 }
 
 object SQL {
+  // AI-NOTE: For Panic2 and error-channel patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
   final class Impl[F[+_, +_]: Panic2](
     transactor: Transactor[F[Throwable, _]]
   ) extends SQL[F] {

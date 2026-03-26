@@ -38,6 +38,7 @@ object Categories {
       }
     }
 
+  // AI-NOTE: For izumi/distage/BIO typeclasses and Lifecycle patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
   final class Dummy[F[+_, +_]: Error2: Primitives2]
     extends Lifecycle.LiftF[F[QueryFailure, _], Categories[F]](
       for {

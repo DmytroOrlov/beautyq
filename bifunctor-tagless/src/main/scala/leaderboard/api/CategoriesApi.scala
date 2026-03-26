@@ -10,6 +10,7 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 
+// AI-NOTE: For izumi/distage/BIO typeclasses used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
 final class CategoriesApi[F[+_, +_]: Async2: Fork2: Primitives2](
   dsl: Http4sDsl[F[Throwable, _]],
   categories: Categories[F],

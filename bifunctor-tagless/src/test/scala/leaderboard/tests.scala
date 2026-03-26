@@ -14,6 +14,7 @@ import logstage.LogIO2
 import leaderboard.zioenv.*
 import zio.{IO, ZIO}
 
+// AI-NOTE: For distage testkit memoizationRoots, Activation, and BIO patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
 abstract class LeaderboardTest extends SpecZIO with AssertZIO {
   override def config = super.config.copy(
     pluginConfig    = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),

@@ -21,6 +21,7 @@ import zio.IO
 
 import scala.concurrent.duration.*
 
+// AI-NOTE: For distage wiring, Lifecycle resources, weak set bindings, and BIO typeclasses, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
 object LeaderboardPlugin extends PluginDef {
   include(modules.roles[IO])
   include(modules.api[IO])
