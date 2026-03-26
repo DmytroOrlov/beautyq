@@ -9,13 +9,13 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{HttpApi, LadderApi, ProfileApi}
+import leaderboard.api.{CategoriesApi, HttpApi, LadderApi, ProfileApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.repo.{Ladder, Profiles}
+import leaderboard.repo.{Categories, Ladder, Profiles}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
-import leaderboard.{LadderRole, LeaderboardRole, ProfileRole}
+import leaderboard.{CategoriesRole, LadderRole, LeaderboardRole, ProfileRole}
 import org.http4s.dsl.Http4sDsl
 import zio.IO
 
@@ -34,6 +34,9 @@ object LeaderboardPlugin extends PluginDef {
       // The `ladder` role
       makeRole[LadderRole[F]]
 
+      // The `category` role
+      makeRole[CategoriesRole[F]]
+
       // The `profile` role
       makeRole[ProfileRole[F]]
 
@@ -47,12 +50,15 @@ object LeaderboardPlugin extends PluginDef {
     def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
       // The `ladder` API
       make[LadderApi[F]]
+      // The `category` API
+      make[CategoriesApi[F]]
       // The `profile` API
       make[ProfileApi[F]]
 
       // A set of all APIs
       many[HttpApi[F]]
         .weak[LadderApi[F]] // add ladder API as a _weak reference_
+        .weak[CategoriesApi[F]] // add categories API as a _weak reference_
         .weak[ProfileApi[F]] // add profiles API as a _weak reference_
 
       make[HttpServer].fromResource[HttpServer.Impl[F]]
@@ -66,6 +72,7 @@ object LeaderboardPlugin extends PluginDef {
       tag(Repo.Dummy)
 
       make[Ladder[F]].fromResource[Ladder.Dummy[F]]
+      make[Categories[F]].fromResource[Categories.Dummy[F]]
       make[Profiles[F]].fromResource[Profiles.Dummy[F]]
     }
 
@@ -73,6 +80,7 @@ object LeaderboardPlugin extends PluginDef {
       tag(Repo.Prod)
 
       make[Ladder[F]].fromResource[Ladder.Postgres[F]]
+      make[Categories[F]].fromResource[Categories.Postgres[F]]
       make[Profiles[F]].fromResource[Profiles.Postgres[F]]
 
       make[SQL[F]].from[SQL.Impl[F]]

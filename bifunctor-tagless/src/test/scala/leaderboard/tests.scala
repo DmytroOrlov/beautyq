@@ -22,13 +22,11 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
       include(new ModuleDef {
         tag(Repo.Dummy)
 
-        make[Categories[IO]].fromResource[Categories.Dummy[IO]]
         make[Services[IO]].fromResource[Services.Dummy[IO]]
       })
       include(new ModuleDef {
         tag(Repo.Prod)
 
-        make[Categories[IO]].fromResource[Categories.Postgres[IO]]
         make[Services[IO]].fromResource {
           (_: Categories[IO], sql: SQL[IO], log: LogIO2[IO]) =>
             new Services.Postgres[IO](sql, log)
