@@ -9,13 +9,13 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, ProfileApi, ServiceApi}
+import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferLocationApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferLocations, MasterServiceOffers, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
-import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterRole, ProfileRole, ServiceRole}
+import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterLocationRole, MasterRole, MasterServiceOfferLocationRole, MasterServiceOfferRole, ProfileRole, ServiceRole}
 import org.http4s.dsl.Http4sDsl
 import zio.IO
 
@@ -44,6 +44,15 @@ object LeaderboardPlugin extends PluginDef {
       // The `master` role
       makeRole[MasterRole[F]]
 
+      // The `master-location` role
+      makeRole[MasterLocationRole[F]]
+
+      // The `master-service-offer` role
+      makeRole[MasterServiceOfferRole[F]]
+
+      // The `master-service-offer-location` role
+      makeRole[MasterServiceOfferLocationRole[F]]
+
       // The `profile` role
       makeRole[ProfileRole[F]]
 
@@ -63,6 +72,12 @@ object LeaderboardPlugin extends PluginDef {
       make[ServiceApi[F]]
       // The `master` API
       make[MasterApi[F]]
+      // The `master-location` API
+      make[MasterLocationApi[F]]
+      // The `master-service-offer` API
+      make[MasterServiceOfferApi[F]]
+      // The `master-service-offer-location` API
+      make[MasterServiceOfferLocationApi[F]]
       // The `profile` API
       make[ProfileApi[F]]
 
@@ -72,6 +87,9 @@ object LeaderboardPlugin extends PluginDef {
         .weak[CategoryApi[F]] // add categories API as a _weak reference_
         .weak[ServiceApi[F]] // add services API as a _weak reference_
         .weak[MasterApi[F]] // add masters API as a _weak reference_
+        .weak[MasterLocationApi[F]] // add master locations API as a _weak reference_
+        .weak[MasterServiceOfferApi[F]] // add master service offers API as a _weak reference_
+        .weak[MasterServiceOfferLocationApi[F]] // add master service offer locations API as a _weak reference_
         .weak[ProfileApi[F]] // add profiles API as a _weak reference_
 
       make[HttpServer].fromResource[HttpServer.Impl[F]]
