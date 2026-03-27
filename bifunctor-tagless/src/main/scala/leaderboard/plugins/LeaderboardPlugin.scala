@@ -9,13 +9,13 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{CategoriesApi, HttpApi, LadderApi, ProfileApi}
+import leaderboard.api.{CategoryApi, HttpApi, LadderApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.repo.{Categories, Ladder, Masters, Profiles}
+import leaderboard.repo.{Categories, Ladder, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
-import leaderboard.{CategoriesRole, LadderRole, LeaderboardRole, ProfileRole}
+import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, ProfileRole, ServiceRole}
 import org.http4s.dsl.Http4sDsl
 import zio.IO
 
@@ -36,7 +36,10 @@ object LeaderboardPlugin extends PluginDef {
       makeRole[LadderRole[F]]
 
       // The `category` role
-      makeRole[CategoriesRole[F]]
+      makeRole[CategoryRole[F]]
+
+      // The `service` role
+      makeRole[ServiceRole[F]]
 
       // The `profile` role
       makeRole[ProfileRole[F]]
@@ -52,14 +55,17 @@ object LeaderboardPlugin extends PluginDef {
       // The `ladder` API
       make[LadderApi[F]]
       // The `category` API
-      make[CategoriesApi[F]]
+      make[CategoryApi[F]]
+      // The `service` API
+      make[ServiceApi[F]]
       // The `profile` API
       make[ProfileApi[F]]
 
       // A set of all APIs
       many[HttpApi[F]]
         .weak[LadderApi[F]] // add ladder API as a _weak reference_
-        .weak[CategoriesApi[F]] // add categories API as a _weak reference_
+        .weak[CategoryApi[F]] // add categories API as a _weak reference_
+        .weak[ServiceApi[F]] // add services API as a _weak reference_
         .weak[ProfileApi[F]] // add profiles API as a _weak reference_
 
       make[HttpServer].fromResource[HttpServer.Impl[F]]
@@ -75,6 +81,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Ladder[F]].fromResource[Ladder.Dummy[F]]
       make[Categories[F]].fromResource[Categories.Dummy[F]]
       make[Masters[F]].fromResource[Masters.Dummy[F]]
+      make[Services[F]].fromResource[Services.Dummy[F]]
       make[Profiles[F]].fromResource[Profiles.Dummy[F]]
     }
 
@@ -84,6 +91,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Ladder[F]].fromResource[Ladder.Postgres[F]]
       make[Categories[F]].fromResource[Categories.Postgres[F]]
       make[Masters[F]].fromResource[Masters.Postgres[F]]
+      make[Services[F]].fromResource[Services.Postgres[F]]
       make[Profiles[F]].fromResource[Profiles.Postgres[F]]
 
       make[SQL[F]].from[SQL.Impl[F]]

@@ -9,8 +9,6 @@ import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
 import leaderboard.repo.{Categories, Ladder, Masters, Profiles, Services}
 import leaderboard.services.Ranks
-import leaderboard.sql.SQL
-import logstage.LogIO2
 import leaderboard.zioenv.*
 import zio.{IO, ZIO}
 
@@ -20,19 +18,6 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
     pluginConfig    = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
       make[Rnd[IO]].from[Rnd.Impl[IO]]
-      include(new ModuleDef {
-        tag(Repo.Dummy)
-
-        make[Services[IO]].fromResource[Services.Dummy[IO]]
-      })
-      include(new ModuleDef {
-        tag(Repo.Prod)
-
-        make[Services[IO]].fromResource {
-          (_: Categories[IO], sql: SQL[IO], log: LogIO2[IO]) =>
-            new Services.Postgres[IO](sql, log)
-        }
-      })
     },
     // For testing, set up a docker container with postgres,
     // instead of trying to connect to an external database
