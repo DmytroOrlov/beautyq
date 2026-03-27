@@ -8,6 +8,6 @@ package object model {
   type MasterId                     = UUID
   type MasterLocationId             = UUID
   type MasterServiceOfferId         = UUID
-  type MasterServiceOfferLocationId = UUID
+  type MasterServiceOfferVariantId  = UUID
   type Score                        = Long
 }

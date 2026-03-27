@@ -10,7 +10,7 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.functional.bio.Applicative2
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RawValue, RoleArgs}
-import leaderboard.api.{CategoryApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferLocationApi, ProfileApi, ServiceApi}
+import leaderboard.api.{CategoryApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.http.HttpServer
 import leaderboard.plugins.{LeaderboardPlugin, PostgresDockerPlugin}
 import logstage.LogIO2
@@ -188,32 +188,32 @@ object MasterServiceOfferRole extends RoleDescriptor {
 }
 
 /**
-  * A role that exposes just the /master-service-offer-location/ endpoints, it can be launched with
+  * A role that exposes just the /master-service-offer-variant/ endpoints, it can be launched with
   *
   * {{{
-  *   ./launcher :master-service-offer-location
+  *   ./launcher :master-service-offer-variant
   * }}}
   *
   * Example session:
   *
   * {{{
-  *   curl -X POST http://localhost:8080/master-service-offer-location -d '{"id":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"73ba445e-edf0-4ecf-a02b-91d0932e1f10","masterLocationId":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4","priceFrom":50.0,"priceTo":80.0}'
-  *   curl -X GET http://localhost:8080/master-service-offer-location/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
-  *   curl -X GET http://localhost:8080/master-service-offer-location/offer/73ba445e-edf0-4ecf-a02b-91d0932e1f10
-  *   curl -X GET http://localhost:8080/master-service-offer-location/location/63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4
+  *   curl -X POST http://localhost:8080/master-service-offer-variant -d '{"id":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"73ba445e-edf0-4ecf-a02b-91d0932e1f10","masterLocationId":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4","priceFrom":50.0,"priceTo":80.0,"durationMin":60}'
+  *   curl -X GET http://localhost:8080/master-service-offer-variant/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
+  *   curl -X GET http://localhost:8080/master-service-offer-variant/offer/73ba445e-edf0-4ecf-a02b-91d0932e1f10
+  *   curl -X GET http://localhost:8080/master-service-offer-variant/location/63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class MasterServiceOfferLocationRole[F[+_, +_]: Applicative2](
-  @unused masterServiceOfferLocationApi: MasterServiceOfferLocationApi[F],
+final class MasterServiceOfferVariantRole[F[+_, +_]: Applicative2](
+  @unused masterServiceOfferVariantApi: MasterServiceOfferVariantApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
   override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
-    Lifecycle.liftF(log.info("MasterServiceOfferLocation API started!"))
+    Lifecycle.liftF(log.info("MasterServiceOfferVariant API started!"))
   }
 }
-object MasterServiceOfferLocationRole extends RoleDescriptor {
-  final val id = "master-service-offer-location"
+object MasterServiceOfferVariantRole extends RoleDescriptor {
+  final val id = "master-service-offer-variant"
 }
 
 /**
@@ -251,10 +251,10 @@ object ProfileRole extends RoleDescriptor {
   *
   * Note that this will have the same effect as launching [[LadderRole]], [[CategoryRole]],
   * [[ServiceRole]], [[MasterRole]], [[MasterLocationRole]], [[MasterServiceOfferRole]],
-  * [[MasterServiceOfferLocationRole]] and [[ProfileRole]] at the same time.
+  * [[MasterServiceOfferVariantRole]] and [[ProfileRole]] at the same time.
   *
   * {{{
-  *   ./launcher :ladder :category :service :master :master-location :master-service-offer :master-service-offer-location :profile
+  *   ./launcher :ladder :category :service :master :master-location :master-service-offer :master-service-offer-variant :profile
   * }}}
   *
   * Example session:
@@ -266,7 +266,7 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X POST http://localhost:8080/master -d '{"id":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Kai"}'
   *   curl -X POST http://localhost:8080/master-location -d '{"id":"8ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterId":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Studio Mitte","address":"Torstrasse 1","lat":52.52,"lon":13.405}'
   *   curl -X POST http://localhost:8080/master-service-offer -d '{"id":"9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterId":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","serviceId":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4"}'
-  *   curl -X POST http://localhost:8080/master-service-offer-location -d '{"id":"aab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterLocationId":"8ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","priceFrom":50.0,"priceTo":80.0}'
+  *   curl -X POST http://localhost:8080/master-service-offer-variant -d '{"id":"aab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterLocationId":"8ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","priceFrom":50.0,"priceTo":80.0,"durationMin":60}'
   *   curl -X GET http://localhost:8080/category/root
   *   curl -X POST http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4 -d '{"name": "Kai", "description": "S C A L A"}'
   *   # check leaderboard
@@ -276,7 +276,7 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/master
   *   curl -X GET http://localhost:8080/master-location/master/7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4
   *   curl -X GET http://localhost:8080/master-service-offer/master/7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4
-  *   curl -X GET http://localhost:8080/master-service-offer-location/offer/9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4
+  *   curl -X GET http://localhost:8080/master-service-offer-variant/offer/9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4
   *   # user profile now shows the rank in the ladder along with profile data
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
@@ -288,12 +288,12 @@ final class LeaderboardRole[F[+_, +_]: Applicative2](
   @unused masterRole: MasterRole[F],
   @unused masterLocationRole: MasterLocationRole[F],
   @unused masterServiceOfferRole: MasterServiceOfferRole[F],
-  @unused masterServiceOfferLocationRole: MasterServiceOfferLocationRole[F],
+  @unused masterServiceOfferVariantRole: MasterServiceOfferVariantRole[F],
   @unused profileRole: ProfileRole[F],
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
   override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
-    Lifecycle.liftF(log.info("Ladder, Category, Service, Master, MasterLocation, MasterServiceOffer, MasterServiceOfferLocation & Profile APIs started!"))
+    Lifecycle.liftF(log.info("Ladder, Category, Service, Master, MasterLocation, MasterServiceOffer, MasterServiceOfferVariant & Profile APIs started!"))
   }
 }
 object LeaderboardRole extends RoleDescriptor {
@@ -524,34 +524,34 @@ object MainMasterServiceOfferProdDocker extends MainBase(Activation(Repo -> Repo
 object MainMasterServiceOfferProd extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Provided), Vector(RoleArgs(MasterServiceOfferRole.id)))
 
 /**
-  * Launch just the `master-service-offer-location` APIs with dummy repositories
+  * Launch just the `master-service-offer-variant` APIs with dummy repositories
   *
   * Equivalent to:
   * {{{
-  *   ./launcher -u repo:dummy :master-service-offer-location
+  *   ./launcher -u repo:dummy :master-service-offer-variant
   * }}}
   */
-object MainMasterServiceOfferLocationDummy extends MainBase(Activation(Repo -> Repo.Dummy), Vector(RoleArgs(MasterServiceOfferLocationRole.id)))
+object MainMasterServiceOfferVariantDummy extends MainBase(Activation(Repo -> Repo.Dummy), Vector(RoleArgs(MasterServiceOfferVariantRole.id)))
 
 /**
-  * Launch just the `master-service-offer-location` APIs with postgres repositories and dockerized postgres service
+  * Launch just the `master-service-offer-variant` APIs with postgres repositories and dockerized postgres service
   *
   * Equivalent to:
   * {{{
-  *   ./launcher -u scene:managed :master-service-offer-location
+  *   ./launcher -u scene:managed :master-service-offer-variant
   * }}}
   */
-object MainMasterServiceOfferLocationProdDocker extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Managed), Vector(RoleArgs(MasterServiceOfferLocationRole.id)))
+object MainMasterServiceOfferVariantProdDocker extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Managed), Vector(RoleArgs(MasterServiceOfferVariantRole.id)))
 
 /**
-  * Launch just the `master-service-offer-location` APIs with postgres repositories and external postgres service
+  * Launch just the `master-service-offer-variant` APIs with postgres repositories and external postgres service
   *
   * Equivalent to:
   * {{{
-  *   ./launcher :master-service-offer-location
+  *   ./launcher :master-service-offer-variant
   * }}}
   */
-object MainMasterServiceOfferLocationProd extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Provided), Vector(RoleArgs(MasterServiceOfferLocationRole.id)))
+object MainMasterServiceOfferVariantProd extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Provided), Vector(RoleArgs(MasterServiceOfferVariantRole.id)))
 
 /**
   * Launch just the `profile` APIs with dummy repositories

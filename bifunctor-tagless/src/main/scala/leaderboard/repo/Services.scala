@@ -10,6 +10,7 @@ import leaderboard.model.{QueryFailure, Service, ServiceId}
 import leaderboard.repo.Categories.categoryExists
 import leaderboard.sql.SQL
 import logstage.LogIO2
+import scala.annotation.unused
 
 trait Services[F[_, _]] {
   def upsertService(service: Service): F[QueryFailure, Unit]
@@ -59,6 +60,7 @@ object Services {
     )
 
   final class Postgres[F[+_, +_]: Error2](
+    @unused categories: Categories[F],
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Services[F]](

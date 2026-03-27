@@ -7,6 +7,7 @@ import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, QueryFailure, ServiceId}
 import leaderboard.sql.SQL
 import logstage.LogIO2
+import scala.annotation.unused
 
 trait MasterServiceOffers[F[_, _]] {
   def upsertMasterServiceOffer(offer: MasterServiceOffer): F[QueryFailure, Unit]
@@ -88,6 +89,8 @@ object MasterServiceOffers {
     )
 
   final class Postgres[F[+_, +_]: Error2](
+    @unused masters: Masters[F],
+    @unused services: Services[F],
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], MasterServiceOffers[F]](

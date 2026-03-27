@@ -9,13 +9,13 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferLocationApi, ProfileApi, ServiceApi}
+import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferLocations, MasterServiceOffers, Masters, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
-import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterLocationRole, MasterRole, MasterServiceOfferLocationRole, MasterServiceOfferRole, ProfileRole, ServiceRole}
+import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterLocationRole, MasterRole, MasterServiceOfferRole, MasterServiceOfferVariantRole, ProfileRole, ServiceRole}
 import org.http4s.dsl.Http4sDsl
 import zio.IO
 
@@ -50,8 +50,8 @@ object LeaderboardPlugin extends PluginDef {
       // The `master-service-offer` role
       makeRole[MasterServiceOfferRole[F]]
 
-      // The `master-service-offer-location` role
-      makeRole[MasterServiceOfferLocationRole[F]]
+      // The `master-service-offer-variant` role
+      makeRole[MasterServiceOfferVariantRole[F]]
 
       // The `profile` role
       makeRole[ProfileRole[F]]
@@ -76,8 +76,8 @@ object LeaderboardPlugin extends PluginDef {
       make[MasterLocationApi[F]]
       // The `master-service-offer` API
       make[MasterServiceOfferApi[F]]
-      // The `master-service-offer-location` API
-      make[MasterServiceOfferLocationApi[F]]
+      // The `master-service-offer-variant` API
+      make[MasterServiceOfferVariantApi[F]]
       // The `profile` API
       make[ProfileApi[F]]
 
@@ -89,7 +89,7 @@ object LeaderboardPlugin extends PluginDef {
         .weak[MasterApi[F]] // add masters API as a _weak reference_
         .weak[MasterLocationApi[F]] // add master locations API as a _weak reference_
         .weak[MasterServiceOfferApi[F]] // add master service offers API as a _weak reference_
-        .weak[MasterServiceOfferLocationApi[F]] // add master service offer locations API as a _weak reference_
+        .weak[MasterServiceOfferVariantApi[F]] // add master service offer variants API as a _weak reference_
         .weak[ProfileApi[F]] // add profiles API as a _weak reference_
 
       make[HttpServer].fromResource[HttpServer.Impl[F]]
@@ -107,7 +107,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Masters[F]].fromResource[Masters.Dummy[F]]
       make[MasterLocations[F]].fromResource[MasterLocations.Dummy[F]]
       make[MasterServiceOffers[F]].fromResource[MasterServiceOffers.Dummy[F]]
-      make[MasterServiceOfferLocations[F]].fromResource[MasterServiceOfferLocations.Dummy[F]]
+      make[MasterServiceOfferVariants[F]].fromResource[MasterServiceOfferVariants.Dummy[F]]
       make[Services[F]].fromResource[Services.Dummy[F]]
       make[Profiles[F]].fromResource[Profiles.Dummy[F]]
     }
@@ -120,7 +120,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Masters[F]].fromResource[Masters.Postgres[F]]
       make[MasterLocations[F]].fromResource[MasterLocations.Postgres[F]]
       make[MasterServiceOffers[F]].fromResource[MasterServiceOffers.Postgres[F]]
-      make[MasterServiceOfferLocations[F]].fromResource[MasterServiceOfferLocations.Postgres[F]]
+      make[MasterServiceOfferVariants[F]].fromResource[MasterServiceOfferVariants.Postgres[F]]
       make[Services[F]].fromResource[Services.Postgres[F]]
       make[Profiles[F]].fromResource[Profiles.Postgres[F]]
 
