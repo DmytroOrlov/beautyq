@@ -852,6 +852,19 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
 }
 
 abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
+  private def makeLink(
+    id: MasterServiceOfferLocationId,
+    masterServiceOfferId: MasterServiceOfferId,
+    masterLocationId: MasterLocationId,
+    priceFrom: BigDecimal,
+    priceTo: BigDecimal,
+  ): IO[QueryFailure, MasterServiceOfferLocation] =
+    MasterServiceOfferLocation.make(id, masterServiceOfferId, masterLocationId, priceFrom, priceTo) match {
+      case Right(value) =>
+        ZIO.succeed(value)
+      case Left(error) =>
+        ZIO.fail(QueryFailure("make-master-service-offer-location", error.asThrowable))
+    }
 
   "MasterServiceOfferLocations" should {
 
@@ -877,7 +890,7 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           service     = Service(serviceId, categoryId, s"offer-location-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(locationId, masterId, s"offer-location-$locationId", s"offer-location-address-$locationId", BigDecimal("12.3400"), BigDecimal("56.7800"))
-          link        = MasterServiceOfferLocation(linkId, offerId, locationId)
+          link       <- makeLink(linkId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"))
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
           _          <- services.upsertService(service)
@@ -900,7 +913,8 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           location    = MasterLocation(locationId, masterId, s"missing-offer-location-$locationId", s"missing-offer-address-$locationId", BigDecimal("1.1000"), BigDecimal("2.2000"))
           _          <- masters.upsertMaster(master)
           _          <- masterLocations.upsertMasterLocation(location)
-          result     <- links.upsertMasterServiceOfferLocation(MasterServiceOfferLocation(linkId, offerId, locationId)).either
+          link       <- makeLink(linkId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"))
+          result     <- links.upsertMasterServiceOfferLocation(link).either
           _          <- assertIO(result.isLeft)
         } yield ()
     }
@@ -929,8 +943,38 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           _          <- masters.upsertMaster(master)
           _          <- services.upsertService(service)
           _          <- offers.upsertMasterServiceOffer(offer)
-          result     <- links.upsertMasterServiceOfferLocation(MasterServiceOfferLocation(linkId, offerId, locationId)).either
+          link       <- makeLink(linkId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"))
+          result     <- links.upsertMasterServiceOfferLocation(link).either
           _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "make rejects negative priceFrom" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          linkId     <- rnd[MasterServiceOfferLocationId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          result      = MasterServiceOfferLocation.make(linkId, offerId, locationId, BigDecimal("-1.0000"), BigDecimal("10.0000"))
+          _          <- assertIO(result == Left(MasterServiceOfferLocationValidationError.NegativePriceFrom(BigDecimal("-1.0000"))))
+        } yield ()
+    }
+
+    "make rejects priceTo less than priceFrom" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          linkId     <- rnd[MasterServiceOfferLocationId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          result      = MasterServiceOfferLocation.make(linkId, offerId, locationId, BigDecimal("20.0000"), BigDecimal("10.0000"))
+          _          <- assertIO(
+                          result == Left(
+                            MasterServiceOfferLocationValidationError.PriceToLessThanPriceFrom(
+                              BigDecimal("20.0000"),
+                              BigDecimal("10.0000"),
+                            )
+                          )
+                        )
         } yield ()
     }
 
@@ -966,7 +1010,8 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
                              _ <- services.upsertService(service)
                              _ <- offers.upsertMasterServiceOffer(offer)
                              _ <- masterLocations.upsertMasterLocation(location)
-                             r <- links.upsertMasterServiceOfferLocation(MasterServiceOfferLocation(linkId, offerId, locationId)).either
+                             link <- makeLink(linkId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"))
+                             r    <- links.upsertMasterServiceOfferLocation(link).either
                            } yield r
                          }
           _          <- assertIO(result.isLeft)
@@ -998,8 +1043,8 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           offer        = MasterServiceOffer(offerId, masterId, serviceId)
           location1    = MasterLocation(location1Id, masterId, s"links-location-a-$location1Id", s"links-address-a-$location1Id", BigDecimal("10.0000"), BigDecimal("20.0000"))
           location2    = MasterLocation(location2Id, masterId, s"links-location-b-$location2Id", s"links-address-b-$location2Id", BigDecimal("30.0000"), BigDecimal("40.0000"))
-          link1        = MasterServiceOfferLocation(link1Id, offerId, location1Id)
-          link2        = MasterServiceOfferLocation(link2Id, offerId, location2Id)
+          link1       <- makeLink(link1Id, offerId, location1Id, BigDecimal("10.0000"), BigDecimal("20.0000"))
+          link2       <- makeLink(link2Id, offerId, location2Id, BigDecimal("30.0000"), BigDecimal("40.0000"))
           _           <- categories.upsertCategory(category)
           _           <- masters.upsertMaster(master)
           _           <- services.upsertService(service)
@@ -1040,8 +1085,8 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
           location    = MasterLocation(locationId, masterId, s"links-shared-location-$locationId", s"links-shared-address-$locationId", BigDecimal("50.0000"), BigDecimal("60.0000"))
-          link1       = MasterServiceOfferLocation(link1Id, offer1Id, locationId)
-          link2       = MasterServiceOfferLocation(link2Id, offer2Id, locationId)
+          link1      <- makeLink(link1Id, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"))
+          link2      <- makeLink(link2Id, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"))
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
           _          <- services.upsertService(service1)
@@ -1088,9 +1133,9 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           location1    = MasterLocation(location1Id, masterId, s"links-filter-offer-location-a-$location1Id", s"links-filter-offer-address-a-$location1Id", BigDecimal("11.0000"), BigDecimal("21.0000"))
           location2    = MasterLocation(location2Id, masterId, s"links-filter-offer-location-b-$location2Id", s"links-filter-offer-address-b-$location2Id", BigDecimal("31.0000"), BigDecimal("41.0000"))
           otherLoc     = MasterLocation(otherLocId, masterId, s"links-filter-offer-location-c-$otherLocId", s"links-filter-offer-address-c-$otherLocId", BigDecimal("51.0000"), BigDecimal("61.0000"))
-          link1        = MasterServiceOfferLocation(link1Id, offer1Id, location1Id)
-          link2        = MasterServiceOfferLocation(link2Id, offer1Id, location2Id)
-          other        = MasterServiceOfferLocation(otherId, offer2Id, otherLocId)
+          link1       <- makeLink(link1Id, offer1Id, location1Id, BigDecimal("11.0000"), BigDecimal("21.0000"))
+          link2       <- makeLink(link2Id, offer1Id, location2Id, BigDecimal("31.0000"), BigDecimal("41.0000"))
+          other       <- makeLink(otherId, offer2Id, otherLocId, BigDecimal("51.0000"), BigDecimal("61.0000"))
           _           <- categories.upsertCategory(category)
           _           <- masters.upsertMaster(master)
           _           <- services.upsertService(service1)
@@ -1138,9 +1183,9 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
           location1   = MasterLocation(location1Id, masterId, s"links-filter-location-a-$location1Id", s"links-filter-location-address-a-$location1Id", BigDecimal("13.0000"), BigDecimal("23.0000"))
           location2   = MasterLocation(location2Id, masterId, s"links-filter-location-b-$location2Id", s"links-filter-location-address-b-$location2Id", BigDecimal("33.0000"), BigDecimal("43.0000"))
-          link1       = MasterServiceOfferLocation(link1Id, offer1Id, location1Id)
-          link2       = MasterServiceOfferLocation(link2Id, offer2Id, location1Id)
-          other       = MasterServiceOfferLocation(otherId, offer1Id, location2Id)
+          link1      <- makeLink(link1Id, offer1Id, location1Id, BigDecimal("13.0000"), BigDecimal("23.0000"))
+          link2      <- makeLink(link2Id, offer2Id, location1Id, BigDecimal("33.0000"), BigDecimal("43.0000"))
+          other      <- makeLink(otherId, offer1Id, location2Id, BigDecimal("53.0000"), BigDecimal("63.0000"))
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
           _          <- services.upsertService(service1)
@@ -1185,9 +1230,9 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           id1          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000002")
           id2          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000001")
           id3          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000003")
-          link1        = MasterServiceOfferLocation(id1, offerId, location1Id)
-          link2        = MasterServiceOfferLocation(id2, offerId, location2Id)
-          link3        = MasterServiceOfferLocation(id3, offerId, location3Id)
+          link1       <- makeLink(id1, offerId, location1Id, BigDecimal("14.0000"), BigDecimal("24.0000"))
+          link2       <- makeLink(id2, offerId, location2Id, BigDecimal("34.0000"), BigDecimal("44.0000"))
+          link3       <- makeLink(id3, offerId, location3Id, BigDecimal("54.0000"), BigDecimal("64.0000"))
           _           <- categories.upsertCategory(category)
           _           <- masters.upsertMaster(master)
           _           <- services.upsertService(service)
@@ -1235,9 +1280,9 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           id1         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000002")
           id2         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000001")
           id3         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000003")
-          link1       = MasterServiceOfferLocation(id1, offer1Id, locationId)
-          link2       = MasterServiceOfferLocation(id2, offer2Id, locationId)
-          link3       = MasterServiceOfferLocation(id3, offer3Id, locationId)
+          link1      <- makeLink(id1, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"))
+          link2      <- makeLink(id2, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"))
+          link3      <- makeLink(id3, offer3Id, locationId, BigDecimal("55.0000"), BigDecimal("65.0000"))
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
           _          <- services.upsertService(service1)
@@ -1283,8 +1328,8 @@ abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
           location1    = MasterLocation(location1Id, masterId, s"links-overwrite-location-a-$location1Id", s"links-overwrite-address-a-$location1Id", BigDecimal("16.0000"), BigDecimal("26.0000"))
           location2    = MasterLocation(location2Id, masterId, s"links-overwrite-location-b-$location2Id", s"links-overwrite-address-b-$location2Id", BigDecimal("36.0000"), BigDecimal("46.0000"))
-          initial      = MasterServiceOfferLocation(linkId, offer1Id, location1Id)
-          updated      = MasterServiceOfferLocation(linkId, offer2Id, location2Id)
+          initial     <- makeLink(linkId, offer1Id, location1Id, BigDecimal("16.0000"), BigDecimal("26.0000"))
+          updated     <- makeLink(linkId, offer2Id, location2Id, BigDecimal("36.0000"), BigDecimal("46.0000"))
           _           <- categories.upsertCategory(category)
           _           <- masters.upsertMaster(master)
           _           <- services.upsertService(service1)

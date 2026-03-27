@@ -197,7 +197,7 @@ object MasterServiceOfferRole extends RoleDescriptor {
   * Example session:
   *
   * {{{
-  *   curl -X POST http://localhost:8080/master-service-offer-location -d '{"id":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"73ba445e-edf0-4ecf-a02b-91d0932e1f10","masterLocationId":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4"}'
+  *   curl -X POST http://localhost:8080/master-service-offer-location -d '{"id":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"73ba445e-edf0-4ecf-a02b-91d0932e1f10","masterLocationId":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4","priceFrom":50.0,"priceTo":80.0}'
   *   curl -X GET http://localhost:8080/master-service-offer-location/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   *   curl -X GET http://localhost:8080/master-service-offer-location/offer/73ba445e-edf0-4ecf-a02b-91d0932e1f10
   *   curl -X GET http://localhost:8080/master-service-offer-location/location/63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4
@@ -266,7 +266,7 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X POST http://localhost:8080/master -d '{"id":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Kai"}'
   *   curl -X POST http://localhost:8080/master-location -d '{"id":"8ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterId":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Studio Mitte","address":"Torstrasse 1","lat":52.52,"lon":13.405}'
   *   curl -X POST http://localhost:8080/master-service-offer -d '{"id":"9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterId":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","serviceId":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4"}'
-  *   curl -X POST http://localhost:8080/master-service-offer-location -d '{"id":"aab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterLocationId":"8ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4"}'
+  *   curl -X POST http://localhost:8080/master-service-offer-location -d '{"id":"aab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterServiceOfferId":"9ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","masterLocationId":"8ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","priceFrom":50.0,"priceTo":80.0}'
   *   curl -X GET http://localhost:8080/category/root
   *   curl -X POST http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4 -d '{"name": "Kai", "description": "S C A L A"}'
   *   # check leaderboard
