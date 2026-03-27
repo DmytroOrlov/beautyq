@@ -10,7 +10,7 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.functional.bio.Applicative2
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RawValue, RoleArgs}
-import leaderboard.api.{CategoryApi, LadderApi, ProfileApi, ServiceApi}
+import leaderboard.api.{CategoryApi, LadderApi, MasterApi, ProfileApi, ServiceApi}
 import leaderboard.http.HttpServer
 import leaderboard.plugins.{LeaderboardPlugin, PostgresDockerPlugin}
 import logstage.LogIO2
@@ -103,6 +103,34 @@ object ServiceRole extends RoleDescriptor {
 }
 
 /**
+  * A role that exposes just the /master/ endpoints, it can be launched with
+  *
+  * {{{
+  *   ./launcher :master
+  * }}}
+  *
+  * Example session:
+  *
+  * {{{
+  *   curl -X POST http://localhost:8080/master -d '{"id":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Kai"}'
+  *   curl -X GET http://localhost:8080/master/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
+  *   curl -X GET http://localhost:8080/master
+  * }}}
+  */
+final class MasterRole[F[+_, +_]: Applicative2](
+  @unused masterApi: MasterApi[F],
+  @unused runningServer: HttpServer,
+  log: LogIO2[F],
+) extends RoleService[F[Throwable, _]] {
+  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+    Lifecycle.liftF(log.info("Master API started!"))
+  }
+}
+object MasterRole extends RoleDescriptor {
+  final val id = "master"
+}
+
+/**
   * A role that exposes just the /profile/ endpoints, it can be launched with
   *
   * {{{
@@ -136,7 +164,7 @@ object ProfileRole extends RoleDescriptor {
   * }}}
   *
   * Note that this will have the same effect as launching [[LadderRole]], [[CategoryRole]],
-  * [[ServiceRole]] and [[ProfileRole]] at the same time.
+  * [[ServiceRole]], [[MasterRole]] and [[ProfileRole]] at the same time.
   *
   * {{{
   *   ./launcher :ladder :category :service :profile
@@ -148,12 +176,14 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X POST http://localhost:8080/ladder/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4/100
   *   curl -X POST http://localhost:8080/category -d '{"id":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","parentId":"73ba445e-edf0-4ecf-a02b-91d0932e1f10","depth":0,"name":"Games"}'
   *   curl -X POST http://localhost:8080/service -d '{"id":"63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4","categoryId":"50753a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Coaching"}'
+  *   curl -X POST http://localhost:8080/master -d '{"id":"7ab53a00-5e2e-4a2f-94b0-e6721b0a3cc4","name":"Kai"}'
   *   curl -X GET http://localhost:8080/category/root
   *   curl -X POST http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4 -d '{"name": "Kai", "description": "S C A L A"}'
   *   # check leaderboard
   *   curl -X GET http://localhost:8080/ladder
   *   curl -X GET http://localhost:8080/category/73ba445e-edf0-4ecf-a02b-91d0932e1f10/children
   *   curl -X GET http://localhost:8080/service/category/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
+  *   curl -X GET http://localhost:8080/master
   *   # user profile now shows the rank in the ladder along with profile data
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
@@ -162,11 +192,12 @@ final class LeaderboardRole[F[+_, +_]: Applicative2](
   @unused ladderRole: LadderRole[F],
   @unused categoryRole: CategoryRole[F],
   @unused serviceRole: ServiceRole[F],
+  @unused masterRole: MasterRole[F],
   @unused profileRole: ProfileRole[F],
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
   override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
-    Lifecycle.liftF(log.info("Ladder, Category, Service & Profile APIs started!"))
+    Lifecycle.liftF(log.info("Ladder, Category, Service, Master & Profile APIs started!"))
   }
 }
 object LeaderboardRole extends RoleDescriptor {
@@ -305,6 +336,36 @@ object MainServiceProdDocker extends MainBase(Activation(Repo -> Repo.Prod, Scen
   * }}}
   */
 object MainServiceProd extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Provided), Vector(RoleArgs(ServiceRole.id)))
+
+/**
+  * Launch just the `master` APIs with dummy repositories
+  *
+  * Equivalent to:
+  * {{{
+  *   ./launcher -u repo:dummy :master
+  * }}}
+  */
+object MainMasterDummy extends MainBase(Activation(Repo -> Repo.Dummy), Vector(RoleArgs(MasterRole.id)))
+
+/**
+  * Launch just the `master` APIs with postgres repositories and dockerized postgres service
+  *
+  * Equivalent to:
+  * {{{
+  *   ./launcher -u scene:managed :master
+  * }}}
+  */
+object MainMasterProdDocker extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Managed), Vector(RoleArgs(MasterRole.id)))
+
+/**
+  * Launch just the `master` APIs with postgres repositories and external postgres service
+  *
+  * Equivalent to:
+  * {{{
+  *   ./launcher :master
+  * }}}
+  */
+object MainMasterProd extends MainBase(Activation(Repo -> Repo.Prod, Scene -> Scene.Provided), Vector(RoleArgs(MasterRole.id)))
 
 /**
   * Launch just the `profile` APIs with dummy repositories

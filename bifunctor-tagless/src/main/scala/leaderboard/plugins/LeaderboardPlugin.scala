@@ -9,13 +9,13 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{CategoryApi, HttpApi, LadderApi, ProfileApi, ServiceApi}
+import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.repo.{Categories, Ladder, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
-import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, ProfileRole, ServiceRole}
+import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterRole, ProfileRole, ServiceRole}
 import org.http4s.dsl.Http4sDsl
 import zio.IO
 
@@ -41,6 +41,9 @@ object LeaderboardPlugin extends PluginDef {
       // The `service` role
       makeRole[ServiceRole[F]]
 
+      // The `master` role
+      makeRole[MasterRole[F]]
+
       // The `profile` role
       makeRole[ProfileRole[F]]
 
@@ -58,6 +61,8 @@ object LeaderboardPlugin extends PluginDef {
       make[CategoryApi[F]]
       // The `service` API
       make[ServiceApi[F]]
+      // The `master` API
+      make[MasterApi[F]]
       // The `profile` API
       make[ProfileApi[F]]
 
@@ -66,6 +71,7 @@ object LeaderboardPlugin extends PluginDef {
         .weak[LadderApi[F]] // add ladder API as a _weak reference_
         .weak[CategoryApi[F]] // add categories API as a _weak reference_
         .weak[ServiceApi[F]] // add services API as a _weak reference_
+        .weak[MasterApi[F]] // add masters API as a _weak reference_
         .weak[ProfileApi[F]] // add profiles API as a _weak reference_
 
       make[HttpServer].fromResource[HttpServer.Impl[F]]
