@@ -7,7 +7,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.repo.{Categories, Ladder, MasterLocations, Masters, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOffers, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.zioenv.*
 import zio.{IO, ZIO}
@@ -31,6 +31,7 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
       DIKey[Categories[IO]],
       DIKey[Masters[IO]],
       DIKey[MasterLocations[IO]],
+      DIKey[MasterServiceOffers[IO]],
       DIKey[Services[IO]],
     ),
   )
@@ -54,6 +55,7 @@ final class RanksTestDummy extends RanksTest with DummyTest
 final class CategoriesTestDummy extends CategoriesTest with DummyTest
 final class MastersTestDummy extends MastersTest with DummyTest
 final class MasterLocationsTestDummy extends MasterLocationsTest with DummyTest
+final class MasterServiceOffersTestDummy extends MasterServiceOffersTest with DummyTest
 final class ServicesTestDummy extends ServicesTest with DummyTest
 
 final class LadderTestPostgres extends LadderTest with ProdTest
@@ -62,6 +64,7 @@ final class RanksTestPostgres extends RanksTest with ProdTest
 final class CategoriesTestPostgres extends CategoriesTest with ProdTest
 final class MastersTestPostgres extends MastersTest with ProdTest
 final class MasterLocationsTestPostgres extends MasterLocationsTest with ProdTest
+final class MasterServiceOffersTestPostgres extends MasterServiceOffersTest with ProdTest
 final class ServicesTestPostgres extends ServicesTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
@@ -572,6 +575,271 @@ abstract class MasterLocationsTest extends LeaderboardTest {
           _          <- masterLocations.upsertMasterLocation(initial)
           _          <- masterLocations.upsertMasterLocation(updated)
           res        <- masterLocations.getMasterLocation(locationId)
+          _          <- assertIO(res.contains(updated))
+        } yield ()
+    }
+
+  }
+
+}
+
+abstract class MasterServiceOffersTest extends LeaderboardTest {
+
+  "MasterServiceOffers" should {
+
+    "upsert & get" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offer-category-$categoryId")
+          master      = Master(masterId, s"offer-master-$masterId")
+          service     = Service(serviceId, categoryId, s"offer-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          res        <- offers.getMasterServiceOffer(offer.id)
+          _          <- assertIO(res.contains(offer))
+        } yield ()
+    }
+
+    "reject creating an offer when master does not exist" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"missing-master-category-$categoryId")
+          service     = Service(serviceId, categoryId, s"missing-master-service-$serviceId")
+          _          <- categories.upsertCategory(category)
+          _          <- services.upsertService(service)
+          result     <- offers.upsertMasterServiceOffer(MasterServiceOffer(offerId, masterId, serviceId)).either
+          _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "reject creating an offer when service does not exist" in {
+      (rnd: Rnd[IO], masters: Masters[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          masterId  <- rnd[MasterId]
+          serviceId <- rnd[ServiceId]
+          offerId   <- rnd[MasterServiceOfferId]
+          master     = Master(masterId, s"missing-service-master-$masterId")
+          _         <- masters.upsertMaster(master)
+          result    <- offers.upsertMasterServiceOffer(MasterServiceOffer(offerId, masterId, serviceId)).either
+          _         <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "allow creating several offers for one master" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-master-category-$categoryId")
+          master      = Master(masterId, s"offers-master-$masterId")
+          service1    = Service(service1Id, categoryId, s"offers-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"offers-service-b-$service2Id")
+          offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
+          offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          res        <- offers.getMasterServiceOffersByMaster(masterId)
+          _          <- assertIO(res.toSet == Set(offer1, offer2))
+        } yield ()
+    }
+
+    "allow creating offers of different masters for one service" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          master1Id  <- rnd[MasterId]
+          master2Id  <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-service-category-$categoryId")
+          master1     = Master(master1Id, s"offers-master-a-$master1Id")
+          master2     = Master(master2Id, s"offers-master-b-$master2Id")
+          service     = Service(serviceId, categoryId, s"offers-shared-service-$serviceId")
+          offer1      = MasterServiceOffer(offer1Id, master1Id, serviceId)
+          offer2      = MasterServiceOffer(offer2Id, master2Id, serviceId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master1)
+          _          <- masters.upsertMaster(master2)
+          _          <- services.upsertService(service)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          res        <- offers.getMasterServiceOffersByService(serviceId)
+          _          <- assertIO(res.toSet == Set(offer1, offer2))
+        } yield ()
+    }
+
+    "return only offers of the requested master" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          master1Id  <- rnd[MasterId]
+          master2Id  <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          otherId    <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-by-master-category-$categoryId")
+          master1     = Master(master1Id, s"offers-master-filter-a-$master1Id")
+          master2     = Master(master2Id, s"offers-master-filter-b-$master2Id")
+          service1    = Service(service1Id, categoryId, s"offers-master-filter-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"offers-master-filter-service-b-$service2Id")
+          offer1      = MasterServiceOffer(offer1Id, master1Id, service1Id)
+          offer2      = MasterServiceOffer(offer2Id, master1Id, service2Id)
+          other       = MasterServiceOffer(otherId, master2Id, service1Id)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master1)
+          _          <- masters.upsertMaster(master2)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- offers.upsertMasterServiceOffer(other)
+          res        <- offers.getMasterServiceOffersByMaster(master1Id)
+          _          <- assertIO(res.toSet == Set(offer1, offer2))
+        } yield ()
+    }
+
+    "return only offers of the requested service" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          master1Id  <- rnd[MasterId]
+          master2Id  <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          otherId    <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-by-service-category-$categoryId")
+          master1     = Master(master1Id, s"offers-service-filter-a-$master1Id")
+          master2     = Master(master2Id, s"offers-service-filter-b-$master2Id")
+          service1    = Service(service1Id, categoryId, s"offers-service-filter-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"offers-service-filter-service-b-$service2Id")
+          offer1      = MasterServiceOffer(offer1Id, master1Id, service1Id)
+          offer2      = MasterServiceOffer(offer2Id, master2Id, service1Id)
+          other       = MasterServiceOffer(otherId, master1Id, service2Id)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master1)
+          _          <- masters.upsertMaster(master2)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- offers.upsertMasterServiceOffer(other)
+          res        <- offers.getMasterServiceOffersByService(service1Id)
+          _          <- assertIO(res.toSet == Set(offer1, offer2))
+        } yield ()
+    }
+
+    "return offers by master sorted by id asc" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          service3Id <- rnd[ServiceId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-sort-master-category-$categoryId")
+          master      = Master(masterId, s"offers-sort-master-$masterId")
+          service1    = Service(service1Id, categoryId, s"offers-sort-master-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"offers-sort-master-service-b-$service2Id")
+          service3    = Service(service3Id, categoryId, s"offers-sort-master-service-c-$service3Id")
+          id1         = java.util.UUID.fromString("10000000-0000-0000-0000-000000000002")
+          id2         = java.util.UUID.fromString("10000000-0000-0000-0000-000000000001")
+          id3         = java.util.UUID.fromString("10000000-0000-0000-0000-000000000003")
+          offer1      = MasterServiceOffer(id1, masterId, service1Id)
+          offer2      = MasterServiceOffer(id2, masterId, service2Id)
+          offer3      = MasterServiceOffer(id3, masterId, service3Id)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- services.upsertService(service3)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- offers.upsertMasterServiceOffer(offer3)
+          res        <- offers.getMasterServiceOffersByMaster(masterId)
+          _          <- assertIO(res == List(offer2, offer1, offer3))
+        } yield ()
+    }
+
+    "return offers by service sorted by id asc" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          master1Id  <- rnd[MasterId]
+          master2Id  <- rnd[MasterId]
+          master3Id  <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-sort-service-category-$categoryId")
+          master1     = Master(master1Id, s"offers-sort-service-master-a-$master1Id")
+          master2     = Master(master2Id, s"offers-sort-service-master-b-$master2Id")
+          master3     = Master(master3Id, s"offers-sort-service-master-c-$master3Id")
+          service     = Service(serviceId, categoryId, s"offers-sort-service-$serviceId")
+          id1         = java.util.UUID.fromString("20000000-0000-0000-0000-000000000002")
+          id2         = java.util.UUID.fromString("20000000-0000-0000-0000-000000000001")
+          id3         = java.util.UUID.fromString("20000000-0000-0000-0000-000000000003")
+          offer1      = MasterServiceOffer(id1, master1Id, serviceId)
+          offer2      = MasterServiceOffer(id2, master2Id, serviceId)
+          offer3      = MasterServiceOffer(id3, master3Id, serviceId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master1)
+          _          <- masters.upsertMaster(master2)
+          _          <- masters.upsertMaster(master3)
+          _          <- services.upsertService(service)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- offers.upsertMasterServiceOffer(offer3)
+          res        <- offers.getMasterServiceOffersByService(serviceId)
+          _          <- assertIO(res == List(offer2, offer1, offer3))
+        } yield ()
+    }
+
+    "upsert overwrites existing offer with same id" in {
+      (rnd: Rnd[IO], categories: Categories[IO], masters: Masters[IO], services: Services[IO], offers: MasterServiceOffers[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          master1Id  <- rnd[MasterId]
+          master2Id  <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offers-overwrite-category-$categoryId")
+          master1     = Master(master1Id, s"offers-overwrite-master-a-$master1Id")
+          master2     = Master(master2Id, s"offers-overwrite-master-b-$master2Id")
+          service1    = Service(service1Id, categoryId, s"offers-overwrite-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"offers-overwrite-service-b-$service2Id")
+          initial     = MasterServiceOffer(offerId, master1Id, service1Id)
+          updated     = MasterServiceOffer(offerId, master2Id, service2Id)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master1)
+          _          <- masters.upsertMaster(master2)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- offers.upsertMasterServiceOffer(initial)
+          _          <- offers.upsertMasterServiceOffer(updated)
+          res        <- offers.getMasterServiceOffer(offerId)
           _          <- assertIO(res.contains(updated))
         } yield ()
     }
