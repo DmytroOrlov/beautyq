@@ -1,26 +1,48 @@
 package leaderboard.model
 
+import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
+
 final case class ServiceVariantSchemaItem(
-  attribute: MasterServiceOfferVariantAttributeDefinition,
+  attribute: AnyAttributeDefinition,
   required: Boolean,
 )
 
 final case class ServiceVariantSchema(
   serviceId: ServiceId,
-  items: Map[MasterServiceOfferVariantAttributeDefinition, Boolean],
+  private val itemsByAttribute: Map[AnyAttributeDefinition, Boolean],
 ) {
-  def allowedAttributes: Set[MasterServiceOfferVariantAttributeDefinition] = items.keySet
-
-  def requiredAttributes: Set[MasterServiceOfferVariantAttributeDefinition] =
-    items.iterator.collect {
-      case (attribute, true) =>
+  def validate(attributes: MasterServiceOfferVariantAttributes): Either[ServiceVariantSchemaValidationError, Unit] = {
+    val presentAttributes   = attributes.presentDefinitions
+    val disallowedAttribute = presentAttributes.diff(itemsByAttribute.keySet).headOption
+    val missingAttribute    = itemsByAttribute.iterator.collectFirst {
+      case (attribute, true) if !presentAttributes.contains(attribute) =>
         attribute
-    }.toSet
+    }
+
+    disallowedAttribute match {
+      case Some(attribute) =>
+        Left(DisallowedAttribute(attribute))
+      case None =>
+        missingAttribute match {
+          case Some(attribute) =>
+            Left(MissingRequiredAttribute(attribute))
+          case None =>
+            Right(())
+        }
+    }
+  }
+
+  private[leaderboard] def items: Iterator[ServiceVariantSchemaItem] =
+    itemsByAttribute.iterator.map {
+      case (attribute, required) =>
+        ServiceVariantSchemaItem(attribute, required)
+    }
 }
 
 object ServiceVariantSchema {
   def empty(serviceId: ServiceId): ServiceVariantSchema =
-    ServiceVariantSchema(serviceId, Map.empty)
+    fromItems(serviceId, Iterable.empty)
 
   def fromItems(serviceId: ServiceId, items: Iterable[ServiceVariantSchemaItem]): ServiceVariantSchema =
     ServiceVariantSchema(

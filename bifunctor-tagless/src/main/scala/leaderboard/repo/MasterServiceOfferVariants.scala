@@ -7,6 +7,8 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.AttributeValueType
 import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
+import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 import leaderboard.model.{
   MasterId,
   MasterLocationId,
@@ -74,9 +76,6 @@ object MasterServiceOfferVariants {
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
     QueryFailure(queryName, new Exception(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode"))
 
-  private def duplicateAttributeCode(queryName: String, attributeCode: String): QueryFailure =
-    QueryFailure(queryName, new Exception(s"Duplicate MasterServiceOfferVariant attribute code: $attributeCode"))
-
   private def attributeStoredInWrongTypeStorage(
     queryName: String,
     attributeCode: String,
@@ -122,25 +121,29 @@ object MasterServiceOfferVariants {
       case BigDecimalValue => "BigDecimalValue"
     }
 
-  private def attributeDefinitionByCode(code: String): Option[MasterServiceOfferVariantAttributeDefinition] =
+  private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
     MasterServiceOfferVariantAttributeDefinition.fromCode(code)
 
-  private def collectStoredAttributes[A](
+  private def collectStoredAttributes[A, D <: MasterServiceOfferVariantAttributeDefinition[A]](
     queryName: String,
     attributes: Map[String, A],
     actualValueType: AttributeValueType,
-  ): Either[QueryFailure, Map[MasterServiceOfferVariantAttributeDefinition, A]] =
-    attributes.foldLeft[Either[QueryFailure, Map[MasterServiceOfferVariantAttributeDefinition, A]]](Right(Map.empty)) {
+    decode: String => Option[D],
+  ): Either[QueryFailure, Map[D, A]] =
+    attributes.foldLeft[Either[QueryFailure, Map[D, A]]](Right(Map.empty)) {
       case (acc, (attributeCode, value)) =>
         acc.flatMap {
           current =>
-            attributeDefinitionByCode(attributeCode) match {
-              case None =>
-                Left(unknownAttributeCode(queryName, attributeCode))
-              case Some(definition) if definition.valueType != actualValueType =>
-                Left(attributeStoredInWrongTypeStorage(queryName, attributeCode, definition.valueType, actualValueType))
+            decode(attributeCode) match {
               case Some(definition) =>
                 Right(current + (definition -> value))
+              case None =>
+                attributeDefinitionByCode(attributeCode) match {
+                  case None =>
+                    Left(unknownAttributeCode(queryName, attributeCode))
+                  case Some(definition) =>
+                    Left(attributeStoredInWrongTypeStorage(queryName, attributeCode, definition.valueType, actualValueType))
+                }
             }
         }
     }
@@ -148,45 +151,37 @@ object MasterServiceOfferVariants {
   private def validateAdditionalAttributes(
     queryName: String,
     attributes: MasterServiceOfferVariantAdditionalAttributes,
-  ): Either[QueryFailure, MasterServiceOfferVariantAttributes] = {
-    val duplicate = attributes.intAttributes.keySet.intersect(attributes.bigDecimalAttributes.keySet).headOption
-    duplicate match {
-      case Some(attributeCode) =>
-        Left(duplicateAttributeCode(queryName, attributeCode))
-      case None =>
-        for {
-          intAttributes <- collectStoredAttributes(queryName, attributes.intAttributes, IntValue)
-          bigDecimalAttributes <- collectStoredAttributes(queryName, attributes.bigDecimalAttributes, BigDecimalValue)
-          validatedAttributes <- MasterServiceOfferVariantAttributes
-                                   .make(intAttributes, bigDecimalAttributes)
-                                   .left
-                                   .map(error => invalidStoredMasterServiceOfferVariant(queryName, error.asThrowable))
-        } yield validatedAttributes
-    }
-  }
+  ): Either[QueryFailure, MasterServiceOfferVariantAttributes] =
+    for {
+      intAttributes <- collectStoredAttributes(
+                         queryName,
+                         attributes.intAttributes,
+                         IntValue,
+                         MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
+                       )
+      bigDecimalAttributes <- collectStoredAttributes(
+                                queryName,
+                                attributes.bigDecimalAttributes,
+                                BigDecimalValue,
+                                MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
+                              )
+    } yield MasterServiceOfferVariantAttributes(
+      intAttributes,
+      bigDecimalAttributes,
+    )
 
   private def validateAttributesAgainstSchema(
     queryName: String,
     serviceId: ServiceId,
     attributes: MasterServiceOfferVariantAttributes,
     schema: ServiceVariantSchema,
-  ): Either[QueryFailure, Unit] = {
-    val presentAttributes   = attributes.values.keySet
-    val disallowedAttribute = presentAttributes.diff(schema.allowedAttributes).headOption
-    val missingAttribute    = schema.requiredAttributes.diff(presentAttributes).headOption
-
-    disallowedAttribute match {
-      case Some(attribute) =>
-        Left(attributeNotAllowedForService(queryName, serviceId, attribute.code))
-      case None =>
-        missingAttribute match {
-          case Some(attribute) =>
-            Left(requiredAttributeMissingForService(queryName, serviceId, attribute.code))
-          case None =>
-            Right(())
-        }
+  ): Either[QueryFailure, Unit] =
+    schema.validate(attributes).left.map {
+      case DisallowedAttribute(attribute) =>
+        attributeNotAllowedForService(queryName, serviceId, attribute.code)
+      case MissingRequiredAttribute(attribute) =>
+        requiredAttributeMissingForService(queryName, serviceId, attribute.code)
     }
-  }
 
   private def liftEither[F[+_, +_]: Error2, A](either: Either[QueryFailure, A]): F[QueryFailure, A] =
     either match {

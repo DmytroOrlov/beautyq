@@ -6,7 +6,7 @@ import doobie.free.{connection => FC}
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
-import leaderboard.model.{MasterServiceOfferVariantAttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema}
+import leaderboard.model.{MasterServiceOfferVariantAttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
 import leaderboard.sql.SQL
 import logstage.LogIO2
 import scala.annotation.unused
@@ -29,10 +29,10 @@ object ServiceVariantSchemas {
   private def decodeSchemaRow(
     queryName: String,
     row: ServiceVariantSchemaRow,
-  ): Either[QueryFailure, (MasterServiceOfferVariantAttributeDefinition, Boolean)] =
+  ): Either[QueryFailure, ServiceVariantSchemaItem] =
     MasterServiceOfferVariantAttributeDefinition.fromCode(row._1) match {
       case Some(attributeDefinition) =>
-        Right(attributeDefinition -> row._2)
+        Right(ServiceVariantSchemaItem(attributeDefinition, row._2))
       case None =>
         Left(unknownAttributeCode(queryName, row._1))
     }
@@ -46,9 +46,9 @@ object ServiceVariantSchemas {
     }
 
   private def schemaInsertRows(schema: ServiceVariantSchema): List[ServiceVariantSchemaInsertRow] =
-    schema.items.iterator.map {
-      case (attribute, required) =>
-        (schema.serviceId, attribute.code, required)
+    schema.items.map {
+      item =>
+        (schema.serviceId, item.attribute.code, item.required)
     }.toList.sortBy(_._2)
 
   private def schemaFromRows(
@@ -56,13 +56,13 @@ object ServiceVariantSchemas {
     serviceId: ServiceId,
     rows: List[ServiceVariantSchemaRow],
   ): Either[QueryFailure, ServiceVariantSchema] =
-    rows.foldLeft[Either[QueryFailure, Map[MasterServiceOfferVariantAttributeDefinition, Boolean]]](Right(Map.empty)) {
+    rows.foldLeft[Either[QueryFailure, List[ServiceVariantSchemaItem]]](Right(Nil)) {
       case (acc, row) =>
         for {
           current <- acc
           decoded <- decodeSchemaRow(queryName, row)
-        } yield current + decoded
-    }.map(items => ServiceVariantSchema(serviceId, items))
+        } yield decoded :: current
+    }.map(items => ServiceVariantSchema.fromItems(serviceId, items.reverse))
 
   private def serviceExists[F[+_, +_]](sql: SQL[F])(serviceId: ServiceId): F[QueryFailure, Boolean] =
     sql.execute("service-exists") {

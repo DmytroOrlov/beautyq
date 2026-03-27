@@ -1,81 +1,23 @@
 package leaderboard.model
 
-import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
-import leaderboard.model.MasterServiceOfferVariantAttributeValue.{BigDecimalAttributeValue, IntAttributeValue}
-import leaderboard.model.MasterServiceOfferVariantValidationError.DuplicateAdditionalAttributeCode
-import scala.annotation.nowarn
+import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
 
-sealed trait MasterServiceOfferVariantAttributeValue extends Product with Serializable {
-  def valueType: AttributeValueType
-}
-
-object MasterServiceOfferVariantAttributeValue {
-  final case class IntAttributeValue(value: Int) extends MasterServiceOfferVariantAttributeValue {
-    override val valueType: AttributeValueType = IntValue
-  }
-
-  final case class BigDecimalAttributeValue(value: BigDecimal) extends MasterServiceOfferVariantAttributeValue {
-    override val valueType: AttributeValueType = BigDecimalValue
-  }
-}
-
-final case class MasterServiceOfferVariantAttributes private (
-  values: Map[MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributeValue]
+final case class MasterServiceOfferVariantAttributes(
+  intValues: Map[IntAttributeDefinition, Int],
+  bigDecimalValues: Map[BigDecimalAttributeDefinition, BigDecimal],
 ) {
-  @nowarn("cat=unused")
-  private def copy(
-    values: Map[MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributeValue] = this.values
-  ): MasterServiceOfferVariantAttributes =
-    new MasterServiceOfferVariantAttributes(values)
+  def get(attributeDefinition: IntAttributeDefinition): Option[Int] =
+    intValues.get(attributeDefinition)
 
-  def valuesByType(
-    valueType: AttributeValueType
-  ): Map[MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributeValue] =
-    values.iterator.collect {
-      case (attributeDefinition, attributeValue) if attributeValue.valueType == valueType =>
-        attributeDefinition -> attributeValue
-    }.toMap
+  def get(attributeDefinition: BigDecimalAttributeDefinition): Option[BigDecimal] =
+    bigDecimalValues.get(attributeDefinition)
 
-  def intValues: Map[MasterServiceOfferVariantAttributeDefinition, Int] =
-    values.iterator.collect {
-      case (attributeDefinition, IntAttributeValue(value)) =>
-        attributeDefinition -> value
-    }.toMap
-
-  def bigDecimalValues: Map[MasterServiceOfferVariantAttributeDefinition, BigDecimal] =
-    values.iterator.collect {
-      case (attributeDefinition, BigDecimalAttributeValue(value)) =>
-        attributeDefinition -> value
-    }.toMap
+  private[model] def presentDefinitions: Set[AnyAttributeDefinition] =
+    intValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet ++
+      bigDecimalValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet
 }
 
 object MasterServiceOfferVariantAttributes {
   val empty: MasterServiceOfferVariantAttributes =
-    MasterServiceOfferVariantAttributes(Map.empty)
-
-  private def apply(
-    values: Map[MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributeValue]
-  ): MasterServiceOfferVariantAttributes =
-    new MasterServiceOfferVariantAttributes(values)
-
-  def make(
-    intAttributes: Map[MasterServiceOfferVariantAttributeDefinition, Int] = Map.empty,
-    bigDecimalAttributes: Map[MasterServiceOfferVariantAttributeDefinition, BigDecimal] = Map.empty,
-  ): Either[MasterServiceOfferVariantValidationError, MasterServiceOfferVariantAttributes] =
-    intAttributes.keySet.intersect(bigDecimalAttributes.keySet).headOption match {
-      case Some(attributeDefinition) =>
-        Left(DuplicateAdditionalAttributeCode(attributeDefinition))
-      case None =>
-        Right(
-          MasterServiceOfferVariantAttributes(
-            intAttributes.iterator.map {
-              case (attributeDefinition, value) =>
-                attributeDefinition -> IntAttributeValue(value)
-            }.toMap ++ bigDecimalAttributes.iterator.map {
-              case (attributeDefinition, value) =>
-                attributeDefinition -> BigDecimalAttributeValue(value)
-            }.toMap
-          )
-        )
-    }
+    MasterServiceOfferVariantAttributes(Map.empty, Map.empty)
 }

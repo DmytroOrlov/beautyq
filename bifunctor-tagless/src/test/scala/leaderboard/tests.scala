@@ -959,28 +959,23 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
     priceFrom: BigDecimal,
     priceTo: BigDecimal,
     durationMin: Int,
-    intAttributes: Map[MasterServiceOfferVariantAttributeDefinition, Int] = Map.empty,
-    bigDecimalAttributes: Map[MasterServiceOfferVariantAttributeDefinition, BigDecimal] = Map.empty,
+    intAttributes: Map[IntAttributeDefinition, Int] = Map.empty,
+    bigDecimalAttributes: Map[BigDecimalAttributeDefinition, BigDecimal] = Map.empty,
   ): IO[QueryFailure, MasterServiceOfferVariant] =
-    MasterServiceOfferVariantAttributes.make(intAttributes, bigDecimalAttributes) match {
-      case Right(attributes) =>
-        MasterServiceOfferVariant
-          .make(
-            id,
-            masterServiceOfferId,
-            masterLocationId,
-            priceFrom,
-            priceTo,
-            durationMin,
-            attributes,
-          ) match {
-          case Right(value) =>
-            ZIO.succeed(value)
-          case Left(error) =>
-            ZIO.fail(QueryFailure("make-master-service-offer-variant", error.asThrowable))
-        }
+    MasterServiceOfferVariant
+      .make(
+        id,
+        masterServiceOfferId,
+        masterLocationId,
+        priceFrom,
+        priceTo,
+        durationMin,
+        MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes),
+      ) match {
+      case Right(value) =>
+        ZIO.succeed(value)
       case Left(error) =>
-        ZIO.fail(QueryFailure("make-master-service-offer-variant-attributes", error.asThrowable))
+        ZIO.fail(QueryFailure("make-master-service-offer-variant", error.asThrowable))
     }
 
   private def makeSchema(serviceId: ServiceId, items: ServiceVariantSchemaItem*): ServiceVariantSchema =
@@ -1022,7 +1017,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         } yield ()
     }
 
-    "upsert & get with additional attributes allowed by service schema" in {
+    "upsert & get with required and optional additional attributes allowed by service schema" in {
       (
         rnd: Rnd[IO],
         categories: Categories[IO],
@@ -1163,39 +1158,16 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         } yield ()
     }
 
-    "make rejects duplicate additional attribute code across typed storages" in {
+    "attributes expose typed access by definition and typed views" in {
       (rnd: Rnd[IO]) =>
         for {
           variantId  <- rnd[MasterServiceOfferVariantId]
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
-          attributeDefinition = MasterServiceOfferVariantAttributeDefinition.SessionCount
-          result      = MasterServiceOfferVariantAttributes.make(
-                          intAttributes = Map(attributeDefinition -> 1),
-                          bigDecimalAttributes = Map(attributeDefinition -> BigDecimal("2.0000")),
+          attributes  = MasterServiceOfferVariantAttributes(
+                          intValues = Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 3),
+                          bigDecimalValues = Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000")),
                         )
-          _          <- assertIO(
-                          result == Left(
-                            MasterServiceOfferVariantValidationError.DuplicateAdditionalAttributeCode(attributeDefinition)
-                          )
-                        )
-        } yield ()
-    }
-
-    "attributes expose unified access by definition and AttributeValueType" in {
-      (rnd: Rnd[IO]) =>
-        for {
-          variantId  <- rnd[MasterServiceOfferVariantId]
-          offerId    <- rnd[MasterServiceOfferId]
-          locationId <- rnd[MasterLocationId]
-          attributes <- ZIO
-                          .fromEither(
-                            MasterServiceOfferVariantAttributes.make(
-                              intAttributes = Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 3),
-                              bigDecimalAttributes = Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000")),
-                            )
-                          )
-                          .mapError(error => QueryFailure("make-master-service-offer-variant-attributes", error.asThrowable))
           variant    <- ZIO
                           .fromEither(
                             MasterServiceOfferVariant.make(
@@ -1209,16 +1181,77 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
                             )
                           )
                           .mapError(error => QueryFailure("make-master-service-offer-variant", error.asThrowable))
+          _          <- assertIO(variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
+          _          <- assertIO(
+                          variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
+                        )
           _          <- assertIO(variant.intAttributes.get(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
           _          <- assertIO(
                           variant.bigDecimalAttributes.get(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
                         )
-          _          <- assertIO(variant.attributesByType(AttributeValueType.IntValue).keySet == Set(MasterServiceOfferVariantAttributeDefinition.SessionCount))
+          _          <- assertIO(variant.intAttributes.keySet == Set(MasterServiceOfferVariantAttributeDefinition.SessionCount))
           _          <- assertIO(
-                          variant.attributesByType(AttributeValueType.BigDecimalValue).keySet == Set(
+                          variant.bigDecimalAttributes.keySet == Set(
                             MasterServiceOfferVariantAttributeDefinition.DepositAmount
                           )
                         )
+        } yield ()
+    }
+
+    "schema validate rejects disallowed attribute" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false))
+          attributes = MasterServiceOfferVariantAttributes(
+                         intValues = Map.empty,
+                         bigDecimalValues = Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000")),
+                       )
+          _         <- assertIO(
+                         schema.validate(attributes) == Left(
+                           ServiceVariantSchemaValidationError.DisallowedAttribute(
+                             MasterServiceOfferVariantAttributeDefinition.DepositAmount
+                           )
+                         )
+                       )
+        } yield ()
+    }
+
+    "schema validate rejects missing required attribute" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true))
+          attributes = MasterServiceOfferVariantAttributes.empty
+          _         <- assertIO(
+                         schema.validate(attributes) == Left(
+                           ServiceVariantSchemaValidationError.MissingRequiredAttribute(
+                             MasterServiceOfferVariantAttributeDefinition.SessionCount
+                           )
+                         )
+                       )
+        } yield ()
+    }
+
+    "decode rejects additional attribute code in wrong typed section" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+                          "id"                   -> variantId.asJson,
+                          "masterServiceOfferId" -> offerId.asJson,
+                          "masterLocationId"     -> locationId.asJson,
+                          "priceFrom"            -> BigDecimal("30.0000").asJson,
+                          "priceTo"              -> BigDecimal("45.0000").asJson,
+                          "durationMin"          -> 60.asJson,
+                          "intAttributes" -> Json.obj(
+                            "deposit_amount" -> 3.asJson
+                          ),
+                        )
+          result      = json.as[MasterServiceOfferVariant]
+          _          <- assertIO(result.isLeft)
         } yield ()
     }
 
@@ -1253,7 +1286,6 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         serviceVariantSchemas: ServiceVariantSchemas[IO],
         masterLocations: MasterLocations[IO],
         offers: MasterServiceOffers[IO],
-        variants: MasterServiceOfferVariants[IO],
       ) =>
         for {
           categoryId <- rnd[CategoryId]
@@ -1268,27 +1300,29 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(locationId, masterId, s"variant-type-location-$locationId", s"variant-type-address-$locationId", BigDecimal("10.0000"), BigDecimal("20.0000"))
           schema      = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false))
-          variant    <- makeVariant(
-                          variantId,
-                          offerId,
-                          locationId,
-                          BigDecimal("30.0000"),
-                          BigDecimal("45.0000"),
-                          60,
-                          intAttributes = Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> 3),
-                        )
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
           _          <- services.upsertService(service)
           _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
           _          <- offers.upsertMasterServiceOffer(offer)
           _          <- masterLocations.upsertMasterLocation(location)
-          result     <- variants.upsertMasterServiceOfferVariant(variant).either
+          json        = Json.obj(
+                          "id"                   -> variantId.asJson,
+                          "masterServiceOfferId" -> offerId.asJson,
+                          "masterLocationId"     -> locationId.asJson,
+                          "priceFrom"            -> BigDecimal("30.0000").asJson,
+                          "priceTo"              -> BigDecimal("45.0000").asJson,
+                          "durationMin"          -> 60.asJson,
+                          "intAttributes" -> Json.obj(
+                            "deposit_amount" -> 3.asJson
+                          ),
+                        )
+          result      = json.as[MasterServiceOfferVariant]
           _          <- assertIO(result.isLeft)
         } yield ()
     }
 
-    "reject attribute not allowed by service schema" in {
+    "upsert rejects disallowed additional attribute by service schema" in {
       (
         rnd: Rnd[IO],
         categories: Categories[IO],
@@ -1328,11 +1362,17 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _          <- offers.upsertMasterServiceOffer(offer)
           _          <- masterLocations.upsertMasterLocation(location)
           result     <- variants.upsertMasterServiceOfferVariant(variant).either
-          _          <- assertIO(result.isLeft)
+          _          <- assertIO(
+                          result.left.exists(
+                            failure =>
+                              failure.queryName == "upsert-master-service-offer-variant" &&
+                                failure.cause.getMessage == s"Service $serviceId does not allow MasterServiceOfferVariant attribute deposit_amount"
+                          )
+                        )
         } yield ()
     }
 
-    "reject missing required attribute from service schema" in {
+    "upsert rejects missing required additional attribute by service schema" in {
       (
         rnd: Rnd[IO],
         categories: Categories[IO],
@@ -1364,7 +1404,13 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _          <- offers.upsertMasterServiceOffer(offer)
           _          <- masterLocations.upsertMasterLocation(location)
           result     <- variants.upsertMasterServiceOfferVariant(variant).either
-          _          <- assertIO(result.isLeft)
+          _          <- assertIO(
+                          result.left.exists(
+                            failure =>
+                              failure.queryName == "upsert-master-service-offer-variant" &&
+                                failure.cause.getMessage == s"Service $serviceId requires MasterServiceOfferVariant attribute session_count"
+                          )
+                        )
         } yield ()
     }
 

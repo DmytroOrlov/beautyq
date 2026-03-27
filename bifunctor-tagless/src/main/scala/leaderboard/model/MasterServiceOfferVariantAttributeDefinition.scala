@@ -2,61 +2,83 @@ package leaderboard.model
 
 import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
 
-sealed trait MasterServiceOfferVariantAttributeDefinition extends Product with Serializable {
+sealed trait MasterServiceOfferVariantAttributeDefinition[+A] extends Product with Serializable {
   def code: String
   def valueType: AttributeValueType
 }
 
+sealed trait IntAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[Int] {
+  final val valueType: AttributeValueType = IntValue
+}
+
+sealed trait BigDecimalAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[BigDecimal] {
+  final val valueType: AttributeValueType = BigDecimalValue
+}
+
 object MasterServiceOfferVariantAttributeDefinition {
-  case object SessionCount extends MasterServiceOfferVariantAttributeDefinition {
+  type AnyAttributeDefinition = MasterServiceOfferVariantAttributeDefinition[Any]
+
+  case object SessionCount extends IntAttributeDefinition {
     val code = "session_count"
-    val valueType: AttributeValueType = IntValue
   }
 
-  case object IncludedCorrectionsCount extends MasterServiceOfferVariantAttributeDefinition {
+  case object IncludedCorrectionsCount extends IntAttributeDefinition {
     val code = "included_corrections_count"
-    val valueType: AttributeValueType = IntValue
   }
 
-  case object MaxClients extends MasterServiceOfferVariantAttributeDefinition {
+  case object MaxClients extends IntAttributeDefinition {
     val code = "max_clients"
-    val valueType: AttributeValueType = IntValue
   }
 
-  case object DepositAmount extends MasterServiceOfferVariantAttributeDefinition {
+  case object DepositAmount extends BigDecimalAttributeDefinition {
     val code = "deposit_amount"
-    val valueType: AttributeValueType = BigDecimalValue
   }
 
-  case object HomeVisitSurcharge extends MasterServiceOfferVariantAttributeDefinition {
+  case object HomeVisitSurcharge extends BigDecimalAttributeDefinition {
     val code = "home_visit_surcharge"
-    val valueType: AttributeValueType = BigDecimalValue
   }
 
-  case object MaterialsSurcharge extends MasterServiceOfferVariantAttributeDefinition {
+  case object MaterialsSurcharge extends BigDecimalAttributeDefinition {
     val code = "materials_surcharge"
-    val valueType: AttributeValueType = BigDecimalValue
   }
 
-  case object FixedDiscountAmount extends MasterServiceOfferVariantAttributeDefinition {
+  case object FixedDiscountAmount extends BigDecimalAttributeDefinition {
     val code = "fixed_discount_amount"
-    val valueType: AttributeValueType = BigDecimalValue
   }
 
-  val all: List[MasterServiceOfferVariantAttributeDefinition] =
+  val intDefinitions: List[IntAttributeDefinition] =
     List(
       SessionCount,
       IncludedCorrectionsCount,
       MaxClients,
+    )
+
+  val bigDecimalDefinitions: List[BigDecimalAttributeDefinition] =
+    List(
       DepositAmount,
       HomeVisitSurcharge,
       MaterialsSurcharge,
       FixedDiscountAmount,
     )
 
-  val byCode: Map[String, MasterServiceOfferVariantAttributeDefinition] =
+  val all: List[AnyAttributeDefinition] =
+    intDefinitions ++ bigDecimalDefinitions
+
+  val byCode: Map[String, AnyAttributeDefinition] =
     all.iterator.map(definition => definition.code -> definition).toMap
 
-  def fromCode(code: String): Option[MasterServiceOfferVariantAttributeDefinition] =
+  def fromCode(code: String): Option[AnyAttributeDefinition] =
     byCode.get(code)
+
+  def fromCodeAsInt(code: String): Option[IntAttributeDefinition] =
+    fromCode(code).collect {
+      case definition: IntAttributeDefinition =>
+        definition
+    }
+
+  def fromCodeAsBigDecimal(code: String): Option[BigDecimalAttributeDefinition] =
+    fromCode(code).collect {
+      case definition: BigDecimalAttributeDefinition =>
+        definition
+    }
 }

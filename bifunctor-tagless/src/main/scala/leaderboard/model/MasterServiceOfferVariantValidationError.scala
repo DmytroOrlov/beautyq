@@ -21,11 +21,4 @@ object MasterServiceOfferVariantValidationError {
   final case class NonPositiveDurationMin(durationMin: Int) extends MasterServiceOfferVariantValidationError {
     override val message: String = s"durationMin must be > 0, got $durationMin"
   }
-
-  final case class DuplicateAdditionalAttributeCode(
-    attributeDefinition: MasterServiceOfferVariantAttributeDefinition
-  ) extends MasterServiceOfferVariantValidationError {
-    override val message: String =
-      s"attributeCode ${attributeDefinition.code} must not be stored in both intAttributes and bigDecimalAttributes"
-  }
 }
