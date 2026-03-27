@@ -7,7 +7,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOffers, Masters, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferLocations, MasterServiceOffers, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.zioenv.*
 import zio.{IO, ZIO}
@@ -32,6 +32,7 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
       DIKey[Masters[IO]],
       DIKey[MasterLocations[IO]],
       DIKey[MasterServiceOffers[IO]],
+      DIKey[MasterServiceOfferLocations[IO]],
       DIKey[Services[IO]],
     ),
   )
@@ -56,6 +57,7 @@ final class CategoriesTestDummy extends CategoriesTest with DummyTest
 final class MastersTestDummy extends MastersTest with DummyTest
 final class MasterLocationsTestDummy extends MasterLocationsTest with DummyTest
 final class MasterServiceOffersTestDummy extends MasterServiceOffersTest with DummyTest
+final class MasterServiceOfferLocationsTestDummy extends MasterServiceOfferLocationsTest with DummyTest
 final class ServicesTestDummy extends ServicesTest with DummyTest
 
 final class LadderTestPostgres extends LadderTest with ProdTest
@@ -65,6 +67,7 @@ final class CategoriesTestPostgres extends CategoriesTest with ProdTest
 final class MastersTestPostgres extends MastersTest with ProdTest
 final class MasterLocationsTestPostgres extends MasterLocationsTest with ProdTest
 final class MasterServiceOffersTestPostgres extends MasterServiceOffersTest with ProdTest
+final class MasterServiceOfferLocationsTestPostgres extends MasterServiceOfferLocationsTest with ProdTest
 final class ServicesTestPostgres extends ServicesTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
@@ -841,6 +844,459 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           _          <- offers.upsertMasterServiceOffer(updated)
           res        <- offers.getMasterServiceOffer(offerId)
           _          <- assertIO(res.contains(updated))
+        } yield ()
+    }
+
+  }
+
+}
+
+abstract class MasterServiceOfferLocationsTest extends LeaderboardTest {
+
+  "MasterServiceOfferLocations" should {
+
+    "upsert & get" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          linkId     <- rnd[MasterServiceOfferLocationId]
+          category    = Category(categoryId, rootCategoryId, 0, s"offer-location-category-$categoryId")
+          master      = Master(masterId, s"offer-location-master-$masterId")
+          service     = Service(serviceId, categoryId, s"offer-location-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"offer-location-$locationId", s"offer-location-address-$locationId", BigDecimal("12.3400"), BigDecimal("56.7800"))
+          link        = MasterServiceOfferLocation(linkId, offerId, locationId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- links.upsertMasterServiceOfferLocation(link)
+          res        <- links.getMasterServiceOfferLocation(link.id)
+          _          <- assertIO(res.contains(link))
+        } yield ()
+    }
+
+    "reject creating a link when offer does not exist" in {
+      (rnd: Rnd[IO], masters: Masters[IO], masterLocations: MasterLocations[IO], links: MasterServiceOfferLocations[IO]) =>
+        for {
+          masterId   <- rnd[MasterId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          linkId     <- rnd[MasterServiceOfferLocationId]
+          master      = Master(masterId, s"missing-offer-master-$masterId")
+          location    = MasterLocation(locationId, masterId, s"missing-offer-location-$locationId", s"missing-offer-address-$locationId", BigDecimal("1.1000"), BigDecimal("2.2000"))
+          _          <- masters.upsertMaster(master)
+          _          <- masterLocations.upsertMasterLocation(location)
+          result     <- links.upsertMasterServiceOfferLocation(MasterServiceOfferLocation(linkId, offerId, locationId)).either
+          _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "reject creating a link when location does not exist" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          linkId     <- rnd[MasterServiceOfferLocationId]
+          category    = Category(categoryId, rootCategoryId, 0, s"missing-location-category-$categoryId")
+          master      = Master(masterId, s"missing-location-master-$masterId")
+          service     = Service(serviceId, categoryId, s"missing-location-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          result     <- links.upsertMasterServiceOfferLocation(MasterServiceOfferLocation(linkId, offerId, locationId)).either
+          _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "reject creating a link when offer and location belong to different masters" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          master1Id  <- rnd[MasterId]
+          master2Id  <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          linkId     <- rnd[MasterServiceOfferLocationId]
+          category    = Category(categoryId, rootCategoryId, 0, s"mismatch-category-$categoryId")
+          master1     = Master(master1Id, s"mismatch-master-a-$master1Id")
+          master2     = Master(master2Id, s"mismatch-master-b-$master2Id")
+          service     = Service(serviceId, categoryId, s"mismatch-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, master1Id, serviceId)
+          location    = MasterLocation(locationId, master2Id, s"mismatch-location-$locationId", s"mismatch-address-$locationId", BigDecimal("17.0000"), BigDecimal("27.0000"))
+          result     <- {
+                           for {
+                             _ <- categories.upsertCategory(category)
+                             _ <- masters.upsertMaster(master1)
+                             _ <- masters.upsertMaster(master2)
+                             _ <- services.upsertService(service)
+                             _ <- offers.upsertMasterServiceOffer(offer)
+                             _ <- masterLocations.upsertMasterLocation(location)
+                             r <- links.upsertMasterServiceOfferLocation(MasterServiceOfferLocation(linkId, offerId, locationId)).either
+                           } yield r
+                         }
+          _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "allow creating several links for one offer" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId  <- rnd[CategoryId]
+          masterId    <- rnd[MasterId]
+          serviceId   <- rnd[ServiceId]
+          offerId     <- rnd[MasterServiceOfferId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          link1Id     <- rnd[MasterServiceOfferLocationId]
+          link2Id     <- rnd[MasterServiceOfferLocationId]
+          category     = Category(categoryId, rootCategoryId, 0, s"links-by-offer-category-$categoryId")
+          master       = Master(masterId, s"links-by-offer-master-$masterId")
+          service      = Service(serviceId, categoryId, s"links-by-offer-service-$serviceId")
+          offer        = MasterServiceOffer(offerId, masterId, serviceId)
+          location1    = MasterLocation(location1Id, masterId, s"links-location-a-$location1Id", s"links-address-a-$location1Id", BigDecimal("10.0000"), BigDecimal("20.0000"))
+          location2    = MasterLocation(location2Id, masterId, s"links-location-b-$location2Id", s"links-address-b-$location2Id", BigDecimal("30.0000"), BigDecimal("40.0000"))
+          link1        = MasterServiceOfferLocation(link1Id, offerId, location1Id)
+          link2        = MasterServiceOfferLocation(link2Id, offerId, location2Id)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location1)
+          _           <- masterLocations.upsertMasterLocation(location2)
+          _           <- links.upsertMasterServiceOfferLocation(link1)
+          _           <- links.upsertMasterServiceOfferLocation(link2)
+          res         <- links.getMasterServiceOfferLocationsByOffer(offerId)
+          _           <- assertIO(res.toSet == Set(link1, link2))
+        } yield ()
+    }
+
+    "allow creating several links for one location" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          link1Id    <- rnd[MasterServiceOfferLocationId]
+          link2Id    <- rnd[MasterServiceOfferLocationId]
+          category    = Category(categoryId, rootCategoryId, 0, s"links-by-location-category-$categoryId")
+          master      = Master(masterId, s"links-by-location-master-$masterId")
+          service1    = Service(service1Id, categoryId, s"links-by-location-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"links-by-location-service-b-$service2Id")
+          offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
+          offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
+          location    = MasterLocation(locationId, masterId, s"links-shared-location-$locationId", s"links-shared-address-$locationId", BigDecimal("50.0000"), BigDecimal("60.0000"))
+          link1       = MasterServiceOfferLocation(link1Id, offer1Id, locationId)
+          link2       = MasterServiceOfferLocation(link2Id, offer2Id, locationId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- links.upsertMasterServiceOfferLocation(link1)
+          _          <- links.upsertMasterServiceOfferLocation(link2)
+          res        <- links.getMasterServiceOfferLocationsByLocation(locationId)
+          _          <- assertIO(res.toSet == Set(link1, link2))
+        } yield ()
+    }
+
+    "return only links of the requested offer" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId  <- rnd[CategoryId]
+          masterId    <- rnd[MasterId]
+          service1Id  <- rnd[ServiceId]
+          service2Id  <- rnd[ServiceId]
+          offer1Id    <- rnd[MasterServiceOfferId]
+          offer2Id    <- rnd[MasterServiceOfferId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          otherLocId  <- rnd[MasterLocationId]
+          link1Id     <- rnd[MasterServiceOfferLocationId]
+          link2Id     <- rnd[MasterServiceOfferLocationId]
+          otherId     <- rnd[MasterServiceOfferLocationId]
+          category     = Category(categoryId, rootCategoryId, 0, s"links-filter-offer-category-$categoryId")
+          master       = Master(masterId, s"links-filter-offer-master-$masterId")
+          service1     = Service(service1Id, categoryId, s"links-filter-offer-service-a-$service1Id")
+          service2     = Service(service2Id, categoryId, s"links-filter-offer-service-b-$service2Id")
+          offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
+          offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
+          location1    = MasterLocation(location1Id, masterId, s"links-filter-offer-location-a-$location1Id", s"links-filter-offer-address-a-$location1Id", BigDecimal("11.0000"), BigDecimal("21.0000"))
+          location2    = MasterLocation(location2Id, masterId, s"links-filter-offer-location-b-$location2Id", s"links-filter-offer-address-b-$location2Id", BigDecimal("31.0000"), BigDecimal("41.0000"))
+          otherLoc     = MasterLocation(otherLocId, masterId, s"links-filter-offer-location-c-$otherLocId", s"links-filter-offer-address-c-$otherLocId", BigDecimal("51.0000"), BigDecimal("61.0000"))
+          link1        = MasterServiceOfferLocation(link1Id, offer1Id, location1Id)
+          link2        = MasterServiceOfferLocation(link2Id, offer1Id, location2Id)
+          other        = MasterServiceOfferLocation(otherId, offer2Id, otherLocId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service1)
+          _           <- services.upsertService(service2)
+          _           <- offers.upsertMasterServiceOffer(offer1)
+          _           <- offers.upsertMasterServiceOffer(offer2)
+          _           <- masterLocations.upsertMasterLocation(location1)
+          _           <- masterLocations.upsertMasterLocation(location2)
+          _           <- masterLocations.upsertMasterLocation(otherLoc)
+          _           <- links.upsertMasterServiceOfferLocation(link1)
+          _           <- links.upsertMasterServiceOfferLocation(link2)
+          _           <- links.upsertMasterServiceOfferLocation(other)
+          res         <- links.getMasterServiceOfferLocationsByOffer(offer1Id)
+          _           <- assertIO(res.toSet == Set(link1, link2))
+        } yield ()
+    }
+
+    "return only links of the requested location" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          link1Id    <- rnd[MasterServiceOfferLocationId]
+          link2Id    <- rnd[MasterServiceOfferLocationId]
+          otherId    <- rnd[MasterServiceOfferLocationId]
+          category    = Category(categoryId, rootCategoryId, 0, s"links-filter-location-category-$categoryId")
+          master      = Master(masterId, s"links-filter-location-master-$masterId")
+          service1    = Service(service1Id, categoryId, s"links-filter-location-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"links-filter-location-service-b-$service2Id")
+          offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
+          offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
+          location1   = MasterLocation(location1Id, masterId, s"links-filter-location-a-$location1Id", s"links-filter-location-address-a-$location1Id", BigDecimal("13.0000"), BigDecimal("23.0000"))
+          location2   = MasterLocation(location2Id, masterId, s"links-filter-location-b-$location2Id", s"links-filter-location-address-b-$location2Id", BigDecimal("33.0000"), BigDecimal("43.0000"))
+          link1       = MasterServiceOfferLocation(link1Id, offer1Id, location1Id)
+          link2       = MasterServiceOfferLocation(link2Id, offer2Id, location1Id)
+          other       = MasterServiceOfferLocation(otherId, offer1Id, location2Id)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- masterLocations.upsertMasterLocation(location1)
+          _          <- masterLocations.upsertMasterLocation(location2)
+          _          <- links.upsertMasterServiceOfferLocation(link1)
+          _          <- links.upsertMasterServiceOfferLocation(link2)
+          _          <- links.upsertMasterServiceOfferLocation(other)
+          res        <- links.getMasterServiceOfferLocationsByLocation(location1Id)
+          _          <- assertIO(res.toSet == Set(link1, link2))
+        } yield ()
+    }
+
+    "return links by offer sorted by id asc" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId  <- rnd[CategoryId]
+          masterId    <- rnd[MasterId]
+          serviceId   <- rnd[ServiceId]
+          offerId     <- rnd[MasterServiceOfferId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          location3Id <- rnd[MasterLocationId]
+          category     = Category(categoryId, rootCategoryId, 0, s"links-sort-offer-category-$categoryId")
+          master       = Master(masterId, s"links-sort-offer-master-$masterId")
+          service      = Service(serviceId, categoryId, s"links-sort-offer-service-$serviceId")
+          offer        = MasterServiceOffer(offerId, masterId, serviceId)
+          location1    = MasterLocation(location1Id, masterId, s"links-sort-offer-location-a-$location1Id", s"links-sort-offer-address-a-$location1Id", BigDecimal("14.0000"), BigDecimal("24.0000"))
+          location2    = MasterLocation(location2Id, masterId, s"links-sort-offer-location-b-$location2Id", s"links-sort-offer-address-b-$location2Id", BigDecimal("34.0000"), BigDecimal("44.0000"))
+          location3    = MasterLocation(location3Id, masterId, s"links-sort-offer-location-c-$location3Id", s"links-sort-offer-address-c-$location3Id", BigDecimal("54.0000"), BigDecimal("64.0000"))
+          id1          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000002")
+          id2          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000001")
+          id3          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000003")
+          link1        = MasterServiceOfferLocation(id1, offerId, location1Id)
+          link2        = MasterServiceOfferLocation(id2, offerId, location2Id)
+          link3        = MasterServiceOfferLocation(id3, offerId, location3Id)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location1)
+          _           <- masterLocations.upsertMasterLocation(location2)
+          _           <- masterLocations.upsertMasterLocation(location3)
+          _           <- links.upsertMasterServiceOfferLocation(link1)
+          _           <- links.upsertMasterServiceOfferLocation(link2)
+          _           <- links.upsertMasterServiceOfferLocation(link3)
+          res         <- links.getMasterServiceOfferLocationsByOffer(offerId)
+          _           <- assertIO(res == List(link2, link1, link3))
+        } yield ()
+    }
+
+    "return links by location sorted by id asc" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          service1Id <- rnd[ServiceId]
+          service2Id <- rnd[ServiceId]
+          service3Id <- rnd[ServiceId]
+          offer1Id   <- rnd[MasterServiceOfferId]
+          offer2Id   <- rnd[MasterServiceOfferId]
+          offer3Id   <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          category    = Category(categoryId, rootCategoryId, 0, s"links-sort-location-category-$categoryId")
+          master      = Master(masterId, s"links-sort-location-master-$masterId")
+          service1    = Service(service1Id, categoryId, s"links-sort-location-service-a-$service1Id")
+          service2    = Service(service2Id, categoryId, s"links-sort-location-service-b-$service2Id")
+          service3    = Service(service3Id, categoryId, s"links-sort-location-service-c-$service3Id")
+          offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
+          offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
+          offer3      = MasterServiceOffer(offer3Id, masterId, service3Id)
+          location    = MasterLocation(locationId, masterId, s"links-sort-location-$locationId", s"links-sort-location-address-$locationId", BigDecimal("15.0000"), BigDecimal("25.0000"))
+          id1         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000002")
+          id2         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000001")
+          id3         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000003")
+          link1       = MasterServiceOfferLocation(id1, offer1Id, locationId)
+          link2       = MasterServiceOfferLocation(id2, offer2Id, locationId)
+          link3       = MasterServiceOfferLocation(id3, offer3Id, locationId)
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service1)
+          _          <- services.upsertService(service2)
+          _          <- services.upsertService(service3)
+          _          <- offers.upsertMasterServiceOffer(offer1)
+          _          <- offers.upsertMasterServiceOffer(offer2)
+          _          <- offers.upsertMasterServiceOffer(offer3)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- links.upsertMasterServiceOfferLocation(link1)
+          _          <- links.upsertMasterServiceOfferLocation(link2)
+          _          <- links.upsertMasterServiceOfferLocation(link3)
+          res        <- links.getMasterServiceOfferLocationsByLocation(locationId)
+          _          <- assertIO(res == List(link2, link1, link3))
+        } yield ()
+    }
+
+    "upsert overwrites existing link with same id" in {
+      (
+        rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        links: MasterServiceOfferLocations[IO],
+      ) =>
+        for {
+          categoryId  <- rnd[CategoryId]
+          masterId    <- rnd[MasterId]
+          service1Id  <- rnd[ServiceId]
+          service2Id  <- rnd[ServiceId]
+          offer1Id    <- rnd[MasterServiceOfferId]
+          offer2Id    <- rnd[MasterServiceOfferId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          linkId      <- rnd[MasterServiceOfferLocationId]
+          category     = Category(categoryId, rootCategoryId, 0, s"links-overwrite-category-$categoryId")
+          master       = Master(masterId, s"links-overwrite-master-$masterId")
+          service1     = Service(service1Id, categoryId, s"links-overwrite-service-a-$service1Id")
+          service2     = Service(service2Id, categoryId, s"links-overwrite-service-b-$service2Id")
+          offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
+          offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
+          location1    = MasterLocation(location1Id, masterId, s"links-overwrite-location-a-$location1Id", s"links-overwrite-address-a-$location1Id", BigDecimal("16.0000"), BigDecimal("26.0000"))
+          location2    = MasterLocation(location2Id, masterId, s"links-overwrite-location-b-$location2Id", s"links-overwrite-address-b-$location2Id", BigDecimal("36.0000"), BigDecimal("46.0000"))
+          initial      = MasterServiceOfferLocation(linkId, offer1Id, location1Id)
+          updated      = MasterServiceOfferLocation(linkId, offer2Id, location2Id)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service1)
+          _           <- services.upsertService(service2)
+          _           <- offers.upsertMasterServiceOffer(offer1)
+          _           <- offers.upsertMasterServiceOffer(offer2)
+          _           <- masterLocations.upsertMasterLocation(location1)
+          _           <- masterLocations.upsertMasterLocation(location2)
+          _           <- links.upsertMasterServiceOfferLocation(initial)
+          _           <- links.upsertMasterServiceOfferLocation(updated)
+          res         <- links.getMasterServiceOfferLocation(linkId)
+          _           <- assertIO(res.contains(updated))
         } yield ()
     }
 
