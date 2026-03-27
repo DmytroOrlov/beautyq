@@ -12,7 +12,7 @@ import izumi.fundamentals.platform.versions.Version
 import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
 import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterLocationRole, MasterRole, MasterServiceOfferRole, MasterServiceOfferVariantRole, ProfileRole, ServiceRole}
@@ -107,6 +107,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Masters[F]].fromResource[Masters.Dummy[F]]
       make[MasterLocations[F]].fromResource[MasterLocations.Dummy[F]]
       make[MasterServiceOffers[F]].fromResource[MasterServiceOffers.Dummy[F]]
+      make[ServiceVariantSchemas[F]].fromResource[ServiceVariantSchemas.Dummy[F]]
       make[MasterServiceOfferVariants[F]].fromResource[MasterServiceOfferVariants.Dummy[F]]
       make[Services[F]].fromResource[Services.Dummy[F]]
       make[Profiles[F]].fromResource[Profiles.Dummy[F]]
@@ -120,6 +121,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Masters[F]].fromResource[Masters.Postgres[F]]
       make[MasterLocations[F]].fromResource[MasterLocations.Postgres[F]]
       make[MasterServiceOffers[F]].fromResource[MasterServiceOffers.Postgres[F]]
+      make[ServiceVariantSchemas[F]].fromResource[ServiceVariantSchemas.Postgres[F]]
       make[MasterServiceOfferVariants[F]].fromResource[MasterServiceOfferVariants.Postgres[F]]
       make[Services[F]].fromResource[Services.Postgres[F]]
       make[Profiles[F]].fromResource[Profiles.Postgres[F]]
