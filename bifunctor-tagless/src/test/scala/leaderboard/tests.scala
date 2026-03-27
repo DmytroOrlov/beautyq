@@ -7,7 +7,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.repo.{Categories, Ladder, Masters, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, MasterLocations, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.zioenv.*
 import zio.{IO, ZIO}
@@ -30,6 +30,7 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
       DIKey[Profiles[IO]],
       DIKey[Categories[IO]],
       DIKey[Masters[IO]],
+      DIKey[MasterLocations[IO]],
       DIKey[Services[IO]],
     ),
   )
@@ -52,6 +53,7 @@ final class ProfilesTestDummy extends ProfilesTest with DummyTest
 final class RanksTestDummy extends RanksTest with DummyTest
 final class CategoriesTestDummy extends CategoriesTest with DummyTest
 final class MastersTestDummy extends MastersTest with DummyTest
+final class MasterLocationsTestDummy extends MasterLocationsTest with DummyTest
 final class ServicesTestDummy extends ServicesTest with DummyTest
 
 final class LadderTestPostgres extends LadderTest with ProdTest
@@ -59,6 +61,7 @@ final class ProfilesTestPostgres extends ProfilesTest with ProdTest
 final class RanksTestPostgres extends RanksTest with ProdTest
 final class CategoriesTestPostgres extends CategoriesTest with ProdTest
 final class MastersTestPostgres extends MastersTest with ProdTest
+final class MasterLocationsTestPostgres extends MasterLocationsTest with ProdTest
 final class ServicesTestPostgres extends ServicesTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
@@ -452,6 +455,124 @@ abstract class MastersTest extends LeaderboardTest {
           _       <- masters.upsertMaster(updated)
           res     <- masters.getMaster(id)
           _       <- assertIO(res.contains(updated))
+        } yield ()
+    }
+
+  }
+
+}
+
+abstract class MasterLocationsTest extends LeaderboardTest {
+
+  "MasterLocations" should {
+
+    "upsert & get" in {
+      (rnd: Rnd[IO], masters: Masters[IO], masterLocations: MasterLocations[IO]) =>
+        for {
+          masterId   <- rnd[MasterId]
+          locationId <- rnd[MasterLocationId]
+          master      = Master(masterId, s"master-$masterId")
+          location    = MasterLocation(locationId, masterId, s"location-$locationId", s"address-$locationId", BigDecimal("52.5200"), BigDecimal("13.4050"))
+          _          <- masters.upsertMaster(master)
+          _          <- masterLocations.upsertMasterLocation(location)
+          res        <- masterLocations.getMasterLocation(location.id)
+          _          <- assertIO(res.contains(location))
+        } yield ()
+    }
+
+    "reject creating a location when master does not exist" in {
+      (rnd: Rnd[IO], masterLocations: MasterLocations[IO]) =>
+        for {
+          masterId   <- rnd[MasterId]
+          locationId <- rnd[MasterLocationId]
+          result     <- masterLocations
+                          .upsertMasterLocation(
+                            MasterLocation(locationId, masterId, "orphan-location", "missing-master-address", BigDecimal("10.1000"), BigDecimal("20.2000"))
+                          )
+                          .either
+          _          <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "allow creating several locations for one master" in {
+      (rnd: Rnd[IO], masters: Masters[IO], masterLocations: MasterLocations[IO]) =>
+        for {
+          masterId <- rnd[MasterId]
+          id1      <- rnd[MasterLocationId]
+          id2      <- rnd[MasterLocationId]
+          master    = Master(masterId, s"locations-master-$masterId")
+          l1        = MasterLocation(id1, masterId, s"location-a-$id1", s"address-a-$id1", BigDecimal("40.7128"), BigDecimal("-74.0060"))
+          l2        = MasterLocation(id2, masterId, s"location-b-$id2", s"address-b-$id2", BigDecimal("34.0522"), BigDecimal("-118.2437"))
+          _        <- masters.upsertMaster(master)
+          _        <- masterLocations.upsertMasterLocation(l1)
+          _        <- masterLocations.upsertMasterLocation(l2)
+          res      <- masterLocations.getMasterLocationsByMaster(masterId)
+          _        <- assertIO(res.toSet == Set(l1, l2))
+        } yield ()
+    }
+
+    "return only locations of the requested master" in {
+      (rnd: Rnd[IO], masters: Masters[IO], masterLocations: MasterLocations[IO]) =>
+        for {
+          master1Id   <- rnd[MasterId]
+          master2Id   <- rnd[MasterId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          otherId     <- rnd[MasterLocationId]
+
+          master1  = Master(master1Id, s"master-a-$master1Id")
+          master2  = Master(master2Id, s"master-b-$master2Id")
+          location1 = MasterLocation(location1Id, master1Id, s"loc-a-$location1Id", s"addr-a-$location1Id", BigDecimal("51.5074"), BigDecimal("-0.1278"))
+          location2 = MasterLocation(location2Id, master1Id, s"loc-b-$location2Id", s"addr-b-$location2Id", BigDecimal("48.8566"), BigDecimal("2.3522"))
+          other     = MasterLocation(otherId, master2Id, s"loc-c-$otherId", s"addr-c-$otherId", BigDecimal("35.6762"), BigDecimal("139.6503"))
+
+          _   <- masters.upsertMaster(master1)
+          _   <- masters.upsertMaster(master2)
+          _   <- masterLocations.upsertMasterLocation(location1)
+          _   <- masterLocations.upsertMasterLocation(location2)
+          _   <- masterLocations.upsertMasterLocation(other)
+          res <- masterLocations.getMasterLocationsByMaster(master1Id)
+
+          _ <- assertIO(res.toSet == Set(location1, location2))
+        } yield ()
+    }
+
+    "return locations sorted by name asc, then id asc" in {
+      (rnd: Rnd[IO], masters: Masters[IO], masterLocations: MasterLocations[IO]) =>
+        for {
+          masterId <- rnd[MasterId]
+          master    = Master(masterId, s"master-sort-$masterId")
+          id1       = java.util.UUID.fromString("00000000-0000-0000-0000-000000000002")
+          id2       = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001")
+          id3       = java.util.UUID.fromString("00000000-0000-0000-0000-000000000003")
+          prefix   <- rnd[MasterId].map(id => s"master-locations-sort-$id")
+          l1        = MasterLocation(id1, masterId, s"$prefix-beta", s"$prefix-address-2", BigDecimal("1.0000"), BigDecimal("2.0000"))
+          l2        = MasterLocation(id2, masterId, s"$prefix-alpha", s"$prefix-address-1", BigDecimal("3.0000"), BigDecimal("4.0000"))
+          l3        = MasterLocation(id3, masterId, s"$prefix-alpha", s"$prefix-address-3", BigDecimal("5.0000"), BigDecimal("6.0000"))
+
+          _   <- masters.upsertMaster(master)
+          _   <- masterLocations.upsertMasterLocation(l1)
+          _   <- masterLocations.upsertMasterLocation(l2)
+          _   <- masterLocations.upsertMasterLocation(l3)
+          res <- masterLocations.getMasterLocationsByMaster(masterId)
+
+          _ <- assertIO(res == List(l2, l3, l1))
+        } yield ()
+    }
+
+    "upsert overwrites existing location with same id" in {
+      (rnd: Rnd[IO], masters: Masters[IO], masterLocations: MasterLocations[IO]) =>
+        for {
+          masterId   <- rnd[MasterId]
+          locationId <- rnd[MasterLocationId]
+          master      = Master(masterId, s"overwrite-master-$masterId")
+          initial     = MasterLocation(locationId, masterId, "same-id", "address-initial", BigDecimal("11.1100"), BigDecimal("22.2200"))
+          updated     = MasterLocation(locationId, masterId, "same-id-updated", "address-updated", BigDecimal("33.3300"), BigDecimal("44.4400"))
+          _          <- masters.upsertMaster(master)
+          _          <- masterLocations.upsertMasterLocation(initial)
+          _          <- masterLocations.upsertMasterLocation(updated)
+          res        <- masterLocations.getMasterLocation(locationId)
+          _          <- assertIO(res.contains(updated))
         } yield ()
     }
 

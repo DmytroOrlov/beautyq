@@ -12,7 +12,7 @@ import izumi.fundamentals.platform.versions.Version
 import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.repo.{Categories, Ladder, Masters, Profiles, Services}
+import leaderboard.repo.{Categories, Ladder, MasterLocations, Masters, Profiles, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
 import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterRole, ProfileRole, ServiceRole}
@@ -87,6 +87,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Ladder[F]].fromResource[Ladder.Dummy[F]]
       make[Categories[F]].fromResource[Categories.Dummy[F]]
       make[Masters[F]].fromResource[Masters.Dummy[F]]
+      make[MasterLocations[F]].fromResource[MasterLocations.Dummy[F]]
       make[Services[F]].fromResource[Services.Dummy[F]]
       make[Profiles[F]].fromResource[Profiles.Dummy[F]]
     }
@@ -97,6 +98,7 @@ object LeaderboardPlugin extends PluginDef {
       make[Ladder[F]].fromResource[Ladder.Postgres[F]]
       make[Categories[F]].fromResource[Categories.Postgres[F]]
       make[Masters[F]].fromResource[Masters.Postgres[F]]
+      make[MasterLocations[F]].fromResource[MasterLocations.Postgres[F]]
       make[Services[F]].fromResource[Services.Postgres[F]]
       make[Profiles[F]].fromResource[Profiles.Postgres[F]]
 

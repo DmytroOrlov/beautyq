@@ -1,0 +1,136 @@
+package leaderboard.repo
+
+import distage.Lifecycle
+import doobie.implicits.*
+import doobie.postgres.implicits.*
+import izumi.functional.bio.{Error2, F, Primitives2}
+import leaderboard.model.{MasterId, MasterLocation, MasterLocationId, QueryFailure}
+import leaderboard.sql.SQL
+import logstage.LogIO2
+
+trait MasterLocations[F[_, _]] {
+  def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit]
+  def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]]
+  def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]]
+}
+
+object MasterLocations {
+  private def masterNotFound(masterId: MasterId): QueryFailure =
+    QueryFailure("no query", new Exception(s"Master $masterId does not exist"))
+
+  private def masterExists[F[+_, +_]](sql: SQL[F])(masterId: MasterId): F[QueryFailure, Boolean] =
+    sql.execute("master-exists") {
+      sql"""
+        select exists(
+          select 1
+          from masters
+          where id = $masterId
+        )
+      """.query[Boolean].unique
+    }
+
+  final class Dummy[F[+_, +_]: Error2: Primitives2](
+    masters: Masters[F]
+  ) extends Lifecycle.LiftF[F[QueryFailure, _], MasterLocations[F]](
+      for {
+        state <- F.mkRef(Map.empty[MasterLocationId, MasterLocation])
+      } yield {
+        new MasterLocations[F] {
+          override def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =
+            masters.getMaster(location.masterId).flatMap {
+              case Some(_) =>
+                state.update_(_ + (location.id -> location))
+              case None =>
+                F.fail(masterNotFound(location.masterId))
+            }
+
+          override def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]] =
+            state.get.map(_.get(id))
+
+          override def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]] =
+            state.get.map(
+              _.values
+                .filter(_.masterId == masterId)
+                .toList
+                .sortBy(location => (location.name, location.id.toString))
+            )
+        }
+      }
+    )
+
+  final class Postgres[F[+_, +_]: Error2](
+    sql: SQL[F],
+    log: LogIO2[F],
+  ) extends Lifecycle.LiftF[F[Throwable, _], MasterLocations[F]](
+      for {
+        _ <- log.info("Creating MasterLocations table")
+        _ <- sql.execute("ddl-master-locations") {
+          sql"""create table if not exists master_locations (
+               |  id uuid not null,
+               |  master_id uuid not null,
+               |  name text not null,
+               |  address text not null,
+               |  lat numeric not null,
+               |  lon numeric not null,
+               |  primary key (id),
+               |  constraint master_locations_master_fk
+               |    foreign key (master_id) references masters(id)
+               |) without oids
+               |""".stripMargin.update.run
+        }
+        _ <- sql.execute("ddl-master-locations-master-id-idx") {
+          sql"""
+            create index if not exists master_locations_master_id_idx
+              on master_locations(master_id)
+          """.update.run
+        }
+      } yield new MasterLocations[F] {
+
+        override def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =
+          masterExists(sql)(location.masterId).flatMap {
+            exists =>
+              if (!exists) {
+                F.fail(masterNotFound(location.masterId))
+              } else {
+                sql
+                  .execute("upsert-master-location") {
+                    sql"""insert into master_locations (id, master_id, name, address, lat, lon)
+                         |values (
+                         |  ${location.id},
+                         |  ${location.masterId},
+                         |  ${location.name},
+                         |  ${location.address},
+                         |  ${location.lat},
+                         |  ${location.lon}
+                         |)
+                         |on conflict (id) do update set
+                         |  master_id = excluded.master_id,
+                         |  name = excluded.name,
+                         |  address = excluded.address,
+                         |  lat = excluded.lat,
+                         |  lon = excluded.lon
+                         |""".stripMargin.update.run
+                  }
+                  .void
+              }
+          }
+
+        override def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]] =
+          sql.execute("get-master-location") {
+            sql"""select id, master_id, name, address, lat, lon
+                 |from master_locations
+                 |where id = $id
+                 |""".stripMargin.query[MasterLocation].option
+          }
+
+        override def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]] =
+          sql.execute("get-master-locations-by-master") {
+            sql"""select id, master_id, name, address, lat, lon
+                 |from master_locations
+                 |where master_id = $masterId
+                 |order by name asc, id asc
+                 |""".stripMargin.query[MasterLocation].to[List]
+          }
+      }
+    )
+}
