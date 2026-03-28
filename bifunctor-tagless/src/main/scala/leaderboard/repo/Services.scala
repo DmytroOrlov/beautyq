@@ -7,9 +7,9 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{QueryFailure, Service, ServiceId}
-import leaderboard.repo.Categories.categoryExists
 import leaderboard.sql.SQL
 import logstage.LogIO2
+
 import scala.annotation.unused
 
 trait Services[F[_, _]] {
@@ -32,7 +32,7 @@ object Services {
         state <- F.mkRef(Map.empty[ServiceId, Service])
       } yield {
         new Services[F] {
-          override def upsertService(service: Service): F[QueryFailure, Unit] = {
+          def upsertService(service: Service): F[QueryFailure, Unit] = {
             if (service.categoryId == rootCategoryId) {
               F.fail(rootCategoryCannotOwnServices)
             } else {
@@ -45,10 +45,10 @@ object Services {
             }
           }
 
-          override def getService(id: ServiceId): F[QueryFailure, Option[Service]] =
+          def getService(id: ServiceId): F[QueryFailure, Option[Service]] =
             state.get.map(_.get(id))
 
-          override def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]] =
+          def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]] =
             state.get.map(
               _.values
                 .filter(_.categoryId == categoryId)
@@ -87,12 +87,11 @@ object Services {
           """.update.run
         }
       } yield new Services[F] {
-
-        override def upsertService(service: Service): F[QueryFailure, Unit] = {
+        def upsertService(service: Service): F[QueryFailure, Unit] = {
           if (service.categoryId == rootCategoryId) {
             F.fail(rootCategoryCannotOwnServices)
           } else {
-            categoryExists(sql)(service.categoryId).flatMap {
+            categoryExists(service.categoryId).flatMap {
               exists =>
                 if (!exists) {
                   F.fail(categoryNotFound(service.categoryId))
@@ -112,7 +111,7 @@ object Services {
           }
         }
 
-        override def getService(id: ServiceId): F[QueryFailure, Option[Service]] =
+        def getService(id: ServiceId): F[QueryFailure, Option[Service]] =
           sql.execute("get-service") {
             sql"""
               select id, category_id, name
@@ -121,7 +120,7 @@ object Services {
             """.query[Service].option
           }
 
-        override def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]] =
+        def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]] =
           sql.execute("get-services-by-category") {
             sql"""
               select id, category_id, name
@@ -129,6 +128,17 @@ object Services {
               where category_id = $categoryId
               order by name asc
             """.query[Service].to[List]
+          }
+
+        def categoryExists(categoryId: CategoryId): F[QueryFailure, Boolean] =
+          sql.execute("category-exists") {
+            sql"""
+        select exists(
+          select 1
+          from categories
+          where id = $categoryId
+        )
+      """.query[Boolean].unique
           }
       }
     )

@@ -4,7 +4,7 @@ import distage.Lifecycle
 import doobie.Fragment
 import doobie.implicits.*
 import doobie.postgres.implicits.*
-import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
+import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
 import leaderboard.sql.SQL
@@ -23,21 +23,6 @@ object Categories {
   private def rootCategoryCannotBePersisted: QueryFailure =
     QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not be persisted"))
 
-  def categoryExists[F[+_, +_]: Applicative2](sql: SQL[F])(parentId: CategoryId): F[QueryFailure, Boolean] =
-    if (parentId == rootCategoryId) {
-      F.pure(true)
-    } else {
-      sql.execute("category-parent-exists") {
-        sql"""
-                select exists(
-                  select 1
-                  from categories
-                  where id = $parentId
-                )
-              """.query[Boolean].unique
-      }
-    }
-
   // AI-NOTE: For izumi/distage/BIO typeclasses and Lifecycle patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
   final class Dummy[F[+_, +_]: Error2: Primitives2]
     extends Lifecycle.LiftF[F[QueryFailure, _], Categories[F]](
@@ -45,7 +30,7 @@ object Categories {
         state <- F.mkRef(Map.empty[CategoryId, Category])
       } yield {
         new Categories[F] {
-          override def upsertCategory(category: Category): F[QueryFailure, Unit] = {
+          def upsertCategory(category: Category): F[QueryFailure, Unit] = {
             if (category.id == rootCategoryId) {
               F.fail(rootCategoryCannotBePersisted)
             } else {
@@ -61,10 +46,10 @@ object Categories {
             }
           }
 
-          override def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] =
+          def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] =
             state.get.map(_.get(id))
 
-          override def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] =
+          def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] =
             state.get.map(
               _.values
                 .filter(_.parentId == parentId)
@@ -101,12 +86,11 @@ object Categories {
           """.update.run
         }
       } yield new Categories[F] {
-
-        override def upsertCategory(category: Category): F[QueryFailure, Unit] = {
+        def upsertCategory(category: Category): F[QueryFailure, Unit] = {
           if (category.id == rootCategoryId) {
             F.fail(rootCategoryCannotBePersisted)
           } else {
-            categoryExists(sql)(category.parentId).flatMap {
+            categoryExists(category.parentId).flatMap {
               exists =>
                 if (!exists) {
                   F.fail(parentNotFound(category.parentId))
@@ -128,7 +112,7 @@ object Categories {
           }
         }
 
-        override def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] = {
+        def getCategory(id: CategoryId): F[QueryFailure, Option[Category]] = {
           sql.execute("get-category") {
             sql"""
                 select id, parent_id, depth, name
@@ -138,7 +122,7 @@ object Categories {
           }
         }
 
-        override def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] = {
+        def getChildren(parentId: CategoryId): F[QueryFailure, List[Category]] = {
           sql.execute(if (parentId == rootCategoryId) "get-root-children" else "get-children") {
             sql"""
                 select id, parent_id, depth, name
@@ -148,6 +132,21 @@ object Categories {
               """.query[Category].to[List]
           }
         }
+
+        def categoryExists(parentId: CategoryId): F[QueryFailure, Boolean] =
+          if (parentId == rootCategoryId) {
+            F.pure(true)
+          } else {
+            sql.execute("category-parent-exists") {
+              sql"""
+                select exists(
+                  select 1
+                  from categories
+                  where id = $parentId
+                )
+              """.query[Boolean].unique
+            }
+          }
       }
     )
 }

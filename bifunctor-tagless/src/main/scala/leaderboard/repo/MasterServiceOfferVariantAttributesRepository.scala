@@ -7,7 +7,16 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.AttributeValueType
+import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
+import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.{
+  MasterServiceOfferVariant,
+  MasterServiceOfferVariantAttributeDefinition,
+  MasterServiceOfferVariantAttributes,
+  MasterServiceOfferVariantId,
+  QueryFailure,
+}
 
 private[repo] final case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
@@ -20,6 +29,91 @@ private[repo] object MasterServiceOfferVariantAdditionalAttributes {
 }
 
 private[repo] object MasterServiceOfferVariantAttributesRepository {
+  private def attributeValueTypeName(valueType: AttributeValueType): String =
+    valueType match {
+      case IntValue        => "IntValue"
+      case BigDecimalValue => "BigDecimalValue"
+    }
+
+  private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
+    QueryFailure(queryName, new Exception(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode"))
+
+  private def attributeStoredInWrongTypeStorage(
+    queryName: String,
+    attributeCode: String,
+    expected: AttributeValueType,
+    actual: AttributeValueType,
+  ): QueryFailure =
+    QueryFailure(
+      queryName,
+      new Exception(
+        s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}"
+      ),
+    )
+
+  private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
+    MasterServiceOfferVariantAttributeDefinition.fromCode(code)
+
+  private def collectStoredAttributes[A, D <: MasterServiceOfferVariantAttributeDefinition[A]](
+    queryName: String,
+    attributes: Map[String, A],
+    actualValueType: AttributeValueType,
+    decode: String => Option[D],
+  ): Either[QueryFailure, Map[D, A]] =
+    attributes.foldLeft[Either[QueryFailure, Map[D, A]]](Right(Map.empty)) {
+      case (acc, (attributeCode, value)) =>
+        acc.flatMap {
+          current =>
+            decode(attributeCode) match {
+              case Some(definition) =>
+                Right(current + (definition -> value))
+              case None =>
+                attributeDefinitionByCode(attributeCode) match {
+                  case None =>
+                    Left(unknownAttributeCode(queryName, attributeCode))
+                  case Some(definition) =>
+                    Left(attributeStoredInWrongTypeStorage(queryName, attributeCode, definition.valueType, actualValueType))
+                }
+            }
+        }
+    }
+
+  def decodeStoredAttributes(
+    queryName: String,
+    attributes: MasterServiceOfferVariantAdditionalAttributes,
+  ): Either[QueryFailure, MasterServiceOfferVariantAttributes] =
+    for {
+      intAttributes <- collectStoredAttributes(
+                         queryName,
+                         attributes.intAttributes,
+                         IntValue,
+                         MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
+                       )
+      bigDecimalAttributes <- collectStoredAttributes(
+                                queryName,
+                                attributes.bigDecimalAttributes,
+                                BigDecimalValue,
+                                MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
+                              )
+    } yield MasterServiceOfferVariantAttributes(
+      intAttributes,
+      bigDecimalAttributes,
+    )
+
+  def encodeStoredAttributes(
+    variant: MasterServiceOfferVariant
+  ): MasterServiceOfferVariantAdditionalAttributes =
+    MasterServiceOfferVariantAdditionalAttributes(
+      variant.intAttributes.iterator.map {
+        case (attributeDefinition, value) =>
+          attributeDefinition.code -> value
+      }.toMap,
+      variant.bigDecimalAttributes.iterator.map {
+        case (attributeDefinition, value) =>
+          attributeDefinition.code -> value
+      }.toMap,
+    )
+
   private type IntAttributesState = Map[(MasterServiceOfferVariantId, String), Int]
   private type BigDecimalAttributesState = Map[(MasterServiceOfferVariantId, String), BigDecimal]
 

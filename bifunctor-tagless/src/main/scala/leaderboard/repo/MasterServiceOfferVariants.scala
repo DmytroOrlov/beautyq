@@ -5,16 +5,12 @@ import doobie.free.{connection => FC}
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
-import leaderboard.model.AttributeValueType
-import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
-import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 import leaderboard.model.{
   MasterId,
   MasterLocationId,
   MasterServiceOfferId,
   MasterServiceOfferVariant,
-  MasterServiceOfferVariantAttributeDefinition,
   MasterServiceOfferVariantAttributes,
   MasterServiceOfferVariantId,
   QueryFailure,
@@ -73,22 +69,6 @@ object MasterServiceOfferVariants {
       ),
     )
 
-  private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
-    QueryFailure(queryName, new Exception(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode"))
-
-  private def attributeStoredInWrongTypeStorage(
-    queryName: String,
-    attributeCode: String,
-    expected: AttributeValueType,
-    actual: AttributeValueType,
-  ): QueryFailure =
-    QueryFailure(
-      queryName,
-      new Exception(
-        s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}"
-      ),
-    )
-
   private def attributeNotAllowedForService(
     queryName: String,
     serviceId: ServiceId,
@@ -114,61 +94,6 @@ object MasterServiceOfferVariants {
     cause: Throwable,
   ): QueryFailure =
     QueryFailure(queryName, cause)
-
-  private def attributeValueTypeName(valueType: AttributeValueType): String =
-    valueType match {
-      case IntValue        => "IntValue"
-      case BigDecimalValue => "BigDecimalValue"
-    }
-
-  private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
-    MasterServiceOfferVariantAttributeDefinition.fromCode(code)
-
-  private def collectStoredAttributes[A, D <: MasterServiceOfferVariantAttributeDefinition[A]](
-    queryName: String,
-    attributes: Map[String, A],
-    actualValueType: AttributeValueType,
-    decode: String => Option[D],
-  ): Either[QueryFailure, Map[D, A]] =
-    attributes.foldLeft[Either[QueryFailure, Map[D, A]]](Right(Map.empty)) {
-      case (acc, (attributeCode, value)) =>
-        acc.flatMap {
-          current =>
-            decode(attributeCode) match {
-              case Some(definition) =>
-                Right(current + (definition -> value))
-              case None =>
-                attributeDefinitionByCode(attributeCode) match {
-                  case None =>
-                    Left(unknownAttributeCode(queryName, attributeCode))
-                  case Some(definition) =>
-                    Left(attributeStoredInWrongTypeStorage(queryName, attributeCode, definition.valueType, actualValueType))
-                }
-            }
-        }
-    }
-
-  private def validateAdditionalAttributes(
-    queryName: String,
-    attributes: MasterServiceOfferVariantAdditionalAttributes,
-  ): Either[QueryFailure, MasterServiceOfferVariantAttributes] =
-    for {
-      intAttributes <- collectStoredAttributes(
-                         queryName,
-                         attributes.intAttributes,
-                         IntValue,
-                         MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
-                       )
-      bigDecimalAttributes <- collectStoredAttributes(
-                                queryName,
-                                attributes.bigDecimalAttributes,
-                                BigDecimalValue,
-                                MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
-                              )
-    } yield MasterServiceOfferVariantAttributes(
-      intAttributes,
-      bigDecimalAttributes,
-    )
 
   private def validateAttributesAgainstSchema(
     queryName: String,
@@ -197,7 +122,7 @@ object MasterServiceOfferVariants {
     schema: ServiceVariantSchema,
   ): F[QueryFailure, MasterServiceOfferVariant] =
     liftEither[F, MasterServiceOfferVariantAttributes](
-      validateAdditionalAttributes(queryName, stored.attributes)
+      MasterServiceOfferVariantAttributesRepository.decodeStoredAttributes(queryName, stored.attributes)
     ).flatMap {
       attributes =>
         liftEither[F, Unit](validateAttributesAgainstSchema(queryName, stored.serviceId, attributes, schema)).flatMap {
@@ -225,27 +150,13 @@ object MasterServiceOfferVariants {
     schema: ServiceVariantSchema,
     variant: MasterServiceOfferVariant,
   ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] = {
-    val storedAttributes = toStoredAttributes(variant)
+    val storedAttributes = MasterServiceOfferVariantAttributesRepository.encodeStoredAttributes(variant)
 
     for {
-      attributes <- validateAdditionalAttributes(queryName, storedAttributes)
+      attributes <- MasterServiceOfferVariantAttributesRepository.decodeStoredAttributes(queryName, storedAttributes)
       _          <- validateAttributesAgainstSchema(queryName, serviceId, attributes, schema)
     } yield storedAttributes
   }
-
-  private def toStoredAttributes(
-    variant: MasterServiceOfferVariant
-  ): MasterServiceOfferVariantAdditionalAttributes =
-    MasterServiceOfferVariantAdditionalAttributes(
-      variant.intAttributes.iterator.map {
-        case (attributeDefinition, value) =>
-          attributeDefinition.code -> value
-      }.toMap,
-      variant.bigDecimalAttributes.iterator.map {
-        case (attributeDefinition, value) =>
-          attributeDefinition.code -> value
-      }.toMap,
-    )
 
   private def offerSummary[F[+_, +_]](
     sql: SQL[F]
