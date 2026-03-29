@@ -15,7 +15,7 @@ import org.http4s.MediaType
 import zio.*
 import zio.interop.catz.*
 
-final case class ObservedResponse(
+case class ObservedResponse(
   status: Status,
   body: String,
 )

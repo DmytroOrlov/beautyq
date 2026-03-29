@@ -1,6 +1,6 @@
 package leaderboard.config
 
-final case class PostgresCfg(
+case class PostgresCfg(
   jdbcDriver: String,
   url: String,
   user: String,

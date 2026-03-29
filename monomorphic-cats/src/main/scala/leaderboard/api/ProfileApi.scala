@@ -10,7 +10,7 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 
-final class ProfileApi(
+class ProfileApi(
   dsl: Http4sDsl[IO],
   profiles: Profiles,
   ranks: Ranks,

@@ -9,7 +9,7 @@ trait Rnd[F[_]] {
 }
 
 object Rnd {
-  final class Impl[F[_]: Sync] extends Rnd[F] {
+  class Impl[F[_]: Sync] extends Rnd[F] {
     def apply[A: Arbitrary]: F[A] = {
       Sync[F].delay {
         val (p, s) = Prop.startSeed(Parameters.default)

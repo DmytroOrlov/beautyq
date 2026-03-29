@@ -10,7 +10,7 @@ trait Ranks[F[_]] {
 }
 
 object Ranks {
-  final class Impl[F[_]: MonadThrow](
+  class Impl[F[_]: MonadThrow](
     ladder: Ladder[F],
     profiles: Profiles[F],
   ) extends Ranks[F] {

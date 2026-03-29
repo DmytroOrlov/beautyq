@@ -9,7 +9,7 @@ import cats.effect.IO
 
 import scala.concurrent.ExecutionContext
 
-final class TransactorResource(
+class TransactorResource(
   cfg: PostgresCfg,
   portCfg: PostgresPortCfg,
   portCheck: PortCheck,

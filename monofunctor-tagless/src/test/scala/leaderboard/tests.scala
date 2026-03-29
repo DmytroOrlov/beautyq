@@ -59,21 +59,21 @@ trait ZIOTest extends LeaderboardTest[zio.Task] {
   )
 }
 
-final class LadderTestDummyCats extends LadderTest[cats.effect.IO] with DummyTest with CatsTest
-final class ProfilesTestDummyCats extends ProfilesTest[cats.effect.IO] with DummyTest with CatsTest
-final class RanksTestDummyCats extends RanksTest[cats.effect.IO] with DummyTest with CatsTest
+class LadderTestDummyCats extends LadderTest[cats.effect.IO] with DummyTest with CatsTest
+class ProfilesTestDummyCats extends ProfilesTest[cats.effect.IO] with DummyTest with CatsTest
+class RanksTestDummyCats extends RanksTest[cats.effect.IO] with DummyTest with CatsTest
 
-final class LadderTestPostgresCats extends LadderTest[cats.effect.IO] with ProdTest with CatsTest
-final class ProfilesTestPostgresCats extends ProfilesTest[cats.effect.IO] with ProdTest with CatsTest
-final class RanksTestPostgresCats extends RanksTest[cats.effect.IO] with ProdTest with CatsTest
+class LadderTestPostgresCats extends LadderTest[cats.effect.IO] with ProdTest with CatsTest
+class ProfilesTestPostgresCats extends ProfilesTest[cats.effect.IO] with ProdTest with CatsTest
+class RanksTestPostgresCats extends RanksTest[cats.effect.IO] with ProdTest with CatsTest
 
-final class LadderTestDummyZIO extends LadderTest[zio.Task] with DummyTest with ZIOTest
-final class ProfilesTestDummyZIO extends ProfilesTest[zio.Task] with DummyTest with ZIOTest
-final class RanksTestDummyZIO extends RanksTest[zio.Task] with DummyTest with ZIOTest
+class LadderTestDummyZIO extends LadderTest[zio.Task] with DummyTest with ZIOTest
+class ProfilesTestDummyZIO extends ProfilesTest[zio.Task] with DummyTest with ZIOTest
+class RanksTestDummyZIO extends RanksTest[zio.Task] with DummyTest with ZIOTest
 
-final class LadderTestPostgresZIO extends LadderTest[zio.Task] with ProdTest with ZIOTest
-final class ProfilesTestPostgresZIO extends ProfilesTest[zio.Task] with ProdTest with ZIOTest
-final class RanksTestPostgresZIO extends RanksTest[zio.Task] with ProdTest with ZIOTest
+class LadderTestPostgresZIO extends LadderTest[zio.Task] with ProdTest with ZIOTest
+class ProfilesTestPostgresZIO extends ProfilesTest[zio.Task] with ProdTest with ZIOTest
+class RanksTestPostgresZIO extends RanksTest[zio.Task] with ProdTest with ZIOTest
 
 abstract class LadderTest[F[_]: Sync: TagK: DefaultModule] extends LeaderboardTest[F] {
 

@@ -90,7 +90,7 @@ object ServiceVariantSchemas {
       ).updateMany(rows)
     }
 
-  final class Dummy[F[+_, +_]: Error2: Primitives2](
+  class Dummy[F[+_, +_]: Error2: Primitives2](
     services: Services[F]
   ) extends Lifecycle.LiftF[F[QueryFailure, _], ServiceVariantSchemas[F]](
       for {
@@ -113,7 +113,7 @@ object ServiceVariantSchemas {
       }
     )
 
-  final class Postgres[F[+_, +_]: Error2](
+  class Postgres[F[+_, +_]: Error2](
     @unused services: Services[F],
     sql: SQL[F],
     log: LogIO2[F],

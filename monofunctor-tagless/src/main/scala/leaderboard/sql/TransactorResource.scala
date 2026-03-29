@@ -9,7 +9,7 @@ import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 
 import scala.concurrent.ExecutionContext
 
-final class TransactorResource[F[_]: Async](
+class TransactorResource[F[_]: Async](
   cfg: PostgresCfg,
   portCfg: PostgresPortCfg,
   portCheck: PortCheck,

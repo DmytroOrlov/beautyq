@@ -3,12 +3,12 @@ package leaderboard.model
 import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 
-final case class ServiceVariantSchemaItem(
+case class ServiceVariantSchemaItem(
   attribute: AnyAttributeDefinition,
   required: Boolean,
 )
 
-final case class ServiceVariantSchema(
+case class ServiceVariantSchema(
   serviceId: ServiceId,
   private val itemsByAttribute: Map[AnyAttributeDefinition, Boolean],
 ) {

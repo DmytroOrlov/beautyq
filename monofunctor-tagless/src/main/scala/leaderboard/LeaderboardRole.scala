@@ -34,7 +34,7 @@ import scala.annotation.unused
   *   curl -X GET http://localhost:8080/ladder
   * }}}
   */
-final class LadderRole[F[_]: Applicative](
+class LadderRole[F[_]: Applicative](
   @unused ladderApi: LadderApi[F],
   @unused runningServer: HttpServer,
   log: LogIO[F],
@@ -44,7 +44,7 @@ final class LadderRole[F[_]: Applicative](
   }
 }
 object LadderRole extends RoleDescriptor {
-  final val id = "ladder"
+  val id = "ladder"
 }
 
 /**
@@ -61,7 +61,7 @@ object LadderRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class ProfileRole[F[_]: Applicative](
+class ProfileRole[F[_]: Applicative](
   @unused profileApi: ProfileApi[F],
   @unused runningServer: HttpServer,
   log: LogIO[F],
@@ -71,7 +71,7 @@ final class ProfileRole[F[_]: Applicative](
   }
 }
 object ProfileRole extends RoleDescriptor {
-  final val id = "profile"
+  val id = "profile"
 }
 
 /** A composite role that exposes all the endpoints, for convenience, it can be launched with
@@ -97,7 +97,7 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class LeaderboardRole[F[_]: Applicative](
+class LeaderboardRole[F[_]: Applicative](
   @unused ladderRole: LadderRole[F],
   @unused profileRole: ProfileRole[F],
   log: LogIO[F],
@@ -107,7 +107,7 @@ final class LeaderboardRole[F[_]: Applicative](
   }
 }
 object LeaderboardRole extends RoleDescriptor {
-  final val id = "leaderboard"
+  val id = "leaderboard"
 }
 
 /**

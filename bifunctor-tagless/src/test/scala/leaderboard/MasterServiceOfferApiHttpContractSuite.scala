@@ -11,7 +11,7 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-final class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterServiceOfferApi(state: MasterServiceOfferApiContractState): MasterServiceOfferApi[IO] =
     new MasterServiceOfferApi[IO](state.masterServiceOffers, MasterServiceOfferTapirEndpoints, new TapirHttpSupport[IO])
 
@@ -126,7 +126,7 @@ final class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZI
   }
 }
 
-final class MasterServiceOfferApiContractState private (
+class MasterServiceOfferApiContractState private (
   private val upsertsRef: Ref[Vector[MasterServiceOffer]],
   private val getMasterServiceOfferResultRef: Ref[Either[QueryFailure, Option[MasterServiceOffer]]],
   private val offersByMasterResultsRef: Ref[Map[leaderboard.model.MasterId, Either[QueryFailure, List[MasterServiceOffer]]]],

@@ -2,7 +2,7 @@ package leaderboard.model
 
 import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
 
-final case class MasterServiceOfferVariantAttributes(
+case class MasterServiceOfferVariantAttributes(
   intValues: Map[IntAttributeDefinition, Int],
   bigDecimalValues: Map[BigDecimalAttributeDefinition, BigDecimal],
 ) {

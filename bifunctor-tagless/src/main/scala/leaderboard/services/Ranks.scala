@@ -9,7 +9,7 @@ trait Ranks[F[_, _]] {
 }
 
 object Ranks {
-  final class Impl[F[+_, +_]: Monad2](
+  class Impl[F[+_, +_]: Monad2](
     ladder: Ladder[F],
     profiles: Profiles[F],
   ) extends Ranks[F] {

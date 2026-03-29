@@ -11,7 +11,7 @@ trait SQL[F[_]] {
 }
 
 object SQL {
-  final class Impl[F[_]: Async](
+  class Impl[F[_]: Async](
     transactor: Transactor[F]
   ) extends SQL[F] {
     def execute[A](queryName: String)(conn: ConnectionIO[A]): F[A] = {

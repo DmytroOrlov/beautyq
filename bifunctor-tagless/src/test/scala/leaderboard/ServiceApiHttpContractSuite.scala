@@ -12,7 +12,7 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-final class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def serviceApi(state: ServiceApiContractState): ServiceApi[IO] =
     new ServiceApi[IO](state.services, ServiceTapirEndpoints, new TapirHttpSupport[IO])
 
@@ -109,7 +109,7 @@ final class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with Http
   }
 }
 
-final class ServiceApiContractState private (
+class ServiceApiContractState private (
   private val upsertsRef: Ref[Vector[Service]],
   private val getServiceResultRef: Ref[Either[QueryFailure, Option[Service]]],
   private val servicesByCategoryResultsRef: Ref[Map[CategoryId, Either[QueryFailure, List[Service]]]],

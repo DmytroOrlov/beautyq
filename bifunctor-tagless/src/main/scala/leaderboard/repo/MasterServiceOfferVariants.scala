@@ -29,7 +29,7 @@ trait MasterServiceOfferVariants[F[_, _]] {
 }
 
 object MasterServiceOfferVariants {
-  private final case class MasterServiceOfferVariantBaseRow(
+  private case class MasterServiceOfferVariantBaseRow(
     id: MasterServiceOfferVariantId,
     masterServiceOfferId: MasterServiceOfferId,
     masterLocationId: MasterLocationId,
@@ -41,13 +41,13 @@ object MasterServiceOfferVariants {
   private type MasterServiceOfferVariantStoredRow =
     (MasterServiceOfferVariantId, MasterServiceOfferId, MasterLocationId, BigDecimal, BigDecimal, Int, ServiceId)
 
-  private final case class StoredVariantData(
+  private case class StoredVariantData(
     base: MasterServiceOfferVariantBaseRow,
     serviceId: ServiceId,
     attributes: MasterServiceOfferVariantAdditionalAttributes,
   )
 
-  private final case class DummyState(
+  private case class DummyState(
     baseRows: Map[MasterServiceOfferVariantId, MasterServiceOfferVariantBaseRow],
     attributes: MasterServiceOfferVariantAttributesRepository.DummyState,
   )
@@ -139,7 +139,7 @@ object MasterServiceOfferVariants {
                   attributes,
                 )
                 .left
-                .map(error => invalidStoredMasterServiceOfferVariant(queryName, error.asThrowable))
+                .map(error => invalidStoredMasterServiceOfferVariant(queryName, new Exception(error.message)))
             )
         }
     }
@@ -284,7 +284,7 @@ object MasterServiceOfferVariants {
         }
     }
 
-  final class Dummy[F[+_, +_]: Error2: Primitives2](
+  class Dummy[F[+_, +_]: Error2: Primitives2](
     masterServiceOffers: MasterServiceOffers[F],
     masterLocations: MasterLocations[F],
     serviceVariantSchemas: ServiceVariantSchemas[F],
@@ -385,7 +385,7 @@ object MasterServiceOfferVariants {
       }
     )
 
-  final class Postgres[F[+_, +_]: Error2](
+  class Postgres[F[+_, +_]: Error2](
     @unused masterServiceOffers: MasterServiceOffers[F],
     @unused masterLocations: MasterLocations[F],
     serviceVariantSchemas: ServiceVariantSchemas[F],

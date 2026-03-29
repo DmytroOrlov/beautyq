@@ -11,7 +11,7 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-final class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterServiceOfferVariantApi(
     state: MasterServiceOfferVariantApiContractState
   ): MasterServiceOfferVariantApi[IO] =
@@ -156,7 +156,7 @@ final class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with A
       .fold(error => throw new IllegalArgumentException(error.message), identity)
 }
 
-final class MasterServiceOfferVariantApiContractState private (
+class MasterServiceOfferVariantApiContractState private (
   private val upsertsRef: Ref[Vector[MasterServiceOfferVariant]],
   private val getMasterServiceOfferVariantResultRef: Ref[Either[QueryFailure, Option[MasterServiceOfferVariant]]],
   private val variantsByOfferResultsRef: Ref[Map[leaderboard.model.MasterServiceOfferId, Either[QueryFailure, List[MasterServiceOfferVariant]]]],

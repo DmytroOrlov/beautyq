@@ -9,13 +9,13 @@ import leaderboard.api.HttpApi
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Server
 
-final case class HttpServer(
+case class HttpServer(
   server: Server
 )
 
 object HttpServer {
 
-  final class Impl[F[_]](
+  class Impl[F[_]](
     allHttpApis: Set[HttpApi[F]]
   )(implicit
     async: Async[F]

@@ -16,7 +16,7 @@ trait Ladder[F[_]] {
 }
 
 object Ladder {
-  final class Dummy[F[_]: Concurrent]
+  class Dummy[F[_]: Concurrent]
     extends Lifecycle.LiftF[F, Ladder[F]](for {
       state <- Ref.of(Map.empty[UserId, Score])
     } yield {
@@ -29,7 +29,7 @@ object Ladder {
       }
     })
 
-  final class Postgres[F[_]: Monad](
+  class Postgres[F[_]: Monad](
     sql: SQL[F],
     log: LogIO[F],
   ) extends Lifecycle.LiftF[F, Ladder[F]](for {

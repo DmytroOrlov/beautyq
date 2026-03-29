@@ -11,7 +11,7 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-final class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterLocationApi(state: MasterLocationApiContractState): MasterLocationApi[IO] =
     new MasterLocationApi[IO](state.masterLocations, MasterLocationTapirEndpoints, new TapirHttpSupport[IO])
 
@@ -110,7 +110,7 @@ final class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO wi
   }
 }
 
-final class MasterLocationApiContractState private (
+class MasterLocationApiContractState private (
   private val upsertsRef: Ref[Vector[MasterLocation]],
   private val getMasterLocationResultRef: Ref[Either[QueryFailure, Option[MasterLocation]]],
   private val locationsByMasterResultsRef: Ref[Map[leaderboard.model.MasterId, Either[QueryFailure, List[MasterLocation]]]],

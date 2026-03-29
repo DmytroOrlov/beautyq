@@ -30,7 +30,7 @@ object MasterLocations {
       """.query[Boolean].unique
     }
 
-  final class Dummy[F[+_, +_]: Error2: Primitives2](
+  class Dummy[F[+_, +_]: Error2: Primitives2](
     masters: Masters[F]
   ) extends Lifecycle.LiftF[F[QueryFailure, _], MasterLocations[F]](
       for {
@@ -59,7 +59,7 @@ object MasterLocations {
       }
     )
 
-  final class Postgres[F[+_, +_]: Error2](
+  class Postgres[F[+_, +_]: Error2](
     @unused masters: Masters[F],
     sql: SQL[F],
     log: LogIO2[F],

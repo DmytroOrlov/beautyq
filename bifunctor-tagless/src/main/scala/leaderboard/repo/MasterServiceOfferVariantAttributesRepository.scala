@@ -18,7 +18,7 @@ import leaderboard.model.{
   QueryFailure,
 }
 
-private[repo] final case class MasterServiceOfferVariantAdditionalAttributes(
+private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
   bigDecimalAttributes: Map[String, BigDecimal],
 )
@@ -117,7 +117,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   private type IntAttributesState = Map[(MasterServiceOfferVariantId, String), Int]
   private type BigDecimalAttributesState = Map[(MasterServiceOfferVariantId, String), BigDecimal]
 
-  final case class DummyState(
+  case class DummyState(
     intAttributes: IntAttributesState,
     bigDecimalAttributes: BigDecimalAttributesState,
   )
@@ -126,7 +126,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     val empty: DummyState = DummyState(Map.empty, Map.empty)
   }
 
-  final class Dummy {
+  class Dummy {
     private def loadAttributes[A](
       state: Map[(MasterServiceOfferVariantId, String), A],
       variantId: MasterServiceOfferVariantId,
@@ -169,7 +169,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     }
   }
 
-  final class Postgres {
+  class Postgres {
     private type IntAttributeRow = (String, Int)
     private type BigDecimalAttributeRow = (String, BigDecimal)
     private type IntAttributeStoredRow = (MasterServiceOfferVariantId, String, Int)

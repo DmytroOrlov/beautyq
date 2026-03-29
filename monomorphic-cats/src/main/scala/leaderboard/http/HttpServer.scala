@@ -8,13 +8,13 @@ import leaderboard.api.HttpApi
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Server
 
-final case class HttpServer(
+case class HttpServer(
   server: Server
 )
 
 object HttpServer {
 
-  final class Impl(
+  class Impl(
     allHttpApis: Set[HttpApi]
   ) extends Lifecycle.Of[IO, HttpServer](
       Lifecycle.fromCats {

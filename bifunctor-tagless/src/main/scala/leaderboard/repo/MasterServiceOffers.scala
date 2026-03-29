@@ -45,7 +45,7 @@ object MasterServiceOffers {
       """.query[Boolean].unique
     }
 
-  final class Dummy[F[+_, +_]: Error2: Primitives2](
+  class Dummy[F[+_, +_]: Error2: Primitives2](
     masters: Masters[F],
     services: Services[F],
   ) extends Lifecycle.LiftF[F[QueryFailure, _], MasterServiceOffers[F]](
@@ -88,7 +88,7 @@ object MasterServiceOffers {
       }
     )
 
-  final class Postgres[F[+_, +_]: Error2](
+  class Postgres[F[+_, +_]: Error2](
     @unused masters: Masters[F],
     @unused services: Services[F],
     sql: SQL[F],

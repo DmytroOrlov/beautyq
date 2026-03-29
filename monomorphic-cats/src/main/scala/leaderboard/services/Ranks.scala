@@ -9,7 +9,7 @@ trait Ranks {
 }
 
 object Ranks {
-  final class Impl(
+  class Impl(
     ladder: Ladder,
     profiles: Profiles,
   ) extends Ranks {

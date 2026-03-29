@@ -7,7 +7,7 @@ import leaderboard.http.tapir.{ServiceTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.Services
 import org.http4s.HttpRoutes
 
-final class ServiceApi[F[+_, +_]](
+class ServiceApi[F[+_, +_]](
   services: Services[F],
   tapirEndpoints: ServiceTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],

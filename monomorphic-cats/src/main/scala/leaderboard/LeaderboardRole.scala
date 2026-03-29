@@ -32,7 +32,7 @@ import scala.annotation.unused
   *   curl -X GET http://localhost:8080/ladder
   * }}}
   */
-final class LadderRole(
+class LadderRole(
   @unused ladderApi: LadderApi,
   @unused runningServer: HttpServer,
   log: LogIO[IO],
@@ -42,7 +42,7 @@ final class LadderRole(
   }
 }
 object LadderRole extends RoleDescriptor {
-  final val id = "ladder"
+  val id = "ladder"
 }
 
 /**
@@ -59,7 +59,7 @@ object LadderRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class ProfileRole(
+class ProfileRole(
   @unused profileApi: ProfileApi,
   @unused runningServer: HttpServer,
   log: LogIO[IO],
@@ -69,7 +69,7 @@ final class ProfileRole(
   }
 }
 object ProfileRole extends RoleDescriptor {
-  final val id = "profile"
+  val id = "profile"
 }
 
 /** A composite role that exposes all the endpoints, for convenience, it can be launched with
@@ -95,7 +95,7 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class LeaderboardRole(
+class LeaderboardRole(
   @unused ladderRole: LadderRole,
   @unused profileRole: ProfileRole,
   log: LogIO[IO],
@@ -105,7 +105,7 @@ final class LeaderboardRole(
   }
 }
 object LeaderboardRole extends RoleDescriptor {
-  final val id = "leaderboard"
+  val id = "leaderboard"
 }
 
 /**

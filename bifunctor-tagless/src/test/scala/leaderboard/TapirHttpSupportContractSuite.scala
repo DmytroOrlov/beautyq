@@ -11,7 +11,7 @@ import sttp.tapir.json.circe.*
 import zio.interop.catz.*
 import zio.{IO, ZIO}
 
-final class TapirHttpSupportContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class TapirHttpSupportContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private val tapirHttpSupport = new TapirHttpSupport[IO]
 
   private val malformedPathGetEndpoint = endpoint.get
@@ -70,7 +70,7 @@ final class TapirHttpSupportContractSuite extends SpecZIO with AssertZIO with Ht
   }
 }
 
-final case class TapirSupportBody(name: String)
+case class TapirSupportBody(name: String)
 
 object TapirSupportBody {
   implicit val codec: Codec.AsObject[TapirSupportBody] = semiauto.deriveCodec

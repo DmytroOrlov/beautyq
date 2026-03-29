@@ -4,7 +4,7 @@ import leaderboard.http.tapir.{LadderTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.Ladder
 import org.http4s.HttpRoutes
 
-final class LadderApi[F[+_, +_]](
+class LadderApi[F[+_, +_]](
   ladder: Ladder[F],
   tapirEndpoints: LadderTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],

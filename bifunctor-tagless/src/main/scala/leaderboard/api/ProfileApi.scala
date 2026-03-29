@@ -9,7 +9,7 @@ import leaderboard.services.Ranks
 import logstage.LogIO2
 import org.http4s.HttpRoutes
 
-final class ProfileApi[F[+_, +_]](
+class ProfileApi[F[+_, +_]](
   profiles: Profiles[F],
   ranks: Ranks[F],
   log: LogIO2[F],

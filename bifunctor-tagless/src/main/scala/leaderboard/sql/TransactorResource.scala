@@ -10,7 +10,7 @@ import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import scala.concurrent.ExecutionContext
 
 // AI-NOTE: For Lifecycle.OfCats and resource-allocation patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
-final class TransactorResource[F[_]: Async](
+class TransactorResource[F[_]: Async](
   cfg: PostgresCfg,
   portCfg: PostgresPortCfg,
   portCheck: PortCheck,

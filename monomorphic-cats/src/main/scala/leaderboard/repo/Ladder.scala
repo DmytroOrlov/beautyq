@@ -14,7 +14,7 @@ trait Ladder {
 }
 
 object Ladder {
-  final class Dummy
+  class Dummy
     extends Lifecycle.LiftF[IO, Ladder](for {
       state <- Ref[IO].of(Map.empty[UserId, Score])
     } yield {
@@ -27,7 +27,7 @@ object Ladder {
       }
     })
 
-  final class Postgres(
+  class Postgres(
     sql: SQL,
     log: LogIO[IO],
   ) extends Lifecycle.LiftF[IO, Ladder](for {

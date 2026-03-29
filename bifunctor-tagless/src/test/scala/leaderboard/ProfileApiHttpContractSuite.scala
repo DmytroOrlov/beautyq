@@ -12,7 +12,7 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-final class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   override def config = super.config.copy(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
@@ -176,7 +176,7 @@ final class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with Http
   }
 }
 
-final class ProfileApiContractState private (
+class ProfileApiContractState private (
   private val savedProfilesRef: Ref[Vector[(UserId, UserProfile)]],
   private val getRankResultRef: Ref[Either[QueryFailure, Option[RankedProfile]]],
   private val setProfileResultRef: Ref[Either[QueryFailure, Unit]],

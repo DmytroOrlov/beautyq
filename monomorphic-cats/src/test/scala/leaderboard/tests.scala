@@ -30,24 +30,24 @@ abstract class LeaderboardTest extends Spec1[IO] with AssertCIO {
 }
 
 trait DummyTest extends LeaderboardTest {
-  override final def config = super.config.copy(
+  override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Repo -> Repo.Dummy)
   )
 }
 
 trait ProdTest extends LeaderboardTest {
-  override final def config = super.config.copy(
+  override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Repo -> Repo.Prod)
   )
 }
 
-final class LadderTestDummy extends LadderTest with DummyTest
-final class ProfilesTestDummy extends ProfilesTest with DummyTest
-final class RanksTestDummy extends RanksTest with DummyTest
+class LadderTestDummy extends LadderTest with DummyTest
+class ProfilesTestDummy extends ProfilesTest with DummyTest
+class RanksTestDummy extends RanksTest with DummyTest
 
-final class LadderTestPostgres extends LadderTest with ProdTest
-final class ProfilesTestPostgres extends ProfilesTest with ProdTest
-final class RanksTestPostgres extends RanksTest with ProdTest
+class LadderTestPostgres extends LadderTest with ProdTest
+class ProfilesTestPostgres extends ProfilesTest with ProdTest
+class RanksTestPostgres extends RanksTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
 

@@ -1,6 +1,6 @@
 package leaderboard.config
 
-final case class PostgresPortCfg(
+case class PostgresPortCfg(
   host: String,
   port: Int,
 ) {

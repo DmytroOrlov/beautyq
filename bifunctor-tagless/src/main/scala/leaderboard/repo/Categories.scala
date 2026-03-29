@@ -24,7 +24,7 @@ object Categories {
     QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not be persisted"))
 
   // AI-NOTE: For izumi/distage/BIO typeclasses and Lifecycle patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
-  final class Dummy[F[+_, +_]: Error2: Primitives2]
+  class Dummy[F[+_, +_]: Error2: Primitives2]
     extends Lifecycle.LiftF[F[QueryFailure, _], Categories[F]](
       for {
         state <- F.mkRef(Map.empty[CategoryId, Category])
@@ -60,7 +60,7 @@ object Categories {
       }
     )
 
-  final class Postgres[F[+_, +_]: Error2](
+  class Postgres[F[+_, +_]: Error2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Categories[F]](

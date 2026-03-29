@@ -25,7 +25,7 @@ object Services {
   private def rootCategoryCannotOwnServices: QueryFailure =
     QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not own services"))
 
-  final class Dummy[F[+_, +_]: Error2: Primitives2](
+  class Dummy[F[+_, +_]: Error2: Primitives2](
     categories: Categories[F]
   ) extends Lifecycle.LiftF[F[QueryFailure, _], Services[F]](
       for {
@@ -59,7 +59,7 @@ object Services {
       }
     )
 
-  final class Postgres[F[+_, +_]: Error2](
+  class Postgres[F[+_, +_]: Error2](
     @unused categories: Categories[F],
     sql: SQL[F],
     log: LogIO2[F],

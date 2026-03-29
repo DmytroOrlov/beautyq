@@ -9,7 +9,7 @@ trait Rnd {
 }
 
 object Rnd {
-  final class Impl extends Rnd {
+  class Impl extends Rnd {
     def apply[A: Arbitrary]: IO[A] = {
       IO {
         val (p, s) = Prop.startSeed(Parameters.default)

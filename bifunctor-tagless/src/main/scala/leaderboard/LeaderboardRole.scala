@@ -32,7 +32,7 @@ import scala.annotation.unused
   *   curl -X GET http://localhost:8080/ladder
   * }}}
   */
-final class LadderRole[F[+_, +_]: Applicative2](
+class LadderRole[F[+_, +_]: Applicative2](
   @unused ladderApi: LadderApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -42,7 +42,7 @@ final class LadderRole[F[+_, +_]: Applicative2](
   }
 }
 object LadderRole extends RoleDescriptor {
-  final val id = "ladder"
+  val id = "ladder"
 }
 
 /**
@@ -61,7 +61,7 @@ object LadderRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/category/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class CategoryRole[F[+_, +_]: Applicative2](
+class CategoryRole[F[+_, +_]: Applicative2](
   @unused categoryApi: CategoryApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -71,7 +71,7 @@ final class CategoryRole[F[+_, +_]: Applicative2](
   }
 }
 object CategoryRole extends RoleDescriptor {
-  final val id = "category"
+  val id = "category"
 }
 
 /**
@@ -89,7 +89,7 @@ object CategoryRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/service/category/73ba445e-edf0-4ecf-a02b-91d0932e1f10
   * }}}
   */
-final class ServiceRole[F[+_, +_]: Applicative2](
+class ServiceRole[F[+_, +_]: Applicative2](
   @unused serviceApi: ServiceApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -99,7 +99,7 @@ final class ServiceRole[F[+_, +_]: Applicative2](
   }
 }
 object ServiceRole extends RoleDescriptor {
-  final val id = "service"
+  val id = "service"
 }
 
 /**
@@ -117,7 +117,7 @@ object ServiceRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/master
   * }}}
   */
-final class MasterRole[F[+_, +_]: Applicative2](
+class MasterRole[F[+_, +_]: Applicative2](
   @unused masterApi: MasterApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -127,7 +127,7 @@ final class MasterRole[F[+_, +_]: Applicative2](
   }
 }
 object MasterRole extends RoleDescriptor {
-  final val id = "master"
+  val id = "master"
 }
 
 /**
@@ -145,7 +145,7 @@ object MasterRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/master-location/master/73ba445e-edf0-4ecf-a02b-91d0932e1f10
   * }}}
   */
-final class MasterLocationRole[F[+_, +_]: Applicative2](
+class MasterLocationRole[F[+_, +_]: Applicative2](
   @unused masterLocationApi: MasterLocationApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -155,7 +155,7 @@ final class MasterLocationRole[F[+_, +_]: Applicative2](
   }
 }
 object MasterLocationRole extends RoleDescriptor {
-  final val id = "master-location"
+  val id = "master-location"
 }
 
 /**
@@ -174,7 +174,7 @@ object MasterLocationRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/master-service-offer/service/63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class MasterServiceOfferRole[F[+_, +_]: Applicative2](
+class MasterServiceOfferRole[F[+_, +_]: Applicative2](
   @unused masterServiceOfferApi: MasterServiceOfferApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -184,7 +184,7 @@ final class MasterServiceOfferRole[F[+_, +_]: Applicative2](
   }
 }
 object MasterServiceOfferRole extends RoleDescriptor {
-  final val id = "master-service-offer"
+  val id = "master-service-offer"
 }
 
 /**
@@ -203,7 +203,7 @@ object MasterServiceOfferRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/master-service-offer-variant/location/63b53a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class MasterServiceOfferVariantRole[F[+_, +_]: Applicative2](
+class MasterServiceOfferVariantRole[F[+_, +_]: Applicative2](
   @unused masterServiceOfferVariantApi: MasterServiceOfferVariantApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -213,7 +213,7 @@ final class MasterServiceOfferVariantRole[F[+_, +_]: Applicative2](
   }
 }
 object MasterServiceOfferVariantRole extends RoleDescriptor {
-  final val id = "master-service-offer-variant"
+  val id = "master-service-offer-variant"
 }
 
 /**
@@ -230,7 +230,7 @@ object MasterServiceOfferVariantRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class ProfileRole[F[+_, +_]: Applicative2](
+class ProfileRole[F[+_, +_]: Applicative2](
   @unused profileApi: ProfileApi[F],
   @unused runningServer: HttpServer,
   log: LogIO2[F],
@@ -240,7 +240,7 @@ final class ProfileRole[F[+_, +_]: Applicative2](
   }
 }
 object ProfileRole extends RoleDescriptor {
-  final val id = "profile"
+  val id = "profile"
 }
 
 /** A composite role that exposes all the endpoints, for convenience, it can be launched with
@@ -281,7 +281,7 @@ object ProfileRole extends RoleDescriptor {
   *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
   * }}}
   */
-final class LeaderboardRole[F[+_, +_]: Applicative2](
+class LeaderboardRole[F[+_, +_]: Applicative2](
   @unused ladderRole: LadderRole[F],
   @unused categoryRole: CategoryRole[F],
   @unused serviceRole: ServiceRole[F],
@@ -297,7 +297,7 @@ final class LeaderboardRole[F[+_, +_]: Applicative2](
   }
 }
 object LeaderboardRole extends RoleDescriptor {
-  final val id = "leaderboard"
+  val id = "leaderboard"
 }
 
 /**

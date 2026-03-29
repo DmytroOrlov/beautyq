@@ -7,7 +7,7 @@ sealed trait ServiceVariantSchemaValidationError extends Product with Serializab
 }
 
 object ServiceVariantSchemaValidationError {
-  final case class DisallowedAttribute(attribute: AnyAttributeDefinition) extends ServiceVariantSchemaValidationError
+  case class DisallowedAttribute(attribute: AnyAttributeDefinition) extends ServiceVariantSchemaValidationError
 
-  final case class MissingRequiredAttribute(attribute: AnyAttributeDefinition) extends ServiceVariantSchemaValidationError
+  case class MissingRequiredAttribute(attribute: AnyAttributeDefinition) extends ServiceVariantSchemaValidationError
 }

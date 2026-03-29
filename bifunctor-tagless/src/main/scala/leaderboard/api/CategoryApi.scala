@@ -8,7 +8,7 @@ import leaderboard.model.Category.rootCategoryId
 import leaderboard.repo.Categories
 import org.http4s.HttpRoutes
 
-final class CategoryApi[F[+_, +_]](
+class CategoryApi[F[+_, +_]](
   categories: Categories[F],
   tapirEndpoints: CategoryTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],

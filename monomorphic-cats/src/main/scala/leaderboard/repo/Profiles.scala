@@ -14,7 +14,7 @@ trait Profiles {
 }
 
 object Profiles {
-  final class Dummy
+  class Dummy
     extends Lifecycle.LiftF[IO, Profiles](for {
       state <- Ref[IO].of(Map.empty[UserId, UserProfile])
     } yield {
@@ -27,7 +27,7 @@ object Profiles {
       }
     })
 
-  final class Postgres(
+  class Postgres(
     sql: SQL,
     log: LogIO[IO],
   ) extends Lifecycle.LiftF[IO, Profiles](for {

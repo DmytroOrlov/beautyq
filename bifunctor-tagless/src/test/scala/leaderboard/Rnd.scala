@@ -9,7 +9,7 @@ trait Rnd[F[_, _]] {
 }
 
 object Rnd {
-  final class Impl[F[+_, +_]: IO2] extends Rnd[F] {
+  class Impl[F[+_, +_]: IO2] extends Rnd[F] {
     def apply[A: Arbitrary]: F[Nothing, A] = {
       F.sync {
         val (p, s) = Prop.startSeed(Parameters.default)

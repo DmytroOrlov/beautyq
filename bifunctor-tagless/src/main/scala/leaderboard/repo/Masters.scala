@@ -15,7 +15,7 @@ trait Masters[F[_, _]] {
 }
 
 object Masters {
-  final class Dummy[F[+_, +_]: Applicative2: Primitives2]
+  class Dummy[F[+_, +_]: Applicative2: Primitives2]
     extends Lifecycle.LiftF[F[Nothing, _], Masters[F]](for {
       state <- F.mkRef(Map.empty[MasterId, Master])
     } yield {
@@ -35,7 +35,7 @@ object Masters {
       }
     })
 
-  final class Postgres[F[+_, +_]: Monad2](
+  class Postgres[F[+_, +_]: Monad2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Masters[F]](for {

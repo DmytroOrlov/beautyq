@@ -13,7 +13,7 @@ import sttp.tapir.server.interceptor.decodefailure.{DecodeFailureHandler, Defaul
 import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.model.ValuedEndpointOutput
 
-final class TapirHttpSupport[F[+_, +_]](implicit async: Async[F[Throwable, _]]) {
+class TapirHttpSupport[F[+_, +_]](implicit async: Async[F[Throwable, _]]) {
   def toRoutes(
     endpoints: List[ServerEndpoint[Fs2Streams[F[Throwable, _]], F[Throwable, _]]]
   ): HttpRoutes[F[Throwable, _]] =

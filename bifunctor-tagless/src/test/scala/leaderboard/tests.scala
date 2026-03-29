@@ -45,39 +45,39 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
 }
 
 trait DummyTest extends LeaderboardTest {
-  override final def config = super.config.copy(
+  override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Repo -> Repo.Dummy)
   )
 }
 
 trait ProdTest extends LeaderboardTest {
-  override final def config = super.config.copy(
+  override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Repo -> Repo.Prod)
   )
 }
 
-final class LadderTestDummy extends LadderTest with DummyTest
-final class ProfilesTestDummy extends ProfilesTest with DummyTest
-final class RanksTestDummy extends RanksTest with DummyTest
-final class CategoriesTestDummy extends CategoriesTest with DummyTest
-final class MastersTestDummy extends MastersTest with DummyTest
-final class MasterLocationsTestDummy extends MasterLocationsTest with DummyTest
-final class MasterServiceOffersTestDummy extends MasterServiceOffersTest with DummyTest
-final class ServiceVariantSchemasTestDummy extends ServiceVariantSchemasTest with DummyTest
-final class ServiceVariantSchemasStorageValidationTestPostgres extends ServiceVariantSchemasStorageValidationTest with ProdTest
-final class MasterServiceOfferVariantsTestDummy extends MasterServiceOfferVariantsTest with DummyTest
-final class ServicesTestDummy extends ServicesTest with DummyTest
+class LadderTestDummy extends LadderTest with DummyTest
+class ProfilesTestDummy extends ProfilesTest with DummyTest
+class RanksTestDummy extends RanksTest with DummyTest
+class CategoriesTestDummy extends CategoriesTest with DummyTest
+class MastersTestDummy extends MastersTest with DummyTest
+class MasterLocationsTestDummy extends MasterLocationsTest with DummyTest
+class MasterServiceOffersTestDummy extends MasterServiceOffersTest with DummyTest
+class ServiceVariantSchemasTestDummy extends ServiceVariantSchemasTest with DummyTest
+class ServiceVariantSchemasStorageValidationTestPostgres extends ServiceVariantSchemasStorageValidationTest with ProdTest
+class MasterServiceOfferVariantsTestDummy extends MasterServiceOfferVariantsTest with DummyTest
+class ServicesTestDummy extends ServicesTest with DummyTest
 
-final class LadderTestPostgres extends LadderTest with ProdTest
-final class ProfilesTestPostgres extends ProfilesTest with ProdTest
-final class RanksTestPostgres extends RanksTest with ProdTest
-final class CategoriesTestPostgres extends CategoriesTest with ProdTest
-final class MastersTestPostgres extends MastersTest with ProdTest
-final class MasterLocationsTestPostgres extends MasterLocationsTest with ProdTest
-final class MasterServiceOffersTestPostgres extends MasterServiceOffersTest with ProdTest
-final class ServiceVariantSchemasTestPostgres extends ServiceVariantSchemasTest with ProdTest
-final class MasterServiceOfferVariantsTestPostgres extends MasterServiceOfferVariantsTest with ProdTest
-final class ServicesTestPostgres extends ServicesTest with ProdTest
+class LadderTestPostgres extends LadderTest with ProdTest
+class ProfilesTestPostgres extends ProfilesTest with ProdTest
+class RanksTestPostgres extends RanksTest with ProdTest
+class CategoriesTestPostgres extends CategoriesTest with ProdTest
+class MastersTestPostgres extends MastersTest with ProdTest
+class MasterLocationsTestPostgres extends MasterLocationsTest with ProdTest
+class MasterServiceOffersTestPostgres extends MasterServiceOffersTest with ProdTest
+class ServiceVariantSchemasTestPostgres extends ServiceVariantSchemasTest with ProdTest
+class MasterServiceOfferVariantsTestPostgres extends MasterServiceOfferVariantsTest with ProdTest
+class ServicesTestPostgres extends ServicesTest with ProdTest
 
 abstract class LadderTest extends LeaderboardTest {
 
@@ -975,7 +975,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
       case Right(value) =>
         ZIO.succeed(value)
       case Left(error) =>
-        ZIO.fail(QueryFailure("make-master-service-offer-variant", error.asThrowable))
+        ZIO.fail(QueryFailure("make-master-service-offer-variant", new Exception(error.message)))
     }
 
   private def makeSchema(serviceId: ServiceId, items: ServiceVariantSchemaItem*): ServiceVariantSchema =
@@ -1180,7 +1180,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
                               attributes,
                             )
                           )
-                          .mapError(error => QueryFailure("make-master-service-offer-variant", error.asThrowable))
+                          .mapError(error => QueryFailure("make-master-service-offer-variant", new Exception(error.message)))
           _          <- assertIO(variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
           _          <- assertIO(
                           variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))

@@ -7,7 +7,7 @@ import org.http4s.HttpRoutes
 import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 
-final class LadderApi(
+class LadderApi(
   dsl: Http4sDsl[IO],
   ladder: Ladder,
 ) extends HttpApi {

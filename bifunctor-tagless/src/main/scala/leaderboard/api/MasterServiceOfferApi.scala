@@ -7,7 +7,7 @@ import leaderboard.http.tapir.{MasterServiceOfferTapirEndpoints, TapirHttpSuppor
 import leaderboard.repo.MasterServiceOffers
 import org.http4s.HttpRoutes
 
-final class MasterServiceOfferApi[F[+_, +_]](
+class MasterServiceOfferApi[F[+_, +_]](
   masterServiceOffers: MasterServiceOffers[F],
   tapirEndpoints: MasterServiceOfferTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],

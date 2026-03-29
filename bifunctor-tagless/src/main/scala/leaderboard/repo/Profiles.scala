@@ -14,7 +14,7 @@ trait Profiles[F[_, _]] {
 }
 
 object Profiles {
-  final class Dummy[F[+_, +_]: Applicative2: Primitives2]
+  class Dummy[F[+_, +_]: Applicative2: Primitives2]
     extends Lifecycle.LiftF[F[Nothing, _], Profiles[F]](for {
       state <- F.mkRef(Map.empty[UserId, UserProfile])
     } yield {
@@ -27,7 +27,7 @@ object Profiles {
       }
     })
 
-  final class Postgres[F[+_, +_]: Monad2](
+  class Postgres[F[+_, +_]: Monad2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Profiles[F]](for {

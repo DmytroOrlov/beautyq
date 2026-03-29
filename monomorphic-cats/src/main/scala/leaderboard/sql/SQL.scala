@@ -10,7 +10,7 @@ trait SQL {
 }
 
 object SQL {
-  final class Impl(
+  class Impl(
     transactor: Transactor[IO]
   ) extends SQL {
     def execute[A](queryName: String)(conn: ConnectionIO[A]): IO[A] = {

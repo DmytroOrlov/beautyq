@@ -11,7 +11,7 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-final class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private val tapirHttpSupport = new TapirHttpSupport[IO]
 
   private def ladderApi(state: LadderApiContractState): LadderApi[IO] =
@@ -102,7 +102,7 @@ final class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
   }
 }
 
-final class LadderApiContractState private (
+class LadderApiContractState private (
   private val submittedScoresRef: Ref[Vector[(UserId, Score)]],
   private val getScoresResultRef: Ref[Either[QueryFailure, List[(UserId, Score)]]],
   private val submitScoreResultRef: Ref[Either[QueryFailure, Unit]],

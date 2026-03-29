@@ -8,7 +8,7 @@ import leaderboard.model.MasterServiceOfferVariant
 import leaderboard.repo.MasterServiceOfferVariants
 import org.http4s.HttpRoutes
 
-final class MasterServiceOfferVariantApi[F[+_, +_]](
+class MasterServiceOfferVariantApi[F[+_, +_]](
   masterServiceOfferVariants: MasterServiceOfferVariants[F],
   tapirEndpoints: MasterServiceOfferVariantTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],
