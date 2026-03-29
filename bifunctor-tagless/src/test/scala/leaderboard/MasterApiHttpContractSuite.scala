@@ -129,7 +129,7 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
 
       for {
         state <- MasterApiContractState.make
-        _ <- state.setGetMasterResult(Left(QueryFailure("get-master", new RuntimeException("get-master-boom"))))
+        _ <- state.setGetMasterResult(Left(QueryFailure.fromThrowable("get-master", new RuntimeException("get-master-boom"))))
         response <- observe(combineApis(masterApi(state)), get(s"/master/$masterId"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")
@@ -139,7 +139,7 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
     "return current server failure semantics when master list lookup fails" in {
       for {
         state <- MasterApiContractState.make
-        _ <- state.setGetMastersResult(Left(QueryFailure("get-masters", new RuntimeException("get-masters-boom"))))
+        _ <- state.setGetMastersResult(Left(QueryFailure.fromThrowable("get-masters", new RuntimeException("get-masters-boom"))))
         response <- observe(combineApis(masterApi(state)), get("/master"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")
@@ -151,7 +151,7 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
 
       for {
         state <- MasterApiContractState.make
-        _ <- state.setUpsertMasterResult(Left(QueryFailure("upsert-master", new RuntimeException("upsert-master-boom"))))
+        _ <- state.setUpsertMasterResult(Left(QueryFailure.fromThrowable("upsert-master", new RuntimeException("upsert-master-boom"))))
         response <- observe(combineApis(masterApi(state)), postJson("/master", payload))
         upserts <- state.upserts
         _ <- assertIO(response.status === Status.InternalServerError)

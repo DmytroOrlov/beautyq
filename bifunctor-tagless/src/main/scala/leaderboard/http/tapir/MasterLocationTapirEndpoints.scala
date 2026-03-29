@@ -1,15 +1,16 @@
 package leaderboard.http.tapir
 
 import io.circe.Json
+import leaderboard.http.HttpApiFailure
 import leaderboard.model.{MasterId, MasterLocation, MasterLocationId}
 import sttp.tapir.*
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait MasterLocationTapirEndpoints {
-  def getMasterLocation: PublicEndpoint[MasterLocationId, Unit, Json, Any]
-  def upsertMasterLocation: PublicEndpoint[MasterLocation, Unit, Unit, Any]
-  def getMasterLocationsByMaster: PublicEndpoint[MasterId, Unit, List[MasterLocation], Any]
+  def getMasterLocation: PublicEndpoint[MasterLocationId, HttpApiFailure, Json, Any]
+  def upsertMasterLocation: PublicEndpoint[MasterLocation, HttpApiFailure, Unit, Any]
+  def getMasterLocationsByMaster: PublicEndpoint[MasterId, HttpApiFailure, List[MasterLocation], Any]
 
   final def all: List[AnyEndpoint] = List(
     getMasterLocation,
@@ -19,7 +20,7 @@ trait MasterLocationTapirEndpoints {
 }
 
 object MasterLocationTapirEndpoints extends MasterLocationTapirEndpoints {
-  private val base = endpoint.in("master-location")
+  private val base = HttpApiFailureTapirSupport.endpointBase.in("master-location")
 
   val getMasterLocation = base.get
     .in(path[MasterLocationId]("id"))

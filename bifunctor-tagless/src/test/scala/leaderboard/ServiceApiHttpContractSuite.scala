@@ -100,7 +100,7 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
       for {
         state <- ServiceApiContractState.make
-        _ <- state.setServicesByCategoryResult(categoryId, Left(QueryFailure("get-services-by-category", new RuntimeException("services-boom"))))
+        _ <- state.setServicesByCategoryResult(categoryId, Left(QueryFailure.fromThrowable("get-services-by-category", new RuntimeException("services-boom"))))
         response <- observe(combineApis(serviceApi(state)), get(s"/service/category/$categoryId"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")

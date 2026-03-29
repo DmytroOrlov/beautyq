@@ -17,6 +17,7 @@ import leaderboard.model.{
   ServiceId,
   ServiceVariantSchema,
 }
+import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
 import scala.annotation.unused
@@ -53,20 +54,17 @@ object MasterServiceOfferVariants {
   )
 
   private def offerNotFound(masterServiceOfferId: MasterServiceOfferId): QueryFailure =
-    QueryFailure("no query", new Exception(s"MasterServiceOffer $masterServiceOfferId does not exist"))
+    QueryFailure.domain(s"MasterServiceOffer $masterServiceOfferId does not exist")
 
   private def locationNotFound(masterLocationId: MasterLocationId): QueryFailure =
-    QueryFailure("no query", new Exception(s"MasterLocation $masterLocationId does not exist"))
+    QueryFailure.domain(s"MasterLocation $masterLocationId does not exist")
 
   private def offerAndLocationMustBelongToSameMaster(
     masterServiceOfferId: MasterServiceOfferId,
     masterLocationId: MasterLocationId,
   ): QueryFailure =
-    QueryFailure(
-      "no query",
-      new Exception(
-        s"MasterServiceOffer $masterServiceOfferId and MasterLocation $masterLocationId must belong to the same master"
-      ),
+    QueryFailure.domain(
+      s"MasterServiceOffer $masterServiceOfferId and MasterLocation $masterLocationId must belong to the same master"
     )
 
   private def attributeNotAllowedForService(
@@ -74,26 +72,20 @@ object MasterServiceOfferVariants {
     serviceId: ServiceId,
     attributeCode: String,
   ): QueryFailure =
-    QueryFailure(
-      queryName,
-      new Exception(s"Service $serviceId does not allow MasterServiceOfferVariant attribute $attributeCode")
-    )
+    QueryFailure.operation(queryName, s"Service $serviceId does not allow MasterServiceOfferVariant attribute $attributeCode")
 
   private def requiredAttributeMissingForService(
     queryName: String,
     serviceId: ServiceId,
     attributeCode: String,
   ): QueryFailure =
-    QueryFailure(
-      queryName,
-      new Exception(s"Service $serviceId requires MasterServiceOfferVariant attribute $attributeCode")
-    )
+    QueryFailure.operation(queryName, s"Service $serviceId requires MasterServiceOfferVariant attribute $attributeCode")
 
   private def invalidStoredMasterServiceOfferVariant(
     queryName: String,
-    cause: Throwable,
+    message: String,
   ): QueryFailure =
-    QueryFailure(queryName, cause)
+    QueryFailure.operation(queryName, message)
 
   private def validateAttributesAgainstSchema(
     queryName: String,
@@ -139,7 +131,7 @@ object MasterServiceOfferVariants {
                   attributes,
                 )
                 .left
-                .map(error => invalidStoredMasterServiceOfferVariant(queryName, new Exception(error.message)))
+                .map(error => invalidStoredMasterServiceOfferVariant(queryName, error.message))
             )
         }
     }
@@ -220,7 +212,7 @@ object MasterServiceOfferVariants {
   ): F[QueryFailure, MasterServiceOfferVariant] =
     masterServiceOffers.getMasterServiceOffer(baseRow.masterServiceOfferId).flatMap {
       case None =>
-        F.fail(invalidStoredMasterServiceOfferVariant(queryName, new Exception(s"MasterServiceOffer ${baseRow.masterServiceOfferId} does not exist")))
+        F.fail(invalidStoredMasterServiceOfferVariant(queryName, s"MasterServiceOffer ${baseRow.masterServiceOfferId} does not exist"))
       case Some(offer) =>
         makeVariantWithSchema[F](
           queryName,
@@ -288,7 +280,7 @@ object MasterServiceOfferVariants {
     masterServiceOffers: MasterServiceOffers[F],
     masterLocations: MasterLocations[F],
     serviceVariantSchemas: ServiceVariantSchemas[F],
-  ) extends Lifecycle.LiftF[F[QueryFailure, _], MasterServiceOfferVariants[F]](
+  ) extends Lifecycle.LiftF[F[Nothing, _], MasterServiceOfferVariants[F]](
       for {
         state <- F.mkRef(DummyState(Map.empty, MasterServiceOfferVariantAttributesRepository.DummyState.empty))
       } yield {
@@ -394,7 +386,7 @@ object MasterServiceOfferVariants {
   ) extends Lifecycle.LiftF[F[Throwable, _], MasterServiceOfferVariants[F]](
       for {
         _ <- log.info("Creating MasterServiceOfferVariants table")
-        _ <- sql.execute("ddl-master-service-offer-variants") {
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variants") {
           sql"""create table if not exists master_service_offer_variants (
                |  id uuid not null,
                |  master_service_offer_id uuid not null,
@@ -415,22 +407,22 @@ object MasterServiceOfferVariants {
                |    check (duration_min > 0)
                |) without oids
                |""".stripMargin.update.run
-        }
-        _ <- sql.execute("ddl-master-service-offer-variants-offer-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variants-offer-id-idx") {
           sql"""
             create index if not exists master_service_offer_variants_offer_id_idx
               on master_service_offer_variants(master_service_offer_id)
           """.update.run
-        }
-        _ <- sql.execute("ddl-master-service-offer-variants-location-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variants-location-id-idx") {
           sql"""
             create index if not exists master_service_offer_variants_location_id_idx
               on master_service_offer_variants(master_location_id)
           """.update.run
-        }
-        _ <- sql.execute("ddl-master-service-offer-variant-attributes") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variant-attributes") {
           new MasterServiceOfferVariantAttributesRepository.Postgres().createTables
-        }
+        })
       } yield {
         val attributesRepository = new MasterServiceOfferVariantAttributesRepository.Postgres
 

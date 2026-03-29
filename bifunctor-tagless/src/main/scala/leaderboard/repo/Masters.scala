@@ -3,9 +3,10 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.postgres.implicits.*
 import doobie.implicits.*
-import izumi.functional.bio.{Applicative2, F, Monad2, Primitives2}
+import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.{Master, MasterId, QueryFailure}
 import leaderboard.sql.SQL
+import leaderboard.runtime.QueryFailureToThrowable
 import logstage.LogIO2
 
 trait Masters[F[_, _]] {
@@ -35,19 +36,19 @@ object Masters {
       }
     })
 
-  class Postgres[F[+_, +_]: Monad2](
+  class Postgres[F[+_, +_]: Error2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Masters[F]](for {
       _ <- log.info("Creating Masters table")
-      _ <- sql.execute("ddl-masters") {
+      _ <- QueryFailureToThrowable.lift(sql.execute("ddl-masters") {
         sql"""create table if not exists masters (
              |  id uuid not null,
              |  name text not null,
              |  primary key (id)
              |) without oids
              |""".stripMargin.update.run
-      }
+      })
     } yield new Masters[F] {
       def upsertMaster(master: Master): F[QueryFailure, Unit] =
         sql

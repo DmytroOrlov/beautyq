@@ -135,7 +135,7 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
 
       for {
         state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setVariantsByLocationResult(locationId, Left(QueryFailure("get-master-service-offer-variants-by-location", new RuntimeException("variants-boom"))))
+        _ <- state.setVariantsByLocationResult(locationId, Left(QueryFailure.fromThrowable("get-master-service-offer-variants-by-location", new RuntimeException("variants-boom"))))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/location/$locationId"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")

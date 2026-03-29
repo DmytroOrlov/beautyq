@@ -3,11 +3,13 @@ package leaderboard.api
 import cats.effect.Async
 import io.circe.Json
 import io.circe.syntax.*
+import izumi.functional.bio.Error2
+import leaderboard.http.HttpApiFailure
 import leaderboard.http.tapir.{MasterTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.Masters
 import org.http4s.HttpRoutes
 
-class MasterApi[F[+_, +_]](
+class MasterApi[F[+_, +_]: Error2](
   masters: Masters[F],
   tapirEndpoints: MasterTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],
@@ -18,9 +20,11 @@ class MasterApi[F[+_, +_]](
     tapirHttpSupport.toRoutes {
       import tapirEndpoints.*
       List(
-        getMaster.serverLogicSuccess[F[Throwable, _]](masterId => async.map(masters.getMaster(masterId))(_.fold[Json](Json.Null)(_.asJson))),
-        getMasters.serverLogicSuccess[F[Throwable, _]](_ => masters.getMasters()),
-        upsertMaster.serverLogicSuccess[F[Throwable, _]](masters.upsertMaster),
+        getMaster.serverLogic[F[Throwable, _]](
+          masterId => async.map(HttpApiFailure.fromQueryEffect(masters.getMaster(masterId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
+        ),
+        getMasters.serverLogic[F[Throwable, _]](_ => HttpApiFailure.fromQueryEffect(masters.getMasters())),
+        upsertMaster.serverLogic[F[Throwable, _]](master => HttpApiFailure.fromQueryEffect(masters.upsertMaster(master))),
       )
     }
 }

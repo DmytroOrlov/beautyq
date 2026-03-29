@@ -975,7 +975,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
       case Right(value) =>
         ZIO.succeed(value)
       case Left(error) =>
-        ZIO.fail(QueryFailure("make-master-service-offer-variant", new Exception(error.message)))
+        ZIO.fail(QueryFailure.operation("make-master-service-offer-variant", error.message))
     }
 
   private def makeSchema(serviceId: ServiceId, items: ServiceVariantSchemaItem*): ServiceVariantSchema =
@@ -1180,7 +1180,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
                               attributes,
                             )
                           )
-                          .mapError(error => QueryFailure("make-master-service-offer-variant", new Exception(error.message)))
+                          .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
           _          <- assertIO(variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
           _          <- assertIO(
                           variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
@@ -1364,9 +1364,13 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           result     <- variants.upsertMasterServiceOfferVariant(variant).either
           _          <- assertIO(
                           result.left.exists(
-                            failure =>
-                              failure.queryName == "upsert-master-service-offer-variant" &&
-                                failure.cause.getMessage == s"Service $serviceId does not allow MasterServiceOfferVariant attribute deposit_amount"
+                            {
+                              case QueryFailure.OperationFailure(operationName, message) =>
+                                operationName == "upsert-master-service-offer-variant" &&
+                                  message == s"Service $serviceId does not allow MasterServiceOfferVariant attribute deposit_amount"
+                              case _ =>
+                                false
+                            }
                           )
                         )
         } yield ()
@@ -1406,9 +1410,13 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           result     <- variants.upsertMasterServiceOfferVariant(variant).either
           _          <- assertIO(
                           result.left.exists(
-                            failure =>
-                              failure.queryName == "upsert-master-service-offer-variant" &&
-                                failure.cause.getMessage == s"Service $serviceId requires MasterServiceOfferVariant attribute session_count"
+                            {
+                              case QueryFailure.OperationFailure(operationName, message) =>
+                                operationName == "upsert-master-service-offer-variant" &&
+                                  message == s"Service $serviceId requires MasterServiceOfferVariant attribute session_count"
+                              case _ =>
+                                false
+                            }
                           )
                         )
         } yield ()

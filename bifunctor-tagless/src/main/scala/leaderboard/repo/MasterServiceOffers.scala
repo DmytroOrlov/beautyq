@@ -5,6 +5,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, QueryFailure, ServiceId}
+import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
 import scala.annotation.unused
@@ -18,10 +19,10 @@ trait MasterServiceOffers[F[_, _]] {
 
 object MasterServiceOffers {
   private def masterNotFound(masterId: MasterId): QueryFailure =
-    QueryFailure("no query", new Exception(s"Master $masterId does not exist"))
+    QueryFailure.domain(s"Master $masterId does not exist")
 
   private def serviceNotFound(serviceId: ServiceId): QueryFailure =
-    QueryFailure("no query", new Exception(s"Service $serviceId does not exist"))
+    QueryFailure.domain(s"Service $serviceId does not exist")
 
   private def masterExists[F[+_, +_]](sql: SQL[F])(masterId: MasterId): F[QueryFailure, Boolean] =
     sql.execute("master-exists") {
@@ -48,7 +49,7 @@ object MasterServiceOffers {
   class Dummy[F[+_, +_]: Error2: Primitives2](
     masters: Masters[F],
     services: Services[F],
-  ) extends Lifecycle.LiftF[F[QueryFailure, _], MasterServiceOffers[F]](
+  ) extends Lifecycle.LiftF[F[Nothing, _], MasterServiceOffers[F]](
       for {
         state <- F.mkRef(Map.empty[MasterServiceOfferId, MasterServiceOffer])
       } yield {
@@ -96,7 +97,7 @@ object MasterServiceOffers {
   ) extends Lifecycle.LiftF[F[Throwable, _], MasterServiceOffers[F]](
       for {
         _ <- log.info("Creating MasterServiceOffers table")
-        _ <- sql.execute("ddl-master-service-offers") {
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offers") {
           sql"""create table if not exists master_service_offers (
                |  id uuid not null,
                |  master_id uuid not null,
@@ -108,19 +109,19 @@ object MasterServiceOffers {
                |    foreign key (service_id) references services(id)
                |) without oids
                |""".stripMargin.update.run
-        }
-        _ <- sql.execute("ddl-master-service-offers-master-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offers-master-id-idx") {
           sql"""
             create index if not exists master_service_offers_master_id_idx
               on master_service_offers(master_id)
           """.update.run
-        }
-        _ <- sql.execute("ddl-master-service-offers-service-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offers-service-id-idx") {
           sql"""
             create index if not exists master_service_offers_service_id_idx
               on master_service_offers(service_id)
           """.update.run
-        }
+        })
       } yield new MasterServiceOffers[F] {
         def upsertMasterServiceOffer(offer: MasterServiceOffer): F[QueryFailure, Unit] =
           masterExists(sql)(offer.masterId).flatMap {

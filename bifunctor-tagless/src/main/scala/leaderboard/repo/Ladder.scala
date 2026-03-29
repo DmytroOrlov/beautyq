@@ -3,9 +3,10 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.postgres.implicits.*
 import doobie.syntax.string.*
-import izumi.functional.bio.{Applicative2, F, Monad2, Primitives2}
+import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.{QueryFailure, Score, UserId}
 import leaderboard.sql.SQL
+import leaderboard.runtime.QueryFailureToThrowable
 import logstage.LogIO2
 
 trait Ladder[F[_, _]] {
@@ -27,19 +28,19 @@ object Ladder {
       }
     })
 
-  class Postgres[F[+_, +_]: Monad2](
+  class Postgres[F[+_, +_]: Error2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Ladder[F]](for {
       _ <- log.info(s"Creating Ladder table")
-      _ <- sql.execute("ladder-ddl") {
+      _ <- QueryFailureToThrowable.lift(sql.execute("ladder-ddl") {
         sql"""create table if not exists ladder (
              | user_id uuid not null,
              | score bigint not null,
              | primary key (user_id)
              |) without oids
              |""".stripMargin.update.run
-      }
+      })
       res = new Ladder[F] {
         def submitScore(userId: UserId, score: Score): F[QueryFailure, Unit] =
           sql

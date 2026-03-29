@@ -70,7 +70,7 @@ class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
     "return current server failure semantics when leaderboard lookup fails" in {
       for {
         state <- LadderApiContractState.make
-        _ <- state.setGetScoresResult(Left(QueryFailure("get-leaderboard", new RuntimeException("scores-boom"))))
+        _ <- state.setGetScoresResult(Left(QueryFailure.fromThrowable("get-leaderboard", new RuntimeException("scores-boom"))))
         response <- observe(combineApis(ladderApi(state)), get("/ladder"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")
@@ -82,7 +82,7 @@ class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
 
       for {
         state <- LadderApiContractState.make
-        _ <- state.setSubmitScoreResult(Left(QueryFailure("submit-score", new RuntimeException("submit-boom"))))
+        _ <- state.setSubmitScoreResult(Left(QueryFailure.fromThrowable("submit-score", new RuntimeException("submit-boom"))))
         response <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/90", ""))
         submitted <- state.submittedScores
         _ <- assertIO(response.status === Status.InternalServerError)

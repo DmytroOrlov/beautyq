@@ -7,6 +7,7 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
+import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
 
@@ -18,14 +19,14 @@ trait Categories[F[_, _]] {
 
 object Categories {
   private def parentNotFound(parentId: CategoryId): QueryFailure =
-    QueryFailure("no query", new Exception(s"Parent category $parentId does not exist"))
+    QueryFailure.domain(s"Parent category $parentId does not exist")
 
   private def rootCategoryCannotBePersisted: QueryFailure =
-    QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not be persisted"))
+    QueryFailure.domain(s"Root category $rootCategoryId is synthetic and must not be persisted")
 
   // AI-NOTE: For izumi/distage/BIO typeclasses and Lifecycle patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
   class Dummy[F[+_, +_]: Error2: Primitives2]
-    extends Lifecycle.LiftF[F[QueryFailure, _], Categories[F]](
+    extends Lifecycle.LiftF[F[Nothing, _], Categories[F]](
       for {
         state <- F.mkRef(Map.empty[CategoryId, Category])
       } yield {
@@ -66,7 +67,7 @@ object Categories {
   ) extends Lifecycle.LiftF[F[Throwable, _], Categories[F]](
       for {
         _ <- log.info("Creating Categories table")
-        _ <- sql.execute("ddl-categories") {
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-categories") {
           Fragment
             .const("""
           create table if not exists categories (
@@ -78,13 +79,13 @@ object Categories {
                 constraint category_not_root
                   check (id <> %s)
               ) without oids""".formatted(rootCategoryIdSqlLiteral)).update.run
-        }
-        _ <- sql.execute("ddl-categories-parent-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-categories-parent-id-idx") {
           sql"""
             create index if not exists categories_parent_id_idx
               on categories(parent_id)
           """.update.run
-        }
+        })
       } yield new Categories[F] {
         def upsertCategory(category: Category): F[QueryFailure, Unit] = {
           if (category.id == rootCategoryId) {

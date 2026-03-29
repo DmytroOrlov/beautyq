@@ -7,6 +7,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterServiceOfferVariantAttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
+import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
 import scala.annotation.unused
@@ -21,10 +22,10 @@ object ServiceVariantSchemas {
   private type ServiceVariantSchemaInsertRow = (ServiceId, String, Boolean)
 
   private def serviceNotFound(serviceId: ServiceId): QueryFailure =
-    QueryFailure("no query", new Exception(s"Service $serviceId does not exist"))
+    QueryFailure.domain(s"Service $serviceId does not exist")
 
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
-    QueryFailure(queryName, new Exception(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode"))
+    QueryFailure.operation(queryName, s"Unknown MasterServiceOfferVariant attribute code: $attributeCode")
 
   private def decodeSchemaRow(
     queryName: String,
@@ -92,7 +93,7 @@ object ServiceVariantSchemas {
 
   class Dummy[F[+_, +_]: Error2: Primitives2](
     services: Services[F]
-  ) extends Lifecycle.LiftF[F[QueryFailure, _], ServiceVariantSchemas[F]](
+  ) extends Lifecycle.LiftF[F[Nothing, _], ServiceVariantSchemas[F]](
       for {
         state <- F.mkRef(Map.empty[ServiceId, ServiceVariantSchema])
       } yield {
@@ -120,7 +121,7 @@ object ServiceVariantSchemas {
   ) extends Lifecycle.LiftF[F[Throwable, _], ServiceVariantSchemas[F]](
       for {
         _ <- log.info("Creating ServiceVariantSchemas table")
-        _ <- sql.execute("ddl-service-variant-schema-items") {
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-service-variant-schema-items") {
           sql"""create table if not exists service_variant_schema_items (
                |  service_id uuid not null,
                |  attribute_code text not null,
@@ -130,7 +131,7 @@ object ServiceVariantSchemas {
                |    foreign key (service_id) references services(id)
                |) without oids
                |""".stripMargin.update.run
-        }
+        })
       } yield new ServiceVariantSchemas[F] {
         def upsertServiceVariantSchema(schema: ServiceVariantSchema): F[QueryFailure, Unit] =
           serviceExists(sql)(schema.serviceId).flatMap {

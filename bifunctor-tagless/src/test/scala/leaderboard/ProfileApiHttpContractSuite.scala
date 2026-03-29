@@ -141,7 +141,7 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         val userId = UUID.fromString("88888888-8888-8888-8888-888888888888")
 
         for {
-          _ <- state.setGetRankResult(Left(QueryFailure("get-rank", new RuntimeException("rank-boom"))))
+          _ <- state.setGetRankResult(Left(QueryFailure.fromThrowable("get-rank", new RuntimeException("rank-boom"))))
           response <- observe(combineApis(profileApi), get(s"/profile/$userId"))
           _ <- assertIO(response.status === Status.InternalServerError)
           _ <- assertIO(response.body === "")
@@ -153,7 +153,7 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         val userId = UUID.fromString("99999999-9999-9999-9999-999999999999")
 
         for {
-          _ <- state.setSetProfileResult(Left(QueryFailure("set-profile", new RuntimeException("set-boom"))))
+          _ <- state.setSetProfileResult(Left(QueryFailure.fromThrowable("set-profile", new RuntimeException("set-boom"))))
           response <- observe(
             combineApis(profileApi),
             postJson(s"/profile/$userId", """{"name":"Fail","description":"Case"}"""),

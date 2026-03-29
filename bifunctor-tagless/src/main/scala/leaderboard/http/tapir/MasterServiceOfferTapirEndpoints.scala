@@ -1,16 +1,17 @@
 package leaderboard.http.tapir
 
 import io.circe.Json
+import leaderboard.http.HttpApiFailure
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, ServiceId}
 import sttp.tapir.*
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait MasterServiceOfferTapirEndpoints {
-  def getMasterServiceOffer: PublicEndpoint[MasterServiceOfferId, Unit, Json, Any]
-  def upsertMasterServiceOffer: PublicEndpoint[MasterServiceOffer, Unit, Unit, Any]
-  def getMasterServiceOffersByMaster: PublicEndpoint[MasterId, Unit, List[MasterServiceOffer], Any]
-  def getMasterServiceOffersByService: PublicEndpoint[ServiceId, Unit, List[MasterServiceOffer], Any]
+  def getMasterServiceOffer: PublicEndpoint[MasterServiceOfferId, HttpApiFailure, Json, Any]
+  def upsertMasterServiceOffer: PublicEndpoint[MasterServiceOffer, HttpApiFailure, Unit, Any]
+  def getMasterServiceOffersByMaster: PublicEndpoint[MasterId, HttpApiFailure, List[MasterServiceOffer], Any]
+  def getMasterServiceOffersByService: PublicEndpoint[ServiceId, HttpApiFailure, List[MasterServiceOffer], Any]
 
   final def all: List[AnyEndpoint] = List(
     getMasterServiceOffer,
@@ -21,7 +22,7 @@ trait MasterServiceOfferTapirEndpoints {
 }
 
 object MasterServiceOfferTapirEndpoints extends MasterServiceOfferTapirEndpoints {
-  private val base = endpoint.in("master-service-offer")
+  private val base = HttpApiFailureTapirSupport.endpointBase.in("master-service-offer")
 
   val getMasterServiceOffer = base.get
     .in(path[MasterServiceOfferId]("id"))

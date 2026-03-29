@@ -18,7 +18,7 @@ object SQL {
     def execute[A](queryName: String)(conn: ConnectionIO[A]): F[QueryFailure, A] = {
       transactor.trans
         .apply(conn)
-        .leftMap(QueryFailure(queryName, _))
+        .leftMap(QueryFailure.fromThrowable(queryName, _))
     }
   }
 }

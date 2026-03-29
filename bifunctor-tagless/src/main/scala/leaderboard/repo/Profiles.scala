@@ -3,9 +3,10 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.postgres.implicits.*
 import doobie.implicits.*
-import izumi.functional.bio.{Applicative2, F, Monad2, Primitives2}
+import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.{QueryFailure, UserId, UserProfile}
 import leaderboard.sql.SQL
+import leaderboard.runtime.QueryFailureToThrowable
 import logstage.LogIO2
 
 trait Profiles[F[_, _]] {
@@ -27,12 +28,12 @@ object Profiles {
       }
     })
 
-  class Postgres[F[+_, +_]: Monad2](
+  class Postgres[F[+_, +_]: Error2](
     sql: SQL[F],
     log: LogIO2[F],
   ) extends Lifecycle.LiftF[F[Throwable, _], Profiles[F]](for {
       _ <- log.info("Creating Profile table")
-      _ <- sql.execute("ddl-profiles") {
+      _ <- QueryFailureToThrowable.lift(sql.execute("ddl-profiles") {
         sql"""create table if not exists profiles (
              |  user_id uuid not null,
              |  name text not null,
@@ -40,7 +41,7 @@ object Profiles {
              |  primary key (user_id)
              |) without oids
              |""".stripMargin.update.run
-      }
+      })
     } yield new Profiles[F] {
       def setProfile(userId: UserId, profile: UserProfile): F[QueryFailure, Unit] = {
         sql

@@ -101,7 +101,7 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
 
       for {
         state <- MasterLocationApiContractState.make
-        _ <- state.setLocationsByMasterResult(masterId, Left(QueryFailure("get-master-locations-by-master", new RuntimeException("locations-boom"))))
+        _ <- state.setLocationsByMasterResult(masterId, Left(QueryFailure.fromThrowable("get-master-locations-by-master", new RuntimeException("locations-boom"))))
         response <- observe(combineApis(masterLocationApi(state)), get(s"/master-location/master/$masterId"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")

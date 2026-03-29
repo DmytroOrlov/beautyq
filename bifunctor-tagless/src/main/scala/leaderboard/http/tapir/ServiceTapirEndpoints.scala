@@ -1,6 +1,7 @@
 package leaderboard.http.tapir
 
 import io.circe.Json
+import leaderboard.http.HttpApiFailure
 import leaderboard.model.Category.CategoryId
 import leaderboard.model.{Service, ServiceId}
 import sttp.tapir.*
@@ -8,9 +9,9 @@ import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait ServiceTapirEndpoints {
-  def getService: PublicEndpoint[ServiceId, Unit, Json, Any]
-  def upsertService: PublicEndpoint[Service, Unit, Unit, Any]
-  def getServicesByCategory: PublicEndpoint[CategoryId, Unit, List[Service], Any]
+  def getService: PublicEndpoint[ServiceId, HttpApiFailure, Json, Any]
+  def upsertService: PublicEndpoint[Service, HttpApiFailure, Unit, Any]
+  def getServicesByCategory: PublicEndpoint[CategoryId, HttpApiFailure, List[Service], Any]
 
   final def all: List[AnyEndpoint] = List(
     getService,
@@ -20,7 +21,7 @@ trait ServiceTapirEndpoints {
 }
 
 object ServiceTapirEndpoints extends ServiceTapirEndpoints {
-  private val base = endpoint.in("service")
+  private val base = HttpApiFailureTapirSupport.endpointBase.in("service")
 
   val getService = base.get
     .in(path[ServiceId]("id"))

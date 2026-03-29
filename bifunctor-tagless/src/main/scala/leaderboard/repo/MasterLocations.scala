@@ -5,6 +5,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterId, MasterLocation, MasterLocationId, QueryFailure}
+import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
 import scala.annotation.unused
@@ -17,7 +18,7 @@ trait MasterLocations[F[_, _]] {
 
 object MasterLocations {
   private def masterNotFound(masterId: MasterId): QueryFailure =
-    QueryFailure("no query", new Exception(s"Master $masterId does not exist"))
+    QueryFailure.domain(s"Master $masterId does not exist")
 
   private def masterExists[F[+_, +_]](sql: SQL[F])(masterId: MasterId): F[QueryFailure, Boolean] =
     sql.execute("master-exists") {
@@ -32,7 +33,7 @@ object MasterLocations {
 
   class Dummy[F[+_, +_]: Error2: Primitives2](
     masters: Masters[F]
-  ) extends Lifecycle.LiftF[F[QueryFailure, _], MasterLocations[F]](
+  ) extends Lifecycle.LiftF[F[Nothing, _], MasterLocations[F]](
       for {
         state <- F.mkRef(Map.empty[MasterLocationId, MasterLocation])
       } yield {
@@ -66,7 +67,7 @@ object MasterLocations {
   ) extends Lifecycle.LiftF[F[Throwable, _], MasterLocations[F]](
       for {
         _ <- log.info("Creating MasterLocations table")
-        _ <- sql.execute("ddl-master-locations") {
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-locations") {
           sql"""create table if not exists master_locations (
                |  id uuid not null,
                |  master_id uuid not null,
@@ -79,13 +80,13 @@ object MasterLocations {
                |    foreign key (master_id) references masters(id)
                |) without oids
                |""".stripMargin.update.run
-        }
-        _ <- sql.execute("ddl-master-locations-master-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-locations-master-id-idx") {
           sql"""
             create index if not exists master_locations_master_id_idx
               on master_locations(master_id)
           """.update.run
-        }
+        })
       } yield new MasterLocations[F] {
 
         def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =

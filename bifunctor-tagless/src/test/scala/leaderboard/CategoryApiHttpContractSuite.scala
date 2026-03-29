@@ -113,7 +113,7 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
     "return current server failure semantics when the root endpoint fails" in {
       for {
         state <- CategoryApiContractState.make
-        _ <- state.setChildrenResult(rootCategoryId, Left(QueryFailure("get-root-children", new RuntimeException("children-boom"))))
+        _ <- state.setChildrenResult(rootCategoryId, Left(QueryFailure.fromThrowable("get-root-children", new RuntimeException("children-boom"))))
         response <- observe(combineApis(categoryApi(state)), get("/category/root"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")

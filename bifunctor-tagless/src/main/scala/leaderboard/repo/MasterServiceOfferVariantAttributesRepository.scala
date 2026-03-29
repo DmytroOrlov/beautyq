@@ -36,7 +36,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     }
 
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
-    QueryFailure(queryName, new Exception(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode"))
+    QueryFailure.operation(queryName, s"Unknown MasterServiceOfferVariant attribute code: $attributeCode")
 
   private def attributeStoredInWrongTypeStorage(
     queryName: String,
@@ -44,11 +44,9 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     expected: AttributeValueType,
     actual: AttributeValueType,
   ): QueryFailure =
-    QueryFailure(
+    QueryFailure.operation(
       queryName,
-      new Exception(
-        s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}"
-      ),
+      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}"
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =

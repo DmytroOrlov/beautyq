@@ -117,7 +117,7 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
 
       for {
         state <- MasterServiceOfferApiContractState.make
-        _ <- state.setOffersByServiceResult(serviceId, Left(QueryFailure("get-master-service-offers-by-service", new RuntimeException("offers-boom"))))
+        _ <- state.setOffersByServiceResult(serviceId, Left(QueryFailure.fromThrowable("get-master-service-offers-by-service", new RuntimeException("offers-boom"))))
         response <- observe(combineApis(masterServiceOfferApi(state)), get(s"/master-service-offer/service/$serviceId"))
         _ <- assertIO(response.status === Status.InternalServerError)
         _ <- assertIO(response.body === "")

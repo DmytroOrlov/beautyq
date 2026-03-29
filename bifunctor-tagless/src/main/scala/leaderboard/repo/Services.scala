@@ -7,6 +7,7 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{QueryFailure, Service, ServiceId}
+import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
 
@@ -20,14 +21,14 @@ trait Services[F[_, _]] {
 
 object Services {
   private def categoryNotFound(categoryId: CategoryId): QueryFailure =
-    QueryFailure("no query", new Exception(s"Category $categoryId does not exist"))
+    QueryFailure.domain(s"Category $categoryId does not exist")
 
   private def rootCategoryCannotOwnServices: QueryFailure =
-    QueryFailure("no query", new Exception(s"Root category $rootCategoryId is synthetic and must not own services"))
+    QueryFailure.domain(s"Root category $rootCategoryId is synthetic and must not own services")
 
   class Dummy[F[+_, +_]: Error2: Primitives2](
     categories: Categories[F]
-  ) extends Lifecycle.LiftF[F[QueryFailure, _], Services[F]](
+  ) extends Lifecycle.LiftF[F[Nothing, _], Services[F]](
       for {
         state <- F.mkRef(Map.empty[ServiceId, Service])
       } yield {
@@ -66,7 +67,7 @@ object Services {
   ) extends Lifecycle.LiftF[F[Throwable, _], Services[F]](
       for {
         _ <- log.info("Creating Services table")
-        _ <- sql.execute("ddl-services") {
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-services") {
           Fragment
             .const("""
               create table if not exists services (
@@ -79,13 +80,13 @@ object Services {
                 constraint services_category_not_root
                   check (category_id <> %s)
               ) without oids""".formatted(rootCategoryIdSqlLiteral)).update.run
-        }
-        _ <- sql.execute("ddl-services-category-id-idx") {
+        })
+        _ <- QueryFailureToThrowable.lift(sql.execute("ddl-services-category-id-idx") {
           sql"""
             create index if not exists services_category_id_idx
               on services(category_id)
           """.update.run
-        }
+        })
       } yield new Services[F] {
         def upsertService(service: Service): F[QueryFailure, Unit] = {
           if (service.categoryId == rootCategoryId) {
