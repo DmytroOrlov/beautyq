@@ -1,37 +1,37 @@
 package leaderboard.api
 
+import cats.effect.Async
+import io.circe.Json
 import io.circe.syntax.*
-import izumi.functional.bio.{Async2, Fork2, Primitives2}
-import izumi.functional.bio.catz.*
+import leaderboard.http.tapir.{MasterServiceOfferVariantTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.MasterServiceOfferVariant
 import leaderboard.repo.MasterServiceOfferVariants
 import org.http4s.HttpRoutes
-import org.http4s.circe.*
-import org.http4s.dsl.Http4sDsl
 
-final class MasterServiceOfferVariantApi[F[+_, +_]: Async2: Fork2: Primitives2](
-  dsl: Http4sDsl[F[Throwable, _]],
+final class MasterServiceOfferVariantApi[F[+_, +_]](
   masterServiceOfferVariants: MasterServiceOfferVariants[F],
+  tapirEndpoints: MasterServiceOfferVariantTapirEndpoints,
+  tapirHttpSupport: TapirHttpSupport[F],
+)(implicit
+  async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
-
-  import dsl.*
-
-  def http: HttpRoutes[F[Throwable, _]] = {
-    HttpRoutes.of {
-      case GET -> Root / "master-service-offer-variant" / UUIDVar(masterServiceOfferVariantId) =>
-        Ok(masterServiceOfferVariants.getMasterServiceOfferVariant(masterServiceOfferVariantId).map(_.asJson))
-
-      case rq @ POST -> Root / "master-service-offer-variant" =>
-        Ok(for {
-          variant <- rq.decodeJson[MasterServiceOfferVariant]
-          _       <- masterServiceOfferVariants.upsertMasterServiceOfferVariant(variant)
-        } yield ())
-
-      case GET -> Root / "master-service-offer-variant" / "offer" / UUIDVar(masterServiceOfferId) =>
-        Ok(masterServiceOfferVariants.getMasterServiceOfferVariantsByOffer(masterServiceOfferId).map(_.asJson))
-
-      case GET -> Root / "master-service-offer-variant" / "location" / UUIDVar(masterLocationId) =>
-        Ok(masterServiceOfferVariants.getMasterServiceOfferVariantsByLocation(masterLocationId).map(_.asJson))
+  def http: HttpRoutes[F[Throwable, _]] =
+    tapirHttpSupport.toRoutes {
+      import tapirEndpoints.*
+      List(
+        getMasterServiceOfferVariant.serverLogicSuccess[F[Throwable, _]](
+          masterServiceOfferVariantId =>
+            async.map(masterServiceOfferVariants.getMasterServiceOfferVariant(masterServiceOfferVariantId))(_.fold[Json](Json.Null)(_.asJson))
+        ),
+        upsertMasterServiceOfferVariant.serverLogicSuccess[F[Throwable, _]] { json =>
+          async.flatMap(async.fromEither(json.as[MasterServiceOfferVariant]))(masterServiceOfferVariants.upsertMasterServiceOfferVariant)
+        },
+        getMasterServiceOfferVariantsByOffer.serverLogicSuccess[F[Throwable, _]](
+          masterServiceOfferId => async.map(masterServiceOfferVariants.getMasterServiceOfferVariantsByOffer(masterServiceOfferId))(_.asJson)
+        ),
+        getMasterServiceOfferVariantsByLocation.serverLogicSuccess[F[Throwable, _]](
+          masterLocationId => async.map(masterServiceOfferVariants.getMasterServiceOfferVariantsByLocation(masterLocationId))(_.asJson)
+        ),
+      )
     }
-  }
 }

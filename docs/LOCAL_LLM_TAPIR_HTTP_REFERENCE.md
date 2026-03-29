@@ -39,6 +39,9 @@ Current file split:
 - `src/main/scala/leaderboard/api/ProfileApi.scala`
   inbound HTTP adapter; assembles Tapir server logic and delegates route construction to Tapir
 
+There is currently no OpenAPI/Swagger route in `distage-example`.
+If one is added later, it should consume the canonical `all` lists from `*TapirEndpoints`, not reassemble endpoint sets by hand.
+
 This is intentional:
 
 - Tapir contracts stay pure
@@ -54,6 +57,9 @@ Use the following split for migrated slices:
 - pure endpoint contracts in `*TapirEndpoints.scala`
 - thin `HttpApi[F]` adapter in `leaderboard.api.*Api`
 - central shared route interpreter policy in `TapirHttpSupport`
+- keep a small named endpoint interface per slice when canonical reuse matters
+- expose a canonical `all` collection on `*TapirEndpoints`
+- expose a canonical `serverEndpoints` collection on `*Api`
 
 Preferred shape:
 
@@ -61,10 +67,11 @@ Preferred shape:
 final class SliceApi[F[+_, +_]](
   dep1: Dep1[F],
   dep2: Dep2[F],
+  sliceTapirEndpoints: SliceTapirEndpoints,
   tapirHttpSupport: TapirHttpSupport[F],
 )(implicit async: Async[F[Throwable, _]]) {
-  private def all: List[ServerEndpoint[...]] = ...
-  override def http = tapirHttpSupport.toRoutes(all)
+  def serverEndpoints: List[ServerEndpoint[...]] = ...
+  def http = tapirHttpSupport.toRoutes(serverEndpoints)
 }
 ```
 
@@ -74,6 +81,11 @@ Rationale:
 - IDE navigation stays short: contract object plus one adapter class
 - `*Api` stays obviously thin and transport-only
 - endpoint contracts stay pure and reusable
+- the named `*TapirEndpoints` interface gives one stable reuse surface for future docs/OpenAPI assembly
+- `*TapirEndpoints.all` becomes the canonical source for docs/OpenAPI later
+- `*Api.serverEndpoints` becomes the canonical source for runtime route assembly
+- `*Api` should depend on the `*TapirEndpoints` interface, not reach into the singleton object directly
+- route docs and runtime wiring stop depending on humans manually repeating endpoint lists
 
 ## Contract Preservation Rules
 
@@ -109,11 +121,11 @@ That preserves the exact existing contract:
 ## How To Migrate The Next Slice
 
 1. Add route-level contract tests first if they do not already exist.
-2. Create pure Tapir endpoints in `leaderboard/http/tapir/...Endpoints.scala`.
+2. Create pure Tapir endpoints in `leaderboard/http/tapir/...Endpoints.scala`, expose named endpoint defs plus canonical `all`.
 3. Keep the public slice entrypoint as `leaderboard.api.<Slice>Api` implementing `HttpApi[F]`.
-4. Assemble Tapir server logic inside that adapter when a separate `*TapirServerEndpoints` class would only be wrapper boilerplate.
+4. Assemble Tapir server logic inside that adapter and expose `serverEndpoints` when a separate `*TapirServerEndpoints` class would only be wrapper boilerplate.
 5. Reuse `TapirHttpSupport` for route interpretation.
-6. Wire `TapirHttpSupport` plus the `HttpApi[F]` implementation in `LeaderboardPlugin`.
+6. Wire the `*TapirEndpoints` singleton into its interface in `LeaderboardPlugin`, alongside `TapirHttpSupport` and the `HttpApi[F]` implementation.
 7. Run existing contract suites before and after the migration.
 
 ## What Not To Do

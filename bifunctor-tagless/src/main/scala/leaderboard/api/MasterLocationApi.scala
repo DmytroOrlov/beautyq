@@ -1,34 +1,28 @@
 package leaderboard.api
 
+import cats.effect.Async
+import io.circe.Json
 import io.circe.syntax.*
-import izumi.functional.bio.{Async2, Fork2, Primitives2}
-import izumi.functional.bio.catz.*
-import leaderboard.model.MasterLocation
+import leaderboard.http.tapir.{MasterLocationTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.MasterLocations
 import org.http4s.HttpRoutes
-import org.http4s.circe.*
-import org.http4s.dsl.Http4sDsl
 
-final class MasterLocationApi[F[+_, +_]: Async2: Fork2: Primitives2](
-  dsl: Http4sDsl[F[Throwable, _]],
+final class MasterLocationApi[F[+_, +_]](
   masterLocations: MasterLocations[F],
+  tapirEndpoints: MasterLocationTapirEndpoints,
+  tapirHttpSupport: TapirHttpSupport[F],
+)(implicit
+  async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
-
-  import dsl.*
-
-  def http: HttpRoutes[F[Throwable, _]] = {
-    HttpRoutes.of {
-      case GET -> Root / "master-location" / UUIDVar(masterLocationId) =>
-        Ok(masterLocations.getMasterLocation(masterLocationId).map(_.asJson))
-
-      case rq @ POST -> Root / "master-location" =>
-        Ok(for {
-          location <- rq.decodeJson[MasterLocation]
-          _        <- masterLocations.upsertMasterLocation(location)
-        } yield ())
-
-      case GET -> Root / "master-location" / "master" / UUIDVar(masterId) =>
-        Ok(masterLocations.getMasterLocationsByMaster(masterId).map(_.asJson))
+  def http: HttpRoutes[F[Throwable, _]] =
+    tapirHttpSupport.toRoutes {
+      import tapirEndpoints.*
+      List(
+        getMasterLocation.serverLogicSuccess[F[Throwable, _]](
+          masterLocationId => async.map(masterLocations.getMasterLocation(masterLocationId))(_.fold[Json](Json.Null)(_.asJson))
+        ),
+        upsertMasterLocation.serverLogicSuccess[F[Throwable, _]](masterLocations.upsertMasterLocation),
+        getMasterLocationsByMaster.serverLogicSuccess[F[Throwable, _]](masterId => masterLocations.getMasterLocationsByMaster(masterId)),
+      )
     }
-  }
 }

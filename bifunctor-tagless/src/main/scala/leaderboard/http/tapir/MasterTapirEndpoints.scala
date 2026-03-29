@@ -6,7 +6,19 @@ import sttp.tapir.*
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
-object MasterTapirEndpoints {
+trait MasterTapirEndpoints {
+  def getMaster: PublicEndpoint[MasterId, Unit, Json, Any]
+  def getMasters: PublicEndpoint[Unit, Unit, List[Master], Any]
+  def upsertMaster: PublicEndpoint[Master, Unit, Unit, Any]
+
+  final def all: List[AnyEndpoint] = List(
+    getMaster,
+    getMasters,
+    upsertMaster,
+  )
+}
+
+object MasterTapirEndpoints extends MasterTapirEndpoints {
   private val base = endpoint.in("master")
 
   val getMaster = base.get

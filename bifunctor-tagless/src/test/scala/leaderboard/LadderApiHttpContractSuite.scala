@@ -2,7 +2,7 @@ package leaderboard
 
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.LadderApi
-import leaderboard.http.tapir.TapirHttpSupport
+import leaderboard.http.tapir.{LadderTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.{QueryFailure, Score, UserId}
 import leaderboard.repo.Ladder
 import org.http4s.Status
@@ -15,7 +15,7 @@ final class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
   private val tapirHttpSupport = new TapirHttpSupport[IO]
 
   private def ladderApi(state: LadderApiContractState): LadderApi[IO] =
-    new LadderApi[IO](state.ladder, tapirHttpSupport)
+    new LadderApi[IO](state.ladder, LadderTapirEndpoints, tapirHttpSupport)
 
   "LadderApi current http4s contracts" should {
     "return 200 and exact json array shape for leaderboard scores" in {

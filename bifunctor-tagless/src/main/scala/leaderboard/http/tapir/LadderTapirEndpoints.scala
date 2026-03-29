@@ -5,7 +5,17 @@ import sttp.tapir.*
 import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
-object LadderTapirEndpoints {
+trait LadderTapirEndpoints {
+  def getScores: PublicEndpoint[Unit, Unit, List[(UserId, Score)], Any]
+  def submitScore: PublicEndpoint[(UserId, Score), Unit, Unit, Any]
+
+  final def all: List[AnyEndpoint] = List(
+    getScores,
+    submitScore,
+  )
+}
+
+object LadderTapirEndpoints extends LadderTapirEndpoints {
   private val base = endpoint.in("ladder")
 
   val getScores = base.get

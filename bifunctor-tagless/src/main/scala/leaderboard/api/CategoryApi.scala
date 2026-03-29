@@ -1,39 +1,28 @@
 package leaderboard.api
 
+import cats.effect.Async
+import io.circe.Json
 import io.circe.syntax.*
-import izumi.functional.bio.{Async2, Fork2, Primitives2}
-import izumi.functional.bio.catz.*
-import leaderboard.model.Category
+import leaderboard.http.tapir.{CategoryTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.Category.rootCategoryId
 import leaderboard.repo.Categories
 import org.http4s.HttpRoutes
-import org.http4s.circe.*
-import org.http4s.dsl.Http4sDsl
 
-// AI-NOTE: For izumi/distage/BIO typeclasses used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
-final class CategoryApi[F[+_, +_]: Async2: Fork2: Primitives2](
-  dsl: Http4sDsl[F[Throwable, _]],
+final class CategoryApi[F[+_, +_]](
   categories: Categories[F],
+  tapirEndpoints: CategoryTapirEndpoints,
+  tapirHttpSupport: TapirHttpSupport[F],
+)(implicit
+  async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
-
-  import dsl.*
-
-  def http: HttpRoutes[F[Throwable, _]] = {
-    HttpRoutes.of {
-      case GET -> Root / "category" / UUIDVar(categoryId) =>
-        Ok(categories.getCategory(categoryId).map(_.asJson))
-
-      case rq @ POST -> Root / "category" =>
-        Ok(for {
-          category <- rq.decodeJson[Category]
-          _        <- categories.upsertCategory(category)
-        } yield ())
-
-      case GET -> Root / "category" / UUIDVar(parentId) / "children" =>
-        Ok(categories.getChildren(parentId).map(_.asJson))
-
-      case GET -> Root / "category" / "root" =>
-        Ok(categories.getChildren(rootCategoryId).map(_.asJson))
+  def http: HttpRoutes[F[Throwable, _]] =
+    tapirHttpSupport.toRoutes {
+      import tapirEndpoints.*
+      List(
+        getCategory.serverLogicSuccess[F[Throwable, _]](categoryId => async.map(categories.getCategory(categoryId))(_.fold[Json](Json.Null)(_.asJson))),
+        upsertCategory.serverLogicSuccess[F[Throwable, _]](categories.upsertCategory),
+        getChildren.serverLogicSuccess[F[Throwable, _]](parentId => categories.getChildren(parentId)),
+        getRootChildren.serverLogicSuccess[F[Throwable, _]](_ => categories.getChildren(rootCategoryId)),
+      )
     }
-  }
 }

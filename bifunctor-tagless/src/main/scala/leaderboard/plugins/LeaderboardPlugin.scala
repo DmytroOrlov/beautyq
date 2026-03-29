@@ -12,12 +12,21 @@ import izumi.fundamentals.platform.versions.Version
 import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.http.tapir.TapirHttpSupport
+import leaderboard.http.tapir.{
+  CategoryTapirEndpoints,
+  LadderTapirEndpoints,
+  MasterLocationTapirEndpoints,
+  MasterServiceOfferTapirEndpoints,
+  MasterServiceOfferVariantTapirEndpoints,
+  MasterTapirEndpoints,
+  ProfileTapirEndpoints,
+  ServiceTapirEndpoints,
+  TapirHttpSupport,
+}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
 import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterLocationRole, MasterRole, MasterServiceOfferRole, MasterServiceOfferVariantRole, ProfileRole, ServiceRole}
-import org.http4s.dsl.Http4sDsl
 import zio.IO
 
 import scala.concurrent.duration.*
@@ -66,21 +75,29 @@ object LeaderboardPlugin extends PluginDef {
 
     def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
       // The `ladder` API
+      make[LadderTapirEndpoints].fromValue(LadderTapirEndpoints)
+      make[TapirHttpSupport[F]]
       make[LadderApi[F]]
       // The `category` API
+      make[CategoryTapirEndpoints].fromValue(CategoryTapirEndpoints)
       make[CategoryApi[F]]
       // The `service` API
+      make[ServiceTapirEndpoints].fromValue(ServiceTapirEndpoints)
       make[ServiceApi[F]]
       // The `master` API
-      make[TapirHttpSupport[F]]
+      make[MasterTapirEndpoints].fromValue(MasterTapirEndpoints)
       make[MasterApi[F]]
       // The `master-location` API
+      make[MasterLocationTapirEndpoints].fromValue(MasterLocationTapirEndpoints)
       make[MasterLocationApi[F]]
       // The `master-service-offer` API
+      make[MasterServiceOfferTapirEndpoints].fromValue(MasterServiceOfferTapirEndpoints)
       make[MasterServiceOfferApi[F]]
       // The `master-service-offer-variant` API
+      make[MasterServiceOfferVariantTapirEndpoints].fromValue(MasterServiceOfferVariantTapirEndpoints)
       make[MasterServiceOfferVariantApi[F]]
       // The `profile` API
+      make[ProfileTapirEndpoints].fromValue(ProfileTapirEndpoints)
       make[ProfileApi[F]]
 
       // A set of all APIs
@@ -97,8 +114,6 @@ object LeaderboardPlugin extends PluginDef {
       make[HttpServer].fromResource[HttpServer.Impl[F]]
 
       make[Ranks[F]].from[Ranks.Impl[F]]
-
-      makeTrait[Http4sDsl[F[Throwable, _]]]
     }
 
     def repoDummy[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
