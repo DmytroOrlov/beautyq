@@ -314,7 +314,7 @@ sealed abstract class MainBase[F[_]: TagK: Async: DefaultModule](
     requiredRoles
   }
 
-  override val pluginConfig: PluginConfig = {
+  val pluginConfig: PluginConfig = {
     // When our plugins are polymorphic, we can't use runtime discovery,
     // we must instantiate them manually using PluginConfig.const.
     // Also, only manual instantiation works reliably with NativeImage.

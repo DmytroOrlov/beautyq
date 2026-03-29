@@ -50,7 +50,7 @@ object Ladder {
                    |""".stripMargin.update.run
             }.void
 
-        override val getScores: F[QueryFailure, List[(UserId, Score)]] =
+        val getScores: F[QueryFailure, List[(UserId, Score)]] =
           sql.execute("get-leaderboard") {
             sql"""select user_id, score from ladder order by score DESC
                  |""".stripMargin.query[(UserId, Score)].to[List]
