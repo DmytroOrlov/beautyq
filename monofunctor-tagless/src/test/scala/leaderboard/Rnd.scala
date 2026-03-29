@@ -10,7 +10,7 @@ trait Rnd[F[_]] {
 
 object Rnd {
   final class Impl[F[_]: Sync] extends Rnd[F] {
-    override def apply[A: Arbitrary]: F[A] = {
+    def apply[A: Arbitrary]: F[A] = {
       Sync[F].delay {
         val (p, s) = Prop.startSeed(Parameters.default)
         Arbitrary.arbitrary[A].pureApply(p, s)

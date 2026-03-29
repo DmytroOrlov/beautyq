@@ -53,7 +53,7 @@ object MasterServiceOffers {
         state <- F.mkRef(Map.empty[MasterServiceOfferId, MasterServiceOffer])
       } yield {
         new MasterServiceOffers[F] {
-          override def upsertMasterServiceOffer(offer: MasterServiceOffer): F[QueryFailure, Unit] =
+          def upsertMasterServiceOffer(offer: MasterServiceOffer): F[QueryFailure, Unit] =
             masters.getMaster(offer.masterId).flatMap {
               case None =>
                 F.fail(masterNotFound(offer.masterId))
@@ -66,10 +66,10 @@ object MasterServiceOffers {
                 }
             }
 
-          override def getMasterServiceOffer(id: MasterServiceOfferId): F[QueryFailure, Option[MasterServiceOffer]] =
+          def getMasterServiceOffer(id: MasterServiceOfferId): F[QueryFailure, Option[MasterServiceOffer]] =
             state.get.map(_.get(id))
 
-          override def getMasterServiceOffersByMaster(masterId: MasterId): F[QueryFailure, List[MasterServiceOffer]] =
+          def getMasterServiceOffersByMaster(masterId: MasterId): F[QueryFailure, List[MasterServiceOffer]] =
             state.get.map(
               _.values
                 .filter(_.masterId == masterId)
@@ -77,7 +77,7 @@ object MasterServiceOffers {
                 .sortBy(_.id.toString)
             )
 
-          override def getMasterServiceOffersByService(serviceId: ServiceId): F[QueryFailure, List[MasterServiceOffer]] =
+          def getMasterServiceOffersByService(serviceId: ServiceId): F[QueryFailure, List[MasterServiceOffer]] =
             state.get.map(
               _.values
                 .filter(_.serviceId == serviceId)
@@ -122,7 +122,7 @@ object MasterServiceOffers {
           """.update.run
         }
       } yield new MasterServiceOffers[F] {
-        override def upsertMasterServiceOffer(offer: MasterServiceOffer): F[QueryFailure, Unit] =
+        def upsertMasterServiceOffer(offer: MasterServiceOffer): F[QueryFailure, Unit] =
           masterExists(sql)(offer.masterId).flatMap {
             masterFound =>
               if (!masterFound) {
@@ -148,7 +148,7 @@ object MasterServiceOffers {
               }
           }
 
-        override def getMasterServiceOffer(id: MasterServiceOfferId): F[QueryFailure, Option[MasterServiceOffer]] =
+        def getMasterServiceOffer(id: MasterServiceOfferId): F[QueryFailure, Option[MasterServiceOffer]] =
           sql.execute("get-master-service-offer") {
             sql"""select id, master_id, service_id
                  |from master_service_offers
@@ -156,7 +156,7 @@ object MasterServiceOffers {
                  |""".stripMargin.query[MasterServiceOffer].option
           }
 
-        override def getMasterServiceOffersByMaster(masterId: MasterId): F[QueryFailure, List[MasterServiceOffer]] =
+        def getMasterServiceOffersByMaster(masterId: MasterId): F[QueryFailure, List[MasterServiceOffer]] =
           sql.execute("get-master-service-offers-by-master") {
             sql"""select id, master_id, service_id
                  |from master_service_offers
@@ -165,7 +165,7 @@ object MasterServiceOffers {
                  |""".stripMargin.query[MasterServiceOffer].to[List]
           }
 
-        override def getMasterServiceOffersByService(serviceId: ServiceId): F[QueryFailure, List[MasterServiceOffer]] =
+        def getMasterServiceOffersByService(serviceId: ServiceId): F[QueryFailure, List[MasterServiceOffer]] =
           sql.execute("get-master-service-offers-by-service") {
             sql"""select id, master_id, service_id
                  |from master_service_offers

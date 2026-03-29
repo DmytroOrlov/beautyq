@@ -37,7 +37,7 @@ object MasterLocations {
         state <- F.mkRef(Map.empty[MasterLocationId, MasterLocation])
       } yield {
         new MasterLocations[F] {
-          override def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =
+          def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =
             masters.getMaster(location.masterId).flatMap {
               case Some(_) =>
                 state.update_(_ + (location.id -> location))
@@ -45,10 +45,10 @@ object MasterLocations {
                 F.fail(masterNotFound(location.masterId))
             }
 
-          override def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]] =
+          def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]] =
             state.get.map(_.get(id))
 
-          override def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]] =
+          def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]] =
             state.get.map(
               _.values
                 .filter(_.masterId == masterId)
@@ -88,7 +88,7 @@ object MasterLocations {
         }
       } yield new MasterLocations[F] {
 
-        override def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =
+        def upsertMasterLocation(location: MasterLocation): F[QueryFailure, Unit] =
           masterExists(sql)(location.masterId).flatMap {
             exists =>
               if (!exists) {
@@ -117,7 +117,7 @@ object MasterLocations {
               }
           }
 
-        override def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]] =
+        def getMasterLocation(id: MasterLocationId): F[QueryFailure, Option[MasterLocation]] =
           sql.execute("get-master-location") {
             sql"""select id, master_id, name, address, lat, lon
                  |from master_locations
@@ -125,7 +125,7 @@ object MasterLocations {
                  |""".stripMargin.query[MasterLocation].option
           }
 
-        override def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]] =
+        def getMasterLocationsByMaster(masterId: MasterId): F[QueryFailure, List[MasterLocation]] =
           sql.execute("get-master-locations-by-master") {
             sql"""select id, master_id, name, address, lat, lon
                  |from master_locations

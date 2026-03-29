@@ -37,7 +37,7 @@ final class LadderRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("Ladder API started!"))
   }
 }
@@ -66,7 +66,7 @@ final class CategoryRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("Category API started!"))
   }
 }
@@ -94,7 +94,7 @@ final class ServiceRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("Service API started!"))
   }
 }
@@ -122,7 +122,7 @@ final class MasterRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("Master API started!"))
   }
 }
@@ -150,7 +150,7 @@ final class MasterLocationRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("MasterLocation API started!"))
   }
 }
@@ -179,7 +179,7 @@ final class MasterServiceOfferRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("MasterServiceOffer API started!"))
   }
 }
@@ -208,7 +208,7 @@ final class MasterServiceOfferVariantRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("MasterServiceOfferVariant API started!"))
   }
 }
@@ -235,7 +235,7 @@ final class ProfileRole[F[+_, +_]: Applicative2](
   @unused runningServer: HttpServer,
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("Profile API started!"))
   }
 }
@@ -292,7 +292,7 @@ final class LeaderboardRole[F[+_, +_]: Applicative2](
   @unused profileRole: ProfileRole[F],
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
     Lifecycle.liftF(log.info("Ladder, Category, Service, Master, MasterLocation, MasterServiceOffer, MasterServiceOfferVariant & Profile APIs started!"))
   }
 }
@@ -671,7 +671,7 @@ sealed abstract class MainBase(
     requiredRoles
   }
 
-  override def pluginConfig: PluginConfig = {
+  def pluginConfig: PluginConfig = {
     if (IzPlatform.isGraalNativeImage) {
       // Only this would work reliably for NativeImage
       PluginConfig.const(List(LeaderboardPlugin, PostgresDockerPlugin))

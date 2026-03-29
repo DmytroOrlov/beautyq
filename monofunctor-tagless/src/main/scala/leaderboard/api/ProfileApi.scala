@@ -20,7 +20,7 @@ final class ProfileApi[F[_]: Concurrent](
 
   import dsl.*
 
-  override def http: HttpRoutes[F] = {
+  def http: HttpRoutes[F] = {
     HttpRoutes.of {
       case GET -> Root / "profile" / UUIDVar(userId) =>
         Ok(ranks.getRank(userId).map(_.asJson))

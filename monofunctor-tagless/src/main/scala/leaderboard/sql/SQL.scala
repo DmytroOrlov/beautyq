@@ -14,7 +14,7 @@ object SQL {
   final class Impl[F[_]: Async](
     transactor: Transactor[F]
   ) extends SQL[F] {
-    override def execute[A](queryName: String)(conn: ConnectionIO[A]): F[A] = {
+    def execute[A](queryName: String)(conn: ConnectionIO[A]): F[A] = {
       transactor.trans
         .apply(conn)
         .handleErrorWith(ex => Async[F].raiseError(QueryFailure(queryName, ex)))

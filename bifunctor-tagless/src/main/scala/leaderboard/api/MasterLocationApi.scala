@@ -16,7 +16,7 @@ final class MasterLocationApi[F[+_, +_]: Async2: Fork2: Primitives2](
 
   import dsl.*
 
-  override def http: HttpRoutes[F[Throwable, _]] = {
+  def http: HttpRoutes[F[Throwable, _]] = {
     HttpRoutes.of {
       case GET -> Root / "master-location" / UUIDVar(masterLocationId) =>
         Ok(masterLocations.getMasterLocation(masterLocationId).map(_.asJson))

@@ -295,7 +295,7 @@ object MasterServiceOfferVariants {
         val attributesRepository = new MasterServiceOfferVariantAttributesRepository.Dummy
 
         new MasterServiceOfferVariants[F] {
-          override def upsertMasterServiceOfferVariant(variant: MasterServiceOfferVariant): F[QueryFailure, Unit] =
+          def upsertMasterServiceOfferVariant(variant: MasterServiceOfferVariant): F[QueryFailure, Unit] =
             masterServiceOffers.getMasterServiceOffer(variant.masterServiceOfferId).flatMap {
               case None =>
                 F.fail(offerNotFound(variant.masterServiceOfferId))
@@ -326,7 +326,7 @@ object MasterServiceOfferVariants {
                 }
             }
 
-          override def getMasterServiceOfferVariant(id: MasterServiceOfferVariantId): F[QueryFailure, Option[MasterServiceOfferVariant]] =
+          def getMasterServiceOfferVariant(id: MasterServiceOfferVariantId): F[QueryFailure, Option[MasterServiceOfferVariant]] =
             state.get.flatMap {
               current =>
                 current.baseRows.get(id) match {
@@ -344,7 +344,7 @@ object MasterServiceOfferVariants {
                 }
             }
 
-          override def getMasterServiceOfferVariantsByOffer(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, List[MasterServiceOfferVariant]] =
+          def getMasterServiceOfferVariantsByOffer(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, List[MasterServiceOfferVariant]] =
             state.get.flatMap {
               current =>
                 val rows =
@@ -363,7 +363,7 @@ object MasterServiceOfferVariants {
                 )
             }
 
-          override def getMasterServiceOfferVariantsByLocation(masterLocationId: MasterLocationId): F[QueryFailure, List[MasterServiceOfferVariant]] =
+          def getMasterServiceOfferVariantsByLocation(masterLocationId: MasterLocationId): F[QueryFailure, List[MasterServiceOfferVariant]] =
             state.get.flatMap {
               current =>
                 val rows =
@@ -435,7 +435,7 @@ object MasterServiceOfferVariants {
         val attributesRepository = new MasterServiceOfferVariantAttributesRepository.Postgres
 
         new MasterServiceOfferVariants[F] {
-          override def upsertMasterServiceOfferVariant(variant: MasterServiceOfferVariant): F[QueryFailure, Unit] =
+          def upsertMasterServiceOfferVariant(variant: MasterServiceOfferVariant): F[QueryFailure, Unit] =
             offerSummary(sql)(variant.masterServiceOfferId).flatMap {
               case None =>
                 F.fail(offerNotFound(variant.masterServiceOfferId))
@@ -489,7 +489,7 @@ object MasterServiceOfferVariants {
                 }
             }
 
-          override def getMasterServiceOfferVariant(id: MasterServiceOfferVariantId): F[QueryFailure, Option[MasterServiceOfferVariant]] =
+          def getMasterServiceOfferVariant(id: MasterServiceOfferVariantId): F[QueryFailure, Option[MasterServiceOfferVariant]] =
             sql.execute("get-master-service-offer-variant") {
               for {
                 row <- sql"""select variant.id,
@@ -512,7 +512,7 @@ object MasterServiceOfferVariants {
                 F.pure(None)
             }
 
-          override def getMasterServiceOfferVariantsByOffer(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, List[MasterServiceOfferVariant]] =
+          def getMasterServiceOfferVariantsByOffer(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, List[MasterServiceOfferVariant]] =
             sql.execute("get-master-service-offer-variants-by-offer") {
               for {
                 rows <- sql"""select variant.id,
@@ -531,7 +531,7 @@ object MasterServiceOfferVariants {
               } yield data
             }.flatMap(makeStoredVariants[F]("get-master-service-offer-variants-by-offer", _, serviceVariantSchemas))
 
-          override def getMasterServiceOfferVariantsByLocation(masterLocationId: MasterLocationId): F[QueryFailure, List[MasterServiceOfferVariant]] =
+          def getMasterServiceOfferVariantsByLocation(masterLocationId: MasterLocationId): F[QueryFailure, List[MasterServiceOfferVariant]] =
             sql.execute("get-master-service-offer-variants-by-location") {
               for {
                 rows <- sql"""select variant.id,

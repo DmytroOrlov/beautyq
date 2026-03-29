@@ -169,7 +169,7 @@ final class MasterApiContractState private (
   private val upsertMasterResultRef: Ref[Either[QueryFailure, Unit]],
 ) {
   val masters: Masters[IO] = new Masters[IO] {
-    override def upsertMaster(master: Master): IO[QueryFailure, Unit] =
+    def upsertMaster(master: Master): IO[QueryFailure, Unit] =
       upsertMasterResultRef.get.flatMap {
         case Right(_) =>
           upsertsRef.update(_ :+ master)
@@ -177,10 +177,10 @@ final class MasterApiContractState private (
           ZIO.fail(error)
       }
 
-    override def getMaster(id: MasterId): IO[QueryFailure, Option[Master]] =
+    def getMaster(id: MasterId): IO[QueryFailure, Option[Master]] =
       getMasterResultRef.get.flatMap(ZIO.fromEither(_))
 
-    override def getMasters(): IO[QueryFailure, List[Master]] =
+    def getMasters(): IO[QueryFailure, List[Master]] =
       getMastersResultRef.get.flatMap(ZIO.fromEither(_))
   }
 

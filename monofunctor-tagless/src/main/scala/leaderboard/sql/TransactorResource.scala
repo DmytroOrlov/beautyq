@@ -24,7 +24,7 @@ final class TransactorResource[F[_]: Async](
     )
   )
   with IntegrationCheck[F] {
-  override def resourcesAvailable(): F[ResourceCheck] = Sync[F].delay {
+  def resourcesAvailable(): F[ResourceCheck] = Sync[F].delay {
     portCheck.checkPort(portCfg.host, portCfg.port, s"Couldn't connect to postgres at host=${portCfg.host} port=${portCfg.port}")
   }
 }

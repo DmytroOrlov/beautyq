@@ -11,7 +11,7 @@ final class LadderApi[F[+_, +_]](
   ladder: Ladder[F],
   tapirHttpSupport: TapirHttpSupport[F],
 ) extends HttpApi[F] {
-  override def http: HttpRoutes[F[Throwable, _]] =
+  def http: HttpRoutes[F[Throwable, _]] =
     tapirHttpSupport.toRoutes(all)
 
   private def all: List[ServerEndpoint[Fs2Streams[F[Throwable, _]], F[Throwable, _]]] =

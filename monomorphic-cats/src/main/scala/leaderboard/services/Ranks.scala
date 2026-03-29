@@ -14,7 +14,7 @@ object Ranks {
     profiles: Profiles,
   ) extends Ranks {
 
-    override def getRank(userId: UserId): IO[Option[RankedProfile]] = {
+    def getRank(userId: UserId): IO[Option[RankedProfile]] = {
       for {
         maybeProfile <- profiles.getProfile(userId)
         scores       <- ladder.getScores

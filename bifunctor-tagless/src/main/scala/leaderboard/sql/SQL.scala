@@ -15,7 +15,7 @@ object SQL {
   final class Impl[F[+_, +_]: Panic2](
     transactor: Transactor[F[Throwable, _]]
   ) extends SQL[F] {
-    override def execute[A](queryName: String)(conn: ConnectionIO[A]): F[QueryFailure, A] = {
+    def execute[A](queryName: String)(conn: ConnectionIO[A]): F[QueryFailure, A] = {
       transactor.trans
         .apply(conn)
         .leftMap(QueryFailure(queryName, _))

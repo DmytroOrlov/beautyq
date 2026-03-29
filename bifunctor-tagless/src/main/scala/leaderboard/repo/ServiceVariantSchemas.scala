@@ -97,7 +97,7 @@ object ServiceVariantSchemas {
         state <- F.mkRef(Map.empty[ServiceId, ServiceVariantSchema])
       } yield {
         new ServiceVariantSchemas[F] {
-          override def upsertServiceVariantSchema(schema: ServiceVariantSchema): F[QueryFailure, Unit] =
+          def upsertServiceVariantSchema(schema: ServiceVariantSchema): F[QueryFailure, Unit] =
             services.getService(schema.serviceId).flatMap {
               case None =>
                 F.fail(serviceNotFound(schema.serviceId))
@@ -105,7 +105,7 @@ object ServiceVariantSchemas {
                 state.update_(_ + (schema.serviceId -> schema))
             }
 
-          override def getServiceVariantSchema(serviceId: ServiceId): F[QueryFailure, ServiceVariantSchema] =
+          def getServiceVariantSchema(serviceId: ServiceId): F[QueryFailure, ServiceVariantSchema] =
             state.get.map { current =>
               current.getOrElse(serviceId, ServiceVariantSchema.empty(serviceId))
             }
@@ -132,7 +132,7 @@ object ServiceVariantSchemas {
                |""".stripMargin.update.run
         }
       } yield new ServiceVariantSchemas[F] {
-        override def upsertServiceVariantSchema(schema: ServiceVariantSchema): F[QueryFailure, Unit] =
+        def upsertServiceVariantSchema(schema: ServiceVariantSchema): F[QueryFailure, Unit] =
           serviceExists(sql)(schema.serviceId).flatMap {
             exists =>
               if (!exists) {
@@ -151,7 +151,7 @@ object ServiceVariantSchemas {
               }
           }
 
-        override def getServiceVariantSchema(serviceId: ServiceId): F[QueryFailure, ServiceVariantSchema] =
+        def getServiceVariantSchema(serviceId: ServiceId): F[QueryFailure, ServiceVariantSchema] =
           sql.execute("get-service-variant-schema") {
             sql"""select attribute_code, required
                  |from service_variant_schema_items

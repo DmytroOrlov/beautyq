@@ -19,7 +19,7 @@ final class ProfileApi(
 
   import dsl.*
 
-  override def http: HttpRoutes[IO] = {
+  def http: HttpRoutes[IO] = {
     HttpRoutes.of {
       case GET -> Root / "profile" / UUIDVar(userId) =>
         Ok(ranks.getRank(userId).map(_.asJson))

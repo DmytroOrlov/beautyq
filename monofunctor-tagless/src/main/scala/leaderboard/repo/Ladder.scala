@@ -21,10 +21,10 @@ object Ladder {
       state <- Ref.of(Map.empty[UserId, Score])
     } yield {
       new Ladder[F] {
-        override def submitScore(userId: UserId, score: Score): F[Unit] =
+        def submitScore(userId: UserId, score: Score): F[Unit] =
           state.update(_ + (userId -> score))
 
-        override def getScores: F[List[(UserId, Score)]] =
+        def getScores: F[List[(UserId, Score)]] =
           state.get.map(_.toList.sortBy(_._2)(Ordering[Score].reverse))
       }
     })
@@ -43,7 +43,7 @@ object Ladder {
              |""".stripMargin.update.run
       }
       res = new Ladder[F] {
-        override def submitScore(userId: UserId, score: Score): F[Unit] =
+        def submitScore(userId: UserId, score: Score): F[Unit] =
           sql
             .execute("submit-score") {
               sql"""insert into ladder (user_id, score) values ($userId, $score)

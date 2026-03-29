@@ -19,10 +19,10 @@ object Profiles {
       state <- F.mkRef(Map.empty[UserId, UserProfile])
     } yield {
       new Profiles[F] {
-        override def setProfile(userId: UserId, profile: UserProfile): F[Nothing, Unit] =
+        def setProfile(userId: UserId, profile: UserProfile): F[Nothing, Unit] =
           state.update_(_ + (userId -> profile))
 
-        override def getProfile(userId: UserId): F[Nothing, Option[UserProfile]] =
+        def getProfile(userId: UserId): F[Nothing, Option[UserProfile]] =
           state.get.map(_.get(userId))
       }
     })
@@ -42,7 +42,7 @@ object Profiles {
              |""".stripMargin.update.run
       }
     } yield new Profiles[F] {
-      override def setProfile(userId: UserId, profile: UserProfile): F[QueryFailure, Unit] = {
+      def setProfile(userId: UserId, profile: UserProfile): F[QueryFailure, Unit] = {
         sql
           .execute("set-profile") {
             sql"""insert into profiles (user_id, name, description)
@@ -54,7 +54,7 @@ object Profiles {
           }.void
       }
 
-      override def getProfile(userId: UserId): F[QueryFailure, Option[UserProfile]] = {
+      def getProfile(userId: UserId): F[QueryFailure, Option[UserProfile]] = {
         sql.execute("get-profile") {
           sql"""select name, description from profiles
                |where user_id = $userId

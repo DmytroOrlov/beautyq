@@ -18,7 +18,7 @@ final class CategoryApi[F[+_, +_]: Async2: Fork2: Primitives2](
 
   import dsl.*
 
-  override def http: HttpRoutes[F[Throwable, _]] = {
+  def http: HttpRoutes[F[Throwable, _]] = {
     HttpRoutes.of {
       case GET -> Root / "category" / UUIDVar(categoryId) =>
         Ok(categories.getCategory(categoryId).map(_.asJson))

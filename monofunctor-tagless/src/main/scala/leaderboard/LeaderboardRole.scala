@@ -39,7 +39,7 @@ final class LadderRole[F[_]: Applicative](
   @unused runningServer: HttpServer,
   log: LogIO[F],
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
     Lifecycle.liftF(log.info("Ladder API started!"))
   }
 }
@@ -66,7 +66,7 @@ final class ProfileRole[F[_]: Applicative](
   @unused runningServer: HttpServer,
   log: LogIO[F],
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
     Lifecycle.liftF(log.info("Profile API started!"))
   }
 }
@@ -102,7 +102,7 @@ final class LeaderboardRole[F[_]: Applicative](
   @unused profileRole: ProfileRole[F],
   log: LogIO[F],
 ) extends RoleService[F] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F, Unit] = {
     Lifecycle.liftF(log.info("Ladder & Profile APIs started!"))
   }
 }

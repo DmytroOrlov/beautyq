@@ -37,7 +37,7 @@ final class LadderRole(
   @unused runningServer: HttpServer,
   log: LogIO[IO],
 ) extends RoleService[IO] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
     Lifecycle.liftF(log.info("Ladder API started!"))
   }
 }
@@ -64,7 +64,7 @@ final class ProfileRole(
   @unused runningServer: HttpServer,
   log: LogIO[IO],
 ) extends RoleService[IO] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
     Lifecycle.liftF(log.info("Profile API started!"))
   }
 }
@@ -100,7 +100,7 @@ final class LeaderboardRole(
   @unused profileRole: ProfileRole,
   log: LogIO[IO],
 ) extends RoleService[IO] {
-  override def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
+  def start(roleParameters: EntrypointArgs): Lifecycle[IO, Unit] = {
     Lifecycle.liftF(log.info("Ladder & Profile APIs started!"))
   }
 }
@@ -299,7 +299,7 @@ sealed abstract class MainBase(
     requiredRoles
   }
 
-  override def pluginConfig: PluginConfig = {
+  def pluginConfig: PluginConfig = {
     if (IzPlatform.isGraalNativeImage) {
       // Only this would work reliably for NativeImage
       PluginConfig.const(List(LeaderboardPlugin, PostgresDockerPlugin))

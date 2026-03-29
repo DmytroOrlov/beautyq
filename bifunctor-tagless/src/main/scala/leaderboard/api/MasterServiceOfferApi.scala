@@ -16,7 +16,7 @@ final class MasterServiceOfferApi[F[+_, +_]: Async2: Fork2: Primitives2](
 
   import dsl.*
 
-  override def http: HttpRoutes[F[Throwable, _]] = {
+  def http: HttpRoutes[F[Throwable, _]] = {
     HttpRoutes.of {
       case GET -> Root / "master-service-offer" / UUIDVar(masterServiceOfferId) =>
         Ok(masterServiceOffers.getMasterServiceOffer(masterServiceOfferId).map(_.asJson))

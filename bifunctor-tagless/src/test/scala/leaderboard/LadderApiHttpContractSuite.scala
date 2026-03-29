@@ -108,7 +108,7 @@ final class LadderApiContractState private (
   private val submitScoreResultRef: Ref[Either[QueryFailure, Unit]],
 ) {
   val ladder: Ladder[IO] = new Ladder[IO] {
-    override def submitScore(userId: UserId, score: Score): IO[QueryFailure, Unit] =
+    def submitScore(userId: UserId, score: Score): IO[QueryFailure, Unit] =
       submitScoreResultRef.get.flatMap {
         case Right(_) =>
           submittedScoresRef.update(_ :+ (userId -> score))
@@ -116,7 +116,7 @@ final class LadderApiContractState private (
           ZIO.fail(error)
       }
 
-    override def getScores: IO[QueryFailure, List[(UserId, Score)]] =
+    def getScores: IO[QueryFailure, List[(UserId, Score)]] =
       getScoresResultRef.get.flatMap(ZIO.fromEither(_))
   }
 

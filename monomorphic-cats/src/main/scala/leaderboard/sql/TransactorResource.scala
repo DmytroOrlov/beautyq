@@ -24,7 +24,7 @@ final class TransactorResource(
     )
   )
   with IntegrationCheck[IO] {
-  override def resourcesAvailable(): IO[ResourceCheck] = IO {
+  def resourcesAvailable(): IO[ResourceCheck] = IO {
     portCheck.checkPort(portCfg.host, portCfg.port, s"Couldn't connect to postgres at host=${portCfg.host} port=${portCfg.port}")
   }
 }

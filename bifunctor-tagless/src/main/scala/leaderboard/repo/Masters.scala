@@ -20,13 +20,13 @@ object Masters {
       state <- F.mkRef(Map.empty[MasterId, Master])
     } yield {
       new Masters[F] {
-        override def upsertMaster(master: Master): F[Nothing, Unit] =
+        def upsertMaster(master: Master): F[Nothing, Unit] =
           state.update_(_ + (master.id -> master))
 
-        override def getMaster(id: MasterId): F[Nothing, Option[Master]] =
+        def getMaster(id: MasterId): F[Nothing, Option[Master]] =
           state.get.map(_.get(id))
 
-        override def getMasters(): F[Nothing, List[Master]] =
+        def getMasters(): F[Nothing, List[Master]] =
           state.get.map(
             _.values
               .toList
@@ -49,7 +49,7 @@ object Masters {
              |""".stripMargin.update.run
       }
     } yield new Masters[F] {
-      override def upsertMaster(master: Master): F[QueryFailure, Unit] =
+      def upsertMaster(master: Master): F[QueryFailure, Unit] =
         sql
           .execute("upsert-master") {
             sql"""insert into masters (id, name)
@@ -59,14 +59,14 @@ object Masters {
                  |""".stripMargin.update.run
           }.void
 
-      override def getMaster(id: MasterId): F[QueryFailure, Option[Master]] =
+      def getMaster(id: MasterId): F[QueryFailure, Option[Master]] =
         sql.execute("get-master") {
           sql"""select id, name from masters
                |where id = $id
                |""".stripMargin.query[Master].option
         }
 
-      override def getMasters(): F[QueryFailure, List[Master]] =
+      def getMasters(): F[QueryFailure, List[Master]] =
         sql.execute("get-masters") {
           sql"""select id, name from masters
                |order by name asc, id asc

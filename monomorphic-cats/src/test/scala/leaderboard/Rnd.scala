@@ -10,7 +10,7 @@ trait Rnd {
 
 object Rnd {
   final class Impl extends Rnd {
-    override def apply[A: Arbitrary]: IO[A] = {
+    def apply[A: Arbitrary]: IO[A] = {
       IO {
         val (p, s) = Prop.startSeed(Parameters.default)
         Arbitrary.arbitrary[A].pureApply(p, s)

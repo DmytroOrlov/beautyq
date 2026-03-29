@@ -15,7 +15,7 @@ final class LadderApi[F[_]: MonadThrow](
 
   import dsl.*
 
-  override def http: HttpRoutes[F] = {
+  def http: HttpRoutes[F] = {
     HttpRoutes.of {
       case GET -> Root / "ladder" =>
         Ok(ladder.getScores.map(_.asJson))

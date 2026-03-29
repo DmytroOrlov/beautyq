@@ -14,16 +14,16 @@ object zioenv {
   }
 
   object profiles extends Profiles[ZIO[Profiles[IO], _, _]] {
-    override def setProfile(userId: UserId, profile: UserProfile): ZIO[Profiles[IO], QueryFailure, Unit] = ZIO.serviceWithZIO(_.setProfile(userId, profile))
-    override def getProfile(userId: UserId): ZIO[Profiles[IO], QueryFailure, Option[UserProfile]]        = ZIO.serviceWithZIO(_.getProfile(userId))
+    def setProfile(userId: UserId, profile: UserProfile): ZIO[Profiles[IO], QueryFailure, Unit] = ZIO.serviceWithZIO(_.setProfile(userId, profile))
+    def getProfile(userId: UserId): ZIO[Profiles[IO], QueryFailure, Option[UserProfile]]        = ZIO.serviceWithZIO(_.getProfile(userId))
   }
 
   object ranks extends Ranks[ZIO[Ranks[IO], _, _]] {
-    override def getRank(userId: UserId): ZIO[Ranks[IO], QueryFailure, Option[RankedProfile]] = ZIO.serviceWithZIO(_.getRank(userId))
+    def getRank(userId: UserId): ZIO[Ranks[IO], QueryFailure, Option[RankedProfile]] = ZIO.serviceWithZIO(_.getRank(userId))
   }
 
   object rnd extends Rnd[ZIO[Rnd[IO], _, _]] {
-    override def apply[A: Arbitrary]: URIO[Rnd[IO], A] = ZIO.serviceWithZIO(_.apply[A])
+    def apply[A: Arbitrary]: URIO[Rnd[IO], A] = ZIO.serviceWithZIO(_.apply[A])
   }
 
 }

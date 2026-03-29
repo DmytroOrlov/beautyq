@@ -182,7 +182,7 @@ final class ProfileApiContractState private (
   private val setProfileResultRef: Ref[Either[QueryFailure, Unit]],
 ) {
   val profiles: Profiles[IO] = new Profiles[IO] {
-    override def setProfile(userId: UserId, profile: UserProfile): IO[QueryFailure, Unit] =
+    def setProfile(userId: UserId, profile: UserProfile): IO[QueryFailure, Unit] =
       setProfileResultRef.get.flatMap {
         case Right(_) =>
           savedProfilesRef.update(_ :+ (userId -> profile))
@@ -190,12 +190,12 @@ final class ProfileApiContractState private (
           ZIO.fail(error)
       }
 
-    override def getProfile(userId: UserId): IO[QueryFailure, Option[UserProfile]] =
+    def getProfile(userId: UserId): IO[QueryFailure, Option[UserProfile]] =
       savedProfilesRef.get.map(_.collectFirst { case (`userId`, profile) => profile })
   }
 
   val ranks: Ranks[IO] = new Ranks[IO] {
-    override def getRank(userId: UserId): IO[QueryFailure, Option[RankedProfile]] =
+    def getRank(userId: UserId): IO[QueryFailure, Option[RankedProfile]] =
       getRankResultRef.get.flatMap(ZIO.fromEither(_))
   }
 
