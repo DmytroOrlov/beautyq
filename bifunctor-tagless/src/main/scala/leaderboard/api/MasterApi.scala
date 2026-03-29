@@ -1,34 +1,30 @@
 package leaderboard.api
 
+import cats.effect.Async
+import io.circe.Json
 import io.circe.syntax.*
-import izumi.functional.bio.{Async2, Fork2, Primitives2}
-import izumi.functional.bio.catz.*
-import leaderboard.model.Master
+import leaderboard.http.tapir.MasterTapirEndpoints.{getMaster, getMasters, upsertMaster}
+import leaderboard.http.tapir.TapirHttpSupport
 import leaderboard.repo.Masters
 import org.http4s.HttpRoutes
-import org.http4s.circe.*
-import org.http4s.dsl.Http4sDsl
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.tapir.server.ServerEndpoint
 
-final class MasterApi[F[+_, +_]: Async2: Fork2: Primitives2](
-  dsl: Http4sDsl[F[Throwable, _]],
+final class MasterApi[F[+_, +_]](
   masters: Masters[F],
+  tapirHttpSupport: TapirHttpSupport[F],
+)(implicit
+  async: Async[F[Throwable, _]],
 ) extends HttpApi[F] {
+  override def http: HttpRoutes[F[Throwable, _]] =
+    tapirHttpSupport.toRoutes(all)
 
-  import dsl.*
-
-  override def http: HttpRoutes[F[Throwable, _]] = {
-    HttpRoutes.of {
-      case GET -> Root / "master" / UUIDVar(masterId) =>
-        Ok(masters.getMaster(masterId).map(_.asJson))
-
-      case rq @ POST -> Root / "master" =>
-        Ok(for {
-          master <- rq.decodeJson[Master]
-          _      <- masters.upsertMaster(master)
-        } yield ())
-
-      case GET -> Root / "master" =>
-        Ok(masters.getMasters().map(_.asJson))
-    }
-  }
+  private def all: List[ServerEndpoint[Fs2Streams[F[Throwable, _]], F[Throwable, _]]] =
+    List(
+      getMasters.serverLogicSuccess[F[Throwable, _]](_ => masters.getMasters()),
+      upsertMaster.serverLogicSuccess[F[Throwable, _]](masters.upsertMaster),
+      getMaster.serverLogicSuccess[F[Throwable, _]](masterId =>
+        async.map(masters.getMaster(masterId))(_.fold[Json](Json.Null)(_.asJson))
+      ),
+    )
 }

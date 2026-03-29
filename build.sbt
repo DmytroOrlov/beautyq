@@ -14,6 +14,7 @@ val V = new {
   val circeGeneric  = "0.14.15"
   val graalMetadata = "0.11.3"
   val catsEffect    = "3.5.4"
+  val tapir         = "1.10.7"
 }
 
 val Deps = new {
@@ -31,6 +32,8 @@ val Deps = new {
   val http4sServer = "org.http4s" %% "http4s-ember-server" % V.http4s
   val http4sClient = "org.http4s" %% "http4s-ember-client" % V.http4s
   val http4sCirce  = "org.http4s" %% "http4s-circe" % V.http4s
+  val tapirHttp4sServer = "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % V.tapir
+  val tapirJsonCirce = "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % V.tapir
 
   val circeGeneric = "io.circe" %% "circe-generic" % V.circeGeneric
 
@@ -81,7 +84,7 @@ inThisBuild(
 
 lazy val `bifunctor-tagless` = project
   .in(file("bifunctor-tagless"))
-  .pipe(sharedSettings(Seq(Deps.zio, Deps.zioCats)))
+  .pipe(sharedSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
 
 lazy val `monofunctor-tagless` = project
   .in(file("monofunctor-tagless"))

@@ -1,27 +1,24 @@
 package leaderboard.api
 
-import io.circe.syntax.*
-import izumi.functional.bio.IO2
-import izumi.functional.bio.catz.*
+import leaderboard.http.tapir.LadderTapirEndpoints.*
+import leaderboard.http.tapir.TapirHttpSupport
 import leaderboard.repo.Ladder
 import org.http4s.HttpRoutes
-import org.http4s.circe.*
-import org.http4s.dsl.Http4sDsl
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.tapir.server.ServerEndpoint
 
-final class LadderApi[F[+_, +_]: IO2](
-  dsl: Http4sDsl[F[Throwable, _]],
+final class LadderApi[F[+_, +_]](
   ladder: Ladder[F],
+  tapirHttpSupport: TapirHttpSupport[F],
 ) extends HttpApi[F] {
+  override def http: HttpRoutes[F[Throwable, _]] =
+    tapirHttpSupport.toRoutes(all)
 
-  import dsl.*
-
-  override def http: HttpRoutes[F[Throwable, _]] = {
-    HttpRoutes.of {
-      case GET -> Root / "ladder" =>
-        Ok(ladder.getScores.map(_.asJson))
-
-      case POST -> Root / "ladder" / UUIDVar(userId) / LongVar(score) =>
-        Ok(ladder.submitScore(userId, score))
-    }
-  }
+  private def all: List[ServerEndpoint[Fs2Streams[F[Throwable, _]], F[Throwable, _]]] =
+    List(
+      getScores.serverLogicSuccess[F[Throwable, _]](_ => ladder.getScores),
+      submitScore.serverLogicSuccess[F[Throwable, _]] { case (userId, score) =>
+        ladder.submitScore(userId, score)
+      },
+    )
 }

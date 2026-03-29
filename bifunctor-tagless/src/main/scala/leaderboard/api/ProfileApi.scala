@@ -1,36 +1,35 @@
 package leaderboard.api
 
+import cats.effect.Async
+import io.circe.Json
 import io.circe.syntax.*
-import izumi.functional.bio.catz.*
-import izumi.functional.bio.{Async2, Fork2, Primitives2}
-import leaderboard.model.UserProfile
+import leaderboard.http.tapir.ProfileTapirEndpoints.{getProfile, setProfile}
+import leaderboard.http.tapir.TapirHttpSupport
 import leaderboard.repo.Profiles
 import leaderboard.services.Ranks
 import logstage.LogIO2
 import org.http4s.HttpRoutes
-import org.http4s.circe.*
-import org.http4s.dsl.Http4sDsl
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.tapir.server.ServerEndpoint
 
-final class ProfileApi[F[+_, +_]: Async2: Fork2: Primitives2](
-  dsl: Http4sDsl[F[Throwable, _]],
+final class ProfileApi[F[+_, +_]](
   profiles: Profiles[F],
   ranks: Ranks[F],
   log: LogIO2[F],
+  tapirHttpSupport: TapirHttpSupport[F],
+)(implicit
+  async: Async[F[Throwable, _]],
 ) extends HttpApi[F] {
+  override def http: HttpRoutes[F[Throwable, _]] =
+    tapirHttpSupport.toRoutes(all)
 
-  import dsl.*
-
-  override def http: HttpRoutes[F[Throwable, _]] = {
-    HttpRoutes.of {
-      case GET -> Root / "profile" / UUIDVar(userId) =>
-        Ok(ranks.getRank(userId).map(_.asJson))
-
-      case rq @ POST -> Root / "profile" / UUIDVar(userId) =>
-        Ok(for {
-          profile <- rq.decodeJson[UserProfile]
-          _       <- log.info(s"Saving $profile")
-          _       <- profiles.setProfile(userId, profile)
-        } yield ())
-    }
-  }
+  private def all: List[ServerEndpoint[Fs2Streams[F[Throwable, _]], F[Throwable, _]]] =
+    List(
+      getProfile.serverLogicSuccess[F[Throwable, _]](userId =>
+        async.map(ranks.getRank(userId))(_.fold[Json](Json.Null)(_.asJson))
+      ),
+      setProfile.serverLogicSuccess[F[Throwable, _]] { case (userId, profile) =>
+        async.flatMap(log.info(s"Saving $profile"))(_ => profiles.setProfile(userId, profile))
+      },
+    )
 }
