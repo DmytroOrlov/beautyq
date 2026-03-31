@@ -1,5 +1,7 @@
 package leaderboard
 
+import leaderboard.model.AttributeMap.Impl
+
 import java.util.UUID
 
 package object model {
@@ -10,5 +12,5 @@ package object model {
   type MasterServiceOfferId        = UUID
   type MasterServiceOfferVariantId = UUID
   type Score                       = Long
-  type AttributeMap[A]             = leaderboard.model.AttributeMap.Impl[A, AttributeDefinition[A]]
+  type AttributeMap[A]             = Impl[A, AttributeDefinition[A]]
 }

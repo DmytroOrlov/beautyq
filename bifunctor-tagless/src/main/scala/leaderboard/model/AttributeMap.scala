@@ -1,8 +1,6 @@
 package leaderboard.model
 
 object AttributeMap {
-  def apply[V, K <: AttributeDefinition[V]](map: Map[K, V]): Impl[V, K] = new Impl(map)
-
   def empty[V, K <: AttributeDefinition[V]] = Impl[V, K](Map.empty)
 
   case class Impl[V, K <: AttributeDefinition[V]](map: Map[K, V]) {

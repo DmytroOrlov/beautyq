@@ -19,5 +19,5 @@ case class MasterServiceOfferVariantAttributes(
 
 object MasterServiceOfferVariantAttributes {
   val empty: MasterServiceOfferVariantAttributes =
-    MasterServiceOfferVariantAttributes(AttributeMap(Map.empty), AttributeMap(Map.empty))
+    MasterServiceOfferVariantAttributes(AttributeMap.empty, AttributeMap.empty)
 }

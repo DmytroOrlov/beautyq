@@ -27,7 +27,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   private def attributeStoredInWrongTypeStorage[A: AttributeValueName](
     queryName: String,
     attributeCode: String,
-    actual: AttributeDefinition[Any],
+    actual: AnyAttributeDefinition,
   ): QueryFailure =
     QueryFailure.operation(
       queryName,

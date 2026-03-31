@@ -126,7 +126,7 @@ object MasterServiceOfferVariant {
   ): Decoder.Result[AttributeMap[A]] =
     c.get[Option[Map[String, A]]](fieldName).flatMap {
       case Some(raw) =>
-        raw.foldLeft[Decoder.Result[AttributeMap[A]]](Right(AttributeMap(Map.empty))) {
+        raw.foldLeft[Decoder.Result[AttributeMap[A]]](Right(AttributeMap.empty)) {
           case (acc, (attributeCode, value)) =>
             for {
               current             <- acc
@@ -136,7 +136,7 @@ object MasterServiceOfferVariant {
             }
         }
       case None =>
-        Right(AttributeMap(Map.empty))
+        Right(AttributeMap.empty)
     }
 
   private def encodeIntAttributes(value: AttributeMap[Int]) =
