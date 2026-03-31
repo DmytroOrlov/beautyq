@@ -10,4 +10,5 @@ package object model {
   type MasterServiceOfferId         = UUID
   type MasterServiceOfferVariantId  = UUID
   type Score                        = Long
+  type AttributeMap[A] = leaderboard.model.AttributeMapImpl[A, MasterServiceOfferVariantAttributeDefinition[A]]
 }

@@ -2,21 +2,15 @@ package leaderboard.repo
 
 import cats.data.NonEmptyList
 import doobie.Update
-import doobie.free.{connection => FC}
+import doobie.free.connection as FC
 import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.AttributeValueType
+import leaderboard.model.{AttributeValueType, MasterServiceOfferVariant, MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
 import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
-import leaderboard.model.{
-  MasterServiceOfferVariant,
-  MasterServiceOfferVariantAttributeDefinition,
-  MasterServiceOfferVariantAttributes,
-  MasterServiceOfferVariantId,
-  QueryFailure,
-}
+import leaderboard.model.AttributeMap
 
 private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
@@ -52,19 +46,19 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
     MasterServiceOfferVariantAttributeDefinition.fromCode(code)
 
-  private def collectStoredAttributes[A, D <: MasterServiceOfferVariantAttributeDefinition[A]](
+  private def collectStoredAttributes[A](
     queryName: String,
     attributes: Map[String, A],
     actualValueType: AttributeValueType,
-    decode: String => Option[D],
-  ): Either[QueryFailure, Map[D, A]] =
-    attributes.foldLeft[Either[QueryFailure, Map[D, A]]](Right(Map.empty)) {
+    decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
+  ): Either[QueryFailure, AttributeMap[A]] =
+    attributes.foldLeft[Either[QueryFailure, AttributeMap[A]]](Right(AttributeMap.empty)) {
       case (acc, (attributeCode, value)) =>
         acc.flatMap {
           current =>
             decode(attributeCode) match {
               case Some(definition) =>
-                Right(current + (definition -> value))
+                Right(current.updated(definition, value))
               case None =>
                 attributeDefinitionByCode(attributeCode) match {
                   case None =>

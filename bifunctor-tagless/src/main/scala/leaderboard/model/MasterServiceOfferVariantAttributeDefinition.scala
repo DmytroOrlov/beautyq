@@ -7,6 +7,23 @@ sealed trait MasterServiceOfferVariantAttributeDefinition[+A] extends Product wi
   def valueType: AttributeValueType
 }
 
+case class AttributeMapImpl[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]) {
+  def updated(key: K, value: V): AttributeMapImpl[V, K] = new AttributeMapImpl(map.updated(key, value))
+  def get(key: K): Option[V] = map.get(key)
+  def iterator: Iterator[(K, V)] = map.iterator
+  def keysIterator: Iterator[K] = map.keysIterator
+  def keySet: Set[K] = map.keySet
+  def nonEmpty: Boolean = map.nonEmpty
+  def isEmpty: Boolean = map.isEmpty
+  def toMap: Map[K, V] = map
+}
+
+object AttributeMap {
+  def apply[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]): AttributeMapImpl[V, K] = new AttributeMapImpl(map)
+
+  def empty[V, K <: MasterServiceOfferVariantAttributeDefinition[V]] = new AttributeMapImpl[V, K](Map.empty)
+}
+
 sealed trait IntAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[Int] {
   final val valueType: AttributeValueType = IntValue
 }

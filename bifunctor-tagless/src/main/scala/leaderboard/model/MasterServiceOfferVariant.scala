@@ -3,6 +3,8 @@ package leaderboard.model
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, JsonObject}
 import io.circe.syntax.*
 import leaderboard.model.MasterServiceOfferVariantValidationError.{NegativePriceFrom, NonPositiveDurationMin, PriceToLessThanPriceFrom}
+import leaderboard.model.AttributeMap
+
 import scala.annotation.nowarn
 
 final case class MasterServiceOfferVariant private (
@@ -24,10 +26,10 @@ final case class MasterServiceOfferVariant private (
   ): Option[BigDecimal] =
     attributes.get(attributeDefinition)
 
-  def intAttributes: Map[IntAttributeDefinition, Int] =
+  def intAttributes: AttributeMap[Int] =
     attributes.intValues
 
-  def bigDecimalAttributes: Map[BigDecimalAttributeDefinition, BigDecimal] =
+  def bigDecimalAttributes: AttributeMap[BigDecimal] =
     attributes.bigDecimalValues
 
   @nowarn("cat=unused")
@@ -100,12 +102,12 @@ object MasterServiceOfferVariant {
       )
     }
 
-  private def decodeAttributeDefinition[A, D <: MasterServiceOfferVariantAttributeDefinition[A]](
+  private def decodeAttributeDefinition[A](
     c: HCursor,
     attributeCode: String,
     fieldName: String,
-    decode: String => Option[D],
-  ): Decoder.Result[D] =
+    decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
+  ): Decoder.Result[MasterServiceOfferVariantAttributeDefinition[A]] =
     decode(attributeCode) match {
       case Some(attributeDefinition) =>
         Right(attributeDefinition)
@@ -118,33 +120,33 @@ object MasterServiceOfferVariant {
         }
     }
 
-  private def decodeAttributes[A: Decoder, D <: MasterServiceOfferVariantAttributeDefinition[A]](
+  private def decodeAttributes[A: Decoder](
     c: HCursor,
     fieldName: String,
-    decode: String => Option[D],
-  ): Decoder.Result[Map[D, A]] =
+    decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
+  ): Decoder.Result[AttributeMap[A]] =
     c.get[Option[Map[String, A]]](fieldName).flatMap {
               case Some(raw) =>
-        raw.foldLeft[Decoder.Result[Map[D, A]]](Right(Map.empty)) {
+        raw.foldLeft[Decoder.Result[AttributeMap[A]]](Right(AttributeMap(Map.empty))) {
           case (acc, (attributeCode, value)) =>
             for {
               current             <- acc
-              attributeDefinition <- decodeAttributeDefinition[A, D](c, attributeCode, fieldName, decode)
+              attributeDefinition <- decodeAttributeDefinition[A](c, attributeCode, fieldName, decode)
             } yield {
-              current + (attributeDefinition -> value)
+              current.updated(attributeDefinition, value)
             }
         }
       case None =>
-        Right(Map.empty)
+        Right(AttributeMap(Map.empty))
     }
 
-  private def encodeIntAttributes(value: Map[IntAttributeDefinition, Int]) =
+  private def encodeIntAttributes(value: AttributeMap[Int]) =
     value.iterator.map {
       case (attributeDefinition, attributeValue) =>
         attributeDefinition.code -> attributeValue
     }.toMap.asJson
 
-  private def encodeBigDecimalAttributes(value: Map[BigDecimalAttributeDefinition, BigDecimal]) =
+  private def encodeBigDecimalAttributes(value: AttributeMap[BigDecimal]) =
     value.iterator.map {
       case (attributeDefinition, attributeValue) =>
         attributeDefinition.code -> attributeValue
@@ -158,12 +160,12 @@ object MasterServiceOfferVariant {
       priceFrom            <- c.get[BigDecimal]("priceFrom")
       priceTo              <- c.get[BigDecimal]("priceTo")
       durationMin          <- c.get[Int]("durationMin")
-      intAttributes        <- decodeAttributes[Int, IntAttributeDefinition](
+      intAttributes        <- decodeAttributes[Int](
                                 c,
                                 "intAttributes",
                                 MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
                               )
-      bigDecimalAttributes <- decodeAttributes[BigDecimal, BigDecimalAttributeDefinition](
+      bigDecimalAttributes <- decodeAttributes[BigDecimal](
                                 c,
                                 "bigDecimalAttributes",
                                 MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,

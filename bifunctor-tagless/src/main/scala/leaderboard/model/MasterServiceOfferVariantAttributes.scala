@@ -1,10 +1,11 @@
 package leaderboard.model
 
 import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.AttributeMap
 
 case class MasterServiceOfferVariantAttributes(
-  intValues: Map[IntAttributeDefinition, Int],
-  bigDecimalValues: Map[BigDecimalAttributeDefinition, BigDecimal],
+  intValues: AttributeMap[Int],
+  bigDecimalValues: AttributeMap[BigDecimal],
 ) {
   def get(attributeDefinition: IntAttributeDefinition): Option[Int] =
     intValues.get(attributeDefinition)
@@ -19,5 +20,5 @@ case class MasterServiceOfferVariantAttributes(
 
 object MasterServiceOfferVariantAttributes {
   val empty: MasterServiceOfferVariantAttributes =
-    MasterServiceOfferVariantAttributes(Map.empty, Map.empty)
+    MasterServiceOfferVariantAttributes(AttributeMap(Map.empty), AttributeMap(Map.empty))
 }
