@@ -40,7 +40,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   ): QueryFailure =
     QueryFailure.operation(
       queryName,
-      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}"
+      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}",
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
@@ -76,17 +76,17 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   ): Either[QueryFailure, MasterServiceOfferVariantAttributes] =
     for {
       intAttributes <- collectStoredAttributes(
-                         queryName,
-                         attributes.intAttributes,
-                         IntValue,
-                         MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
-                       )
+        queryName,
+        attributes.intAttributes,
+        IntValue,
+        MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
+      )
       bigDecimalAttributes <- collectStoredAttributes(
-                                queryName,
-                                attributes.bigDecimalAttributes,
-                                BigDecimalValue,
-                                MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
-                              )
+        queryName,
+        attributes.bigDecimalAttributes,
+        BigDecimalValue,
+        MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
+      )
     } yield MasterServiceOfferVariantAttributes(
       intAttributes,
       bigDecimalAttributes,
@@ -106,7 +106,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       }.toMap,
     )
 
-  private type IntAttributesState = Map[(MasterServiceOfferVariantId, String), Int]
+  private type IntAttributesState        = Map[(MasterServiceOfferVariantId, String), Int]
   private type BigDecimalAttributesState = Map[(MasterServiceOfferVariantId, String), BigDecimal]
 
   case class DummyState(
@@ -153,20 +153,21 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     def replace(
       variantId: MasterServiceOfferVariantId,
       attributes: MasterServiceOfferVariantAdditionalAttributes,
-    )(state: DummyState): DummyState = {
+    )(state: DummyState
+    ): DummyState = {
       state.copy(
-        intAttributes = replaceAttributes(state.intAttributes, variantId, attributes.intAttributes),
+        intAttributes        = replaceAttributes(state.intAttributes, variantId, attributes.intAttributes),
         bigDecimalAttributes = replaceAttributes(state.bigDecimalAttributes, variantId, attributes.bigDecimalAttributes),
       )
     }
   }
 
   class Postgres {
-    private type IntAttributeRow = (String, Int)
-    private type BigDecimalAttributeRow = (String, BigDecimal)
-    private type IntAttributeStoredRow = (MasterServiceOfferVariantId, String, Int)
+    private type IntAttributeRow              = (String, Int)
+    private type BigDecimalAttributeRow       = (String, BigDecimal)
+    private type IntAttributeStoredRow        = (MasterServiceOfferVariantId, String, Int)
     private type BigDecimalAttributeStoredRow = (MasterServiceOfferVariantId, String, BigDecimal)
-    private type IntAttributeInsertRow = (MasterServiceOfferVariantId, String, Int)
+    private type IntAttributeInsertRow        = (MasterServiceOfferVariantId, String, Int)
     private type BigDecimalAttributeInsertRow = (MasterServiceOfferVariantId, String, BigDecimal)
 
     private def loadRowsForVariant[A](
@@ -177,10 +178,11 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     private def loadManyRows[A](
       rows: List[(MasterServiceOfferVariantId, String, A)]
     ): Map[MasterServiceOfferVariantId, Map[String, A]] =
-      rows.groupMap(_._1) {
-        case (_, attributeCode, value) =>
-          attributeCode -> value
-      }.view.mapValues(_.toMap).toMap
+      rows
+        .groupMap(_._1) {
+          case (_, attributeCode, value) =>
+            attributeCode -> value
+        }.view.mapValues(_.toMap).toMap
 
     private def mergeLoadedAttributes(
       variantIds: List[MasterServiceOfferVariantId],
@@ -244,15 +246,15 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     def load(variantId: MasterServiceOfferVariantId): ConnectionIO[MasterServiceOfferVariantAdditionalAttributes] =
       for {
         intAttributes <- sql"""select attribute_code, value
-                               |from master_service_offer_variant_int_attributes
-                               |where master_service_offer_variant_id = $variantId
-                               |order by attribute_code asc
-                               |""".stripMargin.query[IntAttributeRow].to[List]
+                              |from master_service_offer_variant_int_attributes
+                              |where master_service_offer_variant_id = $variantId
+                              |order by attribute_code asc
+                              |""".stripMargin.query[IntAttributeRow].to[List]
         bigDecimalAttributes <- sql"""select attribute_code, value
-                                      |from master_service_offer_variant_bigdecimal_attributes
-                                      |where master_service_offer_variant_id = $variantId
-                                      |order by attribute_code asc
-                                      |""".stripMargin.query[BigDecimalAttributeRow].to[List]
+                                     |from master_service_offer_variant_bigdecimal_attributes
+                                     |where master_service_offer_variant_id = $variantId
+                                     |order by attribute_code asc
+                                     |""".stripMargin.query[BigDecimalAttributeRow].to[List]
       } yield MasterServiceOfferVariantAdditionalAttributes(
         loadRowsForVariant(intAttributes),
         loadRowsForVariant(bigDecimalAttributes),
@@ -277,23 +279,23 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     ): ConnectionIO[Unit] =
       for {
         _ <- sql"""delete from master_service_offer_variant_int_attributes
-                   |where master_service_offer_variant_id = $variantId
-                   |""".stripMargin.update.run
+                  |where master_service_offer_variant_id = $variantId
+                  |""".stripMargin.update.run
         _ <- sql"""delete from master_service_offer_variant_bigdecimal_attributes
-                   |where master_service_offer_variant_id = $variantId
-                   |""".stripMargin.update.run
+                  |where master_service_offer_variant_id = $variantId
+                  |""".stripMargin.update.run
         _ <- insertIntAttributes(
-               attributes.intAttributes.toList.map {
-                 case (attributeCode, value) =>
-                   (variantId, attributeCode, value)
-               }
-             )
+          attributes.intAttributes.toList.map {
+            case (attributeCode, value) =>
+              (variantId, attributeCode, value)
+          }
+        )
         _ <- insertBigDecimalAttributes(
-               attributes.bigDecimalAttributes.toList.map {
-                 case (attributeCode, value) =>
-                   (variantId, attributeCode, value)
-               }
-             )
+          attributes.bigDecimalAttributes.toList.map {
+            case (attributeCode, value) =>
+              (variantId, attributeCode, value)
+          }
+        )
       } yield ()
 
     private def insertIntAttributes(rows: List[IntAttributeInsertRow]): ConnectionIO[Int] =

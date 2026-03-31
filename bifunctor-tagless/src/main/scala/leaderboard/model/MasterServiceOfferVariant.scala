@@ -3,7 +3,6 @@ package leaderboard.model
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, JsonObject}
 import io.circe.syntax.*
 import leaderboard.model.MasterServiceOfferVariantValidationError.{NegativePriceFrom, NonPositiveDurationMin, PriceToLessThanPriceFrom}
-import leaderboard.model.AttributeMap
 
 import scala.annotation.nowarn
 
@@ -34,12 +33,12 @@ final case class MasterServiceOfferVariant private (
 
   @nowarn("cat=unused")
   private def copy(
-    id: MasterServiceOfferVariantId = this.id,
-    masterServiceOfferId: MasterServiceOfferId = this.masterServiceOfferId,
-    masterLocationId: MasterLocationId = this.masterLocationId,
-    priceFrom: BigDecimal = this.priceFrom,
-    priceTo: BigDecimal = this.priceTo,
-    durationMin: Int = this.durationMin,
+    id: MasterServiceOfferVariantId                 = this.id,
+    masterServiceOfferId: MasterServiceOfferId      = this.masterServiceOfferId,
+    masterLocationId: MasterLocationId              = this.masterLocationId,
+    priceFrom: BigDecimal                           = this.priceFrom,
+    priceTo: BigDecimal                             = this.priceTo,
+    durationMin: Int                                = this.durationMin,
     attributes: MasterServiceOfferVariantAttributes = this.attributes,
   ): MasterServiceOfferVariant =
     new MasterServiceOfferVariant(
@@ -126,7 +125,7 @@ object MasterServiceOfferVariant {
     decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
   ): Decoder.Result[AttributeMap[A]] =
     c.get[Option[Map[String, A]]](fieldName).flatMap {
-              case Some(raw) =>
+      case Some(raw) =>
         raw.foldLeft[Decoder.Result[AttributeMap[A]]](Right(AttributeMap(Map.empty))) {
           case (acc, (attributeCode, value)) =>
             for {
@@ -141,63 +140,66 @@ object MasterServiceOfferVariant {
     }
 
   private def encodeIntAttributes(value: AttributeMap[Int]) =
-    value.iterator.map {
-      case (attributeDefinition, attributeValue) =>
-        attributeDefinition.code -> attributeValue
-    }.toMap.asJson
+    value.iterator
+      .map {
+        case (attributeDefinition, attributeValue) =>
+          attributeDefinition.code -> attributeValue
+      }.toMap.asJson
 
   private def encodeBigDecimalAttributes(value: AttributeMap[BigDecimal]) =
-    value.iterator.map {
-      case (attributeDefinition, attributeValue) =>
-        attributeDefinition.code -> attributeValue
-    }.toMap.asJson
+    value.iterator
+      .map {
+        case (attributeDefinition, attributeValue) =>
+          attributeDefinition.code -> attributeValue
+      }.toMap.asJson
 
-  private val decoder: Decoder[MasterServiceOfferVariant] = Decoder.instance { c =>
-    for {
-      id                   <- c.get[MasterServiceOfferVariantId]("id")
-      masterServiceOfferId <- c.get[MasterServiceOfferId]("masterServiceOfferId")
-      masterLocationId     <- c.get[MasterLocationId]("masterLocationId")
-      priceFrom            <- c.get[BigDecimal]("priceFrom")
-      priceTo              <- c.get[BigDecimal]("priceTo")
-      durationMin          <- c.get[Int]("durationMin")
-      intAttributes        <- decodeAttributes[Int](
-                                c,
-                                "intAttributes",
-                                MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
-                              )
-      bigDecimalAttributes <- decodeAttributes[BigDecimal](
-                                c,
-                                "bigDecimalAttributes",
-                                MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
-                              )
-      attributes            = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes)
-      value                <- make(
-                                id,
-                                masterServiceOfferId,
-                                masterLocationId,
-                                priceFrom,
-                                priceTo,
-                                durationMin,
-                                attributes,
-                              )
-                                .left
-                                .map(error => DecodingFailure(error.message, c.history))
-    } yield value
+  private val decoder: Decoder[MasterServiceOfferVariant] = Decoder.instance {
+    c =>
+      for {
+        id                   <- c.get[MasterServiceOfferVariantId]("id")
+        masterServiceOfferId <- c.get[MasterServiceOfferId]("masterServiceOfferId")
+        masterLocationId     <- c.get[MasterLocationId]("masterLocationId")
+        priceFrom            <- c.get[BigDecimal]("priceFrom")
+        priceTo              <- c.get[BigDecimal]("priceTo")
+        durationMin          <- c.get[Int]("durationMin")
+        intAttributes        <- decodeAttributes[Int](
+          c,
+          "intAttributes",
+          MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
+        )
+        bigDecimalAttributes <- decodeAttributes[BigDecimal](
+          c,
+          "bigDecimalAttributes",
+          MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
+        )
+        attributes = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes)
+        value     <- make(
+          id,
+          masterServiceOfferId,
+          masterLocationId,
+          priceFrom,
+          priceTo,
+          durationMin,
+          attributes,
+        ).left
+          .map(error => DecodingFailure(error.message, c.history))
+      } yield value
   }
 
-  private val encoder: Encoder.AsObject[MasterServiceOfferVariant] = Encoder.AsObject.instance { value =>
-    JsonObject.fromIterable(
-      List(
-        "id"                   -> value.id.asJson,
-        "masterServiceOfferId" -> value.masterServiceOfferId.asJson,
-        "masterLocationId"     -> value.masterLocationId.asJson,
-        "priceFrom"            -> value.priceFrom.asJson,
-        "priceTo"              -> value.priceTo.asJson,
-        "durationMin"          -> value.durationMin.asJson,
-      ) ++ Option.when(value.attributes.intValues.nonEmpty)("intAttributes" -> encodeIntAttributes(value.attributes.intValues)) ++ Option.when(
-        value.attributes.bigDecimalValues.nonEmpty
-      )("bigDecimalAttributes" -> encodeBigDecimalAttributes(value.attributes.bigDecimalValues))
-    )
+  private val encoder: Encoder.AsObject[MasterServiceOfferVariant] = Encoder.AsObject.instance {
+    value =>
+      JsonObject.fromIterable(
+        List(
+          "id"                   -> value.id.asJson,
+          "masterServiceOfferId" -> value.masterServiceOfferId.asJson,
+          "masterLocationId"     -> value.masterLocationId.asJson,
+          "priceFrom"            -> value.priceFrom.asJson,
+          "priceTo"              -> value.priceTo.asJson,
+          "durationMin"          -> value.durationMin.asJson,
+        ) ++ Option.when(value.attributes.intValues.nonEmpty)("intAttributes" -> encodeIntAttributes(value.attributes.intValues)) ++ Option.when(
+          value.attributes.bigDecimalValues.nonEmpty
+        )("bigDecimalAttributes" -> encodeBigDecimalAttributes(value.attributes.bigDecimalValues))
+      )
   }
 
   implicit val codec: Codec.AsObject[MasterServiceOfferVariant] = Codec.AsObject.from(decoder, encoder)

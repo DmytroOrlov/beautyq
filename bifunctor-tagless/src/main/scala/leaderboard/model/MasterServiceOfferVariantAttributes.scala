@@ -1,7 +1,6 @@
 package leaderboard.model
 
 import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
-import leaderboard.model.AttributeMap
 
 case class MasterServiceOfferVariantAttributes(
   intValues: AttributeMap[Int],
@@ -15,7 +14,7 @@ case class MasterServiceOfferVariantAttributes(
 
   private[model] def presentDefinitions: Set[AnyAttributeDefinition] =
     intValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet ++
-      bigDecimalValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet
+    bigDecimalValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet
 }
 
 object MasterServiceOfferVariantAttributes {

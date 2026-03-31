@@ -229,11 +229,11 @@ abstract class CategoriesTest extends LeaderboardTest {
     "allow creating a top-level category with parentId == rootCategoryId" in {
       (rnd: Rnd[IO], categories: Categories[IO]) =>
         for {
-          id       <- rnd[CategoryId]
-          category  = Category(id, rootCategoryId, 0, s"top-$id")
-          _        <- categories.upsertCategory(category)
-          res      <- categories.getCategory(category.id)
-          _        <- assertIO(res.contains(category))
+          id      <- rnd[CategoryId]
+          category = Category(id, rootCategoryId, 0, s"top-$id")
+          _       <- categories.upsertCategory(category)
+          res     <- categories.getCategory(category.id)
+          _       <- assertIO(res.contains(category))
         } yield ()
     }
 
@@ -420,11 +420,11 @@ abstract class MastersTest extends LeaderboardTest {
     "upsert & get" in {
       (rnd: Rnd[IO], masters: Masters[IO]) =>
         for {
-          id      <- rnd[MasterId]
-          master   = Master(id, s"name-$id")
-          _       <- masters.upsertMaster(master)
-          res     <- masters.getMaster(master.id)
-          _       <- assertIO(res.contains(master))
+          id    <- rnd[MasterId]
+          master = Master(id, s"name-$id")
+          _     <- masters.upsertMaster(master)
+          res   <- masters.getMaster(master.id)
+          _     <- assertIO(res.contains(master))
         } yield ()
     }
 
@@ -464,13 +464,13 @@ abstract class MastersTest extends LeaderboardTest {
     "upsert overwrites existing master with same id" in {
       (rnd: Rnd[IO], masters: Masters[IO]) =>
         for {
-          id      <- rnd[MasterId]
-          initial  = Master(id, "same-id")
-          updated  = Master(id, "same-id-updated")
-          _       <- masters.upsertMaster(initial)
-          _       <- masters.upsertMaster(updated)
-          res     <- masters.getMaster(id)
-          _       <- assertIO(res.contains(updated))
+          id     <- rnd[MasterId]
+          initial = Master(id, "same-id")
+          updated = Master(id, "same-id-updated")
+          _      <- masters.upsertMaster(initial)
+          _      <- masters.upsertMaster(updated)
+          res    <- masters.getMaster(id)
+          _      <- assertIO(res.contains(updated))
         } yield ()
     }
 
@@ -502,11 +502,11 @@ abstract class MasterLocationsTest extends LeaderboardTest {
           masterId   <- rnd[MasterId]
           locationId <- rnd[MasterLocationId]
           result     <- masterLocations
-                          .upsertMasterLocation(
-                            MasterLocation(locationId, masterId, "orphan-location", "missing-master-address", BigDecimal("10.1000"), BigDecimal("20.2000"))
-                          )
-                          .either
-          _          <- assertIO(result.isLeft)
+            .upsertMasterLocation(
+              MasterLocation(locationId, masterId, "orphan-location", "missing-master-address", BigDecimal("10.1000"), BigDecimal("20.2000"))
+            )
+            .either
+          _ <- assertIO(result.isLeft)
         } yield ()
     }
 
@@ -536,8 +536,8 @@ abstract class MasterLocationsTest extends LeaderboardTest {
           location2Id <- rnd[MasterLocationId]
           otherId     <- rnd[MasterLocationId]
 
-          master1  = Master(master1Id, s"master-a-$master1Id")
-          master2  = Master(master2Id, s"master-b-$master2Id")
+          master1   = Master(master1Id, s"master-a-$master1Id")
+          master2   = Master(master2Id, s"master-b-$master2Id")
           location1 = MasterLocation(location1Id, master1Id, s"loc-a-$location1Id", s"addr-a-$location1Id", BigDecimal("51.5074"), BigDecimal("-0.1278"))
           location2 = MasterLocation(location2Id, master1Id, s"loc-b-$location2Id", s"addr-b-$location2Id", BigDecimal("48.8566"), BigDecimal("2.3522"))
           other     = MasterLocation(otherId, master2Id, s"loc-c-$otherId", s"addr-c-$otherId", BigDecimal("35.6762"), BigDecimal("139.6503"))
@@ -875,23 +875,23 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
           category    = Category(categoryId, rootCategoryId, 0, s"schema-category-$categoryId")
           service     = Service(serviceId, categoryId, s"schema-service-$serviceId")
           schema      = makeSchema(
-                          serviceId,
-                          ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-                          ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
-                        )
-          _          <- categories.upsertCategory(category)
-          _          <- services.upsertService(service)
-          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
-          res        <- serviceVariantSchemas.getServiceVariantSchema(serviceId)
-          _          <- assertIO(
-                          res == ServiceVariantSchema.fromItems(
-                            serviceId,
-                            List(
-                              ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-                              ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
-                            )
-                          )
-                        )
+            serviceId,
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+          )
+          _   <- categories.upsertCategory(category)
+          _   <- services.upsertService(service)
+          _   <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          res <- serviceVariantSchemas.getServiceVariantSchema(serviceId)
+          _   <- assertIO(
+            res == ServiceVariantSchema.fromItems(
+              serviceId,
+              List(
+                ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
+                ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+              ),
+            )
+          )
         } yield ()
     }
 
@@ -900,14 +900,14 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
         for {
           serviceId <- rnd[ServiceId]
           result    <- serviceVariantSchemas
-                         .upsertServiceVariantSchema(
-                           makeSchema(
-                             serviceId,
-                             ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true)
-                           )
-                         )
-                         .either
-          _         <- assertIO(result.isLeft)
+            .upsertServiceVariantSchema(
+              makeSchema(
+                serviceId,
+                ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+              )
+            )
+            .either
+          _ <- assertIO(result.isLeft)
         } yield ()
     }
 
@@ -918,8 +918,7 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
 abstract class ServiceVariantSchemasStorageValidationTest extends LeaderboardTest {
   "ServiceVariantSchemas" should {
     "reject unknown attribute code from storage" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         services: Services[IO],
         serviceVariantSchemas: ServiceVariantSchemas[IO],
@@ -933,20 +932,20 @@ abstract class ServiceVariantSchemasStorageValidationTest extends LeaderboardTes
           _          <- categories.upsertCategory(category)
           _          <- services.upsertService(service)
           _          <- db.execute("insert-invalid-service-variant-schema-item") {
-                          sql"""insert into service_variant_schema_items (
-                               |  service_id,
-                               |  attribute_code,
-                               |  required
-                               |)
-                               |values (
-                               |  $serviceId,
-                               |  ${"unknown_attribute_code"},
-                               |  false
-                               |)
-                               |""".stripMargin.update.run
-                        }
-          result     <- serviceVariantSchemas.getServiceVariantSchema(serviceId).either
-          _          <- assertIO(result.isLeft)
+            sql"""insert into service_variant_schema_items (
+                 |  service_id,
+                 |  attribute_code,
+                 |  required
+                 |)
+                 |values (
+                 |  $serviceId,
+                 |  ${"unknown_attribute_code"},
+                 |  false
+                 |)
+                 |""".stripMargin.update.run
+          }
+          result <- serviceVariantSchemas.getServiceVariantSchema(serviceId).either
+          _      <- assertIO(result.isLeft)
         } yield ()
     }
   }
@@ -960,7 +959,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
     priceFrom: BigDecimal,
     priceTo: BigDecimal,
     durationMin: Int,
-    intAttributes: AttributeMap[Int] = AttributeMap(Map.empty),
+    intAttributes: AttributeMap[Int]               = AttributeMap(Map.empty),
     bigDecimalAttributes: AttributeMap[BigDecimal] = AttributeMap(Map.empty),
   ): IO[QueryFailure, MasterServiceOfferVariant] =
     MasterServiceOfferVariant
@@ -985,8 +984,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
   "MasterServiceOfferVariants" should {
 
     "upsert & get" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1005,22 +1003,28 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master      = Master(masterId, s"offer-variant-master-$masterId")
           service     = Service(serviceId, categoryId, s"offer-variant-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
-          location    = MasterLocation(locationId, masterId, s"offer-variant-$locationId", s"offer-variant-address-$locationId", BigDecimal("12.3400"), BigDecimal("56.7800"))
-          variant    <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service)
-          _          <- offers.upsertMasterServiceOffer(offer)
-          _          <- masterLocations.upsertMasterLocation(location)
-          _          <- variants.upsertMasterServiceOfferVariant(variant)
-          res        <- variants.getMasterServiceOfferVariant(variant.id)
-          _          <- assertIO(res.contains(variant))
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"offer-variant-$locationId",
+            s"offer-variant-address-$locationId",
+            BigDecimal("12.3400"),
+            BigDecimal("56.7800"),
+          )
+          variant <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
+          _       <- categories.upsertCategory(category)
+          _       <- masters.upsertMaster(master)
+          _       <- services.upsertService(service)
+          _       <- offers.upsertMasterServiceOffer(offer)
+          _       <- masterLocations.upsertMasterLocation(location)
+          _       <- variants.upsertMasterServiceOfferVariant(variant)
+          res     <- variants.getMasterServiceOfferVariant(variant.id)
+          _       <- assertIO(res.contains(variant))
         } yield ()
     }
 
     "upsert & get with required and optional additional attributes allowed by service schema" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1040,35 +1044,44 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master      = Master(masterId, s"offer-variant-attrs-master-$masterId")
           service     = Service(serviceId, categoryId, s"offer-variant-attrs-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
-          location    = MasterLocation(locationId, masterId, s"offer-variant-attrs-$locationId", s"offer-variant-attrs-address-$locationId", BigDecimal("13.3400"), BigDecimal("57.7800"))
-          schema      = makeSchema(
-                          serviceId,
-                          ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
-                          ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false),
-                          ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-                        )
-          variant    <- makeVariant(
-                          variantId,
-                          offerId,
-                          locationId,
-                          BigDecimal("30.0000"),
-                          BigDecimal("45.0000"),
-                          60,
-                          intAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 5)),
-                          bigDecimalAttributes = AttributeMap(Map(
-                            MasterServiceOfferVariantAttributeDefinition.DepositAmount      -> BigDecimal("15.0000"),
-                            MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge -> BigDecimal("7.5000"),
-                          )),
-                        )
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service)
-          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
-          _          <- offers.upsertMasterServiceOffer(offer)
-          _          <- masterLocations.upsertMasterLocation(location)
-          _          <- variants.upsertMasterServiceOfferVariant(variant)
-          res        <- variants.getMasterServiceOfferVariant(variant.id)
-          _          <- assertIO(res.contains(variant))
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"offer-variant-attrs-$locationId",
+            s"offer-variant-attrs-address-$locationId",
+            BigDecimal("13.3400"),
+            BigDecimal("57.7800"),
+          )
+          schema = makeSchema(
+            serviceId,
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false),
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
+          )
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            BigDecimal("30.0000"),
+            BigDecimal("45.0000"),
+            60,
+            intAttributes        = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 5)),
+            bigDecimalAttributes = AttributeMap(
+              Map(
+                MasterServiceOfferVariantAttributeDefinition.DepositAmount      -> BigDecimal("15.0000"),
+                MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge -> BigDecimal("7.5000"),
+              )
+            ),
+          )
+          _   <- categories.upsertCategory(category)
+          _   <- masters.upsertMaster(master)
+          _   <- services.upsertService(service)
+          _   <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _   <- offers.upsertMasterServiceOffer(offer)
+          _   <- masterLocations.upsertMasterLocation(location)
+          _   <- variants.upsertMasterServiceOfferVariant(variant)
+          res <- variants.getMasterServiceOfferVariant(variant.id)
+          _   <- assertIO(res.contains(variant))
         } yield ()
     }
 
@@ -1080,18 +1093,24 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
           master      = Master(masterId, s"missing-offer-master-$masterId")
-          location    = MasterLocation(locationId, masterId, s"missing-offer-location-$locationId", s"missing-offer-address-$locationId", BigDecimal("1.1000"), BigDecimal("2.2000"))
-          _          <- masters.upsertMaster(master)
-          _          <- masterLocations.upsertMasterLocation(location)
-          variant    <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
-          result     <- variants.upsertMasterServiceOfferVariant(variant).either
-          _          <- assertIO(result.isLeft)
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"missing-offer-location-$locationId",
+            s"missing-offer-address-$locationId",
+            BigDecimal("1.1000"),
+            BigDecimal("2.2000"),
+          )
+          _       <- masters.upsertMaster(master)
+          _       <- masterLocations.upsertMasterLocation(location)
+          variant <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
+          result  <- variants.upsertMasterServiceOfferVariant(variant).either
+          _       <- assertIO(result.isLeft)
         } yield ()
     }
 
     "reject creating a variant when location does not exist" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1138,13 +1157,13 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           locationId <- rnd[MasterLocationId]
           result      = MasterServiceOfferVariant.make(variantId, offerId, locationId, BigDecimal("20.0000"), BigDecimal("10.0000"), 60)
           _          <- assertIO(
-                          result == Left(
-                            MasterServiceOfferVariantValidationError.PriceToLessThanPriceFrom(
-                              BigDecimal("20.0000"),
-                              BigDecimal("10.0000"),
-                            )
-                          )
-                        )
+            result == Left(
+              MasterServiceOfferVariantValidationError.PriceToLessThanPriceFrom(
+                BigDecimal("20.0000"),
+                BigDecimal("10.0000"),
+              )
+            )
+          )
         } yield ()
     }
 
@@ -1166,36 +1185,36 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           attributes  = MasterServiceOfferVariantAttributes(
-                          intValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 3)),
-                          bigDecimalValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
-                        )
-          variant    <- ZIO
-                          .fromEither(
-                            MasterServiceOfferVariant.make(
-                              variantId,
-                              offerId,
-                              locationId,
-                              BigDecimal("20.0000"),
-                              BigDecimal("30.0000"),
-                              60,
-                              attributes,
-                            )
-                          )
-                          .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
-          _          <- assertIO(variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
-          _          <- assertIO(
-                          variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
-                        )
-          _          <- assertIO(variant.intAttributes.get(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
-          _          <- assertIO(
-                          variant.bigDecimalAttributes.get(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
-                        )
-          _          <- assertIO(variant.intAttributes.keySet == Set(MasterServiceOfferVariantAttributeDefinition.SessionCount))
-          _          <- assertIO(
-                          variant.bigDecimalAttributes.keySet == Set(
-                            MasterServiceOfferVariantAttributeDefinition.DepositAmount
-                          )
-                        )
+            intValues        = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 3)),
+            bigDecimalValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
+          )
+          variant <- ZIO
+            .fromEither(
+              MasterServiceOfferVariant.make(
+                variantId,
+                offerId,
+                locationId,
+                BigDecimal("20.0000"),
+                BigDecimal("30.0000"),
+                60,
+                attributes,
+              )
+            )
+            .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
+          _ <- assertIO(variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
+          _ <- assertIO(
+            variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
+          )
+          _ <- assertIO(variant.intAttributes.get(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
+          _ <- assertIO(
+            variant.bigDecimalAttributes.get(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
+          )
+          _ <- assertIO(variant.intAttributes.keySet == Set(MasterServiceOfferVariantAttributeDefinition.SessionCount))
+          _ <- assertIO(
+            variant.bigDecimalAttributes.keySet == Set(
+              MasterServiceOfferVariantAttributeDefinition.DepositAmount
+            )
+          )
         } yield ()
     }
 
@@ -1205,16 +1224,16 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           serviceId <- rnd[ServiceId]
           schema     = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false))
           attributes = MasterServiceOfferVariantAttributes(
-                         intValues = AttributeMap(Map.empty),
-                         bigDecimalValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
-                       )
-          _         <- assertIO(
-                         schema.validate(attributes) == Left(
-                           ServiceVariantSchemaValidationError.DisallowedAttribute(
-                             MasterServiceOfferVariantAttributeDefinition.DepositAmount
-                           )
-                         )
-                       )
+            intValues        = AttributeMap(Map.empty),
+            bigDecimalValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
+          )
+          _ <- assertIO(
+            schema.validate(attributes) == Left(
+              ServiceVariantSchemaValidationError.DisallowedAttribute(
+                MasterServiceOfferVariantAttributeDefinition.DepositAmount
+              )
+            )
+          )
         } yield ()
     }
 
@@ -1225,12 +1244,12 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           schema     = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true))
           attributes = MasterServiceOfferVariantAttributes.empty
           _         <- assertIO(
-                         schema.validate(attributes) == Left(
-                           ServiceVariantSchemaValidationError.MissingRequiredAttribute(
-                             MasterServiceOfferVariantAttributeDefinition.SessionCount
-                           )
-                         )
-                       )
+            schema.validate(attributes) == Left(
+              ServiceVariantSchemaValidationError.MissingRequiredAttribute(
+                MasterServiceOfferVariantAttributeDefinition.SessionCount
+              )
+            )
+          )
         } yield ()
     }
 
@@ -1241,18 +1260,18 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
           json        = Json.obj(
-                          "id"                   -> variantId.asJson,
-                          "masterServiceOfferId" -> offerId.asJson,
-                          "masterLocationId"     -> locationId.asJson,
-                          "priceFrom"            -> BigDecimal("30.0000").asJson,
-                          "priceTo"              -> BigDecimal("45.0000").asJson,
-                          "durationMin"          -> 60.asJson,
-                          "intAttributes" -> Json.obj(
-                            "deposit_amount" -> 3.asJson
-                          ),
-                        )
-          result      = json.as[MasterServiceOfferVariant]
-          _          <- assertIO(result.isLeft)
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "intAttributes"        -> Json.obj(
+              "deposit_amount" -> 3.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
         } yield ()
     }
 
@@ -1263,24 +1282,23 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
           json        = Json.obj(
-                          "id"                   -> variantId.asJson,
-                          "masterServiceOfferId" -> offerId.asJson,
-                          "masterLocationId"     -> locationId.asJson,
-                          "priceFrom"            -> BigDecimal("30.0000").asJson,
-                          "priceTo"              -> BigDecimal("45.0000").asJson,
-                          "durationMin"          -> 60.asJson,
-                          "intAttributes" -> Json.obj(
-                            "unknown_attribute_code" -> 3.asJson
-                          ),
-                        )
-          result      = json.as[MasterServiceOfferVariant]
-          _          <- assertIO(result.isLeft)
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "intAttributes"        -> Json.obj(
+              "unknown_attribute_code" -> 3.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
         } yield ()
     }
 
     "reject additional attribute stored in wrong typed storage" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1299,33 +1317,39 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master      = Master(masterId, s"variant-type-master-$masterId")
           service     = Service(serviceId, categoryId, s"variant-type-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
-          location    = MasterLocation(locationId, masterId, s"variant-type-location-$locationId", s"variant-type-address-$locationId", BigDecimal("10.0000"), BigDecimal("20.0000"))
-          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false))
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service)
-          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
-          _          <- offers.upsertMasterServiceOffer(offer)
-          _          <- masterLocations.upsertMasterLocation(location)
-          json        = Json.obj(
-                          "id"                   -> variantId.asJson,
-                          "masterServiceOfferId" -> offerId.asJson,
-                          "masterLocationId"     -> locationId.asJson,
-                          "priceFrom"            -> BigDecimal("30.0000").asJson,
-                          "priceTo"              -> BigDecimal("45.0000").asJson,
-                          "durationMin"          -> 60.asJson,
-                          "intAttributes" -> Json.obj(
-                            "deposit_amount" -> 3.asJson
-                          ),
-                        )
-          result      = json.as[MasterServiceOfferVariant]
-          _          <- assertIO(result.isLeft)
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"variant-type-location-$locationId",
+            s"variant-type-address-$locationId",
+            BigDecimal("10.0000"),
+            BigDecimal("20.0000"),
+          )
+          schema = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false))
+          _     <- categories.upsertCategory(category)
+          _     <- masters.upsertMaster(master)
+          _     <- services.upsertService(service)
+          _     <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _     <- offers.upsertMasterServiceOffer(offer)
+          _     <- masterLocations.upsertMasterLocation(location)
+          json   = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "intAttributes"        -> Json.obj(
+              "deposit_amount" -> 3.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
         } yield ()
     }
 
     "upsert rejects disallowed additional attribute by service schema" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1345,41 +1369,45 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master      = Master(masterId, s"variant-schema-master-$masterId")
           service     = Service(serviceId, categoryId, s"variant-schema-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
-          location    = MasterLocation(locationId, masterId, s"variant-schema-location-$locationId", s"variant-schema-address-$locationId", BigDecimal("10.0000"), BigDecimal("20.0000"))
-          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false))
-          variant    <- makeVariant(
-                          variantId,
-                          offerId,
-                          locationId,
-                          BigDecimal("30.0000"),
-                          BigDecimal("45.0000"),
-                          60,
-                          bigDecimalAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("8.0000"))),
-                        )
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service)
-          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
-          _          <- offers.upsertMasterServiceOffer(offer)
-          _          <- masterLocations.upsertMasterLocation(location)
-          result     <- variants.upsertMasterServiceOfferVariant(variant).either
-          _          <- assertIO(
-                          result.left.exists(
-                            {
-                              case QueryFailure.OperationFailure(operationName, message) =>
-                                operationName == "upsert-master-service-offer-variant" &&
-                                  message == s"Service $serviceId does not allow MasterServiceOfferVariant attribute deposit_amount"
-                              case _ =>
-                                false
-                            }
-                          )
-                        )
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"variant-schema-location-$locationId",
+            s"variant-schema-address-$locationId",
+            BigDecimal("10.0000"),
+            BigDecimal("20.0000"),
+          )
+          schema   = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false))
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            BigDecimal("30.0000"),
+            BigDecimal("45.0000"),
+            60,
+            bigDecimalAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("8.0000"))),
+          )
+          _      <- categories.upsertCategory(category)
+          _      <- masters.upsertMaster(master)
+          _      <- services.upsertService(service)
+          _      <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _      <- offers.upsertMasterServiceOffer(offer)
+          _      <- masterLocations.upsertMasterLocation(location)
+          result <- variants.upsertMasterServiceOfferVariant(variant).either
+          _      <- assertIO(
+            result.left.exists {
+              case QueryFailure.OperationFailure(operationName, message) =>
+                operationName == "upsert-master-service-offer-variant" &&
+                message == s"Service $serviceId does not allow MasterServiceOfferVariant attribute deposit_amount"
+              case _ =>
+                false
+            }
+          )
         } yield ()
     }
 
     "upsert rejects missing required additional attribute by service schema" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1399,33 +1427,37 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master      = Master(masterId, s"variant-required-master-$masterId")
           service     = Service(serviceId, categoryId, s"variant-required-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
-          location    = MasterLocation(locationId, masterId, s"variant-required-location-$locationId", s"variant-required-address-$locationId", BigDecimal("10.0000"), BigDecimal("20.0000"))
-          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true))
-          variant    <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service)
-          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
-          _          <- offers.upsertMasterServiceOffer(offer)
-          _          <- masterLocations.upsertMasterLocation(location)
-          result     <- variants.upsertMasterServiceOfferVariant(variant).either
-          _          <- assertIO(
-                          result.left.exists(
-                            {
-                              case QueryFailure.OperationFailure(operationName, message) =>
-                                operationName == "upsert-master-service-offer-variant" &&
-                                  message == s"Service $serviceId requires MasterServiceOfferVariant attribute session_count"
-                              case _ =>
-                                false
-                            }
-                          )
-                        )
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"variant-required-location-$locationId",
+            s"variant-required-address-$locationId",
+            BigDecimal("10.0000"),
+            BigDecimal("20.0000"),
+          )
+          schema   = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true))
+          variant <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
+          _       <- categories.upsertCategory(category)
+          _       <- masters.upsertMaster(master)
+          _       <- services.upsertService(service)
+          _       <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _       <- offers.upsertMasterServiceOffer(offer)
+          _       <- masterLocations.upsertMasterLocation(location)
+          result  <- variants.upsertMasterServiceOfferVariant(variant).either
+          _       <- assertIO(
+            result.left.exists {
+              case QueryFailure.OperationFailure(operationName, message) =>
+                operationName == "upsert-master-service-offer-variant" &&
+                message == s"Service $serviceId requires MasterServiceOfferVariant attribute session_count"
+              case _ =>
+                false
+            }
+          )
         } yield ()
     }
 
     "reject creating a variant when offer and location belong to different masters" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1446,26 +1478,32 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master2     = Master(master2Id, s"mismatch-master-b-$master2Id")
           service     = Service(serviceId, categoryId, s"mismatch-service-$serviceId")
           offer       = MasterServiceOffer(offerId, master1Id, serviceId)
-          location    = MasterLocation(locationId, master2Id, s"mismatch-location-$locationId", s"mismatch-address-$locationId", BigDecimal("17.0000"), BigDecimal("27.0000"))
-          result     <- {
-                           for {
-                             _       <- categories.upsertCategory(category)
-                             _       <- masters.upsertMaster(master1)
-                             _       <- masters.upsertMaster(master2)
-                             _       <- services.upsertService(service)
-                             _       <- offers.upsertMasterServiceOffer(offer)
-                             _       <- masterLocations.upsertMasterLocation(location)
-                             variant <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
-                             r       <- variants.upsertMasterServiceOfferVariant(variant).either
-                           } yield r
-                         }
-          _          <- assertIO(result.isLeft)
+          location    = MasterLocation(
+            locationId,
+            master2Id,
+            s"mismatch-location-$locationId",
+            s"mismatch-address-$locationId",
+            BigDecimal("17.0000"),
+            BigDecimal("27.0000"),
+          )
+          result <- {
+            for {
+              _       <- categories.upsertCategory(category)
+              _       <- masters.upsertMaster(master1)
+              _       <- masters.upsertMaster(master2)
+              _       <- services.upsertService(service)
+              _       <- offers.upsertMasterServiceOffer(offer)
+              _       <- masterLocations.upsertMasterLocation(location)
+              variant <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
+              r       <- variants.upsertMasterServiceOfferVariant(variant).either
+            } yield r
+          }
+          _ <- assertIO(result.isLeft)
         } yield ()
     }
 
     "allow creating several variants for one offer" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1486,26 +1524,39 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master       = Master(masterId, s"variants-by-offer-master-$masterId")
           service      = Service(serviceId, categoryId, s"variants-by-offer-service-$serviceId")
           offer        = MasterServiceOffer(offerId, masterId, serviceId)
-          location1    = MasterLocation(location1Id, masterId, s"variants-location-a-$location1Id", s"variants-address-a-$location1Id", BigDecimal("10.0000"), BigDecimal("20.0000"))
-          location2    = MasterLocation(location2Id, masterId, s"variants-location-b-$location2Id", s"variants-address-b-$location2Id", BigDecimal("30.0000"), BigDecimal("40.0000"))
-          variant1    <- makeVariant(variant1Id, offerId, location1Id, BigDecimal("10.0000"), BigDecimal("20.0000"), 30)
-          variant2    <- makeVariant(variant2Id, offerId, location2Id, BigDecimal("30.0000"), BigDecimal("40.0000"), 90)
-          _           <- categories.upsertCategory(category)
-          _           <- masters.upsertMaster(master)
-          _           <- services.upsertService(service)
-          _           <- offers.upsertMasterServiceOffer(offer)
-          _           <- masterLocations.upsertMasterLocation(location1)
-          _           <- masterLocations.upsertMasterLocation(location2)
-          _           <- variants.upsertMasterServiceOfferVariant(variant1)
-          _           <- variants.upsertMasterServiceOfferVariant(variant2)
-          res         <- variants.getMasterServiceOfferVariantsByOffer(offerId)
-          _           <- assertIO(res.toSet == Set(variant1, variant2))
+          location1    = MasterLocation(
+            location1Id,
+            masterId,
+            s"variants-location-a-$location1Id",
+            s"variants-address-a-$location1Id",
+            BigDecimal("10.0000"),
+            BigDecimal("20.0000"),
+          )
+          location2 = MasterLocation(
+            location2Id,
+            masterId,
+            s"variants-location-b-$location2Id",
+            s"variants-address-b-$location2Id",
+            BigDecimal("30.0000"),
+            BigDecimal("40.0000"),
+          )
+          variant1 <- makeVariant(variant1Id, offerId, location1Id, BigDecimal("10.0000"), BigDecimal("20.0000"), 30)
+          variant2 <- makeVariant(variant2Id, offerId, location2Id, BigDecimal("30.0000"), BigDecimal("40.0000"), 90)
+          _        <- categories.upsertCategory(category)
+          _        <- masters.upsertMaster(master)
+          _        <- services.upsertService(service)
+          _        <- offers.upsertMasterServiceOffer(offer)
+          _        <- masterLocations.upsertMasterLocation(location1)
+          _        <- masterLocations.upsertMasterLocation(location2)
+          _        <- variants.upsertMasterServiceOfferVariant(variant1)
+          _        <- variants.upsertMasterServiceOfferVariant(variant2)
+          res      <- variants.getMasterServiceOfferVariantsByOffer(offerId)
+          _        <- assertIO(res.toSet == Set(variant1, variant2))
         } yield ()
     }
 
     "allow creating several variants for one location" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1529,26 +1580,32 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           service2    = Service(service2Id, categoryId, s"variants-by-location-service-b-$service2Id")
           offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
-          location    = MasterLocation(locationId, masterId, s"variants-shared-location-$locationId", s"variants-shared-address-$locationId", BigDecimal("50.0000"), BigDecimal("60.0000"))
-          variant1   <- makeVariant(variant1Id, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"), 30)
-          variant2   <- makeVariant(variant2Id, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"), 90)
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service1)
-          _          <- services.upsertService(service2)
-          _          <- offers.upsertMasterServiceOffer(offer1)
-          _          <- offers.upsertMasterServiceOffer(offer2)
-          _          <- masterLocations.upsertMasterLocation(location)
-          _          <- variants.upsertMasterServiceOfferVariant(variant1)
-          _          <- variants.upsertMasterServiceOfferVariant(variant2)
-          res        <- variants.getMasterServiceOfferVariantsByLocation(locationId)
-          _          <- assertIO(res.toSet == Set(variant1, variant2))
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"variants-shared-location-$locationId",
+            s"variants-shared-address-$locationId",
+            BigDecimal("50.0000"),
+            BigDecimal("60.0000"),
+          )
+          variant1 <- makeVariant(variant1Id, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"), 30)
+          variant2 <- makeVariant(variant2Id, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"), 90)
+          _        <- categories.upsertCategory(category)
+          _        <- masters.upsertMaster(master)
+          _        <- services.upsertService(service1)
+          _        <- services.upsertService(service2)
+          _        <- offers.upsertMasterServiceOffer(offer1)
+          _        <- offers.upsertMasterServiceOffer(offer2)
+          _        <- masterLocations.upsertMasterLocation(location)
+          _        <- variants.upsertMasterServiceOfferVariant(variant1)
+          _        <- variants.upsertMasterServiceOfferVariant(variant2)
+          res      <- variants.getMasterServiceOfferVariantsByLocation(locationId)
+          _        <- assertIO(res.toSet == Set(variant1, variant2))
         } yield ()
     }
 
     "return only variants of the requested offer" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1575,32 +1632,52 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           service2     = Service(service2Id, categoryId, s"variants-filter-offer-service-b-$service2Id")
           offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
-          location1    = MasterLocation(location1Id, masterId, s"variants-filter-offer-location-a-$location1Id", s"variants-filter-offer-address-a-$location1Id", BigDecimal("11.0000"), BigDecimal("21.0000"))
-          location2    = MasterLocation(location2Id, masterId, s"variants-filter-offer-location-b-$location2Id", s"variants-filter-offer-address-b-$location2Id", BigDecimal("31.0000"), BigDecimal("41.0000"))
-          otherLoc     = MasterLocation(otherLocId, masterId, s"variants-filter-offer-location-c-$otherLocId", s"variants-filter-offer-address-c-$otherLocId", BigDecimal("51.0000"), BigDecimal("61.0000"))
-          variant1    <- makeVariant(variant1Id, offer1Id, location1Id, BigDecimal("11.0000"), BigDecimal("21.0000"), 30)
-          variant2    <- makeVariant(variant2Id, offer1Id, location2Id, BigDecimal("31.0000"), BigDecimal("41.0000"), 60)
-          other       <- makeVariant(otherId, offer2Id, otherLocId, BigDecimal("51.0000"), BigDecimal("61.0000"), 90)
-          _           <- categories.upsertCategory(category)
-          _           <- masters.upsertMaster(master)
-          _           <- services.upsertService(service1)
-          _           <- services.upsertService(service2)
-          _           <- offers.upsertMasterServiceOffer(offer1)
-          _           <- offers.upsertMasterServiceOffer(offer2)
-          _           <- masterLocations.upsertMasterLocation(location1)
-          _           <- masterLocations.upsertMasterLocation(location2)
-          _           <- masterLocations.upsertMasterLocation(otherLoc)
-          _           <- variants.upsertMasterServiceOfferVariant(variant1)
-          _           <- variants.upsertMasterServiceOfferVariant(variant2)
-          _           <- variants.upsertMasterServiceOfferVariant(other)
-          res         <- variants.getMasterServiceOfferVariantsByOffer(offer1Id)
-          _           <- assertIO(res.toSet == Set(variant1, variant2))
+          location1    = MasterLocation(
+            location1Id,
+            masterId,
+            s"variants-filter-offer-location-a-$location1Id",
+            s"variants-filter-offer-address-a-$location1Id",
+            BigDecimal("11.0000"),
+            BigDecimal("21.0000"),
+          )
+          location2 = MasterLocation(
+            location2Id,
+            masterId,
+            s"variants-filter-offer-location-b-$location2Id",
+            s"variants-filter-offer-address-b-$location2Id",
+            BigDecimal("31.0000"),
+            BigDecimal("41.0000"),
+          )
+          otherLoc = MasterLocation(
+            otherLocId,
+            masterId,
+            s"variants-filter-offer-location-c-$otherLocId",
+            s"variants-filter-offer-address-c-$otherLocId",
+            BigDecimal("51.0000"),
+            BigDecimal("61.0000"),
+          )
+          variant1 <- makeVariant(variant1Id, offer1Id, location1Id, BigDecimal("11.0000"), BigDecimal("21.0000"), 30)
+          variant2 <- makeVariant(variant2Id, offer1Id, location2Id, BigDecimal("31.0000"), BigDecimal("41.0000"), 60)
+          other    <- makeVariant(otherId, offer2Id, otherLocId, BigDecimal("51.0000"), BigDecimal("61.0000"), 90)
+          _        <- categories.upsertCategory(category)
+          _        <- masters.upsertMaster(master)
+          _        <- services.upsertService(service1)
+          _        <- services.upsertService(service2)
+          _        <- offers.upsertMasterServiceOffer(offer1)
+          _        <- offers.upsertMasterServiceOffer(offer2)
+          _        <- masterLocations.upsertMasterLocation(location1)
+          _        <- masterLocations.upsertMasterLocation(location2)
+          _        <- masterLocations.upsertMasterLocation(otherLoc)
+          _        <- variants.upsertMasterServiceOfferVariant(variant1)
+          _        <- variants.upsertMasterServiceOfferVariant(variant2)
+          _        <- variants.upsertMasterServiceOfferVariant(other)
+          res      <- variants.getMasterServiceOfferVariantsByOffer(offer1Id)
+          _        <- assertIO(res.toSet == Set(variant1, variant2))
         } yield ()
     }
 
     "return only variants of the requested location" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1626,30 +1703,43 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           service2     = Service(service2Id, categoryId, s"variants-filter-location-service-b-$service2Id")
           offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
-          location1    = MasterLocation(location1Id, masterId, s"variants-filter-location-a-$location1Id", s"variants-filter-location-address-a-$location1Id", BigDecimal("13.0000"), BigDecimal("23.0000"))
-          location2    = MasterLocation(location2Id, masterId, s"variants-filter-location-b-$location2Id", s"variants-filter-location-address-b-$location2Id", BigDecimal("33.0000"), BigDecimal("43.0000"))
-          variant1    <- makeVariant(variant1Id, offer1Id, location1Id, BigDecimal("13.0000"), BigDecimal("23.0000"), 30)
-          variant2    <- makeVariant(variant2Id, offer2Id, location1Id, BigDecimal("33.0000"), BigDecimal("43.0000"), 60)
-          other       <- makeVariant(otherId, offer1Id, location2Id, BigDecimal("53.0000"), BigDecimal("63.0000"), 90)
-          _           <- categories.upsertCategory(category)
-          _           <- masters.upsertMaster(master)
-          _           <- services.upsertService(service1)
-          _           <- services.upsertService(service2)
-          _           <- offers.upsertMasterServiceOffer(offer1)
-          _           <- offers.upsertMasterServiceOffer(offer2)
-          _           <- masterLocations.upsertMasterLocation(location1)
-          _           <- masterLocations.upsertMasterLocation(location2)
-          _           <- variants.upsertMasterServiceOfferVariant(variant1)
-          _           <- variants.upsertMasterServiceOfferVariant(variant2)
-          _           <- variants.upsertMasterServiceOfferVariant(other)
-          res         <- variants.getMasterServiceOfferVariantsByLocation(location1Id)
-          _           <- assertIO(res.toSet == Set(variant1, variant2))
+          location1    = MasterLocation(
+            location1Id,
+            masterId,
+            s"variants-filter-location-a-$location1Id",
+            s"variants-filter-location-address-a-$location1Id",
+            BigDecimal("13.0000"),
+            BigDecimal("23.0000"),
+          )
+          location2 = MasterLocation(
+            location2Id,
+            masterId,
+            s"variants-filter-location-b-$location2Id",
+            s"variants-filter-location-address-b-$location2Id",
+            BigDecimal("33.0000"),
+            BigDecimal("43.0000"),
+          )
+          variant1 <- makeVariant(variant1Id, offer1Id, location1Id, BigDecimal("13.0000"), BigDecimal("23.0000"), 30)
+          variant2 <- makeVariant(variant2Id, offer2Id, location1Id, BigDecimal("33.0000"), BigDecimal("43.0000"), 60)
+          other    <- makeVariant(otherId, offer1Id, location2Id, BigDecimal("53.0000"), BigDecimal("63.0000"), 90)
+          _        <- categories.upsertCategory(category)
+          _        <- masters.upsertMaster(master)
+          _        <- services.upsertService(service1)
+          _        <- services.upsertService(service2)
+          _        <- offers.upsertMasterServiceOffer(offer1)
+          _        <- offers.upsertMasterServiceOffer(offer2)
+          _        <- masterLocations.upsertMasterLocation(location1)
+          _        <- masterLocations.upsertMasterLocation(location2)
+          _        <- variants.upsertMasterServiceOfferVariant(variant1)
+          _        <- variants.upsertMasterServiceOfferVariant(variant2)
+          _        <- variants.upsertMasterServiceOfferVariant(other)
+          res      <- variants.getMasterServiceOfferVariantsByLocation(location1Id)
+          _        <- assertIO(res.toSet == Set(variant1, variant2))
         } yield ()
     }
 
     "return variants by offer sorted by id asc" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1669,33 +1759,53 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           master       = Master(masterId, s"variants-sort-offer-master-$masterId")
           service      = Service(serviceId, categoryId, s"variants-sort-offer-service-$serviceId")
           offer        = MasterServiceOffer(offerId, masterId, serviceId)
-          location1    = MasterLocation(location1Id, masterId, s"variants-sort-offer-location-a-$location1Id", s"variants-sort-offer-address-a-$location1Id", BigDecimal("14.0000"), BigDecimal("24.0000"))
-          location2    = MasterLocation(location2Id, masterId, s"variants-sort-offer-location-b-$location2Id", s"variants-sort-offer-address-b-$location2Id", BigDecimal("34.0000"), BigDecimal("44.0000"))
-          location3    = MasterLocation(location3Id, masterId, s"variants-sort-offer-location-c-$location3Id", s"variants-sort-offer-address-c-$location3Id", BigDecimal("54.0000"), BigDecimal("64.0000"))
-          id1          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000002")
-          id2          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000001")
-          id3          = java.util.UUID.fromString("30000000-0000-0000-0000-000000000003")
-          variant1    <- makeVariant(id1, offerId, location1Id, BigDecimal("14.0000"), BigDecimal("24.0000"), 30)
-          variant2    <- makeVariant(id2, offerId, location2Id, BigDecimal("34.0000"), BigDecimal("44.0000"), 60)
-          variant3    <- makeVariant(id3, offerId, location3Id, BigDecimal("54.0000"), BigDecimal("64.0000"), 90)
-          _           <- categories.upsertCategory(category)
-          _           <- masters.upsertMaster(master)
-          _           <- services.upsertService(service)
-          _           <- offers.upsertMasterServiceOffer(offer)
-          _           <- masterLocations.upsertMasterLocation(location1)
-          _           <- masterLocations.upsertMasterLocation(location2)
-          _           <- masterLocations.upsertMasterLocation(location3)
-          _           <- variants.upsertMasterServiceOfferVariant(variant1)
-          _           <- variants.upsertMasterServiceOfferVariant(variant2)
-          _           <- variants.upsertMasterServiceOfferVariant(variant3)
-          res         <- variants.getMasterServiceOfferVariantsByOffer(offerId)
-          _           <- assertIO(res == List(variant2, variant1, variant3))
+          location1    = MasterLocation(
+            location1Id,
+            masterId,
+            s"variants-sort-offer-location-a-$location1Id",
+            s"variants-sort-offer-address-a-$location1Id",
+            BigDecimal("14.0000"),
+            BigDecimal("24.0000"),
+          )
+          location2 = MasterLocation(
+            location2Id,
+            masterId,
+            s"variants-sort-offer-location-b-$location2Id",
+            s"variants-sort-offer-address-b-$location2Id",
+            BigDecimal("34.0000"),
+            BigDecimal("44.0000"),
+          )
+          location3 = MasterLocation(
+            location3Id,
+            masterId,
+            s"variants-sort-offer-location-c-$location3Id",
+            s"variants-sort-offer-address-c-$location3Id",
+            BigDecimal("54.0000"),
+            BigDecimal("64.0000"),
+          )
+          id1       = java.util.UUID.fromString("30000000-0000-0000-0000-000000000002")
+          id2       = java.util.UUID.fromString("30000000-0000-0000-0000-000000000001")
+          id3       = java.util.UUID.fromString("30000000-0000-0000-0000-000000000003")
+          variant1 <- makeVariant(id1, offerId, location1Id, BigDecimal("14.0000"), BigDecimal("24.0000"), 30)
+          variant2 <- makeVariant(id2, offerId, location2Id, BigDecimal("34.0000"), BigDecimal("44.0000"), 60)
+          variant3 <- makeVariant(id3, offerId, location3Id, BigDecimal("54.0000"), BigDecimal("64.0000"), 90)
+          _        <- categories.upsertCategory(category)
+          _        <- masters.upsertMaster(master)
+          _        <- services.upsertService(service)
+          _        <- offers.upsertMasterServiceOffer(offer)
+          _        <- masterLocations.upsertMasterLocation(location1)
+          _        <- masterLocations.upsertMasterLocation(location2)
+          _        <- masterLocations.upsertMasterLocation(location3)
+          _        <- variants.upsertMasterServiceOfferVariant(variant1)
+          _        <- variants.upsertMasterServiceOfferVariant(variant2)
+          _        <- variants.upsertMasterServiceOfferVariant(variant3)
+          res      <- variants.getMasterServiceOfferVariantsByOffer(offerId)
+          _        <- assertIO(res == List(variant2, variant1, variant3))
         } yield ()
     }
 
     "return variants by location sorted by id asc" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1721,33 +1831,39 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
           offer3      = MasterServiceOffer(offer3Id, masterId, service3Id)
-          location    = MasterLocation(locationId, masterId, s"variants-sort-location-$locationId", s"variants-sort-location-address-$locationId", BigDecimal("15.0000"), BigDecimal("25.0000"))
-          id1         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000002")
-          id2         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000001")
-          id3         = java.util.UUID.fromString("40000000-0000-0000-0000-000000000003")
-          variant1   <- makeVariant(id1, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"), 30)
-          variant2   <- makeVariant(id2, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"), 60)
-          variant3   <- makeVariant(id3, offer3Id, locationId, BigDecimal("55.0000"), BigDecimal("65.0000"), 90)
-          _          <- categories.upsertCategory(category)
-          _          <- masters.upsertMaster(master)
-          _          <- services.upsertService(service1)
-          _          <- services.upsertService(service2)
-          _          <- services.upsertService(service3)
-          _          <- offers.upsertMasterServiceOffer(offer1)
-          _          <- offers.upsertMasterServiceOffer(offer2)
-          _          <- offers.upsertMasterServiceOffer(offer3)
-          _          <- masterLocations.upsertMasterLocation(location)
-          _          <- variants.upsertMasterServiceOfferVariant(variant1)
-          _          <- variants.upsertMasterServiceOfferVariant(variant2)
-          _          <- variants.upsertMasterServiceOfferVariant(variant3)
-          res        <- variants.getMasterServiceOfferVariantsByLocation(locationId)
-          _          <- assertIO(res == List(variant2, variant1, variant3))
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"variants-sort-location-$locationId",
+            s"variants-sort-location-address-$locationId",
+            BigDecimal("15.0000"),
+            BigDecimal("25.0000"),
+          )
+          id1       = java.util.UUID.fromString("40000000-0000-0000-0000-000000000002")
+          id2       = java.util.UUID.fromString("40000000-0000-0000-0000-000000000001")
+          id3       = java.util.UUID.fromString("40000000-0000-0000-0000-000000000003")
+          variant1 <- makeVariant(id1, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"), 30)
+          variant2 <- makeVariant(id2, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"), 60)
+          variant3 <- makeVariant(id3, offer3Id, locationId, BigDecimal("55.0000"), BigDecimal("65.0000"), 90)
+          _        <- categories.upsertCategory(category)
+          _        <- masters.upsertMaster(master)
+          _        <- services.upsertService(service1)
+          _        <- services.upsertService(service2)
+          _        <- services.upsertService(service3)
+          _        <- offers.upsertMasterServiceOffer(offer1)
+          _        <- offers.upsertMasterServiceOffer(offer2)
+          _        <- offers.upsertMasterServiceOffer(offer3)
+          _        <- masterLocations.upsertMasterLocation(location)
+          _        <- variants.upsertMasterServiceOfferVariant(variant1)
+          _        <- variants.upsertMasterServiceOfferVariant(variant2)
+          _        <- variants.upsertMasterServiceOfferVariant(variant3)
+          res      <- variants.getMasterServiceOfferVariantsByLocation(locationId)
+          _        <- assertIO(res == List(variant2, variant1, variant3))
         } yield ()
     }
 
     "upsert overwrites existing variant with same id and replaces additional attributes" in {
-      (
-        rnd: Rnd[IO],
+      (rnd: Rnd[IO],
         categories: Categories[IO],
         masters: Masters[IO],
         services: Services[IO],
@@ -1772,53 +1888,69 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           service2     = Service(service2Id, categoryId, s"variants-overwrite-service-b-$service2Id")
           offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
-          location1    = MasterLocation(location1Id, masterId, s"variants-overwrite-location-a-$location1Id", s"variants-overwrite-address-a-$location1Id", BigDecimal("16.0000"), BigDecimal("26.0000"))
-          location2    = MasterLocation(location2Id, masterId, s"variants-overwrite-location-b-$location2Id", s"variants-overwrite-address-b-$location2Id", BigDecimal("36.0000"), BigDecimal("46.0000"))
+          location1    = MasterLocation(
+            location1Id,
+            masterId,
+            s"variants-overwrite-location-a-$location1Id",
+            s"variants-overwrite-address-a-$location1Id",
+            BigDecimal("16.0000"),
+            BigDecimal("26.0000"),
+          )
+          location2 = MasterLocation(
+            location2Id,
+            masterId,
+            s"variants-overwrite-location-b-$location2Id",
+            s"variants-overwrite-address-b-$location2Id",
+            BigDecimal("36.0000"),
+            BigDecimal("46.0000"),
+          )
           initialSchema = makeSchema(
-                            service1Id,
-                            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false),
-                            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false),
-                          )
+            service1Id,
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false),
+          )
           updatedSchema = makeSchema(
-                            service2Id,
-                            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-                            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false),
-                          )
-          initial      <- makeVariant(
-                            variantId,
-                            offer1Id,
-                            location1Id,
-                            BigDecimal("16.0000"),
-                            BigDecimal("26.0000"),
-                            30,
-                            intAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 1)),
-                            bigDecimalAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("10.0000"))),
-                          )
-          updated      <- makeVariant(
-                            variantId,
-                            offer2Id,
-                            location2Id,
-                            BigDecimal("36.0000"),
-                            BigDecimal("46.0000"),
-                            90,
-                            bigDecimalAttributes = AttributeMap(Map(
-                              MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge -> BigDecimal("12.0000")
-                            )),
-                          )
-          _            <- categories.upsertCategory(category)
-          _            <- masters.upsertMaster(master)
-          _            <- services.upsertService(service1)
-          _            <- services.upsertService(service2)
-          _            <- serviceVariantSchemas.upsertServiceVariantSchema(initialSchema)
-          _            <- serviceVariantSchemas.upsertServiceVariantSchema(updatedSchema)
-          _            <- offers.upsertMasterServiceOffer(offer1)
-          _            <- offers.upsertMasterServiceOffer(offer2)
-          _            <- masterLocations.upsertMasterLocation(location1)
-          _            <- masterLocations.upsertMasterLocation(location2)
-          _            <- variants.upsertMasterServiceOfferVariant(initial)
-          _            <- variants.upsertMasterServiceOfferVariant(updated)
-          res          <- variants.getMasterServiceOfferVariant(variantId)
-          _            <- assertIO(res.contains(updated))
+            service2Id,
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
+            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false),
+          )
+          initial <- makeVariant(
+            variantId,
+            offer1Id,
+            location1Id,
+            BigDecimal("16.0000"),
+            BigDecimal("26.0000"),
+            30,
+            intAttributes        = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 1)),
+            bigDecimalAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("10.0000"))),
+          )
+          updated <- makeVariant(
+            variantId,
+            offer2Id,
+            location2Id,
+            BigDecimal("36.0000"),
+            BigDecimal("46.0000"),
+            90,
+            bigDecimalAttributes = AttributeMap(
+              Map(
+                MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge -> BigDecimal("12.0000")
+              )
+            ),
+          )
+          _   <- categories.upsertCategory(category)
+          _   <- masters.upsertMaster(master)
+          _   <- services.upsertService(service1)
+          _   <- services.upsertService(service2)
+          _   <- serviceVariantSchemas.upsertServiceVariantSchema(initialSchema)
+          _   <- serviceVariantSchemas.upsertServiceVariantSchema(updatedSchema)
+          _   <- offers.upsertMasterServiceOffer(offer1)
+          _   <- offers.upsertMasterServiceOffer(offer2)
+          _   <- masterLocations.upsertMasterLocation(location1)
+          _   <- masterLocations.upsertMasterLocation(location2)
+          _   <- variants.upsertMasterServiceOfferVariant(initial)
+          _   <- variants.upsertMasterServiceOfferVariant(updated)
+          res <- variants.getMasterServiceOfferVariant(variantId)
+          _   <- assertIO(res.contains(updated))
         } yield ()
     }
 

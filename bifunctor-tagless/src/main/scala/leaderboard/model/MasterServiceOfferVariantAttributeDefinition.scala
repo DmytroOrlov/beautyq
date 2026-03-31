@@ -9,13 +9,13 @@ sealed trait MasterServiceOfferVariantAttributeDefinition[+A] extends Product wi
 
 case class AttributeMapImpl[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]) {
   def updated(key: K, value: V): AttributeMapImpl[V, K] = new AttributeMapImpl(map.updated(key, value))
-  def get(key: K): Option[V] = map.get(key)
-  def iterator: Iterator[(K, V)] = map.iterator
-  def keysIterator: Iterator[K] = map.keysIterator
-  def keySet: Set[K] = map.keySet
-  def nonEmpty: Boolean = map.nonEmpty
-  def isEmpty: Boolean = map.isEmpty
-  def toMap: Map[K, V] = map
+  def get(key: K): Option[V]                            = map.get(key)
+  def iterator: Iterator[(K, V)]                        = map.iterator
+  def keysIterator: Iterator[K]                         = map.keysIterator
+  def keySet: Set[K]                                    = map.keySet
+  def nonEmpty: Boolean                                 = map.nonEmpty
+  def isEmpty: Boolean                                  = map.isEmpty
+  def toMap: Map[K, V]                                  = map
 }
 
 object AttributeMap {
