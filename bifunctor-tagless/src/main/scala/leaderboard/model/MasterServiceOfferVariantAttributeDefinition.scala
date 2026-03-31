@@ -1,14 +1,11 @@
 package leaderboard.model
 
-import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
-
 sealed trait MasterServiceOfferVariantAttributeDefinition[+A] extends Product with Serializable {
   def code: String
-  def valueType: AttributeValueType
 }
 
 case class AttributeMapImpl[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]) {
-  def updated(key: K, value: V): AttributeMapImpl[V, K] = new AttributeMapImpl(map.updated(key, value))
+  def updated(key: K, value: V): AttributeMapImpl[V, K] = AttributeMapImpl(map.updated(key, value))
   def get(key: K): Option[V]                            = map.get(key)
   def iterator: Iterator[(K, V)]                        = map.iterator
   def keysIterator: Iterator[K]                         = map.keysIterator
@@ -18,19 +15,24 @@ case class AttributeMapImpl[V, K <: MasterServiceOfferVariantAttributeDefinition
   def toMap: Map[K, V]                                  = map
 }
 
+final case class AttributeValueName[A](name: String)
+
+object AttributeValueName {
+  def apply[A](implicit ev: AttributeValueName[A]): AttributeValueName[A] = ev
+
+  implicit val intAttributeValueName: AttributeValueName[Int]               = AttributeValueName("Int")
+  implicit val bigDecimalAttributeValueName: AttributeValueName[BigDecimal] = AttributeValueName("BigDecimal")
+}
+
 object AttributeMap {
   def apply[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]): AttributeMapImpl[V, K] = new AttributeMapImpl(map)
 
-  def empty[V, K <: MasterServiceOfferVariantAttributeDefinition[V]] = new AttributeMapImpl[V, K](Map.empty)
+  def empty[V, K <: MasterServiceOfferVariantAttributeDefinition[V]] = AttributeMapImpl[V, K](Map.empty)
 }
 
-sealed trait IntAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[Int] {
-  final val valueType: AttributeValueType = IntValue
-}
+sealed trait IntAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[Int]
 
-sealed trait BigDecimalAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[BigDecimal] {
-  final val valueType: AttributeValueType = BigDecimalValue
-}
+sealed trait BigDecimalAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[BigDecimal]
 
 object MasterServiceOfferVariantAttributeDefinition {
   type AnyAttributeDefinition = MasterServiceOfferVariantAttributeDefinition[Any]

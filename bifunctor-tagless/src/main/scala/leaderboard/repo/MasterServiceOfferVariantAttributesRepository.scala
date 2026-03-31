@@ -7,10 +7,8 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.{AttributeValueType, MasterServiceOfferVariant, MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
-import leaderboard.model.AttributeValueType.{BigDecimalValue, IntValue}
+import leaderboard.model.{AttributeMap, AttributeValueName, BigDecimalAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
-import leaderboard.model.AttributeMap
 
 private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
@@ -23,33 +21,31 @@ private[repo] object MasterServiceOfferVariantAdditionalAttributes {
 }
 
 private[repo] object MasterServiceOfferVariantAttributesRepository {
-  private def attributeValueTypeName(valueType: AttributeValueType): String =
-    valueType match {
-      case IntValue        => "IntValue"
-      case BigDecimalValue => "BigDecimalValue"
+  private def actualStorageName(actual: MasterServiceOfferVariantAttributeDefinition[Any]): String =
+    actual match {
+      case _: IntAttributeDefinition        => "Int"
+      case _: BigDecimalAttributeDefinition => "BigDecimal"
     }
 
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
     QueryFailure.operation(queryName, s"Unknown MasterServiceOfferVariant attribute code: $attributeCode")
 
-  private def attributeStoredInWrongTypeStorage(
+  private def attributeStoredInWrongTypeStorage[A: AttributeValueName](
     queryName: String,
     attributeCode: String,
-    expected: AttributeValueType,
-    actual: AttributeValueType,
+    actual: MasterServiceOfferVariantAttributeDefinition[Any],
   ): QueryFailure =
     QueryFailure.operation(
       queryName,
-      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${attributeValueTypeName(expected)} but was read from ${attributeValueTypeName(actual)}",
+      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${AttributeValueName[A].name} but was read from ${actualStorageName(actual)}",
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
     MasterServiceOfferVariantAttributeDefinition.fromCode(code)
 
-  private def collectStoredAttributes[A](
+  private def collectStoredAttributes[A: AttributeValueName](
     queryName: String,
     attributes: Map[String, A],
-    actualValueType: AttributeValueType,
     decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
   ): Either[QueryFailure, AttributeMap[A]] =
     attributes.foldLeft[Either[QueryFailure, AttributeMap[A]]](Right(AttributeMap.empty)) {
@@ -64,7 +60,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                   case None =>
                     Left(unknownAttributeCode(queryName, attributeCode))
                   case Some(definition) =>
-                    Left(attributeStoredInWrongTypeStorage(queryName, attributeCode, definition.valueType, actualValueType))
+                    Left(attributeStoredInWrongTypeStorage[A](queryName, attributeCode, definition))
                 }
             }
         }
@@ -75,16 +71,14 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     attributes: MasterServiceOfferVariantAdditionalAttributes,
   ): Either[QueryFailure, MasterServiceOfferVariantAttributes] =
     for {
-      intAttributes <- collectStoredAttributes(
+      intAttributes <- collectStoredAttributes[Int](
         queryName,
         attributes.intAttributes,
-        IntValue,
         MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
       )
-      bigDecimalAttributes <- collectStoredAttributes(
+      bigDecimalAttributes <- collectStoredAttributes[BigDecimal](
         queryName,
         attributes.bigDecimalAttributes,
-        BigDecimalValue,
         MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
       )
     } yield MasterServiceOfferVariantAttributes(
