@@ -6,7 +6,7 @@ import doobie.free.{connection => FC}
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
-import leaderboard.model.{MasterServiceOfferVariantAttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
+import leaderboard.model.{AttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -18,7 +18,7 @@ trait ServiceVariantSchemas[F[_, _]] {
 }
 
 object ServiceVariantSchemas {
-  private type ServiceVariantSchemaRow = (String, Boolean)
+  private type ServiceVariantSchemaRow       = (String, Boolean)
   private type ServiceVariantSchemaInsertRow = (ServiceId, String, Boolean)
 
   private def serviceNotFound(serviceId: ServiceId): QueryFailure =
@@ -31,7 +31,7 @@ object ServiceVariantSchemas {
     queryName: String,
     row: ServiceVariantSchemaRow,
   ): Either[QueryFailure, ServiceVariantSchemaItem] =
-    MasterServiceOfferVariantAttributeDefinition.fromCode(row._1) match {
+    AttributeDefinition.fromCode(row._1) match {
       case Some(attributeDefinition) =>
         Right(ServiceVariantSchemaItem(attributeDefinition, row._2))
       case None =>
@@ -47,23 +47,25 @@ object ServiceVariantSchemas {
     }
 
   private def schemaInsertRows(schema: ServiceVariantSchema): List[ServiceVariantSchemaInsertRow] =
-    schema.items.map {
-      item =>
-        (schema.serviceId, item.attribute.code, item.required)
-    }.toList.sortBy(_._2)
+    schema.items
+      .map {
+        item =>
+          (schema.serviceId, item.attribute.code, item.required)
+      }.toList.sortBy(_._2)
 
   private def schemaFromRows(
     queryName: String,
     serviceId: ServiceId,
     rows: List[ServiceVariantSchemaRow],
   ): Either[QueryFailure, ServiceVariantSchema] =
-    rows.foldLeft[Either[QueryFailure, List[ServiceVariantSchemaItem]]](Right(Nil)) {
-      case (acc, row) =>
-        for {
-          current <- acc
-          decoded <- decodeSchemaRow(queryName, row)
-        } yield decoded :: current
-    }.map(items => ServiceVariantSchema.fromItems(serviceId, items.reverse))
+    rows
+      .foldLeft[Either[QueryFailure, List[ServiceVariantSchemaItem]]](Right(Nil)) {
+        case (acc, row) =>
+          for {
+            current <- acc
+            decoded <- decodeSchemaRow(queryName, row)
+          } yield decoded :: current
+      }.map(items => ServiceVariantSchema.fromItems(serviceId, items.reverse))
 
   private def serviceExists[F[+_, +_]](sql: SQL[F])(serviceId: ServiceId): F[QueryFailure, Boolean] =
     sql.execute("service-exists") {
@@ -107,8 +109,9 @@ object ServiceVariantSchemas {
             }
 
           def getServiceVariantSchema(serviceId: ServiceId): F[QueryFailure, ServiceVariantSchema] =
-            state.get.map { current =>
-              current.getOrElse(serviceId, ServiceVariantSchema.empty(serviceId))
+            state.get.map {
+              current =>
+                current.getOrElse(serviceId, ServiceVariantSchema.empty(serviceId))
             }
         }
       }
@@ -143,8 +146,8 @@ object ServiceVariantSchemas {
                   .execute("upsert-service-variant-schema") {
                     for {
                       _ <- sql"""delete from service_variant_schema_items
-                                 |where service_id = ${schema.serviceId}
-                                 |""".stripMargin.update.run
+                                |where service_id = ${schema.serviceId}
+                                |""".stripMargin.update.run
                       _ <- insertSchemaRows(schemaInsertRows(schema))
                     } yield ()
                   }
@@ -153,16 +156,17 @@ object ServiceVariantSchemas {
           }
 
         def getServiceVariantSchema(serviceId: ServiceId): F[QueryFailure, ServiceVariantSchema] =
-          sql.execute("get-service-variant-schema") {
-            sql"""select attribute_code, required
-                 |from service_variant_schema_items
-                 |where service_id = $serviceId
-                 |order by attribute_code asc
-                 |""".stripMargin.query[ServiceVariantSchemaRow].to[List]
-          }.flatMap {
-            rows =>
-              liftEither[F, ServiceVariantSchema](schemaFromRows("get-service-variant-schema", serviceId, rows))
-          }
+          sql
+            .execute("get-service-variant-schema") {
+              sql"""select attribute_code, required
+                   |from service_variant_schema_items
+                   |where service_id = $serviceId
+                   |order by attribute_code asc
+                   |""".stripMargin.query[ServiceVariantSchemaRow].to[List]
+            }.flatMap {
+              rows =>
+                liftEither[F, ServiceVariantSchema](schemaFromRows("get-service-variant-schema", serviceId, rows))
+            }
       }
     )
 }

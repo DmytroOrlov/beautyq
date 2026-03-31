@@ -7,8 +7,8 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.{AttributeMap, AttributeValueName, BigDecimalAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributeDefinition, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
-import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.{AttributeDefinition, AttributeMap, AttributeValueName, BigDecimalAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
 private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
@@ -21,7 +21,7 @@ private[repo] object MasterServiceOfferVariantAdditionalAttributes {
 }
 
 private[repo] object MasterServiceOfferVariantAttributesRepository {
-  private def actualStorageName(actual: MasterServiceOfferVariantAttributeDefinition[Any]): String =
+  private def actualStorageName(actual: AttributeDefinition[Any]): String =
     actual match {
       case _: IntAttributeDefinition        => "Int"
       case _: BigDecimalAttributeDefinition => "BigDecimal"
@@ -33,7 +33,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   private def attributeStoredInWrongTypeStorage[A: AttributeValueName](
     queryName: String,
     attributeCode: String,
-    actual: MasterServiceOfferVariantAttributeDefinition[Any],
+    actual: AttributeDefinition[Any],
   ): QueryFailure =
     QueryFailure.operation(
       queryName,
@@ -41,12 +41,12 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
-    MasterServiceOfferVariantAttributeDefinition.fromCode(code)
+    AttributeDefinition.fromCode(code)
 
   private def collectStoredAttributes[A: AttributeValueName](
     queryName: String,
     attributes: Map[String, A],
-    decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
+    decode: String => Option[AttributeDefinition[A]],
   ): Either[QueryFailure, AttributeMap[A]] =
     attributes.foldLeft[Either[QueryFailure, AttributeMap[A]]](Right(AttributeMap.empty)) {
       case (acc, (attributeCode, value)) =>
@@ -74,12 +74,12 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       intAttributes <- collectStoredAttributes[Int](
         queryName,
         attributes.intAttributes,
-        MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
+        AttributeDefinition.fromCodeAsInt,
       )
       bigDecimalAttributes <- collectStoredAttributes[BigDecimal](
         queryName,
         attributes.bigDecimalAttributes,
-        MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
+        AttributeDefinition.fromCodeAsBigDecimal,
       )
     } yield MasterServiceOfferVariantAttributes(
       intAttributes,

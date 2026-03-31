@@ -1,6 +1,6 @@
 package leaderboard.model
 
-import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 
 case class ServiceVariantSchemaItem(

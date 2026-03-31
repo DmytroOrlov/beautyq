@@ -105,13 +105,13 @@ object MasterServiceOfferVariant {
     c: HCursor,
     attributeCode: String,
     fieldName: String,
-    decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
-  ): Decoder.Result[MasterServiceOfferVariantAttributeDefinition[A]] =
+    decode: String => Option[AttributeDefinition[A]],
+  ): Decoder.Result[AttributeDefinition[A]] =
     decode(attributeCode) match {
       case Some(attributeDefinition) =>
         Right(attributeDefinition)
       case None =>
-        MasterServiceOfferVariantAttributeDefinition.fromCode(attributeCode) match {
+        AttributeDefinition.fromCode(attributeCode) match {
           case Some(_) =>
             Left(DecodingFailure(s"MasterServiceOfferVariant attribute code $attributeCode does not belong in $fieldName", c.history))
           case None =>
@@ -122,7 +122,7 @@ object MasterServiceOfferVariant {
   private def decodeAttributes[A: Decoder](
     c: HCursor,
     fieldName: String,
-    decode: String => Option[MasterServiceOfferVariantAttributeDefinition[A]],
+    decode: String => Option[AttributeDefinition[A]],
   ): Decoder.Result[AttributeMap[A]] =
     c.get[Option[Map[String, A]]](fieldName).flatMap {
       case Some(raw) =>
@@ -165,12 +165,12 @@ object MasterServiceOfferVariant {
         intAttributes        <- decodeAttributes[Int](
           c,
           "intAttributes",
-          MasterServiceOfferVariantAttributeDefinition.fromCodeAsInt,
+          AttributeDefinition.fromCodeAsInt,
         )
         bigDecimalAttributes <- decodeAttributes[BigDecimal](
           c,
           "bigDecimalAttributes",
-          MasterServiceOfferVariantAttributeDefinition.fromCodeAsBigDecimal,
+          AttributeDefinition.fromCodeAsBigDecimal,
         )
         attributes = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes)
         value     <- make(

@@ -1,12 +1,12 @@
 package leaderboard.model
 
 object AttributeMap {
-  def apply[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]): AttributeMapImpl[V, K] = new AttributeMapImpl(map)
+  def apply[V, K <: AttributeDefinition[V]](map: Map[K, V]): AttributeMapImpl[V, K] = new AttributeMapImpl(map)
 
-  def empty[V, K <: MasterServiceOfferVariantAttributeDefinition[V]] = AttributeMapImpl[V, K](Map.empty)
+  def empty[V, K <: AttributeDefinition[V]] = AttributeMapImpl[V, K](Map.empty)
 }
 
-case class AttributeMapImpl[V, K <: MasterServiceOfferVariantAttributeDefinition[V]](map: Map[K, V]) {
+case class AttributeMapImpl[V, K <: AttributeDefinition[V]](map: Map[K, V]) {
   def updated(key: K, value: V): AttributeMapImpl[V, K] = AttributeMapImpl(map.updated(key, value))
   def get(key: K): Option[V]                            = map.get(key)
   def iterator: Iterator[(K, V)]                        = map.iterator

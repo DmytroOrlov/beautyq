@@ -876,8 +876,8 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
           service     = Service(serviceId, categoryId, s"schema-service-$serviceId")
           schema      = makeSchema(
             serviceId,
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+            ServiceVariantSchemaItem(AttributeDefinition.MaterialsSurcharge, false),
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, true),
           )
           _   <- categories.upsertCategory(category)
           _   <- services.upsertService(service)
@@ -887,8 +887,8 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
             res == ServiceVariantSchema.fromItems(
               serviceId,
               List(
-                ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-                ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+                ServiceVariantSchemaItem(AttributeDefinition.MaterialsSurcharge, false),
+                ServiceVariantSchemaItem(AttributeDefinition.SessionCount, true),
               ),
             )
           )
@@ -903,7 +903,7 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
             .upsertServiceVariantSchema(
               makeSchema(
                 serviceId,
-                ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
+                ServiceVariantSchemaItem(AttributeDefinition.SessionCount, true),
               )
             )
             .either
@@ -918,12 +918,7 @@ abstract class ServiceVariantSchemasTest extends LeaderboardTest {
 abstract class ServiceVariantSchemasStorageValidationTest extends LeaderboardTest {
   "ServiceVariantSchemas" should {
     "reject unknown attribute code from storage" in {
-      (rnd: Rnd[IO],
-        categories: Categories[IO],
-        services: Services[IO],
-        serviceVariantSchemas: ServiceVariantSchemas[IO],
-        db: SQL[IO],
-      ) =>
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO], serviceVariantSchemas: ServiceVariantSchemas[IO], db: SQL[IO]) =>
         for {
           categoryId <- rnd[CategoryId]
           serviceId  <- rnd[ServiceId]
@@ -1054,9 +1049,9 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           )
           schema = makeSchema(
             serviceId,
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true),
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false),
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, true),
+            ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.MaterialsSurcharge, false),
           )
           variant <- makeVariant(
             variantId,
@@ -1065,11 +1060,11 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             BigDecimal("30.0000"),
             BigDecimal("45.0000"),
             60,
-            intAttributes        = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 5)),
+            intAttributes        = AttributeMap(Map(AttributeDefinition.SessionCount -> 5)),
             bigDecimalAttributes = AttributeMap(
               Map(
-                MasterServiceOfferVariantAttributeDefinition.DepositAmount      -> BigDecimal("15.0000"),
-                MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge -> BigDecimal("7.5000"),
+                AttributeDefinition.DepositAmount      -> BigDecimal("15.0000"),
+                AttributeDefinition.MaterialsSurcharge -> BigDecimal("7.5000"),
               )
             ),
           )
@@ -1185,8 +1180,8 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           attributes  = MasterServiceOfferVariantAttributes(
-            intValues        = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 3)),
-            bigDecimalValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
+            intValues        = AttributeMap(Map(AttributeDefinition.SessionCount -> 3)),
+            bigDecimalValues = AttributeMap(Map(AttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
           )
           variant <- ZIO
             .fromEither(
@@ -1201,18 +1196,18 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
               )
             )
             .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
-          _ <- assertIO(variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
+          _ <- assertIO(variant.getAttribute(AttributeDefinition.SessionCount).contains(3))
           _ <- assertIO(
-            variant.getAttribute(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
+            variant.getAttribute(AttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
           )
-          _ <- assertIO(variant.intAttributes.get(MasterServiceOfferVariantAttributeDefinition.SessionCount).contains(3))
+          _ <- assertIO(variant.intAttributes.get(AttributeDefinition.SessionCount).contains(3))
           _ <- assertIO(
-            variant.bigDecimalAttributes.get(MasterServiceOfferVariantAttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
+            variant.bigDecimalAttributes.get(AttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
           )
-          _ <- assertIO(variant.intAttributes.keySet == Set(MasterServiceOfferVariantAttributeDefinition.SessionCount))
+          _ <- assertIO(variant.intAttributes.keySet == Set(AttributeDefinition.SessionCount))
           _ <- assertIO(
             variant.bigDecimalAttributes.keySet == Set(
-              MasterServiceOfferVariantAttributeDefinition.DepositAmount
+              AttributeDefinition.DepositAmount
             )
           )
         } yield ()
@@ -1222,15 +1217,15 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
       (rnd: Rnd[IO]) =>
         for {
           serviceId <- rnd[ServiceId]
-          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false))
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
           attributes = MasterServiceOfferVariantAttributes(
             intValues        = AttributeMap(Map.empty),
-            bigDecimalValues = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
+            bigDecimalValues = AttributeMap(Map(AttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
           )
           _ <- assertIO(
             schema.validate(attributes) == Left(
               ServiceVariantSchemaValidationError.DisallowedAttribute(
-                MasterServiceOfferVariantAttributeDefinition.DepositAmount
+                AttributeDefinition.DepositAmount
               )
             )
           )
@@ -1241,12 +1236,12 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
       (rnd: Rnd[IO]) =>
         for {
           serviceId <- rnd[ServiceId]
-          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true))
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, true))
           attributes = MasterServiceOfferVariantAttributes.empty
           _         <- assertIO(
             schema.validate(attributes) == Left(
               ServiceVariantSchemaValidationError.MissingRequiredAttribute(
-                MasterServiceOfferVariantAttributeDefinition.SessionCount
+                AttributeDefinition.SessionCount
               )
             )
           )
@@ -1325,7 +1320,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             BigDecimal("10.0000"),
             BigDecimal("20.0000"),
           )
-          schema = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false))
+          schema = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false))
           _     <- categories.upsertCategory(category)
           _     <- masters.upsertMaster(master)
           _     <- services.upsertService(service)
@@ -1377,7 +1372,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             BigDecimal("10.0000"),
             BigDecimal("20.0000"),
           )
-          schema   = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false))
+          schema   = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
           variant <- makeVariant(
             variantId,
             offerId,
@@ -1385,7 +1380,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             BigDecimal("30.0000"),
             BigDecimal("45.0000"),
             60,
-            bigDecimalAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("8.0000"))),
+            bigDecimalAttributes = AttributeMap(Map(AttributeDefinition.DepositAmount -> BigDecimal("8.0000"))),
           )
           _      <- categories.upsertCategory(category)
           _      <- masters.upsertMaster(master)
@@ -1435,7 +1430,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             BigDecimal("10.0000"),
             BigDecimal("20.0000"),
           )
-          schema   = makeSchema(serviceId, ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, true))
+          schema   = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, true))
           variant <- makeVariant(variantId, offerId, locationId, BigDecimal("30.0000"), BigDecimal("45.0000"), 60)
           _       <- categories.upsertCategory(category)
           _       <- masters.upsertMaster(master)
@@ -1906,13 +1901,13 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           )
           initialSchema = makeSchema(
             service1Id,
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false),
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.DepositAmount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false),
           )
           updatedSchema = makeSchema(
             service2Id,
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge, false),
-            ServiceVariantSchemaItem(MasterServiceOfferVariantAttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.MaterialsSurcharge, false),
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false),
           )
           initial <- makeVariant(
             variantId,
@@ -1921,8 +1916,8 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             BigDecimal("16.0000"),
             BigDecimal("26.0000"),
             30,
-            intAttributes        = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.SessionCount -> 1)),
-            bigDecimalAttributes = AttributeMap(Map(MasterServiceOfferVariantAttributeDefinition.DepositAmount -> BigDecimal("10.0000"))),
+            intAttributes        = AttributeMap(Map(AttributeDefinition.SessionCount -> 1)),
+            bigDecimalAttributes = AttributeMap(Map(AttributeDefinition.DepositAmount -> BigDecimal("10.0000"))),
           )
           updated <- makeVariant(
             variantId,
@@ -1933,7 +1928,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             90,
             bigDecimalAttributes = AttributeMap(
               Map(
-                MasterServiceOfferVariantAttributeDefinition.MaterialsSurcharge -> BigDecimal("12.0000")
+                AttributeDefinition.MaterialsSurcharge -> BigDecimal("12.0000")
               )
             ),
           )

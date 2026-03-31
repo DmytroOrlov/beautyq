@@ -1,6 +1,6 @@
 package leaderboard.model
 
-import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
 case class MasterServiceOfferVariantAttributes(
   intValues: AttributeMap[Int],

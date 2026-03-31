@@ -1,6 +1,6 @@
 package leaderboard.model
 
-import leaderboard.model.MasterServiceOfferVariantAttributeDefinition.AnyAttributeDefinition
+import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
 sealed trait ServiceVariantSchemaValidationError extends Product with Serializable {
   def attribute: AnyAttributeDefinition

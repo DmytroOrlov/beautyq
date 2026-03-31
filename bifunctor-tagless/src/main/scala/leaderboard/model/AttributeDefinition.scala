@@ -1,15 +1,15 @@
 package leaderboard.model
 
-sealed trait MasterServiceOfferVariantAttributeDefinition[+A] extends Product with Serializable {
+sealed trait AttributeDefinition[+A] extends Product with Serializable {
   def code: String
 }
 
-sealed trait IntAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[Int]
+sealed trait IntAttributeDefinition extends AttributeDefinition[Int]
 
-sealed trait BigDecimalAttributeDefinition extends MasterServiceOfferVariantAttributeDefinition[BigDecimal]
+sealed trait BigDecimalAttributeDefinition extends AttributeDefinition[BigDecimal]
 
-object MasterServiceOfferVariantAttributeDefinition {
-  type AnyAttributeDefinition = MasterServiceOfferVariantAttributeDefinition[Any]
+object AttributeDefinition {
+  type AnyAttributeDefinition = AttributeDefinition[Any]
 
   case object SessionCount extends IntAttributeDefinition {
     val code = "session_count"
