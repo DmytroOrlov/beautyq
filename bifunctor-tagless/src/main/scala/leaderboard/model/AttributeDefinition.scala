@@ -2,11 +2,16 @@ package leaderboard.model
 
 sealed trait AttributeDefinition[+A] extends Product with Serializable {
   def code: String
+  def valueName: String
 }
 
-sealed trait IntAttributeDefinition extends AttributeDefinition[Int]
+sealed trait IntAttributeDefinition extends AttributeDefinition[Int] {
+  final val valueName = "Int"
+}
 
-sealed trait BigDecimalAttributeDefinition extends AttributeDefinition[BigDecimal]
+sealed trait BigDecimalAttributeDefinition extends AttributeDefinition[BigDecimal] {
+  final val valueName = "BigDecimal"
+}
 
 object AttributeDefinition {
   type AnyAttributeDefinition = AttributeDefinition[Any]

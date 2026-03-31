@@ -21,12 +21,6 @@ private[repo] object MasterServiceOfferVariantAdditionalAttributes {
 }
 
 private[repo] object MasterServiceOfferVariantAttributesRepository {
-  private def actualStorageName(actual: AttributeDefinition[Any]): String =
-    actual match {
-      case _: IntAttributeDefinition        => "Int"
-      case _: BigDecimalAttributeDefinition => "BigDecimal"
-    }
-
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
     QueryFailure.operation(queryName, s"Unknown MasterServiceOfferVariant attribute code: $attributeCode")
 
@@ -37,7 +31,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   ): QueryFailure =
     QueryFailure.operation(
       queryName,
-      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${AttributeValueName[A].name} but was read from ${actualStorageName(actual)}",
+      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${AttributeValueName[A].name} but was read from ${actual.valueName}",
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
