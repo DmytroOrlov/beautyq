@@ -1,44 +1,39 @@
-instructions first, Task last
+General guidance for any Scala task:
+- first understand the current state before changing anything
+- read the minimum relevant files first, then act
+- preserve existing behavior unless the task explicitly asks for behavior changes
+- reuse existing code, full original import block, helpers, naming, code style, and file structure where possible
+- prefer the smallest correct change over broad refactoring
+- keep shared or reusable elements centralized; do not duplicate them unless the task explicitly requires duplication
+- if something is uncertain, make the safest reversible change
+- fix only the failing scope first; do not refactor unrelated code while resolving errors
+- when compilation fails after a change, compare the changed code against the original source before inventing new abstractions
+- do not claim success based on intention; claim only what was actually changed and verified
+- do not use /tmp; use only project paths for temporary, intermediate, cache, and log files
+- when moving Scala code to a new file, keep the full original import block; unused imports are acceptable
+- prefer but do not force a pragmatic hexagonal architecture for new code
+- match the existing Scala syntax/dialect already used by the file/project; do not introduce alternative import or declaration syntax unless it is already present in the codebase
+- respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the source
 
-General guidance:
-- solve the task with the smallest task-justified change set
-- keep the work focused on the requested outcome; do not do unrelated cleanup, refactoring, renaming, deduplication, simplification, or reorganization unless the task requires it
-- preserve existing behavior, names, packages, structure, and local code style as much as the task allows
-- reuse existing code patterns and nearby style whenever practical
-- do not rely on memory for original contents; if you need to re-check file after changing or deleting it, inspect it from git
-- when moving or copying Scala code into a new file, keep the original import block; unused imports are acceptable
-- prefer batched, intentional edits over many tiny reactive edits
-- use only project paths for temporary, intermediate, cache, and log files
+General verification:
+- verify that the requested outcome is present and that no required existing functionality/content was lost
+- run the narrowest relevant checks available for the affected scope
+- prefer compile checks first, then narrower tests, then broader tests only if needed
+- if verification was not run, say so explicitly
+- if verification failed, report the failure clearly instead of presenting the task as done
 
-Execution discipline:
-- before the first edit, write down relevant baseline facts for this task: current file layout, likely scope, and constraints; and also the planned change scope: which files are likely to change, which source of truth you are splitting from, and what must stay behaviorally unchanged
-- identify the complete affected file set before editing whenever the task is a code split/move or the same fix may need to be applied across multiple files; then make those related edits together in one grouped pass
-- do not interrupt a grouped change with verification after each tiny edit; finish the related edit batch first, then run the required checks
-- compare the final state against the recorded baseline facts and planned change scope, not against memory
-
-Verification:
-- run sbt compile until it passes
-- run sbt test:compile until it passes
-- then run full sbt test until it passes
-- in the final sbt test log there must be no ^\[error\] lines
-- after the last code edit, rerun all task-specific checks, then rerun all required final checks
-- never run sbt clean
-- do not claim success unless you ran the check and observed it pass
-
-Final report:
-- final sbt test result and exit code
-- final ^\[error\] count in the final sbt test log
-- files, traits, and classes created, removed, or significantly reshaped, and why each change was required by the task
-- task-specific requirements, listed one by one with status: satisfied / not satisfied (and why)
+General final report:
+- what changed
+- what was intentionally left unchanged
+- what was verified
+- what was not verified
+- any risks, assumptions, or follow-up items
 
 Task:
-<put the task here>
-
-Task-specific requirements:
-<put task-specific requirements here>
+split tests.scala in bifunctor-tagless/src/test/scala/leaderboard into smaller test files by hexagonal architecture layers/business domain
 
 Task-specific verification:
-<put task-specific checks here>
+<put concrete checks for this task here>
 
 Task-specific final report:
-<put any extra reporting requirements here>
+<put the concrete reporting format for this task here>
