@@ -31,7 +31,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   ): QueryFailure =
     QueryFailure.operation(
       queryName,
-      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${AttributeValueName[A].name} but was read from ${actual.valueName}",
+      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${AttributeValueName[A].name} but was read from ${actual.valueType}",
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
