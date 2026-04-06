@@ -1,10 +1,10 @@
-/scala-plan split tests.scala in bifunctor-tagless/src/test/scala/leaderboard into smaller test files by hexagonal architecture layers/business domain
+/scala-plan split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain
 
-/review-plan split tests.scala in bifunctor-tagless/src/test/scala/leaderboard into smaller test files by hexagonal architecture layers/business domain
+/scala-alt-plan split bifunctor-tagless/src/test/scala/leaderboard/tests.scala to smaller test files by hexagonal architecture layers/business domain
 
-/scala-implement split tests.scala in bifunctor-tagless/src/test/scala/leaderboard into smaller test files by hexagonal architecture layers/business domain
+/scala-build split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain
 
-/review-impl split tests.scala in bifunctor-tagless/src/test/scala/leaderboard into smaller test files by hexagonal architecture layers/business domain
+/review-impl split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain
 
 General guidance for any Scala task:
 - first understand the current state before changing anything
@@ -39,7 +39,7 @@ General final report:
 - any risks, assumptions, or follow-up items
 
 Task:
-split tests.scala in bifunctor-tagless/src/test/scala/leaderboard into smaller test files by hexagonal architecture layers/business domain
+split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain
 
 Task-specific verification:
 <put concrete checks for this task here>
