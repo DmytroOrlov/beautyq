@@ -5,8 +5,7 @@ General guidance for Scala tasks:
 - workflow state artifacts = only the exact files under `.opencode/state/` required by the current workflow step
 - project files are the source of truth for the current state
 - workflow state artifacts may guide the workflow, but they are never the source of truth for the current state of project files
-- first understand the current project files before changing anything
-- read relevant project files first, then act
+- before changing anything, first read the relevant project files needed to understand the current state and the task safely
 - preserve existing behavior unless the task explicitly asks for behavior changes
 - reuse existing code, helpers, naming, code style, and file structure where possible
 - prefer the smallest correct change over broad refactoring
