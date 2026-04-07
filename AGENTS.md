@@ -17,8 +17,8 @@ General guidance for any Scala task:
 - when reusing, moving, or copying Scala code to a new file, keep the full original import block; unused imports are acceptable
 - match the existing Scala syntax/dialect already used by the file/project; do not introduce alternative import or declaration syntax unless it is already present in the codebase
 - respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the source
-- prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape, inheritance shape, or wiring unless the task explicitly requires it
-- respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers, wiring, or package splits unless the task explicitly requires it
+- prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape or inheritance shape unless the task explicitly requires it
+- respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers splits unless the task explicitly requires it
 - after a failed broad verification, capture the first failing file and exact error lines, then keep fixes scoped to that file until the blocker is resolved before rerunning the broad check
 
 General verification:
