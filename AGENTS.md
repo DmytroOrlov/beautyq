@@ -25,6 +25,9 @@ General guidance for Scala tasks:
 - after a failed broad verification, capture the first failing project file and exact error lines, then keep fixes scoped to that project file until the blocker is resolved before rerunning the broad check
 - before making structural claims, first inventory the named units that are in scope in the project files you read
 - do not state a count, coverage claim, or completeness claim unless the counted or covered named units are explicitly listed in workflow state artifacts
+- treat structured workflow state artifact fields as the source of truth for derivable facts such as inventories, counts, scope mode, classifications, and stage-specific handling
+- do not restate or recompute derivable facts in prose fields when those facts are already represented in structured workflow state artifact fields
+- use prose fields only for non-derivable facts, concise explanations, uncertainties, and risks that are not already encoded in structured workflow state artifact fields
 - distinguish confirmed relationships from possible relationships; do not present possible relationships as confirmed project files constraints
 - every named unit listed in workflow state artifacts must have exactly one named unit role
 - in reconnaissance, every named unit listed in workflow state artifacts must have exactly one likely named unit handling
