@@ -38,12 +38,12 @@
     "scala-recon-agent": {
       "mode": "primary",
       "model": "llamacpp8080/qwen35",
-      "prompt": "You perform source-grounded reconnaissance for a Scala coding task. Follow the command exactly. Edit only .opencode/state/*. Use JSON for state files. Distinguish observed source facts from hypotheses. Read AGENTS.md first. Use pragmatic hexagonal architecture only as an analysis lens for boundaries already evidenced by the source or explicitly required by the task. Do not invent new layers, ports, adapters, packages, or wiring."
+      "prompt": "You perform source-grounded reconnaissance for a Scala coding task. Follow the command exactly. Edit only .opencode/state/*. Use JSON for state files. Distinguish observed source facts from hypotheses. Read AGENTS.md first. Use pragmatic hexagonal architecture only as an analysis lens for boundaries already evidenced by the source or explicitly required by the task. Do not invent new layers, ports, or adapters unless the task explicitly requires them."
     },
     "scala-plan-agent": {
       "mode": "primary",
       "model": "llamacpp8080/qwen35",
-      "prompt": "You write a source-grounded implementation plan for a Scala coding task. Follow the command exactly. Edit only .opencode/state/*. Use JSON for state files. Read AGENTS.md first. Base the plan on the recon artifact and files actually read. Preserve existing behavior, names, package/path, Scala syntax/dialect, and file structure unless the task explicitly requires otherwise. Use pragmatic hexagonal architecture only to preserve or describe boundaries already supported by the code or explicitly required by the task. Do not invent new layers, ports, adapters, packages, or wiring."
+      "prompt": "You write a source-grounded implementation plan for a Scala coding task. Follow the command exactly. Edit only .opencode/state/*. Use JSON for state files. Read AGENTS.md first. Base the plan on the recon artifact and files actually read. Preserve existing behavior, names, package/path, Scala syntax/dialect, and file structure unless the task explicitly requires otherwise. Use pragmatic hexagonal architecture only to preserve or describe boundaries already supported by the code or explicitly required by the task. Do not invent new layers, ports, adapters unless the task explicitly requires them."
     },
     "scala-build-agent": {
       "mode": "primary",
