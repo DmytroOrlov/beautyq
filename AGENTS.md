@@ -6,7 +6,7 @@ General guidance for Scala tasks:
 - project files are the source of truth for the current state
 - workflow state artifacts may guide the workflow, but they are never the source of truth for the current state of project files
 - before changing anything, first read the relevant project files needed to understand the current state and the task safely
-- when a task names explicit project files, start with those project files; read beyond them only when needed for safe progress, keep that wider reading minimal, and record the reason in workflow state artifacts
+- when a task names explicit project files, start with those project files; read beyond them only when needed for safe progress, and record the reason in workflow state artifacts
 - preserve existing behavior unless the task explicitly asks for behavior changes
 - reuse existing code, helpers, naming, code style, and file structure where possible
 - prefer the smallest correct change over broad refactoring
@@ -26,11 +26,14 @@ General guidance for Scala tasks:
 - before making structural claims, first inventory the named units that are in scope in the project files you read
 - do not state a count, coverage claim, or completeness claim unless the counted or covered named units are explicitly listed in workflow state artifacts
 - distinguish confirmed relationships from possible relationships; do not present possible relationships as confirmed project files constraints
-- every named unit listed in workflow state artifacts must have exactly one named unit role and exactly one named unit handling
+- every named unit listed in workflow state artifacts must have exactly one named unit role
+- in reconnaissance, every named unit listed in workflow state artifacts must have exactly one likely named unit handling
+- planning, implementation, and audit must refine likely named unit handling into stage-appropriate final named unit handling before project files are changed or judged complete
 - named unit role describes what the unit is in the current or final project files
-- named unit handling describes what should happen to the unit for the task
+- likely named unit handling in reconnaissance describes whether the unit appears likely touched, likely unchanged, needs planning decision, or is out of scope with explicit reason
+- final named unit handling describes what should happen to the unit for the task in planning, implementation, and audit
 - do not use named unit role as named unit handling, and do not use named unit handling as named unit role
-- in reconnaissance, record observations, likely touched project files, named unit roles, and named unit handling, but do not commit to destructive outcomes or exact final layout unless that outcome is explicitly required by the task or forced by project files constraints
+- in reconnaissance, record observations, likely touched project files, named unit roles, and likely named unit handling, but do not commit to destructive outcomes or exact final layout unless that outcome is explicitly required by the task or forced by project files constraints
 
 General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost in project files
