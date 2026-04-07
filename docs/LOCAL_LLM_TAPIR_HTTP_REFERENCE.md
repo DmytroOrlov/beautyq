@@ -89,7 +89,7 @@ Rationale:
 
 ## Contract Preservation Rules
 
-For the current migration phase, Tapir defaults are not the source of truth.
+For the current migration phase, Tapir defaults are not the project source of truth.
 Existing route-level contract tests are.
 
 `TapirHttpSupport` therefore overrides default Tapir behavior:

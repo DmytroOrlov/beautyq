@@ -1,36 +1,40 @@
-# Scala project rules
+# General Scala project rules
 
-General guidance for any Scala task:
-- first understand the current state before changing anything
-- read relevant files first, then act
+General guidance for Scala tasks:
+- project files = all files outside `.opencode/`
+- workflow state artifacts = only the exact files under `.opencode/state/` required by the current workflow step
+- project source of truth = project files only, never workflow state artifacts
+- workflow state artifacts may guide workflow, but they are never the project source of truth for current code reality
+- first understand the current project files before changing anything
+- read relevant project files first, then act
 - preserve existing behavior unless the task explicitly asks for behavior changes
 - reuse existing code, helpers, naming, code style, and file structure where possible
 - prefer the smallest correct change over broad refactoring
 - keep shared or reusable elements centralized; do not duplicate them unless the task explicitly requires duplication
 - if something is uncertain, make the safest reversible change
 - fix only the failing scope first; do not refactor unrelated code while resolving errors
-- when compilation fails after a change, compare the changed code against the original source before inventing new abstractions
+- when compilation fails after a change, compare the changed project files against the original project files before inventing new abstractions
 - do not claim success based on intention; claim only what was actually changed and verified
 - do not use /tmp; use only project paths for temporary, intermediate, cache, and log files
-- for workflow handoff artifacts, use `.opencode/state/` inside the project and overwrite deterministic filenames
-- do not treat `.opencode/state/` handoff artifacts as source changes unless the task explicitly asks for that
+- for workflow state artifacts, use `.opencode/state/` inside the project and overwrite deterministic filenames
 - when reusing, moving, or copying Scala code to a new file, keep the full original import block; unused imports are acceptable
 - match the existing Scala syntax/dialect already used by the file/project; do not introduce alternative import or declaration syntax unless it is already present in the codebase
-- respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the source
-- prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape or inheritance shape unless the task explicitly requires it
+- respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the project files
+- prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape, inheritance shape unless the task explicitly requires it
 - respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers splits unless the task explicitly requires it
 - after a failed broad verification, capture the first failing file and exact error lines, then keep fixes scoped to that file until the blocker is resolved before rerunning the broad check
 
 General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost
-- run the narrowest relevant checks available for the affected scope
+- run the narrowest relevant checks available for the affected project-file scope
 - prefer `sbt module1/test:compile module2/test:compile` checks first, then `sbt module1/test module2/test` for all changed and dependent modules
+- derive module scope only from changed project files
 - if verification was not run, say so explicitly
-- if verification failed, report the failure clearly instead of presenting the task as done
-
+  workflow
 General final report:
-- what changed
-- what was intentionally left unchanged
-- what was verified
-- what was not verified
+- changed project files only
+- workflow state artifacts written only
+- what was intentionally left unchanged in project files
+- what was verified for project files
+- what was not verified for project files
 - any risks, assumptions, or follow-up items
