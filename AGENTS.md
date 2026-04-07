@@ -26,6 +26,8 @@ General guidance for Scala tasks:
 - before making structural claims, first inventory the named units that are in scope in the project files you read
 - do not state a count, coverage claim, or completeness claim unless the counted or covered named units are explicitly listed in workflow state artifacts
 - distinguish confirmed relationships from possible relationships; do not present possible relationships as confirmed project files constraints
+- every named unit listed in workflow state artifacts must be accounted for as one of: shared support, candidate change target, intentionally unchanged, or out of scope with explicit reason
+- do not describe a project file as removable, empty, or replaceable unless that outcome is explicitly required by the task or every named unit in that project file is accounted for elsewhere
 
 General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost in project files
