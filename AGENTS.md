@@ -23,6 +23,9 @@ General guidance for Scala tasks:
 - prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape, inheritance shape unless the task explicitly requires it
 - respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers splits unless the task explicitly requires it
 - after a failed broad verification, capture the first failing project file and exact error lines, then keep fixes scoped to that project file until the blocker is resolved before rerunning the broad check
+- before making structural claims, first inventory the named units that are in scope in the project files you read
+- do not state a count, coverage claim, or completeness claim unless the counted or covered named units are explicitly listed in workflow state artifacts
+- distinguish confirmed relationships from possible relationships; do not present possible relationships as confirmed project files constraints
 
 General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost in project files
