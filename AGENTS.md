@@ -21,13 +21,16 @@ General guidance for Scala tasks:
 - match the existing Scala syntax/dialect already used by the project files; do not introduce alternative import or declaration syntax unless it is already present in the project files
 - respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the project files
 - prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape, inheritance shape unless the task explicitly requires it
-- respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers splits unless the task explicitly requires it
+- respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers, or package splits unless the task explicitly requires it
 - after a failed broad verification, capture the first failing project file and exact error lines, then keep fixes scoped to that project file until the blocker is resolved before rerunning the broad check
 - before making structural claims, first inventory the named units that are in scope in the project files you read
 - do not state a count, coverage claim, or completeness claim unless the counted or covered named units are explicitly listed in workflow state artifacts
 - distinguish confirmed relationships from possible relationships; do not present possible relationships as confirmed project files constraints
-- every named unit listed in workflow state artifacts must be accounted for as one of: shared support, candidate change target, intentionally unchanged, or out of scope with explicit reason
-- do not describe a project file as removable, empty, or replaceable unless that outcome is explicitly required by the task or every named unit in that project file is accounted for elsewhere
+- every named unit listed in workflow state artifacts must have exactly one named unit role and exactly one named unit handling
+- named unit role describes what the unit is in the current or final project files
+- named unit handling describes what should happen to the unit for the task
+- do not use named unit role as named unit handling, and do not use named unit handling as named unit role
+- do not describe a project file as removable, empty, or replaceable unless that outcome is explicitly required by the task or every named unit in that project file has explicit named unit handling elsewhere
 
 General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost in project files
