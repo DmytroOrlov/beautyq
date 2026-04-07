@@ -30,7 +30,7 @@ General guidance for Scala tasks:
 - named unit role describes what the unit is in the current or final project files
 - named unit handling describes what should happen to the unit for the task
 - do not use named unit role as named unit handling, and do not use named unit handling as named unit role
-- do not describe a project file as removable, empty, or replaceable unless that outcome is explicitly required by the task or every named unit in that project file has explicit named unit handling elsewhere
+- in reconnaissance, record observations, likely touched project files, named unit roles, and named unit handling, but do not commit to destructive outcomes or exact final layout unless that outcome is explicitly required by the task or forced by project files constraints
 
 General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost in project files
