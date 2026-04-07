@@ -3,8 +3,8 @@
 General guidance for Scala tasks:
 - project files = all files outside `.opencode/`
 - workflow state artifacts = only the exact files under `.opencode/state/` required by the current workflow step
-- project source of truth = project files only, never workflow state artifacts
-- workflow state artifacts may guide workflow, but they are never the project source of truth for current code reality
+- project files are the source of truth for the current state
+- workflow state artifacts may guide the workflow, but they are never the source of truth for the current state of project files
 - first understand the current project files before changing anything
 - read relevant project files first, then act
 - preserve existing behavior unless the task explicitly asks for behavior changes
@@ -18,22 +18,23 @@ General guidance for Scala tasks:
 - do not use /tmp; use only project paths for temporary, intermediate, cache, and log files
 - for workflow state artifacts, use `.opencode/state/` inside the project and overwrite deterministic filenames
 - when reusing, moving, or copying Scala code to a new file, keep the full original import block; unused imports are acceptable
-- match the existing Scala syntax/dialect already used by the file/project; do not introduce alternative import or declaration syntax unless it is already present in the codebase
+- match the existing Scala syntax/dialect already used by the project files; do not introduce alternative import or declaration syntax unless it is already present in the project files
 - respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the project files
 - prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape, inheritance shape unless the task explicitly requires it
 - respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers splits unless the task explicitly requires it
-- after a failed broad verification, capture the first failing file and exact error lines, then keep fixes scoped to that file until the blocker is resolved before rerunning the broad check
+- after a failed broad verification, capture the first failing project file and exact error lines, then keep fixes scoped to that project file until the blocker is resolved before rerunning the broad check
 
 General verification:
-- verify that the requested outcome is present and that no required existing functionality/content was lost
-- run the narrowest relevant checks available for the affected project-file scope
+- verify that the requested outcome is present and that no required existing functionality/content was lost in project files
+- run the narrowest relevant checks available for the affected project files scope
 - prefer `sbt module1/test:compile module2/test:compile` checks first, then `sbt module1/test module2/test` for all changed and dependent modules
 - derive module scope only from changed project files
 - if verification was not run, say so explicitly
-  workflow
+- if verification failed, write the failure to workflow state artifact file instead of presenting the task as done
+
 General final report:
 - changed project files only
-- workflow state artifacts written only
+- written to disk workflow state artifacts only
 - what was intentionally left unchanged in project files
 - what was verified for project files
 - what was not verified for project files

@@ -1,10 +1,10 @@
-/scala-plan split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
+/scala-recon split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
 
-/scala-alt-plan split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
+/scala-plan split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
 
 /scala-build split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
 
-/review-impl split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
+/scala-audit split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only
 
 General guidance for any Scala task:
 - first understand the current state before changing anything
