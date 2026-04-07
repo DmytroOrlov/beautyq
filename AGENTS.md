@@ -6,6 +6,7 @@ General guidance for Scala tasks:
 - project files are the source of truth for the current state
 - workflow state artifacts may guide the workflow, but they are never the source of truth for the current state of project files
 - before changing anything, first read the relevant project files needed to understand the current state and the task safely
+- when a task names explicit project files, start with those project files; read beyond them only when needed for safe progress, keep that wider reading minimal, and record the reason in workflow state artifacts
 - preserve existing behavior unless the task explicitly asks for behavior changes
 - reuse existing code, helpers, naming, code style, and file structure where possible
 - prefer the smallest correct change over broad refactoring
@@ -38,7 +39,7 @@ General verification:
 
 General final report:
 - changed project files only
-- written  on disk workflow state artifacts only
+- written to disk workflow state artifacts only
 - what was intentionally left unchanged in project files
 - what was verified for project files
 - what was not verified for project files
