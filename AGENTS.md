@@ -2,7 +2,7 @@
 
 General guidance for any Scala task:
 - first understand the current state before changing anything
-- read the minimum relevant files first, then act
+- read relevant files first, then act
 - preserve existing behavior unless the task explicitly asks for behavior changes
 - reuse existing code, helpers, naming, code style, and file structure where possible
 - prefer the smallest correct change over broad refactoring
