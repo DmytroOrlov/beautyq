@@ -38,7 +38,7 @@ General verification:
 
 General final report:
 - changed project files only
-- written to disk workflow state artifacts only
+- written  on disk workflow state artifacts only
 - what was intentionally left unchanged in project files
 - what was verified for project files
 - what was not verified for project files
