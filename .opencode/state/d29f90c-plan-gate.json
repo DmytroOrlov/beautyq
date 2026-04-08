@@ -1,0 +1,24 @@
+{
+  "task": "split bifunctor-tagless/src/test/scala/leaderboard/tests.scala into smaller test files by hexagonal architecture layers/business domain found in this file only",
+  "TASK_HASH": "d29f90c",
+  "verdict": "proceed",
+  "reasons": [
+    "Plan is supported by project files: tests.scala exists with 35 named units (11 abstract test classes, 2 base traits, 22 concrete implementations) organized by business domain",
+    "Plan aligns with existing directory structure: leaderboard/tests/domain/ directory exists and is empty, confirming nested hierarchy is expected",
+    "Plan preserves package/path and discovery shape: all new files remain in leaderboard package with nested tests/domain subdirectory",
+    "Named unit roles are confirmed: LeaderboardTest, DummyTest, ProdTest are shared support units; all domain test classes are primary logic units",
+    "All 35 named units have exactly one planned named unit handling: 3 extracted to TestSupport.scala, 11 abstract classes and 22 concrete implementations moved to domain files",
+    "Plan is behavior-safe: only moves code, does not modify test logic or assertions, preserves all imports and memoizationRoots configuration"
+  ],
+  "scope_guardrails": [
+    "Do not create files outside bifunctor-tagless/src/test/scala/leaderboard/ directory",
+    "Do not modify tests.scala until all named units are successfully extracted to new files",
+    "Do not change package declarations: all files must remain in package leaderboard",
+    "Do not extract shared code beyond LeaderboardTest, DummyTest, and ProdTest traits",
+    "Do not create new ports, adapters, layers, or package splits",
+    "Do not modify test logic, assertions, or test names",
+    "Preserve all original imports exactly as they appear in tests.scala",
+    "Helper methods makeSchema and makeVariant must be duplicated locally in their respective test files, not extracted",
+    "Do not delete tests.scala until verification confirms all new files compile and tests are discoverable"
+  ]
+}
