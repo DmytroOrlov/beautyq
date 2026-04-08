@@ -17,7 +17,7 @@ General guidance for Scala tasks:
 - when reusing, moving, or copying Scala code to a new file, keep the full original import block; unused imports are acceptable
 - match the existing Scala syntax/dialect already used by the project files; do not introduce alternative import or declaration syntax unless it is already present in the project files
 - respect actual symbol boundaries in the codebase; do not assume packages, objects, or companions expose members unless confirmed in the project files
-- treat empty directories as non-evidence: they do not by themselves justify target paths, package/layout changes, discovery-shape changes, or file placement decisions
+- treat empty directories as neutral; rely on actual files, package declarations, and task requirements instead
 - prefer extraction refactors over architectural rewrites; use architecture or domain labels only to organize moved code, not to justify changing execution shape, discovery shape, inheritance shape unless the task explicitly requires it
 - respect the existing pragmatic hexagonal boundaries in the codebase; do not introduce new ports, adapters, layers, package splits, or discovery-shape changes unless the task explicitly requires them or reread project files prove they are required
 - after a failed broad verification, capture the first failing project file and exact error lines, then keep fixes scoped to that project file until the blocker is resolved before rerunning the broad check
