@@ -15,7 +15,7 @@ General guidance for Scala tasks:
 - fix only the failing scope first; do not refactor unrelated code while resolving errors
 - when compilation fails after a change, compare the changed project files against the original project files before inventing new abstractions
 - do not claim success based on intention; claim only what was actually changed and verified
-- do not use /tmp; use only project paths for temporary, intermediate, cache, and log files
+- never use /tmp; keep temp/intermediate/cache/log files only under `.opencode/tmp/` inside the project directory
 - for workflow state artifacts, use `.opencode/state/` inside the project and overwrite deterministic filenames
 - when reusing, moving, or copying Scala code to a new file, keep the full original import block; unused imports are acceptable
 - match the existing Scala syntax/dialect already used by the project files; do not introduce alternative import or declaration syntax unless it is already present in the project files
@@ -42,14 +42,16 @@ General verification:
 - verify that the requested outcome is present and that no required existing functionality/content was lost in project files
 - run the narrowest relevant checks available for the affected project files scope
 - prefer `sbt module1/test:compile module2/test:compile` checks first, then `sbt module1/test module2/test` for all changed and dependent modules
-- derive module scope only from changed project files
+- derive changed and direct dependent module scope from changed project files; if that is not enough, read build.sbt or the relevant build definition files before finalizing verification scope
 - if verification was not run, say so explicitly
 - if verification failed, write the failure to workflow state artifact file instead of presenting the task as done
 
 General final report:
 - changed project files only
 - written to disk workflow state artifacts only
+- list every workflow state artifact actually written in the current step; do not omit workflow state artifacts
 - what was intentionally left unchanged in project files
 - what was verified for project files
+- keep the final report honest to the actual changed project files, workflow state artifacts written to disk, and verification actually performed in the current step
 - what was not verified for project files
 - any risks, assumptions, or follow-up items
