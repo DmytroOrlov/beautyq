@@ -86,14 +86,6 @@ lazy val `bifunctor-tagless` = project
   .in(file("bifunctor-tagless"))
   .pipe(sharedSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
 
-lazy val `monofunctor-tagless` = project
-  .in(file("monofunctor-tagless"))
-  .pipe(sharedSettings(Seq(Deps.zio, Deps.zioCats)))
-
-lazy val `monomorphic-cats` = project
-  .in(file("monomorphic-cats"))
-  .pipe(sharedSettings(Seq()))
-
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
   .settings(Compile / resourceDirectory := baseDirectory.value)
@@ -102,8 +94,6 @@ lazy val `distage-example` = project
   .in(file("."))
   .aggregate(
     `bifunctor-tagless`,
-    `monofunctor-tagless`,
-    `monomorphic-cats`,
     `graal-resources`,
   )
   .enablePlugins(GraalVMNativeImagePlugin, UniversalPlugin)
