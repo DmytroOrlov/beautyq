@@ -67,6 +67,7 @@ class MasterServiceOffersTestDummy extends MasterServiceOffersTest with DummyTes
 class ServiceVariantSchemasTestDummy extends ServiceVariantSchemasTest with DummyTest
 class ServiceVariantSchemasStorageValidationTestPostgres extends ServiceVariantSchemasStorageValidationTest with ProdTest
 class MasterServiceOfferVariantsTestDummy extends MasterServiceOfferVariantsTest with DummyTest
+class MasterServiceOfferVariantsStorageValidationTestPostgres extends MasterServiceOfferVariantsStorageValidationTest with ProdTest
 class ServicesTestDummy extends ServicesTest with DummyTest
 
 class LadderTestPostgres extends LadderTest with ProdTest
@@ -1951,4 +1952,439 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
 
   }
 
+}
+
+abstract class MasterServiceOfferVariantsStorageValidationTest extends LeaderboardTest {
+  private def makeSchema(serviceId: ServiceId, items: ServiceVariantSchemaItem*): ServiceVariantSchema =
+    ServiceVariantSchema.fromItems(serviceId, items)
+
+  private def makeVariant(
+    id: MasterServiceOfferVariantId,
+    masterServiceOfferId: MasterServiceOfferId,
+    masterLocationId: MasterLocationId,
+    intAttributes: AttributeMap[Int]               = AttributeMap.empty,
+    bigDecimalAttributes: AttributeMap[BigDecimal] = AttributeMap.empty,
+  ): IO[QueryFailure, MasterServiceOfferVariant] =
+    ZIO
+      .fromEither(
+        MasterServiceOfferVariant.make(
+          id,
+          masterServiceOfferId,
+          masterLocationId,
+          BigDecimal("30.0000"),
+          BigDecimal("45.0000"),
+          60,
+          MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes),
+        )
+      )
+      .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
+
+  "MasterServiceOfferVariants numeric attribute storage" should {
+    "store Int attributes in the numeric table and load them back as typed Int values" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-int-category-$categoryId")
+          master      = Master(masterId, s"numeric-int-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-int-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-int-location-$locationId", s"numeric-int-address-$locationId", BigDecimal("1.0000"), BigDecimal("2.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
+          variant     <- makeVariant(variantId, offerId, locationId, intAttributes = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)))
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded      <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows  <- db.execute("count-master-service-offer-variant-numeric-attributes-int") {
+                           sql"""select count(*)
+                                from master_service_offer_variant_numeric_attributes
+                                where master_service_offer_variant_id = $variantId
+                              """.query[Long].unique
+                         }
+          _ <- assertIO(loaded.flatMap(_.intAttributes.get(AttributeDefinition.SessionCount)).contains(3))
+          _ <- assertIO(storedRows == 1L)
+        } yield ()
+    }
+
+    "store BigDecimal attributes in the numeric table and load them back as typed BigDecimal values" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-decimal-category-$categoryId")
+          master      = Master(masterId, s"numeric-decimal-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-decimal-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-decimal-location-$locationId", s"numeric-decimal-address-$locationId", BigDecimal("3.0000"), BigDecimal("4.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false))
+          variant     <- makeVariant(
+                           variantId,
+                           offerId,
+                           locationId,
+                           bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("25.5000"))),
+                         )
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded     <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows <- db.execute("count-master-service-offer-variant-numeric-attributes-decimal") {
+                          sql"""select count(*)
+                               from master_service_offer_variant_numeric_attributes
+                               where master_service_offer_variant_id = $variantId
+                             """.query[Long].unique
+                        }
+          _ <- assertIO(loaded.flatMap(_.bigDecimalAttributes.get(AttributeDefinition.DepositAmount)).contains(BigDecimal("25.5000")))
+          _ <- assertIO(storedRows == 1L)
+        } yield ()
+    }
+
+    "store mixed Int and BigDecimal attributes in one numeric table and restore separate typed maps" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-mixed-category-$categoryId")
+          master      = Master(masterId, s"numeric-mixed-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-mixed-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-mixed-location-$locationId", s"numeric-mixed-address-$locationId", BigDecimal("5.0000"), BigDecimal("6.0000"))
+          schema = makeSchema(
+            serviceId,
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false),
+          )
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            intAttributes        = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)),
+            bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("25.5000"))),
+          )
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded     <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows <- db.execute("select-master-service-offer-variant-numeric-attributes-mixed") {
+                          sql"""select attribute_code, value
+                               from master_service_offer_variant_numeric_attributes
+                               where master_service_offer_variant_id = $variantId
+                               order by attribute_code asc
+                             """.query[(String, BigDecimal)].to[List]
+                        }
+          _ <- assertIO(loaded.flatMap(_.intAttributes.get(AttributeDefinition.SessionCount)).contains(3))
+          _ <- assertIO(loaded.flatMap(_.bigDecimalAttributes.get(AttributeDefinition.DepositAmount)).contains(BigDecimal("25.5000")))
+          _ <- assertIO(
+            storedRows == List(
+              "deposit_amount" -> BigDecimal("25.5000"),
+              "session_count"  -> BigDecimal("3"),
+            )
+          )
+        } yield ()
+    }
+
+    "loadMany keeps numeric attributes grouped by variant id" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          location1Id <- rnd[MasterLocationId]
+          location2Id <- rnd[MasterLocationId]
+          variant1Id  <- rnd[MasterServiceOfferVariantId]
+          variant2Id  <- rnd[MasterServiceOfferVariantId]
+          category     = Category(categoryId, rootCategoryId, 0, s"numeric-loadmany-category-$categoryId")
+          master       = Master(masterId, s"numeric-loadmany-master-$masterId")
+          service      = Service(serviceId, categoryId, s"numeric-loadmany-service-$serviceId")
+          offer        = MasterServiceOffer(offerId, masterId, serviceId)
+          location1    = MasterLocation(location1Id, masterId, s"numeric-loadmany-location-a-$location1Id", s"numeric-loadmany-address-a-$location1Id", BigDecimal("7.0000"), BigDecimal("8.0000"))
+          location2    = MasterLocation(location2Id, masterId, s"numeric-loadmany-location-b-$location2Id", s"numeric-loadmany-address-b-$location2Id", BigDecimal("9.0000"), BigDecimal("10.0000"))
+          schema = makeSchema(
+            serviceId,
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false),
+          )
+          variant1 <- makeVariant(
+            variant1Id,
+            offerId,
+            location1Id,
+            intAttributes        = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)),
+            bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("25.5000"))),
+          )
+          variant2 <- makeVariant(
+            variant2Id,
+            offerId,
+            location2Id,
+            intAttributes        = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 7)),
+            bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("41.2500"))),
+          )
+          _   <- categories.upsertCategory(category)
+          _   <- masters.upsertMaster(master)
+          _   <- services.upsertService(service)
+          _   <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _   <- offers.upsertMasterServiceOffer(offer)
+          _   <- masterLocations.upsertMasterLocation(location1)
+          _   <- masterLocations.upsertMasterLocation(location2)
+          _   <- variants.upsertMasterServiceOfferVariant(variant1)
+          _   <- variants.upsertMasterServiceOfferVariant(variant2)
+          res <- variants.getMasterServiceOfferVariantsByOffer(offerId)
+          _   <- assertIO(res.toSet == Set(variant1, variant2))
+        } yield ()
+    }
+
+    "reject non-integer stored numeric value for an Int attribute definition" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-invalid-int-category-$categoryId")
+          master      = Master(masterId, s"numeric-invalid-int-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-invalid-int-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-invalid-int-location-$locationId", s"numeric-invalid-int-address-$locationId", BigDecimal("11.0000"), BigDecimal("12.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-invalid-master-service-offer-variant-numeric-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${AttributeDefinition.SessionCount.code},
+                                |  ${BigDecimal("3.5")}
+                                |)
+                                |on conflict (master_service_offer_variant_id, attribute_code) do update set
+                                |  value = excluded.value
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(
+                      result.left.exists {
+                        case QueryFailure.OperationFailure(operationName, message) =>
+                          operationName == "load-master-service-offer-variant-attributes" &&
+                          message == s"MasterServiceOfferVariant attribute ${AttributeDefinition.SessionCount.code} expected Int-compatible numeric value but got non-integer numeric value: 3.5"
+                        case _ =>
+                          false
+                      }
+                    )
+        } yield ()
+    }
+
+    "fail to load Int attribute when numeric value is outside Int range" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-out-of-range-category-$categoryId")
+          master      = Master(masterId, s"numeric-out-of-range-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-out-of-range-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-out-of-range-location-$locationId", s"numeric-out-of-range-address-$locationId", BigDecimal("13.0000"), BigDecimal("14.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-out-of-range-master-service-offer-variant-numeric-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${AttributeDefinition.SessionCount.code},
+                                |  ${BigDecimal("2147483648")}
+                                |)
+                                |on conflict (master_service_offer_variant_id, attribute_code) do update set
+                                |  value = excluded.value
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(
+                      result.left.exists {
+                        case QueryFailure.OperationFailure(operationName, message) =>
+                          operationName == "load-master-service-offer-variant-attributes" &&
+                          message.contains(AttributeDefinition.SessionCount.code) &&
+                          message.contains("Int-compatible numeric value") &&
+                          message.contains("outside Int range") &&
+                          message.contains("2147483648")
+                        case _ =>
+                          false
+                      }
+                    )
+        } yield ()
+    }
+
+    "reject unknown attribute code from numeric storage" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-unknown-category-$categoryId")
+          master      = Master(masterId, s"numeric-unknown-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-unknown-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-unknown-location-$locationId", s"numeric-unknown-address-$locationId", BigDecimal("13.0000"), BigDecimal("14.0000"))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-unknown-master-service-offer-variant-numeric-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${"unknown_attribute_code"},
+                                |  ${BigDecimal("2.0")}
+                                |)
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(
+                      result.left.exists {
+                        case QueryFailure.OperationFailure(operationName, message) =>
+                          operationName == "load-master-service-offer-variant-attributes" &&
+                          message == "Unknown MasterServiceOfferVariant attribute code: unknown_attribute_code"
+                        case _ =>
+                          false
+                      }
+                    )
+        } yield ()
+    }
+
+    "create only the numeric attribute table" in {
+      (db: SQL[IO]) =>
+        for {
+          tableNames <- db.execute("list-master-service-offer-variant-attribute-tables") {
+                          sql"""select table_name
+                               from information_schema.tables
+                               where table_schema = 'public'
+                                 and table_name like 'master_service_offer_variant_%_attributes'
+                               order by table_name asc
+                             """.query[String].to[List]
+                        }
+          _ <- assertIO(
+            tableNames == List("master_service_offer_variant_numeric_attributes")
+          )
+        } yield ()
+    }
+  }
 }

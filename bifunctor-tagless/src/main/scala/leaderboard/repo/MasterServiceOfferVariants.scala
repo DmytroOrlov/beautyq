@@ -240,27 +240,30 @@ object MasterServiceOfferVariants {
   private def loadStoredVariants(
     rows: List[MasterServiceOfferVariantStoredRow],
     attributesRepository: MasterServiceOfferVariantAttributesRepository.Postgres,
-  ): doobie.free.connection.ConnectionIO[List[StoredVariantData]] =
+  ): doobie.free.connection.ConnectionIO[Either[QueryFailure, List[StoredVariantData]]] =
     attributesRepository.loadMany(rows.map(_._1)).map {
       attributesById =>
-        rows.map {
-          row =>
-            toStoredVariantData(row, attributesById.getOrElse(row._1, MasterServiceOfferVariantAdditionalAttributes.empty))
+        attributesById.map {
+          decodedAttributesById =>
+            rows.map {
+              row =>
+                toStoredVariantData(row, decodedAttributesById.getOrElse(row._1, MasterServiceOfferVariantAdditionalAttributes.empty))
+            }
         }
     }
 
   private def loadStoredVariant(
     row: Option[MasterServiceOfferVariantStoredRow],
     attributesRepository: MasterServiceOfferVariantAttributesRepository.Postgres,
-  ): doobie.free.connection.ConnectionIO[Option[StoredVariantData]] =
+  ): doobie.free.connection.ConnectionIO[Either[QueryFailure, Option[StoredVariantData]]] =
     row match {
       case Some(value) =>
         attributesRepository.load(value._1).map {
           attributes =>
-            Option(toStoredVariantData(value, attributes))
+            attributes.map(decoded => Option(toStoredVariantData(value, decoded)))
         }
       case None =>
-        FC.pure(Option.empty[StoredVariantData])
+        FC.pure(Right(Option.empty[StoredVariantData]))
     }
 
   private def makeStoredVariants[F[+_, +_]: Error2](
@@ -498,10 +501,13 @@ object MasterServiceOfferVariants {
                 data <- loadStoredVariant(row, attributesRepository)
               } yield data
             }.flatMap {
-              case Some(data) =>
-                makeVariantWithSchema[F]("get-master-service-offer-variant", data, serviceVariantSchemas).map(Some(_))
-              case None =>
-                F.pure(None)
+              eitherData =>
+                liftEither[F, Option[StoredVariantData]](eitherData).flatMap {
+                  case Some(data) =>
+                    makeVariantWithSchema[F]("get-master-service-offer-variant", data, serviceVariantSchemas).map(Some(_))
+                  case None =>
+                    F.pure(None)
+                }
             }
 
           def getMasterServiceOfferVariantsByOffer(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, List[MasterServiceOfferVariant]] =
@@ -521,7 +527,12 @@ object MasterServiceOfferVariants {
                               |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
                 data <- loadStoredVariants(rows, attributesRepository)
               } yield data
-            }.flatMap(makeStoredVariants[F]("get-master-service-offer-variants-by-offer", _, serviceVariantSchemas))
+            }.flatMap {
+              eitherData =>
+                liftEither[F, List[StoredVariantData]](eitherData).flatMap(
+                  makeStoredVariants[F]("get-master-service-offer-variants-by-offer", _, serviceVariantSchemas)
+                )
+            }
 
           def getMasterServiceOfferVariantsByLocation(masterLocationId: MasterLocationId): F[QueryFailure, List[MasterServiceOfferVariant]] =
             sql.execute("get-master-service-offer-variants-by-location") {
@@ -540,7 +551,12 @@ object MasterServiceOfferVariants {
                               |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
                 data <- loadStoredVariants(rows, attributesRepository)
               } yield data
-            }.flatMap(makeStoredVariants[F]("get-master-service-offer-variants-by-location", _, serviceVariantSchemas))
+            }.flatMap {
+              eitherData =>
+                liftEither[F, List[StoredVariantData]](eitherData).flatMap(
+                  makeStoredVariants[F]("get-master-service-offer-variants-by-location", _, serviceVariantSchemas)
+                )
+            }
         }
       }
     )

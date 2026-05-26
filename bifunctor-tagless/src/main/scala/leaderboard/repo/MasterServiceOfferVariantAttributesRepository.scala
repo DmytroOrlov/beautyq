@@ -7,7 +7,7 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.{AttributeDefinition, AttributeMap, AttributeValueName, BigDecimalAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
 private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
@@ -24,20 +24,40 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
     QueryFailure.operation(queryName, s"Unknown MasterServiceOfferVariant attribute code: $attributeCode")
 
-  private def attributeStoredInWrongTypeStorage[A: AttributeValueName](
+  private def unsupportedNumericAttributeDefinition(
     queryName: String,
     attributeCode: String,
     actual: AnyAttributeDefinition,
   ): QueryFailure =
     QueryFailure.operation(
       queryName,
-      s"MasterServiceOfferVariant attribute $attributeCode expected storage ${AttributeValueName[A].name} but was read from ${actual.valueType}",
+      s"Unsupported numeric attribute definition for MasterServiceOfferVariant attribute $attributeCode: ${actual.valueType}",
+    )
+
+  private def intNumericValueOutsideRange(
+    queryName: String,
+    attributeCode: String,
+    value: BigDecimal,
+  ): QueryFailure =
+    QueryFailure.operation(
+      queryName,
+      s"MasterServiceOfferVariant attribute $attributeCode expected Int-compatible numeric value but was outside Int range: $value",
+    )
+
+  private def nonIntegerNumericValueForInt(
+    queryName: String,
+    attributeCode: String,
+    value: BigDecimal,
+  ): QueryFailure =
+    QueryFailure.operation(
+      queryName,
+      s"MasterServiceOfferVariant attribute $attributeCode expected Int-compatible numeric value but got non-integer numeric value: $value",
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
     AttributeDefinition.fromCode(code)
 
-  private def collectStoredAttributes[A: AttributeValueName](
+  private def collectStoredAttributes[A](
     queryName: String,
     attributes: Map[String, A],
     decode: String => Option[AttributeDefinition[A]],
@@ -54,8 +74,48 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                   case None =>
                     Left(unknownAttributeCode(queryName, attributeCode))
                   case Some(definition) =>
-                    Left(attributeStoredInWrongTypeStorage[A](queryName, attributeCode, definition))
+                    Left(unsupportedNumericAttributeDefinition(queryName, attributeCode, definition))
                 }
+            }
+        }
+    }
+
+  private def decodeIntValue(
+    queryName: String,
+    attributeCode: String,
+    value: BigDecimal,
+  ): Either[QueryFailure, Int] =
+    value.toBigIntExact match {
+      case Some(bigInt) if bigInt.isValidInt =>
+        Right(bigInt.toInt)
+      case Some(_) =>
+        Left(intNumericValueOutsideRange(queryName, attributeCode, value))
+      case None =>
+        Left(nonIntegerNumericValueForInt(queryName, attributeCode, value))
+    }
+
+  def decodeStoredNumericAttributes(
+    queryName: String,
+    attributes: Map[String, BigDecimal],
+  ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] =
+    attributes.foldLeft[Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes]](
+      Right(MasterServiceOfferVariantAdditionalAttributes.empty)
+    ) {
+      case (acc, (attributeCode, value)) =>
+        acc.flatMap {
+          current =>
+            AttributeDefinition.fromCode(attributeCode) match {
+              case None =>
+                Left(unknownAttributeCode(queryName, attributeCode))
+              case Some(_: IntAttributeDefinition) =>
+                decodeIntValue(queryName, attributeCode, value).map {
+                  decoded =>
+                    current.copy(intAttributes = current.intAttributes.updated(attributeCode, decoded))
+                }
+              case Some(_: BigDecimalAttributeDefinition) =>
+                Right(current.copy(bigDecimalAttributes = current.bigDecimalAttributes.updated(attributeCode, value)))
+              case Some(definition) =>
+                Left(unsupportedNumericAttributeDefinition(queryName, attributeCode, definition))
             }
         }
     }
@@ -151,21 +211,18 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   }
 
   class Postgres {
-    private type IntAttributeRow              = (String, Int)
-    private type BigDecimalAttributeRow       = (String, BigDecimal)
-    private type IntAttributeStoredRow        = (MasterServiceOfferVariantId, String, Int)
-    private type BigDecimalAttributeStoredRow = (MasterServiceOfferVariantId, String, BigDecimal)
-    private type IntAttributeInsertRow        = (MasterServiceOfferVariantId, String, Int)
-    private type BigDecimalAttributeInsertRow = (MasterServiceOfferVariantId, String, BigDecimal)
+    private type NumericAttributeRow       = (String, BigDecimal)
+    private type NumericAttributeStoredRow = (MasterServiceOfferVariantId, String, BigDecimal)
+    private type NumericAttributeInsertRow = (MasterServiceOfferVariantId, String, BigDecimal)
 
-    private def loadRowsForVariant[A](
-      rows: List[(String, A)]
-    ): Map[String, A] =
+    private def loadRowsForVariant(
+      rows: List[NumericAttributeRow]
+    ): Map[String, BigDecimal] =
       rows.toMap
 
-    private def loadManyRows[A](
-      rows: List[(MasterServiceOfferVariantId, String, A)]
-    ): Map[MasterServiceOfferVariantId, Map[String, A]] =
+    private def loadManyRows(
+      rows: List[NumericAttributeStoredRow]
+    ): Map[MasterServiceOfferVariantId, Map[String, BigDecimal]] =
       rows
         .groupMap(_._1) {
           case (_, attributeCode, value) =>
@@ -173,92 +230,69 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         }.view.mapValues(_.toMap).toMap
 
     private def mergeLoadedAttributes(
+      queryName: String,
       variantIds: List[MasterServiceOfferVariantId],
-      intRows: List[IntAttributeStoredRow],
-      bigDecimalRows: List[BigDecimalAttributeStoredRow],
-    ): Map[MasterServiceOfferVariantId, MasterServiceOfferVariantAdditionalAttributes] = {
-      val intAttributesById        = loadManyRows(intRows)
-      val bigDecimalAttributesById = loadManyRows(bigDecimalRows)
+      rows: List[NumericAttributeStoredRow],
+    ): Either[QueryFailure, Map[MasterServiceOfferVariantId, MasterServiceOfferVariantAdditionalAttributes]] = {
+      val rowsByVariantId = loadManyRows(rows)
 
-      variantIds.iterator.map {
-        variantId =>
-          variantId -> MasterServiceOfferVariantAdditionalAttributes(
-            intAttributesById.getOrElse(variantId, Map.empty),
-            bigDecimalAttributesById.getOrElse(variantId, Map.empty),
-          )
-      }.toMap
+      variantIds.foldLeft[Either[QueryFailure, Map[MasterServiceOfferVariantId, MasterServiceOfferVariantAdditionalAttributes]]](
+        Right(Map.empty)
+      ) {
+        case (acc, variantId) =>
+          acc.flatMap {
+            current =>
+              decodeStoredNumericAttributes(queryName, rowsByVariantId.getOrElse(variantId, Map.empty)).map {
+                decoded =>
+                  current.updated(variantId, decoded)
+              }
+          }
+      }
     }
 
-    private def selectIntAttributes(variantIds: NonEmptyList[MasterServiceOfferVariantId]): ConnectionIO[List[IntAttributeStoredRow]] =
-      (fr"""select master_service_offer_variant_id, attribute_code, value
-           |from master_service_offer_variant_int_attributes
-           |where""".stripMargin ++
-        fragments.in(fr"master_service_offer_variant_id", variantIds) ++
-        fr"order by master_service_offer_variant_id asc, attribute_code asc")
-        .query[IntAttributeStoredRow]
-        .to[List]
-
-    private def selectBigDecimalAttributes(
+    private def selectNumericAttributes(
       variantIds: NonEmptyList[MasterServiceOfferVariantId]
-    ): ConnectionIO[List[BigDecimalAttributeStoredRow]] =
+    ): ConnectionIO[List[NumericAttributeStoredRow]] =
       (fr"""select master_service_offer_variant_id, attribute_code, value
-           |from master_service_offer_variant_bigdecimal_attributes
+           |from master_service_offer_variant_numeric_attributes
            |where""".stripMargin ++
         fragments.in(fr"master_service_offer_variant_id", variantIds) ++
         fr"order by master_service_offer_variant_id asc, attribute_code asc")
-        .query[BigDecimalAttributeStoredRow]
+        .query[NumericAttributeStoredRow]
         .to[List]
 
     def createTables: ConnectionIO[Unit] =
       for {
-        _ <- sql"""create table if not exists master_service_offer_variant_int_attributes (
-                  |  master_service_offer_variant_id uuid not null,
-                  |  attribute_code text not null,
-                  |  value int not null,
-                  |  primary key (master_service_offer_variant_id, attribute_code),
-                  |  constraint master_service_offer_variant_int_attributes_variant_fk
-                  |    foreign key (master_service_offer_variant_id) references master_service_offer_variants(id)
-                  |) without oids
-                  |""".stripMargin.update.run
-        _ <- sql"""create table if not exists master_service_offer_variant_bigdecimal_attributes (
+        _ <- sql"""create table if not exists master_service_offer_variant_numeric_attributes (
                   |  master_service_offer_variant_id uuid not null,
                   |  attribute_code text not null,
                   |  value numeric not null,
                   |  primary key (master_service_offer_variant_id, attribute_code),
-                  |  constraint master_service_offer_variant_bigdecimal_attributes_variant_fk
+                  |  constraint master_service_offer_variant_numeric_attributes_variant_fk
                   |    foreign key (master_service_offer_variant_id) references master_service_offer_variants(id)
                   |) without oids
                   |""".stripMargin.update.run
       } yield ()
 
-    def load(variantId: MasterServiceOfferVariantId): ConnectionIO[MasterServiceOfferVariantAdditionalAttributes] =
+    def load(variantId: MasterServiceOfferVariantId): ConnectionIO[Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes]] =
       for {
-        intAttributes <- sql"""select attribute_code, value
-                              |from master_service_offer_variant_int_attributes
-                              |where master_service_offer_variant_id = $variantId
-                              |order by attribute_code asc
-                              |""".stripMargin.query[IntAttributeRow].to[List]
-        bigDecimalAttributes <- sql"""select attribute_code, value
-                                     |from master_service_offer_variant_bigdecimal_attributes
-                                     |where master_service_offer_variant_id = $variantId
-                                     |order by attribute_code asc
-                                     |""".stripMargin.query[BigDecimalAttributeRow].to[List]
-      } yield MasterServiceOfferVariantAdditionalAttributes(
-        loadRowsForVariant(intAttributes),
-        loadRowsForVariant(bigDecimalAttributes),
-      )
+        numericAttributes <- sql"""select attribute_code, value
+                                  |from master_service_offer_variant_numeric_attributes
+                                  |where master_service_offer_variant_id = $variantId
+                                  |order by attribute_code asc
+                                  |""".stripMargin.query[NumericAttributeRow].to[List]
+      } yield decodeStoredNumericAttributes("load-master-service-offer-variant-attributes", loadRowsForVariant(numericAttributes))
 
     def loadMany(
       variantIds: List[MasterServiceOfferVariantId]
-    ): ConnectionIO[Map[MasterServiceOfferVariantId, MasterServiceOfferVariantAdditionalAttributes]] =
+    ): ConnectionIO[Either[QueryFailure, Map[MasterServiceOfferVariantId, MasterServiceOfferVariantAdditionalAttributes]]] =
       NonEmptyList.fromList(variantIds) match {
         case Some(ids) =>
           for {
-            intRows        <- selectIntAttributes(ids)
-            bigDecimalRows <- selectBigDecimalAttributes(ids)
-          } yield mergeLoadedAttributes(variantIds, intRows, bigDecimalRows)
+            numericRows <- selectNumericAttributes(ids)
+          } yield mergeLoadedAttributes("load-many-master-service-offer-variant-attributes", variantIds, numericRows)
         case None =>
-          FC.pure(Map.empty)
+          FC.pure(Right(Map.empty))
       }
 
     def replace(
@@ -266,47 +300,26 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       attributes: MasterServiceOfferVariantAdditionalAttributes,
     ): ConnectionIO[Unit] =
       for {
-        _ <- sql"""delete from master_service_offer_variant_int_attributes
+        _ <- sql"""delete from master_service_offer_variant_numeric_attributes
                   |where master_service_offer_variant_id = $variantId
                   |""".stripMargin.update.run
-        _ <- sql"""delete from master_service_offer_variant_bigdecimal_attributes
-                  |where master_service_offer_variant_id = $variantId
-                  |""".stripMargin.update.run
-        _ <- insertIntAttributes(
+        _ <- insertNumericAttributes(
           attributes.intAttributes.toList.map {
             case (attributeCode, value) =>
-              (variantId, attributeCode, value)
-          }
-        )
-        _ <- insertBigDecimalAttributes(
-          attributes.bigDecimalAttributes.toList.map {
+              (variantId, attributeCode, BigDecimal(value))
+          } ++ attributes.bigDecimalAttributes.toList.map {
             case (attributeCode, value) =>
               (variantId, attributeCode, value)
           }
         )
       } yield ()
 
-    private def insertIntAttributes(rows: List[IntAttributeInsertRow]): ConnectionIO[Int] =
+    private def insertNumericAttributes(rows: List[NumericAttributeInsertRow]): ConnectionIO[Int] =
       if (rows.isEmpty) {
         FC.pure(0)
       } else {
-        Update[IntAttributeInsertRow](
-          """insert into master_service_offer_variant_int_attributes (
-            |  master_service_offer_variant_id,
-            |  attribute_code,
-            |  value
-            |)
-            |values (?, ?, ?)
-            |""".stripMargin
-        ).updateMany(rows)
-      }
-
-    private def insertBigDecimalAttributes(rows: List[BigDecimalAttributeInsertRow]): ConnectionIO[Int] =
-      if (rows.isEmpty) {
-        FC.pure(0)
-      } else {
-        Update[BigDecimalAttributeInsertRow](
-          """insert into master_service_offer_variant_bigdecimal_attributes (
+        Update[NumericAttributeInsertRow](
+          """insert into master_service_offer_variant_numeric_attributes (
             |  master_service_offer_variant_id,
             |  attribute_code,
             |  value
