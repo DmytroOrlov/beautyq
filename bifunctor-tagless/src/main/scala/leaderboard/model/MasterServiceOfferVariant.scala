@@ -197,7 +197,7 @@ object MasterServiceOfferVariant {
                 code => AttributeDefinition.fromCodeAsEnum(code).map(_.asInstanceOf[AttributeDefinition[CodedEnumValue]]),
               )
               enumTypedDefinition = enumDefinition.asInstanceOf[EnumAttributeDefinition[?]]
-              enumValue <- enumTypedDefinition.fromStringCode(stringCode).map(_.asInstanceOf[CodedEnumValue]) match {
+              enumValue          <- enumTypedDefinition.fromStringCode(stringCode).map(_.asInstanceOf[CodedEnumValue]) match {
                 case Some(value) =>
                   Right(value)
                 case None =>
