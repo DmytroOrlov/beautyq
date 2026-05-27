@@ -30,6 +30,11 @@ final case class MasterServiceOfferVariant private (
   ): Option[E] =
     attributes.get(attributeDefinition)
 
+  def getAttribute(
+    attributeDefinition: BooleanAttributeDefinition
+  ): Option[Boolean] =
+    attributes.get(attributeDefinition)
+
   def intAttributes: AttributeMap[Int] =
     attributes.intValues
 
@@ -38,6 +43,9 @@ final case class MasterServiceOfferVariant private (
 
   def enumAttributes: AttributeMap[CodedEnumValue] =
     attributes.enumValues
+
+  def booleanAttributes: AttributeMap[Boolean] =
+    attributes.booleanValues
 
   @nowarn("cat=unused")
   private def copy(
@@ -161,6 +169,13 @@ object MasterServiceOfferVariant {
           attributeDefinition.code -> attributeValue
       }.toMap.asJson
 
+  private def encodeBooleanAttributes(value: AttributeMap[Boolean]) =
+    value.iterator
+      .map {
+        case (attributeDefinition, attributeValue) =>
+          attributeDefinition.code -> attributeValue
+      }.toMap.asJson
+
   private def decodeEnumAttributes(
     c: HCursor
   ): Decoder.Result[AttributeMap[CodedEnumValue]] =
@@ -231,7 +246,12 @@ object MasterServiceOfferVariant {
           AttributeDefinition.fromCodeAsBigDecimal,
         )
         enumAttributes <- decodeEnumAttributes(c)
-        attributes = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes)
+        booleanAttributes <- decodeAttributes[Boolean](
+          c,
+          "booleanAttributes",
+          AttributeDefinition.fromCodeAsBoolean,
+        )
+        attributes = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes, booleanAttributes)
         value     <- make(
           id,
           masterServiceOfferId,
@@ -259,7 +279,9 @@ object MasterServiceOfferVariant {
           value.attributes.bigDecimalValues.nonEmpty
         )("bigDecimalAttributes" -> encodeBigDecimalAttributes(value.attributes.bigDecimalValues)) ++ Option.when(
           value.attributes.enumValues.nonEmpty
-        )("enumAttributes" -> encodeEnumAttributes(value.attributes.enumValues))
+        )("enumAttributes" -> encodeEnumAttributes(value.attributes.enumValues)) ++ Option.when(
+          value.attributes.booleanValues.nonEmpty
+        )("booleanAttributes" -> encodeBooleanAttributes(value.attributes.booleanValues))
       )
   }
 

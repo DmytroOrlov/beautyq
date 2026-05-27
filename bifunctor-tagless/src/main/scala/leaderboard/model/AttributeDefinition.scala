@@ -13,6 +13,10 @@ sealed trait BigDecimalAttributeDefinition extends AttributeDefinition[BigDecima
   final val valueType = "BigDecimal"
 }
 
+sealed trait BooleanAttributeDefinition extends AttributeDefinition[Boolean] {
+  final val valueType = "Boolean"
+}
+
 sealed trait EnumAttributeDefinition[E <: CodedEnumValue] extends AttributeDefinition[E] {
   final val valueType = "Enum"
   def values: List[E]
@@ -49,6 +53,22 @@ object AttributeDefinition {
 
   case object FixedDiscountAmount extends BigDecimalAttributeDefinition {
     val code = "fixed_discount_amount"
+  }
+
+  case object WithRemoval extends BooleanAttributeDefinition {
+    val code = "with_removal"
+  }
+
+  case object WithDesign extends BooleanAttributeDefinition {
+    val code = "with_design"
+  }
+
+  case object WithTinting extends BooleanAttributeDefinition {
+    val code = "with_tinting"
+  }
+
+  case object WithCorrection extends BooleanAttributeDefinition {
+    val code = "with_correction"
   }
 
   case object HairRemovalMethodAttribute extends EnumAttributeDefinition[HairRemovalMethod] {
@@ -196,8 +216,16 @@ object AttributeDefinition {
       BodyAreaAttribute,
     )
 
+  val booleanDefinitions: List[BooleanAttributeDefinition] =
+    List(
+      WithRemoval,
+      WithDesign,
+      WithTinting,
+      WithCorrection,
+    )
+
   val all: List[AnyAttributeDefinition] =
-    intDefinitions ++ bigDecimalDefinitions ++ enumDefinitions
+    intDefinitions ++ bigDecimalDefinitions ++ enumDefinitions ++ booleanDefinitions
 
   val byCode: Map[String, AnyAttributeDefinition] =
     all.iterator.map(definition => definition.code -> definition).toMap
@@ -214,6 +242,12 @@ object AttributeDefinition {
   def fromCodeAsBigDecimal(code: String): Option[BigDecimalAttributeDefinition] =
     fromCode(code).collect {
       case definition: BigDecimalAttributeDefinition =>
+        definition
+    }
+
+  def fromCodeAsBoolean(code: String): Option[BooleanAttributeDefinition] =
+    fromCode(code).collect {
+      case definition: BooleanAttributeDefinition =>
         definition
     }
 

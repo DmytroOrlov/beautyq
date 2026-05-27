@@ -966,6 +966,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
     intAttributes: AttributeMap[Int]               = AttributeMap.empty,
     bigDecimalAttributes: AttributeMap[BigDecimal] = AttributeMap.empty,
     enumAttributes: AttributeMap[CodedEnumValue]   = AttributeMap.empty,
+    booleanAttributes: AttributeMap[Boolean]       = AttributeMap.empty,
   ): IO[QueryFailure, MasterServiceOfferVariant] =
     MasterServiceOfferVariant
       .make(
@@ -975,7 +976,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         priceFrom,
         priceTo,
         durationMin,
-        MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes),
+        MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes, booleanAttributes),
       ) match {
       case Right(value) =>
         ZIO.succeed(value)
@@ -1305,6 +1306,14 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _ <- assertIO(AttributeDefinition.fromCodeAsEnum("pmu_area").contains(AttributeDefinition.PmuAreaAttribute))
           _ <- assertIO(AttributeDefinition.fromCodeAsEnum("facial_treatment_type").contains(AttributeDefinition.FacialTreatmentTypeAttribute))
           _ <- assertIO(AttributeDefinition.fromCodeAsEnum("body_area").contains(AttributeDefinition.BodyAreaAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("with_removal").contains(AttributeDefinition.WithRemoval))
+          _ <- assertIO(AttributeDefinition.fromCode("with_design").contains(AttributeDefinition.WithDesign))
+          _ <- assertIO(AttributeDefinition.fromCode("with_tinting").contains(AttributeDefinition.WithTinting))
+          _ <- assertIO(AttributeDefinition.fromCode("with_correction").contains(AttributeDefinition.WithCorrection))
+          _ <- assertIO(AttributeDefinition.fromCodeAsBoolean("with_removal").contains(AttributeDefinition.WithRemoval))
+          _ <- assertIO(AttributeDefinition.fromCodeAsBoolean("with_design").contains(AttributeDefinition.WithDesign))
+          _ <- assertIO(AttributeDefinition.fromCodeAsBoolean("with_tinting").contains(AttributeDefinition.WithTinting))
+          _ <- assertIO(AttributeDefinition.fromCodeAsBoolean("with_correction").contains(AttributeDefinition.WithCorrection))
         } yield ()
     }
 
@@ -1317,6 +1326,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           attributes  = MasterServiceOfferVariantAttributes(
             intValues        = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)),
             bigDecimalValues = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
+            booleanValues    = AttributeMap.Impl(Map(AttributeDefinition.WithRemoval -> true)),
           )
           variant <- ZIO
             .fromEither(
@@ -1339,6 +1349,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _ <- assertIO(
             variant.bigDecimalAttributes.get(AttributeDefinition.DepositAmount).contains(BigDecimal("12.5000"))
           )
+          _ <- assertIO(variant.booleanAttributes.get(AttributeDefinition.WithRemoval).contains(true))
           _ <- assertIO(variant.intAttributes.keySet == Set(AttributeDefinition.SessionCount))
           _ <- assertIO(
             variant.bigDecimalAttributes.keySet == Set(
@@ -1346,6 +1357,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             )
           )
           _ <- assertIO(variant.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute).isEmpty)
+          _ <- assertIO(variant.booleanAttributes.keySet == Set(AttributeDefinition.WithRemoval))
         } yield ()
     }
 
@@ -1357,6 +1369,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           attributes = MasterServiceOfferVariantAttributes(
             intValues        = AttributeMap.empty,
             bigDecimalValues = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("12.5000"))),
+            booleanValues    = AttributeMap.Impl(Map(AttributeDefinition.WithRemoval -> true)),
           )
           _ <- assertIO(
             schema.validate(attributes) == Left(
@@ -1411,6 +1424,21 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             enumValues = enumAttributeMap(
               AttributeDefinition.NailServiceTypeAttribute -> NailServiceType.Manicure
             ),
+          )
+          _ <- assertIO(schema.validate(attributes) == Right(()))
+        } yield ()
+    }
+
+    "schema validate supports allowed boolean attributes" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.WithRemoval, false))
+          attributes = MasterServiceOfferVariantAttributes(
+            intValues        = AttributeMap.empty,
+            bigDecimalValues = AttributeMap.empty,
+            enumValues       = AttributeMap.empty,
+            booleanValues    = AttributeMap.Impl(Map(AttributeDefinition.WithRemoval -> true)),
           )
           _ <- assertIO(schema.validate(attributes) == Right(()))
         } yield ()
@@ -1519,6 +1547,33 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           result = json.as[MasterServiceOfferVariant]
           _ <- assertIO(result.exists(_.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute).contains(HairRemovalMethod.Sugaring)))
           _ <- assertIO(result.exists(_.enumAttributes.get(AttributeDefinition.NailCoatingTypeAttribute).contains(NailCoatingType.GelPolish)))
+        } yield ()
+    }
+
+    "decode and encode supports boolean attributes as JSON booleans" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "booleanAttributes"    -> Json.obj(
+              "with_removal" -> true.asJson,
+              "with_design"  -> false.asJson,
+            ),
+          )
+          decoded = json.as[MasterServiceOfferVariant]
+          _ <- assertIO(decoded.exists(_.booleanAttributes.get(AttributeDefinition.WithRemoval).contains(true)))
+          _ <- assertIO(decoded.exists(_.booleanAttributes.get(AttributeDefinition.WithDesign).contains(false)))
+          encoded = decoded.toOption.get.asJson
+          _ <- assertIO(encoded.hcursor.downField("booleanAttributes").downField("with_removal").as[Boolean].contains(true))
+          _ <- assertIO(encoded.hcursor.downField("booleanAttributes").downField("with_design").as[Boolean].contains(false))
         } yield ()
     }
 
@@ -1636,6 +1691,28 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         } yield ()
     }
 
+    "decode rejects boolean attribute in intAttributes group" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "intAttributes"        -> Json.obj(
+              "with_removal" -> 1.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
+        } yield ()
+    }
+
     "decode rejects int attribute in enumAttributes group" in {
       (rnd: Rnd[IO]) =>
         for {
@@ -1651,6 +1728,28 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             "durationMin"          -> 60.asJson,
             "enumAttributes"       -> Json.obj(
               "session_count" -> "3".asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "decode rejects int attribute in booleanAttributes group" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "booleanAttributes"    -> Json.obj(
+              "session_count" -> true.asJson
             ),
           )
           result = json.as[MasterServiceOfferVariant]
@@ -2422,6 +2521,7 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
     intAttributes: AttributeMap[Int]               = AttributeMap.empty,
     bigDecimalAttributes: AttributeMap[BigDecimal] = AttributeMap.empty,
     enumAttributes: AttributeMap[CodedEnumValue]   = AttributeMap.empty,
+    booleanAttributes: AttributeMap[Boolean]       = AttributeMap.empty,
   ): IO[QueryFailure, MasterServiceOfferVariant] =
     ZIO
       .fromEither(
@@ -2432,7 +2532,7 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           BigDecimal("30.0000"),
           BigDecimal("45.0000"),
           60,
-          MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes),
+          MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes, booleanAttributes),
         )
       )
       .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
@@ -2767,6 +2867,66 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
         } yield ()
     }
 
+    "store Boolean attributes in the numeric table and load them back as typed Boolean values" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-bool-category-$categoryId")
+          master      = Master(masterId, s"numeric-bool-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-bool-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-bool-location-$locationId", s"numeric-bool-address-$locationId", BigDecimal("25.0000"), BigDecimal("26.0000"))
+          schema      = makeSchema(
+                           serviceId,
+                           ServiceVariantSchemaItem(AttributeDefinition.WithRemoval, false),
+                           ServiceVariantSchemaItem(AttributeDefinition.WithDesign, false),
+                         )
+          variant     <- makeVariant(
+                           variantId,
+                           offerId,
+                           locationId,
+                           booleanAttributes = AttributeMap.Impl(Map(AttributeDefinition.WithRemoval -> true, AttributeDefinition.WithDesign -> false)),
+                         )
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded     <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows <- db.execute("select-master-service-offer-variant-boolean") {
+                          sql"""select attribute_code, value
+                               from master_service_offer_variant_numeric_attributes
+                               where master_service_offer_variant_id = $variantId
+                               order by attribute_code asc
+                             """.query[(String, BigDecimal)].to[List]
+                        }
+          _ <- assertIO(loaded.flatMap(_.booleanAttributes.get(AttributeDefinition.WithRemoval)).contains(true))
+          _ <- assertIO(loaded.flatMap(_.booleanAttributes.get(AttributeDefinition.WithDesign)).contains(false))
+          _ <- assertIO(
+            storedRows == List(
+              "with_design"  -> BigDecimal("0"),
+              "with_removal" -> BigDecimal("1"),
+            )
+          )
+        } yield ()
+    }
+
     "store and load several new enum attributes through numeric table" in {
       (rnd: Rnd[IO],
         categories: Categories[IO],
@@ -2845,6 +3005,77 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
               "lash_volume"           -> BigDecimal("2"),
               "nail_service_type"     -> BigDecimal("1"),
               "pmu_area"              -> BigDecimal("1"),
+            )
+          )
+        } yield ()
+    }
+
+    "store mixed Int, BigDecimal, enum, and Boolean attributes in one numeric table and restore typed maps" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-mixed-full-category-$categoryId")
+          master      = Master(masterId, s"numeric-mixed-full-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-mixed-full-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-mixed-full-location-$locationId", s"numeric-mixed-full-address-$locationId", BigDecimal("27.0000"), BigDecimal("28.0000"))
+          schema = makeSchema(
+            serviceId,
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.WithRemoval, false),
+          )
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            intAttributes        = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)),
+            bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("25.5000"))),
+            enumAttributes = enumAttributeMap(
+              AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring,
+            ),
+            booleanAttributes = AttributeMap.Impl(Map(AttributeDefinition.WithRemoval -> true)),
+          )
+          _          <- categories.upsertCategory(category)
+          _          <- masters.upsertMaster(master)
+          _          <- services.upsertService(service)
+          _          <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _          <- offers.upsertMasterServiceOffer(offer)
+          _          <- masterLocations.upsertMasterLocation(location)
+          _          <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded     <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows <- db.execute("select-master-service-offer-variant-numeric-attributes-mixed-full") {
+                          sql"""select attribute_code, value
+                               from master_service_offer_variant_numeric_attributes
+                               where master_service_offer_variant_id = $variantId
+                               order by attribute_code asc
+                             """.query[(String, BigDecimal)].to[List]
+                        }
+          _ <- assertIO(loaded.flatMap(_.intAttributes.get(AttributeDefinition.SessionCount)).contains(3))
+          _ <- assertIO(loaded.flatMap(_.bigDecimalAttributes.get(AttributeDefinition.DepositAmount)).contains(BigDecimal("25.5000")))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute)).contains(HairRemovalMethod.Sugaring))
+          _ <- assertIO(loaded.flatMap(_.booleanAttributes.get(AttributeDefinition.WithRemoval)).contains(true))
+          _ <- assertIO(
+            storedRows == List(
+              "deposit_amount"      -> BigDecimal("25.5000"),
+              "hair_removal_method" -> BigDecimal("2"),
+              "session_count"       -> BigDecimal("3"),
+              "with_removal"        -> BigDecimal("1"),
             )
           )
         } yield ()
@@ -3028,6 +3259,110 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
                           false
                       }
                     )
+        } yield ()
+    }
+
+    "fail to load Boolean attribute when numeric value is outside boolean range" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-invalid-bool-category-$categoryId")
+          master      = Master(masterId, s"numeric-invalid-bool-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-invalid-bool-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-invalid-bool-location-$locationId", s"numeric-invalid-bool-address-$locationId", BigDecimal("29.0000"), BigDecimal("30.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.WithRemoval, false))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-invalid-master-service-offer-variant-boolean-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${AttributeDefinition.WithRemoval.code},
+                                |  ${BigDecimal("2")}
+                                |)
+                                |on conflict (master_service_offer_variant_id, attribute_code) do update set
+                                |  value = excluded.value
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(result.left.exists(_.isInstanceOf[QueryFailure.OperationFailure]))
+        } yield ()
+    }
+
+    "fail to load Boolean attribute when numeric value is non-integer" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-invalid-bool-decimal-category-$categoryId")
+          master      = Master(masterId, s"numeric-invalid-bool-decimal-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-invalid-bool-decimal-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-invalid-bool-decimal-location-$locationId", s"numeric-invalid-bool-decimal-address-$locationId", BigDecimal("31.0000"), BigDecimal("32.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.WithRemoval, false))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-invalid-master-service-offer-variant-boolean-decimal-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${AttributeDefinition.WithRemoval.code},
+                                |  ${BigDecimal("0.5")}
+                                |)
+                                |on conflict (master_service_offer_variant_id, attribute_code) do update set
+                                |  value = excluded.value
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(result.left.exists(_.isInstanceOf[QueryFailure.OperationFailure]))
         } yield ()
     }
 

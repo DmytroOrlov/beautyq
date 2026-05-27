@@ -22,4 +22,5 @@ object AttributeValueName {
 
   implicit val intAttributeValueName: AttributeValueName[Int]               = AttributeValueName("Int")
   implicit val bigDecimalAttributeValueName: AttributeValueName[BigDecimal] = AttributeValueName("BigDecimal")
+  implicit val booleanAttributeValueName: AttributeValueName[Boolean]       = AttributeValueName("Boolean")
 }

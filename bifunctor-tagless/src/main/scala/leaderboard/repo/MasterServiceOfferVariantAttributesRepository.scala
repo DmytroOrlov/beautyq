@@ -7,18 +7,19 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, CodedEnumValue, EnumAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, BooleanAttributeDefinition, CodedEnumValue, EnumAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
 private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
   bigDecimalAttributes: Map[String, BigDecimal],
   enumAttributes: Map[String, CodedEnumValue],
+  booleanAttributes: Map[String, Boolean],
 )
 
 private[repo] object MasterServiceOfferVariantAdditionalAttributes {
   val empty: MasterServiceOfferVariantAdditionalAttributes =
-    MasterServiceOfferVariantAdditionalAttributes(Map.empty, Map.empty, Map.empty)
+    MasterServiceOfferVariantAdditionalAttributes(Map.empty, Map.empty, Map.empty, Map.empty)
 }
 
 private[repo] object MasterServiceOfferVariantAttributesRepository {
@@ -54,6 +55,22 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       queryName,
       s"MasterServiceOfferVariant attribute $attributeCode expected Int-compatible numeric value but got non-integer numeric value: $value",
     )
+
+  private def decodeBooleanValue(
+    queryName: String,
+    attributeCode: String,
+    value: BigDecimal,
+  ): Either[QueryFailure, Boolean] =
+    value.toBigIntExact match {
+      case Some(bigInt) if bigInt == BigInt(0) =>
+        Right(false)
+      case Some(bigInt) if bigInt == BigInt(1) =>
+        Right(true)
+      case Some(_) =>
+        Left(QueryFailure.operation(queryName, s"MasterServiceOfferVariant attribute $attributeCode expected Boolean-compatible numeric value 0 or 1 but got $value"))
+      case None =>
+        Left(QueryFailure.operation(queryName, s"MasterServiceOfferVariant attribute $attributeCode expected Boolean-compatible numeric value 0 or 1 but got non-integer numeric value: $value"))
+    }
 
   private def unknownEnumIntCode(
     queryName: String,
@@ -135,6 +152,11 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                 }
               case Some(_: BigDecimalAttributeDefinition) =>
                 Right(current.copy(bigDecimalAttributes = current.bigDecimalAttributes.updated(attributeCode, value)))
+              case Some(_: BooleanAttributeDefinition) =>
+                decodeBooleanValue(queryName, attributeCode, value).map {
+                  decoded =>
+                    current.copy(booleanAttributes = current.booleanAttributes.updated(attributeCode, decoded))
+                }
               case Some(definition: EnumAttributeDefinition[?]) =>
                 decodeIntValue(queryName, attributeCode, value).flatMap {
                   intCode =>
@@ -188,6 +210,11 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         attributes.bigDecimalAttributes,
         AttributeDefinition.fromCodeAsBigDecimal,
       )
+      booleanAttributes <- collectStoredAttributes[Boolean](
+        queryName,
+        attributes.booleanAttributes,
+        AttributeDefinition.fromCodeAsBoolean,
+      )
       enumAttributes <- collectStoredEnumAttributes(
         queryName,
         attributes.enumAttributes,
@@ -196,6 +223,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       intAttributes,
       bigDecimalAttributes,
       enumAttributes,
+      booleanAttributes,
     )
 
   private def validateEnumAttributeValue(
@@ -228,12 +256,30 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         }
     }
 
+  private def collectEncodedBooleanAttributes(
+    queryName: String,
+    variant: MasterServiceOfferVariant
+  ): Either[QueryFailure, Map[String, Boolean]] =
+    variant.booleanAttributes.iterator.foldLeft[Either[QueryFailure, Map[String, Boolean]]](Right(Map.empty)) {
+      case (acc, (attributeDefinition, value)) =>
+        acc.flatMap { current =>
+          attributeDefinition match {
+            case booleanDefinition: BooleanAttributeDefinition =>
+              Right(current.updated(booleanDefinition.code, value))
+            case other =>
+              Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
+          }
+        }
+    }
+
   def encodeStoredAttributes(
     queryName: String,
     variant: MasterServiceOfferVariant
   ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] =
-    collectEncodedEnumAttributes(queryName, variant).map {
-      enumAttributes =>
+    for {
+      enumAttributes <- collectEncodedEnumAttributes(queryName, variant)
+      booleanAttributes <- collectEncodedBooleanAttributes(queryName, variant)
+    } yield {
         MasterServiceOfferVariantAdditionalAttributes(
           variant.intAttributes.iterator.map {
             case (attributeDefinition, value) =>
@@ -244,21 +290,24 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
               attributeDefinition.code -> value
           }.toMap,
           enumAttributes,
+          booleanAttributes,
         )
     }
 
   private type IntAttributesState        = Map[(MasterServiceOfferVariantId, String), Int]
   private type BigDecimalAttributesState = Map[(MasterServiceOfferVariantId, String), BigDecimal]
   private type EnumAttributesState       = Map[(MasterServiceOfferVariantId, String), CodedEnumValue]
+  private type BooleanAttributesState    = Map[(MasterServiceOfferVariantId, String), Boolean]
 
   case class DummyState(
     intAttributes: IntAttributesState,
     bigDecimalAttributes: BigDecimalAttributesState,
     enumAttributes: EnumAttributesState,
+    booleanAttributes: BooleanAttributesState,
   )
 
   object DummyState {
-    val empty: DummyState = DummyState(Map.empty, Map.empty, Map.empty)
+    val empty: DummyState = DummyState(Map.empty, Map.empty, Map.empty, Map.empty)
   }
 
   class Dummy {
@@ -289,9 +338,10 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       variantId: MasterServiceOfferVariantId,
     ): MasterServiceOfferVariantAdditionalAttributes =
       MasterServiceOfferVariantAdditionalAttributes(
-        loadAttributes(state.intAttributes, variantId),
-        loadAttributes(state.bigDecimalAttributes, variantId),
-        loadAttributes(state.enumAttributes, variantId),
+      loadAttributes(state.intAttributes, variantId),
+      loadAttributes(state.bigDecimalAttributes, variantId),
+      loadAttributes(state.enumAttributes, variantId),
+      loadAttributes(state.booleanAttributes, variantId),
       )
 
     def replace(
@@ -303,6 +353,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         intAttributes        = replaceAttributes(state.intAttributes, variantId, attributes.intAttributes),
         bigDecimalAttributes = replaceAttributes(state.bigDecimalAttributes, variantId, attributes.bigDecimalAttributes),
         enumAttributes       = replaceAttributes(state.enumAttributes, variantId, attributes.enumAttributes),
+        booleanAttributes    = replaceAttributes(state.booleanAttributes, variantId, attributes.booleanAttributes),
       )
     }
   }
@@ -311,6 +362,9 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     private type NumericAttributeRow       = (String, BigDecimal)
     private type NumericAttributeStoredRow = (MasterServiceOfferVariantId, String, BigDecimal)
     private type NumericAttributeInsertRow = (MasterServiceOfferVariantId, String, BigDecimal)
+
+    private def encodeBooleanValue(value: Boolean): BigDecimal =
+      if (value) BigDecimal(1) else BigDecimal(0)
 
     private def loadRowsForVariant(
       rows: List[NumericAttributeRow]
@@ -400,7 +454,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         _ <- sql"""delete from master_service_offer_variant_numeric_attributes
                   |where master_service_offer_variant_id = $variantId
                   |""".stripMargin.update.run
-        _ <- insertNumericAttributes(
+          _ <- insertNumericAttributes(
           attributes.intAttributes.toList.map {
             case (attributeCode, value) =>
               (variantId, attributeCode, BigDecimal(value))
@@ -410,6 +464,9 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
           } ++ attributes.enumAttributes.toList.map {
             case (attributeCode, value) =>
               (variantId, attributeCode, BigDecimal(value.intCode))
+          } ++ attributes.booleanAttributes.toList.map {
+            case (attributeCode, value) =>
+              (variantId, attributeCode, encodeBooleanValue(value))
           }
         )
       } yield ()
