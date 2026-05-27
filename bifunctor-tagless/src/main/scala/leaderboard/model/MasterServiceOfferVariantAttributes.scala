@@ -5,6 +5,7 @@ import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 case class MasterServiceOfferVariantAttributes(
   intValues: AttributeMap[Int],
   bigDecimalValues: AttributeMap[BigDecimal],
+  enumValues: AttributeMap[CodedEnumValue] = AttributeMap.empty,
 ) {
   def get(attributeDefinition: IntAttributeDefinition): Option[Int] =
     intValues.get(attributeDefinition)
@@ -12,14 +13,18 @@ case class MasterServiceOfferVariantAttributes(
   def get(attributeDefinition: BigDecimalAttributeDefinition): Option[BigDecimal] =
     bigDecimalValues.get(attributeDefinition)
 
+  def get[E <: CodedEnumValue](attributeDefinition: EnumAttributeDefinition[E]): Option[E] =
+    enumValues.get(attributeDefinition).map(_.asInstanceOf[E])
+
   private[model] def presentDefinitions: Set[AnyAttributeDefinition] =
     intValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet ++
-    bigDecimalValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet
+    bigDecimalValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet ++
+    enumValues.keysIterator.map(identity[AnyAttributeDefinition]).toSet
 }
 
 object MasterServiceOfferVariantAttributes {
   val empty: MasterServiceOfferVariantAttributes =
-    MasterServiceOfferVariantAttributes(AttributeMap.empty, AttributeMap.empty)
+    MasterServiceOfferVariantAttributes(AttributeMap.empty, AttributeMap.empty, AttributeMap.empty)
 }
 
 sealed trait MasterServiceOfferVariantValidationError extends Product with Serializable {

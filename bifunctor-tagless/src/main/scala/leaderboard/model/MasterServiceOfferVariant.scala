@@ -25,11 +25,19 @@ final case class MasterServiceOfferVariant private (
   ): Option[BigDecimal] =
     attributes.get(attributeDefinition)
 
+  def getAttribute[E <: CodedEnumValue](
+    attributeDefinition: EnumAttributeDefinition[E]
+  ): Option[E] =
+    attributes.get(attributeDefinition)
+
   def intAttributes: AttributeMap[Int] =
     attributes.intValues
 
   def bigDecimalAttributes: AttributeMap[BigDecimal] =
     attributes.bigDecimalValues
+
+  def enumAttributes: AttributeMap[CodedEnumValue] =
+    attributes.enumValues
 
   @nowarn("cat=unused")
   private def copy(
@@ -153,6 +161,56 @@ object MasterServiceOfferVariant {
           attributeDefinition.code -> attributeValue
       }.toMap.asJson
 
+  private def decodeEnumAttributes(
+    c: HCursor
+  ): Decoder.Result[AttributeMap[CodedEnumValue]] =
+    c.get[Option[Map[String, String]]]("enumAttributes").flatMap {
+      case Some(raw) =>
+        raw.foldLeft[Decoder.Result[AttributeMap[CodedEnumValue]]](Right(AttributeMap.empty)) {
+          case (acc, (attributeCode, stringCode)) =>
+            for {
+              current <- acc
+              enumDefinition <- {
+                val decodedDefinition: Decoder.Result[EnumAttributeDefinition[?]] =
+                  AttributeDefinition.fromCodeAsEnum(attributeCode) match {
+                    case Some(value) =>
+                      Right(value)
+                    case None =>
+                      AttributeDefinition.fromCode(attributeCode) match {
+                        case Some(_) =>
+                          Left(DecodingFailure(s"MasterServiceOfferVariant attribute code $attributeCode does not belong in enumAttributes", c.history))
+                        case None =>
+                          Left(DecodingFailure(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode", c.history))
+                      }
+                  }
+                decodedDefinition
+              }
+              enumValue <- enumDefinition.fromStringCode(stringCode).map(_.asInstanceOf[CodedEnumValue]) match {
+                case Some(value) =>
+                  Right(value)
+                case None =>
+                  Left(
+                    DecodingFailure(
+                      s"MasterServiceOfferVariant attribute $attributeCode has unknown enum string code: $stringCode",
+                      c.history,
+                    )
+                  )
+              }
+            } yield {
+              current.updated(enumDefinition.asInstanceOf[AttributeDefinition[CodedEnumValue]], enumValue)
+            }
+        }
+      case None =>
+        Right(AttributeMap.empty)
+    }
+
+  private def encodeEnumAttributes(value: AttributeMap[CodedEnumValue]) =
+    value.iterator
+      .collect {
+        case (attributeDefinition: EnumAttributeDefinition[?], attributeValue) =>
+          attributeDefinition.code -> attributeValue.stringCode
+      }.toMap.asJson
+
   private val decoder: Decoder[MasterServiceOfferVariant] = Decoder.instance {
     c =>
       for {
@@ -172,7 +230,8 @@ object MasterServiceOfferVariant {
           "bigDecimalAttributes",
           AttributeDefinition.fromCodeAsBigDecimal,
         )
-        attributes = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes)
+        enumAttributes <- decodeEnumAttributes(c)
+        attributes = MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes)
         value     <- make(
           id,
           masterServiceOfferId,
@@ -198,7 +257,9 @@ object MasterServiceOfferVariant {
           "durationMin"          -> value.durationMin.asJson,
         ) ++ Option.when(value.attributes.intValues.nonEmpty)("intAttributes" -> encodeIntAttributes(value.attributes.intValues)) ++ Option.when(
           value.attributes.bigDecimalValues.nonEmpty
-        )("bigDecimalAttributes" -> encodeBigDecimalAttributes(value.attributes.bigDecimalValues))
+        )("bigDecimalAttributes" -> encodeBigDecimalAttributes(value.attributes.bigDecimalValues)) ++ Option.when(
+          value.attributes.enumValues.nonEmpty
+        )("enumAttributes" -> encodeEnumAttributes(value.attributes.enumValues))
       )
   }
 

@@ -7,17 +7,18 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.fragments
-import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, CodedEnumValue, EnumAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
 private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
   bigDecimalAttributes: Map[String, BigDecimal],
+  enumAttributes: Map[String, CodedEnumValue],
 )
 
 private[repo] object MasterServiceOfferVariantAdditionalAttributes {
   val empty: MasterServiceOfferVariantAdditionalAttributes =
-    MasterServiceOfferVariantAdditionalAttributes(Map.empty, Map.empty)
+    MasterServiceOfferVariantAdditionalAttributes(Map.empty, Map.empty, Map.empty)
 }
 
 private[repo] object MasterServiceOfferVariantAttributesRepository {
@@ -52,6 +53,26 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
     QueryFailure.operation(
       queryName,
       s"MasterServiceOfferVariant attribute $attributeCode expected Int-compatible numeric value but got non-integer numeric value: $value",
+    )
+
+  private def unknownEnumIntCode(
+    queryName: String,
+    attributeCode: String,
+    value: Int,
+  ): QueryFailure =
+    QueryFailure.operation(
+      queryName,
+      s"MasterServiceOfferVariant attribute $attributeCode has unknown enum int code: $value",
+    )
+
+  private def enumValueNotAllowedForAttribute(
+    queryName: String,
+    attributeCode: String,
+    value: CodedEnumValue,
+  ): QueryFailure =
+    QueryFailure.operation(
+      queryName,
+      s"MasterServiceOfferVariant enum attribute $attributeCode does not accept enum value ${value.stringCode}",
     )
 
   private def attributeDefinitionByCode(code: String): Option[AnyAttributeDefinition] =
@@ -114,8 +135,40 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                 }
               case Some(_: BigDecimalAttributeDefinition) =>
                 Right(current.copy(bigDecimalAttributes = current.bigDecimalAttributes.updated(attributeCode, value)))
+              case Some(definition: EnumAttributeDefinition[?]) =>
+                decodeIntValue(queryName, attributeCode, value).flatMap {
+                  intCode =>
+                    definition.fromIntCode(intCode) match {
+                      case Some(enumValue) =>
+                        Right(current.copy(enumAttributes = current.enumAttributes.updated(attributeCode, enumValue)))
+                      case None =>
+                        Left(unknownEnumIntCode(queryName, attributeCode, intCode))
+                    }
+                }
               case Some(definition) =>
                 Left(unsupportedNumericAttributeDefinition(queryName, attributeCode, definition))
+            }
+        }
+    }
+
+  private def collectStoredEnumAttributes(
+    queryName: String,
+    attributes: Map[String, CodedEnumValue],
+  ): Either[QueryFailure, AttributeMap[CodedEnumValue]] =
+    attributes.foldLeft[Either[QueryFailure, AttributeMap[CodedEnumValue]]](Right(AttributeMap.empty)) {
+      case (acc, (attributeCode, value)) =>
+        acc.flatMap {
+          current =>
+            AttributeDefinition.fromCodeAsEnum(attributeCode) match {
+              case Some(definition) =>
+                Right(current.updated(definition.asInstanceOf[AttributeDefinition[CodedEnumValue]], value))
+              case None =>
+                attributeDefinitionByCode(attributeCode) match {
+                  case None =>
+                    Left(unknownAttributeCode(queryName, attributeCode))
+                  case Some(definition) =>
+                    Left(unsupportedNumericAttributeDefinition(queryName, attributeCode, definition))
+                }
             }
         }
     }
@@ -135,35 +188,77 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         attributes.bigDecimalAttributes,
         AttributeDefinition.fromCodeAsBigDecimal,
       )
+      enumAttributes <- collectStoredEnumAttributes(
+        queryName,
+        attributes.enumAttributes,
+      )
     } yield MasterServiceOfferVariantAttributes(
       intAttributes,
       bigDecimalAttributes,
+      enumAttributes,
     )
 
-  def encodeStoredAttributes(
+  private def validateEnumAttributeValue(
+    queryName: String,
+    attributeDefinition: EnumAttributeDefinition[?],
+    value: CodedEnumValue,
+  ): Either[QueryFailure, Unit] =
+    attributeDefinition.fromIntCode(value.intCode) match {
+      case Some(decoded) if decoded == value =>
+        Right(())
+      case _ =>
+        Left(enumValueNotAllowedForAttribute(queryName, attributeDefinition.code, value))
+    }
+
+  private def collectEncodedEnumAttributes(
+    queryName: String,
     variant: MasterServiceOfferVariant
-  ): MasterServiceOfferVariantAdditionalAttributes =
-    MasterServiceOfferVariantAdditionalAttributes(
-      variant.intAttributes.iterator.map {
-        case (attributeDefinition, value) =>
-          attributeDefinition.code -> value
-      }.toMap,
-      variant.bigDecimalAttributes.iterator.map {
-        case (attributeDefinition, value) =>
-          attributeDefinition.code -> value
-      }.toMap,
-    )
+  ): Either[QueryFailure, Map[String, CodedEnumValue]] =
+    variant.enumAttributes.iterator.foldLeft[Either[QueryFailure, Map[String, CodedEnumValue]]](Right(Map.empty)) {
+      case (acc, (attributeDefinition, value)) =>
+        acc.flatMap { current =>
+          attributeDefinition match {
+            case enumDefinition: EnumAttributeDefinition[?] =>
+              validateEnumAttributeValue(queryName, enumDefinition, value).map { _ =>
+                current.updated(enumDefinition.code, value)
+              }
+            case other =>
+              Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
+          }
+        }
+    }
+
+  def encodeStoredAttributes(
+    queryName: String,
+    variant: MasterServiceOfferVariant
+  ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] =
+    collectEncodedEnumAttributes(queryName, variant).map {
+      enumAttributes =>
+        MasterServiceOfferVariantAdditionalAttributes(
+          variant.intAttributes.iterator.map {
+            case (attributeDefinition, value) =>
+              attributeDefinition.code -> value
+          }.toMap,
+          variant.bigDecimalAttributes.iterator.map {
+            case (attributeDefinition, value) =>
+              attributeDefinition.code -> value
+          }.toMap,
+          enumAttributes,
+        )
+    }
 
   private type IntAttributesState        = Map[(MasterServiceOfferVariantId, String), Int]
   private type BigDecimalAttributesState = Map[(MasterServiceOfferVariantId, String), BigDecimal]
+  private type EnumAttributesState       = Map[(MasterServiceOfferVariantId, String), CodedEnumValue]
 
   case class DummyState(
     intAttributes: IntAttributesState,
     bigDecimalAttributes: BigDecimalAttributesState,
+    enumAttributes: EnumAttributesState,
   )
 
   object DummyState {
-    val empty: DummyState = DummyState(Map.empty, Map.empty)
+    val empty: DummyState = DummyState(Map.empty, Map.empty, Map.empty)
   }
 
   class Dummy {
@@ -196,6 +291,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       MasterServiceOfferVariantAdditionalAttributes(
         loadAttributes(state.intAttributes, variantId),
         loadAttributes(state.bigDecimalAttributes, variantId),
+        loadAttributes(state.enumAttributes, variantId),
       )
 
     def replace(
@@ -206,6 +302,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       state.copy(
         intAttributes        = replaceAttributes(state.intAttributes, variantId, attributes.intAttributes),
         bigDecimalAttributes = replaceAttributes(state.bigDecimalAttributes, variantId, attributes.bigDecimalAttributes),
+        enumAttributes       = replaceAttributes(state.enumAttributes, variantId, attributes.enumAttributes),
       )
     }
   }
@@ -310,6 +407,9 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
           } ++ attributes.bigDecimalAttributes.toList.map {
             case (attributeCode, value) =>
               (variantId, attributeCode, value)
+          } ++ attributes.enumAttributes.toList.map {
+            case (attributeCode, value) =>
+              (variantId, attributeCode, BigDecimal(value.intCode))
           }
         )
       } yield ()

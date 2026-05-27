@@ -948,6 +948,14 @@ abstract class ServiceVariantSchemasStorageValidationTest extends LeaderboardTes
 }
 
 abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
+  private def enumAttributeMap(
+    entries: (EnumAttributeDefinition[?], CodedEnumValue)*
+  ): AttributeMap[CodedEnumValue] =
+    entries.foldLeft(AttributeMap.Impl[CodedEnumValue, AttributeDefinition[CodedEnumValue]](Map.empty)) {
+      case (acc, (definition, value)) =>
+        acc.updated(definition.asInstanceOf[AttributeDefinition[CodedEnumValue]], value)
+    }
+
   private def makeVariant(
     id: MasterServiceOfferVariantId,
     masterServiceOfferId: MasterServiceOfferId,
@@ -957,6 +965,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
     durationMin: Int,
     intAttributes: AttributeMap[Int]               = AttributeMap.empty,
     bigDecimalAttributes: AttributeMap[BigDecimal] = AttributeMap.empty,
+    enumAttributes: AttributeMap[CodedEnumValue]   = AttributeMap.empty,
   ): IO[QueryFailure, MasterServiceOfferVariant] =
     MasterServiceOfferVariant
       .make(
@@ -966,7 +975,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         priceFrom,
         priceTo,
         durationMin,
-        MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes),
+        MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes),
       ) match {
       case Right(value) =>
         ZIO.succeed(value)
@@ -1174,6 +1183,42 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         } yield ()
     }
 
+    "coded enum stringCode derivation is stable" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          _ <- assertIO(HairRemovalMethod.Wax.stringCode == "wax")
+          _ <- assertIO(HairRemovalMethod.Sugaring.stringCode == "sugaring")
+          _ <- assertIO(HairRemovalMethod.Laser.stringCode == "laser")
+          _ <- assertIO(HairRemovalMethod.Threading.stringCode == "threading")
+          _ <- assertIO(NailCoatingType.NoCoating.stringCode == "no_coating")
+          _ <- assertIO(NailCoatingType.RegularPolish.stringCode == "regular_polish")
+          _ <- assertIO(NailCoatingType.GelPolish.stringCode == "gel_polish")
+          _ <- assertIO(NailCoatingType.Shellac.stringCode == "shellac")
+          _ <- assertIO(NailCoatingType.Gel.stringCode == "gel")
+          _ <- assertIO(NailCoatingType.Acrylic.stringCode == "acrylic")
+        } yield ()
+    }
+
+    "coded enum intCode decoding works for valid and invalid values" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          _ <- assertIO(HairRemovalMethod.fromIntCode(2).contains(HairRemovalMethod.Sugaring))
+          _ <- assertIO(HairRemovalMethod.fromIntCode(999).isEmpty)
+          _ <- assertIO(NailCoatingType.fromIntCode(3).contains(NailCoatingType.GelPolish))
+          _ <- assertIO(NailCoatingType.fromIntCode(999).isEmpty)
+        } yield ()
+    }
+
+    "coded enum stringCode decoding works for valid and invalid values" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          _ <- assertIO(HairRemovalMethod.fromStringCode("sugaring").contains(HairRemovalMethod.Sugaring))
+          _ <- assertIO(HairRemovalMethod.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(NailCoatingType.fromStringCode("gel_polish").contains(NailCoatingType.GelPolish))
+          _ <- assertIO(NailCoatingType.fromStringCode("unknown").isEmpty)
+        } yield ()
+    }
+
     "attributes expose typed access by definition and typed views" in {
       (rnd: Rnd[IO]) =>
         for {
@@ -1211,6 +1256,7 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
               AttributeDefinition.DepositAmount
             )
           )
+          _ <- assertIO(variant.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute).isEmpty)
         } yield ()
     }
 
@@ -1249,6 +1295,60 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         } yield ()
     }
 
+    "schema validate supports allowed enum attributes" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, false))
+          attributes = MasterServiceOfferVariantAttributes(
+            intValues        = AttributeMap.empty,
+            bigDecimalValues = AttributeMap.empty,
+            enumValues = enumAttributeMap(
+              AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring
+            ),
+          )
+          _ <- assertIO(schema.validate(attributes) == Right(()))
+        } yield ()
+    }
+
+    "schema validate rejects disallowed enum attribute" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
+          attributes = MasterServiceOfferVariantAttributes(
+            intValues        = AttributeMap.empty,
+            bigDecimalValues = AttributeMap.empty,
+            enumValues = enumAttributeMap(
+              AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring
+            ),
+          )
+          _ <- assertIO(
+            schema.validate(attributes) == Left(
+              ServiceVariantSchemaValidationError.DisallowedAttribute(
+                AttributeDefinition.HairRemovalMethodAttribute
+              )
+            )
+          )
+        } yield ()
+    }
+
+    "schema validate rejects missing required enum attribute" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, true))
+          attributes = MasterServiceOfferVariantAttributes.empty
+          _         <- assertIO(
+            schema.validate(attributes) == Left(
+              ServiceVariantSchemaValidationError.MissingRequiredAttribute(
+                AttributeDefinition.HairRemovalMethodAttribute
+              )
+            )
+          )
+        } yield ()
+    }
+
     "decode rejects additional attribute code in wrong typed section" in {
       (rnd: Rnd[IO]) =>
         for {
@@ -1264,6 +1364,124 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             "durationMin"          -> 60.asJson,
             "intAttributes"        -> Json.obj(
               "deposit_amount" -> 3.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "decode supports enum attributes from string codes" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "enumAttributes"       -> Json.obj(
+              "hair_removal_method" -> "sugaring".asJson,
+              "nail_coating_type"   -> "gel_polish".asJson,
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _ <- assertIO(result.exists(_.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute).contains(HairRemovalMethod.Sugaring)))
+          _ <- assertIO(result.exists(_.enumAttributes.get(AttributeDefinition.NailCoatingTypeAttribute).contains(NailCoatingType.GelPolish)))
+        } yield ()
+    }
+
+    "encode emits enum attributes as string codes" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            BigDecimal("30.0000"),
+            BigDecimal("45.0000"),
+            60,
+            enumAttributes = enumAttributeMap(
+              AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring,
+              AttributeDefinition.NailCoatingTypeAttribute   -> NailCoatingType.GelPolish,
+            ),
+          )
+          json = variant.asJson
+          _ <- assertIO(
+            json.hcursor.downField("enumAttributes").downField("hair_removal_method").as[String].contains("sugaring")
+          )
+          _ <- assertIO(
+            json.hcursor.downField("enumAttributes").downField("nail_coating_type").as[String].contains("gel_polish")
+          )
+        } yield ()
+    }
+
+    "decode rejects unknown enum string code" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "enumAttributes"       -> Json.obj(
+              "hair_removal_method" -> "unknown_method".asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "decode rejects enum attribute in intAttributes group" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "intAttributes"        -> Json.obj(
+              "hair_removal_method" -> 2.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(result.isLeft)
+        } yield ()
+    }
+
+    "decode rejects int attribute in enumAttributes group" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "enumAttributes"       -> Json.obj(
+              "session_count" -> "3".asJson
             ),
           )
           result = json.as[MasterServiceOfferVariant]
@@ -1449,6 +1667,68 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
                 false
             }
           )
+        } yield ()
+    }
+
+    "reject enum value that does not belong to enum attribute" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"variant-enum-mismatch-category-$categoryId")
+          master      = Master(masterId, s"variant-enum-mismatch-master-$masterId")
+          service     = Service(serviceId, categoryId, s"variant-enum-mismatch-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(
+            locationId,
+            masterId,
+            s"variant-enum-mismatch-location-$locationId",
+            s"variant-enum-mismatch-address-$locationId",
+            BigDecimal("10.0000"),
+            BigDecimal("20.0000"),
+          )
+          schema = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.NailCoatingTypeAttribute, false))
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            BigDecimal("30.0000"),
+            BigDecimal("45.0000"),
+            60,
+            enumAttributes = enumAttributeMap(
+              AttributeDefinition.NailCoatingTypeAttribute -> HairRemovalMethod.Sugaring
+            ),
+          )
+          _      <- categories.upsertCategory(category)
+          _      <- masters.upsertMaster(master)
+          _      <- services.upsertService(service)
+          _      <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _      <- offers.upsertMasterServiceOffer(offer)
+          _      <- masterLocations.upsertMasterLocation(location)
+          result <- variants.upsertMasterServiceOfferVariant(variant).either
+          _      <- assertIO(
+                      result.left.exists {
+                        case QueryFailure.OperationFailure(operationName, message) =>
+                          operationName == "upsert-master-service-offer-variant" &&
+                          message.contains("nail_coating_type") &&
+                          message.contains("sugaring") &&
+                          message.contains("does not accept enum value")
+                        case _ =>
+                          false
+                      }
+                    )
         } yield ()
     }
 
@@ -1958,12 +2238,21 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
   private def makeSchema(serviceId: ServiceId, items: ServiceVariantSchemaItem*): ServiceVariantSchema =
     ServiceVariantSchema.fromItems(serviceId, items)
 
+  private def enumAttributeMap(
+    entries: (EnumAttributeDefinition[?], CodedEnumValue)*
+  ): AttributeMap[CodedEnumValue] =
+    entries.foldLeft(AttributeMap.Impl[CodedEnumValue, AttributeDefinition[CodedEnumValue]](Map.empty)) {
+      case (acc, (definition, value)) =>
+        acc.updated(definition.asInstanceOf[AttributeDefinition[CodedEnumValue]], value)
+    }
+
   private def makeVariant(
     id: MasterServiceOfferVariantId,
     masterServiceOfferId: MasterServiceOfferId,
     masterLocationId: MasterLocationId,
     intAttributes: AttributeMap[Int]               = AttributeMap.empty,
     bigDecimalAttributes: AttributeMap[BigDecimal] = AttributeMap.empty,
+    enumAttributes: AttributeMap[CodedEnumValue]   = AttributeMap.empty,
   ): IO[QueryFailure, MasterServiceOfferVariant] =
     ZIO
       .fromEither(
@@ -1974,7 +2263,7 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           BigDecimal("30.0000"),
           BigDecimal("45.0000"),
           60,
-          MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes),
+          MasterServiceOfferVariantAttributes(intAttributes, bigDecimalAttributes, enumAttributes),
         )
       )
       .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
@@ -2129,6 +2418,181 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
             storedRows == List(
               "deposit_amount" -> BigDecimal("25.5000"),
               "session_count"  -> BigDecimal("3"),
+            )
+          )
+        } yield ()
+    }
+
+    "store HairRemovalMethod enum attribute in numeric table and load it back as typed enum value" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-enum-hair-category-$categoryId")
+          master      = Master(masterId, s"numeric-enum-hair-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-enum-hair-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-enum-hair-location-$locationId", s"numeric-enum-hair-address-$locationId", BigDecimal("15.0000"), BigDecimal("16.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, false))
+          variant     <- makeVariant(
+                           variantId,
+                           offerId,
+                           locationId,
+                           enumAttributes = enumAttributeMap(
+                             AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring
+                           ),
+                         )
+          _ <- categories.upsertCategory(category)
+          _ <- masters.upsertMaster(master)
+          _ <- services.upsertService(service)
+          _ <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _ <- offers.upsertMasterServiceOffer(offer)
+          _ <- masterLocations.upsertMasterLocation(location)
+          _ <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded <- variants.getMasterServiceOfferVariant(variantId)
+          storedValue <- db.execute("select-master-service-offer-variant-hair-removal-method") {
+                           sql"""select value
+                                from master_service_offer_variant_numeric_attributes
+                                where master_service_offer_variant_id = $variantId
+                                  and attribute_code = ${AttributeDefinition.HairRemovalMethodAttribute.code}
+                              """.query[BigDecimal].unique
+                         }
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute)).contains(HairRemovalMethod.Sugaring))
+          _ <- assertIO(storedValue == BigDecimal("2"))
+        } yield ()
+    }
+
+    "store NailCoatingType enum attribute in numeric table and load it back as typed enum value" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-enum-nail-category-$categoryId")
+          master      = Master(masterId, s"numeric-enum-nail-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-enum-nail-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-enum-nail-location-$locationId", s"numeric-enum-nail-address-$locationId", BigDecimal("17.0000"), BigDecimal("18.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.NailCoatingTypeAttribute, false))
+          variant     <- makeVariant(
+                           variantId,
+                           offerId,
+                           locationId,
+                           enumAttributes = enumAttributeMap(
+                             AttributeDefinition.NailCoatingTypeAttribute -> NailCoatingType.GelPolish
+                           ),
+                         )
+          _ <- categories.upsertCategory(category)
+          _ <- masters.upsertMaster(master)
+          _ <- services.upsertService(service)
+          _ <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _ <- offers.upsertMasterServiceOffer(offer)
+          _ <- masterLocations.upsertMasterLocation(location)
+          _ <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded <- variants.getMasterServiceOfferVariant(variantId)
+          storedValue <- db.execute("select-master-service-offer-variant-nail-coating-type") {
+                           sql"""select value
+                                from master_service_offer_variant_numeric_attributes
+                                where master_service_offer_variant_id = $variantId
+                                  and attribute_code = ${AttributeDefinition.NailCoatingTypeAttribute.code}
+                              """.query[BigDecimal].unique
+                         }
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.NailCoatingTypeAttribute)).contains(NailCoatingType.GelPolish))
+          _ <- assertIO(storedValue == BigDecimal("3"))
+        } yield ()
+    }
+
+    "store mixed Int, BigDecimal, and enum attributes in one numeric table and restore typed maps" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-mixed-all-category-$categoryId")
+          master      = Master(masterId, s"numeric-mixed-all-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-mixed-all-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-mixed-all-location-$locationId", s"numeric-mixed-all-address-$locationId", BigDecimal("19.0000"), BigDecimal("20.0000"))
+          schema = makeSchema(
+            serviceId,
+            ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, false),
+            ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.NailCoatingTypeAttribute, false),
+          )
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            intAttributes        = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)),
+            bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("25.5000"))),
+            enumAttributes = enumAttributeMap(
+              AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring,
+              AttributeDefinition.NailCoatingTypeAttribute   -> NailCoatingType.GelPolish,
+            ),
+          )
+          _ <- categories.upsertCategory(category)
+          _ <- masters.upsertMaster(master)
+          _ <- services.upsertService(service)
+          _ <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _ <- offers.upsertMasterServiceOffer(offer)
+          _ <- masterLocations.upsertMasterLocation(location)
+          _ <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows <- db.execute("select-master-service-offer-variant-numeric-attributes-mixed-all") {
+                          sql"""select attribute_code, value
+                               from master_service_offer_variant_numeric_attributes
+                               where master_service_offer_variant_id = $variantId
+                               order by attribute_code asc
+                             """.query[(String, BigDecimal)].to[List]
+                        }
+          _ <- assertIO(loaded.flatMap(_.intAttributes.get(AttributeDefinition.SessionCount)).contains(3))
+          _ <- assertIO(loaded.flatMap(_.bigDecimalAttributes.get(AttributeDefinition.DepositAmount)).contains(BigDecimal("25.5000")))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute)).contains(HairRemovalMethod.Sugaring))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.NailCoatingTypeAttribute)).contains(NailCoatingType.GelPolish))
+          _ <- assertIO(
+            storedRows == List(
+              "deposit_amount"       -> BigDecimal("25.5000"),
+              "hair_removal_method"  -> BigDecimal("2"),
+              "nail_coating_type"    -> BigDecimal("3"),
+              "session_count"        -> BigDecimal("3"),
             )
           )
         } yield ()
@@ -2308,6 +2772,131 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
                           message.contains("Int-compatible numeric value") &&
                           message.contains("outside Int range") &&
                           message.contains("2147483648")
+                        case _ =>
+                          false
+                      }
+                    )
+        } yield ()
+    }
+
+    "reject unknown enum int code from numeric storage" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-unknown-enum-code-category-$categoryId")
+          master      = Master(masterId, s"numeric-unknown-enum-code-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-unknown-enum-code-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-unknown-enum-code-location-$locationId", s"numeric-unknown-enum-code-address-$locationId", BigDecimal("21.0000"), BigDecimal("22.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, false))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-unknown-enum-code-master-service-offer-variant-numeric-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${AttributeDefinition.HairRemovalMethodAttribute.code},
+                                |  ${BigDecimal("999")}
+                                |)
+                                |on conflict (master_service_offer_variant_id, attribute_code) do update set
+                                |  value = excluded.value
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(
+                      result.left.exists {
+                        case QueryFailure.OperationFailure(operationName, message) =>
+                          operationName == "load-master-service-offer-variant-attributes" &&
+                          message.contains(AttributeDefinition.HairRemovalMethodAttribute.code) &&
+                          message.contains("unknown enum int code") &&
+                          message.contains("999")
+                        case _ =>
+                          false
+                      }
+                    )
+        } yield ()
+    }
+
+    "reject non-integer numeric value for enum attribute definition" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-non-integer-enum-category-$categoryId")
+          master      = Master(masterId, s"numeric-non-integer-enum-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-non-integer-enum-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-non-integer-enum-location-$locationId", s"numeric-non-integer-enum-address-$locationId", BigDecimal("23.0000"), BigDecimal("24.0000"))
+          schema      = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.HairRemovalMethodAttribute, false))
+          variant     <- makeVariant(variantId, offerId, locationId)
+          _           <- categories.upsertCategory(category)
+          _           <- masters.upsertMaster(master)
+          _           <- services.upsertService(service)
+          _           <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _           <- offers.upsertMasterServiceOffer(offer)
+          _           <- masterLocations.upsertMasterLocation(location)
+          _           <- variants.upsertMasterServiceOfferVariant(variant)
+          _           <- db.execute("insert-non-integer-enum-master-service-offer-variant-numeric-attribute") {
+                           sql"""insert into master_service_offer_variant_numeric_attributes (
+                                |  master_service_offer_variant_id,
+                                |  attribute_code,
+                                |  value
+                                |)
+                                |values (
+                                |  $variantId,
+                                |  ${AttributeDefinition.HairRemovalMethodAttribute.code},
+                                |  ${BigDecimal("2.5")}
+                                |)
+                                |on conflict (master_service_offer_variant_id, attribute_code) do update set
+                                |  value = excluded.value
+                                |""".stripMargin.update.run
+                         }
+          result <- variants.getMasterServiceOfferVariant(variantId).either
+          _      <- assertIO(
+                      result.left.exists {
+                        case QueryFailure.OperationFailure(operationName, message) =>
+                          operationName == "load-master-service-offer-variant-attributes" &&
+                          message.contains(AttributeDefinition.HairRemovalMethodAttribute.code) &&
+                          message.contains("Int-compatible numeric value") &&
+                          message.contains("non-integer numeric value") &&
+                          message.contains("2.5")
                         case _ =>
                           false
                       }

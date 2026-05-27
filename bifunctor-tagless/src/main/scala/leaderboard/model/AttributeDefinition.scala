@@ -13,6 +13,13 @@ sealed trait BigDecimalAttributeDefinition extends AttributeDefinition[BigDecima
   final val valueType = "BigDecimal"
 }
 
+sealed trait EnumAttributeDefinition[E <: CodedEnumValue] extends AttributeDefinition[E] {
+  final val valueType = "Enum"
+  def values: List[E]
+  def fromIntCode(code: Int): Option[E]
+  def fromStringCode(code: String): Option[E]
+}
+
 object AttributeDefinition {
   type AnyAttributeDefinition = AttributeDefinition[Any]
 
@@ -44,6 +51,32 @@ object AttributeDefinition {
     val code = "fixed_discount_amount"
   }
 
+  case object HairRemovalMethodAttribute extends EnumAttributeDefinition[HairRemovalMethod] {
+    val code = "hair_removal_method"
+
+    def values: List[HairRemovalMethod] =
+      HairRemovalMethod.values.toList
+
+    def fromIntCode(code: Int): Option[HairRemovalMethod] =
+      HairRemovalMethod.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[HairRemovalMethod] =
+      HairRemovalMethod.fromStringCode(code)
+  }
+
+  case object NailCoatingTypeAttribute extends EnumAttributeDefinition[NailCoatingType] {
+    val code = "nail_coating_type"
+
+    def values: List[NailCoatingType] =
+      NailCoatingType.values.toList
+
+    def fromIntCode(code: Int): Option[NailCoatingType] =
+      NailCoatingType.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[NailCoatingType] =
+      NailCoatingType.fromStringCode(code)
+  }
+
   val intDefinitions: List[IntAttributeDefinition] =
     List(
       SessionCount,
@@ -59,8 +92,14 @@ object AttributeDefinition {
       FixedDiscountAmount,
     )
 
+  val enumDefinitions: List[EnumAttributeDefinition[?]] =
+    List(
+      HairRemovalMethodAttribute,
+      NailCoatingTypeAttribute,
+    )
+
   val all: List[AnyAttributeDefinition] =
-    intDefinitions ++ bigDecimalDefinitions
+    intDefinitions ++ bigDecimalDefinitions ++ enumDefinitions
 
   val byCode: Map[String, AnyAttributeDefinition] =
     all.iterator.map(definition => definition.code -> definition).toMap
@@ -77,6 +116,12 @@ object AttributeDefinition {
   def fromCodeAsBigDecimal(code: String): Option[BigDecimalAttributeDefinition] =
     fromCode(code).collect {
       case definition: BigDecimalAttributeDefinition =>
+        definition
+    }
+
+  def fromCodeAsEnum(code: String): Option[EnumAttributeDefinition[?]] =
+    fromCode(code).collect {
+      case definition: EnumAttributeDefinition[?] =>
         definition
     }
 }

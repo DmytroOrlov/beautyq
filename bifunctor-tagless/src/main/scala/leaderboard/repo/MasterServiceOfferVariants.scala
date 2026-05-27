@@ -142,9 +142,8 @@ object MasterServiceOfferVariants {
     schema: ServiceVariantSchema,
     variant: MasterServiceOfferVariant,
   ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] = {
-    val storedAttributes = MasterServiceOfferVariantAttributesRepository.encodeStoredAttributes(variant)
-
     for {
+      storedAttributes <- MasterServiceOfferVariantAttributesRepository.encodeStoredAttributes(queryName, variant)
       attributes <- MasterServiceOfferVariantAttributesRepository.decodeStoredAttributes(queryName, storedAttributes)
       _          <- validateAttributesAgainstSchema(queryName, serviceId, attributes, schema)
     } yield storedAttributes
