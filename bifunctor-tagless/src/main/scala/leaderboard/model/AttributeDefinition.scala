@@ -77,6 +77,97 @@ object AttributeDefinition {
       NailCoatingType.fromStringCode(code)
   }
 
+  case object NailServiceTypeAttribute extends EnumAttributeDefinition[NailServiceType] {
+    val code = "nail_service_type"
+
+    def values: List[NailServiceType] =
+      NailServiceType.values.toList
+
+    def fromIntCode(code: Int): Option[NailServiceType] =
+      NailServiceType.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[NailServiceType] =
+      NailServiceType.fromStringCode(code)
+  }
+
+  case object LashServiceTypeAttribute extends EnumAttributeDefinition[LashServiceType] {
+    val code = "lash_service_type"
+
+    def values: List[LashServiceType] =
+      LashServiceType.values.toList
+
+    def fromIntCode(code: Int): Option[LashServiceType] =
+      LashServiceType.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[LashServiceType] =
+      LashServiceType.fromStringCode(code)
+  }
+
+  case object LashVolumeAttribute extends EnumAttributeDefinition[LashVolume] {
+    val code = "lash_volume"
+
+    def values: List[LashVolume] =
+      LashVolume.values.toList
+
+    def fromIntCode(code: Int): Option[LashVolume] =
+      LashVolume.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[LashVolume] =
+      LashVolume.fromStringCode(code)
+  }
+
+  case object BrowServiceTypeAttribute extends EnumAttributeDefinition[BrowServiceType] {
+    val code = "brow_service_type"
+
+    def values: List[BrowServiceType] =
+      BrowServiceType.values.toList
+
+    def fromIntCode(code: Int): Option[BrowServiceType] =
+      BrowServiceType.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[BrowServiceType] =
+      BrowServiceType.fromStringCode(code)
+  }
+
+  case object PmuAreaAttribute extends EnumAttributeDefinition[PmuArea] {
+    val code = "pmu_area"
+
+    def values: List[PmuArea] =
+      PmuArea.values.toList
+
+    def fromIntCode(code: Int): Option[PmuArea] =
+      PmuArea.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[PmuArea] =
+      PmuArea.fromStringCode(code)
+  }
+
+  case object FacialTreatmentTypeAttribute extends EnumAttributeDefinition[FacialTreatmentType] {
+    val code = "facial_treatment_type"
+
+    def values: List[FacialTreatmentType] =
+      FacialTreatmentType.values.toList
+
+    def fromIntCode(code: Int): Option[FacialTreatmentType] =
+      FacialTreatmentType.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[FacialTreatmentType] =
+      FacialTreatmentType.fromStringCode(code)
+  }
+
+  case object BodyAreaAttribute extends EnumAttributeDefinition[BodyArea] {
+    val code = "body_area"
+
+    def values: List[BodyArea] =
+      BodyArea.values.toList
+
+    def fromIntCode(code: Int): Option[BodyArea] =
+      BodyArea.fromIntCode(code)
+
+    def fromStringCode(code: String): Option[BodyArea] =
+      BodyArea.fromStringCode(code)
+  }
+
   val intDefinitions: List[IntAttributeDefinition] =
     List(
       SessionCount,
@@ -96,6 +187,13 @@ object AttributeDefinition {
     List(
       HairRemovalMethodAttribute,
       NailCoatingTypeAttribute,
+      NailServiceTypeAttribute,
+      LashServiceTypeAttribute,
+      LashVolumeAttribute,
+      BrowServiceTypeAttribute,
+      PmuAreaAttribute,
+      FacialTreatmentTypeAttribute,
+      BodyAreaAttribute,
     )
 
   val all: List[AnyAttributeDefinition] =

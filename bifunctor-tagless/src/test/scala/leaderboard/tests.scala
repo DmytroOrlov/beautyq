@@ -1196,6 +1196,47 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _ <- assertIO(NailCoatingType.Shellac.stringCode == "shellac")
           _ <- assertIO(NailCoatingType.Gel.stringCode == "gel")
           _ <- assertIO(NailCoatingType.Acrylic.stringCode == "acrylic")
+          _ <- assertIO(NailServiceType.Manicure.stringCode == "manicure")
+          _ <- assertIO(NailServiceType.Pedicure.stringCode == "pedicure")
+          _ <- assertIO(NailServiceType.Extension.stringCode == "extension")
+          _ <- assertIO(NailServiceType.Refill.stringCode == "refill")
+          _ <- assertIO(NailServiceType.Removal.stringCode == "removal")
+          _ <- assertIO(NailServiceType.Repair.stringCode == "repair")
+          _ <- assertIO(LashServiceType.Extension.stringCode == "extension")
+          _ <- assertIO(LashServiceType.Refill.stringCode == "refill")
+          _ <- assertIO(LashServiceType.Lifting.stringCode == "lifting")
+          _ <- assertIO(LashServiceType.Tinting.stringCode == "tinting")
+          _ <- assertIO(LashServiceType.Removal.stringCode == "removal")
+          _ <- assertIO(LashVolume.Classic1D.stringCode == "classic1_d")
+          _ <- assertIO(LashVolume.Volume2D.stringCode == "volume2_d")
+          _ <- assertIO(LashVolume.Volume3D.stringCode == "volume3_d")
+          _ <- assertIO(LashVolume.MegaVolume.stringCode == "mega_volume")
+          _ <- assertIO(BrowServiceType.Shaping.stringCode == "shaping")
+          _ <- assertIO(BrowServiceType.Tinting.stringCode == "tinting")
+          _ <- assertIO(BrowServiceType.Lamination.stringCode == "lamination")
+          _ <- assertIO(BrowServiceType.Henna.stringCode == "henna")
+          _ <- assertIO(PmuArea.Brows.stringCode == "brows")
+          _ <- assertIO(PmuArea.Lips.stringCode == "lips")
+          _ <- assertIO(PmuArea.Eyeliner.stringCode == "eyeliner")
+          _ <- assertIO(FacialTreatmentType.Classic.stringCode == "classic")
+          _ <- assertIO(FacialTreatmentType.Cleansing.stringCode == "cleansing")
+          _ <- assertIO(FacialTreatmentType.Hydration.stringCode == "hydration")
+          _ <- assertIO(FacialTreatmentType.AntiAging.stringCode == "anti_aging")
+          _ <- assertIO(FacialTreatmentType.Peeling.stringCode == "peeling")
+          _ <- assertIO(FacialTreatmentType.Microneedling.stringCode == "microneedling")
+          _ <- assertIO(FacialTreatmentType.BbGlow.stringCode == "bb_glow")
+          _ <- assertIO(FacialTreatmentType.Aquafacial.stringCode == "aquafacial")
+          _ <- assertIO(BodyArea.UpperLip.stringCode == "upper_lip")
+          _ <- assertIO(BodyArea.Chin.stringCode == "chin")
+          _ <- assertIO(BodyArea.Face.stringCode == "face")
+          _ <- assertIO(BodyArea.Armpits.stringCode == "armpits")
+          _ <- assertIO(BodyArea.Bikini.stringCode == "bikini")
+          _ <- assertIO(BodyArea.Brazilian.stringCode == "brazilian")
+          _ <- assertIO(BodyArea.LowerLegs.stringCode == "lower_legs")
+          _ <- assertIO(BodyArea.FullLegs.stringCode == "full_legs")
+          _ <- assertIO(BodyArea.Arms.stringCode == "arms")
+          _ <- assertIO(BodyArea.Back.stringCode == "back")
+          _ <- assertIO(BodyArea.FaceNeckDecollete.stringCode == "face_neck_decollete")
         } yield ()
     }
 
@@ -1206,6 +1247,20 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _ <- assertIO(HairRemovalMethod.fromIntCode(999).isEmpty)
           _ <- assertIO(NailCoatingType.fromIntCode(3).contains(NailCoatingType.GelPolish))
           _ <- assertIO(NailCoatingType.fromIntCode(999).isEmpty)
+          _ <- assertIO(NailServiceType.fromIntCode(1).contains(NailServiceType.Manicure))
+          _ <- assertIO(NailServiceType.fromIntCode(999).isEmpty)
+          _ <- assertIO(LashServiceType.fromIntCode(1).contains(LashServiceType.Extension))
+          _ <- assertIO(LashServiceType.fromIntCode(999).isEmpty)
+          _ <- assertIO(LashVolume.fromIntCode(2).contains(LashVolume.Volume2D))
+          _ <- assertIO(LashVolume.fromIntCode(999).isEmpty)
+          _ <- assertIO(BrowServiceType.fromIntCode(3).contains(BrowServiceType.Lamination))
+          _ <- assertIO(BrowServiceType.fromIntCode(999).isEmpty)
+          _ <- assertIO(PmuArea.fromIntCode(1).contains(PmuArea.Brows))
+          _ <- assertIO(PmuArea.fromIntCode(999).isEmpty)
+          _ <- assertIO(FacialTreatmentType.fromIntCode(6).contains(FacialTreatmentType.Microneedling))
+          _ <- assertIO(FacialTreatmentType.fromIntCode(999).isEmpty)
+          _ <- assertIO(BodyArea.fromIntCode(1).contains(BodyArea.UpperLip))
+          _ <- assertIO(BodyArea.fromIntCode(999).isEmpty)
         } yield ()
     }
 
@@ -1216,6 +1271,40 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           _ <- assertIO(HairRemovalMethod.fromStringCode("unknown").isEmpty)
           _ <- assertIO(NailCoatingType.fromStringCode("gel_polish").contains(NailCoatingType.GelPolish))
           _ <- assertIO(NailCoatingType.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(NailServiceType.fromStringCode("manicure").contains(NailServiceType.Manicure))
+          _ <- assertIO(NailServiceType.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(LashServiceType.fromStringCode("extension").contains(LashServiceType.Extension))
+          _ <- assertIO(LashServiceType.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(LashVolume.fromStringCode("volume2_d").contains(LashVolume.Volume2D))
+          _ <- assertIO(LashVolume.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(BrowServiceType.fromStringCode("lamination").contains(BrowServiceType.Lamination))
+          _ <- assertIO(BrowServiceType.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(PmuArea.fromStringCode("brows").contains(PmuArea.Brows))
+          _ <- assertIO(PmuArea.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(FacialTreatmentType.fromStringCode("microneedling").contains(FacialTreatmentType.Microneedling))
+          _ <- assertIO(FacialTreatmentType.fromStringCode("unknown").isEmpty)
+          _ <- assertIO(BodyArea.fromStringCode("upper_lip").contains(BodyArea.UpperLip))
+          _ <- assertIO(BodyArea.fromStringCode("unknown").isEmpty)
+        } yield ()
+    }
+
+    "attribute definition registry resolves all new enum attribute codes" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          _ <- assertIO(AttributeDefinition.fromCode("nail_service_type").contains(AttributeDefinition.NailServiceTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("lash_service_type").contains(AttributeDefinition.LashServiceTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("lash_volume").contains(AttributeDefinition.LashVolumeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("brow_service_type").contains(AttributeDefinition.BrowServiceTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("pmu_area").contains(AttributeDefinition.PmuAreaAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("facial_treatment_type").contains(AttributeDefinition.FacialTreatmentTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCode("body_area").contains(AttributeDefinition.BodyAreaAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("nail_service_type").contains(AttributeDefinition.NailServiceTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("lash_service_type").contains(AttributeDefinition.LashServiceTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("lash_volume").contains(AttributeDefinition.LashVolumeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("brow_service_type").contains(AttributeDefinition.BrowServiceTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("pmu_area").contains(AttributeDefinition.PmuAreaAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("facial_treatment_type").contains(AttributeDefinition.FacialTreatmentTypeAttribute))
+          _ <- assertIO(AttributeDefinition.fromCodeAsEnum("body_area").contains(AttributeDefinition.BodyAreaAttribute))
         } yield ()
     }
 
@@ -1311,6 +1400,22 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
         } yield ()
     }
 
+    "schema validate supports allowed new enum attributes" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.NailServiceTypeAttribute, false))
+          attributes = MasterServiceOfferVariantAttributes(
+            intValues        = AttributeMap.empty,
+            bigDecimalValues = AttributeMap.empty,
+            enumValues = enumAttributeMap(
+              AttributeDefinition.NailServiceTypeAttribute -> NailServiceType.Manicure
+            ),
+          )
+          _ <- assertIO(schema.validate(attributes) == Right(()))
+        } yield ()
+    }
+
     "schema validate rejects disallowed enum attribute" in {
       (rnd: Rnd[IO]) =>
         for {
@@ -1327,6 +1432,28 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             schema.validate(attributes) == Left(
               ServiceVariantSchemaValidationError.DisallowedAttribute(
                 AttributeDefinition.HairRemovalMethodAttribute
+              )
+            )
+          )
+        } yield ()
+    }
+
+    "schema validate rejects disallowed new enum attribute" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          serviceId <- rnd[ServiceId]
+          schema     = makeSchema(serviceId, ServiceVariantSchemaItem(AttributeDefinition.SessionCount, false))
+          attributes = MasterServiceOfferVariantAttributes(
+            intValues        = AttributeMap.empty,
+            bigDecimalValues = AttributeMap.empty,
+            enumValues = enumAttributeMap(
+              AttributeDefinition.NailServiceTypeAttribute -> NailServiceType.Manicure
+            ),
+          )
+          _ <- assertIO(
+            schema.validate(attributes) == Left(
+              ServiceVariantSchemaValidationError.DisallowedAttribute(
+                AttributeDefinition.NailServiceTypeAttribute
               )
             )
           )
@@ -1392,6 +1519,48 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
           result = json.as[MasterServiceOfferVariant]
           _ <- assertIO(result.exists(_.enumAttributes.get(AttributeDefinition.HairRemovalMethodAttribute).contains(HairRemovalMethod.Sugaring)))
           _ <- assertIO(result.exists(_.enumAttributes.get(AttributeDefinition.NailCoatingTypeAttribute).contains(NailCoatingType.GelPolish)))
+        } yield ()
+    }
+
+    "decode and encode supports new enum attributes as strings" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "enumAttributes"       -> Json.obj(
+              "nail_service_type"     -> "manicure".asJson,
+              "lash_service_type"     -> "extension".asJson,
+              "lash_volume"           -> "volume2_d".asJson,
+              "brow_service_type"     -> "lamination".asJson,
+              "pmu_area"              -> "brows".asJson,
+              "facial_treatment_type" -> "microneedling".asJson,
+              "body_area"             -> "upper_lip".asJson,
+            ),
+          )
+          decoded = json.as[MasterServiceOfferVariant]
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.NailServiceTypeAttribute).contains(NailServiceType.Manicure)))
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.LashServiceTypeAttribute).contains(LashServiceType.Extension)))
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.LashVolumeAttribute).contains(LashVolume.Volume2D)))
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.BrowServiceTypeAttribute).contains(BrowServiceType.Lamination)))
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.PmuAreaAttribute).contains(PmuArea.Brows)))
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.FacialTreatmentTypeAttribute).contains(FacialTreatmentType.Microneedling)))
+          _ <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.BodyAreaAttribute).contains(BodyArea.UpperLip)))
+          encoded = decoded.toOption.get.asJson
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("nail_service_type").as[String].contains("manicure"))
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("lash_service_type").as[String].contains("extension"))
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("lash_volume").as[String].contains("volume2_d"))
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("brow_service_type").as[String].contains("lamination"))
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("pmu_area").as[String].contains("brows"))
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("facial_treatment_type").as[String].contains("microneedling"))
+          _ <- assertIO(encoded.hcursor.downField("enumAttributes").downField("body_area").as[String].contains("upper_lip"))
         } yield ()
     }
 
@@ -2593,6 +2762,89 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
               "hair_removal_method"  -> BigDecimal("2"),
               "nail_coating_type"    -> BigDecimal("3"),
               "session_count"        -> BigDecimal("3"),
+            )
+          )
+        } yield ()
+    }
+
+    "store and load several new enum attributes through numeric table" in {
+      (rnd: Rnd[IO],
+        categories: Categories[IO],
+        masters: Masters[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masterLocations: MasterLocations[IO],
+        offers: MasterServiceOffers[IO],
+        variants: MasterServiceOfferVariants[IO],
+        db: SQL[IO],
+      ) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          masterId   <- rnd[MasterId]
+          serviceId  <- rnd[ServiceId]
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          category    = Category(categoryId, rootCategoryId, 0, s"numeric-new-enums-category-$categoryId")
+          master      = Master(masterId, s"numeric-new-enums-master-$masterId")
+          service     = Service(serviceId, categoryId, s"numeric-new-enums-service-$serviceId")
+          offer       = MasterServiceOffer(offerId, masterId, serviceId)
+          location    = MasterLocation(locationId, masterId, s"numeric-new-enums-location-$locationId", s"numeric-new-enums-address-$locationId", BigDecimal("21.0000"), BigDecimal("22.0000"))
+          schema = makeSchema(
+            serviceId,
+            ServiceVariantSchemaItem(AttributeDefinition.NailServiceTypeAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.LashServiceTypeAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.LashVolumeAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.BrowServiceTypeAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.PmuAreaAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.FacialTreatmentTypeAttribute, false),
+            ServiceVariantSchemaItem(AttributeDefinition.BodyAreaAttribute, false),
+          )
+          variant <- makeVariant(
+            variantId,
+            offerId,
+            locationId,
+            enumAttributes = enumAttributeMap(
+              AttributeDefinition.NailServiceTypeAttribute     -> NailServiceType.Manicure,
+              AttributeDefinition.LashServiceTypeAttribute     -> LashServiceType.Extension,
+              AttributeDefinition.LashVolumeAttribute          -> LashVolume.Volume2D,
+              AttributeDefinition.BrowServiceTypeAttribute     -> BrowServiceType.Lamination,
+              AttributeDefinition.PmuAreaAttribute             -> PmuArea.Brows,
+              AttributeDefinition.FacialTreatmentTypeAttribute -> FacialTreatmentType.Microneedling,
+              AttributeDefinition.BodyAreaAttribute            -> BodyArea.UpperLip,
+            ),
+          )
+          _ <- categories.upsertCategory(category)
+          _ <- masters.upsertMaster(master)
+          _ <- services.upsertService(service)
+          _ <- serviceVariantSchemas.upsertServiceVariantSchema(schema)
+          _ <- offers.upsertMasterServiceOffer(offer)
+          _ <- masterLocations.upsertMasterLocation(location)
+          _ <- variants.upsertMasterServiceOfferVariant(variant)
+          loaded <- variants.getMasterServiceOfferVariant(variantId)
+          storedRows <- db.execute("select-master-service-offer-variant-numeric-attributes-new-enums") {
+                          sql"""select attribute_code, value
+                               from master_service_offer_variant_numeric_attributes
+                               where master_service_offer_variant_id = $variantId
+                               order by attribute_code asc
+                             """.query[(String, BigDecimal)].to[List]
+                        }
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.NailServiceTypeAttribute)).contains(NailServiceType.Manicure))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.LashServiceTypeAttribute)).contains(LashServiceType.Extension))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.LashVolumeAttribute)).contains(LashVolume.Volume2D))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.BrowServiceTypeAttribute)).contains(BrowServiceType.Lamination))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.PmuAreaAttribute)).contains(PmuArea.Brows))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.FacialTreatmentTypeAttribute)).contains(FacialTreatmentType.Microneedling))
+          _ <- assertIO(loaded.flatMap(_.enumAttributes.get(AttributeDefinition.BodyAreaAttribute)).contains(BodyArea.UpperLip))
+          _ <- assertIO(
+            storedRows == List(
+              "body_area"             -> BigDecimal("1"),
+              "brow_service_type"     -> BigDecimal("3"),
+              "facial_treatment_type" -> BigDecimal("6"),
+              "lash_service_type"     -> BigDecimal("1"),
+              "lash_volume"           -> BigDecimal("2"),
+              "nail_service_type"     -> BigDecimal("1"),
+              "pmu_area"              -> BigDecimal("1"),
             )
           )
         } yield ()
