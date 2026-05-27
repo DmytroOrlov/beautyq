@@ -14,7 +14,7 @@ import java.util.UUID
 
 class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   override def config = super.config.copy(
-    pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
+    pluginConfig    = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
       make[ProfileApiContractState].fromEffect(ProfileApiContractState.make)
       make[Profiles[IO]].from((state: ProfileApiContractState) => state.profiles)
@@ -25,14 +25,14 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
   "ProfileApi current http4s contracts" should {
     "return 200 and exact ranked profile json for an existing profile" in {
       (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
-        val userId = UUID.fromString("11111111-1111-1111-1111-111111111111")
+        val userId        = UUID.fromString("11111111-1111-1111-1111-111111111111")
         val rankedProfile = RankedProfile("Kai", "S C A L A", rank = 3, score = 42)
 
         for {
-          _ <- state.setGetRankResult(Right(Some(rankedProfile)))
+          _        <- state.setGetRankResult(Right(Some(rankedProfile)))
           response <- observe(combineApis(profileApi), get(s"/profile/$userId"))
-          _ <- assertIO(response.status === Status.Ok)
-          _ <- assertIO(response.body === """{"name":"Kai","description":"S C A L A","rank":3,"score":42}""")
+          _        <- assertIO(response.status === Status.Ok)
+          _        <- assertIO(response.body === """{"name":"Kai","description":"S C A L A","rank":3,"score":42}""")
         } yield ()
     }
 
@@ -41,25 +41,25 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         val userId = UUID.fromString("22222222-2222-2222-2222-222222222222")
 
         for {
-          _ <- state.setGetRankResult(Right(None))
+          _        <- state.setGetRankResult(Right(None))
           response <- observe(combineApis(profileApi), get(s"/profile/$userId"))
-          _ <- assertIO(response.status === Status.Ok)
-          _ <- assertIO(response.body === "null")
+          _        <- assertIO(response.status === Status.Ok)
+          _        <- assertIO(response.body === "null")
         } yield ()
     }
 
     "return 200 with empty body and persist the exact profile payload on POST" in {
       (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
-        val userId = UUID.fromString("33333333-3333-3333-3333-333333333333")
+        val userId  = UUID.fromString("33333333-3333-3333-3333-333333333333")
         val payload = """{"name":"Nori","description":"Bio enjoyer"}"""
 
         for {
-          _ <- state.setSetProfileResult(Right(()))
+          _        <- state.setSetProfileResult(Right(()))
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", payload))
-          saved <- state.savedProfiles
-          _ <- assertIO(response.status === Status.Ok)
-          _ <- assertIO(response.body === "")
-          _ <- assertIO(saved === Vector(userId -> UserProfile("Nori", "Bio enjoyer")))
+          saved    <- state.savedProfiles
+          _        <- assertIO(response.status === Status.Ok)
+          _        <- assertIO(response.body === "")
+          _        <- assertIO(saved === Vector(userId -> UserProfile("Nori", "Bio enjoyer")))
         } yield ()
     }
 
@@ -67,8 +67,8 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
       (profileApi: ProfileApi[IO]) =>
         for {
           response <- observe(combineApis(profileApi), get("/profile/not-a-uuid"))
-          _ <- assertIO(response.status === Status.NotFound)
-          _ <- assertIO(response.body === "Not found")
+          _        <- assertIO(response.status === Status.NotFound)
+          _        <- assertIO(response.body === "Not found")
         } yield ()
     }
 
@@ -90,10 +90,10 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", """{"name":"Kai""""))
-          saved <- state.savedProfiles
-          _ <- assertIO(response.status === Status.InternalServerError)
-          _ <- assertIO(response.body === "")
-          _ <- assertIO(saved.isEmpty)
+          saved    <- state.savedProfiles
+          _        <- assertIO(response.status === Status.InternalServerError)
+          _        <- assertIO(response.body === "")
+          _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
@@ -103,10 +103,10 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", """{"name":"Kai"}"""))
-          saved <- state.savedProfiles
-          _ <- assertIO(response.status === Status.InternalServerError)
-          _ <- assertIO(response.body === "")
-          _ <- assertIO(saved.isEmpty)
+          saved    <- state.savedProfiles
+          _        <- assertIO(response.status === Status.InternalServerError)
+          _        <- assertIO(response.body === "")
+          _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
@@ -116,10 +116,10 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", """{"name":123,"description":"typed"}"""))
-          saved <- state.savedProfiles
-          _ <- assertIO(response.status === Status.InternalServerError)
-          _ <- assertIO(response.body === "")
-          _ <- assertIO(saved.isEmpty)
+          saved    <- state.savedProfiles
+          _        <- assertIO(response.status === Status.InternalServerError)
+          _        <- assertIO(response.body === "")
+          _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
@@ -129,10 +129,10 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", ""))
-          saved <- state.savedProfiles
-          _ <- assertIO(response.status === Status.InternalServerError)
-          _ <- assertIO(response.body === "")
-          _ <- assertIO(saved.isEmpty)
+          saved    <- state.savedProfiles
+          _        <- assertIO(response.status === Status.InternalServerError)
+          _        <- assertIO(response.body === "")
+          _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
@@ -141,10 +141,10 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         val userId = UUID.fromString("88888888-8888-8888-8888-888888888888")
 
         for {
-          _ <- state.setGetRankResult(Left(QueryFailure.fromThrowable("get-rank", new RuntimeException("rank-boom"))))
+          _        <- state.setGetRankResult(Left(QueryFailure.fromThrowable("get-rank", new RuntimeException("rank-boom"))))
           response <- observe(combineApis(profileApi), get(s"/profile/$userId"))
-          _ <- assertIO(response.status === Status.InternalServerError)
-          _ <- assertIO(response.body === "")
+          _        <- assertIO(response.status === Status.InternalServerError)
+          _        <- assertIO(response.body === "")
         } yield ()
     }
 
@@ -153,15 +153,15 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         val userId = UUID.fromString("99999999-9999-9999-9999-999999999999")
 
         for {
-          _ <- state.setSetProfileResult(Left(QueryFailure.fromThrowable("set-profile", new RuntimeException("set-boom"))))
+          _        <- state.setSetProfileResult(Left(QueryFailure.fromThrowable("set-profile", new RuntimeException("set-boom"))))
           response <- observe(
             combineApis(profileApi),
             postJson(s"/profile/$userId", """{"name":"Fail","description":"Case"}"""),
           )
           saved <- state.savedProfiles
-          _ <- assertIO(response.status === Status.InternalServerError)
-          _ <- assertIO(response.body === "")
-          _ <- assertIO(saved.isEmpty)
+          _     <- assertIO(response.status === Status.InternalServerError)
+          _     <- assertIO(response.body === "")
+          _     <- assertIO(saved.isEmpty)
         } yield ()
     }
 
@@ -169,8 +169,8 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
       (profileApi: ProfileApi[IO]) =>
         for {
           response <- observe(combineApis(profileApi), get("/totally-unknown"))
-          _ <- assertIO(response.status === Status.NotFound)
-          _ <- assertIO(response.body === "Not found")
+          _        <- assertIO(response.status === Status.NotFound)
+          _        <- assertIO(response.body === "Not found")
         } yield ()
     }
   }
@@ -212,8 +212,8 @@ class ProfileApiContractState private (
 object ProfileApiContractState {
   def make: UIO[ProfileApiContractState] =
     for {
-      savedProfiles <- Ref.make(Vector.empty[(UserId, UserProfile)])
-      getRankResult <- Ref.make[Either[QueryFailure, Option[RankedProfile]]](Right(None))
+      savedProfiles    <- Ref.make(Vector.empty[(UserId, UserProfile)])
+      getRankResult    <- Ref.make[Either[QueryFailure, Option[RankedProfile]]](Right(None))
       setProfileResult <- Ref.make[Either[QueryFailure, Unit]](Right(()))
     } yield new ProfileApiContractState(savedProfiles, getRankResult, setProfileResult)
 }

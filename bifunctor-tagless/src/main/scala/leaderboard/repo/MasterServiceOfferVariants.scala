@@ -6,17 +6,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
-import leaderboard.model.{
-  MasterId,
-  MasterLocationId,
-  MasterServiceOfferId,
-  MasterServiceOfferVariant,
-  MasterServiceOfferVariantAttributes,
-  MasterServiceOfferVariantId,
-  QueryFailure,
-  ServiceId,
-  ServiceVariantSchema,
-}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure, ServiceId, ServiceVariantSchema}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -144,14 +134,15 @@ object MasterServiceOfferVariants {
   ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] = {
     for {
       storedAttributes <- MasterServiceOfferVariantAttributesRepository.encodeStoredAttributes(queryName, variant)
-      attributes <- MasterServiceOfferVariantAttributesRepository.decodeStoredAttributes(queryName, storedAttributes)
-      _          <- validateAttributesAgainstSchema(queryName, serviceId, attributes, schema)
+      attributes       <- MasterServiceOfferVariantAttributesRepository.decodeStoredAttributes(queryName, storedAttributes)
+      _                <- validateAttributesAgainstSchema(queryName, serviceId, attributes, schema)
     } yield storedAttributes
   }
 
   private def offerSummary[F[+_, +_]](
     sql: SQL[F]
-  )(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, Option[(MasterId, ServiceId)]] =
+  )(masterServiceOfferId: MasterServiceOfferId
+  ): F[QueryFailure, Option[(MasterId, ServiceId)]] =
     sql.execute("get-master-service-offer-summary") {
       sql"""
         select master_id, service_id
@@ -162,7 +153,8 @@ object MasterServiceOfferVariants {
 
   private def locationMasterId[F[+_, +_]](
     sql: SQL[F]
-  )(masterLocationId: MasterLocationId): F[QueryFailure, Option[MasterId]] =
+  )(masterLocationId: MasterLocationId
+  ): F[QueryFailure, Option[MasterId]] =
     sql.execute("get-master-location-master-id") {
       sql"""
         select master_id
@@ -310,7 +302,7 @@ object MasterServiceOfferVariants {
                               state.update_ {
                                 current =>
                                   current.copy(
-                                    baseRows = current.baseRows + (variant.id -> toBaseRow(variant)),
+                                    baseRows   = current.baseRows + (variant.id -> toBaseRow(variant)),
                                     attributes = attributesRepository.replace(variant.id, attributes)(current.attributes),
                                   )
                               }
@@ -451,28 +443,28 @@ object MasterServiceOfferVariants {
                                 .execute("upsert-master-service-offer-variant") {
                                   for {
                                     _ <- sql"""insert into master_service_offer_variants (
-                                               |  id,
-                                               |  master_service_offer_id,
-                                               |  master_location_id,
-                                               |  price_from,
-                                               |  price_to,
-                                               |  duration_min
-                                               |)
-                                               |values (
-                                               |  ${variant.id},
-                                               |  ${variant.masterServiceOfferId},
-                                               |  ${variant.masterLocationId},
-                                               |  ${variant.priceFrom},
-                                               |  ${variant.priceTo},
-                                               |  ${variant.durationMin}
-                                               |)
-                                               |on conflict (id) do update set
-                                               |  master_service_offer_id = excluded.master_service_offer_id,
-                                               |  master_location_id = excluded.master_location_id,
-                                               |  price_from = excluded.price_from,
-                                               |  price_to = excluded.price_to,
-                                               |  duration_min = excluded.duration_min
-                                               |""".stripMargin.update.run
+                                              |  id,
+                                              |  master_service_offer_id,
+                                              |  master_location_id,
+                                              |  price_from,
+                                              |  price_to,
+                                              |  duration_min
+                                              |)
+                                              |values (
+                                              |  ${variant.id},
+                                              |  ${variant.masterServiceOfferId},
+                                              |  ${variant.masterLocationId},
+                                              |  ${variant.priceFrom},
+                                              |  ${variant.priceTo},
+                                              |  ${variant.durationMin}
+                                              |)
+                                              |on conflict (id) do update set
+                                              |  master_service_offer_id = excluded.master_service_offer_id,
+                                              |  master_location_id = excluded.master_location_id,
+                                              |  price_from = excluded.price_from,
+                                              |  price_to = excluded.price_to,
+                                              |  duration_min = excluded.duration_min
+                                              |""".stripMargin.update.run
                                     _ <- attributesRepository.replace(variant.id, attributes)
                                   } yield ()
                                 }
@@ -484,78 +476,81 @@ object MasterServiceOfferVariants {
             }
 
           def getMasterServiceOfferVariant(id: MasterServiceOfferVariantId): F[QueryFailure, Option[MasterServiceOfferVariant]] =
-            sql.execute("get-master-service-offer-variant") {
-              for {
-                row <- sql"""select variant.id,
-                             |       variant.master_service_offer_id,
-                             |       variant.master_location_id,
-                             |       variant.price_from,
-                             |       variant.price_to,
-                             |       variant.duration_min,
-                             |       offer.service_id
-                             |from master_service_offer_variants variant
-                             |join master_service_offers offer on offer.id = variant.master_service_offer_id
-                             |where variant.id = $id
-                             |""".stripMargin.query[MasterServiceOfferVariantStoredRow].option
-                data <- loadStoredVariant(row, attributesRepository)
-              } yield data
-            }.flatMap {
-              eitherData =>
-                liftEither[F, Option[StoredVariantData]](eitherData).flatMap {
-                  case Some(data) =>
-                    makeVariantWithSchema[F]("get-master-service-offer-variant", data, serviceVariantSchemas).map(Some(_))
-                  case None =>
-                    F.pure(None)
-                }
-            }
+            sql
+              .execute("get-master-service-offer-variant") {
+                for {
+                  row <- sql"""select variant.id,
+                              |       variant.master_service_offer_id,
+                              |       variant.master_location_id,
+                              |       variant.price_from,
+                              |       variant.price_to,
+                              |       variant.duration_min,
+                              |       offer.service_id
+                              |from master_service_offer_variants variant
+                              |join master_service_offers offer on offer.id = variant.master_service_offer_id
+                              |where variant.id = $id
+                              |""".stripMargin.query[MasterServiceOfferVariantStoredRow].option
+                  data <- loadStoredVariant(row, attributesRepository)
+                } yield data
+              }.flatMap {
+                eitherData =>
+                  liftEither[F, Option[StoredVariantData]](eitherData).flatMap {
+                    case Some(data) =>
+                      makeVariantWithSchema[F]("get-master-service-offer-variant", data, serviceVariantSchemas).map(Some(_))
+                    case None =>
+                      F.pure(None)
+                  }
+              }
 
           def getMasterServiceOfferVariantsByOffer(masterServiceOfferId: MasterServiceOfferId): F[QueryFailure, List[MasterServiceOfferVariant]] =
-            sql.execute("get-master-service-offer-variants-by-offer") {
-              for {
-                rows <- sql"""select variant.id,
-                              |       variant.master_service_offer_id,
-                              |       variant.master_location_id,
-                              |       variant.price_from,
-                              |       variant.price_to,
-                              |       variant.duration_min,
-                              |       offer.service_id
-                              |from master_service_offer_variants variant
-                              |join master_service_offers offer on offer.id = variant.master_service_offer_id
-                              |where variant.master_service_offer_id = $masterServiceOfferId
-                              |order by variant.id asc
-                              |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
-                data <- loadStoredVariants(rows, attributesRepository)
-              } yield data
-            }.flatMap {
-              eitherData =>
-                liftEither[F, List[StoredVariantData]](eitherData).flatMap(
-                  makeStoredVariants[F]("get-master-service-offer-variants-by-offer", _, serviceVariantSchemas)
-                )
-            }
+            sql
+              .execute("get-master-service-offer-variants-by-offer") {
+                for {
+                  rows <- sql"""select variant.id,
+                               |       variant.master_service_offer_id,
+                               |       variant.master_location_id,
+                               |       variant.price_from,
+                               |       variant.price_to,
+                               |       variant.duration_min,
+                               |       offer.service_id
+                               |from master_service_offer_variants variant
+                               |join master_service_offers offer on offer.id = variant.master_service_offer_id
+                               |where variant.master_service_offer_id = $masterServiceOfferId
+                               |order by variant.id asc
+                               |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
+                  data <- loadStoredVariants(rows, attributesRepository)
+                } yield data
+              }.flatMap {
+                eitherData =>
+                  liftEither[F, List[StoredVariantData]](eitherData).flatMap(
+                    makeStoredVariants[F]("get-master-service-offer-variants-by-offer", _, serviceVariantSchemas)
+                  )
+              }
 
           def getMasterServiceOfferVariantsByLocation(masterLocationId: MasterLocationId): F[QueryFailure, List[MasterServiceOfferVariant]] =
-            sql.execute("get-master-service-offer-variants-by-location") {
-              for {
-                rows <- sql"""select variant.id,
-                              |       variant.master_service_offer_id,
-                              |       variant.master_location_id,
-                              |       variant.price_from,
-                              |       variant.price_to,
-                              |       variant.duration_min,
-                              |       offer.service_id
-                              |from master_service_offer_variants variant
-                              |join master_service_offers offer on offer.id = variant.master_service_offer_id
-                              |where variant.master_location_id = $masterLocationId
-                              |order by variant.id asc
-                              |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
-                data <- loadStoredVariants(rows, attributesRepository)
-              } yield data
-            }.flatMap {
-              eitherData =>
-                liftEither[F, List[StoredVariantData]](eitherData).flatMap(
-                  makeStoredVariants[F]("get-master-service-offer-variants-by-location", _, serviceVariantSchemas)
-                )
-            }
+            sql
+              .execute("get-master-service-offer-variants-by-location") {
+                for {
+                  rows <- sql"""select variant.id,
+                               |       variant.master_service_offer_id,
+                               |       variant.master_location_id,
+                               |       variant.price_from,
+                               |       variant.price_to,
+                               |       variant.duration_min,
+                               |       offer.service_id
+                               |from master_service_offer_variants variant
+                               |join master_service_offers offer on offer.id = variant.master_service_offer_id
+                               |where variant.master_location_id = $masterLocationId
+                               |order by variant.id asc
+                               |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
+                  data <- loadStoredVariants(rows, attributesRepository)
+                } yield data
+              }.flatMap {
+                eitherData =>
+                  liftEither[F, List[StoredVariantData]](eitherData).flatMap(
+                    makeStoredVariants[F]("get-master-service-offer-variants-by-location", _, serviceVariantSchemas)
+                  )
+              }
         }
       }
     )

@@ -12,17 +12,7 @@ import izumi.fundamentals.platform.versions.Version
 import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.http.tapir.{
-  CategoryTapirEndpoints,
-  LadderTapirEndpoints,
-  MasterLocationTapirEndpoints,
-  MasterServiceOfferTapirEndpoints,
-  MasterServiceOfferVariantTapirEndpoints,
-  MasterTapirEndpoints,
-  ProfileTapirEndpoints,
-  ServiceTapirEndpoints,
-  TapirHttpSupport,
-}
+import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}

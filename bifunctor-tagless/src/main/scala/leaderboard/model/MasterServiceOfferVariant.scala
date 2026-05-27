@@ -184,7 +184,7 @@ object MasterServiceOfferVariant {
         raw.foldLeft[Decoder.Result[AttributeMap[CodedEnumValue]]](Right(AttributeMap.empty)) {
           case (acc, (attributeCode, stringCode)) =>
             for {
-              current <- acc
+              current        <- acc
               enumDefinition <- {
                 val decodedDefinition: Decoder.Result[EnumAttributeDefinition[?]] =
                   AttributeDefinition.fromCodeAsEnum(attributeCode) match {
@@ -245,7 +245,7 @@ object MasterServiceOfferVariant {
           "bigDecimalAttributes",
           AttributeDefinition.fromCodeAsBigDecimal,
         )
-        enumAttributes <- decodeEnumAttributes(c)
+        enumAttributes    <- decodeEnumAttributes(c)
         booleanAttributes <- decodeAttributes[Boolean](
           c,
           "booleanAttributes",

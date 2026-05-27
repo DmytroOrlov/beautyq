@@ -19,40 +19,40 @@ class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
 
   "LadderApi current http4s contracts" should {
     "return 200 and exact json array shape for leaderboard scores" in {
-      val user1 = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-      val user2 = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+      val user1  = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+      val user2  = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
       val scores = List(user1 -> 100L, user2 -> 55L)
 
       for {
-        state <- LadderApiContractState.make
-        _ <- state.setGetScoresResult(Right(scores))
+        state    <- LadderApiContractState.make
+        _        <- state.setGetScoresResult(Right(scores))
         response <- observe(combineApis(ladderApi(state)), get("/ladder"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === s"""[["$user1",100],["$user2",55]]""")
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === s"""[["$user1",100],["$user2",55]]""")
       } yield ()
     }
 
     "return 200 with empty body and capture submitted score on POST" in {
       val userId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
-      val score = 77L
+      val score  = 77L
 
       for {
-        state <- LadderApiContractState.make
-        _ <- state.setSubmitScoreResult(Right(()))
-        response <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/$score", ""))
+        state     <- LadderApiContractState.make
+        _         <- state.setSubmitScoreResult(Right(()))
+        response  <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/$score", ""))
         submitted <- state.submittedScores
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(submitted === Vector(userId -> score))
+        _         <- assertIO(response.status === Status.Ok)
+        _         <- assertIO(response.body === "")
+        _         <- assertIO(submitted === Vector(userId -> score))
       } yield ()
     }
 
     "return current 404 semantics for malformed UUID path params" in {
       for {
-        state <- LadderApiContractState.make
+        state    <- LadderApiContractState.make
         response <- observe(combineApis(ladderApi(state)), postJson("/ladder/not-a-uuid/15", ""))
-        _ <- assertIO(response.status === Status.NotFound)
-        _ <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === "Not found")
       } yield ()
     }
 
@@ -60,20 +60,20 @@ class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
       val userId = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")
 
       for {
-        state <- LadderApiContractState.make
+        state    <- LadderApiContractState.make
         response <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/not-a-long", ""))
-        _ <- assertIO(response.status === Status.NotFound)
-        _ <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === "Not found")
       } yield ()
     }
 
     "return current server failure semantics when leaderboard lookup fails" in {
       for {
-        state <- LadderApiContractState.make
-        _ <- state.setGetScoresResult(Left(QueryFailure.fromThrowable("get-leaderboard", new RuntimeException("scores-boom"))))
+        state    <- LadderApiContractState.make
+        _        <- state.setGetScoresResult(Left(QueryFailure.fromThrowable("get-leaderboard", new RuntimeException("scores-boom"))))
         response <- observe(combineApis(ladderApi(state)), get("/ladder"))
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
       } yield ()
     }
 
@@ -81,22 +81,22 @@ class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
       val userId = UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
 
       for {
-        state <- LadderApiContractState.make
-        _ <- state.setSubmitScoreResult(Left(QueryFailure.fromThrowable("submit-score", new RuntimeException("submit-boom"))))
-        response <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/90", ""))
+        state     <- LadderApiContractState.make
+        _         <- state.setSubmitScoreResult(Left(QueryFailure.fromThrowable("submit-score", new RuntimeException("submit-boom"))))
+        response  <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/90", ""))
         submitted <- state.submittedScores
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(submitted.isEmpty)
+        _         <- assertIO(response.status === Status.InternalServerError)
+        _         <- assertIO(response.body === "")
+        _         <- assertIO(submitted.isEmpty)
       } yield ()
     }
 
     "return current 404 semantics for an unknown route in the isolated ladder app" in {
       for {
-        state <- LadderApiContractState.make
+        state    <- LadderApiContractState.make
         response <- observe(combineApis(ladderApi(state)), get("/ladder/unknown"))
-        _ <- assertIO(response.status === Status.NotFound)
-        _ <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === "Not found")
       } yield ()
     }
   }
@@ -133,8 +133,8 @@ class LadderApiContractState private (
 object LadderApiContractState {
   def make: UIO[LadderApiContractState] =
     for {
-      submittedScores <- Ref.make(Vector.empty[(UserId, Score)])
-      getScoresResult <- Ref.make[Either[QueryFailure, List[(UserId, Score)]]](Right(Nil))
+      submittedScores   <- Ref.make(Vector.empty[(UserId, Score)])
+      getScoresResult   <- Ref.make[Either[QueryFailure, List[(UserId, Score)]]](Right(Nil))
       submitScoreResult <- Ref.make[Either[QueryFailure, Unit]](Right(()))
     } yield new LadderApiContractState(submittedScores, getScoresResult, submitScoreResult)
 }

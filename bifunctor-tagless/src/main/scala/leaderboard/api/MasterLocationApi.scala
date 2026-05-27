@@ -21,15 +21,10 @@ class MasterLocationApi[F[+_, +_]: Error2](
       import tapirEndpoints.*
       List(
         getMasterLocation.serverLogic[F[Throwable, _]](
-          masterLocationId =>
-            async.map(HttpApiFailure.fromQueryEffect(masterLocations.getMasterLocation(masterLocationId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
+          masterLocationId => async.map(HttpApiFailure.fromQueryEffect(masterLocations.getMasterLocation(masterLocationId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
         ),
-        upsertMasterLocation.serverLogic[F[Throwable, _]](
-          location => HttpApiFailure.fromQueryEffect(masterLocations.upsertMasterLocation(location))
-        ),
-        getMasterLocationsByMaster.serverLogic[F[Throwable, _]](
-          masterId => HttpApiFailure.fromQueryEffect(masterLocations.getMasterLocationsByMaster(masterId))
-        ),
+        upsertMasterLocation.serverLogic[F[Throwable, _]](location => HttpApiFailure.fromQueryEffect(masterLocations.upsertMasterLocation(location))),
+        getMasterLocationsByMaster.serverLogic[F[Throwable, _]](masterId => HttpApiFailure.fromQueryEffect(masterLocations.getMasterLocationsByMaster(masterId))),
       )
     }
 }

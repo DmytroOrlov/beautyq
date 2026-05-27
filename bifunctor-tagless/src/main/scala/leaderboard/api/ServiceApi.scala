@@ -24,9 +24,7 @@ class ServiceApi[F[+_, +_]: Error2](
           serviceId => async.map(HttpApiFailure.fromQueryEffect(services.getService(serviceId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
         ),
         upsertService.serverLogic[F[Throwable, _]](service => HttpApiFailure.fromQueryEffect(services.upsertService(service))),
-        getServicesByCategory.serverLogic[F[Throwable, _]](
-          categoryId => HttpApiFailure.fromQueryEffect(services.getServicesByCategory(categoryId))
-        ),
+        getServicesByCategory.serverLogic[F[Throwable, _]](categoryId => HttpApiFailure.fromQueryEffect(services.getServicesByCategory(categoryId))),
       )
     }
 }

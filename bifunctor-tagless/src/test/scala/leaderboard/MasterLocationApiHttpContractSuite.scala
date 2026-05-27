@@ -18,15 +18,15 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
   "MasterLocationApi current http4s contracts" should {
     "return 200 and exact location json for an existing entity" in {
       val locationId = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val masterId = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-      val location = MasterLocation(locationId, masterId, "Studio", "Main street", 55, 37)
+      val masterId   = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val location   = MasterLocation(locationId, masterId, "Studio", "Main street", 55, 37)
 
       for {
-        state <- MasterLocationApiContractState.make
-        _ <- state.setGetMasterLocationResult(Right(Some(location)))
+        state    <- MasterLocationApiContractState.make
+        _        <- state.setGetMasterLocationResult(Right(Some(location)))
         response <- observe(combineApis(masterLocationApi(state)), get(s"/master-location/$locationId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""{"id":"$locationId","masterId":"$masterId","name":"Studio","address":"Main street","lat":55,"lon":37}"""
         )
       } yield ()
@@ -36,25 +36,25 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
       val locationId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
-        state <- MasterLocationApiContractState.make
-        _ <- state.setGetMasterLocationResult(Right(None))
+        state    <- MasterLocationApiContractState.make
+        _        <- state.setGetMasterLocationResult(Right(None))
         response <- observe(combineApis(masterLocationApi(state)), get(s"/master-location/$locationId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === "null")
       } yield ()
     }
 
     "return 200 and exact json array for the master endpoint" in {
       val masterId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first = MasterLocation(UUID.fromString("00000000-0000-0000-0000-000000000001"), masterId, "Alpha", "A", 1, 2)
-      val second = MasterLocation(UUID.fromString("00000000-0000-0000-0000-000000000002"), masterId, "Beta", "B", 3, 4)
+      val first    = MasterLocation(UUID.fromString("00000000-0000-0000-0000-000000000001"), masterId, "Alpha", "A", 1, 2)
+      val second   = MasterLocation(UUID.fromString("00000000-0000-0000-0000-000000000002"), masterId, "Beta", "B", 3, 4)
 
       for {
-        state <- MasterLocationApiContractState.make
-        _ <- state.setLocationsByMasterResult(masterId, Right(List(first, second)))
+        state    <- MasterLocationApiContractState.make
+        _        <- state.setLocationsByMasterResult(masterId, Right(List(first, second)))
         response <- observe(combineApis(masterLocationApi(state)), get(s"/master-location/master/$masterId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""[{"id":"${first.id}","masterId":"$masterId","name":"Alpha","address":"A","lat":1,"lon":2},{"id":"${second.id}","masterId":"$masterId","name":"Beta","address":"B","lat":3,"lon":4}]"""
         )
       } yield ()
@@ -62,37 +62,37 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
 
     "return 200 with empty body and capture the posted location payload" in {
       val locationId = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
-      val masterId = UUID.fromString("01010101-0202-0303-0404-050505050505")
-      val payload = s"""{"id":"$locationId","masterId":"$masterId","name":"Office","address":"Center","lat":50,"lon":30}"""
+      val masterId   = UUID.fromString("01010101-0202-0303-0404-050505050505")
+      val payload    = s"""{"id":"$locationId","masterId":"$masterId","name":"Office","address":"Center","lat":50,"lon":30}"""
 
       for {
-        state <- MasterLocationApiContractState.make
-        _ <- state.setUpsertMasterLocationResult(Right(()))
+        state    <- MasterLocationApiContractState.make
+        _        <- state.setUpsertMasterLocationResult(Right(()))
         response <- observe(combineApis(masterLocationApi(state)), postJson("/master-location", payload))
-        upserts <- state.upserts
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(upserts === Vector(MasterLocation(locationId, masterId, "Office", "Center", 50, 30)))
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === "")
+        _        <- assertIO(upserts === Vector(MasterLocation(locationId, masterId, "Office", "Center", 50, 30)))
       } yield ()
     }
 
     "return current 404 semantics for malformed UUID path params" in {
       for {
-        state <- MasterLocationApiContractState.make
+        state    <- MasterLocationApiContractState.make
         response <- observe(combineApis(masterLocationApi(state)), get("/master-location/not-a-uuid"))
-        _ <- assertIO(response.status === Status.NotFound)
-        _ <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === "Not found")
       } yield ()
     }
 
     "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
       for {
-        state <- MasterLocationApiContractState.make
+        state    <- MasterLocationApiContractState.make
         response <- observe(combineApis(masterLocationApi(state)), postJson("/master-location", """{"id":"abc""""))
-        upserts <- state.upserts
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(upserts.isEmpty)
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
+        _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
@@ -100,11 +100,11 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
       val masterId = UUID.fromString("99999999-0000-0000-0000-000000000000")
 
       for {
-        state <- MasterLocationApiContractState.make
-        _ <- state.setLocationsByMasterResult(masterId, Left(QueryFailure.fromThrowable("get-master-locations-by-master", new RuntimeException("locations-boom"))))
+        state    <- MasterLocationApiContractState.make
+        _        <- state.setLocationsByMasterResult(masterId, Left(QueryFailure.fromThrowable("get-master-locations-by-master", new RuntimeException("locations-boom"))))
         response <- observe(combineApis(masterLocationApi(state)), get(s"/master-location/master/$masterId"))
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
       } yield ()
     }
   }
@@ -129,8 +129,9 @@ class MasterLocationApiContractState private (
       getMasterLocationResultRef.get.flatMap(ZIO.fromEither(_))
 
     def getMasterLocationsByMaster(masterId: leaderboard.model.MasterId): IO[QueryFailure, List[MasterLocation]] =
-      locationsByMasterResultsRef.get.flatMap { current =>
-        ZIO.fromEither(current.getOrElse(masterId, Right(Nil)))
+      locationsByMasterResultsRef.get.flatMap {
+        current =>
+          ZIO.fromEither(current.getOrElse(masterId, Right(Nil)))
       }
   }
 
@@ -153,9 +154,9 @@ class MasterLocationApiContractState private (
 object MasterLocationApiContractState {
   def make: UIO[MasterLocationApiContractState] =
     for {
-      upserts <- Ref.make(Vector.empty[MasterLocation])
-      getMasterLocationResult <- Ref.make[Either[QueryFailure, Option[MasterLocation]]](Right(None))
-      locationsByMasterResults <- Ref.make(Map.empty[leaderboard.model.MasterId, Either[QueryFailure, List[MasterLocation]]])
+      upserts                    <- Ref.make(Vector.empty[MasterLocation])
+      getMasterLocationResult    <- Ref.make[Either[QueryFailure, Option[MasterLocation]]](Right(None))
+      locationsByMasterResults   <- Ref.make(Map.empty[leaderboard.model.MasterId, Either[QueryFailure, List[MasterLocation]]])
       upsertMasterLocationResult <- Ref.make[Either[QueryFailure, Unit]](Right(()))
     } yield new MasterLocationApiContractState(upserts, getMasterLocationResult, locationsByMasterResults, upsertMasterLocationResult)
 }

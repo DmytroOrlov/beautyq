@@ -29,8 +29,7 @@ object Masters {
 
         def getMasters(): F[Nothing, List[Master]] =
           state.get.map(
-            _.values
-              .toList
+            _.values.toList
               .sortBy(master => (master.name, master.id.toString))
           )
       }

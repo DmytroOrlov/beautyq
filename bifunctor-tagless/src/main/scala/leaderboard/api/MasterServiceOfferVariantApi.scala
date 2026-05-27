@@ -27,13 +27,14 @@ class MasterServiceOfferVariantApi[F[+_, +_]: Error2](
               _.map(_.fold[Json](Json.Null)(_.asJson))
             )
         ),
-        upsertMasterServiceOfferVariant.serverLogic[F[Throwable, _]] { json =>
-          HttpApiFailure.fromEither(json.as[MasterServiceOfferVariant]) match {
-            case Left(error) =>
-              async.pure(Left(error))
-            case Right(variant) =>
-              HttpApiFailure.fromQueryEffect(masterServiceOfferVariants.upsertMasterServiceOfferVariant(variant))
-          }
+        upsertMasterServiceOfferVariant.serverLogic[F[Throwable, _]] {
+          json =>
+            HttpApiFailure.fromEither(json.as[MasterServiceOfferVariant]) match {
+              case Left(error) =>
+                async.pure(Left(error))
+              case Right(variant) =>
+                HttpApiFailure.fromQueryEffect(masterServiceOfferVariants.upsertMasterServiceOfferVariant(variant))
+            }
         },
         getMasterServiceOfferVariantsByOffer.serverLogic[F[Throwable, _]](
           masterServiceOfferId =>

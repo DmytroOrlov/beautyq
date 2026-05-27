@@ -23,14 +23,15 @@ class TapirHttpSupport[F[+_, +_]](implicit async: Async[F[Throwable, _]]) {
   // - malformed path params should still fall through to route-level 404
   // - malformed body decode should still surface as 500 with an empty body
   private val currentContractDecodeFailureHandler: DecodeFailureHandler[F[Throwable, _]] =
-    DecodeFailureHandler { ctx =>
-      if (isPathCaptureFailure(ctx)) {
-        async.pure(None)
-      } else if (isBodyDecodeFailure(ctx)) {
-        async.pure(Some(TapirHttpSupport.internalServerErrorOutput))
-      } else {
-        DefaultDecodeFailureHandler[F[Throwable, _]](ctx)(new CatsMonadError[F[Throwable, _]])
-      }
+    DecodeFailureHandler {
+      ctx =>
+        if (isPathCaptureFailure(ctx)) {
+          async.pure(None)
+        } else if (isBodyDecodeFailure(ctx)) {
+          async.pure(Some(TapirHttpSupport.internalServerErrorOutput))
+        } else {
+          DefaultDecodeFailureHandler[F[Throwable, _]](ctx)(new CatsMonadError[F[Throwable, _]])
+        }
     }
 
   private val currentContractExceptionHandler: ExceptionHandler[F[Throwable, _]] =
@@ -52,10 +53,10 @@ class TapirHttpSupport[F[+_, +_]](implicit async: Async[F[Throwable, _]]) {
 
   private def isBodyDecodeFailure(ctx: DecodeFailureContext): Boolean =
     ctx.failingInput match {
-      case _: EndpointIO.Body[_, _]          => true
-      case _: EndpointIO.OneOfBody[_, _]     => true
+      case _: EndpointIO.Body[_, _]              => true
+      case _: EndpointIO.OneOfBody[_, _]         => true
       case _: EndpointIO.StreamBodyWrapper[_, _] => true
-      case _                                 => false
+      case _                                     => false
     }
 }
 

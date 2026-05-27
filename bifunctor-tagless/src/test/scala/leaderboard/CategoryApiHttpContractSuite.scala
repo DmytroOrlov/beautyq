@@ -20,15 +20,15 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
   "CategoryApi current http4s contracts" should {
     "return 200 and exact category json for an existing entity" in {
       val categoryId = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val parentId = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-      val category = Category(categoryId, parentId, 1, "Hair")
+      val parentId   = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val category   = Category(categoryId, parentId, 1, "Hair")
 
       for {
-        state <- CategoryApiContractState.make
-        _ <- state.setGetCategoryResult(Right(Some(category)))
+        state    <- CategoryApiContractState.make
+        _        <- state.setGetCategoryResult(Right(Some(category)))
         response <- observe(combineApis(categoryApi(state)), get(s"/category/$categoryId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === s"""{"id":"$categoryId","parentId":"$parentId","depth":1,"name":"Hair"}""")
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === s"""{"id":"$categoryId","parentId":"$parentId","depth":1,"name":"Hair"}""")
       } yield ()
     }
 
@@ -36,25 +36,25 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
       val categoryId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
-        state <- CategoryApiContractState.make
-        _ <- state.setGetCategoryResult(Right(None))
+        state    <- CategoryApiContractState.make
+        _        <- state.setGetCategoryResult(Right(None))
         response <- observe(combineApis(categoryApi(state)), get(s"/category/$categoryId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === "null")
       } yield ()
     }
 
     "return 200 and exact json array for the children endpoint" in {
       val parentId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first = Category(UUID.fromString("00000000-0000-0000-0000-000000000001"), parentId, 1, "Alpha")
-      val second = Category(UUID.fromString("00000000-0000-0000-0000-000000000002"), parentId, 1, "Beta")
+      val first    = Category(UUID.fromString("00000000-0000-0000-0000-000000000001"), parentId, 1, "Alpha")
+      val second   = Category(UUID.fromString("00000000-0000-0000-0000-000000000002"), parentId, 1, "Beta")
 
       for {
-        state <- CategoryApiContractState.make
-        _ <- state.setChildrenResult(parentId, Right(List(first, second)))
+        state    <- CategoryApiContractState.make
+        _        <- state.setChildrenResult(parentId, Right(List(first, second)))
         response <- observe(combineApis(categoryApi(state)), get(s"/category/$parentId/children"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""[{"id":"${first.id}","parentId":"$parentId","depth":1,"name":"Alpha"},{"id":"${second.id}","parentId":"$parentId","depth":1,"name":"Beta"}]"""
         )
       } yield ()
@@ -64,11 +64,11 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
       val rootChild = Category(UUID.fromString("99999999-0000-0000-0000-000000000001"), rootCategoryId, 0, "Root")
 
       for {
-        state <- CategoryApiContractState.make
-        _ <- state.setChildrenResult(rootCategoryId, Right(List(rootChild)))
+        state    <- CategoryApiContractState.make
+        _        <- state.setChildrenResult(rootCategoryId, Right(List(rootChild)))
         response <- observe(combineApis(categoryApi(state)), get("/category/root"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""[{"id":"${rootChild.id}","parentId":"$rootCategoryId","depth":0,"name":"Root"}]"""
         )
       } yield ()
@@ -76,47 +76,47 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
 
     "return 200 with empty body and capture the posted category payload" in {
       val categoryId = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
-      val parentId = UUID.fromString("01010101-0202-0303-0404-050505050505")
-      val payload = s"""{"id":"$categoryId","parentId":"$parentId","depth":2,"name":"Coloring"}"""
+      val parentId   = UUID.fromString("01010101-0202-0303-0404-050505050505")
+      val payload    = s"""{"id":"$categoryId","parentId":"$parentId","depth":2,"name":"Coloring"}"""
 
       for {
-        state <- CategoryApiContractState.make
-        _ <- state.setUpsertCategoryResult(Right(()))
+        state    <- CategoryApiContractState.make
+        _        <- state.setUpsertCategoryResult(Right(()))
         response <- observe(combineApis(categoryApi(state)), postJson("/category", payload))
-        upserts <- state.upserts
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(upserts === Vector(Category(categoryId, parentId, 2, "Coloring")))
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === "")
+        _        <- assertIO(upserts === Vector(Category(categoryId, parentId, 2, "Coloring")))
       } yield ()
     }
 
     "return current 404 semantics for malformed UUID path params" in {
       for {
-        state <- CategoryApiContractState.make
+        state    <- CategoryApiContractState.make
         response <- observe(combineApis(categoryApi(state)), get("/category/not-a-uuid"))
-        _ <- assertIO(response.status === Status.NotFound)
-        _ <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === "Not found")
       } yield ()
     }
 
     "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
       for {
-        state <- CategoryApiContractState.make
+        state    <- CategoryApiContractState.make
         response <- observe(combineApis(categoryApi(state)), postJson("/category", """{"id":"abc""""))
-        upserts <- state.upserts
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(upserts.isEmpty)
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
+        _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
     "return current server failure semantics when the root endpoint fails" in {
       for {
-        state <- CategoryApiContractState.make
-        _ <- state.setChildrenResult(rootCategoryId, Left(QueryFailure.fromThrowable("get-root-children", new RuntimeException("children-boom"))))
+        state    <- CategoryApiContractState.make
+        _        <- state.setChildrenResult(rootCategoryId, Left(QueryFailure.fromThrowable("get-root-children", new RuntimeException("children-boom"))))
         response <- observe(combineApis(categoryApi(state)), get("/category/root"))
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
       } yield ()
     }
   }
@@ -141,8 +141,9 @@ class CategoryApiContractState private (
       getCategoryResultRef.get.flatMap(ZIO.fromEither(_))
 
     def getChildren(parentId: CategoryId): IO[QueryFailure, List[Category]] =
-      childrenResultsRef.get.flatMap { current =>
-        ZIO.fromEither(current.getOrElse(parentId, Right(Nil)))
+      childrenResultsRef.get.flatMap {
+        current =>
+          ZIO.fromEither(current.getOrElse(parentId, Right(Nil)))
       }
   }
 
@@ -162,9 +163,9 @@ class CategoryApiContractState private (
 object CategoryApiContractState {
   def make: UIO[CategoryApiContractState] =
     for {
-      upserts <- Ref.make(Vector.empty[Category])
-      getCategoryResult <- Ref.make[Either[QueryFailure, Option[Category]]](Right(None))
-      childrenResults <- Ref.make(Map.empty[CategoryId, Either[QueryFailure, List[Category]]])
+      upserts              <- Ref.make(Vector.empty[Category])
+      getCategoryResult    <- Ref.make[Either[QueryFailure, Option[Category]]](Right(None))
+      childrenResults      <- Ref.make(Map.empty[CategoryId, Either[QueryFailure, List[Category]]])
       upsertCategoryResult <- Ref.make[Either[QueryFailure, Unit]](Right(()))
     } yield new CategoryApiContractState(upserts, getCategoryResult, childrenResults, upsertCategoryResult)
 }

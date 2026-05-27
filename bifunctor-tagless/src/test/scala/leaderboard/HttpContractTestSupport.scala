@@ -27,30 +27,33 @@ trait HttpContractTestSupport {
   protected final def get(path: String): Request[Task] =
     Request[Task](
       method = Method.GET,
-      uri = Uri.unsafeFromString(path),
+      uri    = Uri.unsafeFromString(path),
     )
 
   protected final def postJson(path: String, body: String): Request[Task] =
     Request[Task](
       method = Method.POST,
-      uri = Uri.unsafeFromString(path),
+      uri    = Uri.unsafeFromString(path),
     ).withEntity(body).putHeaders(`Content-Type`(MediaType.application.json))
 
   protected final def observe(app: HttpApp[Task], request: Request[Task]): Task[ObservedResponse] =
-    withClientAndBaseUri(app) { (client, baseUri) =>
-      client
-        .run(request.withUri(baseUri.resolve(request.uri)))
-        .use { response =>
-          response.body
-            .through(text.utf8.decode)
-            .compile
-            .string
-            .map(body => ObservedResponse(response.status, body))
-        }
+    withClientAndBaseUri(app) {
+      (client, baseUri) =>
+        client
+          .run(request.withUri(baseUri.resolve(request.uri)))
+          .use {
+            response =>
+              response.body
+                .through(text.utf8.decode)
+                .compile
+                .string
+                .map(body => ObservedResponse(response.status, body))
+          }
     }
 
-  private def withClientAndBaseUri[A](app: HttpApp[Task])(
-    use: (Client[Task], Uri) => Task[A],
+  private def withClientAndBaseUri[A](
+    app: HttpApp[Task]
+  )(use: (Client[Task], Uri) => Task[A]
   ): Task[A] =
     EmberServerBuilder
       .default[Task](using Async[Task], Network.forAsync[Task])
@@ -58,10 +61,12 @@ trait HttpContractTestSupport {
       .withPort(Port.fromInt(0).get)
       .withHttpApp(app)
       .build
-      .use { server =>
-        EmberClientBuilder.default[Task](using Async[Task], Network.forAsync[Task]).build.use { client =>
-          val baseUri = Uri.unsafeFromString(s"http://127.0.0.1:${server.address.getPort}")
-          use(client, baseUri)
-        }
+      .use {
+        server =>
+          EmberClientBuilder.default[Task](using Async[Task], Network.forAsync[Task]).build.use {
+            client =>
+              val baseUri = Uri.unsafeFromString(s"http://127.0.0.1:${server.address.getPort}")
+              use(client, baseUri)
+          }
       }
 }

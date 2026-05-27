@@ -24,9 +24,7 @@ class MasterServiceOfferApi[F[+_, +_]: Error2](
           masterServiceOfferId =>
             async.map(HttpApiFailure.fromQueryEffect(masterServiceOffers.getMasterServiceOffer(masterServiceOfferId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
         ),
-        upsertMasterServiceOffer.serverLogic[F[Throwable, _]](
-          offer => HttpApiFailure.fromQueryEffect(masterServiceOffers.upsertMasterServiceOffer(offer))
-        ),
+        upsertMasterServiceOffer.serverLogic[F[Throwable, _]](offer => HttpApiFailure.fromQueryEffect(masterServiceOffers.upsertMasterServiceOffer(offer))),
         getMasterServiceOffersByMaster.serverLogic[F[Throwable, _]](
           masterId => HttpApiFailure.fromQueryEffect(masterServiceOffers.getMasterServiceOffersByMaster(masterId))
         ),

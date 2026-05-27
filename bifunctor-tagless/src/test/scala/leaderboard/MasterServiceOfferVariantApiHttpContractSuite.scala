@@ -33,11 +33,11 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
       )
 
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setGetMasterServiceOfferVariantResult(Right(Some(variant)))
+        state    <- MasterServiceOfferVariantApiContractState.make
+        _        <- state.setGetMasterServiceOfferVariantResult(Right(Some(variant)))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/${variant.id}"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""{"id":"${variant.id}","masterServiceOfferId":"${variant.masterServiceOfferId}","masterLocationId":"${variant.masterLocationId}","priceFrom":10,"priceTo":15,"durationMin":45}"""
         )
       } yield ()
@@ -47,25 +47,25 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
       val variantId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setGetMasterServiceOfferVariantResult(Right(None))
+        state    <- MasterServiceOfferVariantApiContractState.make
+        _        <- state.setGetMasterServiceOfferVariantResult(Right(None))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/$variantId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === "null")
       } yield ()
     }
 
     "return 200 and exact json array for the offer endpoint" in {
       val offerId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000001"), offerId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001"), 1, 2, 30)
-      val second = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000002"), offerId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002"), 3, 4, 45)
+      val first   = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000001"), offerId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001"), 1, 2, 30)
+      val second  = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000002"), offerId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002"), 3, 4, 45)
 
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setVariantsByOfferResult(offerId, Right(List(first, second)))
+        state    <- MasterServiceOfferVariantApiContractState.make
+        _        <- state.setVariantsByOfferResult(offerId, Right(List(first, second)))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/offer/$offerId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""[{"id":"${first.id}","masterServiceOfferId":"$offerId","masterLocationId":"${first.masterLocationId}","priceFrom":1,"priceTo":2,"durationMin":30},{"id":"${second.id}","masterServiceOfferId":"$offerId","masterLocationId":"${second.masterLocationId}","priceFrom":3,"priceTo":4,"durationMin":45}]"""
         )
       } yield ()
@@ -73,15 +73,15 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
 
     "return 200 and exact json array for the location endpoint" in {
       val locationId = UUID.fromString("12345678-0000-0000-0000-123456789abc")
-      val first = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000003"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001"), locationId, 5, 6, 60)
-      val second = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000004"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002"), locationId, 7, 8, 75)
+      val first      = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000003"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001"), locationId, 5, 6, 60)
+      val second     = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000004"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002"), locationId, 7, 8, 75)
 
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setVariantsByLocationResult(locationId, Right(List(first, second)))
+        state    <- MasterServiceOfferVariantApiContractState.make
+        _        <- state.setVariantsByLocationResult(locationId, Right(List(first, second)))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/location/$locationId"))
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(
           response.body === s"""[{"id":"${first.id}","masterServiceOfferId":"${first.masterServiceOfferId}","masterLocationId":"$locationId","priceFrom":5,"priceTo":6,"durationMin":60},{"id":"${second.id}","masterServiceOfferId":"${second.masterServiceOfferId}","masterLocationId":"$locationId","priceFrom":7,"priceTo":8,"durationMin":75}]"""
         )
       } yield ()
@@ -100,33 +100,33 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
         s"""{"id":"${variant.id}","masterServiceOfferId":"${variant.masterServiceOfferId}","masterLocationId":"${variant.masterLocationId}","priceFrom":20,"priceTo":25,"durationMin":90}"""
 
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setUpsertMasterServiceOfferVariantResult(Right(()))
+        state    <- MasterServiceOfferVariantApiContractState.make
+        _        <- state.setUpsertMasterServiceOfferVariantResult(Right(()))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), postJson("/master-service-offer-variant", payload))
-        upserts <- state.upserts
-        _ <- assertIO(response.status === Status.Ok)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(upserts === Vector(variant))
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.Ok)
+        _        <- assertIO(response.body === "")
+        _        <- assertIO(upserts === Vector(variant))
       } yield ()
     }
 
     "return current 404 semantics for malformed UUID path params" in {
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
+        state    <- MasterServiceOfferVariantApiContractState.make
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get("/master-service-offer-variant/not-a-uuid"))
-        _ <- assertIO(response.status === Status.NotFound)
-        _ <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === "Not found")
       } yield ()
     }
 
     "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
       for {
-        state <- MasterServiceOfferVariantApiContractState.make
+        state    <- MasterServiceOfferVariantApiContractState.make
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), postJson("/master-service-offer-variant", """{"id":"abc""""))
-        upserts <- state.upserts
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
-        _ <- assertIO(upserts.isEmpty)
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
+        _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
@@ -135,10 +135,13 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
 
       for {
         state <- MasterServiceOfferVariantApiContractState.make
-        _ <- state.setVariantsByLocationResult(locationId, Left(QueryFailure.fromThrowable("get-master-service-offer-variants-by-location", new RuntimeException("variants-boom"))))
+        _     <- state.setVariantsByLocationResult(
+          locationId,
+          Left(QueryFailure.fromThrowable("get-master-service-offer-variants-by-location", new RuntimeException("variants-boom"))),
+        )
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/location/$locationId"))
-        _ <- assertIO(response.status === Status.InternalServerError)
-        _ <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.InternalServerError)
+        _        <- assertIO(response.body === "")
       } yield ()
     }
   }
@@ -178,15 +181,17 @@ class MasterServiceOfferVariantApiContractState private (
     def getMasterServiceOfferVariantsByOffer(
       masterServiceOfferId: leaderboard.model.MasterServiceOfferId
     ): IO[QueryFailure, List[MasterServiceOfferVariant]] =
-      variantsByOfferResultsRef.get.flatMap { current =>
-        ZIO.fromEither(current.getOrElse(masterServiceOfferId, Right(Nil)))
+      variantsByOfferResultsRef.get.flatMap {
+        current =>
+          ZIO.fromEither(current.getOrElse(masterServiceOfferId, Right(Nil)))
       }
 
     def getMasterServiceOfferVariantsByLocation(
       masterLocationId: leaderboard.model.MasterLocationId
     ): IO[QueryFailure, List[MasterServiceOfferVariant]] =
-      variantsByLocationResultsRef.get.flatMap { current =>
-        ZIO.fromEither(current.getOrElse(masterLocationId, Right(Nil)))
+      variantsByLocationResultsRef.get.flatMap {
+        current =>
+          ZIO.fromEither(current.getOrElse(masterLocationId, Right(Nil)))
       }
   }
 
@@ -217,9 +222,9 @@ class MasterServiceOfferVariantApiContractState private (
 object MasterServiceOfferVariantApiContractState {
   def make: UIO[MasterServiceOfferVariantApiContractState] =
     for {
-      upserts <- Ref.make(Vector.empty[MasterServiceOfferVariant])
+      upserts                            <- Ref.make(Vector.empty[MasterServiceOfferVariant])
       getMasterServiceOfferVariantResult <- Ref.make[Either[QueryFailure, Option[MasterServiceOfferVariant]]](Right(None))
-      variantsByOfferResults <- Ref.make(
+      variantsByOfferResults             <- Ref.make(
         Map.empty[leaderboard.model.MasterServiceOfferId, Either[QueryFailure, List[MasterServiceOfferVariant]]]
       )
       variantsByLocationResults <- Ref.make(

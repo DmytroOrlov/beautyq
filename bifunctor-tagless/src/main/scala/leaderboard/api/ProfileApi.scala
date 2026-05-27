@@ -24,9 +24,7 @@ class ProfileApi[F[+_, +_]: Error2](
     tapirHttpSupport.toRoutes {
       import tapirEndpoints.*
       List(
-        getProfile.serverLogic[F[Throwable, _]](
-          userId => async.map(HttpApiFailure.fromQueryEffect(ranks.getRank(userId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
-        ),
+        getProfile.serverLogic[F[Throwable, _]](userId => async.map(HttpApiFailure.fromQueryEffect(ranks.getRank(userId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))),
         setProfile.serverLogic[F[Throwable, _]] {
           case (userId, profile) =>
             async.flatMap(log.info(s"Saving $profile"))(_ => HttpApiFailure.fromQueryEffect(profiles.setProfile(userId, profile)))

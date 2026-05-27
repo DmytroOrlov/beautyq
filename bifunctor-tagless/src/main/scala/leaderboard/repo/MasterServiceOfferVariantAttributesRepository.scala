@@ -69,7 +69,12 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       case Some(_) =>
         Left(QueryFailure.operation(queryName, s"MasterServiceOfferVariant attribute $attributeCode expected Boolean-compatible numeric value 0 or 1 but got $value"))
       case None =>
-        Left(QueryFailure.operation(queryName, s"MasterServiceOfferVariant attribute $attributeCode expected Boolean-compatible numeric value 0 or 1 but got non-integer numeric value: $value"))
+        Left(
+          QueryFailure.operation(
+            queryName,
+            s"MasterServiceOfferVariant attribute $attributeCode expected Boolean-compatible numeric value 0 or 1 but got non-integer numeric value: $value",
+          )
+        )
     }
 
   private def unknownEnumIntCode(
@@ -240,58 +245,61 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
 
   private def collectEncodedEnumAttributes(
     queryName: String,
-    variant: MasterServiceOfferVariant
+    variant: MasterServiceOfferVariant,
   ): Either[QueryFailure, Map[String, CodedEnumValue]] =
     variant.enumAttributes.iterator.foldLeft[Either[QueryFailure, Map[String, CodedEnumValue]]](Right(Map.empty)) {
       case (acc, (attributeDefinition, value)) =>
-        acc.flatMap { current =>
-          attributeDefinition match {
-            case enumDefinition: EnumAttributeDefinition[?] =>
-              validateEnumAttributeValue(queryName, enumDefinition, value).map { _ =>
-                current.updated(enumDefinition.code, value)
-              }
-            case other =>
-              Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
-          }
+        acc.flatMap {
+          current =>
+            attributeDefinition match {
+              case enumDefinition: EnumAttributeDefinition[?] =>
+                validateEnumAttributeValue(queryName, enumDefinition, value).map {
+                  _ =>
+                    current.updated(enumDefinition.code, value)
+                }
+              case other =>
+                Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
+            }
         }
     }
 
   private def collectEncodedBooleanAttributes(
     queryName: String,
-    variant: MasterServiceOfferVariant
+    variant: MasterServiceOfferVariant,
   ): Either[QueryFailure, Map[String, Boolean]] =
     variant.booleanAttributes.iterator.foldLeft[Either[QueryFailure, Map[String, Boolean]]](Right(Map.empty)) {
       case (acc, (attributeDefinition, value)) =>
-        acc.flatMap { current =>
-          attributeDefinition match {
-            case booleanDefinition: BooleanAttributeDefinition =>
-              Right(current.updated(booleanDefinition.code, value))
-            case other =>
-              Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
-          }
+        acc.flatMap {
+          current =>
+            attributeDefinition match {
+              case booleanDefinition: BooleanAttributeDefinition =>
+                Right(current.updated(booleanDefinition.code, value))
+              case other =>
+                Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
+            }
         }
     }
 
   def encodeStoredAttributes(
     queryName: String,
-    variant: MasterServiceOfferVariant
+    variant: MasterServiceOfferVariant,
   ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] =
     for {
-      enumAttributes <- collectEncodedEnumAttributes(queryName, variant)
+      enumAttributes    <- collectEncodedEnumAttributes(queryName, variant)
       booleanAttributes <- collectEncodedBooleanAttributes(queryName, variant)
     } yield {
-        MasterServiceOfferVariantAdditionalAttributes(
-          variant.intAttributes.iterator.map {
-            case (attributeDefinition, value) =>
-              attributeDefinition.code -> value
-          }.toMap,
-          variant.bigDecimalAttributes.iterator.map {
-            case (attributeDefinition, value) =>
-              attributeDefinition.code -> value
-          }.toMap,
-          enumAttributes,
-          booleanAttributes,
-        )
+      MasterServiceOfferVariantAdditionalAttributes(
+        variant.intAttributes.iterator.map {
+          case (attributeDefinition, value) =>
+            attributeDefinition.code -> value
+        }.toMap,
+        variant.bigDecimalAttributes.iterator.map {
+          case (attributeDefinition, value) =>
+            attributeDefinition.code -> value
+        }.toMap,
+        enumAttributes,
+        booleanAttributes,
+      )
     }
 
   private type IntAttributesState        = Map[(MasterServiceOfferVariantId, String), Int]
@@ -338,10 +346,10 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
       variantId: MasterServiceOfferVariantId,
     ): MasterServiceOfferVariantAdditionalAttributes =
       MasterServiceOfferVariantAdditionalAttributes(
-      loadAttributes(state.intAttributes, variantId),
-      loadAttributes(state.bigDecimalAttributes, variantId),
-      loadAttributes(state.enumAttributes, variantId),
-      loadAttributes(state.booleanAttributes, variantId),
+        loadAttributes(state.intAttributes, variantId),
+        loadAttributes(state.bigDecimalAttributes, variantId),
+        loadAttributes(state.enumAttributes, variantId),
+        loadAttributes(state.booleanAttributes, variantId),
       )
 
     def replace(
@@ -454,7 +462,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
         _ <- sql"""delete from master_service_offer_variant_numeric_attributes
                   |where master_service_offer_variant_id = $variantId
                   |""".stripMargin.update.run
-          _ <- insertNumericAttributes(
+        _ <- insertNumericAttributes(
           attributes.intAttributes.toList.map {
             case (attributeCode, value) =>
               (variantId, attributeCode, BigDecimal(value))

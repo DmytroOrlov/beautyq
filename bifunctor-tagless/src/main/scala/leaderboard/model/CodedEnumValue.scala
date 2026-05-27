@@ -15,7 +15,6 @@ object CodedEnumValue {
       .toLowerCase
 }
 
-
 enum NailCoatingType(val intCode: Int) extends CodedEnumValue:
   case NoCoating extends NailCoatingType(1)
   case RegularPolish extends NailCoatingType(2)
@@ -37,7 +36,6 @@ object NailCoatingType:
   def fromStringCode(code: String): Option[NailCoatingType] =
     byStringCode.get(code)
 
-
 enum HairRemovalMethod(val intCode: Int) extends CodedEnumValue:
   case Wax extends HairRemovalMethod(1)
   case Sugaring extends HairRemovalMethod(2)
@@ -56,7 +54,6 @@ object HairRemovalMethod:
 
   def fromStringCode(code: String): Option[HairRemovalMethod] =
     byStringCode.get(code)
-
 
 enum NailServiceType(val intCode: Int) extends CodedEnumValue:
   case Manicure extends NailServiceType(1)
@@ -79,7 +76,6 @@ object NailServiceType:
   def fromStringCode(code: String): Option[NailServiceType] =
     byStringCode.get(code)
 
-
 enum LashServiceType(val intCode: Int) extends CodedEnumValue:
   case Extension extends LashServiceType(1)
   case Refill extends LashServiceType(2)
@@ -100,7 +96,6 @@ object LashServiceType:
   def fromStringCode(code: String): Option[LashServiceType] =
     byStringCode.get(code)
 
-
 enum LashVolume(val intCode: Int) extends CodedEnumValue:
   case Classic1D extends LashVolume(1)
   case Volume2D extends LashVolume(2)
@@ -119,7 +114,6 @@ object LashVolume:
 
   def fromStringCode(code: String): Option[LashVolume] =
     byStringCode.get(code)
-
 
 enum BrowServiceType(val intCode: Int) extends CodedEnumValue:
   case Shaping extends BrowServiceType(1)
@@ -140,7 +134,6 @@ object BrowServiceType:
   def fromStringCode(code: String): Option[BrowServiceType] =
     byStringCode.get(code)
 
-
 enum PmuArea(val intCode: Int) extends CodedEnumValue:
   case Brows extends PmuArea(1)
   case Lips extends PmuArea(2)
@@ -158,7 +151,6 @@ object PmuArea:
 
   def fromStringCode(code: String): Option[PmuArea] =
     byStringCode.get(code)
-
 
 enum FacialTreatmentType(val intCode: Int) extends CodedEnumValue:
   case Classic extends FacialTreatmentType(1)
@@ -182,7 +174,6 @@ object FacialTreatmentType:
 
   def fromStringCode(code: String): Option[FacialTreatmentType] =
     byStringCode.get(code)
-
 
 enum BodyArea(val intCode: Int) extends CodedEnumValue:
   case UpperLip extends BodyArea(1)
