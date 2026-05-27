@@ -117,7 +117,7 @@ object MasterServiceOfferVariant {
       )
     }
 
-  private def decodeAttributeDefinition[A](
+  private def decodeAttributeDefinition[A: AttributeValueName](
     c: HCursor,
     attributeCode: String,
     fieldName: String,
@@ -129,13 +129,18 @@ object MasterServiceOfferVariant {
       case None =>
         AttributeDefinition.fromCode(attributeCode) match {
           case Some(_) =>
-            Left(DecodingFailure(s"MasterServiceOfferVariant attribute code $attributeCode does not belong in $fieldName", c.history))
+            Left(
+              DecodingFailure(
+                s"MasterServiceOfferVariant attribute $attributeCode does not belong in $fieldName; expected ${AttributeValueName[A].name}",
+                c.history,
+              )
+            )
           case None =>
             Left(DecodingFailure(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode", c.history))
         }
     }
 
-  private def decodeAttributes[A: Decoder](
+  private def decodeAttributes[A: Decoder: AttributeValueName](
     c: HCursor,
     fieldName: String,
     decode: String => Option[AttributeDefinition[A]],
@@ -185,22 +190,14 @@ object MasterServiceOfferVariant {
           case (acc, (attributeCode, stringCode)) =>
             for {
               current        <- acc
-              enumDefinition <- {
-                val decodedDefinition: Decoder.Result[EnumAttributeDefinition[?]] =
-                  AttributeDefinition.fromCodeAsEnum(attributeCode) match {
-                    case Some(value) =>
-                      Right(value)
-                    case None =>
-                      AttributeDefinition.fromCode(attributeCode) match {
-                        case Some(_) =>
-                          Left(DecodingFailure(s"MasterServiceOfferVariant attribute code $attributeCode does not belong in enumAttributes", c.history))
-                        case None =>
-                          Left(DecodingFailure(s"Unknown MasterServiceOfferVariant attribute code: $attributeCode", c.history))
-                      }
-                  }
-                decodedDefinition
-              }
-              enumValue <- enumDefinition.fromStringCode(stringCode).map(_.asInstanceOf[CodedEnumValue]) match {
+              enumDefinition <- decodeAttributeDefinition[CodedEnumValue](
+                c,
+                attributeCode,
+                "enumAttributes",
+                code => AttributeDefinition.fromCodeAsEnum(code).map(_.asInstanceOf[AttributeDefinition[CodedEnumValue]]),
+              )
+              enumTypedDefinition = enumDefinition.asInstanceOf[EnumAttributeDefinition[?]]
+              enumValue <- enumTypedDefinition.fromStringCode(stringCode).map(_.asInstanceOf[CodedEnumValue]) match {
                 case Some(value) =>
                   Right(value)
                 case None =>
@@ -212,7 +209,7 @@ object MasterServiceOfferVariant {
                   )
               }
             } yield {
-              current.updated(enumDefinition.asInstanceOf[AttributeDefinition[CodedEnumValue]], enumValue)
+              current.updated(enumDefinition, enumValue)
             }
         }
       case None =>

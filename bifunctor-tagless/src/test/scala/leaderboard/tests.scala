@@ -1709,7 +1709,13 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             ),
           )
           result = json.as[MasterServiceOfferVariant]
-          _     <- assertIO(result.isLeft)
+          _     <- assertIO(
+            result.left.exists(error =>
+              error.getMessage.contains("with_removal") &&
+              error.getMessage.contains("intAttributes") &&
+              error.getMessage.contains("Int")
+            )
+          )
         } yield ()
     }
 
@@ -1753,7 +1759,69 @@ abstract class MasterServiceOfferVariantsTest extends LeaderboardTest {
             ),
           )
           result = json.as[MasterServiceOfferVariant]
-          _     <- assertIO(result.isLeft)
+          _     <- assertIO(
+            result.left.exists(error =>
+              error.getMessage.contains("session_count") &&
+              error.getMessage.contains("booleanAttributes") &&
+              error.getMessage.contains("Boolean")
+            )
+          )
+        } yield ()
+    }
+
+    "decode rejects enum attribute in booleanAttributes group" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "booleanAttributes"    -> Json.obj(
+              "hair_removal_method" -> true.asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(
+            result.left.exists(error =>
+              error.getMessage.contains("hair_removal_method") &&
+              error.getMessage.contains("booleanAttributes") &&
+              error.getMessage.contains("Boolean")
+            )
+          )
+        } yield ()
+    }
+
+    "decode rejects boolean attribute in enumAttributes group" in {
+      (rnd: Rnd[IO]) =>
+        for {
+          offerId    <- rnd[MasterServiceOfferId]
+          locationId <- rnd[MasterLocationId]
+          variantId  <- rnd[MasterServiceOfferVariantId]
+          json        = Json.obj(
+            "id"                   -> variantId.asJson,
+            "masterServiceOfferId" -> offerId.asJson,
+            "masterLocationId"     -> locationId.asJson,
+            "priceFrom"            -> BigDecimal("30.0000").asJson,
+            "priceTo"              -> BigDecimal("45.0000").asJson,
+            "durationMin"          -> 60.asJson,
+            "enumAttributes"       -> Json.obj(
+              "with_removal" -> "true".asJson
+            ),
+          )
+          result = json.as[MasterServiceOfferVariant]
+          _     <- assertIO(
+            result.left.exists(error =>
+              error.getMessage.contains("with_removal") &&
+              error.getMessage.contains("enumAttributes") &&
+              error.getMessage.contains("Enum")
+            )
+          )
         } yield ()
     }
 
