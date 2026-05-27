@@ -6,8 +6,11 @@ import com.comcast.ip4s.Port
 import fs2.io.net.Network
 import izumi.distage.model.definition.Lifecycle
 import leaderboard.api.HttpApi
+import leaderboard.seed.BeautyQSeedReady
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Server
+
+import scala.annotation.unused
 
 case class HttpServer(
   server: Server
@@ -16,6 +19,7 @@ case class HttpServer(
 object HttpServer {
 
   class Impl[F[+_, +_]](
+    @unused seedReady: BeautyQSeedReady,
     allHttpApis: Set[HttpApi[F]]
   )(implicit
     async: Async[F[Throwable, _]]

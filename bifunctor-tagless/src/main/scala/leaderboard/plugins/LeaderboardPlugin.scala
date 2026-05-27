@@ -2,7 +2,7 @@ package leaderboard.plugins
 
 import distage.StandardAxis.Repo
 import distage.config.ConfigModuleDef
-import distage.{ModuleDef, Scene, TagKK}
+import distage.{Mode, ModuleDef, Scene, TagKK}
 import doobie.util.transactor.Transactor
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
@@ -14,6 +14,7 @@ import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
+import leaderboard.seed.{BeautyQSeedInserter, BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
 import leaderboard.{CategoryRole, LadderRole, LeaderboardRole, MasterLocationRole, MasterRole, MasterServiceOfferRole, MasterServiceOfferVariantRole, ProfileRole, ServiceRole}
@@ -27,6 +28,9 @@ object LeaderboardPlugin extends PluginDef {
   include(modules.api[IO])
   include(modules.repoDummy[IO])
   include(modules.repoProd[IO])
+  include(modules.seed[IO])
+  include(modules.seedProd[IO])
+  include(modules.seedTest[IO])
   include(modules.configs)
   include(modules.prodConfigs)
 
@@ -137,6 +141,21 @@ object LeaderboardPlugin extends PluginDef {
 
       make[Transactor[F[Throwable, _]]].fromResource[TransactorResource[F[Throwable, _]]]
       make[PortCheck].from(new PortCheck(3.seconds))
+    }
+
+    def seed[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      make[BeautyQSeedLoader].from[BeautyQSeedLoader.ResourceLoader]
+      make[BeautyQSeedInserter[F]].from[BeautyQSeedInserter.Impl[F]]
+    }
+
+    def seedProd[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      tag(Mode.Prod)
+      make[BeautyQSeedReady].fromResource[BeautyQSeedReady.Noop[F]]
+    }
+
+    def seedTest[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      tag(Mode.Test)
+      make[BeautyQSeedReady].fromResource[BeautyQSeedReady.LoadAndInsert[F]]
     }
 
     val configs: ConfigModuleDef = new ConfigModuleDef {

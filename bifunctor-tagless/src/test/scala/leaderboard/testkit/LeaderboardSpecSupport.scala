@@ -1,6 +1,6 @@
 package leaderboard
 
-import distage.{DIKey, ModuleDef, Scene}
+import distage.{DIKey, Mode, ModuleDef, Scene}
 import io.circe.Json
 import io.circe.syntax.*
 import doobie.implicits.*
@@ -27,7 +27,7 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
     },
     // For testing, set up a docker container with postgres,
     // instead of trying to connect to an external database
-    activation = Activation(Scene -> Scene.Managed),
+    activation = Activation(Scene -> Scene.Managed, Mode -> Mode.Prod),
     // Instantiate repos only once per test-run and
     // share them and all their dependencies across all tests.
     // this includes the Postgres Docker container above and table DDLs

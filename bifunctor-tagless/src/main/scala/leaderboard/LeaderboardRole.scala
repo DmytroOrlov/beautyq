@@ -2,7 +2,7 @@ package leaderboard
 
 import distage.StandardAxis.Repo
 import distage.plugins.PluginConfig
-import distage.{Activation, Lifecycle, Module, ModuleDef}
+import distage.{Activation, Lifecycle, Mode, Module, ModuleDef}
 import izumi.distage.model.definition.StandardAxis.Scene
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.bundled.{ConfigWriter, Help}
@@ -43,6 +43,33 @@ class LadderRole[F[+_, +_]: Applicative2](
 }
 object LadderRole extends RoleDescriptor {
   val id = "ladder"
+}
+
+/**
+ * A role that exposes just the /profile/ endpoints, it can be launched with
+ *
+ * {{{
+ *   ./launcher :profile
+ * }}}
+ *
+ * Example session:
+ *
+ * {{{
+ *   curl -X POST http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4 -d '{"name": "Kai", "description": "S C A L A"}'
+ *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
+ * }}}
+ */
+class ProfileRole[F[+_, +_]: Applicative2](
+                                            @unused profileApi: ProfileApi[F],
+                                            @unused runningServer: HttpServer,
+                                            log: LogIO2[F],
+                                          ) extends RoleService[F[Throwable, _]] {
+  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
+    Lifecycle.liftF(log.info("Profile API started!"))
+  }
+}
+object ProfileRole extends RoleDescriptor {
+  val id = "profile"
 }
 
 /**
@@ -216,33 +243,6 @@ object MasterServiceOfferVariantRole extends RoleDescriptor {
   val id = "master-service-offer-variant"
 }
 
-/**
-  * A role that exposes just the /profile/ endpoints, it can be launched with
-  *
-  * {{{
-  *   ./launcher :profile
-  * }}}
-  *
-  * Example session:
-  *
-  * {{{
-  *   curl -X POST http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4 -d '{"name": "Kai", "description": "S C A L A"}'
-  *   curl -X GET http://localhost:8080/profile/50753a00-5e2e-4a2f-94b0-e6721b0a3cc4
-  * }}}
-  */
-class ProfileRole[F[+_, +_]: Applicative2](
-  @unused profileApi: ProfileApi[F],
-  @unused runningServer: HttpServer,
-  log: LogIO2[F],
-) extends RoleService[F[Throwable, _]] {
-  def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
-    Lifecycle.liftF(log.info("Profile API started!"))
-  }
-}
-object ProfileRole extends RoleDescriptor {
-  val id = "profile"
-}
-
 /** A composite role that exposes all the endpoints, for convenience, it can be launched with
   *
   * {{{
@@ -282,18 +282,16 @@ object ProfileRole extends RoleDescriptor {
   * }}}
   */
 class LeaderboardRole[F[+_, +_]: Applicative2](
-  @unused ladderRole: LadderRole[F],
   @unused categoryRole: CategoryRole[F],
   @unused serviceRole: ServiceRole[F],
   @unused masterRole: MasterRole[F],
   @unused masterLocationRole: MasterLocationRole[F],
   @unused masterServiceOfferRole: MasterServiceOfferRole[F],
   @unused masterServiceOfferVariantRole: MasterServiceOfferVariantRole[F],
-  @unused profileRole: ProfileRole[F],
   log: LogIO2[F],
 ) extends RoleService[F[Throwable, _]] {
   def start(roleParameters: EntrypointArgs): Lifecycle[F[Throwable, _], Unit] = {
-    Lifecycle.liftF(log.info("Ladder, Category, Service, Master, MasterLocation, MasterServiceOffer, MasterServiceOfferVariant & Profile APIs started!"))
+    Lifecycle.liftF(log.info("Category, Service, Master, MasterLocation, MasterServiceOffer, MasterServiceOfferVariant & Profile APIs started!"))
   }
 }
 object LeaderboardRole extends RoleDescriptor {
@@ -686,6 +684,6 @@ sealed abstract class MainBase(
     make[Activation].named("default").fromValue(defaultActivation ++ activation)
   }
 
-  private def defaultActivation = Activation(Scene -> Scene.Provided)
+  private def defaultActivation = Activation(Scene -> Scene.Provided, Mode -> Mode.Prod)
 
 }
