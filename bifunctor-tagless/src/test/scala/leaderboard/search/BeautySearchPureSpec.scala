@@ -7,6 +7,7 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDo
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.inmemory.InMemorySearchBackend
+import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
@@ -91,6 +92,109 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(spec.dimension == 384)
       assert(spec.distance == VectorDistance.Cosine)
       assert(spec.sourceTextFieldPaths == List("serviceName", "allText"))
+    }
+  }
+
+  "SearchEmbeddingTextExtractor" should {
+    "extract source text from matching fields" in {
+      val document = documents.head
+      val spec = BeautySearchSpecV1.spec.copy(
+        variantDocument = SearchDocumentSpec[VariantSearchDocument](
+          indexName = "synthetic-embedding",
+          id = _.variantId.toString,
+          fields = List(
+            SearchField[VariantSearchDocument](
+              path = "first",
+              kind = SearchFieldKind.Text,
+              extract = doc => Some(SearchValue.Text(doc.serviceName)),
+            ),
+            SearchField[VariantSearchDocument](
+              path = "second",
+              kind = SearchFieldKind.Text,
+              extract = doc => Some(SearchValue.Text(doc.categoryName)),
+            ),
+          ),
+        ),
+        embeddingSpec = Some(EmbeddingSpec[VariantSearchDocument](
+          vectorName = "variant-embedding",
+          modelName = "test-model",
+          dimension = 384,
+          distance = VectorDistance.Cosine,
+          sourceTextFieldPaths = List("first", "second"),
+        )),
+      )
+
+      val text = SearchEmbeddingTextExtractor.extract(spec.variantDocument, spec.embeddingSpec.get, document)
+      assert(text == s"${document.serviceName} ${document.categoryName}")
+    }
+
+    "ignore missing source text fields" in {
+      val document = documents.head
+      val documentSpec = SearchDocumentSpec[VariantSearchDocument](
+        indexName = "synthetic-embedding-missing",
+        id = _.variantId.toString,
+        fields = List(
+          SearchField[VariantSearchDocument](
+            path = "present",
+            kind = SearchFieldKind.Text,
+            extract = doc => Some(SearchValue.Text(doc.serviceName)),
+          ),
+        ),
+      )
+      val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = "variant-embedding",
+        modelName = "test-model",
+        dimension = 384,
+        distance = VectorDistance.Cosine,
+        sourceTextFieldPaths = List("missing", "present", "also-missing"),
+      )
+
+      val text = SearchEmbeddingTextExtractor.extract(documentSpec, embeddingSpec, document)
+      assert(text == document.serviceName)
+    }
+
+    "ignore None extractor values" in {
+      val document = documents.head
+      val documentSpec = SearchDocumentSpec[VariantSearchDocument](
+        indexName = "synthetic-embedding-none",
+        id = _.variantId.toString,
+        fields = List(
+          SearchField[VariantSearchDocument](
+            path = "empty",
+            kind = SearchFieldKind.Text,
+            extract = _ => None,
+          ),
+          SearchField[VariantSearchDocument](
+            path = "present",
+            kind = SearchFieldKind.Text,
+            extract = doc => Some(SearchValue.Text(doc.categoryName)),
+          ),
+        ),
+      )
+      val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = "variant-embedding",
+        modelName = "test-model",
+        dimension = 384,
+        distance = VectorDistance.Cosine,
+        sourceTextFieldPaths = List("empty", "present"),
+      )
+
+      val text = SearchEmbeddingTextExtractor.extract(documentSpec, embeddingSpec, document)
+      assert(text == document.categoryName)
+    }
+
+    "work with BeautySearchSpecV1.variantDocument" in {
+      val document = documents.head
+      val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = "variant-embedding",
+        modelName = "test-model",
+        dimension = 384,
+        distance = VectorDistance.Cosine,
+        sourceTextFieldPaths = List("serviceName", "categoryName"),
+      )
+
+      val text = SearchEmbeddingTextExtractor.extract(BeautySearchSpecV1.spec.variantDocument, embeddingSpec, document)
+      assert(text == s"${document.serviceName} ${document.categoryName}")
     }
   }
 
