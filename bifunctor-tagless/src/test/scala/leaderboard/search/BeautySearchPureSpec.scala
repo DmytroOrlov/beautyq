@@ -9,6 +9,7 @@ import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
+import leaderboard.search.qdrant.QdrantJsonInterpreter
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe}
@@ -592,6 +593,58 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       }
 
       assert(jsonContainsString(request, "testSyntheticText^9.0"))
+    }
+  }
+
+  "QdrantJsonInterpreter" should {
+    "generate collection creation JSON from vector specs" in {
+      val spec = VectorSearchSpec(
+        collectionName = "synthetic_collection",
+        vectorName = "synthetic_vector",
+        topK = 7,
+        scoreThreshold = None,
+      )
+      val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = "synthetic_vector",
+        modelName = "synthetic-model",
+        dimension = 384,
+        distance = VectorDistance.Euclidean,
+        sourceTextFieldPaths = List("serviceName"),
+      )
+
+      val json = QdrantJsonInterpreter.createCollectionJson(spec, embeddingSpec)
+      val cursor = json.hcursor
+      assert(cursor.downField("vectors").downField("synthetic_vector").get[Int]("size") == Right(384))
+      assert(cursor.downField("vectors").downField("synthetic_vector").get[String]("distance") == Right("Euclid"))
+    }
+
+    "generate search JSON with topK and without score_threshold when absent" in {
+      val spec = VectorSearchSpec(
+        collectionName = "synthetic_collection",
+        vectorName = "synthetic_vector",
+        topK = 7,
+        scoreThreshold = None,
+      )
+
+      val json = QdrantJsonInterpreter.searchRequestJson(spec, List(0.1, 0.2, 0.3))
+      val cursor = json.hcursor
+      assert(cursor.get[String]("using") == Right("synthetic_vector"))
+      assert(cursor.get[Int]("limit") == Right(7))
+      assert(cursor.downField("score_threshold").focus.isEmpty)
+      assert(cursor.downField("query").as[List[Double]] == Right(List(0.1, 0.2, 0.3)))
+    }
+
+    "generate search JSON with score_threshold when present" in {
+      val spec = VectorSearchSpec(
+        collectionName = "synthetic_collection",
+        vectorName = "synthetic_vector",
+        topK = 7,
+        scoreThreshold = Some(0.42),
+      )
+
+      val json = QdrantJsonInterpreter.searchRequestJson(spec, List(0.9, 0.8))
+      val cursor = json.hcursor
+      assert(cursor.get[Double]("score_threshold") == Right(0.42))
     }
   }
 
