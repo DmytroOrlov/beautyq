@@ -26,11 +26,17 @@ object QdrantJsonInterpreter {
       )
     )
 
-  def upsertPointJson(id: String, vector: List[Double], payload: Map[String, Json]): Json =
+  def upsertPointJson(id: String, vectorName: String, vector: List[Double], payload: Map[String, Json]): Json =
     Json.obj(
-      "id" -> Json.fromString(id),
-      "vector" -> Json.arr(vector.map(Json.fromDoubleOrNull): _*),
-      "payload" -> Json.fromJsonObject(JsonObject.fromIterable(payload)),
+      "points" -> Json.arr(
+        Json.obj(
+          "id" -> Json.fromString(id),
+          "vector" -> Json.obj(
+            vectorName -> Json.arr(vector.map(Json.fromDoubleOrNull): _*),
+          ),
+          "payload" -> Json.fromJsonObject(JsonObject.fromIterable(payload)),
+        )
+      ),
     )
 
   private def qdrantDistance(distance: VectorDistance): String =
