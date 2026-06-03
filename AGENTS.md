@@ -328,3 +328,9 @@ If sbt fails with `graal-resources/target` path recursion or `File name too long
 2. Clean stale target/build output directories.
 3. Rerun the same sbt command.
 4. Do not change source code while fixing this infrastructure issue.
+
+* If sbt fails on `~/.sbt/boot/sbt.boot.lock` or another lock outside the sandbox writable roots:
+  * stop source-code work
+  * rerun the same sbt command with the required local permission/escalation
+  * do not change source code to fix this infrastructure issue
+  * report that the first failure was an environment/sandbox lock issue

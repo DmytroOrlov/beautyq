@@ -3,6 +3,28 @@ package leaderboard.search.dsl
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.VariantSearchDocument
 
+sealed trait VectorDistance extends Product with Serializable
+object VectorDistance {
+  case object Cosine extends VectorDistance
+  case object Dot extends VectorDistance
+  case object Euclidean extends VectorDistance
+}
+
+final case class EmbeddingSpec[A](
+  vectorName: String,
+  modelName: String,
+  dimension: Int,
+  distance: VectorDistance,
+  sourceTextFieldPaths: List[String],
+)
+
+final case class VectorSearchSpec(
+  collectionName: String,
+  vectorName: String,
+  topK: Int,
+  scoreThreshold: Option[Double],
+)
+
 sealed trait SearchFieldKind extends Product with Serializable
 object SearchFieldKind {
   case object Text extends SearchFieldKind
@@ -203,4 +225,6 @@ final case class BeautySearchSpec(
   carouselSpec: CarouselSpec,
   facetSpec: FacetSpec,
   requestSpec: SearchRequestSpec = SearchRequestSpec(),
+  embeddingSpec: Option[EmbeddingSpec[VariantSearchDocument]] = None,
+  vectorSearchSpec: Option[VectorSearchSpec] = None,
 )

@@ -29,6 +29,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private val evalSuite = BeautySearchEvalInventory.evalSuite
 
   "BeautySearchSpecV1" should {
+    "have vector backend disabled by default" in {
+      assert(BeautySearchSpecV1.spec.embeddingSpec.isEmpty)
+      assert(BeautySearchSpecV1.spec.vectorSearchSpec.isEmpty)
+    }
+
     "include dynamic fields for all AttributeDefinition.all entries" in {
       val paths = BeautySearchSpecV1.spec.variantDocument.fields.map(_.path).toSet
 
@@ -54,6 +59,38 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         }.toMap
         assert(built.enumAttributes == expected)
       }
+    }
+  }
+
+  "vector search DSL" should {
+    "construct VectorSearchSpec" in {
+      val spec = VectorSearchSpec(
+        collectionName = "variants",
+        vectorName = "variant-embedding",
+        topK = 10,
+        scoreThreshold = Some(0.8),
+      )
+
+      assert(spec.collectionName == "variants")
+      assert(spec.vectorName == "variant-embedding")
+      assert(spec.topK == 10)
+      assert(spec.scoreThreshold.contains(0.8))
+    }
+
+    "construct EmbeddingSpec[VariantSearchDocument]" in {
+      val spec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = "variant-embedding",
+        modelName = "test-model",
+        dimension = 384,
+        distance = VectorDistance.Cosine,
+        sourceTextFieldPaths = List("serviceName", "allText"),
+      )
+
+      assert(spec.vectorName == "variant-embedding")
+      assert(spec.modelName == "test-model")
+      assert(spec.dimension == 384)
+      assert(spec.distance == VectorDistance.Cosine)
+      assert(spec.sourceTextFieldPaths == List("serviceName", "allText"))
     }
   }
 
