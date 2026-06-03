@@ -1,0 +1,357 @@
+# Search DSL Hybrid V1 Plan
+
+## 1. Goal
+
+Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall.
+
+It should not replace the Elasticsearch V1 path. Elasticsearch remains the deterministic baseline for lexical search, filters, facets, and standard response assembly.
+
+Qdrant should add recall for the narrow semantic gap already proven by the current Qdrant-only eval slice:
+
+- `q_broad_004`
+- `q_broad_006`
+
+Qdrant must not become responsible for canonical facets, exact filters, price and duration constraints, or final production ranking in V1.
+
+The architecture should stay tapir-like and spec-driven:
+
+- pure search contracts and routing metadata first
+- backend interpreters second
+- domain examples in eval/spec data
+- no hidden BeautyQ-specific query branches inside Elasticsearch or Qdrant interpreters
+
+The first hybrid path should therefore be an explicitly measured extension of the existing search DSL architecture, not an ad-hoc fallback bolted onto production search.
+
+## 2. Current Baseline
+
+Current measured coverage is split across two separate backend paths:
+
+- Elasticsearch V1 lexical/filter/facet baseline covers `61/63` eval queries.
+- Qdrant-only semantic candidate quality covers `q_broad_004` and `q_broad_006`.
+- ES plus Qdrant cover the current `63/63` eval intent space only as separately measured backends.
+
+There is currently no production hybrid behavior:
+
+- no fallback from ES to Qdrant
+- no general Qdrant production default
+- no hybrid ranking
+- no score fusion
+- no reranking
+
+The Qdrant semantic quality gate is intentionally environment-gated:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
+QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true
+```
+
+This gate proves semantic candidate quality for the two broad queries. It does not by itself justify changing production routing.
+
+## 3. Backend Responsibilities
+
+Elasticsearch owns deterministic lexical search behavior:
+
+- exact service constraints
+- exact attribute constraints
+- enum filters
+- boolean filters
+- numeric filters
+- price filters
+- duration filters
+- geo constraints where they are currently ES-owned
+- canonical facets
+- deterministic lexical ranking
+- standard three-carousel response assembly when lexical intent is clear
+
+Qdrant owns semantic recall behavior:
+
+- broad and conversational discovery
+- semantic candidate variant ids
+- semantic candidate provider ids
+- semantic candidate service ids
+- discovery cases where the lexical dictionary should not be expanded
+
+Qdrant must not own production-critical deterministic behavior in V1:
+
+- canonical facets
+- exact attribute filtering
+- price filtering
+- duration filtering
+- hard-negative disambiguation
+- final production ranking
+
+The practical rule is: Qdrant can propose candidates, but ES/spec-driven domain assembly remains the contract owner for deterministic search behavior.
+
+## 4. Query Routing Signals
+
+Hybrid V1 should route by explicit, inspectable parser/spec signals rather than backend-local query text branches.
+
+### ES-only
+
+Queries should stay ES-only when they contain clear lexical or structured intent:
+
+- explicit service intent
+- explicit attribute or filter constraints
+- price constraints
+- duration constraints
+- body-area constraints
+- known dictionary or synonym matches
+- hard-negative or noise queries already covered by ES eval
+- parser output with strong explicit constraints
+
+This protects the current 61-query lexical baseline from being diluted by semantic fallback.
+
+### Qdrant Candidate Route for Broad Semantic Queries
+
+Queries may be eligible for the Qdrant candidate route only when lexical intent is weak and semantic discovery is the measured goal:
+
+- no explicit service constraints
+- no explicit attribute constraints
+- no exact filter constraints
+- broad beauty or discovery language
+- similarity to the proven `q_broad_004` and `q_broad_006` semantic gap
+- high residual text combined with broad semantic eligibility, no explicit constraints, and no hard-negative signals
+
+Residual text alone must never route a query to Qdrant.
+
+The first implementation should not make Qdrant a generic "unknown query" default. It should start with the narrow broad-query class represented by `q_broad_004` and `q_broad_006`, then expand only after eval evidence exists.
+
+The query ids `q_broad_004` and `q_broad_006` may appear in eval data, tests, and documentation. They must not be hardcoded in production routing logic.
+
+### Fallback
+
+ES-to-Qdrant fallback should be more conservative than the broad semantic Qdrant candidate route.
+
+Potential fallback signals:
+
+- ES returns zero hits and the parser has no strong explicit constraints.
+- ES returns low-confidence or weak broad result mass, but this is not implemented yet.
+- Parser output has high `remainingText`, broad semantic eligibility, no explicit constraints, and no hard-negative signals.
+
+Low confidence must not be used as a routing signal until a concrete confidence metric is defined and tested.
+
+Fallback must be blocked when the query is explicitly constrained or known to be a hard negative:
+
+- no fallback for explicit service constraints
+- no fallback for exact attribute/filter constraints
+- no fallback for price or duration filters
+- no fallback for hard-negative/noise queries already covered by ES
+- no fallback just because a query has residual text
+
+Residual text alone must never route a query to Qdrant. High residual text is only a weak signal and must be combined with broad semantic eligibility, no explicit constraints, and no hard-negative signals.
+
+## 5. Minimal V1 Behavior
+
+The safest first implementation should keep the existing ES path unchanged.
+
+Hybrid V1 should add a separate experimental service or method rather than replacing `BeautySearchService`.
+
+The first behavior should be:
+
+- keep current production ES behavior unchanged
+- route only `q_broad_004` and `q_broad_006`-like broad queries to the Qdrant candidate route
+- return Qdrant candidate ids instead of final ranked production results
+- assemble domain documents into the existing three-carousel shapes where possible
+- avoid score fusion
+- avoid reranking
+- avoid changing Elasticsearch interpreters
+- avoid changing `BeautySearchSpecV1` dictionary data to force broad query matching
+- avoid production rollout until eval gates are green
+
+This creates a measured experimental path without weakening the existing lexical baseline.
+
+## 6. Candidate Combination Strategy
+
+### Option A: Qdrant-only semantic response for broad queries
+
+Qdrant handles the narrow broad-query class and returns semantic candidates without combining with ES hits.
+
+Benefits:
+
+- smallest behavior change
+- easiest to evaluate
+- avoids score normalization problems
+- avoids hiding ES regressions
+
+Costs:
+
+- response facets may be limited or candidate-derived
+- behavior is useful only for broad discovery queries
+- not a general hybrid strategy
+
+### Option B: Qdrant candidate ids assembled through existing response assembler
+
+Qdrant returns candidate ids. Existing domain document loading and response assembly build the same carousel shapes where possible.
+
+Benefits:
+
+- preserves current response contract shape
+- keeps Qdrant as recall-only
+- reuses existing domain assembly logic
+- avoids Qdrant becoming the owner of facets or filtering
+
+Costs:
+
+- requires careful definition of candidate ordering
+- may need explicit handling when candidate ids do not fill all carousel types
+- candidate-derived facets must not be presented as canonical ES facets
+
+### Option C: ES plus Qdrant union with deterministic ordering
+
+ES hits and Qdrant candidates are unioned, deduplicated, and ordered by a deterministic rule.
+
+Benefits:
+
+- can preserve ES precision while adding semantic recall
+- prepares for later measured hybrid behavior
+
+Costs:
+
+- introduces ranking and ordering questions early
+- risks weakening lexical queries if applied too broadly
+- can hide ES zero-hit regressions if used as automatic fallback
+
+### Option D: Later measured score fusion or reranking
+
+ES scores and Qdrant scores are fused, or a separate reranker orders combined candidates.
+
+Benefits:
+
+- may improve final ordering after candidate quality is proven
+
+Costs:
+
+- requires score calibration or a reranking model
+- increases explainability risk
+- creates a larger production behavior change
+- is premature before V1 candidate routing is measured
+
+### Recommendation
+
+V1 should use Option B for the experimental path: Qdrant candidate ids assembled through existing domain response assembly.
+
+This is safer than raw Qdrant-only responses because it preserves the existing response shape where possible. It is safer than ES plus Qdrant union because it avoids early score fusion, ranking changes, and fallback behavior that could hide ES regressions.
+
+Option A can remain a local diagnostic mode. Option C should wait until broad-query candidate assembly is green. Option D should wait until separate score-fusion or reranking design and eval exist.
+
+## 7. Facets and Inferred Filters
+
+Elasticsearch remains canonical for facets.
+
+Qdrant-only broad results may later expose limited metadata derived from returned candidates, but those values are not equivalent to ES index-wide aggregations.
+
+If candidate-derived facets or inferred filters are added later, they should be explicitly marked as candidate-derived:
+
+- they describe only the returned semantic candidate set
+- they must not be presented as canonical result-space facets
+- they must not replace ES aggregations for structured lexical queries
+
+Qdrant should not be asked to compute exact filters or canonical facet counts in Hybrid V1.
+
+## 8. Eval Gates Before Production
+
+Production rollout should require these gates before any hybrid or fallback path becomes user-facing:
+
+- ES-only regression suite remains green at `61/63`.
+- Qdrant-only semantic candidate quality assertions remain green.
+- Hybrid/fallback tests cover only `q_broad_004` and `q_broad_006` first.
+- Lexical queries do not regress.
+- Hard-negative queries do not regress.
+- Explicitly constrained queries do not route to Qdrant fallback.
+- Broad semantic queries are not fixed by `BeautySearchSpecV1` dictionary hacks.
+- Qdrant fallback does not hide ES regressions.
+
+The Qdrant quality gate should remain explicit and environment-gated:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
+QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true
+```
+
+Hybrid tests should prove routing behavior as well as result quality. A broad query passing through Qdrant is not enough if lexical or hard-negative queries also start routing to Qdrant unintentionally.
+
+## 9. Implementation Sequence
+
+Future implementation should be split into small patches:
+
+1. Add routing decision data model only.
+2. Add pure router tests only.
+3. Add Qdrant candidate response model.
+4. Add experimental hybrid service path.
+5. Add hybrid tests for `q_broad_004` and `q_broad_006`.
+6. Add regression tests proving lexical and hard-negative queries still stay ES-only.
+7. Only later consider score fusion or reranking.
+
+The first implementation patch should only introduce inspectable routing decisions and pure tests around those decisions.
+
+It must not include:
+
+- backend calls
+- `BeautySearchService` changes
+- `QdrantClient` calls
+- production routing changes
+- Elasticsearch interpreter changes
+- Qdrant retrieval changes
+- ranking changes
+
+## 10. Generic and Domain Reuse Implications
+
+Hybrid routing should be described in DSL/spec terms where possible.
+
+Reusable concepts should be generic:
+
+- lexical confidence
+- explicit constraints
+- residual text
+- semantic candidate eligibility
+- hard-negative classification
+- backend routing decision
+- fallback eligibility
+
+Domain-specific broad-query examples belong in domain eval/spec data.
+
+For BeautyQ, `q_broad_004` and `q_broad_006` are examples of the broad semantic class. They should guide eval coverage, not become hardcoded backend behavior.
+
+Backend interpreters should stay generic:
+
+- Elasticsearch interpreters consume lexical/filter/facet specs.
+- Qdrant interpreters consume vector/search specs.
+- Hybrid routing consumes parser/spec output and measured routing metadata.
+
+A second domain should be able to reuse:
+
+- ES lexical backend
+- Qdrant semantic backend
+- routing concepts
+- eval workflow
+
+The second domain should provide its own:
+
+- flattened search document
+- domain spec
+- dictionary
+- semantic embedding text spec
+- eval dataset
+- routing eval cases
+
+This keeps the search DSL direction generic while allowing BeautyQ to remain the first measured domain.
+
+## 11. Risks and Anti-patterns
+
+The main risks are caused by using semantic fallback too broadly.
+
+Avoid these anti-patterns:
+
+- broad fallback hiding ES regressions
+- Qdrant providing canonical facets
+- Qdrant bypassing explicit filters
+- expanding `BeautySearchSpecV1` dictionary to force broad semantic queries
+- introducing runtime LLM generation
+- routing hard-negative queries to Qdrant just because they have residual text
+- making Qdrant the default for all unknown queries without eval evidence
+- implementing ES/Qdrant hybrid before this design is reviewed
+- changing Elasticsearch interpreters to accommodate Qdrant
+- adding score fusion before candidate routing is measured
+- adding reranking before candidate routing is measured
+
+Hybrid V1 should stay narrow: prove the two known broad semantic gaps, preserve the ES baseline, and keep the backend interpreters mechanical.
