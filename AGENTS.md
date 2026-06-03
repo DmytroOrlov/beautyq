@@ -338,6 +338,41 @@ Do not update docs coverage numbers in the same patch as code/test coverage unle
   7. BeautyQ Qdrant-only semantic candidate eval
   8. only later: fallback/hybrid/rerank
 
+### Hybrid / fallback workflow
+
+* Hybrid/fallback work must start with design-only documentation.
+
+  * Do not implement ES/Qdrant hybrid, fallback, fusion, or reranking unless the task explicitly asks for implementation.
+  * Do not change production search routing in a design task.
+  * Do not replace the Elasticsearch V1 baseline.
+
+* Current baseline split:
+
+  * Elasticsearch V1 owns lexical/filter/facet search and covers 61/63 eval queries.
+  * Qdrant-only semantic eval covers `q_broad_004` and `q_broad_006`.
+  * Together they cover the eval intent space, but no production hybrid/fallback exists yet.
+
+* Backend responsibilities:
+
+  * Elasticsearch owns exact filters, facets, enum/boolean/numeric constraints, price/duration constraints, geo constraints, deterministic lexical search, and standard response assembly.
+  * Qdrant owns semantic recall for broad/conversational discovery and may return candidate ids.
+  * Qdrant must not become the owner of facets or exact attribute filtering.
+
+* Safe hybrid design constraints:
+
+  * First hybrid design should target only `q_broad_004` and `q_broad_006`.
+  * Lexical queries must remain ES-only unless a later measured change proves otherwise.
+  * Hard-negative queries must not route to Qdrant just because they have residual text.
+  * Qdrant fallback must not hide Elasticsearch regressions.
+  * No score fusion or reranking in the first hybrid implementation unless separately designed and tested.
+
+* Required eval gates before any production hybrid:
+
+  * ES-only regression remains green.
+  * Qdrant-only semantic candidate quality assertions remain green.
+  * Hybrid/fallback tests improve only the semantic candidates first.
+  * Existing lexical and hard-negative eval queries do not regress.
+
 ### SBT rules
 
 Run one sbt command at a time.

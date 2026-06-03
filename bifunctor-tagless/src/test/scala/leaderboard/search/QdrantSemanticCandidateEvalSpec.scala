@@ -30,6 +30,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
 
   private val evalSuite = BeautySearchEvalInventory.evalSuite
   private val semanticCandidateQueryIds = Set("q_broad_004", "q_broad_006")
+  private val qualityAssertionsEnabled = envFlag("QDRANT_SEMANTIC_QUALITY_ASSERTIONS")
   private val embeddingSpecTemplate = EmbeddingSpec[VariantSearchDocument](
     vectorName = "llama-cpp-embedding",
     modelName = "local-llama-cpp-embedding",
@@ -110,10 +111,8 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
                       QdrantJsonInterpreter.searchRequestJson(vectorSearchSpec, queryVector.toList),
                     )
                     measurement = SemanticEvalMeasurement.from(query, hits)
-                    // Qdrant-only measurement smoke: this spec records retrieval quality but does not fail
-                    // when acceptable ids are absent yet. Add acceptable-id assertions only after the
-                    // embedding model/config is proven stable.
                     _ <- ZIO.succeed(assert(hits.nonEmpty, measurement.render))
+                    _ <- requireQualityAssertions(query, measurement)
                     _ <- ZIO.succeed(println(measurement.render))
                   } yield measurement
                 }
@@ -176,6 +175,19 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
       "serviceId" -> Json.fromString(document.serviceId.toString),
       "serviceName" -> Json.fromString(document.serviceName),
     )
+
+  private def requireQualityAssertions(
+    query: BeautySearchEvalQuery,
+    measurement: SemanticEvalMeasurement,
+  ): IO[QueryFailure, Unit] =
+    if (qualityAssertionsEnabled) measurement.requireTopK(query)
+    else ZIO.unit
+
+  private def envFlag(name: String): Boolean =
+    sys.env.get(name).exists { value =>
+      val normalized = value.trim.toLowerCase
+      normalized == "1" || normalized == "true" || normalized == "yes"
+    }
 }
 
 private final case class SemanticEvalMeasurement(
@@ -198,6 +210,32 @@ private final case class SemanticEvalMeasurement(
 
   def summary: String =
     s"$queryId:$status"
+
+  def requireTopK(query: BeautySearchEvalQuery): IO[QueryFailure, Unit] = {
+    val providerTopK = query.expectedProviderCarousel.topK.requiredInTopK.getOrElse(5)
+    val serviceTopK = query.expectedServiceIntentCarousel.topK.requiredInTopK.getOrElse(3)
+
+    // ES eval uses a tighter variant top-3 expectation, but that is too strict for
+    // Qdrant-only broad semantic recall. This optional Qdrant-only gate validates
+    // semantic candidate recall quality: an acceptable variant must appear somewhere
+    // in the returned Qdrant topK, while provider/service stay constrained by their
+    // eval topK windows. Exact variant ranking, fusion, and reranking remain future
+    // hybrid/rerank work and are intentionally out of scope for this spec.
+    val variantOk = topVariantIds.exists(acceptableVariantIds.contains)
+    val providerOk = topProviderIds.take(providerTopK).exists(acceptableProviderIds.contains)
+    val serviceOk = topServiceIds.take(serviceTopK).exists(acceptableServiceIds.contains)
+
+    if (variantOk && providerOk && serviceOk) ZIO.unit
+    else {
+      val failure =
+        s"queryId=$queryId query=$queryText " +
+          s"variantTopK=returned_topK variantOk=$variantOk " +
+          s"providerTopK=$providerTopK providerOk=$providerOk " +
+          s"serviceTopK=$serviceTopK serviceOk=$serviceOk " +
+          render
+      ZIO.fail(QueryFailure.operation("qdrant-semantic-quality-assertion", failure))
+    }
+  }
 
   def render: String =
     s"queryId=$queryId status=$status query=$queryText " +
