@@ -59,6 +59,14 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "q_hair_007",
   )
 
+  private val hardNegativeQueryIds = Set(
+    "q_nails_011",
+    "q_lashes_007",
+    "q_noise_003",
+    "q_noise_004",
+    "q_noise_005",
+  )
+
   "BeautySearchSpecV1" should {
     "include dynamic fields for all AttributeDefinition.all entries" in {
       val paths = BeautySearchSpecV1.spec.variantDocument.fields.map(_.path).toSet
@@ -504,6 +512,29 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         assert(report.failedAssertions.isEmpty, s"scorer failures for ${query.id}: ${report.failedAssertions.mkString(", ")}")
       }
     }
+
+    "return acceptable variant, provider and service ids for the hard-negative eval subset" in {
+      val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
+      val service = new BeautySearchService.Impl[IO](parser, backend)
+
+      evalSuite.queries.filter(query => hardNegativeQueryIds.contains(query.id)).foreach { query =>
+        val response = runIO(
+          service.search(
+            UserSearchInput(
+              query = query.query,
+              userLat = Some(evalSuite.testUserLocation.lat),
+              userLon = Some(evalSuite.testUserLocation.lon),
+            )
+          )
+        )
+        val report = BeautySearchEvalScorer.score(query, response)
+
+        assert(response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)), diagnosticMessage(query, response, report, "variant top-3"))
+        assert(response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)), diagnosticMessage(query, response, report, "provider top-5"))
+        assert(response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)), diagnosticMessage(query, response, report, "service top-3"))
+        assert(report.failedAssertions.isEmpty, diagnosticMessage(query, response, report, "scorer"))
+      }
+    }
   }
 
   private def jsonContainsString(json: Json, needle: String): Boolean =
@@ -513,4 +544,16 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     Unsafe.unsafe { implicit unsafe =>
       Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }
+
+  private def diagnosticMessage(
+    query: leaderboard.search.eval.BeautySearchEvalQuery,
+    response: BeautySearchResponse,
+    report: leaderboard.search.eval.BeautySearchEvalReport,
+    check: String,
+  ): String =
+    s"check=$check queryId=${query.id} query=${query.query} " +
+      s"topVariantIds=${response.variantCarousel.take(3).map(_.variantId).mkString("[", ",", "]")} " +
+      s"topProviderLocationIds=${response.providerCarousel.take(5).map(_.masterLocationId).mkString("[", ",", "]")} " +
+      s"topServiceIds=${response.serviceIntentCarousel.take(3).map(_.serviceId).mkString("[", ",", "]")} " +
+      s"failedAssertions=${report.failedAssertions.mkString("[", ",", "]")}"
 }
