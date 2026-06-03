@@ -48,6 +48,17 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "q_face_008",
   )
 
+  private val secondMilestoneQueryIds = Set(
+    "q_nails_007",
+    "q_nails_012",
+    "q_lashes_004",
+    "q_hair_002",
+    "q_hair_003",
+    "q_hair_004",
+    "q_hair_006",
+    "q_hair_007",
+  )
+
   "BeautySearchSpecV1" should {
     "include dynamic fields for all AttributeDefinition.all entries" in {
       val paths = BeautySearchSpecV1.spec.variantDocument.fields.map(_.path).toSet
@@ -453,6 +464,29 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val service = new BeautySearchService.Impl[IO](parser, backend)
 
       evalSuite.queries.filter(query => firstMilestoneQueryIds.contains(query.id)).foreach { query =>
+        val response = runIO(
+          service.search(
+            UserSearchInput(
+              query = query.query,
+              userLat = Some(evalSuite.testUserLocation.lat),
+              userLon = Some(evalSuite.testUserLocation.lon),
+            )
+          )
+        )
+        val report = BeautySearchEvalScorer.score(query, response)
+
+        assert(response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)), s"variant top-3 failed for ${query.id}")
+        assert(response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)), s"provider top-5 failed for ${query.id}")
+        assert(response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)), s"service top-3 failed for ${query.id}")
+        assert(report.failedAssertions.isEmpty, s"scorer failures for ${query.id}: ${report.failedAssertions.mkString(", ")}")
+      }
+    }
+
+    "return acceptable variant, provider and service ids for the second milestone eval subset" in {
+      val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
+      val service = new BeautySearchService.Impl[IO](parser, backend)
+
+      evalSuite.queries.filter(query => secondMilestoneQueryIds.contains(query.id)).foreach { query =>
         val response = runIO(
           service.search(
             UserSearchInput(

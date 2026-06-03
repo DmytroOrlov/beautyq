@@ -47,6 +47,17 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     "q_face_008",
   )
 
+  private val secondMilestoneQueryIds = Set(
+    "q_nails_007",
+    "q_nails_012",
+    "q_lashes_004",
+    "q_hair_002",
+    "q_hair_003",
+    "q_hair_004",
+    "q_hair_006",
+    "q_hair_007",
+  )
+
   "BeautySearch Elasticsearch integration" should {
     "create the index mapping" in {
       (
@@ -107,6 +118,54 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
                     _ <- assertIO(response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)))
                     _ <- assertIO(response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)))
                     _ <- assertIO(report.failedAssertions.isEmpty)
+                  } yield ()
+              }
+            } yield ()
+        }
+    }
+
+    "pass the second milestone eval subset" in {
+      (
+        portCfg: ElasticsearchPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+      ) =>
+        withPreparedIndex(portCfg) {
+          (client, testSpec) =>
+            for {
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => secondMilestoneQueryIds.contains(query.id))) {
+                query =>
+                  for {
+                    response <- executeSearch(testSpec, client, query.query)
+                    report = BeautySearchEvalScorer.score(query, response)
+                    _ <- requireCondition(
+                      response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)),
+                      query,
+                      response,
+                      report,
+                      "variant top-3",
+                    )
+                    _ <- requireCondition(
+                      response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)),
+                      query,
+                      response,
+                      report,
+                      "provider top-5",
+                    )
+                    _ <- requireCondition(
+                      response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)),
+                      query,
+                      response,
+                      report,
+                      "service top-3",
+                    )
+                    _ <- requireCondition(report.failedAssertions.isEmpty, query, response, report, "scorer")
                   } yield ()
               }
             } yield ()
@@ -195,4 +254,26 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
       interpreted <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(spec, input, intent, rawResponse))
     } yield interpreted
   }
+
+  private def diagnosticMessage(
+    query: leaderboard.search.eval.BeautySearchEvalQuery,
+    response: BeautySearchResponse,
+    report: leaderboard.search.eval.BeautySearchEvalReport,
+    check: String,
+  ): String =
+    s"check=$check queryId=${query.id} query=${query.query} " +
+      s"topVariantIds=${response.variantCarousel.take(3).map(_.variantId).mkString("[", ",", "]")} " +
+      s"topProviderLocationIds=${response.providerCarousel.take(5).map(_.masterLocationId).mkString("[", ",", "]")} " +
+      s"topServiceIds=${response.serviceIntentCarousel.take(3).map(_.serviceId).mkString("[", ",", "]")} " +
+      s"failedAssertions=${report.failedAssertions.mkString("[", ",", "]")}"
+
+  private def requireCondition(
+    condition: Boolean,
+    query: leaderboard.search.eval.BeautySearchEvalQuery,
+    response: BeautySearchResponse,
+    report: leaderboard.search.eval.BeautySearchEvalReport,
+    check: String,
+  ): IO[QueryFailure, Unit] =
+    if condition then ZIO.unit
+    else ZIO.fail(QueryFailure.operation("beautyq-search-eval", diagnosticMessage(query, response, report, check)))
 }
