@@ -529,10 +529,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         )
         val report = BeautySearchEvalScorer.score(query, response)
 
-        assert(response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)), diagnosticMessage(query, response, report, "variant top-3"))
-        assert(response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)), diagnosticMessage(query, response, report, "provider top-5"))
-        assert(response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)), diagnosticMessage(query, response, report, "service top-3"))
-        assert(report.failedAssertions.isEmpty, diagnosticMessage(query, response, report, "scorer"))
+        BeautySearchEvalTestSupport.assertEvalOutcome(query, response, report, "eval")
       }
     }
   }
@@ -545,15 +542,4 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }
 
-  private def diagnosticMessage(
-    query: leaderboard.search.eval.BeautySearchEvalQuery,
-    response: BeautySearchResponse,
-    report: leaderboard.search.eval.BeautySearchEvalReport,
-    check: String,
-  ): String =
-    s"check=$check queryId=${query.id} query=${query.query} " +
-      s"topVariantIds=${response.variantCarousel.take(3).map(_.variantId).mkString("[", ",", "]")} " +
-      s"topProviderLocationIds=${response.providerCarousel.take(5).map(_.masterLocationId).mkString("[", ",", "]")} " +
-      s"topServiceIds=${response.serviceIntentCarousel.take(3).map(_.serviceId).mkString("[", ",", "]")} " +
-      s"failedAssertions=${report.failedAssertions.mkString("[", ",", "]")}"
 }

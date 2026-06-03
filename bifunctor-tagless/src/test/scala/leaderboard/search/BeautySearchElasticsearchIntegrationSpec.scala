@@ -153,31 +153,13 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
                     debug <- executeSearchDebug(testSpec, client, query.query)
                     response = debug.response
                     report = BeautySearchEvalScorer.score(query, response)
-                    _ <- requireCondition(
-                      response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)),
+                    _ <- BeautySearchEvalTestSupport.requireEvalOutcome(
                       query,
                       response,
                       report,
-                      "variant top-3",
-                      Some(debug),
+                      "eval",
+                      Some(BeautySearchEvalTestSupport.EsDebug(debug.intent, debug.requestJson, debug.rawHitCount)),
                     )
-                    _ <- requireCondition(
-                      response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)),
-                      query,
-                      response,
-                      report,
-                      "provider top-5",
-                      Some(debug),
-                    )
-                    _ <- requireCondition(
-                      response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)),
-                      query,
-                      response,
-                      report,
-                      "service top-3",
-                      Some(debug),
-                    )
-                    _ <- requireCondition(report.failedAssertions.isEmpty, query, response, report, "scorer", Some(debug))
                   } yield ()
               }
             } yield ()
@@ -204,28 +186,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
                   for {
                     response <- executeSearch(testSpec, client, query.query)
                     report = BeautySearchEvalScorer.score(query, response)
-                    _ <- requireCondition(
-                      response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)),
-                      query,
-                      response,
-                      report,
-                      "variant top-3",
-                    )
-                    _ <- requireCondition(
-                      response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)),
-                      query,
-                      response,
-                      report,
-                      "provider top-5",
-                    )
-                    _ <- requireCondition(
-                      response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)),
-                      query,
-                      response,
-                      report,
-                      "service top-3",
-                    )
-                    _ <- requireCondition(report.failedAssertions.isEmpty, query, response, report, "scorer")
+                    _ <- BeautySearchEvalTestSupport.requireEvalOutcome(query, response, report, "eval")
                   } yield ()
               }
             } yield ()
@@ -338,33 +299,4 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     } yield SearchDebug(intent, requestJson, rawHits, interpreted)
   }
 
-  private def debugSuffix(debug: Option[SearchDebug]): String =
-    debug.fold("")(d =>
-      s"intent=${d.intent} explicitConstraints=${d.intent.explicitConstraints} softBoosts=${d.intent.softBoosts} remainingText=${d.intent.remainingText} rawHitCount=${d.rawHitCount} request=${d.requestJson.noSpaces} "
-    )
-
-  private def diagnosticMessage(
-    query: leaderboard.search.eval.BeautySearchEvalQuery,
-    response: BeautySearchResponse,
-    report: leaderboard.search.eval.BeautySearchEvalReport,
-    check: String,
-    debug: Option[SearchDebug] = None,
-  ): String =
-    s"check=$check queryId=${query.id} query=${query.query} " +
-      s"topVariantIds=${response.variantCarousel.take(3).map(_.variantId).mkString("[", ",", "]")} " +
-      s"topProviderLocationIds=${response.providerCarousel.take(5).map(_.masterLocationId).mkString("[", ",", "]")} " +
-      s"topServiceIds=${response.serviceIntentCarousel.take(3).map(_.serviceId).mkString("[", ",", "]")} " +
-      s"failedAssertions=${report.failedAssertions.mkString("[", ",", "]")} " +
-      debugSuffix(debug)
-
-  private def requireCondition(
-    condition: Boolean,
-    query: leaderboard.search.eval.BeautySearchEvalQuery,
-    response: BeautySearchResponse,
-    report: leaderboard.search.eval.BeautySearchEvalReport,
-    check: String,
-    debug: Option[SearchDebug] = None,
-  ): IO[QueryFailure, Unit] =
-    if condition then ZIO.unit
-    else ZIO.fail(QueryFailure.operation("beautyq-search-eval", diagnosticMessage(query, response, report, check, debug)))
 }
