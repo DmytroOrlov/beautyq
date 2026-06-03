@@ -4,7 +4,7 @@ import io.circe.Json
 import leaderboard.model.*
 import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.elasticsearch.{ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
+import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.{BeautySearchEvalLoader, BeautySearchEvalScorer}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -103,6 +103,42 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       )
       assert(cursor.downField("mappings").downField("properties").downField("location").get[String]("type") == Right("geo_point"))
     }
+
+    "be derived from SearchDocumentSpec fields" in {
+      val syntheticSpec = BeautySearchSpecV1.spec.copy(
+        variantDocument = BeautySearchSpecV1.spec.variantDocument.copy(
+          fields = BeautySearchSpecV1.spec.variantDocument.fields :+ SearchField[VariantSearchDocument](
+            path = "testSyntheticKeyword",
+            kind = SearchFieldKind.Keyword,
+            extract = _ => None,
+            filterable = true,
+            facetable = true,
+          )
+        )
+      )
+
+      val mapping = ElasticsearchMappingInterpreter.mapping(syntheticSpec)
+      assert(mapping.hcursor.downField("mappings").downField("properties").downField("testSyntheticKeyword").get[String]("type") == Right("keyword"))
+    }
+  }
+
+  "ElasticsearchIngestionInterpreter" should {
+    "be derived from SearchField.extract" in {
+      val syntheticSpec = BeautySearchSpecV1.spec.copy(
+        variantDocument = BeautySearchSpecV1.spec.variantDocument.copy(
+          fields = BeautySearchSpecV1.spec.variantDocument.fields :+ SearchField[VariantSearchDocument](
+            path = "testSyntheticKeyword",
+            kind = SearchFieldKind.Keyword,
+            extract = _ => Some(SearchValue.Keyword("synthetic-value")),
+            filterable = true,
+            facetable = true,
+          )
+        )
+      )
+
+      val source = ElasticsearchIngestionInterpreter.sourceJson(syntheticSpec, documents.head)
+      assert(source.hcursor.downField("testSyntheticKeyword").as[String] == Right("synthetic-value"))
+    }
   }
 
   "ElasticsearchSearchRequestInterpreter" should {
@@ -168,6 +204,94 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(cursor.downField("aggs").downField("agg_serviceName").focus.nonEmpty)
       assert(cursor.downField("aggs").downField("agg_providerKey").focus.nonEmpty)
       assert(cursor.downField("aggs").downField("agg_serviceKey").focus.nonEmpty)
+    }
+
+    "use SearchFieldSemantic lookup instead of hardcoded paths for constraints" in {
+      val syntheticSpec = BeautySearchSpec(
+        variantDocument = SearchDocumentSpec(
+          indexName = "custom-semantic",
+          id = _.variantId.toString,
+          fields = List(
+            SearchField[VariantSearchDocument](
+              path = "serviceName2",
+              kind = SearchFieldKind.Keyword,
+              extract = document => Some(SearchValue.Keyword(document.serviceName)),
+              semantic = Some(SearchFieldSemantic.ServiceName),
+              filterable = true,
+            ),
+          ),
+        ),
+        synonyms = Nil,
+        carouselSpec = CarouselSpec(),
+        facetSpec = FacetSpec(enabled = false, fields = Nil),
+      )
+
+      val request = ElasticsearchSearchRequestInterpreter.request(
+        syntheticSpec,
+        UserSearchInput("query", None, None),
+        ParsedSearchIntent(
+          originalQuery = "query",
+          normalizedTokens = List("query"),
+          explicitConstraints = List(SearchConstraint.ServiceAny(Set("Маникюр"))),
+          softBoosts = Nil,
+          remainingText = "",
+        ),
+      ) match {
+        case Right(value) => value
+        case Left(error) => throw new RuntimeException(error.message)
+      }
+
+      assert(jsonContainsString(request, "serviceName2"))
+      assert(!jsonContainsString(request, "serviceName\""))
+    }
+
+    "derive facets from FacetSpec and remove them when absent" in {
+      val syntheticFacet = FacetField("serviceName", FacetFieldMode.Terms, limit = 3)
+      val specWithFacet = BeautySearchSpecV1.spec.copy(
+        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = BeautySearchSpecV1.spec.facetSpec.fields :+ syntheticFacet)
+      )
+      val specWithoutFacet = BeautySearchSpecV1.spec.copy(
+        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = BeautySearchSpecV1.spec.facetSpec.fields.filterNot(_.path == "serviceName"))
+      )
+
+      val input = UserSearchInput("query", None, None)
+      val intent = ParsedSearchIntent("query", List("query"), Nil, Nil, "")
+      val withFacet = ElasticsearchSearchRequestInterpreter.request(specWithFacet, input, intent).toOption.get
+      val withoutFacet = ElasticsearchSearchRequestInterpreter.request(specWithoutFacet, input, intent).toOption.get
+
+      assert(withFacet.hcursor.downField("aggs").downField("agg_serviceName").focus.nonEmpty)
+      assert(withoutFacet.hcursor.downField("aggs").downField("agg_serviceName").focus.isEmpty)
+    }
+
+    "use searchable fields and boosts from SearchField" in {
+      val syntheticSpec = BeautySearchSpecV1.spec.copy(
+        variantDocument = BeautySearchSpecV1.spec.variantDocument.copy(
+          fields = BeautySearchSpecV1.spec.variantDocument.fields :+ SearchField[VariantSearchDocument](
+            path = "testSyntheticText",
+            kind = SearchFieldKind.Text,
+            extract = _ => Some(SearchValue.Text("synthetic text")),
+            searchable = true,
+            boost = 9.0,
+          )
+        )
+      )
+
+      val request = ElasticsearchSearchRequestInterpreter.request(
+        syntheticSpec,
+        UserSearchInput("synthetic", None, None),
+        ParsedSearchIntent(
+          originalQuery = "synthetic",
+          normalizedTokens = List("synthetic"),
+          explicitConstraints = Nil,
+          softBoosts = Nil,
+          remainingText = "synthetic",
+        ),
+      ) match {
+        case Right(value) => value
+        case Left(error) => throw new RuntimeException(error.message)
+      }
+
+      assert(jsonContainsString(request, "testSyntheticText^9.0"))
     }
   }
 
@@ -240,6 +364,23 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           assert(intent.explicitConstraints.contains(expectedConstraint), s"Missing $expectedConstraint for query '$query'")
         }
       }
+    }
+
+    "use synonym dictionary data from the spec" in {
+      val syntheticSpec = BeautySearchSpec(
+        variantDocument = BeautySearchSpecV1.spec.variantDocument,
+        synonyms = BeautySearchSpecV1.spec.synonyms :+ SearchSynonym(
+          tokens = Set("synthetic keyword"),
+          constraints = List(SearchConstraint.ServiceAny(Set("Маникюр"))),
+          matchMode = SynonymMatchMode.Phrase,
+        ),
+        carouselSpec = BeautySearchSpecV1.spec.carouselSpec,
+        facetSpec = BeautySearchSpecV1.spec.facetSpec,
+      )
+
+      val syntheticParser = new BeautySearchIntentParser(syntheticSpec)
+      val parsed = syntheticParser.parse(UserSearchInput("synthetic keyword", None, None))
+      assert(parsed.explicitConstraints.contains(SearchConstraint.ServiceAny(Set("Маникюр"))))
     }
   }
 
