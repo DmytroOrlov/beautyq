@@ -146,10 +146,28 @@ The ES integration suite uses a seed-scoped Postgres snapshot loader so tests st
 
 * **Total eval queries**: 63
 * **ES V1 lexical covered queries**: 61
-* **Uncovered semantic/vector candidates**: 2
-* **Uncovered ids**:
+* **Qdrant-only semantic candidates**: 2
+* **Qdrant-only ids**:
   * `q_broad_004`
   * `q_broad_006`
+* **Combined intent-space coverage**: 63/63
+
+## Qdrant-Only Semantic Candidate Eval
+
+The two intentionally non-lexical eval queries now pass in a separate Qdrant-only semantic candidate run:
+
+* `q_broad_004`: passed via Qdrant-only semantic retrieval
+* `q_broad_006`: passed via Qdrant-only semantic retrieval
+
+This run was manual and environment-gated:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
+  sbt 'project bifunctor-tagless' \
+  'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
+```
+
+The local embedding server remains a manual prerequisite for this eval path. It is not part of normal test execution and is not a production runtime dependency.
 
 ## ES V1 Lexical Boundary
 
@@ -169,7 +187,18 @@ ES V1 should not be forced to cover:
 * semantic similarity without dictionary support
 * unseen paraphrases that require embeddings
 
-`q_broad_004` and `q_broad_006` are intentionally left for future semantic/vector search. They are not treated as failed lexical coverage work.
+`q_broad_004` and `q_broad_006` remain outside the ES V1 lexical contract. They are covered by the separate Qdrant-only semantic candidate eval and are not treated as failed lexical coverage work.
+
+## Combined Architecture Status
+
+Current backend roles are intentionally separate:
+
+* Elasticsearch V1 remains the deterministic lexical/filter/facet baseline.
+* Qdrant remains a separate semantic recall backend for broad semantic candidates.
+* Together they cover the current 63/63 BeautyQ eval intent space.
+* No ES/Qdrant fallback has been implemented yet.
+* No hybrid ranking/fusion has been implemented yet.
+* No reranking has been implemented yet.
 
 ### Coverage Rules
 
@@ -177,3 +206,8 @@ New coverage should continue to follow this rule:
 1. Add pure/in-memory test first.
 2. Then add Elasticsearch integration test in a separate patch.
 3. Production changes should be limited to narrow `BeautySearchSpecV1` dictionary/spec data unless a real spec-driven interpreter bug is found.
+
+## Recommended Next Step
+
+1. Add explicit Qdrant quality assertions only after the embedding model and config are stable.
+2. Design fallback or hybrid criteria later as a separate measured change.

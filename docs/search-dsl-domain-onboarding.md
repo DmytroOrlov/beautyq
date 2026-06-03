@@ -192,10 +192,28 @@ If one of these feels convenient, it usually means the DSL/spec is missing a pie
 
 * **Total eval queries**: 63
 * **ES V1 lexical covered queries**: 61
-* **Uncovered semantic/vector candidates**: 2
-* **Uncovered ids**:
+* **Qdrant-only semantic candidates**: 2
+* **Qdrant-only ids**:
   * `q_broad_004`
   * `q_broad_006`
+* **Combined intent-space coverage**: 63/63
+
+### Qdrant-Only Semantic Candidate Eval
+
+The two broad semantic candidates now pass in a separate Qdrant-only eval:
+
+* `q_broad_004`: passed via Qdrant-only semantic retrieval
+* `q_broad_006`: passed via Qdrant-only semantic retrieval
+
+Manual command:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
+  sbt 'project bifunctor-tagless' \
+  'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
+```
+
+This run is manual and environment-gated. It should not be treated as a default production-like test path.
 
 ### ES V1 Lexical Boundary
 
@@ -215,7 +233,14 @@ ES V1 should not be forced to cover:
 * semantic similarity without dictionary support
 * unseen paraphrases that require embeddings
 
-`q_broad_004` and `q_broad_006` are intentionally left for future semantic/vector search, not failed lexical work.
+`q_broad_004` and `q_broad_006` remain outside the ES lexical contract. They are covered by a separate Qdrant-only semantic candidate eval, not by Elasticsearch.
+
+### Combined Architecture Status
+
+* Elasticsearch remains the deterministic lexical baseline.
+* Qdrant remains a separate semantic recall backend.
+* Together they cover 63/63 of the current BeautyQ eval intent space.
+* No fallback, hybrid ranking, or reranking has been implemented yet.
 
 ### Coverage Rules
 
@@ -226,6 +251,8 @@ New coverage should continue to follow this rule:
 
 The next likely work is:
 * Extending eval coverage further
+* Adding explicit Qdrant quality assertions after model/config stabilization
+* Designing fallback or hybrid criteria later as a separate measured change
 * Extracting remaining BeautyQ names from generic pieces if and when a second domain is introduced
 
 ## Naming Note

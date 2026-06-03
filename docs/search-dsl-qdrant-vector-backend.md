@@ -2,7 +2,7 @@
 
 ## 1. Goal
 
-Qdrant is a future second backend for semantic/vector recall in BeautyQ search.
+Qdrant is a separate backend for semantic/vector recall in BeautyQ search.
 
 It complements the Elasticsearch V1 lexical baseline. It does not replace it, mutate it, or relax its current deterministic contract.
 
@@ -21,7 +21,27 @@ Qdrant should therefore become another interpreter of the search DSL/spec rather
 
 Elasticsearch remains the deterministic lexical/filter/facet baseline.
 
-## 2. Non-goals for now
+## 2. Current Eval Status
+
+The current BeautyQ eval status is:
+
+* Elasticsearch V1 lexical/filter/facet search covers 61/63 eval queries.
+* `q_broad_004` passes via Qdrant-only semantic retrieval.
+* `q_broad_006` passes via Qdrant-only semantic retrieval.
+* ES plus Qdrant therefore cover 63/63 eval intent space.
+* This is not hybrid search yet.
+
+The Qdrant-only semantic candidate eval was run manually with a local embedding server:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
+  sbt 'project bifunctor-tagless' \
+  'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
+```
+
+That run is environment-gated and should remain separate from normal default test execution.
+
+## 3. Non-goals for now
 
 The first Qdrant design note explicitly excludes the following:
 
@@ -31,10 +51,10 @@ The first Qdrant design note explicitly excludes the following:
 - no runtime LLM generation
 - no changes to Elasticsearch interpreters
 - no production dependency on the local embedding server yet
-- no Qdrant fallback until Qdrant has separate eval coverage
+- no Qdrant fallback, even though separate Qdrant eval coverage now exists
 - no BeautyQ-specific dictionary logic inside Qdrant interpreters
 
-## 3. Local prototype commands
+## 4. Local prototype commands
 
 These commands are local-only prototype commands for future experimentation:
 
@@ -57,7 +77,7 @@ They should not become production runtime assumptions in this docs-only task.
 
 The embedding model, pooling mode, vector dimension, and distance metric must later be represented in DSL/spec data rather than hidden in ad-hoc local setup.
 
-## 4. Spec-driven architecture
+## 5. Spec-driven architecture
 
 Future Qdrant support should add DSL/spec data first and interpreters second.
 
@@ -95,7 +115,7 @@ The invariant is the same as for the current Elasticsearch path:
 - if Qdrant needs semantics, add them to the DSL/spec first
 - do not hardcode BeautyQ services, attributes, query phrases, or dictionary rules in Qdrant interpreters
 
-## 5. Candidate embedding text for BeautyQ
+## 6. Candidate embedding text for BeautyQ
 
 A future `VariantSearchDocument` embedding text could combine selected human-readable fields such as:
 
@@ -111,7 +131,7 @@ The important constraint is that this text shape must be specified through `Embe
 
 That keeps embedding behavior reviewable, testable, and reusable across domains.
 
-## 6. Safe implementation sequence
+## 7. Safe implementation sequence
 
 Future implementation should follow this exact sequence.
 
@@ -157,7 +177,7 @@ Future implementation should follow this exact sequence.
    - or reranking
    - each as separate measured changes
 
-## 7. Eval strategy
+## 8. Eval strategy
 
 Qdrant should not be judged by replacing all Elasticsearch eval queries.
 
@@ -168,22 +188,23 @@ Qdrant should first target broad, conversational, and semantic candidates, espec
 - `q_broad_004`
 - `q_broad_006`
 
-Separate Qdrant eval subsets should be added before any hybrid behavior is introduced.
+Separate Qdrant eval subsets should be added and stabilized before any hybrid behavior is introduced.
 
-Qdrant should not become a fallback path until it has its own green eval tests.
+Qdrant now has a green semantic-candidate eval slice for `q_broad_004` and `q_broad_006`, but that does not by itself justify fallback, fusion, or reranking.
 
-## 8. Guardrails
+## 9. Guardrails
 
 - do not change Elasticsearch behavior while adding Qdrant
 - do not put BeautyQ dictionary logic in Qdrant interpreters
 - do not call the embedding model from the parser
-- do not add Qdrant as a fallback until separate Qdrant eval exists
+- do not add Qdrant as a fallback in the same change that establishes Qdrant-only eval
 - do not introduce hybrid ranking in the first Qdrant implementation
 - do not use Qdrant to hide bad lexical/dictionary regressions
 - if Qdrant needs semantics, add them to the DSL/spec first
 - keep Qdrant implementation steps small and independently verifiable
+- add explicit Qdrant quality assertions only after the embedding model and config are stable
 
-## 9. Relationship to reusable-domain onboarding
+## 10. Relationship to reusable-domain onboarding
 
 Qdrant support should be generic in the same way the Elasticsearch interpreters are intended to be generic.
 
@@ -197,3 +218,8 @@ A new domain should provide:
 The Qdrant interpreters should not depend on BeautyQ domain classes except through typed spec/document parameters.
 
 That keeps the vector backend reusable and helps the search DSL evolve into a reusable cross-domain architecture rather than a BeautyQ-only implementation.
+
+## 11. Recommended Next Step
+
+1. Stabilize the embedding model/config and then add explicit Qdrant quality assertions for the semantic candidate slice.
+2. Design fallback, hybrid, or reranking criteria later as a separate measured change.
