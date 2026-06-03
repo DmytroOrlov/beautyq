@@ -45,6 +45,14 @@ object BeautySearchSpecV1 {
       inferredFilterDominanceThreshold = BigDecimal("0.70"),
       inferredFilterMinCount = 2,
     ),
+    requestSpec = SearchRequestSpec(
+      hitWindowSize = 256,
+      textOperator = TextOperator.And,
+      aggregationSize = 20,
+      geoDistanceScale = "5km",
+      geoDistanceOffset = "0km",
+      geoDistanceDecay = 0.5d,
+    ),
   )
 
   private val baseFields: List[SearchField[VariantSearchDocument]] =

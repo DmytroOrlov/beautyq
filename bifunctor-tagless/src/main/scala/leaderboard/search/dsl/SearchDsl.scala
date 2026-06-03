@@ -158,6 +158,28 @@ final case class FacetSpec(
   inferredFilterMinCount: Int = 2,
 )
 
+sealed trait TextOperator extends Product with Serializable {
+  def value: String
+}
+object TextOperator {
+  case object And extends TextOperator {
+    override val value: String = "and"
+  }
+
+  case object Or extends TextOperator {
+    override val value: String = "or"
+  }
+}
+
+final case class SearchRequestSpec(
+  hitWindowSize: Int = 256,
+  textOperator: TextOperator = TextOperator.And,
+  aggregationSize: Int = 20,
+  geoDistanceScale: String = "5km",
+  geoDistanceOffset: String = "0km",
+  geoDistanceDecay: Double = 0.5d,
+)
+
 final case class RankingSpec(
   textScoreWeight: Double = 1.0,
   serviceBoostWeight: Double = 2.0,
@@ -180,4 +202,5 @@ final case class BeautySearchSpec(
   synonyms: List[SearchSynonym],
   carouselSpec: CarouselSpec,
   facetSpec: FacetSpec,
+  requestSpec: SearchRequestSpec = SearchRequestSpec(),
 )

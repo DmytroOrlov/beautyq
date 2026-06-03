@@ -263,6 +263,69 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(withoutFacet.hcursor.downField("aggs").downField("agg_serviceName").focus.isEmpty)
     }
 
+    "use requestSpec.hitWindowSize for request size" in {
+      val customSpec = BeautySearchSpecV1.spec.copy(
+        requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(hitWindowSize = 7)
+      )
+
+      val request = ElasticsearchSearchRequestInterpreter.request(
+        customSpec,
+        UserSearchInput("synthetic", None, None, limit = 1),
+        ParsedSearchIntent("synthetic", List("synthetic"), Nil, Nil, "synthetic"),
+      ) match {
+        case Right(value) => value
+        case Left(error) => throw new RuntimeException(error.message)
+      }
+
+      assert(request.hcursor.get[Int]("size") == Right(7))
+    }
+
+    "use requestSpec.aggregationSize for facet aggregations" in {
+      val customSpec = BeautySearchSpecV1.spec.copy(
+        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = List(FacetField("serviceName", FacetFieldMode.Terms, limit = 3))),
+        requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(aggregationSize = 11),
+      )
+
+      val request = ElasticsearchSearchRequestInterpreter.request(
+        customSpec,
+        UserSearchInput("synthetic", None, None, limit = 1),
+        ParsedSearchIntent("synthetic", List("synthetic"), Nil, Nil, "synthetic"),
+      ) match {
+        case Right(value) => value
+        case Left(error) => throw new RuntimeException(error.message)
+      }
+
+      val facetAgg = request.hcursor.downField("aggs").downField("agg_serviceName").downField("terms")
+      assert(facetAgg.get[Int]("size") == Right(11))
+    }
+
+    "use requestSpec.textOperator for multi_match" in {
+      val customSpec = BeautySearchSpecV1.spec.copy(
+        variantDocument = BeautySearchSpecV1.spec.variantDocument.copy(
+          fields = BeautySearchSpecV1.spec.variantDocument.fields :+ SearchField[VariantSearchDocument](
+            path = "testSyntheticText",
+            kind = SearchFieldKind.Text,
+            extract = _ => Some(SearchValue.Text("synthetic text")),
+            searchable = true,
+            boost = 9.0,
+          )
+        ),
+        requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(textOperator = TextOperator.Or),
+      )
+
+      val request = ElasticsearchSearchRequestInterpreter.request(
+        customSpec,
+        UserSearchInput("synthetic", None, None),
+        ParsedSearchIntent("synthetic", List("synthetic"), Nil, Nil, "synthetic"),
+      ) match {
+        case Right(value) => value
+        case Left(error) => throw new RuntimeException(error.message)
+      }
+
+      val multiMatch = request.hcursor.downField("query").downField("bool").downField("must").downN(0).downField("multi_match")
+      assert(multiMatch.get[String]("operator") == Right("or"))
+    }
+
     "use searchable fields and boosts from SearchField" in {
       val syntheticSpec = BeautySearchSpecV1.spec.copy(
         variantDocument = BeautySearchSpecV1.spec.variantDocument.copy(

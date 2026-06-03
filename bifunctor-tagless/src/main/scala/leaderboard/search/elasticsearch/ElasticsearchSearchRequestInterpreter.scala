@@ -7,8 +7,6 @@ import leaderboard.search.dsl.*
 import leaderboard.search.interpreter.SearchSpecSupport
 
 object ElasticsearchSearchRequestInterpreter {
-  private val RequestedHitCount = 256
-
   def request(
     spec: BeautySearchSpec,
     input: UserSearchInput,
@@ -22,7 +20,7 @@ object ElasticsearchSearchRequestInterpreter {
       query = geoQuery(spec, input, baseQuery)
     } yield Json.obj(
       "track_total_hits" -> Json.fromBoolean(true),
-      "size" -> Json.fromInt(math.max(RequestedHitCount, input.limit)),
+      "size" -> Json.fromInt(math.max(spec.requestSpec.hitWindowSize, input.limit)),
       "query" -> query,
       "aggs" -> aggregations(spec),
     )
@@ -41,7 +39,7 @@ object ElasticsearchSearchRequestInterpreter {
           "multi_match" -> Json.obj(
             "query" -> Json.fromString(query),
             "fields" -> Json.arr(fields.map(Json.fromString): _*),
-            "operator" -> Json.fromString("and"),
+            "operator" -> Json.fromString(spec.requestSpec.textOperator.value),
           )
         )
       )
@@ -50,19 +48,19 @@ object ElasticsearchSearchRequestInterpreter {
 
   private def aggregations(spec: BeautySearchSpec): Json = {
     val facetAggs = spec.facetSpec.fields.map { facetField =>
-      aggName(facetField.path) -> facetAggregation(facetField)
+      aggName(facetField.path) -> facetAggregation(spec, facetField)
     }
     val groupAggs = List(
-      aggName(spec.carouselSpec.providerGroupField) -> termsAggregation(spec.carouselSpec.providerGroupField, spec.carouselSpec.providerSize * 4),
-      aggName(spec.carouselSpec.serviceIntentGroupField) -> termsAggregation(spec.carouselSpec.serviceIntentGroupField, spec.carouselSpec.serviceIntentSize * 4),
+      aggName(spec.carouselSpec.providerGroupField) -> termsAggregation(spec.carouselSpec.providerGroupField, spec.requestSpec.aggregationSize),
+      aggName(spec.carouselSpec.serviceIntentGroupField) -> termsAggregation(spec.carouselSpec.serviceIntentGroupField, spec.requestSpec.aggregationSize),
     )
     Json.obj((facetAggs ++ groupAggs).map { case (name, value) => name -> value }: _*)
   }
 
-  private def facetAggregation(facetField: FacetField): Json =
+  private def facetAggregation(spec: BeautySearchSpec, facetField: FacetField): Json =
     facetField.mode match {
       case FacetFieldMode.Terms =>
-        termsAggregation(facetField.path, facetField.limit)
+        termsAggregation(facetField.path, spec.requestSpec.aggregationSize)
       case FacetFieldMode.Ranges(buckets) =>
         Json.obj(
           "range" -> Json.obj(
@@ -102,9 +100,9 @@ object ElasticsearchSearchRequestInterpreter {
                       "lat" -> Json.fromBigDecimal(lat),
                       "lon" -> Json.fromBigDecimal(lon),
                     ),
-                    "scale" -> Json.fromString("5km"),
-                    "offset" -> Json.fromString("0km"),
-                    "decay" -> Json.fromDoubleOrNull(0.5d),
+                    "scale" -> Json.fromString(spec.requestSpec.geoDistanceScale),
+                    "offset" -> Json.fromString(spec.requestSpec.geoDistanceOffset),
+                    "decay" -> Json.fromDoubleOrNull(spec.requestSpec.geoDistanceDecay),
                   )
                 ),
                 "weight" -> Json.fromDoubleOrNull(spec.carouselSpec.ranking.providerDistanceWeight),
