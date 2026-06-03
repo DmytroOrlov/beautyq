@@ -1,0 +1,87 @@
+{
+  "file": "beautyq_search_eval_queries_v1.json",
+  "validJson": true,
+  "queryCount": 63,
+  "uniqueQueryIds": true,
+  "allQueriesHaveVariantMatches": true,
+  "allReferencedVariantIdsExist": true,
+  "allReferencedServiceIdsExist": true,
+  "allReferencedLocationIdsExist": true,
+  "errors": [],
+  "summary": {
+    "queryCount": 63,
+    "languages": {
+      "de": 6,
+      "en": 21,
+      "mixed": 5,
+      "ru": 31
+    },
+    "queryTypes": {
+      "ambiguous": 2,
+      "attribute": 24,
+      "attribute_heavy": 11,
+      "broad": 9,
+      "conversational": 5,
+      "direct": 19,
+      "english": 13,
+      "german": 7,
+      "hard_negative": 7,
+      "home_visit": 2,
+      "location": 3,
+      "mixed_language": 4,
+      "multi_intent": 1,
+      "negative_attribute": 1,
+      "numeric": 3,
+      "price": 4,
+      "synonym": 9,
+      "technical_token": 1,
+      "typo": 2
+    },
+    "coveredServices": [
+      "Permanent Make-Up",
+      "Брови",
+      "Выездной уход и мини-группы",
+      "Косметология лица",
+      "Маникюр",
+      "Наращивание и моделирование ногтей",
+      "Педикюр",
+      "Ресницы",
+      "Удаление волос"
+    ],
+    "coveredEnumAttributes": [
+      "body_area",
+      "brow_service_type",
+      "facial_treatment_type",
+      "hair_removal_method",
+      "lash_service_type",
+      "lash_volume",
+      "nail_coating_type",
+      "nail_service_type",
+      "pmu_area"
+    ],
+    "coveredBooleanAttributes": [
+      "with_correction",
+      "with_design",
+      "with_removal",
+      "with_tinting"
+    ],
+    "coveredIntAttributes": [
+      "included_corrections_count",
+      "max_clients",
+      "session_count"
+    ],
+    "coveredBigDecimalAttributes": [
+      "deposit_amount",
+      "fixed_discount_amount",
+      "home_visit_surcharge",
+      "materials_surcharge"
+    ],
+    "coverageNotes": [
+      "All 9 services from the seed are covered.",
+      "All enum attribute codes present in the model/seed are covered.",
+      "All boolean attribute codes are covered.",
+      "All current numeric attribute groups that appear in the seed are covered.",
+      "Every query has at least one seed-backed MasterServiceOfferVariant match."
+    ]
+  }
+}
