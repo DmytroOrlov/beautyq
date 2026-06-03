@@ -12,6 +12,7 @@ object BeautySearchSpecV1 {
   private val PmuService = "Permanent Make-Up"
   private val HairRemovalService = "Удаление волос"
   private val FaceService = "Косметология лица"
+  private val HomeVisitService = "Выездной уход и мини-группы"
 
   private val NailsCategory = "Ногти, маникюр и педикюр"
   private val EyesCategory = "Ресницы, брови и permanent make-up"
@@ -317,6 +318,7 @@ object BeautySearchSpecV1 {
       servicePhrase(Set(PmuService, "pmu", "permanent makeup", "permanent make up", "permanent make-up", "перманент", "татуаж"), PmuService, None),
       servicePhrase(Set(HairRemovalService, "удаление волос", "hair removal", "depilation", "депиляция"), HairRemovalService, None),
       servicePhrase(Set(FaceService, "косметология лица", "facial", "face treatment"), FaceService, None),
+      servicePhrase(Set(HomeVisitService, "выездной уход", "выездной уход для двоих", "beauty treatment at home", "home beauty care", "beauty at home"), HomeVisitService, None),
       phrase(Set(NailsCategory, "nails"), List(SearchConstraint.CategoryAny(Set(NailsCategory))), softBoosts = List(SearchConstraint.ServiceAny(Set(ManicureService, PedicureService, NailExtensionService)))),
       phrase(Set(EyesCategory), List(SearchConstraint.CategoryAny(Set(EyesCategory)))),
       phrase(Set(FaceCategory), List(SearchConstraint.CategoryAny(Set(FaceCategory)))),

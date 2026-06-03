@@ -44,6 +44,11 @@ object BeautySearchEvalInventory {
     "q_hair_010",
   )
 
+  val homeVisitQueryIds: Set[String] = Set(
+    "q_home_001",
+    "q_home_002",
+  )
+
   val hardNegativeQueryIds: Set[String] = Set(
     "q_nails_011",
     "q_lashes_007",
@@ -89,7 +94,7 @@ object BeautySearchEvalInventory {
 
   def inventorySummary: String = {
     val allQueries = evalSuite.queries
-    val covered = firstMilestoneQueryIds ++ secondMilestoneQueryIds ++ hardNegativeQueryIds ++ browsLashesQueryIds ++ pmuQueryIds ++ faceQueryIds ++ nailsQueryIds ++ hairRemainingQueryIds
+    val covered = firstMilestoneQueryIds ++ secondMilestoneQueryIds ++ hardNegativeQueryIds ++ browsLashesQueryIds ++ pmuQueryIds ++ faceQueryIds ++ nailsQueryIds ++ hairRemainingQueryIds ++ homeVisitQueryIds
     val uncovered = allQueries.map(_.id).filterNot(covered.contains).sorted
     s"total=${allQueries.size} covered=${covered.size} uncovered=${uncovered.size} uncoveredIds=${uncovered.mkString("[", ",", "]")}"
   }

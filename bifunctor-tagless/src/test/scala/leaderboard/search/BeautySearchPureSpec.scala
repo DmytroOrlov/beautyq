@@ -67,7 +67,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         BeautySearchEvalInventory.pmuQueryIds ++
         BeautySearchEvalInventory.faceQueryIds ++
         BeautySearchEvalInventory.nailsQueryIds ++
-        BeautySearchEvalInventory.hairRemainingQueryIds
+        BeautySearchEvalInventory.hairRemainingQueryIds ++
+        BeautySearchEvalInventory.homeVisitQueryIds
 
       assert(BeautySearchEvalInventory.firstMilestoneQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.secondMilestoneQueryIds.subsetOf(allIds))
@@ -77,6 +78,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(BeautySearchEvalInventory.faceQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.nailsQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.hairRemainingQueryIds.subsetOf(allIds))
+      assert(BeautySearchEvalInventory.homeVisitQueryIds.subsetOf(allIds))
       val allSets = List(
         BeautySearchEvalInventory.firstMilestoneQueryIds,
         BeautySearchEvalInventory.secondMilestoneQueryIds,
@@ -86,6 +88,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         BeautySearchEvalInventory.faceQueryIds,
         BeautySearchEvalInventory.nailsQueryIds,
         BeautySearchEvalInventory.hairRemainingQueryIds,
+        BeautySearchEvalInventory.homeVisitQueryIds,
       )
       for {
         (a, i) <- allSets.zipWithIndex
@@ -93,7 +96,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       } assert(a.intersect(b).isEmpty, s"Overlap between set $i and set $j: ${a.intersect(b)}")
 
       println(BeautySearchEvalInventory.inventorySummary)
-      assert(covered.size == 53)
+      assert(covered.size == 55)
       assert((allIds -- covered).nonEmpty)
     }
   }
@@ -104,6 +107,29 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val service = new BeautySearchService.Impl[IO](parser, backend)
       val queries = evalSuite.queries.filter(query => BeautySearchEvalInventory.hairRemainingQueryIds.contains(query.id))
       assert(queries.map(_.id).toSet == BeautySearchEvalInventory.hairRemainingQueryIds)
+
+      queries.foreach { query =>
+        val response = runIO(
+          service.search(
+            UserSearchInput(
+              query = query.query,
+              userLat = Some(evalSuite.testUserLocation.lat),
+              userLon = Some(evalSuite.testUserLocation.lon),
+            )
+          )
+        )
+        val report = BeautySearchEvalScorer.score(query, response)
+        runIO(BeautySearchEvalTestSupport.requireEvalOutcome(query, response, report, "pure"))
+      }
+    }
+  }
+
+  "home visit pure eval" should {
+    "cover home-visit queries" in {
+      val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
+      val service = new BeautySearchService.Impl[IO](parser, backend)
+      val queries = evalSuite.queries.filter(query => BeautySearchEvalInventory.homeVisitQueryIds.contains(query.id))
+      assert(queries.map(_.id).toSet == BeautySearchEvalInventory.homeVisitQueryIds)
 
       queries.foreach { query =>
         val response = runIO(
