@@ -60,36 +60,36 @@
 
 ## BeautyQ search DSL rules
 
-This section is intentionally strict. Follow it literally.
+Follow this section literally. Pick one mode before editing. Do not mix modes.
 
-### Main rule
+### Main invariant
 
-* Search behavior must live in `BeautySearchSpecV1` / DSL data.
-* Backend interpreters must stay mechanical.
-* Do not hardcode BeautyQ service names, attribute codes, query phrases, or ranking rules inside Elasticsearch interpreters.
+Search semantics must live in DSL/spec data, not in backend interpreters.
 
-Allowed search-semantic place:
+Allowed place for BeautyQ search semantics:
 
 * `BeautySearchSpecV1.scala`
 
-Usually forbidden places for domain semantics:
+Usually forbidden for BeautyQ domain semantics:
 
 * `ElasticsearchSearchRequestInterpreter.scala`
 * `ElasticsearchSearchResponseInterpreter.scala`
 * `ElasticsearchMappingInterpreter.scala`
 * `ElasticsearchIngestionInterpreter.scala`
 * `InMemorySearchBackend.scala`
-* parser/interpreter code, unless the task explicitly asks for parser/interpreter work
+* `QdrantClient.scala`
+* `QdrantJsonInterpreter.scala`
+* parser/interpreter code, unless the task explicitly asks for it
 
-If Elasticsearch or in-memory search needs new semantics, first add metadata or dictionary/spec data to the DSL/spec.
+Do not hardcode BeautyQ service names, attribute codes, query phrases, eval query ids, or ranking rules inside backend interpreters.
 
-### Pick exactly one task mode
+If a backend needs new semantics, add missing metadata to the DSL/spec first.
 
-Before editing, classify the task as exactly one mode.
+---
 
-#### Mode A: pure eval slice
+### Mode A: pure eval slice
 
-Use this when adding new query coverage for `InMemorySearchBackend`.
+Use for new `InMemorySearchBackend` eval coverage.
 
 Allowed files:
 
@@ -99,21 +99,22 @@ Allowed files:
 
 Forbidden:
 
-* Do not edit Elasticsearch tests.
-* Do not edit Elasticsearch interpreters.
-* Do not update docs.
-* Do not edit AGENTS.md.
-* Do not refactor helpers.
+* no Elasticsearch tests
+* no Qdrant tests
+* no backend interpreters
+* no docs
+* no AGENTS.md
+* no helper refactors
 
 Required steps:
 
 1. Add one query-id set to `BeautySearchEvalInventory`.
 
-2. Add that set to the covered inventory.
+2. Add it to covered inventory.
 
-3. Update the duplicate/overlap check to include the new set.
+3. Add it to duplicate/overlap checks.
 
-4. Update the expected covered count.
+4. Update expected covered count.
 
 5. Add one pure test in `BeautySearchPureSpec`.
 
@@ -123,34 +124,36 @@ Required steps:
 
 7. Report per-query pass/fail and coverage counts from test output.
 
-#### Mode B: Elasticsearch eval slice
+---
 
-Use this only after the same pure slice is green.
+### Mode B: Elasticsearch eval slice
+
+Use only after the same pure slice is green.
 
 Allowed files:
 
 * `BeautySearchElasticsearchIntegrationSpec.scala`
-* `BeautySearchSpecV1.scala` only if Elasticsearch exposes a narrow residual-text dictionary gap
+* `BeautySearchSpecV1.scala` only for narrow residual-text dictionary/spec fixes
 
 Forbidden:
 
-* Do not edit `BeautySearchEvalInventory.scala`.
-* Do not edit `BeautySearchPureSpec.scala`.
-* Do not edit Elasticsearch interpreters.
-* Do not change ranking.
-* Do not update docs.
-* Do not edit AGENTS.md.
-* Do not refactor helpers.
+* no `BeautySearchEvalInventory.scala`
+* no `BeautySearchPureSpec.scala`
+* no Elasticsearch interpreters
+* no ranking changes
+* no docs
+* no AGENTS.md
+* no helper refactors
 
 Required steps:
 
-1. Add one Elasticsearch test in `BeautySearchElasticsearchIntegrationSpec`.
+1. Add one ES test in `BeautySearchElasticsearchIntegrationSpec`.
 
 2. Reuse the existing query-id set from `BeautySearchEvalInventory`.
 
 3. Reuse `BeautySearchEvalTestSupport.requireEvalOutcome`.
 
-4. Keep existing ES diagnostics unchanged.
+4. Keep existing diagnostics.
 
 5. Run:
 
@@ -158,7 +161,96 @@ Required steps:
 
 6. Report per-query pass/fail.
 
-#### Mode C: docs-only update
+---
+
+### Mode C: Qdrant-only work
+
+Use for Qdrant/vector steps.
+
+Allowed depends on the task, but keep it isolated.
+
+Always forbidden unless explicitly requested:
+
+* no Elasticsearch changes
+* no `BeautySearchSpecV1` dictionary changes
+* no production search wiring
+* no hybrid/fallback
+* no ranking changes
+* no user-facing response changes
+* no llama.cpp Dockerization
+* no starting/stopping llama.cpp from code
+
+llama.cpp is manual-only. The user starts it when needed:
+
+`~/git/llama.cpp/build/bin/llama-server -m ~/git/Qwen3-Embedding-0.6B-Q8_0.gguf --embedding --pooling last -ub 8192 --port 8081`
+
+Tests that need llama.cpp must be env-gated with:
+
+`LLAMA_CPP_EMBEDDING_URL=http://localhost:8081`
+
+Normal tests must pass without llama.cpp running.
+
+Qdrant order:
+
+1. vector DSL data
+2. embedding text extraction
+3. pure Qdrant JSON
+4. Qdrant Docker smoke
+5. llama.cpp embedding client
+6. synthetic Qdrant + llama.cpp retrieval smoke
+7. BeautyQ Qdrant-only semantic candidate eval
+8. only later: fallback/hybrid/rerank
+
+Qdrant semantic eval rules:
+
+* do not change `BeautySearchSpecV1` to make Qdrant pass
+* do not add lexical synonyms for `q_broad_004` or `q_broad_006`
+* do not add fallback from ES to Qdrant
+* do not add Qdrant to production responses
+* Qdrant-only quality gates are env-gated/manual until explicitly promoted
+
+---
+
+### Mode D: hybrid/fallback work
+
+Hybrid/fallback starts as docs/design or pure routing only.
+
+Forbidden unless explicitly requested:
+
+* no production routing changes
+* no `BeautySearchService` wiring
+* no ES/Qdrant hybrid calls
+* no score fusion
+* no reranking
+* no fallback behavior
+* no Elasticsearch interpreter changes
+* no Qdrant interpreter/client changes
+
+Current measured split:
+
+* ES lexical baseline: 61/63 eval queries
+* Qdrant-only semantic candidates: `q_broad_004`, `q_broad_006`
+* no production hybrid/fallback exists yet
+
+Rules:
+
+* ES owns filters, facets, exact attributes, price/duration, lexical ranking, and normal response assembly.
+* Qdrant owns semantic candidate recall only.
+* Qdrant must not own canonical facets or exact filters.
+* Hard-negative queries must not route to Qdrant just because they have residual text.
+* Residual text alone must never route to Qdrant.
+* Eval query ids may appear in tests/docs, not in production routing code.
+
+First implementation patch must be pure routing model + pure tests only:
+
+* no backend calls
+* no `BeautySearchService` changes
+* no `QdrantClient` calls
+* no production routing changes
+
+---
+
+### Mode E: docs-only
 
 Allowed files:
 
@@ -166,11 +258,14 @@ Allowed files:
 
 Forbidden:
 
-* Do not edit Scala files.
-* Do not edit tests.
-* Do not run sbt unless docs generation exists.
+* no Scala
+* no tests
+* no AGENTS.md
+* no sbt unless docs tooling requires it
 
-#### Mode D: AGENTS.md update
+---
+
+### Mode F: AGENTS.md-only
 
 Allowed files:
 
@@ -178,36 +273,56 @@ Allowed files:
 
 Forbidden:
 
-* Do not edit Scala files.
-* Do not edit tests.
-* Do not update docs.
+* no Scala
+* no tests
+* no docs
 
-#### Mode E: infrastructure cleanup
+---
 
-Use this when sbt fails because of local build output issues.
+### Mode G: infrastructure cleanup
 
-Allowed actions:
+Use only for local build-output problems.
+
+Allowed:
 
 * remove stale `target` directories
 * rerun the same sbt command
+* rerun with local permission/escalation for sbt boot locks
 
 Forbidden:
 
-* Do not edit source code.
-* Do not edit tests.
-* Do not change dictionary/spec data.
+* no source changes
+* no test changes
+* no dictionary/spec changes
+
+Known issues:
+
+If sbt fails with `graal-resources/target` recursion or `File name too long`:
+
+1. stop search work
+2. clean stale target/build directories
+3. rerun the same sbt command
+4. do not change source code
+
+If sbt fails on `~/.sbt/boot/sbt.boot.lock`:
+
+1. stop source-code work
+2. rerun the same sbt command with required local permission/escalation
+3. do not change source code
+4. report it as environment/sandbox lock issue
+
+---
 
 ### Dictionary rules
 
 Keep dictionary fixes narrow.
 
-Preferred fixes:
+Prefer:
 
-* exact phrase synonyms
+* exact phrases
 * contextual `requires`
 * conflict-preventing `excludes`
-
-Avoid broad unconditional tokens.
+* no-op residual cleanup only when safe
 
 Do not add these as unconditional service triggers:
 
@@ -222,6 +337,9 @@ Do not add these as unconditional service triggers:
 * `коррекция`
 * `снятие`
 * `гель`
+* `beauty`
+* `рядом`
+* `недорого`
 
 Bad:
 
@@ -238,19 +356,20 @@ phrase(Set("снять гель с ногтей"), ...)
 Bad:
 
 ```scala
-phrase(Set("brows"), List(ServiceAny(PMU), ...))
+phrase(Set("beauty"), ...)
 ```
 
 Better:
 
 ```scala
-phrase(Set("powder brows"), List(ServiceAny(PMU), ...))
-phrase(Set("brows"), List(...), requires = List(ServiceAny(Set(PMU))))
+phrase(Set("beauty at home"), ...)
 ```
 
-Do not implement generic negation or NLP logic for one failing query.
+Do not implement generic NLP/negation for one failing query.
 
-Do not fix a failing query by changing ranking unless the task explicitly asks for ranking work.
+Do not fix a query by changing ranking unless explicitly requested.
+
+---
 
 ### Failure protocol
 
@@ -266,16 +385,18 @@ Report:
 * top provider location ids
 * top service ids
 * scorer failed assertions
-* raw hit count, for Elasticsearch tests
-* Elasticsearch request JSON, for Elasticsearch tests
+* raw hit count, for ES/Qdrant tests
+* request JSON, for ES/Qdrant tests
 
-Then fix only that query with the smallest dictionary/spec-data change.
+Then fix only that query with the smallest safe change.
 
-Do not keep adding more query ids while the current slice is red.
+Do not keep adding more query ids while current slice is red.
+
+---
 
 ### Patch hygiene
 
-Keep each patch to one purpose.
+One patch = one purpose.
 
 Do not mix:
 
@@ -292,122 +413,52 @@ Do not commit:
 * build artifacts
 * temporary println/debug output
 
-When adding a new eval slice, always report coverage counts from test output, not from memory.
+Use counts from test output, not memory.
 
 Do not update docs coverage numbers in the same patch as code/test coverage unless explicitly requested.
 
-### Vector / Qdrant workflow
+---
 
-* Qdrant work must stay separate from Elasticsearch until Qdrant-only eval is measured.
+### Standard sbt commands
 
-  * First build Qdrant-only retrieval.
-  * Then measure Qdrant-only eval.
-  * Only after that consider ES/Qdrant fallback, hybrid ranking, or reranking.
-  * Do not add hybrid/fallback/reranking in the same patch as Qdrant ingestion or Qdrant eval.
-
-* Elasticsearch remains the lexical/filter/facet baseline.
-
-  * Do not change Elasticsearch behavior while adding Qdrant.
-  * Do not change Elasticsearch interpreters to make Qdrant tests pass.
-  * Do not use Qdrant to hide Elasticsearch regressions.
-
-* llama.cpp embedding server is manual-only.
-
-  * Agents must not start, stop, install, or Dockerize llama.cpp.
-  * Tests that need llama.cpp must be gated by `LLAMA_CPP_EMBEDDING_URL`.
-  * Normal test suites must pass without llama.cpp running.
-  * The user starts llama.cpp manually when needed:
-    `~/git/llama.cpp/build/bin/llama-server -m ~/git/Qwen3-Embedding-0.6B-Q8_0.gguf --embedding --pooling last -ub 8192 --port 8081`
-
-* Qdrant-only eval rules:
-
-  * Do not change `BeautySearchSpecV1` dictionary to make Qdrant eval pass.
-  * Do not add lexical synonyms for `q_broad_004` or `q_broad_006`.
-  * Do not add production search wiring.
-  * Do not add fallback from ES to Qdrant.
-  * Do not add Qdrant results to user-facing search responses until separate Qdrant eval is measured.
-
-* Qdrant implementation order:
-
-  1. DSL/vector spec data
-  2. embedding text extraction
-  3. pure Qdrant JSON
-  4. Qdrant Docker smoke
-  5. llama.cpp embedding client
-  6. synthetic Qdrant + llama.cpp retrieval smoke
-  7. BeautyQ Qdrant-only semantic candidate eval
-  8. only later: fallback/hybrid/rerank
-
-### Hybrid / fallback workflow
-
-* Hybrid/fallback work must start with design-only documentation.
-
-  * Do not implement ES/Qdrant hybrid, fallback, fusion, or reranking unless the task explicitly asks for implementation.
-  * Do not change production search routing in a design task.
-  * Do not replace the Elasticsearch V1 baseline.
-
-* Current baseline split:
-
-  * Elasticsearch V1 owns lexical/filter/facet search and covers 61/63 eval queries.
-  * Qdrant-only semantic eval covers `q_broad_004` and `q_broad_006`.
-  * Together they cover the eval intent space, but no production hybrid/fallback exists yet.
-
-* Backend responsibilities:
-
-  * Elasticsearch owns exact filters, facets, enum/boolean/numeric constraints, price/duration constraints, geo constraints, deterministic lexical search, and standard response assembly.
-  * Qdrant owns semantic recall for broad/conversational discovery and may return candidate ids.
-  * Qdrant must not become the owner of facets or exact attribute filtering.
-
-* Safe hybrid design constraints:
-
-  * First hybrid design should target only `q_broad_004` and `q_broad_006`.
-  * Lexical queries must remain ES-only unless a later measured change proves otherwise.
-  * Hard-negative queries must not route to Qdrant just because they have residual text.
-  * Qdrant fallback must not hide Elasticsearch regressions.
-  * No score fusion or reranking in the first hybrid implementation unless separately designed and tested.
-
-* Required eval gates before any production hybrid:
-
-  * ES-only regression remains green.
-  * Qdrant-only semantic candidate quality assertions remain green.
-  * Hybrid/fallback tests improve only the semantic candidates first.
-  * Existing lexical and hard-negative eval queries do not regress.
-
-### SBT rules
-
-Run one sbt command at a time.
-
-Avoid parallel sbt invocations because the repo can hit sbt server locks.
-
-Standard commands:
-
-Pure slice:
+Pure search tests:
 
 ```bash
 sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchPureSpec'
 ```
 
-Elasticsearch slice:
+Elasticsearch tests:
 
 ```bash
 sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchElasticsearchIntegrationSpec'
 ```
 
-Compile-only check:
+Qdrant Docker smoke:
+
+```bash
+sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantDockerSmokeSpec'
+```
+
+Qdrant semantic eval without llama.cpp should cancel cleanly:
+
+```bash
+sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
+```
+
+Manual Qdrant semantic eval, only after user starts llama.cpp:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
+```
+
+Manual Qdrant semantic quality gate:
+
+```bash
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
+```
+
+Compile-only:
 
 ```bash
 sbt 'project bifunctor-tagless' test:compile
 ```
-
-If sbt fails with `graal-resources/target` path recursion or `File name too long`:
-
-1. Stop search work.
-2. Clean stale target/build output directories.
-3. Rerun the same sbt command.
-4. Do not change source code while fixing this infrastructure issue.
-
-* If sbt fails on `~/.sbt/boot/sbt.boot.lock` or another lock outside the sandbox writable roots:
-  * stop source-code work
-  * rerun the same sbt command with the required local permission/escalation
-  * do not change source code to fix this infrastructure issue
-  * report that the first failure was an environment/sandbox lock issue

@@ -628,10 +628,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val json = QdrantJsonInterpreter.searchRequestJson(spec, List(0.1, 0.2, 0.3))
       val cursor = json.hcursor
-      assert(cursor.get[String]("using") == Right("synthetic_vector"))
+      assert(cursor.downField("vector").downField("name").as[String] == Right("synthetic_vector"))
+      assert(cursor.downField("vector").downField("vector").as[List[Double]] == Right(List(0.1, 0.2, 0.3)))
       assert(cursor.get[Int]("limit") == Right(7))
       assert(cursor.downField("score_threshold").focus.isEmpty)
-      assert(cursor.downField("query").as[List[Double]] == Right(List(0.1, 0.2, 0.3)))
+      assert(cursor.get[Boolean]("with_payload") == Right(true))
     }
 
     "generate search JSON with score_threshold when present" in {
@@ -644,6 +645,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val json = QdrantJsonInterpreter.searchRequestJson(spec, List(0.9, 0.8))
       val cursor = json.hcursor
+      assert(cursor.downField("vector").downField("name").as[String] == Right("synthetic_vector"))
+      assert(cursor.downField("vector").downField("vector").as[List[Double]] == Right(List(0.9, 0.8)))
+      assert(cursor.get[Int]("limit") == Right(7))
+      assert(cursor.get[Boolean]("with_payload") == Right(true))
       assert(cursor.get[Double]("score_threshold") == Right(0.42))
     }
   }
@@ -734,6 +739,108 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val syntheticParser = new BeautySearchIntentParser(syntheticSpec)
       val parsed = syntheticParser.parse(UserSearchInput("synthetic keyword", None, None))
       assert(parsed.explicitConstraints.contains(SearchConstraint.ServiceAny(Set("Маникюр"))))
+    }
+  }
+
+  "SearchBackendRouter" should {
+    "route a direct lexical query to ElasticsearchOnly" in {
+      val router = SearchBackendRouter.default
+      val input = UserSearchInput("маникюр", None, None)
+      val decision = router.decide(input, parser.parse(input))
+
+      assert(decision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(decision.reason == SearchRoutingReason.ExplicitConstraints)
+    }
+
+    "route a constrained attribute query to ElasticsearchOnly" in {
+      val router = SearchBackendRouter.default
+      val input = UserSearchInput("shellac entfernen und neu", None, None)
+      val decision = router.decide(input, parser.parse(input))
+
+      assert(decision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(decision.reason == SearchRoutingReason.ExplicitConstraints)
+    }
+
+    "route a hard-negative query to ElasticsearchOnly" in {
+      val router = SearchBackendRouter.default
+      val query = queryById("q_noise_003")
+      val input = UserSearchInput(query.query, None, None)
+      val decision = router.decide(
+        input,
+        parser.parse(input),
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.HardNegativeOrNoiseGuard)),
+      )
+
+      assert(decision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(decision.reason == SearchRoutingReason.ExplicitConstraints)
+    }
+
+    "route q_broad_004-like parsed input to QdrantCandidateRoute when marked as broad semantic" in {
+      val router = SearchBackendRouter.default
+      val query = queryById("q_broad_004")
+      val input = UserSearchInput(query.query, None, None)
+      val parsed = parser.parse(input)
+      val decision = router.decide(
+        input,
+        parsed,
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+      )
+
+      assert(parsed.explicitConstraints.isEmpty)
+      assert(parsed.softBoosts.isEmpty)
+      assert(parsed.remainingText.nonEmpty)
+      assert(decision.route == SearchBackendRoute.QdrantCandidateRoute)
+      assert(decision.reason == SearchRoutingReason.BroadSemanticCandidate)
+    }
+
+    "route q_broad_006-like parsed input to QdrantCandidateRoute when marked as broad semantic" in {
+      val router = SearchBackendRouter.default
+      val query = queryById("q_broad_006")
+      val input = UserSearchInput(query.query, None, None)
+      val parsed = parser.parse(input)
+      val decision = router.decide(
+        input,
+        parsed,
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+      )
+
+      assert(parsed.explicitConstraints.isEmpty)
+      assert(parsed.softBoosts.isEmpty)
+      assert(parsed.remainingText.nonEmpty)
+      assert(decision.route == SearchBackendRoute.QdrantCandidateRoute)
+      assert(decision.reason == SearchRoutingReason.BroadSemanticCandidate)
+    }
+
+    "keep residual text alone on ElasticsearchOnly when no broad signal is present" in {
+      val router = SearchBackendRouter.default
+      val input = UserSearchInput("beauty near Wandsbek Markt", None, None)
+      val parsed = parser.parse(input)
+      val decision = router.decide(input, parsed)
+
+      assert(parsed.explicitConstraints.isEmpty)
+      assert(parsed.softBoosts.isEmpty)
+      assert(parsed.remainingText.nonEmpty)
+      assert(decision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(decision.reason == SearchRoutingReason.FallbackNotEnabled)
+    }
+
+    "not depend on query ids in production router logic" in {
+      val router = SearchBackendRouter.default
+      val parsed = ParsedSearchIntent(
+        originalQuery = "synthetic broad query",
+        normalizedTokens = List("synthetic", "broad", "query"),
+        explicitConstraints = Nil,
+        softBoosts = Nil,
+        remainingText = "synthetic broad query",
+      )
+      val metadata = SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))
+
+      val first = router.decide(UserSearchInput("first label", None, None), parsed, metadata)
+      val second = router.decide(UserSearchInput("second label", None, None), parsed, metadata)
+
+      assert(first.route == SearchBackendRoute.QdrantCandidateRoute)
+      assert(second.route == SearchBackendRoute.QdrantCandidateRoute)
+      assert(first.reason == second.reason)
     }
   }
 
@@ -887,6 +994,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   private def jsonContainsString(json: Json, needle: String): Boolean =
     json.noSpaces.contains(needle)
+
+  private def queryById(id: String) =
+    evalSuite.queries.find(_.id == id).getOrElse(sys.error(s"Missing eval query $id"))
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe { implicit unsafe =>
