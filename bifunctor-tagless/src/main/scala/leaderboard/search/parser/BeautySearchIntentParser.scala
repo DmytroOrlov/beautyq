@@ -1,0 +1,239 @@
+package leaderboard.search.parser
+
+import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
+import leaderboard.search.dsl.{BeautySearchSpec, SearchConstraint, SearchSynonym, SynonymMatchMode}
+
+import java.util.Locale
+
+final class BeautySearchIntentParser(spec: BeautySearchSpec) {
+  import BeautySearchIntentParser.*
+
+  def parse(input: UserSearchInput): ParsedSearchIntent = {
+    val normalizedQuery = normalize(input.query)
+    val normalizedTokens = tokenize(normalizedQuery)
+    val baseMatches = selectMatches(
+      synonyms = spec.synonyms.filter(_.requires.isEmpty),
+      tokens = normalizedTokens,
+      currentConstraints = Nil,
+      occupied = Set.empty,
+    )
+
+    val contextualMatches = selectContextualMatches(
+      synonyms = spec.synonyms.filter(_.requires.nonEmpty),
+      tokens = normalizedTokens,
+      selected = baseMatches,
+    )
+
+    val allMatches = (baseMatches ++ contextualMatches).sortBy(matchResult => (matchResult.start, matchResult.end))
+    val explicitConstraints = distinctConstraints(allMatches.flatMap(_.synonym.constraints))
+    val softBoosts = distinctConstraints(allMatches.flatMap(_.synonym.softBoosts))
+    val occupiedPositions = allMatches.foldLeft(Set.empty[Int]) { (acc, next) =>
+      acc ++ (next.start until next.end)
+    }
+    val remainingText = normalizedTokens.zipWithIndex.collect {
+      case (token, index) if !occupiedPositions.contains(index) => token
+    }.mkString(" ")
+
+    ParsedSearchIntent(
+      originalQuery = input.query,
+      normalizedTokens = normalizedTokens,
+      explicitConstraints = explicitConstraints,
+      softBoosts = softBoosts,
+      remainingText = remainingText,
+    )
+  }
+}
+
+object BeautySearchIntentParser {
+  private final case class MatchResult(
+    synonym: SearchSynonym,
+    phrase: String,
+    start: Int,
+    end: Int,
+  ) {
+    val length: Int = end - start
+  }
+
+  private def normalize(value: String): String =
+    value
+      .toLowerCase(Locale.ROOT)
+      .replace('ё', 'е')
+      .replace('–', ' ')
+      .replace('—', ' ')
+      .replace('-', ' ')
+      .replace('/', ' ')
+      .replace('\\', ' ')
+      .replace('(', ' ')
+      .replace(')', ' ')
+      .replace('[', ' ')
+      .replace(']', ' ')
+      .replace('{', ' ')
+      .replace('}', ' ')
+      .replace(',', ' ')
+      .replace('.', ' ')
+      .replace(':', ' ')
+      .replace(';', ' ')
+      .replace('!', ' ')
+      .replace('?', ' ')
+      .replace('"', ' ')
+      .replace('\'', ' ')
+      .trim
+      .replaceAll("\\s+", " ")
+
+  private def tokenize(value: String): List[String] =
+    value.split(' ').toList.map(_.trim).filter(_.nonEmpty)
+
+  private def selectContextualMatches(
+    synonyms: List[SearchSynonym],
+    tokens: List[String],
+    selected: List[MatchResult],
+  ): List[MatchResult] = {
+    val currentConstraints = distinctConstraints(selected.flatMap(_.synonym.constraints))
+    val occupied = selected.foldLeft(Set.empty[Int]) { (acc, next) =>
+      acc ++ (next.start until next.end)
+    }
+    val nextMatches = selectMatches(synonyms, tokens, currentConstraints, occupied)
+    if (nextMatches.isEmpty) {
+      Nil
+    } else {
+      nextMatches ++ selectContextualMatches(synonyms, tokens, selected ++ nextMatches)
+    }
+  }
+
+  private def selectMatches(
+    synonyms: List[SearchSynonym],
+    tokens: List[String],
+    currentConstraints: List[SearchConstraint],
+    occupied: Set[Int],
+  ): List[MatchResult] = {
+    val candidates = synonyms.iterator
+      .filter { synonym =>
+        val requiresSatisfied = constraintsSatisfied(synonym.requires, currentConstraints)
+        val excludesSatisfied = synonym.excludes.nonEmpty && constraintsSatisfied(synonym.excludes, currentConstraints)
+        requiresSatisfied && !excludesSatisfied
+      }
+      .flatMap(synonym => synonym.tokens.iterator.flatMap(token => matchToken(synonym, token, tokens)))
+      .toList
+      .sortBy(candidate => (-candidate.length, candidate.start, -candidate.synonym.constraints.size))
+
+    candidates.foldLeft(List.empty[MatchResult]) {
+      case (acc, candidate) =>
+        val candidateIndexes = candidate.start until candidate.end
+        val occupiedBySelection = acc.exists(existing => overlaps(existing, candidate))
+        val occupiedByPrevious = candidateIndexes.exists(occupied.contains)
+        if (occupiedBySelection || occupiedByPrevious) {
+          acc
+        } else {
+          candidate :: acc
+        }
+    }.reverse
+  }
+
+  private def matchToken(
+    synonym: SearchSynonym,
+    rawToken: String,
+    tokens: List[String],
+  ): List[MatchResult] = {
+    val token = normalize(rawToken)
+    val phraseTokens = tokenize(token)
+    if (phraseTokens.isEmpty) {
+      Nil
+    } else {
+      synonym.matchMode match {
+        case SynonymMatchMode.Phrase =>
+          slidingMatches(synonym, rawToken, phraseTokens, tokens)
+        case SynonymMatchMode.Token =>
+          phraseTokens.flatMap { tokenValue =>
+            tokens.zipWithIndex.collect {
+              case (candidate, index) if candidate == tokenValue => MatchResult(synonym, rawToken, index, index + 1)
+            }
+          }
+      }
+    }
+  }
+
+  private def slidingMatches(
+    synonym: SearchSynonym,
+    rawToken: String,
+    phraseTokens: List[String],
+    tokens: List[String],
+  ): List[MatchResult] = {
+    if (phraseTokens.length > tokens.length) {
+      Nil
+    } else {
+      tokens.sliding(phraseTokens.length).zipWithIndex.collect {
+        case (candidateTokens, index) if candidateTokens == phraseTokens =>
+          MatchResult(synonym, rawToken, index, index + phraseTokens.length)
+      }.toList
+    }
+  }
+
+  private def overlaps(left: MatchResult, right: MatchResult): Boolean =
+    left.start < right.end && right.start < left.end
+
+  private def constraintsSatisfied(required: List[SearchConstraint], current: List[SearchConstraint]): Boolean =
+    required.forall(requiredConstraint => current.exists(currentConstraint => covers(currentConstraint, requiredConstraint)))
+
+  private def covers(current: SearchConstraint, required: SearchConstraint): Boolean =
+    (current, required) match {
+      case (SearchConstraint.ServiceAny(currentNames), SearchConstraint.ServiceAny(requiredNames)) =>
+        requiredNames.subsetOf(currentNames)
+      case (SearchConstraint.CategoryAny(currentNames), SearchConstraint.CategoryAny(requiredNames)) =>
+        requiredNames.subsetOf(currentNames)
+      case (
+            SearchConstraint.EnumAttr(currentCode, currentValues),
+            SearchConstraint.EnumAttr(requiredCode, requiredValues),
+          ) =>
+        currentCode == requiredCode && requiredValues.subsetOf(currentValues)
+      case (SearchConstraint.BoolAttr(currentCode, currentValue), SearchConstraint.BoolAttr(requiredCode, requiredValue)) =>
+        currentCode == requiredCode && currentValue == requiredValue
+      case (
+            SearchConstraint.IntRange(currentCode, currentMin, currentMax),
+            SearchConstraint.IntRange(requiredCode, requiredMin, requiredMax),
+          ) =>
+        currentCode == requiredCode && boundCovers(currentMin, currentMax, requiredMin, requiredMax)
+      case (
+            SearchConstraint.DecimalRange(currentCode, currentMin, currentMax),
+            SearchConstraint.DecimalRange(requiredCode, requiredMin, requiredMax),
+          ) =>
+        currentCode == requiredCode && boundCovers(currentMin, currentMax, requiredMin, requiredMax)
+      case (SearchConstraint.PriceRange(currentMin, currentMax), SearchConstraint.PriceRange(requiredMin, requiredMax)) =>
+        boundCovers(currentMin, currentMax, requiredMin, requiredMax)
+      case (SearchConstraint.DurationRange(currentMin, currentMax), SearchConstraint.DurationRange(requiredMin, requiredMax)) =>
+        boundCovers(currentMin, currentMax, requiredMin, requiredMax)
+      case (SearchConstraint.NearUser, SearchConstraint.NearUser) =>
+        true
+      case _ =>
+        false
+    }
+
+  private def boundCovers[A: Ordering](
+    currentMin: Option[A],
+    currentMax: Option[A],
+    requiredMin: Option[A],
+    requiredMax: Option[A],
+  ): Boolean = {
+    val ordering = summon[Ordering[A]]
+    val minSatisfied = (currentMin, requiredMin) match {
+      case (_, None) => true
+      case (Some(current), Some(required)) => ordering.lteq(current, required)
+      case (None, Some(_)) => false
+    }
+    val maxSatisfied = (currentMax, requiredMax) match {
+      case (_, None) => true
+      case (Some(current), Some(required)) => ordering.gteq(current, required)
+      case (None, Some(_)) => false
+    }
+    minSatisfied && maxSatisfied
+  }
+
+  private def distinctConstraints(constraints: List[SearchConstraint]): List[SearchConstraint] =
+    constraints.foldLeft((Set.empty[SearchConstraint], List.empty[SearchConstraint])) {
+      case ((seen, acc), constraint) =>
+        if (seen.contains(constraint)) {
+          (seen, acc)
+        } else {
+          (seen + constraint, acc :+ constraint)
+        }
+    }._2
+}
