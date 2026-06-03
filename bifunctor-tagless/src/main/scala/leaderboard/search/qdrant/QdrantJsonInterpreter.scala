@@ -19,9 +19,12 @@ object QdrantJsonInterpreter {
     Json.fromJsonObject(
       JsonObject.fromIterable(
         List(
-          "query" -> Json.arr(queryVector.map(Json.fromDoubleOrNull): _*),
-          "using" -> Json.fromString(spec.vectorName),
+          "vector" -> Json.obj(
+            "name" -> Json.fromString(spec.vectorName),
+            "vector" -> Json.arr(queryVector.map(Json.fromDoubleOrNull): _*),
+          ),
           "limit" -> Json.fromInt(spec.topK),
+          "with_payload" -> Json.True,
         ) ++ spec.scoreThreshold.toList.map(scoreThreshold => "score_threshold" -> Json.fromDoubleOrNull(scoreThreshold))
       )
     )
