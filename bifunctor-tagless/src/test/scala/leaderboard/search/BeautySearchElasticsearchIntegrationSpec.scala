@@ -58,6 +58,14 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     "q_hair_007",
   )
 
+  private val hardNegativeQueryIds = Set(
+    "q_nails_011",
+    "q_lashes_007",
+    "q_noise_003",
+    "q_noise_004",
+    "q_noise_005",
+  )
+
   "BeautySearch Elasticsearch integration" should {
     "create the index mapping" in {
       (
@@ -140,6 +148,58 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
             for {
               _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => secondMilestoneQueryIds.contains(query.id))) {
+                query =>
+                  for {
+                    debug <- executeSearchDebug(testSpec, client, query.query)
+                    response = debug.response
+                    report = BeautySearchEvalScorer.score(query, response)
+                    _ <- requireCondition(
+                      response.variantCarousel.take(3).exists(result => query.expectedVariantCarousel.acceptableVariantIds.contains(result.variantId)),
+                      query,
+                      response,
+                      report,
+                      "variant top-3",
+                      Some(debug),
+                    )
+                    _ <- requireCondition(
+                      response.providerCarousel.take(5).exists(result => query.expectedProviderCarousel.acceptableProviderLocationIds.contains(result.masterLocationId)),
+                      query,
+                      response,
+                      report,
+                      "provider top-5",
+                      Some(debug),
+                    )
+                    _ <- requireCondition(
+                      response.serviceIntentCarousel.take(3).exists(result => query.expectedServiceIntentCarousel.acceptableServiceIds.contains(result.serviceId)),
+                      query,
+                      response,
+                      report,
+                      "service top-3",
+                      Some(debug),
+                    )
+                    _ <- requireCondition(report.failedAssertions.isEmpty, query, response, report, "scorer", Some(debug))
+                  } yield ()
+              }
+            } yield ()
+        }
+    }
+
+    "pass the hard-negative eval subset" in {
+      (
+        portCfg: ElasticsearchPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+      ) =>
+        withPreparedIndex(portCfg) {
+          (client, testSpec) =>
+            for {
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => hardNegativeQueryIds.contains(query.id))) {
                 query =>
                   for {
                     response <- executeSearch(testSpec, client, query.query)
@@ -255,17 +315,47 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     } yield interpreted
   }
 
+  private final case class SearchDebug(
+    intent: ParsedSearchIntent,
+    requestJson: io.circe.Json,
+    rawHitCount: Option[Long],
+    response: BeautySearchResponse,
+  )
+
+  private def executeSearchDebug(
+    spec: leaderboard.search.dsl.BeautySearchSpec,
+    client: ElasticsearchTestClient,
+    query: String,
+  ): IO[QueryFailure, SearchDebug] = {
+    val input = UserSearchInput(query, Some(evalSuite.testUserLocation.lat), Some(evalSuite.testUserLocation.lon))
+    val parser = new BeautySearchIntentParser(spec)
+    val intent = parser.parse(input)
+    for {
+      requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(spec, input, intent))
+      rawResponse <- client.postJson(s"/${spec.variantDocument.indexName}/_search", requestJson)
+      interpreted <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(spec, input, intent, rawResponse))
+      rawHits = rawResponse.hcursor.downField("hits").downField("total").as[Long].toOption.orElse(rawResponse.hcursor.downField("hits").downField("total").downField("value").as[Long].toOption)
+    } yield SearchDebug(intent, requestJson, rawHits, interpreted)
+  }
+
+  private def debugSuffix(debug: Option[SearchDebug]): String =
+    debug.fold("")(d =>
+      s"intent=${d.intent} explicitConstraints=${d.intent.explicitConstraints} softBoosts=${d.intent.softBoosts} remainingText=${d.intent.remainingText} rawHitCount=${d.rawHitCount} request=${d.requestJson.noSpaces} "
+    )
+
   private def diagnosticMessage(
     query: leaderboard.search.eval.BeautySearchEvalQuery,
     response: BeautySearchResponse,
     report: leaderboard.search.eval.BeautySearchEvalReport,
     check: String,
+    debug: Option[SearchDebug] = None,
   ): String =
     s"check=$check queryId=${query.id} query=${query.query} " +
       s"topVariantIds=${response.variantCarousel.take(3).map(_.variantId).mkString("[", ",", "]")} " +
       s"topProviderLocationIds=${response.providerCarousel.take(5).map(_.masterLocationId).mkString("[", ",", "]")} " +
       s"topServiceIds=${response.serviceIntentCarousel.take(3).map(_.serviceId).mkString("[", ",", "]")} " +
-      s"failedAssertions=${report.failedAssertions.mkString("[", ",", "]")}"
+      s"failedAssertions=${report.failedAssertions.mkString("[", ",", "]")} " +
+      debugSuffix(debug)
 
   private def requireCondition(
     condition: Boolean,
@@ -273,7 +363,8 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     response: BeautySearchResponse,
     report: leaderboard.search.eval.BeautySearchEvalReport,
     check: String,
+    debug: Option[SearchDebug] = None,
   ): IO[QueryFailure, Unit] =
     if condition then ZIO.unit
-    else ZIO.fail(QueryFailure.operation("beautyq-search-eval", diagnosticMessage(query, response, report, check)))
+    else ZIO.fail(QueryFailure.operation("beautyq-search-eval", diagnosticMessage(query, response, report, check, debug)))
 }

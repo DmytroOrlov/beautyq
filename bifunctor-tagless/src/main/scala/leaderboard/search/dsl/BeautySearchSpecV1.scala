@@ -321,6 +321,7 @@ object BeautySearchSpecV1 {
       phrase(Set(HairRemovalCategory), List(SearchConstraint.CategoryAny(Set(HairRemovalCategory)))),
       phrase(Set("гель лак", "гель лак", "gel polish"), List(enumConstraint("nail_coating_type", "gel_polish"))),
       phrase(Set("shellac", "шелак"), List(enumConstraint("nail_coating_type", "shellac"))),
+      phrase(Set("снять гель с ногтей", "снять гель"), List(SearchConstraint.ServiceAny(Set(NailExtensionService)), enumConstraint("nail_service_type", "removal"), enumConstraint("nail_coating_type", "gel"), boolConstraint("with_removal", true))),
       phrase(Set("gel removal"), List(SearchConstraint.ServiceAny(Set(NailExtensionService)), enumConstraint("nail_service_type", "removal"), enumConstraint("nail_coating_type", "gel"))),
       phrase(Set("не татуаж"), Nil),
       phrase(Set("без лака", "без покрытия", "no coating"), List(enumConstraint("nail_coating_type", "no_coating"))),
