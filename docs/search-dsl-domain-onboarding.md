@@ -67,6 +67,27 @@ A new domain should provide its own domain-specific layer on top of the generic 
 
 The point is not to make the domain disappear. The point is to keep domain knowledge in one explicit place instead of spreading it through parser branches and backend-specific code.
 
+## Reusable-Domain Note
+
+For a new domain, do not expect the DSL to remove the need for domain eval and dictionary work.
+
+The reusable part is:
+
+* `SearchDocumentSpec`
+* `SearchField` metadata
+* mapping/ingestion/request/response interpreters
+* in-memory backend
+* eval workflow
+* pure-first then backend verification
+
+The domain-specific part is:
+
+* flattened search document
+* domain spec
+* dictionary/synonyms
+* eval dataset
+* carousel/result projection
+
 ## BeautyQ Happy Path
 
 This is the sequence that worked for BeautyQ and should be reused for a new domain.
@@ -170,27 +191,31 @@ If one of these feels convenient, it usually means the DSL/spec is missing a pie
 ### Current Eval Coverage
 
 * **Total eval queries**: 63
-* **Covered queries after PMU coverage**: 38
-* **Uncovered queries**: 25
+* **ES V1 lexical covered queries**: 61
+* **Uncovered semantic/vector candidates**: 2
+* **Uncovered ids**:
+  * `q_broad_004`
+  * `q_broad_006`
 
-### Covered Groups
+### ES V1 Lexical Boundary
 
-Coverage currently exists for:
-* First milestone
-* Second milestone
-* Hard-negative pure + Elasticsearch
-* Brows/lashes pure + Elasticsearch
-* PMU pure + Elasticsearch
+ES V1 is intended to cover:
 
-### Uncovered Groups
+* direct service queries
+* known multilingual synonyms
+* enum/boolean/int/decimal attribute queries
+* known typo/noise cleanup
+* exact commercial intent phrases
+* facets, filters, grouping, and deterministic carousels
 
-Remaining uncovered groups include:
-* Broad queries
-* Remaining nails attribute-heavy queries
-* Remaining face/PMU queries
-* Home-visit queries
-* Remaining hair-removal queries
-* Typo/noise queries
+ES V1 should not be forced to cover:
+
+* broad beauty intent without a stable service/entity signal
+* conversational discovery queries
+* semantic similarity without dictionary support
+* unseen paraphrases that require embeddings
+
+`q_broad_004` and `q_broad_006` are intentionally left for future semantic/vector search, not failed lexical work.
 
 ### Coverage Rules
 

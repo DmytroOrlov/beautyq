@@ -145,27 +145,31 @@ The ES integration suite uses a seed-scoped Postgres snapshot loader so tests st
 ## Current Eval Coverage
 
 * **Total eval queries**: 63
-* **Covered queries after PMU coverage**: 38
-* **Uncovered queries**: 25
+* **ES V1 lexical covered queries**: 61
+* **Uncovered semantic/vector candidates**: 2
+* **Uncovered ids**:
+  * `q_broad_004`
+  * `q_broad_006`
 
-### Covered Groups
+## ES V1 Lexical Boundary
 
-Coverage currently exists for:
-* First milestone
-* Second milestone
-* Hard-negative pure + Elasticsearch
-* Brows/lashes pure + Elasticsearch
-* PMU pure + Elasticsearch
+ES V1 is intended to cover:
 
-### Uncovered Groups
+* direct service queries
+* known multilingual synonyms
+* enum/boolean/int/decimal attribute queries
+* known typo/noise cleanup
+* exact commercial intent phrases
+* facets, filters, grouping, and deterministic carousels
 
-Remaining uncovered groups include:
-* Broad queries
-* Remaining nails attribute-heavy queries
-* Remaining face/PMU queries
-* Home-visit queries
-* Remaining hair-removal queries
-* Typo/noise queries
+ES V1 should not be forced to cover:
+
+* broad beauty intent without a stable service/entity signal
+* conversational discovery queries
+* semantic similarity without dictionary support
+* unseen paraphrases that require embeddings
+
+`q_broad_004` and `q_broad_006` are intentionally left for future semantic/vector search. They are not treated as failed lexical coverage work.
 
 ### Coverage Rules
 
