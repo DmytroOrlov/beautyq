@@ -60,111 +60,271 @@
 
 ## BeautyQ search DSL rules
 
-### Core invariant
+This section is intentionally strict. Follow it literally.
 
-* Keep BeautyQ search semantics in `BeautySearchSpecV1` / DSL data, not in backend interpreters.
+### Main rule
 
-  * Mapping, ingestion, searchable fields, filters, facets, boosts, request behavior, grouping, and synonym behavior must be driven by the spec.
-  * If Elasticsearch or in-memory search needs new semantics, add metadata to the DSL/spec first.
-  * Do not hardcode BeautyQ service names, attribute codes, query phrases, or ranking rules inside Elasticsearch interpreters.
+* Search behavior must live in `BeautySearchSpecV1` / DSL data.
+* Backend interpreters must stay mechanical.
+* Do not hardcode BeautyQ service names, attribute codes, query phrases, or ranking rules inside Elasticsearch interpreters.
 
-### Eval coverage workflow
+Allowed search-semantic place:
 
-* Add eval coverage in small slices.
+* `BeautySearchSpecV1.scala`
 
-  * First add pure/in-memory coverage.
-  * Only after the pure slice is green, add Elasticsearch coverage in a separate patch.
-  * Do not add pure and Elasticsearch coverage in the same patch unless explicitly requested.
-  * Do not add unrelated query ids while working on a slice.
+Usually forbidden places for domain semantics:
 
-* For a pure eval slice, allowed files are usually:
+* `ElasticsearchSearchRequestInterpreter.scala`
+* `ElasticsearchSearchResponseInterpreter.scala`
+* `ElasticsearchMappingInterpreter.scala`
+* `ElasticsearchIngestionInterpreter.scala`
+* `InMemorySearchBackend.scala`
+* parser/interpreter code, unless the task explicitly asks for parser/interpreter work
 
-  * `BeautySearchEvalInventory.scala`
-  * `BeautySearchPureSpec.scala`
-  * `BeautySearchSpecV1.scala` for narrow dictionary/spec data only
+If Elasticsearch or in-memory search needs new semantics, first add metadata or dictionary/spec data to the DSL/spec.
 
-* For an Elasticsearch eval slice, allowed files are usually:
+### Pick exactly one task mode
 
-  * `BeautySearchElasticsearchIntegrationSpec.scala`
-  * `BeautySearchSpecV1.scala` only if Elasticsearch exposes a narrow residual-text dictionary gap
+Before editing, classify the task as exactly one mode.
+
+#### Mode A: pure eval slice
+
+Use this when adding new query coverage for `InMemorySearchBackend`.
+
+Allowed files:
+
+* `BeautySearchEvalInventory.scala`
+* `BeautySearchPureSpec.scala`
+* `BeautySearchSpecV1.scala` only for narrow dictionary/spec data
+
+Forbidden:
+
+* Do not edit Elasticsearch tests.
+* Do not edit Elasticsearch interpreters.
+* Do not update docs.
+* Do not edit AGENTS.md.
+* Do not refactor helpers.
+
+Required steps:
+
+1. Add one query-id set to `BeautySearchEvalInventory`.
+
+2. Add that set to the covered inventory.
+
+3. Update the duplicate/overlap check to include the new set.
+
+4. Update the expected covered count.
+
+5. Add one pure test in `BeautySearchPureSpec`.
+
+6. Run:
+
+   `sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchPureSpec'`
+
+7. Report per-query pass/fail and coverage counts from test output.
+
+#### Mode B: Elasticsearch eval slice
+
+Use this only after the same pure slice is green.
+
+Allowed files:
+
+* `BeautySearchElasticsearchIntegrationSpec.scala`
+* `BeautySearchSpecV1.scala` only if Elasticsearch exposes a narrow residual-text dictionary gap
+
+Forbidden:
+
+* Do not edit `BeautySearchEvalInventory.scala`.
+* Do not edit `BeautySearchPureSpec.scala`.
+* Do not edit Elasticsearch interpreters.
+* Do not change ranking.
+* Do not update docs.
+* Do not edit AGENTS.md.
+* Do not refactor helpers.
+
+Required steps:
+
+1. Add one Elasticsearch test in `BeautySearchElasticsearchIntegrationSpec`.
+
+2. Reuse the existing query-id set from `BeautySearchEvalInventory`.
+
+3. Reuse `BeautySearchEvalTestSupport.requireEvalOutcome`.
+
+4. Keep existing ES diagnostics unchanged.
+
+5. Run:
+
+   `sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchElasticsearchIntegrationSpec'`
+
+6. Report per-query pass/fail.
+
+#### Mode C: docs-only update
+
+Allowed files:
+
+* docs files only
+
+Forbidden:
+
+* Do not edit Scala files.
+* Do not edit tests.
+* Do not run sbt unless docs generation exists.
+
+#### Mode D: AGENTS.md update
+
+Allowed files:
+
+* `AGENTS.md` only
+
+Forbidden:
+
+* Do not edit Scala files.
+* Do not edit tests.
+* Do not update docs.
+
+#### Mode E: infrastructure cleanup
+
+Use this when sbt fails because of local build output issues.
+
+Allowed actions:
+
+* remove stale `target` directories
+* rerun the same sbt command
+
+Forbidden:
+
+* Do not edit source code.
+* Do not edit tests.
+* Do not change dictionary/spec data.
 
 ### Dictionary rules
 
-* Keep dictionary fixes narrow and contextual.
+Keep dictionary fixes narrow.
 
-  * Prefer exact phrase synonyms and `requires` constraints.
-  * Do not add broad tokens such as `brows`, `gel`, `removal`, `lifting`, `correction`, or `lip` as unconditional service triggers.
-  * Do not implement generic negation or NLP logic for one failing query.
-  * Do not fix a failing query by changing ranking unless the task explicitly asks for ranking work.
+Preferred fixes:
 
-### Interpreter rules
+* exact phrase synonyms
+* contextual `requires`
+* conflict-preventing `excludes`
 
-* Keep search interpreter changes rare and spec-driven.
+Avoid broad unconditional tokens.
 
-  * Do not add query-specific branches to parser/interpreter code.
-  * Do not change Elasticsearch interpreters while adding eval coverage unless a test proves a real spec-driven interpreter bug.
-  * Do not make Elasticsearch and in-memory behavior diverge intentionally.
+Do not add these as unconditional service triggers:
+
+* `brows`
+* `gel`
+* `removal`
+* `lifting`
+* `correction`
+* `lip`
+* `face`
+* `дизайн`
+* `коррекция`
+* `снятие`
+* `гель`
+
+Bad:
+
+```scala
+phrase(Set("gel"), ...)
+```
+
+Better:
+
+```scala
+phrase(Set("снять гель с ногтей"), ...)
+```
+
+Bad:
+
+```scala
+phrase(Set("brows"), List(ServiceAny(PMU), ...))
+```
+
+Better:
+
+```scala
+phrase(Set("powder brows"), List(ServiceAny(PMU), ...))
+phrase(Set("brows"), List(...), requires = List(ServiceAny(Set(PMU))))
+```
+
+Do not implement generic negation or NLP logic for one failing query.
+
+Do not fix a failing query by changing ranking unless the task explicitly asks for ranking work.
 
 ### Failure protocol
 
-* If one query fails, stop and report:
+If one query fails, stop expanding the slice.
 
-  * query id
-  * query text
-  * parsed intent, if available
-  * top variant ids
-  * top provider location ids
-  * top service ids
-  * scorer failed assertions
-  * Elasticsearch request JSON, for Elasticsearch tests
+Report:
 
-* Fix only the failing query with the smallest dictionary/spec-data change.
+* query id
+* query text
+* parsed intent, if available
+* remaining text, if available
+* top variant ids
+* top provider location ids
+* top service ids
+* scorer failed assertions
+* raw hit count, for Elasticsearch tests
+* Elasticsearch request JSON, for Elasticsearch tests
 
-* Do not continue expanding coverage while a current slice is red.
+Then fix only that query with the smallest dictionary/spec-data change.
+
+Do not keep adding more query ids while the current slice is red.
 
 ### Patch hygiene
 
-* Keep each patch to one purpose.
+Keep each patch to one purpose.
 
-  * Do not mix eval coverage, docs updates, AGENTS.md edits, and unrelated cleanup in one patch.
-  * Do not commit local opencode/session logs.
-  * Do not leave temporary println/debug output in green patches.
+Do not mix:
 
-* When adding a new eval slice:
+* eval coverage
+* docs updates
+* AGENTS.md edits
+* infrastructure cleanup
+* unrelated refactors
 
-  * update `BeautySearchEvalInventory`
-  * update the inventory overlap/duplicate check to include the new set
-  * update the expected covered count in the inventory test
-  * report coverage counts from the test output, not from memory
+Do not commit:
 
-* Do not update docs coverage numbers in the same patch as code/test coverage unless explicitly requested.
+* opencode session logs
+* local debug files
+* build artifacts
+* temporary println/debug output
 
-  * Prefer a separate docs-only patch after pure and Elasticsearch coverage are both green for a slice.
+When adding a new eval slice, always report coverage counts from test output, not from memory.
 
-### Dictionary safety examples
-
-* Broad words must usually be contextual:
-
-  * `brows`
-  * `gel`
-  * `removal`
-  * `lifting`
-  * `correction`
-  * `lip`
-  * `face`
-
-* Prefer exact phrase entries for known eval phrases.
-
-* For ambiguous bare terms, prefer `requires` / `excludes` constraints instead of unconditional service triggers.
+Do not update docs coverage numbers in the same patch as code/test coverage unless explicitly requested.
 
 ### SBT rules
 
-* Run one sbt command at a time.
+Run one sbt command at a time.
 
-  * Avoid parallel sbt invocations because the repo can hit sbt server locks.
+Avoid parallel sbt invocations because the repo can hit sbt server locks.
 
-* Standard verification commands:
+Standard commands:
 
-  * Pure slice: `sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchPureSpec'`
-  * Elasticsearch slice: `sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchElasticsearchIntegrationSpec'`
-  * Compile-only check: `sbt 'project bifunctor-tagless' test:compile`
+Pure slice:
+
+```bash
+sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchPureSpec'
+```
+
+Elasticsearch slice:
+
+```bash
+sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchElasticsearchIntegrationSpec'
+```
+
+Compile-only check:
+
+```bash
+sbt 'project bifunctor-tagless' test:compile
+```
+
+If sbt fails with `graal-resources/target` path recursion or `File name too long`:
+
+1. Stop search work.
+2. Clean stale target/build output directories.
+3. Rerun the same sbt command.
+4. Do not change source code while fixing this infrastructure issue.

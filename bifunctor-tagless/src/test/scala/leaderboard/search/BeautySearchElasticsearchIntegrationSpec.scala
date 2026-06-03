@@ -223,6 +223,72 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         }
     }
 
+    "pass the face eval subset" in {
+      (
+        portCfg: ElasticsearchPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+      ) =>
+        withPreparedIndex(portCfg) {
+          (client, testSpec) =>
+            for {
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.faceQueryIds.contains(query.id))) {
+                query =>
+                  for {
+                    debug <- executeSearchDebug(testSpec, client, query.query)
+                    report = BeautySearchEvalScorer.score(query, debug.response)
+                    _ <- BeautySearchEvalTestSupport.requireEvalOutcome(
+                      query,
+                      debug.response,
+                      report,
+                      "eval",
+                      Some(BeautySearchEvalTestSupport.EsDebug(debug.intent, debug.requestJson, debug.rawHitCount)),
+                    )
+                  } yield ()
+              }
+            } yield ()
+        }
+    }
+
+    "pass the nails eval subset" in {
+      (
+        portCfg: ElasticsearchPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+      ) =>
+        withPreparedIndex(portCfg) {
+          (client, testSpec) =>
+            for {
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.nailsQueryIds.contains(query.id))) {
+                query =>
+                  for {
+                    debug <- executeSearchDebug(testSpec, client, query.query)
+                    report = BeautySearchEvalScorer.score(query, debug.response)
+                    _ <- BeautySearchEvalTestSupport.requireEvalOutcome(
+                      query,
+                      debug.response,
+                      report,
+                      "eval",
+                      Some(BeautySearchEvalTestSupport.EsDebug(debug.intent, debug.requestJson, debug.rawHitCount)),
+                    )
+                  } yield ()
+              }
+            } yield ()
+        }
+    }
+
     "return exactly the three UI carousels in the interpreted response" in {
       (
         portCfg: ElasticsearchPortCfg,
