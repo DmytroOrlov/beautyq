@@ -5,14 +5,12 @@ import leaderboard.model.*
 import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
-import leaderboard.search.eval.{BeautySearchEvalLoader, BeautySearchEvalScorer}
+import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe}
-
-import java.nio.file.Paths
 
 final class BeautySearchPureSpec extends AnyWordSpec {
   private val seedData = new BeautyQSeedLoader.ResourceLoader().load() match {
@@ -28,44 +26,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   private val parser = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
 
-  private val evalSuite = BeautySearchEvalLoader.load(Paths.get("beautyq_search_eval_queries_v1.json")) match {
-    case Right(value) => value
-    case Left(error) => throw new RuntimeException(error.message)
-  }
-
-  private val firstMilestoneQueryIds = Set(
-    "q_nails_001",
-    "q_nails_006",
-    "q_nails_009",
-    "q_lashes_001",
-    "q_lashes_002",
-    "q_brows_005",
-    "q_pmu_001",
-    "q_pmu_005",
-    "q_face_001",
-    "q_face_002",
-    "q_face_004",
-    "q_face_008",
-  )
-
-  private val secondMilestoneQueryIds = Set(
-    "q_nails_007",
-    "q_nails_012",
-    "q_lashes_004",
-    "q_hair_002",
-    "q_hair_003",
-    "q_hair_004",
-    "q_hair_006",
-    "q_hair_007",
-  )
-
-  private val hardNegativeQueryIds = Set(
-    "q_nails_011",
-    "q_lashes_007",
-    "q_noise_003",
-    "q_noise_004",
-    "q_noise_005",
-  )
+  private val evalSuite = BeautySearchEvalInventory.evalSuite
 
   "BeautySearchSpecV1" should {
     "include dynamic fields for all AttributeDefinition.all entries" in {
@@ -93,6 +54,26 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         }.toMap
         assert(built.enumAttributes == expected)
       }
+    }
+  }
+
+  "BeautySearchEvalInventory" should {
+    "report current coverage without failing uncovered ids" in {
+      val allIds = evalSuite.queries.map(_.id).toSet
+      val covered = BeautySearchEvalInventory.firstMilestoneQueryIds ++ BeautySearchEvalInventory.secondMilestoneQueryIds ++ BeautySearchEvalInventory.hardNegativeQueryIds
+
+      assert(BeautySearchEvalInventory.firstMilestoneQueryIds.subsetOf(allIds))
+      assert(BeautySearchEvalInventory.secondMilestoneQueryIds.subsetOf(allIds))
+      assert(BeautySearchEvalInventory.hardNegativeQueryIds.subsetOf(allIds))
+      assert(
+        BeautySearchEvalInventory.firstMilestoneQueryIds.intersect(BeautySearchEvalInventory.secondMilestoneQueryIds).isEmpty &&
+          BeautySearchEvalInventory.firstMilestoneQueryIds.intersect(BeautySearchEvalInventory.hardNegativeQueryIds).isEmpty &&
+          BeautySearchEvalInventory.secondMilestoneQueryIds.intersect(BeautySearchEvalInventory.hardNegativeQueryIds).isEmpty,
+      )
+
+      println(BeautySearchEvalInventory.inventorySummary)
+      assert(covered.size == 25)
+      assert((allIds -- covered).nonEmpty)
     }
   }
 
@@ -471,7 +452,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
       val service = new BeautySearchService.Impl[IO](parser, backend)
 
-      evalSuite.queries.filter(query => firstMilestoneQueryIds.contains(query.id)).foreach { query =>
+      evalSuite.queries.filter(query => BeautySearchEvalInventory.firstMilestoneQueryIds.contains(query.id)).foreach { query =>
         val response = runIO(
           service.search(
             UserSearchInput(
@@ -494,7 +475,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
       val service = new BeautySearchService.Impl[IO](parser, backend)
 
-      evalSuite.queries.filter(query => secondMilestoneQueryIds.contains(query.id)).foreach { query =>
+      evalSuite.queries.filter(query => BeautySearchEvalInventory.secondMilestoneQueryIds.contains(query.id)).foreach { query =>
         val response = runIO(
           service.search(
             UserSearchInput(
@@ -517,7 +498,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
       val service = new BeautySearchService.Impl[IO](parser, backend)
 
-      evalSuite.queries.filter(query => hardNegativeQueryIds.contains(query.id)).foreach { query =>
+      evalSuite.queries.filter(query => BeautySearchEvalInventory.hardNegativeQueryIds.contains(query.id)).foreach { query =>
         val response = runIO(
           service.search(
             UserSearchInput(
