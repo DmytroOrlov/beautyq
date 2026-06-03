@@ -167,18 +167,40 @@ If one of these feels convenient, it usually means the DSL/spec is missing a pie
 
 ## BeautyQ Status
 
-Current BeautyQ status:
+### Current Eval Coverage
 
-- first milestone coverage exists
-- second milestone coverage exists in pure and Elasticsearch paths
-- hard-negative coverage exists in pure and Elasticsearch paths
-- eval inventory tracks covered and uncovered query ids
-- brows/lashes pure coverage exists as an additional milestone slice
+* **Total eval queries**: 63
+* **Covered queries after the latest brows/lashes slice**: 34
+* **Uncovered queries**: 29
+
+### Covered Groups
+
+Coverage currently exists for:
+* First milestone
+* Second milestone
+* Hard-negative pure + Elasticsearch
+* Brows/lashes pure + Elasticsearch
+
+### Uncovered Groups
+
+Remaining uncovered groups include:
+* Broad queries
+* Remaining nails attribute-heavy queries
+* Remaining face/PMU queries
+* Home-visit queries
+* Remaining hair-removal queries
+* Typo/noise queries
+
+### Coverage Rules
+
+New coverage should continue to follow this rule:
+1. Add pure/in-memory test first.
+2. Then add Elasticsearch integration test in a separate patch.
+3. Production changes should be limited to narrow `BeautySearchSpecV1` dictionary/spec data unless a real spec-driven interpreter bug is found.
 
 The next likely work is:
-
-- extending eval coverage further
-- extracting remaining BeautyQ names from generic pieces if and when a second domain is introduced
+* Extending eval coverage further
+* Extracting remaining BeautyQ names from generic pieces if and when a second domain is introduced
 
 ## Naming Note
 

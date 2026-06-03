@@ -141,3 +141,34 @@ Docker-backed Elasticsearch integration tests cover:
 - response shape with exactly three carousels
 
 The ES integration suite uses a seed-scoped Postgres snapshot loader so tests stay deterministic even when the shared managed Postgres instance contains unrelated rows from other suites.
+
+## Current Eval Coverage
+
+* **Total eval queries**: 63
+* **Covered queries after the latest brows/lashes slice**: 34
+* **Uncovered queries**: 29
+
+### Covered Groups
+
+Coverage currently exists for:
+* First milestone
+* Second milestone
+* Hard-negative pure + Elasticsearch
+* Brows/lashes pure + Elasticsearch
+
+### Uncovered Groups
+
+Remaining uncovered groups include:
+* Broad queries
+* Remaining nails attribute-heavy queries
+* Remaining face/PMU queries
+* Home-visit queries
+* Remaining hair-removal queries
+* Typo/noise queries
+
+### Coverage Rules
+
+New coverage should continue to follow this rule:
+1. Add pure/in-memory test first.
+2. Then add Elasticsearch integration test in a separate patch.
+3. Production changes should be limited to narrow `BeautySearchSpecV1` dictionary/spec data unless a real spec-driven interpreter bug is found.
