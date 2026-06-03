@@ -31,6 +31,7 @@ The single source of truth is `leaderboard.search.dsl.BeautySearchSpec`.
 - `SearchSynonym` dictionary
 - `CarouselSpec`
 - `FacetSpec`
+- `SearchRequestSpec`
 
 `SearchDocumentSpec.fields` carry the information interpreters need:
 
@@ -42,6 +43,17 @@ The single source of truth is `leaderboard.search.dsl.BeautySearchSpec`.
 - boosts
 
 This keeps Elasticsearch and in-memory implementations driven by the same metadata.
+
+`SearchRequestSpec` carries backend request behavior that should stay spec-driven rather than hidden inside Elasticsearch code:
+
+- `hitWindowSize`
+- `textOperator`
+- `aggregationSize`
+- `geoDistanceScale`
+- `geoDistanceOffset`
+- `geoDistanceDecay`
+
+`ElasticsearchSearchRequestInterpreter` must read those values from the spec and should not encode BeautyQ semantics in local constants.
 
 ## Search Document
 
@@ -87,8 +99,10 @@ Domain knowledge stays in the synonym dictionary, not in the parser algorithm.
 
 - `ElasticsearchMappingInterpreter`: derives mapping from `SearchDocumentSpec.fields`
 - `ElasticsearchIngestionInterpreter`: builds `_bulk` NDJSON from the same spec
-- `ElasticsearchSearchRequestInterpreter`: builds bool query, boosts, facets, and grouping aggregations from spec metadata and parsed intent
+- `ElasticsearchSearchRequestInterpreter`: builds bool query, boosts, facets, and grouping aggregations from spec metadata, parsed intent, and `SearchRequestSpec`
 - `ElasticsearchSearchResponseInterpreter`: decodes hits and delegates carousel / facet / inferred-filter assembly to shared logic
+
+The Elasticsearch interpreters must remain mechanical. If a search behavior affects request shape, field selection, aggregation sizing, or geo scoring knobs, the value belongs in the DSL/spec first rather than in an interpreter-local branch or constant.
 
 ### In-memory
 
