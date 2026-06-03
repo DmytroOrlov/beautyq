@@ -513,6 +513,26 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         BeautySearchEvalTestSupport.assertEvalOutcome(query, response, report, "eval")
       }
     }
+
+    "return acceptable variant, provider and service ids for the brows and lashes eval subset" in {
+      val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
+      val service = new BeautySearchService.Impl[IO](parser, backend)
+
+      evalSuite.queries.filter(query => BeautySearchEvalInventory.browsLashesQueryIds.contains(query.id)).foreach { query =>
+        val response = runIO(
+          service.search(
+            UserSearchInput(
+              query = query.query,
+              userLat = Some(evalSuite.testUserLocation.lat),
+              userLon = Some(evalSuite.testUserLocation.lon),
+            )
+          )
+        )
+        val report = BeautySearchEvalScorer.score(query, response)
+
+        BeautySearchEvalTestSupport.assertEvalOutcome(query, response, report, "eval")
+      }
+    }
   }
 
   private def jsonContainsString(json: Json, needle: String): Boolean =
