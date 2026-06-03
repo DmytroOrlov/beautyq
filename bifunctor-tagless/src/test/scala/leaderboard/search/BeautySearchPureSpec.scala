@@ -60,19 +60,31 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   "BeautySearchEvalInventory" should {
     "report current coverage without failing uncovered ids" in {
       val allIds = evalSuite.queries.map(_.id).toSet
-      val covered = BeautySearchEvalInventory.firstMilestoneQueryIds ++ BeautySearchEvalInventory.secondMilestoneQueryIds ++ BeautySearchEvalInventory.hardNegativeQueryIds
+      val covered = BeautySearchEvalInventory.firstMilestoneQueryIds ++
+        BeautySearchEvalInventory.secondMilestoneQueryIds ++
+        BeautySearchEvalInventory.hardNegativeQueryIds ++
+        BeautySearchEvalInventory.browsLashesQueryIds ++
+        BeautySearchEvalInventory.pmuQueryIds
 
       assert(BeautySearchEvalInventory.firstMilestoneQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.secondMilestoneQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.hardNegativeQueryIds.subsetOf(allIds))
-      assert(
-        BeautySearchEvalInventory.firstMilestoneQueryIds.intersect(BeautySearchEvalInventory.secondMilestoneQueryIds).isEmpty &&
-          BeautySearchEvalInventory.firstMilestoneQueryIds.intersect(BeautySearchEvalInventory.hardNegativeQueryIds).isEmpty &&
-          BeautySearchEvalInventory.secondMilestoneQueryIds.intersect(BeautySearchEvalInventory.hardNegativeQueryIds).isEmpty,
+      assert(BeautySearchEvalInventory.browsLashesQueryIds.subsetOf(allIds))
+      assert(BeautySearchEvalInventory.pmuQueryIds.subsetOf(allIds))
+      val allSets = List(
+        BeautySearchEvalInventory.firstMilestoneQueryIds,
+        BeautySearchEvalInventory.secondMilestoneQueryIds,
+        BeautySearchEvalInventory.hardNegativeQueryIds,
+        BeautySearchEvalInventory.browsLashesQueryIds,
+        BeautySearchEvalInventory.pmuQueryIds,
       )
+      for {
+        (a, i) <- allSets.zipWithIndex
+        (b, j) <- allSets.zipWithIndex if i < j
+      } assert(a.intersect(b).isEmpty, s"Overlap between set $i and set $j: ${a.intersect(b)}")
 
       println(BeautySearchEvalInventory.inventorySummary)
-      assert(covered.size == 25)
+      assert(covered.size == 38)
       assert((allIds -- covered).nonEmpty)
     }
   }
@@ -519,6 +531,26 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val service = new BeautySearchService.Impl[IO](parser, backend)
 
       evalSuite.queries.filter(query => BeautySearchEvalInventory.browsLashesQueryIds.contains(query.id)).foreach { query =>
+        val response = runIO(
+          service.search(
+            UserSearchInput(
+              query = query.query,
+              userLat = Some(evalSuite.testUserLocation.lat),
+              userLon = Some(evalSuite.testUserLocation.lon),
+            )
+          )
+        )
+        val report = BeautySearchEvalScorer.score(query, response)
+
+        BeautySearchEvalTestSupport.assertEvalOutcome(query, response, report, "eval")
+      }
+    }
+
+    "return acceptable variant, provider and service ids for the PMU eval subset" in {
+      val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
+      val service = new BeautySearchService.Impl[IO](parser, backend)
+
+      evalSuite.queries.filter(query => BeautySearchEvalInventory.pmuQueryIds.contains(query.id)).foreach { query =>
         val response = runIO(
           service.search(
             UserSearchInput(
