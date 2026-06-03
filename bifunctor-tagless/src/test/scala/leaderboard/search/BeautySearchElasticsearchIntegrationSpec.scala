@@ -7,14 +7,14 @@ import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocumentBuilder}
+import leaderboard.search.BeautySearchEvalInventory
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
-import leaderboard.search.eval.{BeautySearchEvalLoader, BeautySearchEvalScorer}
+import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.seed.BeautyQSeedLoader
 import zio.{IO, ZIO}
 
-import java.nio.file.Paths
 import java.util.UUID
 
 final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest with ProdTest {
@@ -28,43 +28,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     case Right(value) => value
     case Left(error) => throw new RuntimeException(error.message)
   }
-  private val evalSuite = BeautySearchEvalLoader.load(Paths.get("beautyq_search_eval_queries_v1.json")) match {
-    case Right(value) => value
-    case Left(error) => throw new RuntimeException(error.message)
-  }
-  private val firstMilestoneQueryIds = Set(
-    "q_nails_001",
-    "q_nails_006",
-    "q_nails_009",
-    "q_lashes_001",
-    "q_lashes_002",
-    "q_brows_005",
-    "q_pmu_001",
-    "q_pmu_005",
-    "q_face_001",
-    "q_face_002",
-    "q_face_004",
-    "q_face_008",
-  )
-
-  private val secondMilestoneQueryIds = Set(
-    "q_nails_007",
-    "q_nails_012",
-    "q_lashes_004",
-    "q_hair_002",
-    "q_hair_003",
-    "q_hair_004",
-    "q_hair_006",
-    "q_hair_007",
-  )
-
-  private val hardNegativeQueryIds = Set(
-    "q_nails_011",
-    "q_lashes_007",
-    "q_noise_003",
-    "q_noise_004",
-    "q_noise_005",
-  )
+  private val evalSuite = BeautySearchEvalInventory.evalSuite
 
   "BeautySearch Elasticsearch integration" should {
     "create the index mapping" in {
@@ -117,7 +81,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
           (client, testSpec) =>
             for {
               _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
-              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => firstMilestoneQueryIds.contains(query.id))) {
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.firstMilestoneQueryIds.contains(query.id))) {
                 query =>
                   for {
                     response <- executeSearch(testSpec, client, query.query)
@@ -147,7 +111,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
           (client, testSpec) =>
             for {
               _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
-              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => secondMilestoneQueryIds.contains(query.id))) {
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.secondMilestoneQueryIds.contains(query.id))) {
                 query =>
                   for {
                     debug <- executeSearchDebug(testSpec, client, query.query)
@@ -181,7 +145,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
           (client, testSpec) =>
             for {
               _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
-              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => hardNegativeQueryIds.contains(query.id))) {
+              _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.hardNegativeQueryIds.contains(query.id))) {
                 query =>
                   for {
                     response <- executeSearch(testSpec, client, query.query)
