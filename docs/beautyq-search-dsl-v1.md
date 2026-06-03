@@ -145,8 +145,8 @@ The ES integration suite uses a seed-scoped Postgres snapshot loader so tests st
 ## Current Eval Coverage
 
 * **Total eval queries**: 63
-* **Covered queries after the latest brows/lashes slice**: 34
-* **Uncovered queries**: 29
+* **Covered queries after PMU coverage**: 38
+* **Uncovered queries**: 25
 
 ### Covered Groups
 
@@ -155,6 +155,7 @@ Coverage currently exists for:
 * Second milestone
 * Hard-negative pure + Elasticsearch
 * Brows/lashes pure + Elasticsearch
+* PMU pure + Elasticsearch
 
 ### Uncovered Groups
 
