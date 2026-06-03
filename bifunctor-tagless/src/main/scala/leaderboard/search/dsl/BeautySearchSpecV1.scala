@@ -308,7 +308,7 @@ object BeautySearchSpecV1 {
 
   private val dictionary: List[SearchSynonym] =
     List(
-      servicePhrase(Set(ManicureService, "маникюр"), ManicureService, Some("nail_service_type" -> "manicure")),
+      servicePhrase(Set(ManicureService, "маникюр", "манекюр"), ManicureService, Some("nail_service_type" -> "manicure")),
       phrase(Set("обычный маникюр"), List(SearchConstraint.ServiceAny(Set(ManicureService)), enumConstraint("nail_service_type", "manicure"))),
       phrase(Set("дешевый маникюр рядом"), List(SearchConstraint.ServiceAny(Set(ManicureService)), enumConstraint("nail_service_type", "manicure"))),
       servicePhrase(Set(PedicureService, "педикюр", "pedicure", "fußpflege"), PedicureService, Some("nail_service_type" -> "pedicure")),
@@ -320,11 +320,17 @@ object BeautySearchSpecV1 {
       servicePhrase(Set(FaceService, "косметология лица", "facial", "face treatment"), FaceService, None),
       servicePhrase(Set(HomeVisitService, "выездной уход", "выездной уход для двоих", "beauty treatment at home", "home beauty care", "beauty at home", "small group"), HomeVisitService, None),
       phrase(Set(NailsCategory, "nails"), List(SearchConstraint.CategoryAny(Set(NailsCategory))), softBoosts = List(SearchConstraint.ServiceAny(Set(ManicureService, PedicureService, NailExtensionService)))),
+      phrase(Set("ногти"), List(SearchConstraint.CategoryAny(Set(NailsCategory))), softBoosts = List(SearchConstraint.ServiceAny(Set(ManicureService, PedicureService, NailExtensionService)))),
       phrase(Set(EyesCategory), List(SearchConstraint.CategoryAny(Set(EyesCategory)))),
       phrase(Set(FaceCategory), List(SearchConstraint.CategoryAny(Set(FaceCategory)))),
       phrase(Set(HairRemovalCategory), List(SearchConstraint.CategoryAny(Set(HairRemovalCategory)))),
+      phrase(Set("салон красоты"), Nil),
+      phrase(Set("lashes and brows"), List(SearchConstraint.ServiceAny(Set(LashesService, BrowsService)))),
+      phrase(Set("что-то для лица рядом", "что то для лица рядом", "что-то для лица", "что то для лица"), List(SearchConstraint.ServiceAny(Set(FaceService)))),
+      phrase(Set("недорогие ногти рядом"), List(SearchConstraint.ServiceAny(Set(ManicureService, PedicureService)))),
       phrase(Set("гель лак", "гель лак", "gel polish"), List(enumConstraint("nail_coating_type", "gel_polish"))),
       phrase(Set("shellac", "шелак"), List(enumConstraint("nail_coating_type", "shellac"))),
+      phrase(Set("реснички 2д корр"), List(SearchConstraint.ServiceAny(Set(LashesService)), enumConstraint("lash_volume", "volume2_d"), enumConstraint("lash_service_type", "refill"), boolConstraint("with_correction", true))),
       phrase(Set("с shellac и снятием"), List(enumConstraint("nail_coating_type", "shellac"), boolConstraint("with_removal", true))),
       phrase(Set("shellac entfernen und neu"), List(enumConstraint("nail_coating_type", "shellac"), boolConstraint("with_removal", true))),
       phrase(Set("снять гель с ногтей", "снять гель"), List(SearchConstraint.ServiceAny(Set(NailExtensionService)), enumConstraint("nail_service_type", "removal"), enumConstraint("nail_coating_type", "gel"), boolConstraint("with_removal", true))),
