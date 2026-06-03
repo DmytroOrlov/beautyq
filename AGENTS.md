@@ -296,6 +296,48 @@ When adding a new eval slice, always report coverage counts from test output, no
 
 Do not update docs coverage numbers in the same patch as code/test coverage unless explicitly requested.
 
+### Vector / Qdrant workflow
+
+* Qdrant work must stay separate from Elasticsearch until Qdrant-only eval is measured.
+
+  * First build Qdrant-only retrieval.
+  * Then measure Qdrant-only eval.
+  * Only after that consider ES/Qdrant fallback, hybrid ranking, or reranking.
+  * Do not add hybrid/fallback/reranking in the same patch as Qdrant ingestion or Qdrant eval.
+
+* Elasticsearch remains the lexical/filter/facet baseline.
+
+  * Do not change Elasticsearch behavior while adding Qdrant.
+  * Do not change Elasticsearch interpreters to make Qdrant tests pass.
+  * Do not use Qdrant to hide Elasticsearch regressions.
+
+* llama.cpp embedding server is manual-only.
+
+  * Agents must not start, stop, install, or Dockerize llama.cpp.
+  * Tests that need llama.cpp must be gated by `LLAMA_CPP_EMBEDDING_URL`.
+  * Normal test suites must pass without llama.cpp running.
+  * The user starts llama.cpp manually when needed:
+    `~/git/llama.cpp/build/bin/llama-server -m ~/git/Qwen3-Embedding-0.6B-Q8_0.gguf --embedding --pooling last -ub 8192 --port 8081`
+
+* Qdrant-only eval rules:
+
+  * Do not change `BeautySearchSpecV1` dictionary to make Qdrant eval pass.
+  * Do not add lexical synonyms for `q_broad_004` or `q_broad_006`.
+  * Do not add production search wiring.
+  * Do not add fallback from ES to Qdrant.
+  * Do not add Qdrant results to user-facing search responses until separate Qdrant eval is measured.
+
+* Qdrant implementation order:
+
+  1. DSL/vector spec data
+  2. embedding text extraction
+  3. pure Qdrant JSON
+  4. Qdrant Docker smoke
+  5. llama.cpp embedding client
+  6. synthetic Qdrant + llama.cpp retrieval smoke
+  7. BeautyQ Qdrant-only semantic candidate eval
+  8. only later: fallback/hybrid/rerank
+
 ### SBT rules
 
 Run one sbt command at a time.
