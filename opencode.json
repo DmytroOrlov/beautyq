@@ -17,13 +17,13 @@
           "variants": {
             "default": {
               "limit": {
-                "context": 262144,
+                "context": 196608,
                 "output": 8192
               }
             },
             "128k": {
               "limit": {
-                "context": 131072,
+                "context": 262144,
                 "output": 8192
               }
             }
