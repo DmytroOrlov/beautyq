@@ -122,6 +122,41 @@
 
 * Do not continue expanding coverage while a current slice is red.
 
+### Patch hygiene
+
+* Keep each patch to one purpose.
+
+  * Do not mix eval coverage, docs updates, AGENTS.md edits, and unrelated cleanup in one patch.
+  * Do not commit local opencode/session logs.
+  * Do not leave temporary println/debug output in green patches.
+
+* When adding a new eval slice:
+
+  * update `BeautySearchEvalInventory`
+  * update the inventory overlap/duplicate check to include the new set
+  * update the expected covered count in the inventory test
+  * report coverage counts from the test output, not from memory
+
+* Do not update docs coverage numbers in the same patch as code/test coverage unless explicitly requested.
+
+  * Prefer a separate docs-only patch after pure and Elasticsearch coverage are both green for a slice.
+
+### Dictionary safety examples
+
+* Broad words must usually be contextual:
+
+  * `brows`
+  * `gel`
+  * `removal`
+  * `lifting`
+  * `correction`
+  * `lip`
+  * `face`
+
+* Prefer exact phrase entries for known eval phrases.
+
+* For ambiguous bare terms, prefer `requires` / `excludes` constraints instead of unconditional service triggers.
+
 ### SBT rules
 
 * Run one sbt command at a time.

@@ -64,19 +64,22 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         BeautySearchEvalInventory.secondMilestoneQueryIds ++
         BeautySearchEvalInventory.hardNegativeQueryIds ++
         BeautySearchEvalInventory.browsLashesQueryIds ++
-        BeautySearchEvalInventory.pmuQueryIds
+        BeautySearchEvalInventory.pmuQueryIds ++
+        BeautySearchEvalInventory.faceQueryIds
 
       assert(BeautySearchEvalInventory.firstMilestoneQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.secondMilestoneQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.hardNegativeQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.browsLashesQueryIds.subsetOf(allIds))
       assert(BeautySearchEvalInventory.pmuQueryIds.subsetOf(allIds))
+      assert(BeautySearchEvalInventory.faceQueryIds.subsetOf(allIds))
       val allSets = List(
         BeautySearchEvalInventory.firstMilestoneQueryIds,
         BeautySearchEvalInventory.secondMilestoneQueryIds,
         BeautySearchEvalInventory.hardNegativeQueryIds,
         BeautySearchEvalInventory.browsLashesQueryIds,
         BeautySearchEvalInventory.pmuQueryIds,
+        BeautySearchEvalInventory.faceQueryIds,
       )
       for {
         (a, i) <- allSets.zipWithIndex
@@ -84,7 +87,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       } assert(a.intersect(b).isEmpty, s"Overlap between set $i and set $j: ${a.intersect(b)}")
 
       println(BeautySearchEvalInventory.inventorySummary)
-      assert(covered.size == 38)
+      assert(covered.size == 42)
       assert((allIds -- covered).nonEmpty)
     }
   }
@@ -551,6 +554,26 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val service = new BeautySearchService.Impl[IO](parser, backend)
 
       evalSuite.queries.filter(query => BeautySearchEvalInventory.pmuQueryIds.contains(query.id)).foreach { query =>
+        val response = runIO(
+          service.search(
+            UserSearchInput(
+              query = query.query,
+              userLat = Some(evalSuite.testUserLocation.lat),
+              userLon = Some(evalSuite.testUserLocation.lon),
+            )
+          )
+        )
+        val report = BeautySearchEvalScorer.score(query, response)
+
+        BeautySearchEvalTestSupport.assertEvalOutcome(query, response, report, "eval")
+      }
+    }
+
+    "return acceptable variant, provider and service ids for the face eval subset" in {
+      val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
+      val service = new BeautySearchService.Impl[IO](parser, backend)
+
+      evalSuite.queries.filter(query => BeautySearchEvalInventory.faceQueryIds.contains(query.id)).foreach { query =>
         val response = runIO(
           service.search(
             UserSearchInput(
