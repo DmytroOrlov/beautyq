@@ -3,7 +3,7 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.MasterServiceOfferVariantApi
 import leaderboard.http.tapir.{MasterServiceOfferVariantTapirEndpoints, TapirHttpSupport}
-import leaderboard.model.{MasterServiceOfferVariant, MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.*
 import leaderboard.repo.MasterServiceOfferVariants
 import org.http4s.Status
 import zio.interop.catz.*
@@ -11,7 +11,11 @@ import zio.{IO, Ref, UIO, ZIO}
 
 import java.util.UUID
 
-class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
+class MasterServiceOfferVariantApiHttpContractSuite
+    extends SpecZIO
+    with AssertZIO
+    with HttpContractTestSupport
+    with VariantTestFixtures {
   private def masterServiceOfferVariantApi(
     state: MasterServiceOfferVariantApiContractState
   ): MasterServiceOfferVariantApi[IO] =
@@ -21,29 +25,40 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
       new TapirHttpSupport[IO],
     )
 
-  "MasterServiceOfferVariantApi current http4s contracts" should {
-    "return 200 and exact variant json for an existing entity" in {
-      val variant = variantOf(
-        UUID.fromString("11111111-2222-3333-4444-555555555555"),
-        UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
-        UUID.fromString("99999999-8888-7777-6666-555555555555"),
-        10,
-        15,
-        45,
-      )
+  "MasterServiceOfferVariantApi legacy compatibility contracts" should {
+    "pin legacy compatibility: existing single-entity GET returns 200 and exact json with attribute groups" in {
+      val variantId            = UUID.fromString("11111111-2222-3333-4444-555555555555")
+      val masterServiceOfferId = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val masterLocationId     = UUID.fromString("99999999-8888-7777-6666-555555555555")
 
       for {
+        variant <- makeVariant(
+          variantId,
+          masterServiceOfferId,
+          masterLocationId,
+          10,
+          15,
+          45,
+          intAttributes = AttributeMap.Impl(Map(AttributeDefinition.SessionCount -> 3)),
+          bigDecimalAttributes = AttributeMap.Impl(Map(AttributeDefinition.DepositAmount -> BigDecimal("12"))),
+          enumAttributes = AttributeMap.Impl(Map(AttributeDefinition.HairRemovalMethodAttribute -> HairRemovalMethod.Sugaring)),
+          booleanAttributes = AttributeMap.Impl(Map(AttributeDefinition.WithRemoval -> true)),
+        )
         state    <- MasterServiceOfferVariantApiContractState.make
         _        <- state.setGetMasterServiceOfferVariantResult(Right(Some(variant)))
-        response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/${variant.id}"))
+        response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/$variantId"))
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(
-          response.body === s"""{"id":"${variant.id}","masterServiceOfferId":"${variant.masterServiceOfferId}","masterLocationId":"${variant.masterLocationId}","priceFrom":10,"priceTo":15,"durationMin":45}"""
+          response.body === s"""{"id":"$variantId","masterServiceOfferId":"$masterServiceOfferId","masterLocationId":"$masterLocationId","priceFrom":10,"priceTo":15,"durationMin":45,"intAttributes":{"session_count":3},"bigDecimalAttributes":{"deposit_amount":12},"enumAttributes":{"hair_removal_method":"sugaring"},"booleanAttributes":{"with_removal":true}}"""
         )
+        _        <- assertIO(response.body.contains(""""intAttributes":{"session_count":3}"""))
+        _        <- assertIO(response.body.contains(""""bigDecimalAttributes":{"deposit_amount":12}"""))
+        _        <- assertIO(response.body.contains(""""enumAttributes":{"hair_removal_method":"sugaring"}"""))
+        _        <- assertIO(response.body.contains(""""booleanAttributes":{"with_removal":true}"""))
       } yield ()
     }
 
-    "return 200 and null body for a missing variant" in {
+    "pin legacy compatibility: missing single-entity GET returns 200 and null body" in {
       val variantId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
@@ -153,9 +168,10 @@ class MasterServiceOfferVariantApiHttpContractSuite extends SpecZIO with AssertZ
     priceFrom: BigDecimal,
     priceTo: BigDecimal,
     durationMin: Int,
+    attributes: MasterServiceOfferVariantAttributes = MasterServiceOfferVariantAttributes.empty,
   ): MasterServiceOfferVariant =
     MasterServiceOfferVariant
-      .make(id, masterServiceOfferId, masterLocationId, priceFrom, priceTo, durationMin)
+      .make(id, masterServiceOfferId, masterLocationId, priceFrom, priceTo, durationMin, attributes)
       .fold(error => throw new IllegalArgumentException(error.message), identity)
 }
 
