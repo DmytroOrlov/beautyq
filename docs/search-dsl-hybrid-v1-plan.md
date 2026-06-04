@@ -109,12 +109,12 @@ Queries may be eligible for the Qdrant candidate route only when lexical intent 
 - no explicit attribute constraints
 - no exact filter constraints
 - broad beauty or discovery language
-- similarity to the proven `q_broad_004` and `q_broad_006` semantic gap
-- high residual text combined with broad semantic eligibility, no explicit constraints, and no hard-negative signals
+- similarity to the eval examples `q_broad_004` and `q_broad_006` for coverage only
+- high residual text may be useful as diagnostic/eval context, but it is not a production routing trigger
 
 Residual text alone must never route a query to Qdrant.
 
-The first implementation should not make Qdrant a generic "unknown query" default. It should start with the narrow broad-query class represented by `q_broad_004` and `q_broad_006`, then expand only after eval evidence exists.
+The first implementation should not make Qdrant a generic "unknown query" default. It should start with the narrow broad-query class represented by the `q_broad_004` and `q_broad_006` eval examples, then expand only after eval evidence exists.
 
 The query ids `q_broad_004` and `q_broad_006` may appear in eval data, tests, and documentation. They must not be hardcoded in production routing logic.
 
@@ -126,7 +126,7 @@ Potential fallback signals:
 
 - ES returns zero hits and the parser has no strong explicit constraints.
 - ES returns low-confidence or weak broad result mass, but this is not implemented yet.
-- Parser output has high `remainingText`, broad semantic eligibility, no explicit constraints, and no hard-negative signals.
+- Parser output has no explicit constraints and no hard-negative signals; any `remainingText` is diagnostic context only.
 
 Low confidence must not be used as a routing signal until a concrete confidence metric is defined and tested.
 
@@ -138,7 +138,7 @@ Fallback must be blocked when the query is explicitly constrained or known to be
 - no fallback for hard-negative/noise queries already covered by ES
 - no fallback just because a query has residual text
 
-Residual text alone must never route a query to Qdrant. High residual text is only a weak signal and must be combined with broad semantic eligibility, no explicit constraints, and no hard-negative signals.
+Residual text alone must never route a query to Qdrant. Residual text can be used for diagnostics or eval context only, not as a production routing trigger.
 
 ## 5. Minimal V1 Behavior
 
@@ -149,7 +149,7 @@ Hybrid V1 should add a separate experimental service or method rather than repla
 The first behavior should be:
 
 - keep current production ES behavior unchanged
-- route only `q_broad_004` and `q_broad_006`-like broad queries to the Qdrant candidate route
+- route only the eval-covered broad-query shape to the Qdrant candidate route, using explicit metadata from a future safe source rather than eval ids or residual text
 - return Qdrant candidate ids instead of final ranked production results
 - assemble domain documents into the existing three-carousel shapes where possible
 - avoid score fusion
@@ -254,7 +254,7 @@ Production rollout should require these gates before any hybrid or fallback path
 
 - ES-only regression suite remains green at `61/63`.
 - Qdrant-only semantic candidate quality assertions remain green.
-- Hybrid/fallback tests cover only `q_broad_004` and `q_broad_006` first.
+- Hybrid/fallback tests cover the `q_broad_004` and `q_broad_006` eval examples first.
 - Lexical queries do not regress.
 - Hard-negative queries do not regress.
 - Explicitly constrained queries do not route to Qdrant fallback.
@@ -310,13 +310,13 @@ Reusable concepts should be generic:
 
 Domain-specific broad-query examples belong in domain eval/spec data.
 
-For BeautyQ, `q_broad_004` and `q_broad_006` are examples of the broad semantic class. They should guide eval coverage, not become hardcoded backend behavior.
+For BeautyQ, `q_broad_004` and `q_broad_006` are examples of the broad semantic class. They should guide eval coverage and documentation examples, not become hardcoded backend behavior.
 
 Backend interpreters should stay generic:
 
 - Elasticsearch interpreters consume lexical/filter/facet specs.
 - Qdrant interpreters consume vector/search specs.
-- Hybrid routing consumes parser/spec output and measured routing metadata.
+- Hybrid routing consumes parser/spec output and future explicit routing metadata.
 
 A second domain should be able to reuse:
 
