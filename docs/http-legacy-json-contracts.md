@@ -15,14 +15,12 @@ The current adapter-level encoding is centralized in `leaderboard.http.tapir.Leg
 The following Tapir endpoint definitions currently expose single-entity GET responses as raw JSON:
 
 - `leaderboard.http.tapir.ProfileTapirEndpoints`
-- `leaderboard.http.tapir.MasterLocationTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
 
 These are the actual files used by the HTTP adapters in:
 
 - `leaderboard.api.ProfileApi`
-- `leaderboard.api.MasterLocationApi`
 - `leaderboard.api.MasterServiceOfferApi`
 - `leaderboard.api.MasterServiceOfferVariantApi`
 
@@ -59,11 +57,10 @@ These are the actual files used by the HTTP adapters in:
 
 ### MasterLocationApi
 
-- Current response contract: `GET /master-location/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `MasterLocation`.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: medium. Location lookups are often consumed alongside master-service-offer data, so compatibility needs to be checked against clients that rely on null-returning reads.
-- Required tests before changing: route contract tests for missing entity, present entity, and the existing response body serialization.
+- Migrated on June 4, 2026.
+- Current response contract: `GET /master-location/{id}` returns typed `MasterLocation` JSON.
+- Missing-entity behavior now: `404 Not Found` with typed error JSON.
+- This endpoint is no longer part of the legacy raw-JSON `200 + null` compatibility set.
 
 ### MasterServiceOfferApi
 
@@ -103,7 +100,7 @@ This provides an intermediate migration path, but it still needs careful adapter
 
 ## Recommended first migration step
 
-`ServiceApi`, `CategoryApi`, and `MasterApi` have been migrated. The next candidates are `ProfileApi` or `MasterLocationApi`, both low-to-medium risk.
+`ServiceApi`, `CategoryApi`, `MasterApi`, and `MasterLocationApi` have been migrated. The next candidates are `ProfileApi` or `MasterServiceOfferApi`, both low-to-medium risk.
 
 The migration steps should be:
 

@@ -32,15 +32,15 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
       } yield ()
     }
 
-    "return 200 and null body for a missing location" in {
+    "return 404 and typed error json for a missing location" in {
       val locationId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterLocationApiContractState.make
         _        <- state.setGetMasterLocationResult(Right(None))
         response <- observe(combineApis(masterLocationApi(state)), get(s"/master-location/$locationId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === s"""{"code":"not_found","message":"Master location '$locationId' was not found"}""")
       } yield ()
     }
 
