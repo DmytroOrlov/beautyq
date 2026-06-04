@@ -39,19 +39,36 @@ If full test fails:
 ## sbt rules
 
 * Do not run sbt commands in parallel.
-* Prefer one chained sbt command instead of several shells.
+* Prefer one chained, project-scoped sbt command over several shells.
 * Do not use `-no-server` unless the user explicitly asks.
-* For multiple checks, chain them in one sbt session.
-* If sbt fails on `~/.sbt/boot/sbt.boot.lock`, rerun the same command with local permission/escalation. Do not edit source.
-* If sbt fails with stale target/classpath/resource recursion, stop source work, clean targets, rerun the same command, and report it.
+* If sbt hits `~/.sbt/boot/sbt.boot.lock`, rerun the same command with local permission/escalation. Do not edit source.
 
-Useful commands:
+Use `sbt --shutdown` only for stale/inconsistent compile state, for example:
+
+* `error while loading SomeClass.class`;
+* bad/stale classfile or classpath errors;
+* the same clean compile command fails differently on repeat;
+* sbt/IDE/agent compilation was interrupted or may have overlapped.
+
+Compile-state reset:
 
 ```bash
+sbt --shutdown
+find . -type d -name target -print0 | xargs -0 rm -rf
 sbt 'project bifunctor-tagless' Test/compile
-sbt 'project bifunctor-tagless' 'testOnly leaderboard.SomeSuite'
-sbt 'project bifunctor-tagless' test
 ```
+
+Do not use `sbt --shutdown` to explain runtime test failures. It does not reset Docker, Postgres, Elasticsearch, Distage resources, or seed state.
+
+Cold runtime test reset:
+
+```bash
+docker rm -f $(docker ps -a -q -f "label=distage.type") || true
+find . -type d -name target -print0 | xargs -0 rm -rf
+sbt test
+```
+
+If compile is green but full tests are red, diagnose runtime resources/tests. Do not keep cleaning targets or changing source blindly.
 
 ## Warning rules
 

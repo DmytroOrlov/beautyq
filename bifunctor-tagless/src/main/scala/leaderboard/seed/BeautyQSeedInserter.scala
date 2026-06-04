@@ -2,17 +2,21 @@ package leaderboard.seed
 
 import distage.Lifecycle
 import izumi.functional.bio.{Error2, F}
+import izumi.functional.bio.IO2
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.runtime.QueryFailureToThrowable
 import logstage.LogIO2
+import java.util.concurrent.Semaphore
 
 trait BeautyQSeedInserter[F[_, _]] {
   def insert(data: BeautyQSeedData): F[QueryFailure, Unit]
 }
 
 object BeautyQSeedInserter {
-  final class Impl[F[+_, +_]: Error2](
+  private val seedLoadLock = new Semaphore(1, true)
+
+  final class Impl[F[+_, +_]](
     categories: Categories[F],
     services: Services[F],
     masters: Masters[F],
@@ -20,24 +24,25 @@ object BeautyQSeedInserter {
     masterServiceOffers: MasterServiceOffers[F],
     serviceVariantSchemas: ServiceVariantSchemas[F],
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
-  ) extends BeautyQSeedInserter[F] {
-
+  )(using error2: Error2[F], io: IO2[F]) extends BeautyQSeedInserter[F] {
     def insert(data: BeautyQSeedData): F[QueryFailure, Unit] = {
-      for {
-        _ <- insertSequential(data.nonRootCategories.sortBy(category => (category.depth, category.name, category.id.toString)))(categories.upsertCategory)
-        _ <- insertSequential(data.services)(services.upsertService)
-        _ <- insertSequential(data.masters)(masters.upsertMaster)
-        _ <- insertSequential(data.masterLocations)(masterLocations.upsertMasterLocation)
-        _ <- insertSequential(data.masterServiceOffers)(masterServiceOffers.upsertMasterServiceOffer)
-        _ <- insertSequential(data.serviceVariantSchemas)(serviceVariantSchemas.upsertServiceVariantSchema)
-        _ <- insertSequential(data.masterServiceOfferVariants)(masterServiceOfferVariants.upsertMasterServiceOfferVariant)
-      } yield ()
+      io.bracket(io.sync(seedLoadLock.acquireUninterruptibly()))(_ => io.sync(seedLoadLock.release())) { _ =>
+        for {
+          _ <- insertSequential(data.nonRootCategories.sortBy(category => (category.depth, category.name, category.id.toString)))(categories.upsertCategory)
+          _ <- insertSequential(data.services)(services.upsertService)
+          _ <- insertSequential(data.masters)(masters.upsertMaster)
+          _ <- insertSequential(data.masterLocations)(masterLocations.upsertMasterLocation)
+          _ <- insertSequential(data.masterServiceOffers)(masterServiceOffers.upsertMasterServiceOffer)
+          _ <- insertSequential(data.serviceVariantSchemas)(serviceVariantSchemas.upsertServiceVariantSchema)
+          _ <- insertSequential(data.masterServiceOfferVariants)(masterServiceOfferVariants.upsertMasterServiceOfferVariant)
+        } yield ()
+      }
     }
 
     private def insertSequential[A](rows: List[A])(insert: A => F[QueryFailure, Unit]): F[QueryFailure, Unit] =
-      rows.foldLeft(F.pure(()): F[QueryFailure, Unit]) {
+      rows.foldLeft(error2.pure(()): F[QueryFailure, Unit]) {
         case (acc, row) =>
-          acc.flatMap(_ => insert(row))
+          error2.flatMap(acc)(_ => insert(row))
       }
   }
 }
