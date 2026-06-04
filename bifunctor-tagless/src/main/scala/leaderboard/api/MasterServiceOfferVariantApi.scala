@@ -1,11 +1,10 @@
 package leaderboard.api
 
 import cats.effect.Async
-import io.circe.Json
 import io.circe.syntax.*
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.{MasterServiceOfferVariantTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.{LegacyJsonResponse, MasterServiceOfferVariantTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.MasterServiceOfferVariant
 import leaderboard.repo.MasterServiceOfferVariants
 import org.http4s.HttpRoutes
@@ -24,7 +23,7 @@ class MasterServiceOfferVariantApi[F[+_, +_]: Error2](
         getMasterServiceOfferVariant.serverLogic[F[Throwable, _]](
           masterServiceOfferVariantId =>
             async.map(HttpApiFailure.fromQueryEffect(masterServiceOfferVariants.getMasterServiceOfferVariant(masterServiceOfferVariantId)))(
-              _.map(_.fold[Json](Json.Null)(_.asJson))
+              _.map(LegacyJsonResponse.optionalAsJson)
             )
         ),
         upsertMasterServiceOfferVariant.serverLogic[F[Throwable, _]] {

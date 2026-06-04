@@ -1,11 +1,9 @@
 package leaderboard.api
 
 import cats.effect.Async
-import io.circe.Json
-import io.circe.syntax.*
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.{CategoryTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.{CategoryTapirEndpoints, LegacyJsonResponse, TapirHttpSupport}
 import leaderboard.model.Category.rootCategoryId
 import leaderboard.repo.Categories
 import org.http4s.HttpRoutes
@@ -22,7 +20,7 @@ class CategoryApi[F[+_, +_]: Error2](
       import tapirEndpoints.*
       List(
         getCategory.serverLogic[F[Throwable, _]](
-          categoryId => async.map(HttpApiFailure.fromQueryEffect(categories.getCategory(categoryId)))(_.map(_.fold[Json](Json.Null)(_.asJson)))
+          categoryId => async.map(HttpApiFailure.fromQueryEffect(categories.getCategory(categoryId)))(_.map(LegacyJsonResponse.optionalAsJson))
         ),
         upsertCategory.serverLogic[F[Throwable, _]](category => HttpApiFailure.fromQueryEffect(categories.upsertCategory(category))),
         getChildren.serverLogic[F[Throwable, _]](parentId => HttpApiFailure.fromQueryEffect(categories.getChildren(parentId))),
