@@ -6,7 +6,7 @@ import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
-import leaderboard.search.hybrid.ExperimentalHybridSearchBackend
+import leaderboard.search.hybrid.{ExperimentalHybridRouteDecider, ExperimentalHybridSearchBackend}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -558,6 +558,92 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(lexical.calls == 1)
       assert(semantic.calls == 0)
       assert(lookup.calls == 0)
+    }
+  }
+
+  "ExperimentalHybridRouteDecider" should {
+    "return ElasticsearchOnly with default metadata" in {
+      val decider = new ExperimentalHybridRouteDecider(
+        SearchBackendRouter.default,
+        (_, _) => SearchRoutingMetadata(),
+      )
+      val input = UserSearchInput("synthetic residual probe", None, None)
+      val intent = parser.parse(input)
+
+      assert(intent.explicitConstraints.isEmpty)
+      assert(intent.softBoosts.isEmpty)
+      assert(intent.remainingText.nonEmpty)
+      assert(decider.decide(input, intent) == SearchBackendRoute.ElasticsearchOnly)
+    }
+
+    "return QdrantCandidateRoute with broad semantic metadata" in {
+      val decider = new ExperimentalHybridRouteDecider(
+        SearchBackendRouter.default,
+        (_, _) => SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+      )
+      val input = UserSearchInput("synthetic semantic discovery", None, None)
+      val intent = parser.parse(input)
+
+      assert(intent.explicitConstraints.isEmpty)
+      assert(intent.softBoosts.isEmpty)
+      assert(intent.remainingText.nonEmpty)
+      assert(decider.decide(input, intent) == SearchBackendRoute.QdrantCandidateRoute)
+    }
+
+    "keep residual text alone on ElasticsearchOnly" in {
+      val decider = new ExperimentalHybridRouteDecider(
+        SearchBackendRouter.default,
+        (_, _) => SearchRoutingMetadata(),
+      )
+      val input = UserSearchInput("beauty near Wandsbek Markt", None, None)
+      val intent = parser.parse(input)
+
+      assert(intent.explicitConstraints.isEmpty)
+      assert(intent.softBoosts.isEmpty)
+      assert(intent.remainingText.nonEmpty)
+      assert(decider.decide(input, intent) == SearchBackendRoute.ElasticsearchOnly)
+    }
+
+    "keep hard-negative or noise metadata on ElasticsearchOnly" in {
+      val decider = new ExperimentalHybridRouteDecider(
+        SearchBackendRouter.default,
+        (_, _) => SearchRoutingMetadata(signal = Some(SearchRoutingSignal.HardNegativeOrNoiseGuard)),
+      )
+      val input = UserSearchInput("synthetic noisy probe", None, None)
+      val intent = parser.parse(input)
+
+      assert(intent.explicitConstraints.isEmpty)
+      assert(intent.softBoosts.isEmpty)
+      assert(intent.remainingText.nonEmpty)
+      assert(decider.decide(input, intent) == SearchBackendRoute.ElasticsearchOnly)
+    }
+
+    "provide the route decision function accepted by ExperimentalHybridSearchBackend" in {
+      val knownDocuments = documents.take(1)
+      val hits = List(QdrantCandidateHit(knownDocuments.head.variantId, 0.93))
+      val input = UserSearchInput("synthetic semantic backend adapter", None, None, limit = 10)
+      val intent = parser.parse(input)
+      val lexical = new FakeBeautySearchBackend(emptyResponse)
+      val semantic = new CountingSemanticCandidateBackend(hits)
+      val lookup = new CountingVariantSearchDocumentLookup(knownDocuments)
+      val decider = new ExperimentalHybridRouteDecider(
+        SearchBackendRouter.default,
+        (_, _) => SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+      )
+      val backend = new ExperimentalHybridSearchBackend[IO](
+        BeautySearchSpecV1.spec,
+        lexical,
+        decider.toRouteDecision,
+        semantic,
+        lookup,
+      )
+
+      val response = runIO(backend.search(input, intent))
+
+      assert(lexical.calls == 0)
+      assert(semantic.calls == 1)
+      assert(lookup.calls == 1)
+      assert(response.variantCarousel.map(_.variantId) == knownDocuments.map(_.variantId))
     }
   }
 
