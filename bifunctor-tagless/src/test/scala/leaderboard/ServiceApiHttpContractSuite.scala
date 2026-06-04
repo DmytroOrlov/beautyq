@@ -31,15 +31,15 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
       } yield ()
     }
 
-    "return 200 and null body for a missing service" in {
+    "return 404 and typed error json for a missing service" in {
       val serviceId = UUID.fromString("22222222-2222-2222-2222-222222222222")
 
       for {
         state    <- ServiceApiContractState.make
         _        <- state.setGetServiceResult(Right(None))
         response <- observe(combineApis(serviceApi(state)), get(s"/service/$serviceId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === s"""{"code":"not_found","message":"Service '$serviceId' was not found"}""")
       } yield ()
     }
 

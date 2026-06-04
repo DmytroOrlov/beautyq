@@ -17,7 +17,6 @@ The following Tapir endpoint definitions currently expose single-entity GET resp
 - `leaderboard.http.tapir.ProfileTapirEndpoints`
 - `leaderboard.http.tapir.MasterTapirEndpoints`
 - `leaderboard.http.tapir.CategoryTapirEndpoints`
-- `leaderboard.http.tapir.ServiceTapirEndpoints`
 - `leaderboard.http.tapir.MasterLocationTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
@@ -27,7 +26,6 @@ These are the actual files used by the HTTP adapters in:
 - `leaderboard.api.ProfileApi`
 - `leaderboard.api.MasterApi`
 - `leaderboard.api.CategoryApi`
-- `leaderboard.api.ServiceApi`
 - `leaderboard.api.MasterLocationApi`
 - `leaderboard.api.MasterServiceOfferApi`
 - `leaderboard.api.MasterServiceOfferVariantApi`
@@ -60,11 +58,10 @@ These are the actual files used by the HTTP adapters in:
 
 ### ServiceApi
 
-- Current response contract: `GET /service/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `Service`.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: low. This is one of the clearest candidates for a typed response migration.
-- Required tests before changing: route contract tests for missing entity, present entity, and any path/body decode behavior the current Tapir route already guarantees.
+- Migrated on June 4, 2026.
+- Current response contract: `GET /service/{id}` returns `200 OK` with typed `Service` JSON when present.
+- Missing-entity behavior now: `404 Not Found` with typed error JSON.
+- This endpoint is no longer part of the legacy raw-JSON `200 + null` compatibility set.
 
 ### MasterLocationApi
 

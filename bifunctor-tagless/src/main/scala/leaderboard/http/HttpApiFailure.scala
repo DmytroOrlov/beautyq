@@ -1,5 +1,7 @@
 package leaderboard.http
 
+import io.circe.Codec
+import io.circe.generic.semiauto
 import izumi.functional.bio.Error2
 import leaderboard.model.QueryFailure
 
@@ -7,6 +9,17 @@ sealed trait HttpApiFailure extends Product with Serializable
 
 object HttpApiFailure {
   case object InternalServerError extends HttpApiFailure
+  final case class NotFound(code: String, message: String) extends HttpApiFailure
+
+  object NotFound {
+    def service(id: leaderboard.model.ServiceId): NotFound =
+      NotFound(
+        code = "not_found",
+        message = s"Service '$id' was not found",
+      )
+  }
+
+  implicit val notFoundCodec: Codec.AsObject[NotFound] = semiauto.deriveCodec
 
   def fromQueryFailure(error: QueryFailure): HttpApiFailure =
     InternalServerError
