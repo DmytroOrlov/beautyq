@@ -355,3 +355,42 @@ Avoid these anti-patterns:
 - adding reranking before candidate routing is measured
 
 Hybrid V1 should stay narrow: prove the two known broad semantic gaps, preserve the ES baseline, and keep the backend interpreters mechanical.
+
+## 12. Experimental Routing Metadata Note
+
+`ExperimentalHybridRouteDecider` takes an injected metadata provider because the current codebase has no production-safe source of `SearchRoutingMetadata`.
+At present, metadata is only supplied from tests and eval scaffolding, and `BeautySearchBackend.search(input, intent)` does not carry routing metadata through the production path.
+
+That is intentional. `BeautySearchService.Impl` must stay parser plus backend delegation, and the user-facing search input does not yet have an explicit experiment or routing field.
+
+Safe future metadata sources are limited to:
+
+- explicit experiment metadata
+- a future API or config source that does not derive from eval query ids
+- a future parser signal, but only if it is separately proven safe and stable
+
+Unsafe metadata sources are:
+
+- residual text alone
+- hardcoded `q_broad_004` / `q_broad_006` ids
+- Qdrant-as-default
+- fallback-on-zero-results
+- broad dictionary hacks in `BeautySearchSpecV1`
+
+Current implementation ladder:
+
+1. `SearchBackendRouter`
+2. `SemanticCandidateBackend`
+3. `VariantSearchDocumentLookup`
+4. `QdrantCandidateAssembler`
+5. `QdrantCandidateResponseProjector`
+6. `ExperimentalHybridSearchBackend`
+7. `ExperimentalHybridRouteDecider`
+
+What is still missing before runtime hybrid:
+
+- a real explicit metadata source
+- a production-safe provider for `SearchRoutingMetadata`
+- a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
+
+The recommended next step is to keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.
