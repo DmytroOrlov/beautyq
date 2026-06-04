@@ -9,7 +9,7 @@ import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantJsonInterpreter}
+import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantCandidateResponseProjector, QdrantJsonInterpreter}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
@@ -335,6 +335,116 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(assembly.providerCandidates.head.count == 2)
       assert(assembly.providerCandidates(1).masterLocationId == secondGroup.head.masterLocationId)
       assert(assembly.providerCandidates(1).count == 1)
+    }
+  }
+
+  "Qdrant candidate response projector" should {
+    "preserve Qdrant candidate order and scores in variant carousel" in {
+      val docs = documents.take(3)
+      val hits = List(
+        QdrantCandidateHit(docs(1).variantId, 0.21),
+        QdrantCandidateHit(docs(0).variantId, 0.84),
+        QdrantCandidateHit(docs(2).variantId, 0.53),
+      )
+
+      val response = QdrantCandidateResponseProjector.project(
+        BeautySearchSpecV1.spec,
+        UserSearchInput(query = "test", userLat = None, userLon = None, limit = 10),
+        assembleQdrantCandidates(hits),
+      )
+
+      assert(response.variantCarousel.map(_.variantId) == List(docs(1).variantId, docs(0).variantId, docs(2).variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.21, 0.84, 0.53))
+    }
+
+    "copy safe variant fields from VariantSearchDocument" in {
+      val document = documents.head
+
+      val response = QdrantCandidateResponseProjector.project(
+        BeautySearchSpecV1.spec,
+        UserSearchInput(query = "test", userLat = None, userLon = None, limit = 10),
+        assembleQdrantCandidates(List(QdrantCandidateHit(document.variantId, 0.77))),
+      )
+
+      val result = response.variantCarousel.head
+      assert(result.variantId == document.variantId)
+      assert(result.masterServiceOfferId == document.masterServiceOfferId)
+      assert(result.masterLocationId == document.masterLocationId)
+      assert(result.masterId == document.masterId)
+      assert(result.serviceId == document.serviceId)
+      assert(result.categoryId == document.categoryId)
+      assert(result.serviceName == document.serviceName)
+      assert(result.categoryName == document.categoryName)
+      assert(result.masterName == document.masterName)
+      assert(result.locationName == document.locationName)
+      assert(result.address == document.address)
+      assert(result.lat == document.lat)
+      assert(result.lon == document.lon)
+      assert(result.priceFrom == document.priceFrom)
+      assert(result.priceTo == document.priceTo)
+      assert(result.durationMin == document.durationMin)
+      assert(result.enumAttributes == document.enumAttributes)
+      assert(result.booleanAttributes == document.booleanAttributes)
+      assert(result.intAttributes == document.intAttributes)
+      assert(result.bigDecimalAttributes == document.bigDecimalAttributes)
+      assert(result.distanceKm.isEmpty)
+    }
+
+    "project provider and service carousels from assembly groups" in {
+      val providerGroup = providerGroupDocuments
+      val serviceGroup = serviceGroupDocuments
+      val outsideProviderGroup = documents.find(_.masterLocationId != providerGroup.head.masterLocationId).get
+      val outsideServiceGroup = documents.find(_.serviceId != serviceGroup.head.serviceId).get
+      val hits = List(
+        QdrantCandidateHit(providerGroup(1).variantId, 0.95),
+        QdrantCandidateHit(outsideProviderGroup.variantId, 0.90),
+        QdrantCandidateHit(providerGroup.head.variantId, 0.85),
+        QdrantCandidateHit(serviceGroup.head.variantId, 0.80),
+        QdrantCandidateHit(outsideServiceGroup.variantId, 0.70),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+      val response = QdrantCandidateResponseProjector.project(
+        BeautySearchSpecV1.spec,
+        UserSearchInput(query = "test", userLat = None, userLon = None, limit = 10),
+        assembly,
+      )
+
+      assert(response.providerCarousel.map(_.masterLocationId) == assembly.providerCandidates.map(_.masterLocationId))
+      assert(response.providerCarousel.map(_.bestScore) == assembly.providerCandidates.map(_.bestScore))
+      assert(response.providerCarousel.map(_.matchingVariantCount) == assembly.providerCandidates.map(_.count))
+      assert(response.serviceIntentCarousel.map(_.serviceId) == assembly.serviceCandidates.map(_.serviceId))
+      assert(response.serviceIntentCarousel.map(_.bestScore) == assembly.serviceCandidates.map(_.bestScore))
+      assert(response.serviceIntentCarousel.map(_.matchingVariantCount) == assembly.serviceCandidates.map(_.count))
+    }
+
+    "respect carousel size limits and keep facets and inferred filters empty" in {
+      val docs = documents.take(4)
+      val hits = List(
+        QdrantCandidateHit(docs(0).variantId, 0.91),
+        QdrantCandidateHit(docs(1).variantId, 0.81),
+        QdrantCandidateHit(docs(2).variantId, 0.71),
+        QdrantCandidateHit(docs(3).variantId, 0.61),
+      )
+      val spec = BeautySearchSpecV1.spec.copy(
+        carouselSpec = BeautySearchSpecV1.spec.carouselSpec.copy(
+          variantSize = 2,
+          providerSize = 1,
+          serviceIntentSize = 1,
+        )
+      )
+
+      val response = QdrantCandidateResponseProjector.project(
+        spec,
+        UserSearchInput(query = "test", userLat = None, userLon = None, limit = 3),
+        assembleQdrantCandidates(hits),
+      )
+
+      assert(response.variantCarousel.size == 2)
+      assert(response.providerCarousel.size == 1)
+      assert(response.serviceIntentCarousel.size == 1)
+      assert(response.facets.isEmpty)
+      assert(response.inferredFilters.isEmpty)
     }
   }
 
