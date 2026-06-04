@@ -6,6 +6,7 @@ import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
+import leaderboard.search.hybrid.ExperimentalHybridSearchBackend
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -475,6 +476,88 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(assembly.variantCandidates.map(_.document.variantId) == List(knownDocuments(1).variantId, knownDocuments(0).variantId, knownDocuments(2).variantId))
       assert(response.variantCarousel.map(_.variantId) == assembly.variantCandidates.map(_.document.variantId))
       assert(response.variantCarousel.map(_.score) == List(0.91, 0.81, 0.71))
+    }
+  }
+
+  "ExperimentalHybridSearchBackend" should {
+    "delegate ElasticsearchOnly to the lexical backend without semantic calls or lookup" in {
+      val input = UserSearchInput("маникюр", None, None)
+      val intent = parser.parse(input)
+      val lexicalResponse = emptyResponse.copy(facets = List(BeautySearchFacet("lexical", Nil)))
+      val lexical = new FakeBeautySearchBackend(lexicalResponse)
+      val semantic = new CountingSemanticCandidateBackend(Nil)
+      val lookup = new CountingVariantSearchDocumentLookup(Nil)
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchOnly, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(input, intent))
+
+      assert(response == lexicalResponse)
+      assert(lexical.calls == 1)
+      assert(semantic.calls == 0)
+      assert(lookup.calls == 0)
+    }
+
+    "project QdrantCandidateRoute through fake semantic backend, fake lookup, assembler and projector" in {
+      val knownDocuments = documents.take(3)
+      val hits = List(
+        QdrantCandidateHit(knownDocuments(1).variantId, 0.91),
+        QdrantCandidateHit(knownDocuments(0).variantId, 0.81),
+        QdrantCandidateHit(knownDocuments(2).variantId, 0.71),
+      )
+      val input = UserSearchInput("synthetic semantic route", None, None, limit = 10)
+      val intent = parser.parse(input)
+      val lexical = new FakeBeautySearchBackend(emptyResponse)
+      val semantic = new CountingSemanticCandidateBackend(hits)
+      val lookup = new CountingVariantSearchDocumentLookup(knownDocuments)
+      val backend = experimentalBackend(SearchBackendRoute.QdrantCandidateRoute, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(input, intent))
+
+      assert(lexical.calls == 0)
+      assert(semantic.calls == 1)
+      assert(semantic.lastInput.contains(input))
+      assert(semantic.lastIntent.contains(intent))
+      assert(lookup.calls == 1)
+      assert(lookup.lastVariantIds.contains(hits.map(_.variantId)))
+      assert(response.variantCarousel.map(_.variantId) == List(knownDocuments(1).variantId, knownDocuments(0).variantId, knownDocuments(2).variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.91, 0.81, 0.71))
+      assert(response.facets.isEmpty)
+      assert(response.inferredFilters.isEmpty)
+    }
+
+    "ignore unknown semantic hit ids through the assembler path" in {
+      val knownDocument = documents.head
+      val hits = List(
+        QdrantCandidateHit(unknownVariantId, 0.99),
+        QdrantCandidateHit(knownDocument.variantId, 0.77),
+      )
+      val lexical = new FakeBeautySearchBackend(emptyResponse)
+      val semantic = new CountingSemanticCandidateBackend(hits)
+      val lookup = new CountingVariantSearchDocumentLookup(List(knownDocument))
+      val backend = experimentalBackend(SearchBackendRoute.QdrantCandidateRoute, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(UserSearchInput("synthetic unknown id", None, None), ParsedSearchIntent("synthetic unknown id", Nil, Nil, Nil, "synthetic unknown id")))
+
+      assert(response.variantCarousel.map(_.variantId) == List(knownDocument.variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.77))
+      assert(!response.variantCarousel.exists(_.variantId == unknownVariantId))
+    }
+
+    "delegate ElasticsearchThenQdrantFallback lexically without fallback behavior" in {
+      val input = UserSearchInput("synthetic fallback route", None, None)
+      val intent = parser.parse(input)
+      val lexicalResponse = emptyResponse.copy(facets = List(BeautySearchFacet("fallback-lexical", Nil)))
+      val lexical = new FakeBeautySearchBackend(lexicalResponse)
+      val semantic = new CountingSemanticCandidateBackend(List(QdrantCandidateHit(documents.head.variantId, 0.5)))
+      val lookup = new CountingVariantSearchDocumentLookup(documents.take(1))
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchThenQdrantFallback, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(input, intent))
+
+      assert(response == lexicalResponse)
+      assert(lexical.calls == 1)
+      assert(semantic.calls == 0)
+      assert(lookup.calls == 0)
     }
   }
 
@@ -1388,6 +1471,66 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   private def serviceGroupDocuments =
     documents.groupBy(_.serviceId).values.find(_.size >= 2).get
+
+  private def emptyResponse =
+    BeautySearchResponse(
+      variantCarousel = Nil,
+      providerCarousel = Nil,
+      serviceIntentCarousel = Nil,
+      facets = Nil,
+      inferredFilters = Nil,
+    )
+
+  private def experimentalBackend(
+    route: SearchBackendRoute,
+    lexical: FakeBeautySearchBackend,
+    semantic: CountingSemanticCandidateBackend,
+    lookup: CountingVariantSearchDocumentLookup,
+  ) =
+    new ExperimentalHybridSearchBackend[IO](
+      BeautySearchSpecV1.spec,
+      lexical,
+      (_, _) => route,
+      semantic,
+      lookup,
+    )
+
+  private final class FakeBeautySearchBackend(response: BeautySearchResponse) extends BeautySearchBackend[IO] {
+    var calls: Int = 0
+
+    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
+      ZIO.succeed {
+        calls += 1
+        response
+      }
+  }
+
+  private final class CountingSemanticCandidateBackend(hits: List[QdrantCandidateHit]) extends SemanticCandidateBackend[IO] {
+    var calls: Int = 0
+    var lastInput: Option[UserSearchInput] = None
+    var lastIntent: Option[ParsedSearchIntent] = None
+
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[QdrantCandidateHit]] =
+      ZIO.succeed {
+        calls += 1
+        lastInput = Some(input)
+        lastIntent = Some(intent)
+        hits
+      }
+  }
+
+  private final class CountingVariantSearchDocumentLookup(documents: List[VariantSearchDocument]) extends VariantSearchDocumentLookup[IO] {
+    private val documentsById = documents.iterator.map(document => document.variantId -> document).toMap
+    var calls: Int = 0
+    var lastVariantIds: Option[List[MasterServiceOfferVariantId]] = None
+
+    override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
+      ZIO.succeed {
+        calls += 1
+        lastVariantIds = Some(variantIds)
+        variantIds.iterator.flatMap(variantId => documentsById.get(variantId).map(document => variantId -> document)).toMap
+      }
+  }
 
   private final class FakeSemanticCandidateBackend(
     expectedInput: UserSearchInput,
