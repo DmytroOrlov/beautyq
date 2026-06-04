@@ -58,15 +58,17 @@ class MasterServiceOfferVariantApiHttpContractSuite
       } yield ()
     }
 
-    "pin legacy compatibility: missing single-entity GET returns 200 and null body" in {
+    "return 404 and typed not-found json for a missing single-entity GET" in {
       val variantId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterServiceOfferVariantApiContractState.make
         _        <- state.setGetMasterServiceOfferVariantResult(Right(None))
         response <- observe(combineApis(masterServiceOfferVariantApi(state)), get(s"/master-service-offer-variant/$variantId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(
+          response.body === s"""{"code":"not_found","message":"Master service offer variant '$variantId' was not found"}"""
+        )
       } yield ()
     }
 

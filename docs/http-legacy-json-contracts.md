@@ -4,9 +4,9 @@ This inventory documents the current compatibility layer for Beauty single-entit
 
 ## Current compatibility rule
 
-Single-entity GET endpoints may intentionally return `200 OK` with JSON `null` when the entity is missing.
+No Beauty single-entity GET endpoints remain on the legacy `200 OK` + JSON `null` compatibility path.
 
-That behavior is preserved today as part of the legacy contract. It stays in place until a later typed-response / `404` migration phase explicitly replaces it.
+That behavior was preserved during the migration phase while endpoints were still being converted. The remaining legacy case in this repo is `ProfileApi`, which is intentionally excluded from this Beauty inventory because it is a rank/read-model endpoint, not a Beauty domain typed single-entity migration candidate.
 
 The current adapter-level encoding is centralized in `leaderboard.http.tapir.LegacyJsonResponse.optionalAsJson`, which turns `Option[A]` into `Json.Null` or the encoded entity body.
 
@@ -14,14 +14,9 @@ The current adapter-level encoding is centralized in `leaderboard.http.tapir.Leg
 
 The following Tapir endpoint definitions currently expose single-entity GET responses as raw JSON:
 
-- `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
+- none for Beauty domain endpoints
 
-These are the actual files used by the HTTP adapters in:
-
-- `leaderboard.api.MasterServiceOfferApi`
-- `leaderboard.api.MasterServiceOfferVariantApi`
-
-Profile is intentionally excluded from this Beauty migration inventory. `ProfileApi` is a legacy rank/read-model endpoint, not a Beauty domain typed single-entity migration candidate.
+Profile is intentionally excluded from this Beauty migration inventory. `ProfileApi` is a legacy rank/read-model endpoint, not a Beauty domain typed single-entity migration candidate, and remains the only legacy `200 + null` single-entity GET path in this repo.
 
 ## Per-endpoint inventory
 
@@ -62,11 +57,10 @@ Profile is intentionally excluded from this Beauty migration inventory. `Profile
 
 ### MasterServiceOfferVariantApi
 
-- Current response contract: `GET /master-service-offer-variant/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `MasterServiceOfferVariant`.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: high. This endpoint is the most coupled to the variant attribute codec and the legacy JSON contract is part of a larger storage/encoding story.
-- Required tests before changing: route contract tests for missing entity, present entity, JSON encoding stability, and any variant attribute round-trip behavior already covered elsewhere. This should not be the first endpoint migrated.
+- Migrated on June 4, 2026.
+- Current response contract: `GET /master-service-offer-variant/{id}` returns typed `MasterServiceOfferVariant` JSON.
+- Missing-entity behavior now: `404 Not Found` with typed error JSON.
+- This endpoint is no longer part of the legacy raw-JSON `200 + null` compatibility set.
 
 ## Future migration options
 
@@ -90,13 +84,11 @@ This provides an intermediate migration path, but it still needs careful adapter
 
 ## Recommended first migration step
 
-`ServiceApi`, `CategoryApi`, `MasterApi`, `MasterLocationApi`, and `MasterServiceOfferApi` have been migrated. The only remaining Beauty legacy single-entity GET endpoint is `MasterServiceOfferVariantApi`, which is still the last, highest-risk legacy endpoint.
+`ServiceApi`, `CategoryApi`, `MasterApi`, `MasterLocationApi`, `MasterServiceOfferApi`, and `MasterServiceOfferVariantApi` have been migrated. No Beauty single-entity GET endpoints remain on the legacy raw-JSON `200 + null` path.
 
 The migration steps should be:
 
 1. add or extend route contract tests so the current compatibility behavior is pinned down,
 2. introduce a typed endpoint with `singleEntityGetErrorOutput` and `jsonBody[Entity]`,
 3. update the adapter to use `toRight(NotFound.xxx)` instead of `optionalAsJson`,
-4. do not start with `MasterServiceOfferVariantApi`.
-
-`MasterServiceOfferVariantApi` should come later because it carries the most coupling to variant encoding and would make the migration unnecessarily risky. It remains the last, highest-risk legacy endpoint in this inventory.
+4. keep `ProfileApi` out of this Beauty migration inventory.

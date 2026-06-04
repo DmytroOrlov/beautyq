@@ -2,12 +2,13 @@ package leaderboard.http.tapir
 
 import io.circe.Json
 import leaderboard.http.HttpApiFailure
-import leaderboard.model.{MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId}
+import leaderboard.model.{MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId}
 import sttp.tapir.*
+import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait MasterServiceOfferVariantTapirEndpoints {
-  def getMasterServiceOfferVariant: PublicEndpoint[MasterServiceOfferVariantId, HttpApiFailure, Json, Any]
+  def getMasterServiceOfferVariant: PublicEndpoint[MasterServiceOfferVariantId, HttpApiFailure, MasterServiceOfferVariant, Any]
   def upsertMasterServiceOfferVariant: PublicEndpoint[Json, HttpApiFailure, Unit, Any]
   def getMasterServiceOfferVariantsByOffer: PublicEndpoint[MasterServiceOfferId, HttpApiFailure, Json, Any]
   def getMasterServiceOfferVariantsByLocation: PublicEndpoint[MasterLocationId, HttpApiFailure, Json, Any]
@@ -21,11 +22,16 @@ trait MasterServiceOfferVariantTapirEndpoints {
 }
 
 object MasterServiceOfferVariantTapirEndpoints extends MasterServiceOfferVariantTapirEndpoints {
-  private val base = HttpApiFailureTapirSupport.endpointBase.in("master-service-offer-variant")
+  given Schema[MasterServiceOfferVariant] =
+    Schema.any[MasterServiceOfferVariant]
 
-  val getMasterServiceOfferVariant = base.get
+  private val base = HttpApiFailureTapirSupport.endpointBase.in("master-service-offer-variant")
+  private val getBase = sttp.tapir.endpoint.in("master-service-offer-variant")
+
+  val getMasterServiceOfferVariant = getBase.get
+    .errorOut(HttpApiFailureTapirSupport.singleEntityGetErrorOutput)
     .in(path[MasterServiceOfferVariantId]("id"))
-    .out(jsonBody[Json])
+    .out(jsonBody[MasterServiceOfferVariant])
 
   val upsertMasterServiceOfferVariant = base.post
     .in(jsonBody[Json])
