@@ -10,7 +10,7 @@ object HttpApiFailureTapirSupport {
   val errorOutput: EndpointOutput[HttpApiFailure] =
     statusCode.map[HttpApiFailure]((_: StatusCode) => HttpApiFailure.InternalServerError)(_ => StatusCode.InternalServerError)
 
-  val serviceGetErrorOutput: EndpointOutput[HttpApiFailure] =
+  val singleEntityGetErrorOutput: EndpointOutput[HttpApiFailure] =
     oneOf[HttpApiFailure](
       oneOfVariantValueMatcher(
         statusCode(StatusCode.NotFound)

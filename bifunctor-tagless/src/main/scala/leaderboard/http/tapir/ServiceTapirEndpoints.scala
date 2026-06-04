@@ -23,7 +23,7 @@ object ServiceTapirEndpoints extends ServiceTapirEndpoints {
   private val base = sttp.tapir.endpoint.in("service")
 
   val getService = base.get
-    .errorOut(HttpApiFailureTapirSupport.serviceGetErrorOutput)
+    .errorOut(HttpApiFailureTapirSupport.singleEntityGetErrorOutput)
     .in(path[ServiceId]("id"))
     .out(jsonBody[Service])
 
