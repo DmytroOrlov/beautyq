@@ -15,7 +15,6 @@ The current adapter-level encoding is centralized in `leaderboard.http.tapir.Leg
 The following Tapir endpoint definitions currently expose single-entity GET responses as raw JSON:
 
 - `leaderboard.http.tapir.ProfileTapirEndpoints`
-- `leaderboard.http.tapir.MasterTapirEndpoints`
 - `leaderboard.http.tapir.MasterLocationTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
@@ -23,7 +22,6 @@ The following Tapir endpoint definitions currently expose single-entity GET resp
 These are the actual files used by the HTTP adapters in:
 
 - `leaderboard.api.ProfileApi`
-- `leaderboard.api.MasterApi`
 - `leaderboard.api.MasterLocationApi`
 - `leaderboard.api.MasterServiceOfferApi`
 - `leaderboard.api.MasterServiceOfferVariantApi`
@@ -40,11 +38,10 @@ These are the actual files used by the HTTP adapters in:
 
 ### MasterApi
 
-- Current response contract: `GET /master/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `Master`.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: low. This is a straightforward single-entity lookup with a direct domain type available.
-- Required tests before changing: route contract tests for missing entity, present entity, and any existing contract expectations around status code and JSON shape.
+- Migrated on June 4, 2026.
+- Current response contract: `GET /master/{id}` returns typed `Master` JSON.
+- Missing-entity behavior now: `404 Not Found` with typed error JSON.
+- This endpoint is no longer part of the legacy raw-JSON `200 + null` compatibility set.
 
 ### CategoryApi
 
@@ -106,13 +103,13 @@ This provides an intermediate migration path, but it still needs careful adapter
 
 ## Recommended first migration step
 
-Start with one low-risk endpoint, most likely `MasterApi` or `ServiceApi`.
+`ServiceApi`, `CategoryApi`, and `MasterApi` have been migrated. The next candidates are `ProfileApi` or `MasterLocationApi`, both low-to-medium risk.
 
-The first step should be:
+The migration steps should be:
 
 1. add or extend route contract tests so the current compatibility behavior is pinned down,
-2. introduce a typed endpoint behind the existing compatibility adapter,
-3. keep the `200 + null` behavior for missing entities during the transition,
+2. introduce a typed endpoint with `singleEntityGetErrorOutput` and `jsonBody[Entity]`,
+3. update the adapter to use `toRight(NotFound.xxx)` instead of `optionalAsJson`,
 4. do not start with `MasterServiceOfferVariantApi`.
 
-`MasterServiceOfferVariantApi` should come later because it carries the most coupling to variant encoding and would make the first migration unnecessarily risky.
+`MasterServiceOfferVariantApi` should come later because it carries the most coupling to variant encoding and would make the migration unnecessarily risky. It remains the last, highest-risk legacy endpoint in this inventory.

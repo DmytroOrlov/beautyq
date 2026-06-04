@@ -13,16 +13,13 @@ object HttpApiFailure {
 
   object NotFound {
     def category(id: leaderboard.model.Category.CategoryId): NotFound =
-      NotFound(
-        code = "not_found",
-        message = s"Category '$id' was not found",
-      )
+      NotFound(code = "not_found", message = s"Category '$id' was not found")
 
     def service(id: leaderboard.model.ServiceId): NotFound =
-      NotFound(
-        code = "not_found",
-        message = s"Service '$id' was not found",
-      )
+      NotFound(code = "not_found", message = s"Service '$id' was not found")
+
+    def master(id: leaderboard.model.MasterId): NotFound =
+      NotFound(code = "not_found", message = s"Master '$id' was not found")
   }
 
   implicit val notFoundCodec: Codec.AsObject[NotFound] = semiauto.deriveCodec

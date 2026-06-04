@@ -29,15 +29,15 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
       } yield ()
     }
 
-    "return 200 and null body for a missing master" in {
+    "return 404 and typed error JSON for a missing master" in {
       val masterId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterApiContractState.make
         _        <- state.setGetMasterResult(Right(None))
         response <- observe(combineApis(masterApi(state)), get(s"/master/$masterId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === s"""{"code":"not_found","message":"Master '$masterId' was not found"}""")
       } yield ()
     }
 
