@@ -16,7 +16,6 @@ The following Tapir endpoint definitions currently expose single-entity GET resp
 
 - `leaderboard.http.tapir.ProfileTapirEndpoints`
 - `leaderboard.http.tapir.MasterTapirEndpoints`
-- `leaderboard.http.tapir.CategoryTapirEndpoints`
 - `leaderboard.http.tapir.MasterLocationTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
@@ -25,7 +24,6 @@ These are the actual files used by the HTTP adapters in:
 
 - `leaderboard.api.ProfileApi`
 - `leaderboard.api.MasterApi`
-- `leaderboard.api.CategoryApi`
 - `leaderboard.api.MasterLocationApi`
 - `leaderboard.api.MasterServiceOfferApi`
 - `leaderboard.api.MasterServiceOfferVariantApi`
@@ -50,11 +48,10 @@ These are the actual files used by the HTTP adapters in:
 
 ### CategoryApi
 
-- Current response contract: `GET /category/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `Category`.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: low to medium. The endpoint is simple, but category lookups participate in tree-shaped navigation, so downstream callers may depend on the current null-on-miss behavior.
-- Required tests before changing: route contract tests for missing entity, present entity, and surrounding category lookup behavior if the migration changes the adapter shape.
+- Migrated on June 4, 2026.
+- Current response contract: `GET /category/{id}` returns typed `Category` JSON.
+- Missing-entity behavior now: `404 Not Found` with typed error JSON.
+- This endpoint is no longer part of the legacy raw-JSON `200 + null` compatibility set.
 
 ### ServiceApi
 

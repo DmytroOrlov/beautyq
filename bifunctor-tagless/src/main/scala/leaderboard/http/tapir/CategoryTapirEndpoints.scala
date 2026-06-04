@@ -1,6 +1,5 @@
 package leaderboard.http.tapir
 
-import io.circe.Json
 import leaderboard.http.HttpApiFailure
 import leaderboard.model.Category
 import leaderboard.model.Category.CategoryId
@@ -9,7 +8,7 @@ import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait CategoryTapirEndpoints {
-  def getCategory: PublicEndpoint[CategoryId, HttpApiFailure, Json, Any]
+  def getCategory: PublicEndpoint[CategoryId, HttpApiFailure, Category, Any]
   def upsertCategory: PublicEndpoint[Category, HttpApiFailure, Unit, Any]
   def getChildren: PublicEndpoint[CategoryId, HttpApiFailure, List[Category], Any]
   def getRootChildren: PublicEndpoint[Unit, HttpApiFailure, List[Category], Any]
@@ -23,22 +22,23 @@ trait CategoryTapirEndpoints {
 }
 
 object CategoryTapirEndpoints extends CategoryTapirEndpoints {
-  private val base = HttpApiFailureTapirSupport.endpointBase.in("category")
+  private val base = sttp.tapir.endpoint.in("category")
 
   val getCategory = base.get
+    .errorOut(HttpApiFailureTapirSupport.singleEntityGetErrorOutput)
     .in(path[CategoryId]("id"))
-    .out(jsonBody[Json])
+    .out(jsonBody[Category])
 
-  val upsertCategory = base.post
+  val upsertCategory = HttpApiFailureTapirSupport.endpointBase.in("category").post
     .in(jsonBody[Category])
     .out(emptyOutput)
 
-  val getChildren = base.get
+  val getChildren = HttpApiFailureTapirSupport.endpointBase.in("category").get
     .in(path[CategoryId]("parentId"))
     .in("children")
     .out(jsonBody[List[Category]])
 
-  val getRootChildren = base.get
+  val getRootChildren = HttpApiFailureTapirSupport.endpointBase.in("category").get
     .in("root")
     .out(jsonBody[List[Category]])
 }

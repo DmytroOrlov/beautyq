@@ -12,6 +12,12 @@ object HttpApiFailure {
   final case class NotFound(code: String, message: String) extends HttpApiFailure
 
   object NotFound {
+    def category(id: leaderboard.model.Category.CategoryId): NotFound =
+      NotFound(
+        code = "not_found",
+        message = s"Category '$id' was not found",
+      )
+
     def service(id: leaderboard.model.ServiceId): NotFound =
       NotFound(
         code = "not_found",

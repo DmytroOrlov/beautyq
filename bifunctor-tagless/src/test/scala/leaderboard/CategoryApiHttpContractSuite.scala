@@ -32,15 +32,15 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
       } yield ()
     }
 
-    "return 200 and null body for a missing category" in {
+    "return 404 and typed error json for a missing category" in {
       val categoryId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- CategoryApiContractState.make
         _        <- state.setGetCategoryResult(Right(None))
         response <- observe(combineApis(categoryApi(state)), get(s"/category/$categoryId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === s"""{"code":"not_found","message":"Category '$categoryId' was not found"}""")
       } yield ()
     }
 
