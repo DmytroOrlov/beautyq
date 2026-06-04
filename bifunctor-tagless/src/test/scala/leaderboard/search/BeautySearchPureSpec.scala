@@ -11,9 +11,10 @@ import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantCandidateResponseProjector, QdrantJsonInterpreter}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
+import leaderboard.search.semantic.{SemanticCandidateBackend, VariantSearchDocumentLookup}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
-import zio.{IO, Runtime, Unsafe}
+import zio.{IO, Runtime, Unsafe, ZIO}
 
 import java.util.UUID
 
@@ -445,6 +446,35 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(response.serviceIntentCarousel.size == 1)
       assert(response.facets.isEmpty)
       assert(response.inferredFilters.isEmpty)
+    }
+  }
+
+  "semantic candidate runtime seams" should {
+    "compose fake semantic hits and fake document lookup through assembler and projector" in {
+      val knownDocuments = documents.take(3)
+      val hits = List(
+        QdrantCandidateHit(knownDocuments(1).variantId, 0.91),
+        QdrantCandidateHit(unknownVariantId, 0.88),
+        QdrantCandidateHit(knownDocuments(0).variantId, 0.81),
+        QdrantCandidateHit(knownDocuments(2).variantId, 0.71),
+      )
+      val lookup = new FakeVariantSearchDocumentLookup(knownDocuments)
+      val input = UserSearchInput(query = "broad semantic test", userLat = None, userLon = None, limit = 10)
+      val intent = parser.parse(input)
+      val backend = new FakeSemanticCandidateBackend(input, intent, hits)
+
+      val candidateHits = runIO(backend.candidates(input, intent))
+      val lookupResult = runIO(lookup.lookup(candidateHits.map(_.variantId)))
+      val resolvedDocuments = candidateHits.flatMap(hit => lookupResult.get(hit.variantId))
+      val assembly = QdrantCandidateAssembler.assemble(candidateHits, resolvedDocuments)
+      val response = QdrantCandidateResponseProjector.project(BeautySearchSpecV1.spec, input, assembly)
+
+      assert(candidateHits == hits)
+      assert(lookupResult.keySet == knownDocuments.map(_.variantId).toSet)
+      assert(!lookupResult.contains(unknownVariantId))
+      assert(assembly.variantCandidates.map(_.document.variantId) == List(knownDocuments(1).variantId, knownDocuments(0).variantId, knownDocuments(2).variantId))
+      assert(response.variantCarousel.map(_.variantId) == assembly.variantCandidates.map(_.document.variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.91, 0.81, 0.71))
     }
   }
 
@@ -1358,6 +1388,25 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   private def serviceGroupDocuments =
     documents.groupBy(_.serviceId).values.find(_.size >= 2).get
+
+  private final class FakeSemanticCandidateBackend(
+    expectedInput: UserSearchInput,
+    expectedIntent: ParsedSearchIntent,
+    hits: List[QdrantCandidateHit],
+  ) extends SemanticCandidateBackend[IO] {
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[QdrantCandidateHit]] = ZIO.succeed {
+      assert(input == expectedInput)
+      assert(intent == expectedIntent)
+      hits
+    }
+  }
+
+  private final class FakeVariantSearchDocumentLookup(documents: List[VariantSearchDocument]) extends VariantSearchDocumentLookup[IO] {
+    private val documentsById = documents.iterator.map(document => document.variantId -> document).toMap
+
+    override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
+      ZIO.succeed(variantIds.iterator.flatMap(variantId => documentsById.get(variantId).map(document => variantId -> document)).toMap)
+  }
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe { implicit unsafe =>
