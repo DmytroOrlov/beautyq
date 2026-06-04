@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import org.scalatest.wordspec.AnyWordSpec
 
 final class LlamaCppEmbeddingSmokeSpec extends AnyWordSpec {

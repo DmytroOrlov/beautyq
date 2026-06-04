@@ -1,4 +1,4 @@
-package leaderboard.search
+package leaderboard.search.qdrant
 
 import io.circe.{Json, JsonObject}
 import io.circe.parser.parse

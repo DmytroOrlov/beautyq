@@ -1,4 +1,6 @@
-package leaderboard.search
+package leaderboard.search.routing
+
+import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
 
 sealed trait SearchBackendRoute extends Product with Serializable
 object SearchBackendRoute {

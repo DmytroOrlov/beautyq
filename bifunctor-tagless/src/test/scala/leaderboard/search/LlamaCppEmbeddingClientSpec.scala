@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import io.circe.Json
+import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import org.scalatest.wordspec.AnyWordSpec
 
 final class LlamaCppEmbeddingClientSpec extends AnyWordSpec {

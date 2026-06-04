@@ -1,4 +1,4 @@
-package leaderboard.search
+package leaderboard.search.embedding
 
 import leaderboard.model.QueryFailure
 import zio.IO

@@ -5,7 +5,9 @@ import io.circe.Json
 import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
+import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.qdrant.QdrantJsonInterpreter
+import leaderboard.search.qdrant.QdrantClient
 import java.util.UUID
 import zio.ZIO
 

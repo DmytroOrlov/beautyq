@@ -6,6 +6,7 @@ import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
 import leaderboard.search.dsl.{EmbeddingSpec, VectorDistance, VectorSearchSpec}
+import leaderboard.search.qdrant.QdrantClient
 import leaderboard.search.qdrant.QdrantJsonInterpreter
 import java.util.UUID
 import zio.ZIO

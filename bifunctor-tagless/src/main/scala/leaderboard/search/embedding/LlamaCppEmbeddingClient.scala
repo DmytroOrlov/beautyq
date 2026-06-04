@@ -1,4 +1,4 @@
-package leaderboard.search
+package leaderboard.search.embedding
 
 import io.circe.{Decoder, Json}
 import io.circe.parser.parse

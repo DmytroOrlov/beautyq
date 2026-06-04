@@ -7,10 +7,12 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
+import leaderboard.search.qdrant.{QdrantClient, QdrantSearchHit}
 import leaderboard.search.qdrant.QdrantJsonInterpreter
 import leaderboard.seed.BeautyQSeedLoader
 import zio.{IO, ZIO}
