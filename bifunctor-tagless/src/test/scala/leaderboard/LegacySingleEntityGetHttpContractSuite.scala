@@ -1,74 +1,51 @@
 package leaderboard
 
+import distage.ModuleDef
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
-import leaderboard.api.MasterServiceOfferApi
-import leaderboard.http.tapir.{MasterServiceOfferTapirEndpoints, TapirHttpSupport}
-import leaderboard.model.{MasterServiceOffer, QueryFailure}
-import leaderboard.repo.MasterServiceOffers
+import leaderboard.api.ProfileApi
+import leaderboard.model.RankedProfile
+import leaderboard.repo.Profiles
+import leaderboard.services.Ranks
 import org.http4s.Status
-import zio.interop.catz.*
-import zio.{IO, Ref, UIO, ZIO}
+import zio.IO
 
 import java.util.UUID
 
 class LegacySingleEntityGetHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
-  private def masterServiceOfferApi(state: LegacySingleEntityGetContractState): MasterServiceOfferApi[IO] =
-    new MasterServiceOfferApi[IO](state.masterServiceOffers, MasterServiceOfferTapirEndpoints, new TapirHttpSupport[IO])
+  override def config = super.config.copy(
+    pluginConfig    = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
+    moduleOverrides = super.config.moduleOverrides ++ new ModuleDef {
+      make[ProfileApiContractState].fromEffect(ProfileApiContractState.make)
+      make[Profiles[IO]].from((state: ProfileApiContractState) => state.profiles)
+      make[Ranks[IO]].from((state: ProfileApiContractState) => state.ranks)
+    },
+  )
 
   "Legacy single entity GET contracts" should {
-    "pin 200 and null for a missing legacy master service offer" in {
-      val offerId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
+    "pin 200 and null for a missing legacy profile" in {
+      (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
+        val userId = UUID.fromString("22222222-2222-2222-2222-222222222222")
 
-      for {
-        state    <- LegacySingleEntityGetContractState.make
-        _        <- state.setGetMasterServiceOfferResult(Right(None))
-        response <- observe(combineApis(masterServiceOfferApi(state)), get(s"/master-service-offer/$offerId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
-      } yield ()
+        for {
+          _        <- state.setGetRankResult(Right(None))
+          response <- observe(combineApis(profileApi), get(s"/profile/$userId"))
+          _        <- assertIO(response.status === Status.Ok)
+          _        <- assertIO(response.body === "null")
+        } yield ()
     }
 
-    "pin 200 and exact json for an existing legacy master service offer" in {
-      val offerId   = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val masterId  = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-      val serviceId = UUID.fromString("99999999-8888-7777-6666-555555555555")
-      val offer     = MasterServiceOffer(offerId, masterId, serviceId)
+    "pin 200 and exact json for an existing legacy profile" in {
+      (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
+        val userId        = UUID.fromString("11111111-1111-1111-1111-111111111111")
+        val rankedProfile = RankedProfile("Kai", "S C A L A", rank = 3, score = 42)
 
-      for {
-        state    <- LegacySingleEntityGetContractState.make
-        _        <- state.setGetMasterServiceOfferResult(Right(Some(offer)))
-        response <- observe(combineApis(masterServiceOfferApi(state)), get(s"/master-service-offer/$offerId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === s"""{"id":"$offerId","masterId":"$masterId","serviceId":"$serviceId"}""")
-      } yield ()
+        for {
+          _        <- state.setGetRankResult(Right(Some(rankedProfile)))
+          response <- observe(combineApis(profileApi), get(s"/profile/$userId"))
+          _        <- assertIO(response.status === Status.Ok)
+          _        <- assertIO(response.body === """{"name":"Kai","description":"S C A L A","rank":3,"score":42}""")
+        } yield ()
     }
   }
-}
-
-class LegacySingleEntityGetContractState private (
-  private val getMasterServiceOfferResultRef: Ref[Either[QueryFailure, Option[MasterServiceOffer]]],
-) {
-  val masterServiceOffers: MasterServiceOffers[IO] = new MasterServiceOffers[IO] {
-    def upsertMasterServiceOffer(offer: MasterServiceOffer): IO[QueryFailure, Unit] =
-      ZIO.unit
-
-    def getMasterServiceOffer(id: leaderboard.model.MasterServiceOfferId): IO[QueryFailure, Option[MasterServiceOffer]] =
-      getMasterServiceOfferResultRef.get.flatMap(ZIO.fromEither(_))
-
-    def getMasterServiceOffersByMaster(masterId: leaderboard.model.MasterId): IO[QueryFailure, List[MasterServiceOffer]] =
-      ZIO.succeed(Nil)
-
-    def getMasterServiceOffersByService(serviceId: leaderboard.model.ServiceId): IO[QueryFailure, List[MasterServiceOffer]] =
-      ZIO.succeed(Nil)
-  }
-
-  def setGetMasterServiceOfferResult(result: Either[QueryFailure, Option[MasterServiceOffer]]): UIO[Unit] =
-    getMasterServiceOfferResultRef.set(result)
-}
-
-object LegacySingleEntityGetContractState {
-  def make: UIO[LegacySingleEntityGetContractState] =
-    for {
-      getMasterServiceOfferResult <- Ref.make[Either[QueryFailure, Option[MasterServiceOffer]]](Right(None))
-    } yield new LegacySingleEntityGetContractState(getMasterServiceOfferResult)
 }

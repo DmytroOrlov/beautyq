@@ -15,7 +15,6 @@ The current adapter-level encoding is centralized in `leaderboard.http.tapir.Leg
 The following Tapir endpoint definitions currently expose single-entity GET responses as raw JSON:
 
 - `leaderboard.http.tapir.ProfileTapirEndpoints`
-- `leaderboard.http.tapir.MasterServiceOfferTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
 
 These are the actual files used by the HTTP adapters in:
@@ -64,11 +63,10 @@ These are the actual files used by the HTTP adapters in:
 
 ### MasterServiceOfferApi
 
-- Current response contract: `GET /master-service-offer/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `MasterServiceOffer`.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: medium. This entity sits closer to the broader offer graph and may be part of workflows that expect compatibility with the current raw-JSON transport.
-- Required tests before changing: route contract tests for missing entity, present entity, and any service/master lookup behavior that depends on the current read contract.
+- Migrated on June 4, 2026.
+- Current response contract: `GET /master-service-offer/{id}` returns typed `MasterServiceOffer` JSON.
+- Missing-entity behavior now: `404 Not Found` with typed error JSON.
+- This endpoint is no longer part of the legacy raw-JSON `200 + null` compatibility set.
 
 ### MasterServiceOfferVariantApi
 
@@ -100,7 +98,7 @@ This provides an intermediate migration path, but it still needs careful adapter
 
 ## Recommended first migration step
 
-`ServiceApi`, `CategoryApi`, `MasterApi`, and `MasterLocationApi` have been migrated. The next candidates are `ProfileApi` or `MasterServiceOfferApi`, both low-to-medium risk.
+`ServiceApi`, `CategoryApi`, `MasterApi`, `MasterLocationApi`, and `MasterServiceOfferApi` have been migrated. The next candidates are `ProfileApi` or `MasterServiceOfferVariantApi`, with `MasterServiceOfferVariantApi` still the last, highest-risk legacy endpoint.
 
 The migration steps should be:
 

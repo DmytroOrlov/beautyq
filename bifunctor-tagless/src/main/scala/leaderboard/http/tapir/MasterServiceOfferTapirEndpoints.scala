@@ -1,6 +1,5 @@
 package leaderboard.http.tapir
 
-import io.circe.Json
 import leaderboard.http.HttpApiFailure
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, ServiceId}
 import sttp.tapir.*
@@ -8,7 +7,7 @@ import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait MasterServiceOfferTapirEndpoints {
-  def getMasterServiceOffer: PublicEndpoint[MasterServiceOfferId, HttpApiFailure, Json, Any]
+  def getMasterServiceOffer: PublicEndpoint[MasterServiceOfferId, HttpApiFailure, MasterServiceOffer, Any]
   def upsertMasterServiceOffer: PublicEndpoint[MasterServiceOffer, HttpApiFailure, Unit, Any]
   def getMasterServiceOffersByMaster: PublicEndpoint[MasterId, HttpApiFailure, List[MasterServiceOffer], Any]
   def getMasterServiceOffersByService: PublicEndpoint[ServiceId, HttpApiFailure, List[MasterServiceOffer], Any]
@@ -23,10 +22,12 @@ trait MasterServiceOfferTapirEndpoints {
 
 object MasterServiceOfferTapirEndpoints extends MasterServiceOfferTapirEndpoints {
   private val base = HttpApiFailureTapirSupport.endpointBase.in("master-service-offer")
+  private val getBase = sttp.tapir.endpoint.in("master-service-offer")
 
-  val getMasterServiceOffer = base.get
+  val getMasterServiceOffer = getBase.get
+    .errorOut(HttpApiFailureTapirSupport.singleEntityGetErrorOutput)
     .in(path[MasterServiceOfferId]("id"))
-    .out(jsonBody[Json])
+    .out(jsonBody[MasterServiceOffer])
 
   val upsertMasterServiceOffer = base.post
     .in(jsonBody[MasterServiceOffer])

@@ -31,15 +31,15 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
       } yield ()
     }
 
-    "return 200 and null body for a missing offer" in {
+    "return 404 and typed error json for a missing offer" in {
       val offerId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterServiceOfferApiContractState.make
         _        <- state.setGetMasterServiceOfferResult(Right(None))
         response <- observe(combineApis(masterServiceOfferApi(state)), get(s"/master-service-offer/$offerId"))
-        _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === "null")
+        _        <- assertIO(response.status === Status.NotFound)
+        _        <- assertIO(response.body === s"""{"code":"not_found","message":"Master service offer '$offerId' was not found"}""")
       } yield ()
     }
 

@@ -23,6 +23,9 @@ object HttpApiFailure {
 
     def masterLocation(id: leaderboard.model.MasterLocationId): NotFound =
       NotFound(code = "not_found", message = s"Master location '$id' was not found")
+
+    def masterServiceOffer(id: leaderboard.model.MasterServiceOfferId): NotFound =
+      NotFound(code = "not_found", message = s"Master service offer '$id' was not found")
   }
 
   implicit val notFoundCodec: Codec.AsObject[NotFound] = semiauto.deriveCodec
