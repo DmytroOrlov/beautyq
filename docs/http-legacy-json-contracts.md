@@ -1,6 +1,6 @@
 # Legacy raw JSON single-entity HTTP contracts
 
-This inventory documents the current compatibility layer for single-entity GET endpoints that still return raw `io.circe.Json` rather than a typed response.
+This inventory documents the current compatibility layer for Beauty single-entity GET endpoints that still return raw `io.circe.Json` rather than a typed response.
 
 ## Current compatibility rule
 
@@ -14,24 +14,16 @@ The current adapter-level encoding is centralized in `leaderboard.http.tapir.Leg
 
 The following Tapir endpoint definitions currently expose single-entity GET responses as raw JSON:
 
-- `leaderboard.http.tapir.ProfileTapirEndpoints`
 - `leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints`
 
 These are the actual files used by the HTTP adapters in:
 
-- `leaderboard.api.ProfileApi`
 - `leaderboard.api.MasterServiceOfferApi`
 - `leaderboard.api.MasterServiceOfferVariantApi`
 
+Profile is intentionally excluded from this Beauty migration inventory. `ProfileApi` is a legacy rank/read-model endpoint, not a Beauty domain typed single-entity migration candidate.
+
 ## Per-endpoint inventory
-
-### ProfileApi
-
-- Current response contract: `GET /profile/{id}` returns `jsonBody[Json]`.
-- Likely future typed response: `UserProfile` or a domain-specific profile read model, depending on whether this endpoint is meant to expose the stored profile or the computed rank payload.
-- Missing-entity behavior today: `200 OK` with `null`.
-- Migration risk: low to medium. The payload is already a simple entity-shaped response, but the current API path is entangled with legacy compatibility behavior.
-- Required tests before changing: route contract tests for existing `200 + null`, existing object-body serialization, and the malformed-path / failure-path behavior that the Tapir adapter currently preserves.
 
 ### MasterApi
 
@@ -98,7 +90,7 @@ This provides an intermediate migration path, but it still needs careful adapter
 
 ## Recommended first migration step
 
-`ServiceApi`, `CategoryApi`, `MasterApi`, `MasterLocationApi`, and `MasterServiceOfferApi` have been migrated. The next candidates are `ProfileApi` or `MasterServiceOfferVariantApi`, with `MasterServiceOfferVariantApi` still the last, highest-risk legacy endpoint.
+`ServiceApi`, `CategoryApi`, `MasterApi`, `MasterLocationApi`, and `MasterServiceOfferApi` have been migrated. The only remaining Beauty legacy single-entity GET endpoint is `MasterServiceOfferVariantApi`, which is still the last, highest-risk legacy endpoint.
 
 The migration steps should be:
 
