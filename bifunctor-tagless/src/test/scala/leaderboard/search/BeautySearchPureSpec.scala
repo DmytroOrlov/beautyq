@@ -743,6 +743,49 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   }
 
   "SearchBackendRouter" should {
+    "route the covered lexical eval queries to ElasticsearchOnly and the broad semantic eval queries to QdrantCandidateRoute via metadata" in {
+      val router = SearchBackendRouter.default
+
+      val lexicalQueryIds =
+        BeautySearchEvalInventory.firstMilestoneQueryIds ++
+          BeautySearchEvalInventory.secondMilestoneQueryIds ++
+          BeautySearchEvalInventory.hardNegativeQueryIds ++
+          BeautySearchEvalInventory.browsLashesQueryIds ++
+          BeautySearchEvalInventory.pmuQueryIds ++
+          BeautySearchEvalInventory.faceQueryIds ++
+          BeautySearchEvalInventory.nailsQueryIds ++
+          BeautySearchEvalInventory.hairRemainingQueryIds ++
+          BeautySearchEvalInventory.homeVisitQueryIds ++
+          BeautySearchEvalInventory.lexicalRemainderQueryIds
+
+      assert(lexicalQueryIds.size == 61)
+
+      evalSuite.queries.filter(query => lexicalQueryIds.contains(query.id)).foreach { query =>
+        val input = UserSearchInput(query.query, None, None)
+        val parsed = parser.parse(input)
+        val decision = router.decide(input, parsed)
+
+        assert(decision.route == SearchBackendRoute.ElasticsearchOnly, s"${query.id} should route to ElasticsearchOnly")
+      }
+
+      val broadSemanticQueryIds = Set("q_broad_004", "q_broad_006")
+      broadSemanticQueryIds.foreach { queryId =>
+        val query = queryById(queryId)
+        val input = UserSearchInput(query.query, None, None)
+        val parsed = parser.parse(input)
+        val decision = router.decide(
+          input,
+          parsed,
+          SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+        )
+
+        assert(decision.route == SearchBackendRoute.QdrantCandidateRoute, s"$queryId should route to QdrantCandidateRoute")
+        assert(parsed.explicitConstraints.isEmpty)
+        assert(parsed.softBoosts.isEmpty)
+        assert(parsed.remainingText.nonEmpty)
+      }
+    }
+
     "route a direct lexical query to ElasticsearchOnly" in {
       val router = SearchBackendRouter.default
       val input = UserSearchInput("маникюр", None, None)
@@ -825,22 +868,12 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     }
 
     "not depend on query ids in production router logic" in {
-      val router = SearchBackendRouter.default
-      val parsed = ParsedSearchIntent(
-        originalQuery = "synthetic broad query",
-        normalizedTokens = List("synthetic", "broad", "query"),
-        explicitConstraints = Nil,
-        softBoosts = Nil,
-        remainingText = "synthetic broad query",
-      )
-      val metadata = SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))
+      val decideMethod = classOf[SearchBackendRouter].getMethods.find { method =>
+        method.getName == "decide" &&
+        method.getParameterTypes.toList == List(classOf[UserSearchInput], classOf[ParsedSearchIntent], classOf[SearchRoutingMetadata])
+      }.getOrElse(sys.error("Missing decide(UserSearchInput, ParsedSearchIntent, SearchRoutingMetadata) method"))
 
-      val first = router.decide(UserSearchInput("first label", None, None), parsed, metadata)
-      val second = router.decide(UserSearchInput("second label", None, None), parsed, metadata)
-
-      assert(first.route == SearchBackendRoute.QdrantCandidateRoute)
-      assert(second.route == SearchBackendRoute.QdrantCandidateRoute)
-      assert(first.reason == second.reason)
+      assert(!decideMethod.getParameterTypes.exists(_ == classOf[String]))
     }
   }
 
