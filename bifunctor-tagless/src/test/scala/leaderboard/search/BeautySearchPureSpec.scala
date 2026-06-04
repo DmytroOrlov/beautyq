@@ -9,11 +9,13 @@ import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.QdrantJsonInterpreter
+import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantJsonInterpreter}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe}
+
+import java.util.UUID
 
 final class BeautySearchPureSpec extends AnyWordSpec {
   private val seedData = new BeautyQSeedLoader.ResourceLoader().load() match {
@@ -30,6 +32,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private val parser = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
 
   private val evalSuite = BeautySearchEvalInventory.evalSuite
+  private val unknownVariantId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
 
   "BeautySearchSpecV1" should {
     "have vector backend disabled by default" in {
@@ -197,6 +200,141 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val text = SearchEmbeddingTextExtractor.extract(BeautySearchSpecV1.spec.variantDocument, embeddingSpec, document)
       assert(text == s"${document.serviceName} ${document.categoryName}")
+    }
+  }
+
+  "Qdrant candidate assembly" should {
+    "preserve variant hit order" in {
+      val docs = documents.take(3)
+      val hits = List(
+        QdrantCandidateHit(docs(1).variantId, 0.2),
+        QdrantCandidateHit(docs(0).variantId, 0.8),
+        QdrantCandidateHit(docs(2).variantId, 0.5),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.variantCandidates.map(_.document.variantId) == List(docs(1).variantId, docs(0).variantId, docs(2).variantId))
+    }
+
+    "ignore unknown variant ids" in {
+      val document = documents.head
+      val hits = List(
+        QdrantCandidateHit(unknownVariantId, 0.9),
+        QdrantCandidateHit(document.variantId, 0.7),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.variantCandidates.map(_.document.variantId) == List(document.variantId))
+    }
+
+    "group providers by masterLocationId" in {
+      val groupDocuments = providerGroupDocuments
+      val hits = List(
+        QdrantCandidateHit(groupDocuments(0).variantId, 0.4),
+        QdrantCandidateHit(groupDocuments(1).variantId, 0.9),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.providerCandidates.size == 1)
+      val providerGroup = assembly.providerCandidates.head
+      assert(providerGroup.masterLocationId == groupDocuments.head.masterLocationId)
+      assert(providerGroup.count == 2)
+      assert(providerGroup.bestScore == 0.9)
+      assert(providerGroup.variants.map(_.document.variantId) == List(groupDocuments(0).variantId, groupDocuments(1).variantId))
+    }
+
+    "group services by serviceId" in {
+      val groupDocuments = serviceGroupDocuments
+      val hits = List(
+        QdrantCandidateHit(groupDocuments(0).variantId, 0.1),
+        QdrantCandidateHit(groupDocuments(1).variantId, 0.6),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.serviceCandidates.size == 1)
+      val serviceGroup = assembly.serviceCandidates.head
+      assert(serviceGroup.serviceId == groupDocuments.head.serviceId)
+      assert(serviceGroup.count == 2)
+      assert(serviceGroup.bestScore == 0.6)
+      assert(serviceGroup.variants.map(_.document.variantId) == List(groupDocuments(0).variantId, groupDocuments(1).variantId))
+    }
+
+    "rank service groups by bestScore descending" in {
+      val serviceGroups = documents.groupBy(_.serviceId).values.filter(_.nonEmpty).toList.sortBy(_.head.serviceId.toString)
+      assert(serviceGroups.size >= 2)
+
+      val lowGroup = serviceGroups.head
+      val highGroup = serviceGroups(1)
+      val hits = List(
+        QdrantCandidateHit(lowGroup.head.variantId, 0.2),
+        QdrantCandidateHit(highGroup.head.variantId, 0.8),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.serviceCandidates.head.serviceId == highGroup.head.serviceId)
+      assert(assembly.serviceCandidates.head.bestScore == 0.8)
+    }
+
+    "rank tied service groups by count descending" in {
+      val serviceGroups = documents.groupBy(_.serviceId).values.filter(_.size >= 2).toList.sortBy(_.head.serviceId.toString)
+      assert(serviceGroups.size >= 2)
+
+      val firstGroup = serviceGroups.head
+      val secondGroup = serviceGroups(1)
+      val hits = List(
+        QdrantCandidateHit(firstGroup.head.variantId, 0.7),
+        QdrantCandidateHit(firstGroup(1).variantId, 0.7),
+        QdrantCandidateHit(secondGroup.head.variantId, 0.7),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.serviceCandidates.head.serviceId == firstGroup.head.serviceId)
+      assert(assembly.serviceCandidates.head.count == 2)
+      assert(assembly.serviceCandidates(1).serviceId == secondGroup.head.serviceId)
+      assert(assembly.serviceCandidates(1).count == 1)
+    }
+
+    "rank provider groups by bestScore descending" in {
+      val providerGroups = documents.groupBy(_.masterLocationId).values.filter(_.nonEmpty).toList.sortBy(_.head.masterLocationId.toString)
+      assert(providerGroups.size >= 2)
+
+      val lowGroup = providerGroups.head
+      val highGroup = providerGroups(1)
+      val hits = List(
+        QdrantCandidateHit(lowGroup.head.variantId, 0.2),
+        QdrantCandidateHit(highGroup.head.variantId, 0.8),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.providerCandidates.head.masterLocationId == highGroup.head.masterLocationId)
+      assert(assembly.providerCandidates.head.bestScore == 0.8)
+    }
+
+    "rank tied provider groups by count descending" in {
+      val providerGroups = documents.groupBy(_.masterLocationId).values.filter(_.size >= 2).toList.sortBy(_.head.masterLocationId.toString)
+      assert(providerGroups.size >= 2)
+
+      val firstGroup = providerGroups.head
+      val secondGroup = providerGroups(1)
+      val hits = List(
+        QdrantCandidateHit(firstGroup.head.variantId, 0.7),
+        QdrantCandidateHit(firstGroup(1).variantId, 0.7),
+        QdrantCandidateHit(secondGroup.head.variantId, 0.7),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.providerCandidates.head.masterLocationId == firstGroup.head.masterLocationId)
+      assert(assembly.providerCandidates.head.count == 2)
+      assert(assembly.providerCandidates(1).masterLocationId == secondGroup.head.masterLocationId)
+      assert(assembly.providerCandidates(1).count == 1)
     }
   }
 
@@ -1031,6 +1169,15 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   private def queryById(id: String) =
     evalSuite.queries.find(_.id == id).getOrElse(sys.error(s"Missing eval query $id"))
+
+  private def assembleQdrantCandidates(hits: List[QdrantCandidateHit]) =
+    QdrantCandidateAssembler.assemble(hits, documents)
+
+  private def providerGroupDocuments =
+    documents.groupBy(_.masterLocationId).values.find(_.size >= 2).get
+
+  private def serviceGroupDocuments =
+    documents.groupBy(_.serviceId).values.find(_.size >= 2).get
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe { implicit unsafe =>
