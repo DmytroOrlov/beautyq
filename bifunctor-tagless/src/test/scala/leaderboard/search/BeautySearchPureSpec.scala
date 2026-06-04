@@ -1006,6 +1006,76 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(decision.reason == SearchRoutingReason.FallbackNotEnabled)
     }
 
+    "combine the pure router with pure Qdrant candidate assembly without runtime hybrid behavior" in {
+      val router = SearchBackendRouter.default
+      val candidateDocuments = documents.take(2)
+      val candidateHits = List(
+        QdrantCandidateHit(candidateDocuments(1).variantId, 0.82),
+        QdrantCandidateHit(candidateDocuments(0).variantId, 0.91),
+      )
+
+      def routeAndMaybeAssemble(
+        input: UserSearchInput,
+        metadata: SearchRoutingMetadata = SearchRoutingMetadata(),
+        hits: List[QdrantCandidateHit] = Nil,
+      ) = {
+        val parsed = parser.parse(input)
+        val decision = router.decide(input, parsed, metadata)
+        val assembly =
+          if (decision.route == SearchBackendRoute.QdrantCandidateRoute) Some(assembleQdrantCandidates(hits))
+          else None
+
+        (parsed, decision, assembly)
+      }
+
+      val lexicalQuery = evalSuite.queries
+        .find(query => BeautySearchEvalInventory.firstMilestoneQueryIds.contains(query.id))
+        .getOrElse(sys.error("Missing lexical eval query for router coverage"))
+      val lexicalInput = UserSearchInput(lexicalQuery.query, None, None)
+      val (lexicalParsed, lexicalDecision, lexicalAssembly) = routeAndMaybeAssemble(lexicalInput)
+
+      assert(lexicalParsed.explicitConstraints.nonEmpty || lexicalParsed.softBoosts.nonEmpty)
+      assert(lexicalDecision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(lexicalAssembly.isEmpty)
+
+      val broadSemanticInput = UserSearchInput("synthetic semantic probe", None, None)
+      val (broadSemanticParsed, broadSemanticDecision, broadSemanticAssembly) = routeAndMaybeAssemble(
+        broadSemanticInput,
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+        candidateHits,
+      )
+
+      assert(broadSemanticParsed.explicitConstraints.isEmpty)
+      assert(broadSemanticParsed.softBoosts.isEmpty)
+      assert(broadSemanticParsed.remainingText.nonEmpty)
+      assert(broadSemanticDecision.route == SearchBackendRoute.QdrantCandidateRoute)
+      assert(broadSemanticDecision.reason == SearchRoutingReason.BroadSemanticCandidate)
+      assert(broadSemanticAssembly.exists(_.variantCandidates.map(_.document.variantId) == List(candidateDocuments(1).variantId, candidateDocuments(0).variantId)))
+
+      val residualInput = UserSearchInput("synthetic residual probe", None, None)
+      val (residualParsed, residualDecision, residualAssembly) = routeAndMaybeAssemble(residualInput)
+
+      assert(residualParsed.explicitConstraints.isEmpty)
+      assert(residualParsed.softBoosts.isEmpty)
+      assert(residualParsed.remainingText.nonEmpty)
+      assert(residualDecision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(residualDecision.reason == SearchRoutingReason.FallbackNotEnabled)
+      assert(residualAssembly.isEmpty)
+
+      val hardNegativeInput = UserSearchInput("synthetic residual probe", None, None)
+      val (hardNegativeParsed, hardNegativeDecision, hardNegativeAssembly) = routeAndMaybeAssemble(
+        hardNegativeInput,
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.HardNegativeOrNoiseGuard)),
+      )
+
+      assert(hardNegativeParsed.explicitConstraints.isEmpty)
+      assert(hardNegativeParsed.softBoosts.isEmpty)
+      assert(hardNegativeParsed.remainingText.nonEmpty)
+      assert(hardNegativeDecision.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(hardNegativeDecision.reason == SearchRoutingReason.HardNegativeOrNoiseGuard)
+      assert(hardNegativeAssembly.isEmpty)
+    }
+
     "not depend on query ids in production router logic" in {
       val decideMethod = classOf[SearchBackendRouter].getMethods.find { method =>
         method.getName == "decide" &&
