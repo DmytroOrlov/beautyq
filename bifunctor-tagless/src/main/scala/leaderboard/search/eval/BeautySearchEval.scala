@@ -1,8 +1,7 @@
 package leaderboard.search.eval
 
-import io.circe.{Decoder, DecodingFailure, HCursor}
+import io.circe.{Decoder, DecodingFailure}
 import io.circe.parser.decode
-import leaderboard.model.Category.CategoryId
 import leaderboard.model.*
 import leaderboard.search.*
 

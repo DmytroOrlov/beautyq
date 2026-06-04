@@ -172,8 +172,6 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                         Left(unknownEnumIntCode(queryName, attributeCode, intCode))
                     }
                 }
-              case Some(definition) =>
-                Left(unsupportedNumericAttributeDefinition(queryName, attributeCode, definition))
             }
         }
     }
@@ -257,14 +255,11 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                   _ =>
                     current.updated(enumDefinition.code, value)
                 }
-              case other =>
-                Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
             }
         }
     }
 
   private def collectEncodedBooleanAttributes(
-    queryName: String,
     variant: MasterServiceOfferVariant,
   ): Either[QueryFailure, Map[String, Boolean]] =
     variant.booleanAttributes.iterator.foldLeft[Either[QueryFailure, Map[String, Boolean]]](Right(Map.empty)) {
@@ -274,8 +269,6 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
             attributeDefinition match {
               case booleanDefinition: BooleanAttributeDefinition =>
                 Right(current.updated(booleanDefinition.code, value))
-              case other =>
-                Left(unsupportedNumericAttributeDefinition(queryName, other.code, other))
             }
         }
     }
@@ -286,7 +279,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
   ): Either[QueryFailure, MasterServiceOfferVariantAdditionalAttributes] =
     for {
       enumAttributes    <- collectEncodedEnumAttributes(queryName, variant)
-      booleanAttributes <- collectEncodedBooleanAttributes(queryName, variant)
+      booleanAttributes <- collectEncodedBooleanAttributes(variant)
     } yield {
       MasterServiceOfferVariantAdditionalAttributes(
         variant.intAttributes.iterator.map {

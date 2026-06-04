@@ -1,22 +1,11 @@
 package leaderboard
 
-import distage.{DIKey, ModuleDef, Scene}
 import io.circe.Json
 import io.circe.syntax.*
-import doobie.implicits.*
-import doobie.postgres.implicits.*
-import izumi.distage.model.definition.Activation
-import izumi.distage.model.definition.StandardAxis.Repo
-import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
-import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
-import leaderboard.services.Ranks
-import leaderboard.sql.SQL
-import leaderboard.zioenv.*
+import leaderboard.model.Category.{CategoryId, rootCategoryId}
+import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import zio.{IO, ZIO}
-import leaderboard.model.AttributeMap
 
 // AI-NOTE: For distage testkit memoizationRoots, Activation, and BIO patterns used here, see docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md
 

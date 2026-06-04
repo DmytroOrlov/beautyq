@@ -268,8 +268,6 @@ object BeautySearchSpecV1 {
             sortable = true,
           )
         )
-      case _ =>
-        Nil
     }
 
   private val facetFields: List[FacetField] =

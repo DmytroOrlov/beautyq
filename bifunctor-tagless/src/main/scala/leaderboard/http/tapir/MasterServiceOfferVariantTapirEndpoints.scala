@@ -4,7 +4,6 @@ import io.circe.Json
 import leaderboard.http.HttpApiFailure
 import leaderboard.model.{MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId}
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 trait MasterServiceOfferVariantTapirEndpoints {

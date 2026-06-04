@@ -5,6 +5,8 @@ import leaderboard.model.*
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.dsl.SearchConstraint
 
+import scala.annotation.nowarn
+
 final case class UserSearchInput(
   query: String,
   userLat: Option[BigDecimal],
@@ -98,6 +100,7 @@ trait BeautySearchService[F[_, _]] {
 }
 
 object BeautySearchService {
+  @nowarn("msg=unused")
   final class Impl[F[+_, +_]: Error2](
     parser: BeautySearchIntentParser,
     backend: BeautySearchBackend[F],

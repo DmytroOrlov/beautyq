@@ -47,7 +47,7 @@ final case class MasterServiceOfferVariant private (
   def booleanAttributes: AttributeMap[Boolean] =
     attributes.booleanValues
 
-  @nowarn("cat=unused")
+  @nowarn("msg=unused")
   private def copy(
     id: MasterServiceOfferVariantId                 = this.id,
     masterServiceOfferId: MasterServiceOfferId      = this.masterServiceOfferId,
