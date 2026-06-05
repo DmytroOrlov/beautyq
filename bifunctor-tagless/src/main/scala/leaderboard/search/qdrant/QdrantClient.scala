@@ -29,6 +29,9 @@ final class QdrantClient(host: String, port: Int) {
       else ZIO.fail(QueryFailure.operation("delete-qdrant-collection", s"Unexpected status ${response.statusCode}: $body"))
     }
 
+  def collectionInfo(path: String): IO[QueryFailure, Json] =
+    request("GET", path).flatMap(parseJson("get-qdrant-collection-info", _))
+
   def upsertPoint(path: String, json: Json): IO[QueryFailure, Json] =
     request("PUT", path, Some(json.noSpaces), "application/json").flatMap(parseJson("upsert-qdrant-point", _))
 
