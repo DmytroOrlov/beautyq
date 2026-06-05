@@ -36,7 +36,7 @@ final case class QdrantCandidateAssembly(
 object QdrantCandidateAssembler {
   def assemble(hits: List[QdrantCandidateHit], documents: List[VariantSearchDocument]): QdrantCandidateAssembly = {
     val documentsById = documents.iterator.map(document => document.variantId -> document).toMap
-    val variantCandidates = hits.flatMap { hit =>
+    val variantCandidates = deduplicateHitsByVariantId(hits).flatMap { hit =>
       documentsById.get(hit.variantId).map(document => QdrantVariantCandidate(document, hit.score))
     }
 
@@ -45,6 +45,19 @@ object QdrantCandidateAssembler {
       providerCandidates = groupByMasterLocationId(variantCandidates),
       serviceCandidates = groupByServiceId(variantCandidates),
     )
+  }
+
+  private def deduplicateHitsByVariantId(hits: List[QdrantCandidateHit]): List[QdrantCandidateHit] = {
+    val (_, deduplicatedReverse) = hits.foldLeft((Set.empty[MasterServiceOfferVariantId], List.empty[QdrantCandidateHit])) {
+      case ((seen, deduplicated), hit) =>
+        if (seen(hit.variantId)) {
+          (seen, deduplicated)
+        } else {
+          (seen + hit.variantId, hit :: deduplicated)
+        }
+    }
+
+    deduplicatedReverse.reverse
   }
 
   private def groupByMasterLocationId(

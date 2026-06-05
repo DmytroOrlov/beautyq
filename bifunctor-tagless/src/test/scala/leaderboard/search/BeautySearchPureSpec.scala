@@ -315,6 +315,22 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(assembly.variantCandidates.map(_.document.variantId) == List(document.variantId))
     }
 
+    "deduplicate duplicate variant hits by variantId before joining documents" in {
+      val docs = documents.take(3)
+      val hits = List(
+        QdrantCandidateHit(docs(1).variantId, 0.91),
+        QdrantCandidateHit(docs(0).variantId, 0.81),
+        QdrantCandidateHit(docs(1).variantId, 0.31),
+        QdrantCandidateHit(docs(2).variantId, 0.71),
+        QdrantCandidateHit(docs(0).variantId, 0.21),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.variantCandidates.map(_.document.variantId) == List(docs(1).variantId, docs(0).variantId, docs(2).variantId))
+      assert(assembly.variantCandidates.map(_.score) == List(0.91, 0.81, 0.71))
+    }
+
     "group providers by masterLocationId" in {
       val groupDocuments = providerGroupDocuments
       val hits = List(
@@ -332,6 +348,25 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(providerGroup.variants.map(_.document.variantId) == List(groupDocuments(0).variantId, groupDocuments(1).variantId))
     }
 
+    "count deduplicated variants in provider groups" in {
+      val groupDocuments = providerGroupDocuments
+      val hits = List(
+        QdrantCandidateHit(groupDocuments(0).variantId, 0.4),
+        QdrantCandidateHit(groupDocuments(1).variantId, 0.7),
+        QdrantCandidateHit(groupDocuments(0).variantId, 0.9),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.providerCandidates.size == 1)
+      val providerGroup = assembly.providerCandidates.head
+      assert(providerGroup.masterLocationId == groupDocuments.head.masterLocationId)
+      assert(providerGroup.count == 2)
+      assert(providerGroup.bestScore == 0.7)
+      assert(providerGroup.variants.map(_.document.variantId) == List(groupDocuments(0).variantId, groupDocuments(1).variantId))
+      assert(providerGroup.variants.map(_.score) == List(0.4, 0.7))
+    }
+
     "group services by serviceId" in {
       val groupDocuments = serviceGroupDocuments
       val hits = List(
@@ -347,6 +382,25 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(serviceGroup.count == 2)
       assert(serviceGroup.bestScore == 0.6)
       assert(serviceGroup.variants.map(_.document.variantId) == List(groupDocuments(0).variantId, groupDocuments(1).variantId))
+    }
+
+    "count deduplicated variants in service groups" in {
+      val groupDocuments = serviceGroupDocuments
+      val hits = List(
+        QdrantCandidateHit(groupDocuments(0).variantId, 0.1),
+        QdrantCandidateHit(groupDocuments(1).variantId, 0.6),
+        QdrantCandidateHit(groupDocuments(0).variantId, 0.8),
+      )
+
+      val assembly = assembleQdrantCandidates(hits)
+
+      assert(assembly.serviceCandidates.size == 1)
+      val serviceGroup = assembly.serviceCandidates.head
+      assert(serviceGroup.serviceId == groupDocuments.head.serviceId)
+      assert(serviceGroup.count == 2)
+      assert(serviceGroup.bestScore == 0.6)
+      assert(serviceGroup.variants.map(_.document.variantId) == List(groupDocuments(0).variantId, groupDocuments(1).variantId))
+      assert(serviceGroup.variants.map(_.score) == List(0.1, 0.6))
     }
 
     "rank service groups by bestScore descending" in {
