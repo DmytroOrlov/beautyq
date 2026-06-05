@@ -363,6 +363,43 @@ At present, metadata is only supplied from tests and eval scaffolding, and `Beau
 
 That is intentional. `BeautySearchService.Impl` must stay parser plus backend delegation, and the user-facing search input does not yet have an explicit experiment or routing field.
 
+Current state is still experimental and test-scoped. The existing pieces are useful seams, but they are not a production rollout path:
+
+- `QdrantCandidateHitDecoder`
+- `SemanticCandidateHit` / `SemanticCandidateBackend`
+- `QdrantSearchClient` / `QdrantPointUpsertClient` ports
+- `QdrantSemanticCandidateSearch`
+- `QdrantSemanticCandidateBackend`
+- `QdrantVariantDocumentPointBuilder`
+- `QdrantVariantDocumentIndexer`
+- `QdrantSemanticCandidateEvalSpec` reuses shared eval helpers
+- an env-gated explicit experimental service integration spec exists
+- the explicit metadata route is still experimental and test-only
+
+These pieces are not production-ready yet because the runtime lifecycle and operational contracts are still missing:
+
+- a production-safe `SearchRoutingMetadata` source
+- runtime `VariantSearchDocument` snapshot/freshness lifecycle
+- a production `VariantSearchDocumentLookup`
+- a production Qdrant collection lifecycle
+- a collection versioning and vector-dimension compatibility policy
+- a production indexing lifecycle with batching, retry, and backpressure
+- route-decision observability and diagnostics
+- defined fallback semantics
+- score calibration, score fusion, or reranking policy
+- Elasticsearch facet/filter parity for any hybrid user-facing path
+- a rollout strategy
+
+Until those gaps are closed, the following remain explicitly forbidden:
+
+- Qdrant-as-default
+- residual-text routing
+- eval query ids in main code
+- fallback-on-zero-results
+- production Distage wiring
+- HTTP/API metadata surface
+- Elasticsearch facet replacement by the Qdrant path
+
 Safe future metadata sources are limited to:
 
 - explicit experiment metadata
