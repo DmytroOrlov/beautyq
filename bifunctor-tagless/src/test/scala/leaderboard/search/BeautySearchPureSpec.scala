@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import io.circe.Json
+import io.circe.{Json, JsonObject}
 import leaderboard.model.*
 import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
@@ -10,7 +10,7 @@ import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalH
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantCandidateResponseProjector, QdrantJsonInterpreter}
+import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantCandidateHitDecoder, QdrantCandidateResponseProjector, QdrantJsonInterpreter, QdrantSearchHit}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
 import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, VariantSearchDocumentLookup}
 import leaderboard.seed.BeautyQSeedLoader
@@ -99,6 +99,70 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(spec.dimension == 384)
       assert(spec.distance == VectorDistance.Cosine)
       assert(spec.sourceTextFieldPaths == List("serviceName", "allText"))
+    }
+  }
+
+  "Qdrant candidate hit decoder" should {
+    "decode payload.variantId into candidate hits, preserving order and score" in {
+      val firstVariantId = documents(0).variantId
+      val secondVariantId = documents(1).variantId
+      val hits = List(
+        QdrantSearchHit(
+          id = UUID.randomUUID().toString,
+          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(secondVariantId.toString))),
+          score = 0.25,
+        ),
+        QdrantSearchHit(
+          id = UUID.randomUUID().toString,
+          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(firstVariantId.toString))),
+          score = 0.75,
+        ),
+      )
+
+      val decoded = QdrantCandidateHitDecoder.decode(hits)
+
+      assert(decoded == Right(List(
+        QdrantCandidateHit(secondVariantId, 0.25),
+        QdrantCandidateHit(firstVariantId, 0.75),
+      )))
+    }
+
+    "fail when payload.variantId is missing" in {
+      val hit = QdrantSearchHit(
+        id = UUID.randomUUID().toString,
+        payload = JsonObject.empty,
+        score = 0.5,
+      )
+
+      val decoded = QdrantCandidateHitDecoder.decode(List(hit))
+
+      assert(decoded.isLeft)
+      assert(decoded.left.exists(_.message.contains("Missing payload.variantId")))
+    }
+
+    "fail when payload.variantId is invalid" in {
+      val hit = QdrantSearchHit(
+        id = UUID.randomUUID().toString,
+        payload = JsonObject.fromMap(Map("variantId" -> Json.fromString("not-a-uuid"))),
+        score = 0.5,
+      )
+
+      val decoded = QdrantCandidateHitDecoder.decode(List(hit))
+
+      assert(decoded.isLeft)
+      assert(decoded.left.exists(_.message.contains("Invalid payload.variantId")))
+    }
+
+    "not fall back to hit.id when payload.variantId is missing" in {
+      val hit = QdrantSearchHit(
+        id = UUID.fromString("00000000-0000-0000-0000-000000000123").toString,
+        payload = JsonObject.empty,
+        score = 0.5,
+      )
+
+      val decoded = QdrantCandidateHitDecoder.decode(List(hit))
+
+      assert(decoded.isLeft)
     }
   }
 
