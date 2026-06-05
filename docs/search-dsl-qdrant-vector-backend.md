@@ -131,7 +131,62 @@ The important constraint is that this text shape must be specified through `Embe
 
 That keeps embedding behavior reviewable, testable, and reusable across domains.
 
-## 7. Safe implementation sequence
+## 7. Collection lifecycle and versioning policy
+
+Current status is intentionally non-production:
+
+- Qdrant search/indexing helpers exist.
+- `VariantSearchDocumentSnapshotProvider` exists.
+- `QdrantVariantDocumentSnapshotIndexer` exists.
+- the env-gated experimental service spec exists
+- no production collection lifecycle exists
+
+Collection identity must be explicit and versioned. At minimum it should include:
+
+- domain/search spec version
+- embedding model id or name
+- vector dimension
+- vector name
+- distance metric
+- optional environment or purpose suffix
+
+Example versioned collection name:
+
+- `beautyq-v1-qwen3-embedding-0_6b-1024-default-cosine-exp`
+
+Compatibility must be strict:
+
+- expected dimension comes from `EmbeddingSpec`
+- collection vector config must match the expected dimension, vector name, and distance metric
+- mismatch must fail fast
+- there must be no silent recreate in production-like paths
+
+Non-production policy:
+
+- tests may create unique temporary collections
+- tests may delete and recreate isolated collections
+- experiments may use explicit versioned collection names
+
+Future production policy:
+
+- no destructive recreate of an active collection
+- alias and blue-green collection management are deferred
+- any future alias switch requires full indexing plus eval and health checks first
+- a rollback strategy is required before production rollout
+
+Non-goals for this step:
+
+- no collection manager implementation
+- no Distage wiring
+- no HTTP or API changes
+- no routing metadata source
+- no fallback behavior
+- no score fusion or reranking
+- no Elasticsearch facet replacement
+
+The next code step after this doc, if needed, should be pure config or policy types only, with no Qdrant client calls yet.
+
+## 8. Safe implementation sequence
 
 Future implementation should follow this exact sequence.
 
@@ -177,7 +232,7 @@ Future implementation should follow this exact sequence.
    - or reranking
    - each as separate measured changes
 
-## 8. Eval strategy
+## 9. Eval strategy
 
 Qdrant should not be judged by replacing all Elasticsearch eval queries.
 
@@ -192,7 +247,7 @@ Separate Qdrant eval subsets should be added and stabilized before any hybrid be
 
 Qdrant now has a green semantic-candidate eval slice for `q_broad_004` and `q_broad_006`, but that does not by itself justify fallback, fusion, or reranking.
 
-## 9. Guardrails
+## 10. Guardrails
 
 - do not change Elasticsearch behavior while adding Qdrant
 - do not put BeautyQ dictionary logic in Qdrant interpreters
@@ -204,7 +259,7 @@ Qdrant now has a green semantic-candidate eval slice for `q_broad_004` and `q_br
 - keep Qdrant implementation steps small and independently verifiable
 - add explicit Qdrant quality assertions only after the embedding model and config are stable
 
-## 10. Relationship to reusable-domain onboarding
+## 11. Relationship to reusable-domain onboarding
 
 Qdrant support should be generic in the same way the Elasticsearch interpreters are intended to be generic.
 
@@ -219,7 +274,7 @@ The Qdrant interpreters should not depend on BeautyQ domain classes except throu
 
 That keeps the vector backend reusable and helps the search DSL evolve into a reusable cross-domain architecture rather than a BeautyQ-only implementation.
 
-## 11. Recommended Next Step
+## 12. Recommended Next Step
 
 1. Stabilize the embedding model/config and then add explicit Qdrant quality assertions for the semantic candidate slice.
 2. Design fallback, hybrid, or reranking criteria later as a separate measured change.
