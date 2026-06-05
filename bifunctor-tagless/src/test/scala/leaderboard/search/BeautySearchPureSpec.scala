@@ -12,7 +12,7 @@ import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantCandidateResponseProjector, QdrantJsonInterpreter}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
-import leaderboard.search.semantic.{SemanticCandidateBackend, VariantSearchDocumentLookup}
+import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, VariantSearchDocumentLookup}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
@@ -451,6 +451,39 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   }
 
   "semantic candidate runtime seams" should {
+    "resolve known variant ids with the in-memory document lookup" in {
+      val knownDocuments = documents.take(3)
+      val lookup = new InMemoryVariantSearchDocumentLookup[IO](knownDocuments)
+
+      val result = runIO(lookup.lookup(List(knownDocuments(2).variantId, knownDocuments(0).variantId)))
+
+      assert(result == Map(
+        knownDocuments(2).variantId -> knownDocuments(2),
+        knownDocuments(0).variantId -> knownDocuments(0),
+      ))
+    }
+
+    "ignore unknown variant ids with the in-memory document lookup" in {
+      val knownDocument = documents.head
+      val lookup = new InMemoryVariantSearchDocumentLookup[IO](List(knownDocument))
+
+      val result = runIO(lookup.lookup(List(unknownVariantId, knownDocument.variantId)))
+
+      assert(result == Map(knownDocument.variantId -> knownDocument))
+      assert(!result.contains(unknownVariantId))
+    }
+
+    "keep the first document for duplicate ids in the in-memory document lookup" in {
+      val first = documents.head
+      val duplicate = first.copy(allText = s"duplicate ${first.allText}")
+      val lookup = new InMemoryVariantSearchDocumentLookup[IO](List(first, duplicate))
+
+      val result = runIO(lookup.lookup(List(first.variantId)))
+
+      assert(result == Map(first.variantId -> first))
+      assert(result(first.variantId) != duplicate)
+    }
+
     "compose fake semantic hits and fake document lookup through assembler and projector" in {
       val knownDocuments = documents.take(3)
       val hits = List(
@@ -497,7 +530,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(lookup.calls == 0)
     }
 
-    "project QdrantCandidateRoute through fake semantic backend, fake lookup, assembler and projector" in {
+    "project QdrantCandidateRoute through semantic backend, in-memory lookup, assembler and projector" in {
       val knownDocuments = documents.take(3)
       val hits = List(
         QdrantCandidateHit(knownDocuments(1).variantId, 0.91),
@@ -508,7 +541,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val intent = parser.parse(input)
       val lexical = new FakeBeautySearchBackend(emptyResponse)
       val semantic = new CountingSemanticCandidateBackend(hits)
-      val lookup = new CountingVariantSearchDocumentLookup(knownDocuments)
+      val lookup = new InMemoryVariantSearchDocumentLookup[IO](knownDocuments)
       val backend = experimentalBackend(SearchBackendRoute.QdrantCandidateRoute, lexical, semantic, lookup)
 
       val response = runIO(backend.search(input, intent))
@@ -517,8 +550,6 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(semantic.calls == 1)
       assert(semantic.lastInput.contains(input))
       assert(semantic.lastIntent.contains(intent))
-      assert(lookup.calls == 1)
-      assert(lookup.lastVariantIds.contains(hits.map(_.variantId)))
       assert(response.variantCarousel.map(_.variantId) == List(knownDocuments(1).variantId, knownDocuments(0).variantId, knownDocuments(2).variantId))
       assert(response.variantCarousel.map(_.score) == List(0.91, 0.81, 0.71))
       assert(response.facets.isEmpty)
@@ -1656,7 +1687,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     route: SearchBackendRoute,
     lexical: FakeBeautySearchBackend,
     semantic: CountingSemanticCandidateBackend,
-    lookup: CountingVariantSearchDocumentLookup,
+    lookup: VariantSearchDocumentLookup[IO],
   ) =
     new ExperimentalHybridSearchBackend[IO](
       BeautySearchSpecV1.spec,
@@ -1669,7 +1700,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private def experimentalService(
     lexical: FakeBeautySearchBackend,
     semantic: CountingSemanticCandidateBackend,
-    lookup: CountingVariantSearchDocumentLookup,
+    lookup: VariantSearchDocumentLookup[IO],
   ) =
     new ExperimentalBeautySearchService[IO](
       parser,
