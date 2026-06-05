@@ -11,8 +11,7 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSe
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
-import leaderboard.search.qdrant.{QdrantClient, QdrantSearchHit, QdrantVariantDocumentPointBuilder}
-import leaderboard.search.qdrant.QdrantJsonInterpreter
+import leaderboard.search.qdrant.{QdrantCandidateHit, QdrantClient, QdrantClientSearchAdapter, QdrantJsonInterpreter, QdrantSemanticCandidateSearch, QdrantVariantDocumentPointBuilder}
 import leaderboard.seed.BeautyQSeedLoader
 import zio.{IO, ZIO}
 
@@ -66,6 +65,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
           case Some(url) =>
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
             val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+            val semanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient))
             val collectionName = s"semantic_eval_${UUID.randomUUID().toString.replace('-', '_')}"
             val collectionPath = s"/collections/$collectionName"
             val vectorSearchSpec = vectorSearchSpecTemplate.copy(collectionName = collectionName)
@@ -82,6 +82,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
                   masterServiceOfferVariants,
                 )
                 _ <- assertIO(documents.size == seed.masterServiceOfferVariants.size)
+                documentsByVariantId = documents.iterator.map(document => document.variantId -> document).toMap
                 firstDocument <- ZIO
                   .fromOption(documents.headOption)
                   .orElseFail(QueryFailure.domain("No seeded variant documents were available for Qdrant semantic evaluation"))
@@ -96,22 +97,15 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
                 _ <- ZIO.foreachDiscard(documents.tail) { document =>
                   for {
                     vector <- embeddingClient.embed(embeddingText(document))
-                    _ <- qdrantClient.upsertPoint(
-                      s"$collectionPath/points?wait=true",
-                      QdrantVariantDocumentPointBuilder.upsertPointJson(document, embeddingSpec.vectorName, vector.toList),
-                    )
+                    _ <- upsertDocument(qdrantClient, collectionPath, embeddingSpec, document, vector)
                   } yield ()
                 }
                 semanticQueries <- ZIO.succeed(evalSuite.queries.filter(query => semanticCandidateQueryIds.contains(query.id)))
                 _ <- assertIO(semanticQueries.map(_.id).toSet == semanticCandidateQueryIds)
                 measurements <- ZIO.foreach(semanticQueries) { query =>
                   for {
-                    queryVector <- embeddingClient.embed(query.query)
-                    hits <- qdrantClient.search(
-                      s"$collectionPath/points/search",
-                      QdrantJsonInterpreter.searchRequestJson(vectorSearchSpec, queryVector.toList),
-                    )
-                    measurement = SemanticEvalMeasurement.from(query, hits)
+                    hits <- semanticCandidateSearch.search(query.query, vectorSearchSpec)
+                    measurement = SemanticEvalMeasurement.from(query, hits, documentsByVariantId)
                     _ <- ZIO.succeed(assert(hits.nonEmpty, measurement.render))
                     _ <- requireQualityAssertions(query, measurement)
                     _ <- ZIO.succeed(println(measurement.render))
@@ -242,19 +236,26 @@ private final case class SemanticEvalMeasurement(
 }
 
 private object SemanticEvalMeasurement {
-  def from(query: BeautySearchEvalQuery, hits: List[QdrantSearchHit]): SemanticEvalMeasurement =
+  def from(
+    query: BeautySearchEvalQuery,
+    hits: List[QdrantCandidateHit],
+    documentsByVariantId: Map[UUID, VariantSearchDocument],
+  ): SemanticEvalMeasurement =
     SemanticEvalMeasurement(
       queryId = query.id,
       queryText = query.query,
-      topVariantIds = payloadValues(hits, "variantId"),
-      topProviderIds = payloadValues(hits, "masterLocationId"),
-      topServiceIds = payloadValues(hits, "serviceId"),
+      topVariantIds = hits.map(_.variantId.toString).distinct,
+      topProviderIds = documentValues(hits, documentsByVariantId)(_.masterLocationId.toString),
+      topServiceIds = documentValues(hits, documentsByVariantId)(_.serviceId.toString),
       scores = hits.map(_.score),
       acceptableVariantIds = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet,
       acceptableProviderIds = query.expectedProviderCarousel.acceptableProviderLocationIds.map(_.toString).toSet,
       acceptableServiceIds = query.expectedServiceIntentCarousel.acceptableServiceIds.map(_.toString).toSet,
     )
 
-  private def payloadValues(hits: List[QdrantSearchHit], key: String): List[String] =
-    hits.iterator.flatMap(_.payload.apply(key).flatMap(_.asString)).toList.distinct
+  private def documentValues(
+    hits: List[QdrantCandidateHit],
+    documentsByVariantId: Map[UUID, VariantSearchDocument],
+  )(value: VariantSearchDocument => String): List[String] =
+    hits.iterator.flatMap(hit => documentsByVariantId.get(hit.variantId).map(value)).toList.distinct
 }
