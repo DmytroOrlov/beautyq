@@ -13,7 +13,7 @@ import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateAssembly, QdrantCandidateHit, QdrantCandidateHitDecoder, QdrantCandidateResponseProjector, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
-import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, VariantSearchDocumentLookup}
+import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, SemanticCandidateHit, VariantSearchDocumentLookup}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Ref, Runtime, Unsafe, ZIO}
@@ -293,9 +293,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "preserve variant hit order" in {
       val docs = documents.take(3)
       val hits = List(
-        QdrantCandidateHit(docs(1).variantId, 0.2),
-        QdrantCandidateHit(docs(0).variantId, 0.8),
-        QdrantCandidateHit(docs(2).variantId, 0.5),
+        SemanticCandidateHit(docs(1).variantId, 0.2),
+        SemanticCandidateHit(docs(0).variantId, 0.8),
+        SemanticCandidateHit(docs(2).variantId, 0.5),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -306,8 +306,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "ignore unknown variant ids" in {
       val document = documents.head
       val hits = List(
-        QdrantCandidateHit(unknownVariantId, 0.9),
-        QdrantCandidateHit(document.variantId, 0.7),
+        SemanticCandidateHit(unknownVariantId, 0.9),
+        SemanticCandidateHit(document.variantId, 0.7),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -318,11 +318,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "deduplicate duplicate variant hits by variantId before joining documents" in {
       val docs = documents.take(3)
       val hits = List(
-        QdrantCandidateHit(docs(1).variantId, 0.91),
-        QdrantCandidateHit(docs(0).variantId, 0.81),
-        QdrantCandidateHit(docs(1).variantId, 0.31),
-        QdrantCandidateHit(docs(2).variantId, 0.71),
-        QdrantCandidateHit(docs(0).variantId, 0.21),
+        SemanticCandidateHit(docs(1).variantId, 0.91),
+        SemanticCandidateHit(docs(0).variantId, 0.81),
+        SemanticCandidateHit(docs(1).variantId, 0.31),
+        SemanticCandidateHit(docs(2).variantId, 0.71),
+        SemanticCandidateHit(docs(0).variantId, 0.21),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -334,8 +334,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "group providers by masterLocationId" in {
       val groupDocuments = providerGroupDocuments
       val hits = List(
-        QdrantCandidateHit(groupDocuments(0).variantId, 0.4),
-        QdrantCandidateHit(groupDocuments(1).variantId, 0.9),
+        SemanticCandidateHit(groupDocuments(0).variantId, 0.4),
+        SemanticCandidateHit(groupDocuments(1).variantId, 0.9),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -351,9 +351,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "count deduplicated variants in provider groups" in {
       val groupDocuments = providerGroupDocuments
       val hits = List(
-        QdrantCandidateHit(groupDocuments(0).variantId, 0.4),
-        QdrantCandidateHit(groupDocuments(1).variantId, 0.7),
-        QdrantCandidateHit(groupDocuments(0).variantId, 0.9),
+        SemanticCandidateHit(groupDocuments(0).variantId, 0.4),
+        SemanticCandidateHit(groupDocuments(1).variantId, 0.7),
+        SemanticCandidateHit(groupDocuments(0).variantId, 0.9),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -370,8 +370,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "group services by serviceId" in {
       val groupDocuments = serviceGroupDocuments
       val hits = List(
-        QdrantCandidateHit(groupDocuments(0).variantId, 0.1),
-        QdrantCandidateHit(groupDocuments(1).variantId, 0.6),
+        SemanticCandidateHit(groupDocuments(0).variantId, 0.1),
+        SemanticCandidateHit(groupDocuments(1).variantId, 0.6),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -387,9 +387,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "count deduplicated variants in service groups" in {
       val groupDocuments = serviceGroupDocuments
       val hits = List(
-        QdrantCandidateHit(groupDocuments(0).variantId, 0.1),
-        QdrantCandidateHit(groupDocuments(1).variantId, 0.6),
-        QdrantCandidateHit(groupDocuments(0).variantId, 0.8),
+        SemanticCandidateHit(groupDocuments(0).variantId, 0.1),
+        SemanticCandidateHit(groupDocuments(1).variantId, 0.6),
+        SemanticCandidateHit(groupDocuments(0).variantId, 0.8),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -410,8 +410,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val lowGroup = serviceGroups.head
       val highGroup = serviceGroups(1)
       val hits = List(
-        QdrantCandidateHit(lowGroup.head.variantId, 0.2),
-        QdrantCandidateHit(highGroup.head.variantId, 0.8),
+        SemanticCandidateHit(lowGroup.head.variantId, 0.2),
+        SemanticCandidateHit(highGroup.head.variantId, 0.8),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -427,9 +427,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val firstGroup = serviceGroups.head
       val secondGroup = serviceGroups(1)
       val hits = List(
-        QdrantCandidateHit(firstGroup.head.variantId, 0.7),
-        QdrantCandidateHit(firstGroup(1).variantId, 0.7),
-        QdrantCandidateHit(secondGroup.head.variantId, 0.7),
+        SemanticCandidateHit(firstGroup.head.variantId, 0.7),
+        SemanticCandidateHit(firstGroup(1).variantId, 0.7),
+        SemanticCandidateHit(secondGroup.head.variantId, 0.7),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -447,8 +447,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val lowGroup = providerGroups.head
       val highGroup = providerGroups(1)
       val hits = List(
-        QdrantCandidateHit(lowGroup.head.variantId, 0.2),
-        QdrantCandidateHit(highGroup.head.variantId, 0.8),
+        SemanticCandidateHit(lowGroup.head.variantId, 0.2),
+        SemanticCandidateHit(highGroup.head.variantId, 0.8),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -464,9 +464,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val firstGroup = providerGroups.head
       val secondGroup = providerGroups(1)
       val hits = List(
-        QdrantCandidateHit(firstGroup.head.variantId, 0.7),
-        QdrantCandidateHit(firstGroup(1).variantId, 0.7),
-        QdrantCandidateHit(secondGroup.head.variantId, 0.7),
+        SemanticCandidateHit(firstGroup.head.variantId, 0.7),
+        SemanticCandidateHit(firstGroup(1).variantId, 0.7),
+        SemanticCandidateHit(secondGroup.head.variantId, 0.7),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -500,9 +500,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "preserve Qdrant candidate order and scores in variant carousel" in {
       val docs = documents.take(3)
       val hits = List(
-        QdrantCandidateHit(docs(1).variantId, 0.21),
-        QdrantCandidateHit(docs(0).variantId, 0.84),
-        QdrantCandidateHit(docs(2).variantId, 0.53),
+        SemanticCandidateHit(docs(1).variantId, 0.21),
+        SemanticCandidateHit(docs(0).variantId, 0.84),
+        SemanticCandidateHit(docs(2).variantId, 0.53),
       )
 
       val response = QdrantCandidateResponseProjector.project(
@@ -521,7 +521,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val response = QdrantCandidateResponseProjector.project(
         BeautySearchSpecV1.spec,
         UserSearchInput(query = "test", userLat = None, userLon = None, limit = 10),
-        assembleQdrantCandidates(List(QdrantCandidateHit(document.variantId, 0.77))),
+        assembleQdrantCandidates(List(SemanticCandidateHit(document.variantId, 0.77))),
       )
 
       val result = response.variantCarousel.head
@@ -554,11 +554,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val outsideProviderGroup = documents.find(_.masterLocationId != providerGroup.head.masterLocationId).get
       val outsideServiceGroup = documents.find(_.serviceId != serviceGroup.head.serviceId).get
       val hits = List(
-        QdrantCandidateHit(providerGroup(1).variantId, 0.95),
-        QdrantCandidateHit(outsideProviderGroup.variantId, 0.90),
-        QdrantCandidateHit(providerGroup.head.variantId, 0.85),
-        QdrantCandidateHit(serviceGroup.head.variantId, 0.80),
-        QdrantCandidateHit(outsideServiceGroup.variantId, 0.70),
+        SemanticCandidateHit(providerGroup(1).variantId, 0.95),
+        SemanticCandidateHit(outsideProviderGroup.variantId, 0.90),
+        SemanticCandidateHit(providerGroup.head.variantId, 0.85),
+        SemanticCandidateHit(serviceGroup.head.variantId, 0.80),
+        SemanticCandidateHit(outsideServiceGroup.variantId, 0.70),
       )
 
       val assembly = assembleQdrantCandidates(hits)
@@ -579,10 +579,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "respect carousel size limits and keep facets and inferred filters empty" in {
       val docs = documents.take(4)
       val hits = List(
-        QdrantCandidateHit(docs(0).variantId, 0.91),
-        QdrantCandidateHit(docs(1).variantId, 0.81),
-        QdrantCandidateHit(docs(2).variantId, 0.71),
-        QdrantCandidateHit(docs(3).variantId, 0.61),
+        SemanticCandidateHit(docs(0).variantId, 0.91),
+        SemanticCandidateHit(docs(1).variantId, 0.81),
+        SemanticCandidateHit(docs(2).variantId, 0.71),
+        SemanticCandidateHit(docs(3).variantId, 0.61),
       )
       val spec = BeautySearchSpecV1.spec.copy(
         carouselSpec = BeautySearchSpecV1.spec.carouselSpec.copy(
@@ -648,10 +648,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "compose fake semantic hits and fake document lookup through assembler and projector" in {
       val knownDocuments = documents.take(3)
       val hits = List(
-        QdrantCandidateHit(knownDocuments(1).variantId, 0.91),
-        QdrantCandidateHit(unknownVariantId, 0.88),
-        QdrantCandidateHit(knownDocuments(0).variantId, 0.81),
-        QdrantCandidateHit(knownDocuments(2).variantId, 0.71),
+        SemanticCandidateHit(knownDocuments(1).variantId, 0.91),
+        SemanticCandidateHit(unknownVariantId, 0.88),
+        SemanticCandidateHit(knownDocuments(0).variantId, 0.81),
+        SemanticCandidateHit(knownDocuments(2).variantId, 0.71),
       )
       val lookup = new FakeVariantSearchDocumentLookup(knownDocuments)
       val input = UserSearchInput(query = "broad semantic test", userLat = None, userLon = None, limit = 10)
@@ -692,9 +692,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "project QdrantCandidateRoute through semantic backend, in-memory lookup, assembler and projector" in {
       val knownDocuments = documents.take(3)
       val hits = List(
-        QdrantCandidateHit(knownDocuments(1).variantId, 0.91),
-        QdrantCandidateHit(knownDocuments(0).variantId, 0.81),
-        QdrantCandidateHit(knownDocuments(2).variantId, 0.71),
+        SemanticCandidateHit(knownDocuments(1).variantId, 0.91),
+        SemanticCandidateHit(knownDocuments(0).variantId, 0.81),
+        SemanticCandidateHit(knownDocuments(2).variantId, 0.71),
       )
       val input = UserSearchInput("synthetic semantic route", None, None, limit = 10)
       val intent = parser.parse(input)
@@ -718,8 +718,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "ignore unknown semantic hit ids through the assembler path" in {
       val knownDocument = documents.head
       val hits = List(
-        QdrantCandidateHit(unknownVariantId, 0.99),
-        QdrantCandidateHit(knownDocument.variantId, 0.77),
+        SemanticCandidateHit(unknownVariantId, 0.99),
+        SemanticCandidateHit(knownDocument.variantId, 0.77),
       )
       val lexical = new FakeBeautySearchBackend(emptyResponse)
       val semantic = new CountingSemanticCandidateBackend(hits)
@@ -735,8 +735,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
     "return an empty candidate response when all semantic hits are unknown" in {
       val hits = List(
-        QdrantCandidateHit(unknownVariantId, 0.99),
-        QdrantCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000124"), 0.88),
+        SemanticCandidateHit(unknownVariantId, 0.99),
+        SemanticCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000124"), 0.88),
       )
       val lexical = new FakeBeautySearchBackend(emptyResponse)
       val semantic = new CountingSemanticCandidateBackend(hits)
@@ -789,8 +789,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "route through semantic candidate path with broad semantic metadata" in {
       val knownDocuments = documents.take(2)
       val hits = List(
-        QdrantCandidateHit(knownDocuments(1).variantId, 0.92),
-        QdrantCandidateHit(knownDocuments(0).variantId, 0.83),
+        SemanticCandidateHit(knownDocuments(1).variantId, 0.92),
+        SemanticCandidateHit(knownDocuments(0).variantId, 0.83),
       )
       val input = UserSearchInput("synthetic semantic service probe", None, None, limit = 10)
       val lexical = new FakeBeautySearchBackend(emptyResponse)
@@ -836,7 +836,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val intent = parser.parse(input)
       val knownDocument = documents.head
       val lexical = new FakeBeautySearchBackend(emptyResponse.copy(facets = List(BeautySearchFacet("residual-lexical", Nil))))
-      val semantic = new CountingSemanticCandidateBackend(List(QdrantCandidateHit(knownDocument.variantId, 0.94)))
+      val semantic = new CountingSemanticCandidateBackend(List(SemanticCandidateHit(knownDocument.variantId, 0.94)))
       val lookup = new CountingVariantSearchDocumentLookup(List(knownDocument))
       val service = experimentalService(lexical, semantic, lookup)
 
@@ -983,7 +983,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
     "provide the route decision function accepted by ExperimentalHybridSearchBackend" in {
       val knownDocuments = documents.take(1)
-      val hits = List(QdrantCandidateHit(knownDocuments.head.variantId, 0.93))
+      val hits = List(SemanticCandidateHit(knownDocuments.head.variantId, 0.93))
       val input = UserSearchInput("synthetic semantic backend adapter", None, None, limit = 10)
       val intent = parser.parse(input)
       val lexical = new FakeBeautySearchBackend(emptyResponse)
@@ -1682,14 +1682,14 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val router = SearchBackendRouter.default
       val candidateDocuments = documents.take(2)
       val candidateHits = List(
-        QdrantCandidateHit(candidateDocuments(1).variantId, 0.82),
-        QdrantCandidateHit(candidateDocuments(0).variantId, 0.91),
+        SemanticCandidateHit(candidateDocuments(1).variantId, 0.82),
+        SemanticCandidateHit(candidateDocuments(0).variantId, 0.91),
       )
 
       def routeAndMaybeAssemble(
         input: UserSearchInput,
         metadata: SearchRoutingMetadata = SearchRoutingMetadata(),
-        hits: List[QdrantCandidateHit] = Nil,
+        hits: List[SemanticCandidateHit] = Nil,
       ) = {
         val parsed = parser.parse(input)
         val decision = router.decide(input, parsed, metadata)
@@ -1912,7 +1912,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private def queryById(id: String) =
     evalSuite.queries.find(_.id == id).getOrElse(sys.error(s"Missing eval query $id"))
 
-  private def assembleQdrantCandidates(hits: List[QdrantCandidateHit]) =
+  private def assembleQdrantCandidates(hits: List[SemanticCandidateHit]) =
     QdrantCandidateAssembler.assemble(hits, documents)
 
   private def providerGroupDocuments =
@@ -2002,14 +2002,14 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     val empty: SemanticProbe = SemanticProbe(calls = 0, lastInput = None, lastIntent = None)
   }
 
-  private final class CountingSemanticCandidateBackend(hits: List[QdrantCandidateHit]) extends SemanticCandidateBackend[IO] {
+  private final class CountingSemanticCandidateBackend(hits: List[SemanticCandidateHit]) extends SemanticCandidateBackend[IO] {
     private val probe = runZIO(Ref.make(SemanticProbe.empty))
 
     def calls: Int = runZIO(probe.get.map(_.calls))
     def lastInput: Option[UserSearchInput] = runZIO(probe.get.map(_.lastInput))
     def lastIntent: Option[ParsedSearchIntent] = runZIO(probe.get.map(_.lastIntent))
 
-    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[QdrantCandidateHit]] =
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] =
       for {
         _ <- probe.update { state =>
           state.copy(
@@ -2022,7 +2022,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   }
 
   private final class FailingSemanticCandidateBackend extends SemanticCandidateBackend[IO] {
-    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[QdrantCandidateHit]] =
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] =
       ZIO.dieMessage(s"Semantic backend must not be called for ${input.query}: $intent")
   }
 
@@ -2063,9 +2063,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private final class FakeSemanticCandidateBackend(
     expectedInput: UserSearchInput,
     expectedIntent: ParsedSearchIntent,
-    hits: List[QdrantCandidateHit],
+    hits: List[SemanticCandidateHit],
   ) extends SemanticCandidateBackend[IO] {
-    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[QdrantCandidateHit]] = ZIO.succeed {
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] = ZIO.succeed {
       assert(input == expectedInput)
       assert(intent == expectedIntent)
       hits

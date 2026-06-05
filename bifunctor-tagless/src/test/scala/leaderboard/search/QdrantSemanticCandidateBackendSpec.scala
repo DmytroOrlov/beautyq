@@ -4,7 +4,8 @@ import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorSearchSpec
 import leaderboard.search.embedding.EmbeddingClient
-import leaderboard.search.qdrant.{QdrantCandidateHit, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
+import leaderboard.search.qdrant.{QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
+import leaderboard.search.semantic.SemanticCandidateHit
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Ref, Runtime, Unsafe, ZIO}
 
@@ -12,7 +13,7 @@ import java.util.UUID
 
 final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
   "QdrantSemanticCandidateBackend" should {
-    "pass input.query to the helper, use the configured VectorSearchSpec, and return hits unchanged" in {
+    "pass input.query to the helper, use the configured VectorSearchSpec, and return generic semantic hits" in {
       val spec = VectorSearchSpec(
         collectionName = "beauty-semantic",
         vectorName = "variant-embedding",
@@ -52,8 +53,8 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       assert(!runUio(queryRef.get).contains(intent.remainingText))
       assert(runUio(pathRef.get).contains("/collections/beauty-semantic/points/search"))
       assert(result == List(
-        QdrantCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000011"), 0.93),
-        QdrantCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000022"), 0.81),
+        SemanticCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000011"), 0.93),
+        SemanticCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000022"), 0.81),
       ))
     }
 

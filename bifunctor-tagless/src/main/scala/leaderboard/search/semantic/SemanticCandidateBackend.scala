@@ -3,11 +3,15 @@ package leaderboard.search.semantic
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.VariantSearchDocument
-import leaderboard.search.qdrant.QdrantCandidateHit
 import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
 
+final case class SemanticCandidateHit(
+  variantId: MasterServiceOfferVariantId,
+  score: Double,
+)
+
 trait SemanticCandidateBackend[F[_, _]] {
-  def candidates(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, List[QdrantCandidateHit]]
+  def candidates(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, List[SemanticCandidateHit]]
 }
 
 trait VariantSearchDocumentLookup[F[_, _]] {
