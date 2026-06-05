@@ -10,8 +10,15 @@ import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingC
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.eval.BeautySearchEvalQuery
-import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
-import leaderboard.search.qdrant.{QdrantCandidateHit, QdrantClient, QdrantClientSearchAdapter, QdrantJsonInterpreter, QdrantSemanticCandidateSearch, QdrantVariantDocumentPointBuilder}
+import leaderboard.search.qdrant.{
+  QdrantCandidateHit,
+  QdrantClient,
+  QdrantClientPointUpsertAdapter,
+  QdrantClientSearchAdapter,
+  QdrantJsonInterpreter,
+  QdrantSemanticCandidateSearch,
+  QdrantVariantDocumentIndexer,
+}
 import leaderboard.seed.BeautyQSeedLoader
 import zio.{IO, ZIO}
 
@@ -83,23 +90,22 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
                 )
                 _ <- assertIO(documents.size == seed.masterServiceOfferVariants.size)
                 documentsByVariantId = documents.iterator.map(document => document.variantId -> document).toMap
-                firstDocument <- ZIO
+                _ <- ZIO
                   .fromOption(documents.headOption)
                   .orElseFail(QueryFailure.domain("No seeded variant documents were available for Qdrant semantic evaluation"))
-                firstText = embeddingText(firstDocument)
-                _ <- assertIO(firstText.nonEmpty)
-                firstVector <- embeddingClient.embed(firstText)
-                _ <- assertIO(firstVector.nonEmpty)
-                embeddingSpec: EmbeddingSpec[VariantSearchDocument] = embeddingSpecTemplate.copy(dimension = firstVector.length)
+                  .unit
+                dimensionProbeVector <- embeddingClient.embed("qdrant semantic candidate eval dimension probe")
+                _ <- assertIO(dimensionProbeVector.nonEmpty)
+                embeddingSpec: EmbeddingSpec[VariantSearchDocument] = embeddingSpecTemplate.copy(dimension = dimensionProbeVector.length)
+                indexer = new QdrantVariantDocumentIndexer(
+                  embeddingClient,
+                  new QdrantClientPointUpsertAdapter(qdrantClient),
+                  BeautySearchSpecV1.spec.variantDocument,
+                  embeddingSpec,
+                )
                 collectionJson = QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, embeddingSpec)
                 _ <- qdrantClient.createCollection(collectionPath, collectionJson)
-                _ <- upsertDocument(qdrantClient, collectionPath, embeddingSpec, firstDocument, firstVector)
-                _ <- ZIO.foreachDiscard(documents.tail) { document =>
-                  for {
-                    vector <- embeddingClient.embed(embeddingText(document))
-                    _ <- upsertDocument(qdrantClient, collectionPath, embeddingSpec, document, vector)
-                  } yield ()
-                }
+                _ <- ZIO.foreachDiscard(documents)(document => indexer.upsertDocument(collectionName, document))
                 semanticQueries <- ZIO.succeed(evalSuite.queries.filter(query => semanticCandidateQueryIds.contains(query.id)))
                 _ <- assertIO(semanticQueries.map(_.id).toSet == semanticCandidateQueryIds)
                 measurements <- ZIO.foreach(semanticQueries) { query =>
@@ -147,21 +153,6 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
       documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
     } yield documents
   }
-
-  private def embeddingText(document: VariantSearchDocument): String =
-    SearchEmbeddingTextExtractor.extract(BeautySearchSpecV1.spec.variantDocument, embeddingSpecTemplate, document)
-
-  private def upsertDocument(
-    qdrantClient: QdrantClient,
-    collectionPath: String,
-    embeddingSpec: EmbeddingSpec[VariantSearchDocument],
-    document: VariantSearchDocument,
-    vector: Vector[Double],
-  ) =
-    qdrantClient.upsertPoint(
-      s"$collectionPath/points?wait=true",
-      QdrantVariantDocumentPointBuilder.upsertPointJson(document, embeddingSpec.vectorName, vector.toList),
-    )
 
   private def requireQualityAssertions(
     query: BeautySearchEvalQuery,
