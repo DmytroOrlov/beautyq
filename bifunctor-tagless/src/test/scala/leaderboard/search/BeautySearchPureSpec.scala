@@ -6,11 +6,12 @@ import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
+import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalHybridRouteDecider, ExperimentalHybridSearchBackend}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateAssembly, QdrantCandidateHit, QdrantCandidateHitDecoder, QdrantCandidateResponseProjector, QdrantJsonInterpreter, QdrantSearchHit}
+import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateAssembly, QdrantCandidateHit, QdrantCandidateHitDecoder, QdrantCandidateResponseProjector, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
 import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, VariantSearchDocumentLookup}
 import leaderboard.seed.BeautyQSeedLoader
@@ -810,6 +811,62 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       assert(response == lexicalResponse)
       assert(lexical.calls == 1)
+    }
+
+    "compose explicit broad semantic metadata through fake-only Qdrant dependencies end-to-end" in {
+      val knownDocuments = documents.take(2)
+      val vectorSpec = VectorSearchSpec(
+        collectionName = "beauty-semantic-test",
+        vectorName = "variant-embedding",
+        topK = 2,
+        scoreThreshold = Some(0.5),
+      )
+      val spec = BeautySearchSpecV1.spec.copy(vectorSearchSpec = Some(vectorSpec))
+      val input = UserSearchInput("synthetic explicit broad semantic service probe", None, None, limit = 10)
+      val intent = parser.parse(input)
+      val vector = Vector(0.2, 0.4, 0.6)
+      val hits = List(
+        QdrantSearchHit(
+          id = "point-1",
+          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(knownDocuments(1).variantId.toString))),
+          score = 0.94,
+        ),
+        QdrantSearchHit(
+          id = "point-2",
+          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(knownDocuments(0).variantId.toString))),
+          score = 0.87,
+        ),
+      )
+      val embeddingQueryRef = runZIO(Ref.make(Option.empty[String]))
+      val qdrantPathRef = runZIO(Ref.make(Option.empty[String]))
+      val lexical = new FailingBeautySearchBackend
+      val embeddingClient = new RecordingEmbeddingClient(embeddingQueryRef, vector)
+      val qdrantClient = new RecordingQdrantSearchClient(qdrantPathRef, hits)
+      val semantic = new QdrantSemanticCandidateBackend(
+        new QdrantSemanticCandidateSearch(embeddingClient, qdrantClient),
+        vectorSpec,
+      )
+      val lookup = new InMemoryVariantSearchDocumentLookup[IO](knownDocuments)
+      val service = new ExperimentalBeautySearchService[IO](
+        parser,
+        spec,
+        lexical,
+        SearchBackendRouter.default,
+        semantic,
+        lookup,
+      )
+      val metadata = SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))
+
+      val route = SearchBackendRouter.default.decide(input, intent, metadata)
+      val response = runIO(service.search(input, metadata))
+
+      assert(route.route == SearchBackendRoute.QdrantCandidateRoute)
+      assert(runZIO(embeddingQueryRef.get).contains(input.query))
+      assert(runZIO(qdrantPathRef.get).contains("/collections/beauty-semantic-test/points/search"))
+      assert(response.variantCarousel.map(_.variantId) == List(knownDocuments(1).variantId, knownDocuments(0).variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.94, 0.87))
+      assert(response.facets == Nil)
+      assert(response.inferredFilters == Nil)
     }
   }
 
@@ -1872,8 +1929,13 @@ final class BeautySearchPureSpec extends AnyWordSpec {
             lastInput = Some(input),
             lastIntent = Some(intent),
           )
-        }
+      }
       } yield response
+  }
+
+  private final class FailingBeautySearchBackend extends BeautySearchBackend[IO] {
+    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
+      ZIO.dieMessage(s"Lexical backend must not be called for ${input.query}: $intent")
   }
 
   private final case class SemanticProbe(
@@ -1961,6 +2023,22 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
     override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
       ZIO.succeed(variantIds.iterator.flatMap(variantId => documentsById.get(variantId).map(document => variantId -> document)).toMap)
+  }
+
+  private final class RecordingEmbeddingClient(
+    queryRef: Ref[Option[String]],
+    vector: Vector[Double],
+  ) extends EmbeddingClient {
+    override def embed(text: String): IO[QueryFailure, Vector[Double]] =
+      queryRef.set(Some(text)) *> ZIO.succeed(vector)
+  }
+
+  private final class RecordingQdrantSearchClient(
+    pathRef: Ref[Option[String]],
+    hits: List[QdrantSearchHit],
+  ) extends QdrantSearchClient {
+    override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
+      pathRef.set(Some(path)) *> ZIO.succeed(hits)
   }
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
