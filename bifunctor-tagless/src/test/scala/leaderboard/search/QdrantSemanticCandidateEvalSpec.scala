@@ -19,9 +19,10 @@ import leaderboard.search.qdrant.{
   QdrantSemanticCandidateSearch,
   QdrantVariantDocumentIndexer,
 }
-import leaderboard.seed.BeautyQSeedLoader
+import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, ZIO}
 
+import scala.annotation.unused
 import java.util.UUID
 
 final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTest {
@@ -63,6 +64,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         val testEffect: IO[QueryFailure, Unit] = sys.env.get("LLAMA_CPP_EMBEDDING_URL") match {
           case None =>
@@ -87,6 +89,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
                   masterLocations,
                   masterServiceOffers,
                   masterServiceOfferVariants,
+                  seedReady,
                 )
                 _ <- assertIO(documents.size == seed.masterServiceOfferVariants.size)
                 documentsByVariantId = documents.iterator.map(document => document.variantId -> document).toMap
@@ -136,6 +139,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
     masterLocations: MasterLocations[IO],
     masterServiceOffers: MasterServiceOffers[IO],
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+    @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
     val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
       seed,

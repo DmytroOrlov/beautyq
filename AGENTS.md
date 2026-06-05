@@ -4,63 +4,44 @@
 
 * Inspect nearby repo code before using framework APIs from memory.
 * One patch = one purpose.
-* Do not mix code, tests, docs, build changes, and AGENTS.md edits unless explicitly asked.
+* Do not mix code, tests, docs, build files, and AGENTS edits unless explicitly asked.
 * Do not make broad refactors while fixing one failing test.
-* Existing focused tests and route-level HTTP contract tests are the source of truth.
-* Do not commit debug output, session logs, build artifacts, or temporary `println`.
-* If a requested change needs a wider scope than the prompt allows, stop and report.
+* Existing focused tests and route-level HTTP contract tests are source of truth.
+* Do not commit debug output, logs, build artifacts, or temporary `println`.
+* If the requested change needs wider scope, stop and report.
 
 ## Verification rules
 
-Use explicit status labels:
+Use explicit labels:
 
-* `FOCUSED GREEN`: requested focused suite passed; full repo status is unknown.
+* `FOCUSED GREEN`: requested focused suite passed; full repo status unknown.
 * `FULL GREEN`: full `sbt test` passed.
 * `FULL RED`: full `sbt test` failed.
+* `VERIFICATION BLOCKED`: sbt/docker/local permissions blocked verification.
+* `USER-VERIFIED FULL GREEN`: user ran the exact command and reported green.
 
-Do not call work commit-ready unless `FULL GREEN` is reached, or unless the user explicitly asked for focused-only verification.
+Do not call work commit-ready unless `FULL GREEN`, `USER-VERIFIED FULL GREEN`, or the user explicitly accepts focused-only verification.
 
-For patches touching `src/main`, run focused checks and then full test before reporting commit-ready.
+For `src/main` changes, run focused checks and then full test unless the user says they will run it.
 
-Preferred command shape:
-
-```bash
-sbt 'project bifunctor-tagless' Test/compile 'testOnly leaderboard.search.BeautySearchPureSpec' test
-```
-
-If full test fails:
-
-* stop;
-* do not continue to the next task;
-* do not claim the repo is stable;
-* report failing suite/test, exact error, and whether it appears related to changed files;
-* do not add suppressions or speculative fixes.
+If full test fails: stop, report failing suite/test and exact error, and fix only the failure.
 
 ## sbt rules
 
 * Do not run sbt commands in parallel.
-* Prefer one chained, project-scoped sbt command over several shells.
-* Do not use `-no-server` unless the user explicitly asks.
-* If sbt hits `~/.sbt/boot/sbt.boot.lock`, rerun the same command with local permission/escalation. Do not edit source.
+* Prefer one chained, project-scoped sbt command.
+* Do not use `-no-server` unless explicitly asked.
+* If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
+* If escalation is unavailable or rejected, report `VERIFICATION BLOCKED` and the exact command for the user.
+* Do not edit source to work around sbt locks.
 
-Use `sbt --shutdown` only for stale/inconsistent compile state, for example:
-
-* `error while loading SomeClass.class`;
-* bad/stale classfile or classpath errors;
-* the same clean compile command fails differently on repeat;
-* sbt/IDE/agent compilation was interrupted or may have overlapped.
-
-Compile-state reset:
+Preferred focused shape:
 
 ```bash
-sbt --shutdown
-find . -type d -name target -print0 | xargs -0 rm -rf
-sbt 'project bifunctor-tagless' Test/compile
+sbt 'project bifunctor-tagless' Test/compile 'testOnly leaderboard.search.BeautySearchPureSpec'
 ```
 
-Do not use `sbt --shutdown` to explain runtime test failures. It does not reset Docker, Postgres, Elasticsearch, Distage resources, or seed state.
-
-Cold runtime test reset:
+Cold runtime reset:
 
 ```bash
 docker rm -f $(docker ps -a -q -f "label=distage.type") || true
@@ -68,50 +49,71 @@ find . -type d -name target -print0 | xargs -0 rm -rf
 sbt test
 ```
 
-If compile is green but full tests are red, diagnose runtime resources/tests. Do not keep cleaning targets or changing source blindly.
+Use `sbt --shutdown` only for stale compile/classpath state, not for runtime test failures.
+
+## Context bundle rule
+
+When collecting context for ChatGPT, write a unique file and copy that file:
+
+```bash
+OUT="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM.txt"
+{ echo "## git status <random> <topic>"; git status --short; } > "$OUT"
+cpf "$OUT"
+echo "$OUT"
+```
+
+Do not rely on generic `Pasted text.txt` or stale `2.txt`.
 
 ## Warning rules
 
 * Do not add `@nowarn` as a first fix.
 * Never add `@nowarn("msg=Unreachable")`.
-* For unreachable match cases, fix the match:
-
-  * remove unreachable branches;
-  * simplify the ADT match;
-  * do not hide it with `@nowarn`.
-* `@nowarn` is allowed only when the warning is exact, narrow, intentional, and explained by a short comment.
-* Prefer removing unused imports, unused params, and dead code over suppressing warnings.
+* For unreachable match cases, fix the match instead of suppressing it.
+* `@nowarn` is allowed only when exact, narrow, intentional, and explained.
+* Prefer removing unused imports, params, or dead code.
 
 ## Distage rules
 
-* Distage startup order follows dependency edges, not textual binding order.
+* Distage startup follows dependency edges, not binding order.
 * `ModuleDef` order and `memoizationRoots` order are not sequencing guarantees.
-* Distage has graph GC. Do not claim it starts all bindings; inspect roots, axes, and suite inheritance.
-* Do not remove `@unused` parent repo dependencies from Postgres repos when they preserve FK table creation order.
-* If tests are slow, inspect Distage roots/axes/resources before blaming the whole graph.
+* Distage has graph GC; inspect roots, axes, and suite inheritance.
+* Do not remove `@unused` parent repo dependencies if they preserve FK table creation order.
+
+## Seed-backed snapshot rule
+
+If a test reads seed JSON and then loads a repo-backed seed-scoped snapshot, it must depend directly on `BeautyQSeedReady` before repository reads.
+
+Applies to:
+
+* `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories`
+* any seed-json + shared-Postgres snapshot path
+
+Required shape:
+
+```scala
+(seedReady: BeautyQSeedReady, repos...) =>
+  loadDocuments(seedReady, repos...)
+
+private def loadDocuments(
+  @unused seedReady: BeautyQSeedReady,
+  repos...
+): IO[QueryFailure, List[VariantSearchDocument]] =
+  ...
+```
+
+Do not rely on `Mode.Test`, `memoizationRoots`, isolated green runs, or timing.
+
+If a spec is green alone but full suite fails with `Seed-scoped search snapshot is missing Category/Service/Master`, check for a missing direct `BeautyQSeedReady` edge before changing search, Qdrant, Elasticsearch, or seed data.
 
 ## HTTP / Tapir rules
 
 * Put pure Tapir endpoint contracts in `leaderboard/http/tapir/*TapirEndpoints.scala`.
 * Keep `leaderboard.api.*Api` as thin `HttpApi[F]` adapters.
-* Reuse existing helpers:
-
-  * `TapirHttpSupport`
-  * `LegacyJsonResponse.optionalAsJson`
-  * `HttpApiFailureTapirSupport.singleEntityGetErrorOutput`
+* Reuse existing support helpers.
 * Do not migrate many endpoints in one patch.
 * Do not change malformed path/body/exception contracts unless explicitly asked.
 
-Beauty single-entity GETs already migrated to typed `200 domain JSON / 404 HttpApiFailure JSON`:
-
-* `ServiceApi`
-* `CategoryApi`
-* `MasterApi`
-* `MasterLocationApi`
-* `MasterServiceOfferApi`
-* `MasterServiceOfferVariantApi`
-
-`ProfileApi` is out of Beauty typed GET scope. It is a legacy ranked/read-model endpoint, not a Beauty domain single-entity GET.
+Beauty single-entity GETs use typed `200 domain JSON / 404 HttpApiFailure JSON`. `ProfileApi` is out of that scope.
 
 ## MasterServiceOfferVariant invariants
 
@@ -123,108 +125,75 @@ Preserve:
 * `bigDecimalAttributes`
 * `enumAttributes`
 * `booleanAttributes`
-* enum attributes encoded as stable `stringCode` values
-* unified numeric storage path for int/bigdecimal/boolean/enum-as-int storage
+* enum values as stable `stringCode`
+* unified numeric storage path
 
-Never change these in search, build cleanup, or unrelated HTTP patches.
+## BeautyQ search rules
 
-## BeautyQ search architecture
+Search semantics live in DSL/spec data, not backend interpreters.
 
-Search semantics must live in DSL/spec data, not backend interpreters.
-
-Allowed place for BeautyQ search semantics:
+Allowed place for BeautyQ semantics:
 
 * `BeautySearchSpecV1.scala`
 
-Do not hardcode BeautyQ service names, attribute codes, query phrases, eval query ids, or ranking rules inside:
+Do not hardcode service names, query phrases, eval query ids, ranking rules, or attribute semantics inside ES/Qdrant clients, generic parser/interpreter code, or in-memory backends.
 
-* Elasticsearch interpreters;
-* Qdrant client/interpreters;
-* InMemory backend;
-* generic parser/interpreter code.
+Elasticsearch owns lexical search, filters, facets, exact attributes, price/duration, lexical ranking, and normal response assembly.
 
-If a backend needs new semantics, add metadata to DSL/spec first.
-
-## Search ownership
-
-Elasticsearch owns:
-
-* lexical search;
-* filters;
-* facets;
-* exact attributes;
-* price/duration;
-* lexical ranking;
-* normal response assembly.
-
-Qdrant owns:
-
-* semantic candidate recall only.
+Qdrant owns semantic candidate recall only.
 
 Rules:
 
-* ES lexical baseline is intentionally `61/63`.
-* Qdrant semantic candidates are `q_broad_004` and `q_broad_006`.
-* Do not close those semantic gaps with broad lexical dictionary hacks.
+* ES lexical baseline intentionally leaves broad semantic gaps.
+* Qdrant semantic candidates cover broad semantic eval cases.
+* Do not close semantic gaps with broad lexical dictionary hacks.
 * Residual text alone must never route to Qdrant.
-* Hard-negative/noise queries must not route to Qdrant just because they have residual text.
-* Eval query ids may appear in tests/docs, not production routing code.
+* Hard-negative/noise queries must not route to Qdrant because of residual text.
+* Eval query ids may appear in tests/docs, not production routing.
 
 ## Search task modes
 
 Pick one mode before editing. Do not mix modes.
 
-### Pure eval / parser / DSL work
+### Pure eval / parser / DSL
 
 Allowed:
 
 * `BeautySearchPureSpec.scala`
 * eval inventory files
-* `BeautySearchSpecV1.scala` only for narrow dictionary/spec data
+* narrow `BeautySearchSpecV1.scala` changes
 
 Forbidden:
 
-* no Elasticsearch runtime changes;
-* no Qdrant runtime changes;
-* no production wiring;
-* no docs unless asked.
+* ES runtime changes
+* Qdrant runtime changes
+* production wiring
+* docs unless asked
 
-Run focused test:
-
-```bash
-sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.BeautySearchPureSpec'
-```
-
-### Elasticsearch eval work
+### Elasticsearch eval
 
 Use only after the same pure slice is green.
 
-Allowed:
-
-* Elasticsearch integration spec
-* `BeautySearchSpecV1.scala` only for narrow residual-text/spec fixes
-
 Forbidden:
 
-* no eval inventory changes;
-* no Qdrant changes;
-* no ranking rewrites;
-* no docs unless asked.
+* eval inventory changes
+* Qdrant changes
+* ranking rewrites
+* docs unless asked
 
-### Qdrant-only work
+### Qdrant-only
 
 Forbidden unless explicitly requested:
 
-* no Elasticsearch changes;
-* no `BeautySearchSpecV1` dictionary changes;
-* no production search wiring;
-* no hybrid/fallback;
-* no score fusion;
-* no reranking;
-* no llama.cpp Dockerization;
-* no starting/stopping llama.cpp from code.
+* Elasticsearch changes
+* `BeautySearchSpecV1` dictionary changes
+* production search wiring
+* hybrid/fallback
+* score fusion/reranking
+* llama.cpp Dockerization
+* starting/stopping llama.cpp from code
 
-llama.cpp is manual-only. The user starts it:
+llama.cpp is manual-only:
 
 ```bash
 ~/git/llama.cpp/build/bin/llama-server \
@@ -235,7 +204,7 @@ llama.cpp is manual-only. The user starts it:
   --port 8081
 ```
 
-Env-gated eval:
+Env-gated Qdrant run:
 
 ```bash
 LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
@@ -250,38 +219,28 @@ QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true \
 sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
 ```
 
-## Hybrid/fallback work
+## Hybrid/fallback rules
 
 Hybrid starts with pure model/tests. Runtime hybrid requires explicit user approval.
 
-Already completed pure steps:
-
-* Qdrant candidate assembly;
-* router + Qdrant candidate assembly composition;
-* Qdrant candidate response projection.
-
 Still forbidden unless explicitly requested:
 
-* no `BeautySearchService` wiring;
-* no ES/Qdrant hybrid calls;
-* no production fallback behavior;
-* no score fusion;
-* no reranking;
-* no Qdrant-as-default;
-* no Elasticsearch/Qdrant client changes.
+* `BeautySearchService` production wiring
+* ES/Qdrant production hybrid calls
+* production fallback behavior
+* score fusion/reranking
+* Qdrant-as-default
+* residual-text routing
+* eval query ids in main code
+* Elasticsearch/Qdrant client behavior changes
 
-Next runtime work must start with a read-only design/validation report unless the user explicitly asks to implement.
+Next runtime work must start with read-only design/validation unless the user explicitly asks to implement.
 
 ## Dictionary rules
 
 Keep dictionary fixes narrow.
 
-Prefer:
-
-* exact phrases;
-* contextual `requires`;
-* conflict-preventing `excludes`;
-* safe no-op residual cleanup.
+Prefer exact phrases, contextual `requires`, conflict-preventing `excludes`, and safe no-op residual cleanup.
 
 Do not add broad unconditional triggers such as:
 
@@ -302,18 +261,13 @@ If one query/test fails, stop expanding the slice.
 
 Report:
 
-* test/suite name;
-* exact error;
-* changed files;
-* whether the failure reproduces alone;
-* whether it appears related to the patch;
-* smallest safe next diagnostic command.
+* suite/test name
+* exact error
+* changed files
+* whether it reproduces alone
+* whether it appears related to the patch
+* smallest safe next diagnostic command
 
-For search eval failures, also report:
-
-* query id and query text;
-* parsed intent and remaining text, if available;
-* top ids and failed assertions;
-* raw hit count and request JSON for ES/Qdrant, if relevant.
+For search eval failures also report query id/text, parsed intent, remaining text, top ids, failed assertions, and raw ES/Qdrant request details if relevant.
 
 Then fix only that failure with the smallest safe change.

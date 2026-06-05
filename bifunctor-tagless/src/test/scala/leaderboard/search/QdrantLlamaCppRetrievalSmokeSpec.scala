@@ -34,15 +34,15 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
             val collectionPath = s"/collections/$collectionName"
             val vectorName = "llama-cpp-embedding"
             val docs = List(
-              "face-care" -> "facial care skin hydration anti aging",
-              "nails" -> "manicure gel polish nails",
-              "lashes" -> "eyelash extension 2d lashes",
+              ("550e8400-e29b-41d4-a716-446655440001", "face-care", "facial care skin hydration anti aging"),
+              ("550e8400-e29b-41d4-a716-446655440002", "nails", "manicure gel polish nails"),
+              ("550e8400-e29b-41d4-a716-446655440003", "lashes", "eyelash extension 2d lashes"),
             )
 
             unsafeRun(
               (
                 for {
-                firstVector <- embeddingClient.embed(docs.head._2)
+                firstVector <- embeddingClient.embed(docs.head._3)
                 spec = QdrantRetrievalSmokeSpec.collectionSpec(collectionName, vectorName)
                 embeddingSpec = QdrantRetrievalSmokeSpec.embeddingSpec(firstVector.length)
                 collectionJson <- ZIO.succeed(QdrantJsonInterpreter.createCollectionJson(spec, embeddingSpec))
@@ -53,14 +53,14 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
                     docs.head._1,
                     vectorName,
                     firstVector.toList,
-                    Map("id" -> Json.fromString(docs.head._1)),
+                    Map("id" -> Json.fromString(docs.head._2)),
                   ),
                 )
-                _ <- ZIO.foreachDiscard(docs.tail) { case (id, text) =>
+                _ <- ZIO.foreachDiscard(docs.tail) { case (pointId, payloadId, text) =>
                   for {
                     vector <- embeddingClient.embed(text)
-                    payload = Map("id" -> Json.fromString(id))
-                    pointJson = QdrantJsonInterpreter.upsertPointJson(id, vectorName, vector.toList, payload)
+                    payload = Map("id" -> Json.fromString(payloadId))
+                    pointJson = QdrantJsonInterpreter.upsertPointJson(pointId, vectorName, vector.toList, payload)
                     _ <- qdrantClient.upsertPoint(s"$collectionPath/points?wait=true", pointJson)
                   } yield ()
                 }
