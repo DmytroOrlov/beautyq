@@ -1,7 +1,6 @@
 package leaderboard.search
 
 import distage.{DIKey, Mode}
-import io.circe.Json
 import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
@@ -12,7 +11,7 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSe
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
-import leaderboard.search.qdrant.{QdrantClient, QdrantSearchHit}
+import leaderboard.search.qdrant.{QdrantClient, QdrantSearchHit, QdrantVariantDocumentPointBuilder}
 import leaderboard.search.qdrant.QdrantJsonInterpreter
 import leaderboard.seed.BeautyQSeedLoader
 import zio.{IO, ZIO}
@@ -99,7 +98,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
                     vector <- embeddingClient.embed(embeddingText(document))
                     _ <- qdrantClient.upsertPoint(
                       s"$collectionPath/points?wait=true",
-                      QdrantJsonInterpreter.upsertPointJson(document.variantId.toString, embeddingSpec.vectorName, vector.toList, payload(document)),
+                      QdrantVariantDocumentPointBuilder.upsertPointJson(document, embeddingSpec.vectorName, vector.toList),
                     )
                   } yield ()
                 }
@@ -164,18 +163,10 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
     embeddingSpec: EmbeddingSpec[VariantSearchDocument],
     document: VariantSearchDocument,
     vector: Vector[Double],
-  ): IO[QueryFailure, Json] =
+  ) =
     qdrantClient.upsertPoint(
       s"$collectionPath/points?wait=true",
-      QdrantJsonInterpreter.upsertPointJson(document.variantId.toString, embeddingSpec.vectorName, vector.toList, payload(document)),
-    )
-
-  private def payload(document: VariantSearchDocument): Map[String, Json] =
-    Map(
-      "variantId" -> Json.fromString(document.variantId.toString),
-      "masterLocationId" -> Json.fromString(document.masterLocationId.toString),
-      "serviceId" -> Json.fromString(document.serviceId.toString),
-      "serviceName" -> Json.fromString(document.serviceName),
+      QdrantVariantDocumentPointBuilder.upsertPointJson(document, embeddingSpec.vectorName, vector.toList),
     )
 
   private def requireQualityAssertions(
