@@ -8,12 +8,16 @@ import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import zio.{IO, ZIO}
 
+trait QdrantVariantDocumentUpsert {
+  def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json]
+}
+
 final class QdrantVariantDocumentIndexer(
   embeddingClient: EmbeddingClient,
   upsertClient: QdrantPointUpsertClient,
   documentSpec: SearchDocumentSpec[VariantSearchDocument],
   embeddingSpec: EmbeddingSpec[VariantSearchDocument],
-) {
+) extends QdrantVariantDocumentUpsert {
   def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
     for {
       text <- ZIO.succeed(SearchEmbeddingTextExtractor.extract(documentSpec, embeddingSpec, document))
