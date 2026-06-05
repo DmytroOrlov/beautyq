@@ -12,9 +12,10 @@ import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.seed.BeautyQSeedLoader
+import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, ZIO}
 
+import scala.annotation.unused
 import java.util.UUID
 
 final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest with ProdTest {
@@ -54,11 +55,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              documents <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              documents <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               countJson <- client.getJson(s"/${testSpec.variantDocument.indexName}/_count")
               count <- ZIO.fromEither(countJson.hcursor.get[Long]("count").left.map(error => QueryFailure.operation("decode-es-count", error.getMessage)))
               _ <- assertIO(count == documents.size.toLong)
@@ -76,11 +78,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.firstMilestoneQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -106,11 +109,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.secondMilestoneQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -140,11 +144,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.hardNegativeQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -167,11 +172,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.browsLashesQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -200,11 +206,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.pmuQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -233,11 +240,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.faceQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -266,11 +274,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.nailsQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -299,11 +308,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.hairRemainingQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -332,11 +342,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.homeVisitQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -365,11 +376,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               _ <- ZIO.foreachDiscard(evalSuite.queries.filter(query => BeautySearchEvalInventory.lexicalRemainderQueryIds.contains(query.id))) {
                 query =>
                   for {
@@ -398,11 +410,12 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterLocations: MasterLocations[IO],
         masterServiceOffers: MasterServiceOffers[IO],
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
       ) =>
         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
-              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants)
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
               response <- executeSearch(testSpec, client, "маникюр гель лак")
               _ <- assertIO(response.variantCarousel.nonEmpty)
               _ <- assertIO(response.providerCarousel.nonEmpty)
@@ -435,6 +448,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     masterLocations: MasterLocations[IO],
     masterServiceOffers: MasterServiceOffers[IO],
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+    @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[leaderboard.search.document.VariantSearchDocument]] = {
     val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
       seed,
