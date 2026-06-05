@@ -6,7 +6,7 @@ import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
-import leaderboard.search.hybrid.{ExperimentalHybridRouteDecider, ExperimentalHybridSearchBackend}
+import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalHybridRouteDecider, ExperimentalHybridSearchBackend}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -558,6 +558,91 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(lexical.calls == 1)
       assert(semantic.calls == 0)
       assert(lookup.calls == 0)
+    }
+  }
+
+  "ExperimentalBeautySearchService" should {
+    "delegate lexically with empty metadata" in {
+      val input = UserSearchInput("synthetic residual service probe", None, None)
+      val lexicalResponse = emptyResponse.copy(facets = List(BeautySearchFacet("experimental-lexical", Nil)))
+      val lexical = new FakeBeautySearchBackend(lexicalResponse)
+      val semantic = new CountingSemanticCandidateBackend(List(QdrantCandidateHit(documents.head.variantId, 0.5)))
+      val lookup = new CountingVariantSearchDocumentLookup(documents.take(1))
+      val service = experimentalService(lexical, semantic, lookup)
+
+      val response = runIO(service.search(input, SearchRoutingMetadata()))
+
+      assert(response == lexicalResponse)
+      assert(lexical.calls == 1)
+      assert(semantic.calls == 0)
+      assert(lookup.calls == 0)
+    }
+
+    "route through semantic candidate path with broad semantic metadata" in {
+      val knownDocuments = documents.take(2)
+      val hits = List(
+        QdrantCandidateHit(knownDocuments(1).variantId, 0.92),
+        QdrantCandidateHit(knownDocuments(0).variantId, 0.83),
+      )
+      val input = UserSearchInput("synthetic semantic service probe", None, None, limit = 10)
+      val lexical = new FakeBeautySearchBackend(emptyResponse)
+      val semantic = new CountingSemanticCandidateBackend(hits)
+      val lookup = new CountingVariantSearchDocumentLookup(knownDocuments)
+      val service = experimentalService(lexical, semantic, lookup)
+
+      val response = runIO(service.search(input, SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))))
+
+      assert(lexical.calls == 0)
+      assert(semantic.calls == 1)
+      assert(lookup.calls == 1)
+      assert(response.variantCarousel.map(_.variantId) == List(knownDocuments(1).variantId, knownDocuments(0).variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.92, 0.83))
+    }
+
+    "parse input before backend search" in {
+      val input = UserSearchInput("маникюр", None, None)
+      val expectedIntent = parser.parse(input)
+      val lexical = new FakeBeautySearchBackend(emptyResponse)
+      val semantic = new CountingSemanticCandidateBackend(Nil)
+      val lookup = new CountingVariantSearchDocumentLookup(Nil)
+      val service = experimentalService(lexical, semantic, lookup)
+
+      runIO(service.search(input, SearchRoutingMetadata()))
+
+      assert(lexical.lastInput.contains(input))
+      assert(lexical.lastIntent.contains(expectedIntent))
+      assert(expectedIntent.explicitConstraints.nonEmpty)
+    }
+
+    "stay separate from the existing BeautySearchService and BeautySearchBackend contracts" in {
+      val serviceSearchMethods = classOf[BeautySearchService[IO]].getMethods.filter(_.getName == "search").map(_.getParameterCount).toSet
+      val backendSearchMethods = classOf[BeautySearchBackend[IO]].getMethods.filter(_.getName == "search").map(_.getParameterCount).toSet
+
+      assert(serviceSearchMethods == Set(1))
+      assert(backendSearchMethods == Set(2))
+      assert(!classOf[BeautySearchService[IO]].isAssignableFrom(classOf[ExperimentalBeautySearchService[IO]]))
+    }
+
+    "keep residual text on lexical path unless explicit metadata is passed" in {
+      val input = UserSearchInput("synthetic residual explicit metadata probe", None, None, limit = 10)
+      val intent = parser.parse(input)
+      val knownDocument = documents.head
+      val lexical = new FakeBeautySearchBackend(emptyResponse.copy(facets = List(BeautySearchFacet("residual-lexical", Nil))))
+      val semantic = new CountingSemanticCandidateBackend(List(QdrantCandidateHit(knownDocument.variantId, 0.94)))
+      val lookup = new CountingVariantSearchDocumentLookup(List(knownDocument))
+      val service = experimentalService(lexical, semantic, lookup)
+
+      val defaultResponse = runIO(service.search(input, SearchRoutingMetadata()))
+      val explicitResponse = runIO(service.search(input, SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))))
+
+      assert(intent.explicitConstraints.isEmpty)
+      assert(intent.softBoosts.isEmpty)
+      assert(intent.remainingText.nonEmpty)
+      assert(defaultResponse.facets.map(_.fieldPath) == List("residual-lexical"))
+      assert(explicitResponse.variantCarousel.map(_.variantId) == List(knownDocument.variantId))
+      assert(lexical.calls == 1)
+      assert(semantic.calls == 1)
+      assert(lookup.calls == 1)
     }
   }
 
@@ -1581,12 +1666,30 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       lookup,
     )
 
+  private def experimentalService(
+    lexical: FakeBeautySearchBackend,
+    semantic: CountingSemanticCandidateBackend,
+    lookup: CountingVariantSearchDocumentLookup,
+  ) =
+    new ExperimentalBeautySearchService[IO](
+      parser,
+      BeautySearchSpecV1.spec,
+      lexical,
+      SearchBackendRouter.default,
+      semantic,
+      lookup,
+    )
+
   private final class FakeBeautySearchBackend(response: BeautySearchResponse) extends BeautySearchBackend[IO] {
     var calls: Int = 0
+    var lastInput: Option[UserSearchInput] = None
+    var lastIntent: Option[ParsedSearchIntent] = None
 
     override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
       ZIO.succeed {
         calls += 1
+        lastInput = Some(input)
+        lastIntent = Some(intent)
         response
       }
   }
