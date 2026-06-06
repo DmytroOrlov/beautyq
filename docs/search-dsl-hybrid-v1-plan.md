@@ -266,10 +266,12 @@ The pure variant-only `BeautySearchResponse` adapter now exists as `BeautyQHybri
 The pure provider/service projection policy model now exists as `BeautyQHybridProviderServiceProjection.project`.
 The pure provider/service response carousel adapter now exists as
 `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels`.
+The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
 
 It does not implement production hybrid.
 It does not change production `BeautySearchService`.
 It does not define HTTP/API metadata.
+It composes pure retrieval projection into `BeautySearchResponse`.
 
 ### Output Shape
 
@@ -590,6 +592,7 @@ Current implementation ladder:
 10. Pure `BeautyQHybridResponseAdapter` variant-only response projection
 11. Pure `BeautyQHybridProviderServiceProjection` intermediate provider/service candidates
 12. Pure `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels` provider/service response carousel projection
+13. Pure `BeautyQHybridResponsePipeline.projectResponse` retrieval-to-response composition
 
 What is still missing before runtime hybrid:
 
@@ -598,5 +601,5 @@ What is still missing before runtime hybrid:
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
 - non-production adapter/wiring boundary design, still disabled by default and not production
 
-The recommended next code step is deciding the non-production adapter/wiring boundary, still disabled by default and not production wiring.
+The recommended next step is non-production adapter/wiring design, not runtime wiring yet.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

@@ -559,6 +559,7 @@ The pure provider/service projection policy model now exists as
 `BeautyQHybridProviderServiceProjection.project`.
 The pure provider/service response carousel adapter now exists as
 `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels`.
+The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
 
 The implemented pure policy is lexical-first semantic supplement:
 
@@ -602,6 +603,18 @@ The implemented pure provider/service response carousel adapter:
 * does not call Elasticsearch or Qdrant
 * does not route, fallback, or wire production services
 
+The implemented pure response pipeline adapter:
+
+* composes only existing pure pieces: policy -> variant hydration -> provider/service projection -> response adapter
+* projects `HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` plus hydrated `VariantSearchDocument` values into `BeautySearchResponse`
+* returns `BeautySearchResponse` plus combined policy, variant projection, provider/service projection, and response adapter diagnostics
+* propagates missing-document `QueryFailure` from variant hydration without building a response
+* preserves lexical-first semantic-supplement order from the pure policy
+* preserves the separate display score policies already encoded in component outputs
+* does not call Elasticsearch, Qdrant, or llama.cpp
+* does not do score fusion, reranking, fallback, routing, or production wiring
+* does not implement runtime service integration
+
 Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
 They are not raw Qdrant outputs.
 
@@ -623,6 +636,7 @@ It does not fuse scores, rerank, fallback, route queries, produce facets, or pro
 It does not define production routing.
 The hydrated variant projection adapter also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
 The provider/service projection policy also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
+The response pipeline adapter produces `BeautySearchResponse` only by composing existing pure components; it does not add runtime service integration, Elasticsearch calls, Qdrant calls, llama.cpp calls, score fusion, reranking, fallback, routing, or production wiring.
 
 Domain point ids must be Qdrant-compatible ids:
 
@@ -655,7 +669,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Decide non-production adapter wiring boundary, still disabled by default and not production.
+1. Design non-production adapter wiring boundary with explicit activation, still disabled by default and not production.
 2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
@@ -712,6 +726,9 @@ Current stage:
 * BeautyQ pure provider/service response carousel adapter preserves projection order instead of sorting by score
 * BeautyQ pure provider/service response carousel adapter limits provider sample matching variant ids to 3
 * BeautyQ pure provider/service response carousel adapter keeps facets and inferred filters empty because those remain ES/parser-owned
+* BeautyQ pure response pipeline adapter exists and is done through `BeautyQHybridResponsePipeline.projectResponse`
+* BeautyQ pure response pipeline adapter composes only existing pure pieces: policy -> variant hydration -> provider/service projection -> response adapter
+* BeautyQ pure response pipeline adapter returns `BeautySearchResponse` plus diagnostics and still does not call ES/Qdrant/llama, fuse scores, rerank, fallback, route, wire production, or implement runtime service integration
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
@@ -722,7 +739,7 @@ Current stage:
 
 Immediate next step:
 
-* decide non-production adapter wiring boundary, still disabled by default and not production
+* design non-production adapter wiring boundary with explicit activation, still disabled by default and not production
 
 Later pinned TODO:
 
@@ -730,7 +747,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* decide non-production adapter wiring boundary, still disabled by default and not production
+* design non-production adapter wiring boundary with explicit activation, still disabled by default and not production
 * keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
