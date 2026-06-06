@@ -23,8 +23,9 @@ object ElasticsearchSearchResponseInterpreter {
         for {
           score <- c.get[Option[Double]]("_score")
           source <- c.get[VariantSearchDocument]("_source")
-          matchedFields <- c.get[Option[List[String]]]("_matched_queries")
-        } yield SearchHit(score.getOrElse(0.0d), source, matchedFields.getOrElse(Nil))
+          matchedQueries <- c.get[Option[List[String]]]("matched_queries")
+          legacyMatchedQueries <- c.get[Option[List[String]]]("_matched_queries")
+        } yield SearchHit(score.getOrElse(0.0d), source, matchedQueries.orElse(legacyMatchedQueries).getOrElse(Nil))
     }
   }
 

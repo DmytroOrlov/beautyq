@@ -13,7 +13,7 @@ import java.util.UUID
 
 final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
   "ElasticsearchSearchResponseInterpreter.documentHits" should {
-    "decode ES hits into generic lexical hits and preserve matched query names as lexical diagnostics" in {
+    "decode ES hits into generic lexical hits and preserve score, _source, and real matched query names as lexical diagnostics" in {
       val document = variantDocument()
       val response = searchResponseJson(
         esHitJson(
@@ -28,13 +28,43 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
       assert(result == Right(List(LexicalDocumentHit(document.variantId, 4.25, List("serviceName", "attributeText")))))
     }
 
-    "default missing score to 0.0 and missing _matched_queries to Nil" in {
+    "fall back to legacy _matched_queries when matched_queries is absent" in {
       val document = variantDocument(variantId = uuid("00000000-0000-0000-0000-000000000322"))
       val response = searchResponseJson(
         esHitJson(
           source = document.asJson,
           score = None,
-          matchedQueries = Nil,
+          legacyMatchedQueries = List("serviceName"),
+        )
+      )
+
+      val result = ElasticsearchSearchResponseInterpreter.documentHits(response)
+
+      assert(result == Right(List(LexicalDocumentHit(document.variantId, 0.0d, List("serviceName")))))
+    }
+
+    "prefer matched_queries when both matched_queries and _matched_queries are present" in {
+      val document = variantDocument(variantId = uuid("00000000-0000-0000-0000-000000000323"))
+      val response = searchResponseJson(
+        esHitJson(
+          source = document.asJson,
+          score = Some(1.5),
+          matchedQueries = List("matched_queries"),
+          legacyMatchedQueries = List("legacy_matched_queries"),
+        )
+      )
+
+      val result = ElasticsearchSearchResponseInterpreter.documentHits(response)
+
+      assert(result == Right(List(LexicalDocumentHit(document.variantId, 1.5d, List("matched_queries")))))
+    }
+
+    "default missing score to 0.0 and missing matched queries to Nil" in {
+      val document = variantDocument(variantId = uuid("00000000-0000-0000-0000-000000000324"))
+      val response = searchResponseJson(
+        esHitJson(
+          source = document.asJson,
+          score = None,
         )
       )
 
@@ -47,13 +77,13 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
       val missingSourceResponse = searchResponseJson(
         Json.obj(
           "_score" -> Json.fromDoubleOrNull(1.0),
-          "_matched_queries" -> Json.arr(Json.fromString("serviceName")),
+          "matched_queries" -> Json.arr(Json.fromString("serviceName")),
         )
       )
       val invalidSourceResponse = searchResponseJson(
         Json.obj(
           "_score" -> Json.fromDoubleOrNull(1.0),
-          "_matched_queries" -> Json.arr(Json.fromString("serviceName")),
+          "matched_queries" -> Json.arr(Json.fromString("serviceName")),
           "_source" -> Json.fromString("not-a-document"),
         )
       )
@@ -105,11 +135,19 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
       )
     )
 
-  private def esHitJson(source: Json, score: Option[Double], matchedQueries: List[String]): Json = {
+  private def esHitJson(
+    source: Json,
+    score: Option[Double],
+    matchedQueries: List[String] = Nil,
+    legacyMatchedQueries: List[String] = Nil,
+  ): Json = {
     val fields = List.newBuilder[(String, Json)]
     score.foreach(value => fields += "_score" -> Json.fromDoubleOrNull(value))
     if (matchedQueries.nonEmpty) {
-      fields += "_matched_queries" -> Json.arr(matchedQueries.map(Json.fromString): _*)
+      fields += "matched_queries" -> Json.arr(matchedQueries.map(Json.fromString): _*)
+    }
+    if (legacyMatchedQueries.nonEmpty) {
+      fields += "_matched_queries" -> Json.arr(legacyMatchedQueries.map(Json.fromString): _*)
     }
     fields += "_source" -> source
     Json.obj(fields.result(): _*)
