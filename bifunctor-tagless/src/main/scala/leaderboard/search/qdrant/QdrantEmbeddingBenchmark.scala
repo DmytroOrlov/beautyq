@@ -10,12 +10,25 @@ final case class QdrantEmbeddingBenchmarkCandidate(
   notes: Option[String] = None,
 )
 
-sealed trait QdrantEmbeddingBenchmarkRunMode
+sealed trait QdrantEmbeddingBenchmarkRunMode {
+  def expectedCandidateCount: Int
+}
 
 object QdrantEmbeddingBenchmarkRunMode {
-  case object SingleEndpointManualRestart extends QdrantEmbeddingBenchmarkRunMode
-  case object DualEndpointParallel        extends QdrantEmbeddingBenchmarkRunMode
+  case object SingleEndpointManualRestart extends QdrantEmbeddingBenchmarkRunMode {
+    override val expectedCandidateCount: Int = 1
+  }
+
+  case object DualEndpointParallel extends QdrantEmbeddingBenchmarkRunMode {
+    override val expectedCandidateCount: Int = 2
+  }
 }
+
+final case class QdrantEmbeddingBenchmarkPlan(
+  runMode: QdrantEmbeddingBenchmarkRunMode,
+  candidates: List[QdrantEmbeddingBenchmarkCandidate],
+  k: Int,
+)
 
 final case class QdrantEmbeddingBenchmarkExpected(
   acceptableVariantIds: List[MasterServiceOfferVariantId],
@@ -54,6 +67,12 @@ final case class QdrantEmbeddingBenchmarkAggregate(
   meanQueryLatencyMs: Option[Double],
 )
 
+final case class QdrantEmbeddingBenchmarkCandidateReport(
+  candidate: QdrantEmbeddingBenchmarkCandidate,
+  queryMetrics: List[QdrantEmbeddingBenchmarkQueryMetrics],
+  aggregate: QdrantEmbeddingBenchmarkAggregate,
+)
+
 final case class QdrantEmbeddingBenchmarkComparison(
   left: QdrantEmbeddingBenchmarkAggregate,
   right: QdrantEmbeddingBenchmarkAggregate,
@@ -62,6 +81,12 @@ final case class QdrantEmbeddingBenchmarkComparison(
   providerHitRateAtKDelta: Double,
   serviceHitRateAtKDelta: Double,
   meanQueryLatencyMsDelta: Option[Double],
+)
+
+final case class QdrantEmbeddingBenchmarkReport(
+  plan: QdrantEmbeddingBenchmarkPlan,
+  candidateReports: List[QdrantEmbeddingBenchmarkCandidateReport],
+  comparisons: List[QdrantEmbeddingBenchmarkComparison],
 )
 
 object QdrantEmbeddingBenchmark {
@@ -83,6 +108,13 @@ object QdrantEmbeddingBenchmark {
     )
   }
 
+  def metricsFor(
+    results: List[QdrantEmbeddingBenchmarkQueryResult],
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+    k: Int,
+  ): List[QdrantEmbeddingBenchmarkQueryMetrics] =
+    results.flatMap(result => expectationsByQueryId.get(result.queryId).map(expected => metricsFor(result, expected, k)))
+
   def aggregate(
     metrics: List[QdrantEmbeddingBenchmarkQueryMetrics],
     queryResults: List[QdrantEmbeddingBenchmarkQueryResult],
@@ -102,6 +134,22 @@ object QdrantEmbeddingBenchmark {
     )
   }
 
+  def candidateReport(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    queryResults: List[QdrantEmbeddingBenchmarkQueryResult],
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+    k: Int,
+  ): QdrantEmbeddingBenchmarkCandidateReport = {
+    val metrics = metricsFor(queryResults, expectationsByQueryId, k)
+    val aggregateResult = aggregate(metrics, queryResults).copy(candidateId = candidate.candidateId)
+
+    QdrantEmbeddingBenchmarkCandidateReport(
+      candidate = candidate,
+      queryMetrics = metrics,
+      aggregate = aggregateResult,
+    )
+  }
+
   def compare(
     leftAggregate: QdrantEmbeddingBenchmarkAggregate,
     rightAggregate: QdrantEmbeddingBenchmarkAggregate,
@@ -118,6 +166,35 @@ object QdrantEmbeddingBenchmark {
         rightLatency <- rightAggregate.meanQueryLatencyMs
       } yield rightLatency - leftLatency,
     )
+
+  def report(
+    plan: QdrantEmbeddingBenchmarkPlan,
+    queryResultsByCandidateId: Map[String, List[QdrantEmbeddingBenchmarkQueryResult]],
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+  ): QdrantEmbeddingBenchmarkReport = {
+    val normalizedK = nonNegativeK(plan.k)
+    val candidateReports = plan.candidates.map { candidate =>
+      candidateReport(
+        candidate = candidate,
+        queryResults = queryResultsByCandidateId.getOrElse(candidate.candidateId, Nil),
+        expectationsByQueryId = expectationsByQueryId,
+        k = normalizedK,
+      )
+    }
+
+    val comparisons = candidateReports match {
+      case left :: right :: Nil =>
+        List(compare(left.aggregate, right.aggregate))
+      case _ =>
+        Nil
+    }
+
+    QdrantEmbeddingBenchmarkReport(
+      plan = plan.copy(k = normalizedK),
+      candidateReports = candidateReports,
+      comparisons = comparisons,
+    )
+  }
 
   private def firstHitRank[A](rankedIds: List[A], acceptableIds: Set[A], k: Int): Option[Int] =
     rankedIds.take(nonNegativeK(k)).zipWithIndex.collectFirst {
