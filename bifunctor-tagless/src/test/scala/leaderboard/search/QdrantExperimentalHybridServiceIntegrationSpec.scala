@@ -6,13 +6,26 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.hybrid.ExperimentalBeautySearchService
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.{QdrantClient, QdrantClientPointUpsertAdapter, QdrantClientSearchAdapter, QdrantJsonInterpreter, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch, QdrantVariantDocumentIndexer}
+import leaderboard.search.qdrant.{
+  QdrantClient,
+  QdrantClientCollectionInfoAdapter,
+  QdrantClientPointUpsertAdapter,
+  QdrantClientSearchAdapter,
+  QdrantCollectionCompatibilityChecker,
+  QdrantCollectionCompatibilityGuard,
+  QdrantCollectionReadinessConfig,
+  QdrantCollectionReadinessInput,
+  QdrantJsonInterpreter,
+  QdrantNonProductionExperimentComposition,
+  QdrantSemanticCandidateSearch,
+  QdrantVariantDocumentIndexer,
+}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingSignal}
 import leaderboard.search.semantic.InMemoryVariantSearchDocumentLookup
 import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
@@ -69,13 +82,11 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
           case Some(url) =>
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
             val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
-            val collectionName = s"experimental_hybrid_${UUID.randomUUID().toString.replace('-', '_')}"
-            val collectionPath = s"/collections/$collectionName"
-            val vectorSearchSpec = vectorSearchSpecTemplate.copy(collectionName = collectionName)
             val metadata = SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))
+            val readinessPurpose = s"experimental_hybrid_${UUID.randomUUID().toString.replace('-', '_')}"
 
-            (
-              for {
+            Ref.make(Option.empty[String]).flatMap { collectionPathRef =>
+              (for {
                 documents <- loadDocuments(
                   seedReady,
                   categories,
@@ -100,26 +111,47 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
                 dimensionProbeVector <- embeddingClient.embed("qdrant experimental hybrid service integration dimension probe")
                 _ <- assertIO(dimensionProbeVector.nonEmpty)
                 embeddingSpec: EmbeddingSpec[VariantSearchDocument] = embeddingSpecTemplate.copy(dimension = dimensionProbeVector.length)
+                readinessConfig = QdrantCollectionReadinessConfig.derive(QdrantCollectionReadinessInput(
+                  domainName = "beauty_variant",
+                  searchSpecVersion = "v1",
+                  purpose = readinessPurpose,
+                  embeddingSpec = embeddingSpec,
+                  vectorSearchSpec = vectorSearchSpecTemplate,
+                ))
+                collectionPath = s"/collections/${readinessConfig.collectionName}"
+                vectorSearchSpec = readinessConfig.vectorSearchSpec
                 collectionJson = QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, embeddingSpec)
+                _ <- collectionPathRef.set(Some(collectionPath))
                 _ <- qdrantClient.createCollection(collectionPath, collectionJson)
-                indexer: QdrantVariantDocumentIndexer = new QdrantVariantDocumentIndexer(
+                documentUpsert: QdrantVariantDocumentIndexer = new QdrantVariantDocumentIndexer(
                   embeddingClient,
                   new QdrantClientPointUpsertAdapter(qdrantClient),
                   BeautySearchSpecV1.spec.variantDocument,
                   embeddingSpec,
                 )
-                _ <- ZIO.foreachDiscard(documents)(document => indexer.upsertDocument(collectionName, document))
+                compatibilityGuard = new QdrantCollectionCompatibilityGuard(
+                  new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
+                )
+                semanticSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient))
+                composition = QdrantNonProductionExperimentComposition.build(
+                  readinessConfig = readinessConfig,
+                  compatibilityGuard = compatibilityGuard,
+                  snapshotProvider = new InMemoryVariantSearchDocumentSnapshotProvider[IO](documents),
+                  documentUpsert = documentUpsert,
+                  semanticCandidateSearch = semanticSearch,
+                )
+                indexingResult <- composition.indexSnapshot()
+                _ <- assertIO(indexingResult.totalDocumentsLoaded == documents.size)
+                _ <- assertIO(indexingResult.totalDocumentsIndexed == documents.size)
                 lexicalCalls <- Ref.make(0)
                 lexical: FailFastBeautySearchBackend = new FailFastBeautySearchBackend(lexicalCalls)
-                semanticSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient))
-                semanticBackend: QdrantSemanticCandidateBackend = new QdrantSemanticCandidateBackend(semanticSearch, vectorSearchSpec)
                 lookup: InMemoryVariantSearchDocumentLookup[IO] = new InMemoryVariantSearchDocumentLookup[IO](documents)
                 service: ExperimentalBeautySearchService[IO] = new ExperimentalBeautySearchService[IO](
                   parser,
                   semanticSmokeSpec.copy(embeddingSpec = Some(embeddingSpec), vectorSearchSpec = Some(vectorSearchSpec)),
                   lexical,
                   SearchBackendRouter.default,
-                  semanticBackend,
+                  composition.semanticBackend,
                   lookup,
                 )
                 response <- service.search(input, metadata)
@@ -142,7 +174,13 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
                 )
                 _ <- assertTopResultIsTargetOrSameIndexedText(response.variantCarousel, documents, targetDocument, targetText, embeddingSpec)
               } yield ()
-            ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
+              ).ensuring(
+                collectionPathRef.get.flatMap {
+                  case Some(collectionPath) => qdrantClient.deleteCollection(collectionPath).either.unit
+                  case None => ZIO.unit
+                }
+              )
+            }
         }
 
         testEffect
