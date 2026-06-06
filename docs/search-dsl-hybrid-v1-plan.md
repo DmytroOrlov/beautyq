@@ -48,6 +48,7 @@ There is currently no production hybrid behavior:
 
 The current hybrid retrieval seam is a container/diagnostic boundary only.
 It does not add score fusion, reranking, fallback, or a production routing change.
+The generic seam is not merge policy, and production hybrid remains out of scope.
 
 The Qdrant semantic quality gate is intentionally environment-gated:
 

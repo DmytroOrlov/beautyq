@@ -28,9 +28,12 @@ Current eval status:
 
 * Elasticsearch V1 lexical/filter/facet search covers the deterministic lexical baseline.
 * Qdrant semantic candidate retrieval covers the broad semantic slice that Elasticsearch intentionally does not close with dictionary hacks.
+* generic retrieval/indexing boundaries are present.
+* genericity is currently expressed within the existing search DSL input model.
+* domain-specific projection/merge policy remains future work.
 * Env-gated Qdrant plus llama.cpp integration is green locally.
 * Full test and env-full test have been user-verified green after the current non-production Qdrant composition work.
-* This is still not production hybrid search.
+* Production hybrid is not implemented.
 
 Current implemented non-production pieces:
 
@@ -88,6 +91,14 @@ Reusable domain seams/status:
 * generic lexical/Elasticsearch result seam: done
 * generic hybrid document retrieval seam: done
 * domain-specific hybrid projection/merge policy: next design step
+
+### Review follow-ups before projection/merge policy
+
+* ES matched queries decoding: verify/fix the ES response adapter to read real ES `matched_queries`, keep fallback for legacy/test `_matched_queries` if needed, and document that generic lexical `matchedFields` currently means ES matched query names / lexical diagnostics, not highlights.
+* Benchmark validation hardening: fail clearly if a candidate returns fewer results than expected query ids, require each candidate result set to cover the selected benchmark query ids, and keep the existing duplicate candidate id / unexpected candidate id / unexpected query id validations.
+* Hybrid diagnostics clarity: review `HybridDocumentRetrievalDiagnostics` executed flags, avoid implying lexical/semantic channels executed when representing lexical-only or semantic-only retrieval, and either pass execution flags explicitly later or keep the current helper scoped to both-channel retrieval.
+* Qdrant point id naming/compatibility: clarify that current numeric id support is JVM-safe non-negative `Long`, not the full unsigned 64-bit range, record the possible later rename from `UnsignedLong` to `NonNegativeLong` or equivalent, and note that legacy raw-string `upsertPointJson(id: String, ...)` may remain for compatibility while new generic indexing paths must use `QdrantPointId`.
+* Abstraction proliferation guardrail: do not add new generic seams unless they are needed by a second domain proof, projection/merge policy, or a concrete correctness gap.
 
 ## 3. Non-goals for now
 
@@ -525,9 +536,10 @@ The generic hybrid document retrieval seam now supports:
 `HybridDocumentRetrievalResult[Id]` holds lexical and semantic hits for the same domain id type.
 It preserves lexical hit order, preserves semantic hit order, and keeps lexical and semantic scores separate.
 `distinctDocumentIdsInChannelOrder` is a diagnostic/id-list helper only.
-It is not ranking, fusion, fallback, reranking, or production routing.
+`HybridDocumentRetrievalResult[Id]` is a container/diagnostics boundary only.
+It is not merge policy, ranking, score fusion, fallback, reranking, or production routing.
 
-This seam is only a boundary for holding separate channel outputs. It does not implement score fusion, reranking, fallback, query routing, production hybrid behavior, Elasticsearch behavior changes, or Qdrant behavior changes.
+This seam only holds separate channel outputs. It does not implement merge policy, score fusion, reranking, fallback, query routing, production hybrid behavior, Elasticsearch behavior changes, or Qdrant behavior changes.
 
 BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over the generic backend boundary. It keeps the existing `candidates(...)` API and BeautyQ `MasterServiceOfferVariantId` candidate hit shape while exposing generic document hits for reusable semantic infrastructure.
 
@@ -564,21 +576,23 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Design domain-specific hybrid projection/merge policy.
-2. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
-3. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
-4. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
+1. Fix/verify ES `matched_queries` decoding.
+2. Harden benchmark runner against missing expected query results per candidate.
+3. Design-only BeautyQ domain-specific hybrid projection/merge policy.
+4. Then pure policy model/tests if the design is accepted.
+5. Only later consider non-production explicit wiring.
 
 Then:
 
-5. Design the future non-production experiment activation/axis in detail.
-6. Add non-production wiring only behind that explicit boundary, if still needed.
-7. Keep production `BeautySearchService` unchanged.
-8. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
+6. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
+7. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
+8. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
+9. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
 
 Still not next:
 
 * production Distage wiring
+* replacing `BeautySearchService`
 * HTTP/API metadata surface
 * Qdrant-as-default
 * fallback-on-zero-results
@@ -586,7 +600,10 @@ Still not next:
 * score fusion/reranking
 * collection manager / alias switching
 * startup indexing hook
-* using benchmark decision policy as a production auto-switch
+* production collection manager
+* alias/blue-green implementation
+* startup auto-indexing
+* benchmark decision policy as an automatic model switch
 
 ## 15. Living plan and TODOs
 
@@ -595,7 +612,7 @@ Current stage:
 * non-production experimental Qdrant path exists
 * readiness config, compatibility guard, guarded snapshot indexing, semantic backend, experimental service, and benchmark tooling exist
 * generic Qdrant document indexing seam exists and is done
-* Qdrant point ids are constrained to UUID or unsigned integer ids
+* Qdrant point ids are constrained to UUID or JVM-safe non-negative `Long` ids
 * generic semantic candidate assembly boundary exists and is done
 * generic semantic response projector boundary exists and is done through `SemanticResponseProjector[Assembly, Response]`
 * generic semantic backend boundary exists and is done through `SemanticDocumentBackend[F, Id]`
@@ -610,15 +627,17 @@ Current stage:
 * no production hybrid wiring yet
 * no Qdrant hybrid Distage wiring yet
 
+Later pinned TODO:
+
+* expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
+
 Immediate design/code next step:
 
-* design domain-specific hybrid projection/merge policy
-* keep `LeaderboardPlugin` unchanged for now
-* do not add Distage wiring until there is a real search-service graph boundary
-* if a non-production experiment module is later added, it must be named and explicitly activated
-* before wiring, prefer either:
-  * a small design-only note for the future experiment axis/config shape, or
-  * another explicit safety/design patch before any wiring
+* fix/verify ES `matched_queries` decoding
+* harden benchmark runner against missing expected query results per candidate
+* design-only BeautyQ domain-specific hybrid projection/merge policy
+* then pure policy model/tests if the design is accepted
+* only later consider non-production explicit wiring
 
 Benchmark TODOs:
 
@@ -633,6 +652,7 @@ Benchmark hardening TODO:
 * duplicate candidate ids should fail or report clearly before report generation
 * result query ids without expectations should fail or report clearly in the runner/report path
 * candidate executor results for the wrong candidate id should fail clearly
+* candidate result sets must cover the selected benchmark query ids and fail clearly when they return fewer results than expected
 * keep the decision policy documented as a manual evaluation aid, not a production auto-switch
 
 Wiring TODO:
@@ -643,6 +663,16 @@ Wiring TODO:
 * collection creation remains outside the production app lifecycle
 * snapshot indexing remains an explicit test/manual action
 * metadata remains explicit and outside HTTP/API for now
+* production Distage wiring stays forbidden for now
+* Qdrant-as-default stays forbidden for now
+* fallback-on-zero-results stays forbidden for now
+* residualText -> semantic route stays forbidden for now
+* HTTP/API metadata field stays forbidden for now
+* score fusion/reranking stays forbidden for now
+* production collection manager stays forbidden for now
+* alias/blue-green implementation stays forbidden for now
+* startup auto-indexing stays forbidden for now
+* benchmark decision policy as an automatic model switch stays forbidden for now
 
 Watch items:
 
@@ -651,16 +681,4 @@ Watch items:
 * confirm `QdrantNonProductionHybridExperiment.build` keeps spec/readiness embedding/vector config consistent before wiring
 * keep benchmark stdout output as manual tooling, not product telemetry
 * raw string point-id helpers may remain for compatibility, but new generic indexing paths must use `QdrantPointId`
-
-Forbidden for now:
-
-* production Distage wiring
-* Qdrant-as-default
-* fallback-on-zero-results
-* residual-text routing
-* HTTP/API metadata field
-* score fusion/reranking
-* production collection manager
-* alias/blue-green implementation
-* startup auto-indexing
-* using the benchmark decision policy as a production auto-switch
+* `HybridDocumentRetrievalResult` remains a container/diagnostics boundary, not merge policy, ranking, score fusion, fallback, or production routing
