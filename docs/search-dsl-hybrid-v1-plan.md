@@ -8,7 +8,11 @@ It should not replace the Elasticsearch V1 path. Elasticsearch remains the deter
 
 Qdrant should add recall for the narrow semantic gap already proven by the current Qdrant-only eval slice:
 
+- `q_broad_001`
+- `q_broad_002`
+- `q_broad_003`
 - `q_broad_004`
+- `q_broad_005`
 - `q_broad_006`
 
 Qdrant must not become responsible for canonical facets, exact filters, price and duration constraints, or final production ranking in V1.
@@ -28,6 +32,7 @@ Current measured coverage is split across two separate backend paths:
 
 - Elasticsearch V1 lexical/filter/facet baseline covers `61/63` eval queries.
 - Qdrant-only semantic candidate quality covers `q_broad_004` and `q_broad_006`.
+- The named non-production embedding benchmark subset now includes more explicit eval query ids beyond `q_broad_004` and `q_broad_006`: `q_broad_001`, `q_broad_002`, `q_broad_003`, and `q_broad_005`.
 - ES plus Qdrant cover the current `63/63` eval intent space only as separately measured backends.
 
 Current status note:
@@ -122,14 +127,16 @@ Queries may be eligible for the Qdrant candidate route only when lexical intent 
 - no explicit attribute constraints
 - no exact filter constraints
 - broad beauty or discovery language
-- similarity to the eval examples `q_broad_004` and `q_broad_006` for coverage only
+- similarity to the broad eval examples `q_broad_001` through `q_broad_006` for coverage only
 - high residual text may be useful as diagnostic/eval context, but it is not a production routing trigger
 
 Residual text alone must never route a query to Qdrant.
 
-The first implementation should not make Qdrant a generic "unknown query" default. It should start with the narrow broad-query class represented by the `q_broad_004` and `q_broad_006` eval examples, then expand only after eval evidence exists.
+The first implementation should not make Qdrant a generic "unknown query" default. The current benchmark subset expansion is still non-production benchmark/eval infrastructure, not production routing evidence.
 
-The query ids `q_broad_004` and `q_broad_006` may appear in eval data, tests, and documentation. They must not be hardcoded in production routing logic.
+The query ids `q_broad_001` through `q_broad_006` may appear in eval data, tests, benchmark tooling, and documentation. They must not be hardcoded in production routing logic.
+
+Benchmark decision policy is a manual evaluation aid, not runtime model switching. This tiny subset expansion does not make the benchmark mature enough for automatic model choice.
 
 ### Fallback
 
@@ -517,7 +524,7 @@ Production rollout should require these gates before any hybrid or fallback path
 
 - ES-only regression suite remains green at `61/63`.
 - Qdrant-only semantic candidate quality assertions remain green.
-- Hybrid/fallback tests cover the `q_broad_004` and `q_broad_006` eval examples first.
+- Hybrid/fallback tests cover the broad eval examples first, including `q_broad_004` and `q_broad_006`.
 - Lexical queries do not regress.
 - Hard-negative queries do not regress.
 - Explicitly constrained queries do not route to Qdrant fallback.
@@ -544,9 +551,10 @@ Future implementation should be split into small patches:
 5. Done: construction-safe hybrid experiment activation factory.
 6. Done: test(search) tiny synthetic second-domain proof for generic seams.
 7. Done: fake-only explicit non-production Distage/test module gating proof.
-8. Optional later: benchmark subset expansion with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
+8. Done: benchmark subset expansion with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
 9. Later, with separate design: real non-production Qdrant/ES/Llama module adapter and resource lifecycle.
 10. Much later: production lifecycle, routing, metadata, score fusion, or reranking decisions.
+11. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
 
 The second-domain proof is done.
 The fake-only explicit module gating proof is done.
@@ -585,7 +593,7 @@ Reusable concepts should be generic:
 
 Domain-specific broad-query examples belong in domain eval/spec data.
 
-For BeautyQ, `q_broad_004` and `q_broad_006` are examples of the broad semantic class. They should guide eval coverage and documentation examples, not become hardcoded backend behavior.
+For BeautyQ, `q_broad_001` through `q_broad_006` are examples of the broad semantic benchmark/eval class. They should guide eval coverage, benchmark examples, and documentation examples, not become hardcoded backend behavior.
 
 Backend interpreters should stay generic:
 

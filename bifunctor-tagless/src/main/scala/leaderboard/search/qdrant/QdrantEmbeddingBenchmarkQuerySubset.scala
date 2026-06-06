@@ -17,8 +17,15 @@ object QdrantEmbeddingBenchmarkQuerySubset {
   val SemanticBroadSmoke: QdrantEmbeddingBenchmarkQuerySubset =
     QdrantEmbeddingBenchmarkQuerySubset(
       id = "semantic-broad-smoke",
-      description = "Broad semantic benchmark smoke subset for named embedding comparisons.",
-      queryIds = List("q_broad_004", "q_broad_006"),
+      description = "Non-production broad semantic benchmark/eval smoke subset for named embedding comparisons.",
+      queryIds = List(
+        "q_broad_001",
+        "q_broad_002",
+        "q_broad_003",
+        "q_broad_004",
+        "q_broad_005",
+        "q_broad_006",
+      ),
     )
 
   def select(

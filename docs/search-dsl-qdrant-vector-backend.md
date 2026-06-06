@@ -8,7 +8,11 @@ It complements the Elasticsearch V1 lexical baseline. It does not replace it, mu
 
 The intended role for Qdrant is to help with broad, conversational, and semantic queries that are intentionally outside the Elasticsearch V1 lexical boundary today, including:
 
+* `q_broad_001`
+* `q_broad_002`
+* `q_broad_003`
 * `q_broad_004`
+* `q_broad_005`
 * `q_broad_006`
 
 The architectural rule stays the same as the existing search DSL pattern:
@@ -32,6 +36,7 @@ Current eval status:
 * genericity is currently expressed within the existing search DSL input model.
 * pure BeautyQ domain-specific projection/merge policy and response adapters are present.
 * Env-gated Qdrant plus llama.cpp integration is green locally.
+* The named non-production embedding benchmark subset has been expanded beyond only `q_broad_004` and `q_broad_006`; it now uses a small explicit eval-id list for broad-query coverage.
 * Full test and env-full test have been user-verified green after the current non-production Qdrant composition work.
 * Production hybrid is not implemented.
 
@@ -98,7 +103,7 @@ Reusable domain seams/status:
 
 * Done: ES matched queries decoding now reads real ES `matched_queries`, keeps fallback for legacy/test `_matched_queries`, and documents that generic lexical `matchedFields` currently means ES matched query names / lexical diagnostics, not highlights.
 * Done: benchmark validation hardening now fails clearly if a candidate returns fewer results than expected query ids, requires each candidate result set to cover the selected benchmark query ids, and keeps the existing duplicate candidate id / unexpected candidate id / unexpected query id validations.
-* Pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
+* Done: the named benchmark subset now includes more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
 * Hybrid diagnostics clarity: review `HybridDocumentRetrievalDiagnostics` executed flags, avoid implying lexical/semantic channels executed when representing lexical-only or semantic-only retrieval, and either pass execution flags explicitly later or keep the current helper scoped to both-channel retrieval.
 * Qdrant point id naming/compatibility: clarify that current numeric id support is JVM-safe non-negative `Long`, not the full unsigned 64-bit range, record the possible later rename from `UnsignedLong` to `NonNegativeLong` or equivalent, and note that legacy raw-string `upsertPointJson(id: String, ...)` may remain for compatibility while new generic indexing paths must use `QdrantPointId`.
 * Abstraction proliferation guardrail: do not add new generic seams unless they are needed by a second domain proof, projection/merge policy, or a concrete correctness gap.
@@ -473,12 +478,18 @@ Elasticsearch remains responsible for:
 
 Qdrant first targets broad, conversational, and semantic candidates, especially:
 
+* `q_broad_001`
+* `q_broad_002`
+* `q_broad_003`
 * `q_broad_004`
+* `q_broad_005`
 * `q_broad_006`
 
-Separate Qdrant eval subsets should stay stabilized before any hybrid production behavior is introduced.
+The named embedding benchmark subset is still a tiny non-production benchmark/eval subset. Query ids are allowed here, in eval data, tests, benchmark tooling, and documentation examples only; they must not be hardcoded into production routing.
 
-Qdrant semantic-candidate eval and env-gated experimental service smoke tests do not by themselves justify fallback, fusion, reranking, or production routing.
+Separate Qdrant eval subsets should stay stabilized before any hybrid production behavior is introduced. This subset expansion does not make the benchmark mature enough for automatic model choice.
+
+Qdrant semantic-candidate eval, benchmark decision output, and env-gated experimental service smoke tests do not by themselves justify fallback, fusion, reranking, production routing, or runtime model switching.
 
 ## 12. Relationship to reusable-domain onboarding
 
@@ -887,7 +898,7 @@ Current stage:
 
 Immediate next step:
 
-1. optional later: benchmark subset expansion
+1. optional later: larger benchmark taxonomy expansion
 
 Second-domain proof requirements:
 
@@ -896,7 +907,8 @@ Second-domain proof requirements:
 
 Later pinned TODO:
 
-* expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
+* done: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
+* later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available
 
 Immediate design/code next step:
 
@@ -905,11 +917,11 @@ Immediate design/code next step:
 
 Benchmark TODOs:
 
-* **Pinned later TODO:** expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
+* done: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * use explicit query ids first; do not invent taxonomy until `queryTypes` are standardized
-* later include broad semantic, hard-negative, lexical-looking, domain-diverse, and cross-domain queries
+* later include a larger taxonomy for hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, lexical-looking/domain-diverse cases, and broader second-domain eval cases when available
 * rerun 0.6B vs 4B after subset expansion
-* current tiny benchmark verdict: 0.6B is preferred on the current subset because 4B had no quality gain and higher latency
+* current tiny benchmark verdict remains decision support only; benchmark decision policy is not runtime model switching, and this tiny subset is not mature enough for automatic model choice
 
 Benchmark hardening TODO:
 
@@ -923,7 +935,7 @@ Review follow-up status:
 
 * done: ES `matched_queries` decoding fix/verification
 * done: benchmark complete-query validation in the runner/report path
-* pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
+* done: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
 * done: tiny synthetic second-domain proof for generic seams
 * done: fake-only explicit non-production module gating proof

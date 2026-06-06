@@ -17,6 +17,38 @@ import java.util.UUID
 
 final class QdrantEmbeddingBenchmarkQuerySubsetSpec extends AnyWordSpec {
   "QdrantEmbeddingBenchmarkQuerySubset" should {
+    "define the named semantic broad smoke subset with the original broad semantic query ids" in {
+      assert(QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke.queryIds.contains("q_broad_004"))
+      assert(QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke.queryIds.contains("q_broad_006"))
+    }
+
+    "define the named semantic broad smoke subset with additional explicit eval query ids" in {
+      val originalIds = Set("q_broad_004", "q_broad_006")
+      val additionalIds = QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke.queryIds.filterNot(originalIds)
+      val inventoryIds = BeautySearchEvalInventory.evalSuite.queries.map(_.id).toSet
+
+      assert(additionalIds.nonEmpty)
+      assert(additionalIds.toSet.subsetOf(inventoryIds))
+    }
+
+    "select the named semantic broad smoke subset in deterministic eval inventory order" in {
+      val selected = QdrantEmbeddingBenchmarkQuerySubset
+        .select(
+          QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke,
+          BeautySearchEvalInventory.evalSuite.queries,
+        )
+        .toOption
+        .getOrElse(fail("expected semantic broad smoke subset selection success"))
+
+      assert(selected.map(_.id) == QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke.queryIds)
+    }
+
+    "define the named semantic broad smoke subset without duplicate query ids" in {
+      val queryIds = QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke.queryIds
+
+      assert(queryIds.distinct == queryIds)
+    }
+
     "select explicit ids in inventory order instead of request order" in {
       val q1 = query(id = "q1", queryTypes = List("lexical"))
       val q2 = query(id = "q2", queryTypes = List("broad"))
