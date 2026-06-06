@@ -251,7 +251,7 @@ Compatibility is strict:
 
 ## 9. Non-production experiment wiring boundary
 
-The current non-production experiment path should remain separate from production search wiring.
+The current non-production experiment path must remain separate from production search wiring.
 
 Production default:
 
@@ -260,15 +260,27 @@ BeautySearchService
   -> current Elasticsearch-backed search path
 ```
 
-Non-production experiment path:
+Non-production experiment boundary:
 
 ```text
-explicit test/config/axis setup
+manual/test/local experiment setup
   -> QdrantCollectionReadinessConfig
   -> QdrantNonProductionExperimentComposition
-  -> ExperimentalBeautySearchService
+  -> QdrantNonProductionHybridExperiment
   -> explicit SearchRoutingMetadata
 ```
+
+This boundary is deliberately outside the production app graph.
+
+### Current wiring decision
+
+There is intentionally no Qdrant hybrid Distage wiring yet.
+
+`LeaderboardPlugin` currently wires roles, APIs, repositories, seed readiness, and config. It does not wire a production search service graph. Adding Qdrant hybrid bindings there now would either create an unused module or move the project too close to production hybrid search before lifecycle, metadata, and rollout decisions are complete.
+
+The supported runtime boundary for local/test/manual experiments is `QdrantNonProductionHybridExperiment`. It composes readiness/composition with `ExperimentalBeautySearchService`, but it is not part of the production app graph.
+
+### Allowed in non-production experiments
 
 Allowed in non-production experiments:
 
@@ -279,7 +291,8 @@ Allowed in non-production experiments:
 * guarded snapshot indexing
 * explicit `SearchRoutingMetadata`
 * fail-fast lexical backends in tests
-* direct construction of `ExperimentalBeautySearchService`
+* direct construction of `QdrantNonProductionHybridExperiment`
+* direct construction of `ExperimentalBeautySearchService` in focused tests
 
 Not allowed yet:
 
@@ -294,23 +307,55 @@ Not allowed yet:
 * score fusion/reranking
 * Qdrant replacement for Elasticsearch facets/filters
 
-### Activation boundary
+### Future non-production wiring rule
 
-Future non-production wiring, if added, must be behind an explicit activation boundary.
+Future non-production wiring, if added, must be behind an explicit named experiment boundary.
 
 Acceptable future shapes:
 
-* a test-only axis
-* a non-production experiment axis
-* an explicit local experiment module
-* an explicit manual task/test setup
+* explicit local experiment module
+* explicit test-only experiment axis
+* explicit non-production experiment axis/config
+* explicit manual/admin experiment task
 
 Unacceptable shapes:
 
-* enabled by `Mode.Prod` default
-* implicit through `Mode.Test` without a named experiment boundary
+* default `Mode.Prod` wiring
+* implicit `Mode.Test` activation without a named experiment boundary
+* wiring Qdrant into the production `BeautySearchService`
 * automatic production startup indexing
-* production search path depending on Qdrant availability
+* automatic collection create/delete/recreate in app startup
+* production search depending on Qdrant availability
+
+### Allowed experiment bindings
+
+If a future non-production module is added, it may bind only experiment-scoped components such as:
+
+* `QdrantCollectionReadinessConfig`
+* `QdrantNonProductionExperimentComposition`
+* `QdrantNonProductionHybridExperiment`
+* `QdrantSemanticCandidateBackend`
+* `QdrantCollectionCompatibilityChecker`
+* `QdrantCollectionCompatibilityGuard`
+* snapshot provider / upsert / indexer for explicit test or manual setup
+* explicit `SearchRoutingMetadata` source for the experiment
+
+These bindings must not become the production default graph.
+
+### Experiment lifecycle ownership
+
+Collection lifecycle remains outside the production app:
+
+* collection creation is manual/test/local setup
+* collection deletion is test/local cleanup only
+* snapshot indexing is explicit test/manual action
+* no production startup hook
+* no request-time indexing
+* no hidden indexing side effect from constructing a service
+
+Versioned collection names remain the current policy.
+
+Alias/blue-green switching, rollback, production collection manager, and destructive recreate policies are deferred production-lifecycle work.
 
 ### Snapshot indexing trigger
 
@@ -328,13 +373,24 @@ Not acceptable yet:
 * production request-time indexing
 * hidden side effect of constructing the search service
 
-### Metadata source
+### Metadata boundary
 
-Routing metadata is currently explicit and test/eval supplied.
+Routing metadata remains explicit.
 
-Future experiment metadata may come from a non-production method, local test setup, or explicit internal call surface, but it is not yet an HTTP/API contract.
+The current experiment may pass:
 
-Residual text alone must not route to Qdrant.
+```scala
+SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))
+```
+
+from test/manual harnesses.
+
+This is not yet:
+
+* an HTTP/API field
+* residual-text routing
+* a production metadata contract
+* a fallback trigger
 
 ## 10. Future production lifecycle policy
 
@@ -421,14 +477,17 @@ That keeps the vector backend reusable and helps the search DSL evolve into a re
 
 Immediate next step:
 
-1. Add a lightweight experimental route diagnostics model before any non-production wiring.
+1. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
+2. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
+3. Keep benchmark subset expansion as a pinned later TODO, not the immediate next coding step.
+4. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
 
 Then:
 
-2. Design non-production experiment activation/axis in detail.
-3. Add non-production wiring only behind that explicit boundary.
-4. Keep production `BeautySearchService` unchanged.
-5. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
+5. Design the future non-production experiment activation/axis in detail.
+6. Add non-production wiring only behind that explicit boundary, if still needed.
+7. Keep production `BeautySearchService` unchanged.
+8. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
 
 Still not next:
 
@@ -440,6 +499,7 @@ Still not next:
 * score fusion/reranking
 * collection manager / alias switching
 * startup indexing hook
+* using benchmark decision policy as a production auto-switch
 
 ## 15. Living plan and TODOs
 
@@ -447,19 +507,23 @@ Current stage:
 
 * non-production experimental Qdrant path exists
 * readiness config, compatibility guard, guarded snapshot indexing, semantic backend, experimental service, and benchmark tooling exist
+* `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
 * no production hybrid wiring yet
+* no Qdrant hybrid Distage wiring yet
 
-Immediate design next step:
+Immediate design/code next step:
 
-* design the non-production experiment module and axis boundary
-* decide explicit activation and config
-* decide which bindings stay non-production/test-only
-* keep the production graph ES-only
+* keep `LeaderboardPlugin` unchanged for now
+* do not add Distage wiring until there is a real search-service graph boundary
+* if a non-production experiment module is later added, it must be named and explicitly activated
+* before wiring, prefer either:
+  * a small design-only note for the future experiment axis/config shape, or
+  * another explicit safety/design patch before any wiring
 
 Benchmark TODOs:
 
-* expand the benchmark subset beyond `q_broad_004` and `q_broad_006`
+* **Pinned later TODO:** expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * use explicit query ids first; do not invent taxonomy until `queryTypes` are standardized
 * later include broad semantic, hard-negative, lexical-looking, domain-diverse, and cross-domain queries
 * rerun 0.6B vs 4B after subset expansion
@@ -467,8 +531,9 @@ Benchmark TODOs:
 
 Benchmark hardening TODO:
 
-* fail or report clearly on duplicate candidate ids
-* fail or report clearly when a result query id has no expectation
+* duplicate candidate ids should fail or report clearly before report generation
+* result query ids without expectations should fail or report clearly in the runner/report path
+* candidate executor results for the wrong candidate id should fail clearly
 * keep the decision policy documented as a manual evaluation aid, not a production auto-switch
 
 Wiring TODO:
@@ -477,12 +542,15 @@ Wiring TODO:
 * no production `BeautySearchService` change yet
 * no startup auto-indexing
 * collection creation remains outside the production app lifecycle
+* snapshot indexing remains an explicit test/manual action
+* metadata remains explicit and outside HTTP/API for now
 
 Watch items:
 
 * env-gated specs may start heavy resources before cancel
 * `ExperimentalHybridRouteDiagnostics.reasonCategory` is a string; make it an ADT only if it becomes an API/log contract
 * confirm `QdrantNonProductionHybridExperiment.build` keeps spec/readiness embedding/vector config consistent before wiring
+* keep benchmark stdout output as manual tooling, not product telemetry
 
 Forbidden for now:
 
