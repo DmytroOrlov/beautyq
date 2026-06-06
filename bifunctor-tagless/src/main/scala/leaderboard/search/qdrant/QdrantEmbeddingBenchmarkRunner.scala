@@ -19,15 +19,22 @@ final class QdrantEmbeddingBenchmarkRunner(
     queries: List[BeautySearchEvalQuery],
   ): IO[QueryFailure, QdrantEmbeddingBenchmarkReport] =
     for {
-      _ <- validateCandidateCount(plan)
-      queryResultsByCandidateId <- ZIO.foreach(plan.candidates) { candidate =>
-        executor.runCandidate(candidate, queries).map(candidate.candidateId -> _)
-      }.map(_.toMap)
+      _ <- validatePlan(plan)
+      expectedByQueryId = expectationsByQueryId(queries)
+      candidateResults <- ZIO.foreach(plan.candidates) { candidate =>
+        for {
+          results <- executor.runCandidate(candidate, queries)
+          _       <- validateCandidateResults(candidate, results, expectedByQueryId)
+        } yield candidate.candidateId -> results
+      }
     } yield QdrantEmbeddingBenchmark.report(
       plan = plan,
-      queryResultsByCandidateId = queryResultsByCandidateId,
-      expectationsByQueryId = expectationsByQueryId(queries),
+      queryResultsByCandidateId = candidateResults.toMap,
+      expectationsByQueryId = expectedByQueryId,
     )
+
+  private def validatePlan(plan: QdrantEmbeddingBenchmarkPlan): IO[QueryFailure, Unit] =
+    validateCandidateCount(plan) *> validateDistinctCandidateIds(plan)
 
   private def validateCandidateCount(plan: QdrantEmbeddingBenchmarkPlan): IO[QueryFailure, Unit] = {
     val expected = plan.runMode.expectedCandidateCount
@@ -40,6 +47,60 @@ final class QdrantEmbeddingBenchmarkRunner(
       )
     ).when(actual != expected).unit
   }
+
+  private def validateDistinctCandidateIds(plan: QdrantEmbeddingBenchmarkPlan): IO[QueryFailure, Unit] = {
+    val duplicateIds = plan.candidates
+      .groupBy(_.candidateId)
+      .collect {
+        case (candidateId, candidates) if candidates.size > 1 => candidateId
+      }
+      .toList
+      .sorted
+
+    ZIO.fail(
+      QueryFailure.operation(
+        "qdrant-embedding-benchmark-runner",
+        s"Benchmark plan contains duplicate candidate id(s): ${duplicateIds.mkString(", ")}",
+      )
+    ).when(duplicateIds.nonEmpty).unit
+  }
+
+  private def validateCandidateResults(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    results: List[QdrantEmbeddingBenchmarkQueryResult],
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+  ): IO[QueryFailure, Unit] =
+    ZIO.foreachDiscard(results)(validateResult(candidate, _, expectationsByQueryId))
+
+  private def validateResult(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    result: QdrantEmbeddingBenchmarkQueryResult,
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+  ): IO[QueryFailure, Unit] =
+    validateResultCandidateId(candidate, result) *> validateExpectedQueryId(candidate, result, expectationsByQueryId)
+
+  private def validateResultCandidateId(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    result: QdrantEmbeddingBenchmarkQueryResult,
+  ): IO[QueryFailure, Unit] =
+    ZIO.fail(
+      QueryFailure.operation(
+        "qdrant-embedding-benchmark-runner",
+        s"Candidate ${candidate.candidateId} executor returned result for candidate ${result.candidateId} on query ${result.queryId}",
+      )
+    ).when(result.candidateId != candidate.candidateId).unit
+
+  private def validateExpectedQueryId(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    result: QdrantEmbeddingBenchmarkQueryResult,
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+  ): IO[QueryFailure, Unit] =
+    ZIO.fail(
+      QueryFailure.operation(
+        "qdrant-embedding-benchmark-runner",
+        s"Candidate ${candidate.candidateId} returned benchmark result for query ${result.queryId} without an expectation",
+      )
+    ).when(!expectationsByQueryId.contains(result.queryId)).unit
 
   private def expectationsByQueryId(queries: List[BeautySearchEvalQuery]): Map[String, QdrantEmbeddingBenchmarkExpected] =
     queries.map { query =>

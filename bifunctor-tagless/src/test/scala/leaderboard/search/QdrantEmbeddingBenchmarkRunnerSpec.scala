@@ -71,6 +71,23 @@ final class QdrantEmbeddingBenchmarkRunnerSpec extends AnyWordSpec {
       }
     }
 
+    "fail duplicate candidate ids clearly before results are collapsed into a map" in {
+      val first = benchmarkCandidate("candidate-a")
+      val second = benchmarkCandidate("candidate-a")
+      val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel, List(first, second), k = 1)
+
+      val failure = runFail(new QdrantEmbeddingBenchmarkRunner(new StaticExecutor()).run(plan, Nil))
+
+      failure match {
+        case QueryFailure.OperationFailure(operationName, message) =>
+          assert(operationName == "qdrant-embedding-benchmark-runner")
+          assert(message.contains("duplicate candidate id"))
+          assert(message.contains("candidate-a"))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
+    }
+
     "convert eval acceptable ids into benchmark expectations" in {
       val candidate = benchmarkCandidate("candidate-a")
       val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart, List(candidate), k = 2)
@@ -118,6 +135,48 @@ final class QdrantEmbeddingBenchmarkRunnerSpec extends AnyWordSpec {
       run(new QdrantEmbeddingBenchmarkRunner(executor).run(plan, List(query)))
 
       assert(runUio(callsRef.get) == List(first.candidateId, second.candidateId))
+    }
+
+    "fail when a candidate returns a result for a query without an expectation" in {
+      val candidate = benchmarkCandidate("candidate-a")
+      val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart, List(candidate), k = 1)
+      val query = evalQuery("q1", acceptableVariantIds = List(variantId(1)))
+      val executor = new StaticExecutor(
+        candidate.candidateId -> List(queryResult(candidate.candidateId, "q-missing", topVariantIds = List(variantId(1))))
+      )
+
+      val failure = runFail(new QdrantEmbeddingBenchmarkRunner(executor).run(plan, List(query)))
+
+      failure match {
+        case QueryFailure.OperationFailure(operationName, message) =>
+          assert(operationName == "qdrant-embedding-benchmark-runner")
+          assert(message.contains(candidate.candidateId))
+          assert(message.contains("q-missing"))
+          assert(message.contains("without an expectation"))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
+    }
+
+    "fail when a candidate executor returns a result for a different candidate id" in {
+      val candidate = benchmarkCandidate("candidate-a")
+      val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart, List(candidate), k = 1)
+      val query = evalQuery("q1", acceptableVariantIds = List(variantId(1)))
+      val executor = new StaticExecutor(
+        candidate.candidateId -> List(queryResult("candidate-b", query.id, topVariantIds = List(variantId(1))))
+      )
+
+      val failure = runFail(new QdrantEmbeddingBenchmarkRunner(executor).run(plan, List(query)))
+
+      failure match {
+        case QueryFailure.OperationFailure(operationName, message) =>
+          assert(operationName == "qdrant-embedding-benchmark-runner")
+          assert(message.contains("candidate-a"))
+          assert(message.contains("candidate-b"))
+          assert(message.contains(query.id))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
     }
 
     "preserve candidate order in the report" in {
