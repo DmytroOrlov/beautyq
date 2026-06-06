@@ -263,6 +263,7 @@ This section defines the BeautyQ-specific policy boundary.
 The pure policy model now exists as `BeautyQHybridProjectionPolicy.lexicalFirstSemanticSupplement`.
 The pure hydrated variant projection adapter now exists as `BeautyQHybridVariantProjection.project`.
 The pure variant-only `BeautySearchResponse` adapter now exists as `BeautyQHybridResponseAdapter.variantOnlyResponse`.
+The pure provider/service projection policy model now exists as `BeautyQHybridProviderServiceProjection.project`.
 
 It does not implement production hybrid.
 It does not change production `BeautySearchService`.
@@ -297,8 +298,18 @@ The variant-only response adapter is not full response parity:
 - the display score is not a fused score, not a ranking score, and is not used to reorder candidates
 - it does not expose separate lexical or semantic scores in the production response shape
 
+The provider/service projection policy is also not full response parity:
+
+- it creates intermediate provider and service-intent candidates only
+- it groups provider candidates by `masterLocationId`
+- it groups service-intent candidates by `serviceId`
+- group order follows first candidate occurrence in policy order
+- `representativeDisplayScore` is display-only under `LexicalThenSemantic`, not ranking or fusion
+- it does not build provider or service response carousels
+- it does not fill `ProviderSearchResult.bestScore` or `ServiceIntentSearchResult.bestScore`
+
 Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
-The next step must decide provider/service `bestScore` semantics before building those carousels.
+The next step must explicitly decide provider/service response `bestScore` mapping before building those carousels.
 They are not raw Qdrant outputs.
 
 Facets and inferred filters remain ES/parser-owned:
@@ -401,8 +412,8 @@ Hybrid tests should prove routing behavior as well as result quality. A broad qu
 Future implementation should be split into small patches:
 
 1. Done: add pure BeautyQ hybrid projection/merge policy model/tests only.
-2. Next: decide whether to add a non-production adapter from policy candidates into BeautyQ response projection, still without production wiring.
-3. Add non-production adapter/pure projection tests only if the adapter boundary is accepted.
+2. Done: add pure BeautyQ provider/service projection policy model/tests only.
+3. Next: decide response `bestScore` mapping before adding provider/service carousel adapter behavior, still without production wiring.
 4. Add routing decision data model only.
 5. Add pure router tests only.
 6. Add Qdrant candidate response model.
@@ -411,7 +422,7 @@ Future implementation should be split into small patches:
 9. Add regression tests proving lexical and hard-negative queries still stay ES-only.
 10. Only later consider score fusion or reranking.
 
-The next implementation patch after the pure policy model should only consider a non-production adapter or pure projection tests.
+The next implementation patch after the pure provider/service projection model should only decide response `bestScore` mapping or add accepted pure adapter tests.
 It should not add runtime wiring.
 
 It must not include:
@@ -565,13 +576,14 @@ Current implementation ladder:
 8. Pure `BeautyQHybridProjectionPolicy`
 9. Pure `BeautyQHybridVariantProjection`
 10. Pure `BeautyQHybridResponseAdapter` variant-only response projection
+11. Pure `BeautyQHybridProviderServiceProjection` intermediate provider/service candidates
 
 What is still missing before runtime hybrid:
 
-- provider/service carousel `bestScore` policy before building those carousels
+- explicit provider/service response `bestScore` mapping before building those carousels
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
 
-The recommended next code step is designing provider/service carousel policy or non-production adapter wiring, still without production wiring.
+The recommended next code step is deciding mapping from provider/service projection candidates into response `bestScore` fields before enabling provider/service carousels, still without production wiring.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

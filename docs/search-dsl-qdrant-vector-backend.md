@@ -92,7 +92,7 @@ Reusable domain seams/status:
 * generic hybrid document retrieval seam: done
 * ES matched_queries decoding correctness follow-up: done
 * benchmark complete-query validation correctness follow-up: done
-* domain-specific hybrid projection/merge policy: immediate next design step
+* domain-specific hybrid projection/merge policy: done for variant policy, hydrated variant projection, and intermediate provider/service projection candidates
 
 ### Review follow-ups before projection/merge policy
 
@@ -555,6 +555,8 @@ The future BeautyQ hybrid output remains `BeautySearchResponse`.
 The pure BeautyQ domain-specific hybrid projection/merge policy model now exists as
 `BeautyQHybridProjectionPolicy.lexicalFirstSemanticSupplement`.
 The pure hydrated variant projection adapter now exists as `BeautyQHybridVariantProjection.project`.
+The pure provider/service projection policy model now exists as
+`BeautyQHybridProviderServiceProjection.project`.
 
 The implemented pure policy is lexical-first semantic supplement:
 
@@ -574,8 +576,23 @@ The implemented pure hydrated variant projection adapter:
 * preserves candidate sources
 * fails clearly when a policy candidate has no matching `VariantSearchDocument`
 
+The implemented pure provider/service projection policy:
+
+* creates intermediate provider and service-intent candidates only
+* does not build `BeautySearchResponse` provider or service carousels
+* groups provider candidates by `masterLocationId`
+* groups service-intent candidates by `serviceId`
+* preserves group order by first candidate occurrence in policy order
+* unions candidate sources inside each group
+* counts unique matching variant ids inside each group
+* keeps provider sample matching variant ids in policy order with duplicates removed
+* uses `representativeDisplayScore` only as a display value, not ranking, fusion, or reranking
+* derives `representativeDisplayScore` from the first group candidate with `LexicalThenSemantic`: lexical score when present, otherwise semantic score, otherwise `0.0`
+
 Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
 They are not raw Qdrant outputs.
+Mapping provider/service projection candidates into `ProviderSearchResult.bestScore` and
+`ServiceIntentSearchResult.bestScore` remains future work because those fields look like ranking scores while ES and Qdrant scores are channel-local.
 
 Facets and inferred filters remain ES/parser-owned:
 
@@ -594,6 +611,7 @@ The implemented pure policy merges only at the `MasterServiceOfferVariantId` can
 It does not fuse scores, rerank, fallback, route queries, produce facets, or produce provider/service carousels.
 It does not define production routing.
 The hydrated variant projection adapter also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
+The provider/service projection policy also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
 
 Domain point ids must be Qdrant-compatible ids:
 
@@ -626,7 +644,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Design provider/service carousel policy or non-production adapter wiring, with no production wiring.
+1. Decide mapping from provider/service projection candidates into response `bestScore` fields before enabling provider/service carousels.
 2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
@@ -675,7 +693,10 @@ Current stage:
 * BeautyQ pure variant-only response adapter intentionally suppresses `providerCarousel`, `serviceIntentCarousel`, `facets`, and `inferredFilters`
 * `VariantSearchResult.score` in the pure hybrid response adapter is display-only under `LexicalThenSemantic`: lexical score when present, otherwise semantic score, otherwise `0.0`
 * the pure hybrid response adapter display score is not a fused score, not a ranking score, and is not used to reorder candidates
-* provider/service carousel derivation remains future work because `bestScore` semantics need a separate policy
+* BeautyQ pure provider/service projection policy exists and is done through `BeautyQHybridProviderServiceProjection.project`
+* BeautyQ pure provider/service projection policy creates intermediate provider/service candidates only, groups by `masterLocationId` and `serviceId`, and preserves group order by first candidate occurrence in policy order
+* `representativeDisplayScore` in the pure provider/service projection policy is display-only under `LexicalThenSemantic`, not ranking, fusion, or reranking
+* provider/service response carousel derivation remains future work because mapping into `ProviderSearchResult.bestScore` and `ServiceIntentSearchResult.bestScore` needs a separate decision
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
@@ -690,7 +711,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* design provider/service carousel policy before deriving `bestScore`, or design non-production adapter wiring
+* decide mapping from provider/service projection candidates into response `bestScore` fields before enabling provider/service carousels
 * keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
@@ -715,7 +736,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is designing provider/service carousel policy or non-production adapter wiring, but still no production wiring
+* next code step is deciding mapping from provider/service projection candidates into response `bestScore` fields before enabling provider/service carousels, but still no production wiring
 
 Wiring TODO:
 
