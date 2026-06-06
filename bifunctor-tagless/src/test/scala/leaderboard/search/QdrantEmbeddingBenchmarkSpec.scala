@@ -7,6 +7,7 @@ import leaderboard.search.qdrant.{
   QdrantEmbeddingBenchmarkCandidate,
   QdrantEmbeddingBenchmarkExpected,
   QdrantEmbeddingBenchmarkPlan,
+  QdrantEmbeddingBenchmarkReportFormatter,
   QdrantEmbeddingBenchmarkQueryResult,
   QdrantEmbeddingBenchmarkRunMode,
 }
@@ -334,6 +335,140 @@ final class QdrantEmbeddingBenchmarkSpec extends AnyWordSpec {
 
       assert(metrics.variantHitAtK)
       assert(aggregate.variantRecallAtK == 1.0)
+    }
+
+    "format report with run mode, k, candidate metadata, aggregate metrics, and query rows" in {
+      val candidate = QdrantEmbeddingBenchmarkCandidate(
+        candidateId = "qwen3-0_6b",
+        modelName = "Qwen3-Embedding-0.6B",
+        endpointLabel = "http://localhost:8081",
+        vectorDimension = 1024,
+      )
+      val report = QdrantEmbeddingBenchmark.report(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
+          candidates = List(candidate),
+          k = 5,
+        ),
+        queryResultsByCandidateId = Map(
+          candidate.candidateId -> List(
+            queryResult(
+              candidateId = candidate.candidateId,
+              queryId = "q_broad_004",
+              topVariantIds = List(variantId(1), variantId(9)),
+              topProviderIds = List(providerId(1)),
+              topServiceIds = List(serviceId(1)),
+              queryLatencyMs = Some(12),
+            )
+          )
+        ),
+        expectationsByQueryId = Map(
+          "q_broad_004" -> expectedResult(
+            acceptableVariantIds = List(variantId(1)),
+            acceptableProviderIds = List(providerId(1)),
+            acceptableServiceIds = List(serviceId(1)),
+          )
+        ),
+      )
+
+      val formatted = QdrantEmbeddingBenchmarkReportFormatter.format(report)
+
+      assert(formatted.contains("runMode: SingleEndpointManualRestart"))
+      assert(formatted.contains("k: 5"))
+      assert(formatted.contains("candidates: qwen3-0_6b"))
+      assert(formatted.contains("candidate: qwen3-0_6b"))
+      assert(formatted.contains("modelName: Qwen3-Embedding-0.6B"))
+      assert(formatted.contains("endpointLabel: http://localhost:8081"))
+      assert(formatted.contains("vectorDimension: 1024"))
+      assert(formatted.contains("queryCount: 1"))
+      assert(formatted.contains("variantRecallAtK: 1.0000"))
+      assert(formatted.contains("meanReciprocalRankAtK: 1.0000"))
+      assert(formatted.contains("providerHitRateAtK: 1.0000"))
+      assert(formatted.contains("serviceHitRateAtK: 1.0000"))
+      assert(formatted.contains("meanQueryLatencyMs: 12.0000"))
+      assert(formatted.contains("q_broad_004 | candidate=qwen3-0_6b | variantHit=yes | rank=1 | reciprocalRank=1.0000"))
+    }
+
+    "format comparison deltas for dual candidate reports" in {
+      val leftCandidate = QdrantEmbeddingBenchmarkCandidate("qwen3-0_6b", "Qwen3-Embedding-0.6B", "http://localhost:8081", 1024)
+      val rightCandidate = QdrantEmbeddingBenchmarkCandidate("qwen3-4b", "Qwen3-Embedding-4B", "http://localhost:8082", 2560)
+      val report = QdrantEmbeddingBenchmark.report(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+          candidates = List(leftCandidate, rightCandidate),
+          k = 5,
+        ),
+        queryResultsByCandidateId = Map(
+          leftCandidate.candidateId -> List(
+            queryResult(
+              candidateId = leftCandidate.candidateId,
+              queryId = "q1",
+              topVariantIds = List(variantId(9)),
+              topProviderIds = List(providerId(9)),
+              topServiceIds = List(serviceId(9)),
+              queryLatencyMs = Some(40),
+            )
+          ),
+          rightCandidate.candidateId -> List(
+            queryResult(
+              candidateId = rightCandidate.candidateId,
+              queryId = "q1",
+              topVariantIds = List(variantId(1)),
+              topProviderIds = List(providerId(1)),
+              topServiceIds = List(serviceId(1)),
+              queryLatencyMs = Some(20),
+            )
+          ),
+        ),
+        expectationsByQueryId = Map(
+          "q1" -> expectedResult(
+            acceptableVariantIds = List(variantId(1)),
+            acceptableProviderIds = List(providerId(1)),
+            acceptableServiceIds = List(serviceId(1)),
+          )
+        ),
+      )
+
+      val formatted = QdrantEmbeddingBenchmarkReportFormatter.format(report)
+
+      assert(formatted.contains("runMode: DualEndpointParallel"))
+      assert(formatted.contains("comparisons:"))
+      assert(formatted.contains("qwen3-0_6b -> qwen3-4b"))
+      assert(formatted.contains("variantRecallAtKDelta: +1.0000"))
+      assert(formatted.contains("meanReciprocalRankAtKDelta: +1.0000"))
+      assert(formatted.contains("providerHitRateAtKDelta: +1.0000"))
+      assert(formatted.contains("serviceHitRateAtKDelta: +1.0000"))
+      assert(formatted.contains("meanQueryLatencyMsDelta: -20.0000"))
+    }
+
+    "omit latency delta cleanly when absent" in {
+      val report = QdrantEmbeddingBenchmarkReportFormatter.format(
+        leaderboard.search.qdrant.QdrantEmbeddingBenchmarkReport(
+          plan = QdrantEmbeddingBenchmarkPlan(
+            runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+            candidates = List(
+              QdrantEmbeddingBenchmarkCandidate("left", "Left", "http://localhost:8081", 1024),
+              QdrantEmbeddingBenchmarkCandidate("right", "Right", "http://localhost:8082", 2560),
+            ),
+            k = 3,
+          ),
+          candidateReports = Nil,
+          comparisons = List(
+            leaderboard.search.qdrant.QdrantEmbeddingBenchmarkComparison(
+              left = QdrantEmbeddingBenchmarkAggregate("left", 1, 0.0, 0.0, 0.0, 0.0, None),
+              right = QdrantEmbeddingBenchmarkAggregate("right", 1, 1.0, 1.0, 1.0, 1.0, Some(10.0)),
+              variantRecallAtKDelta = 1.0,
+              meanReciprocalRankAtKDelta = 1.0,
+              providerHitRateAtKDelta = 1.0,
+              serviceHitRateAtKDelta = 1.0,
+              meanQueryLatencyMsDelta = None,
+            )
+          ),
+        )
+      )
+
+      assert(report.contains("left -> right"))
+      assert(!report.contains("meanQueryLatencyMsDelta"))
     }
   }
 

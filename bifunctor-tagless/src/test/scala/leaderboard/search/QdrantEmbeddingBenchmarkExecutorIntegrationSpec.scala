@@ -15,6 +15,7 @@ import leaderboard.search.qdrant.{
   QdrantEmbeddingBenchmarkExecutorConfig,
   QdrantEmbeddingBenchmarkPlan,
   QdrantEmbeddingBenchmarkQdrantCandidateExecutor,
+  QdrantEmbeddingBenchmarkReportFormatter,
   QdrantEmbeddingBenchmarkRunMode,
   QdrantEmbeddingBenchmarkRunner,
 }
@@ -136,6 +137,7 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
         ),
       )
       report <- new QdrantEmbeddingBenchmarkRunner(executor).run(plan.copy(candidates = candidates), tinyQueries)
+      _ <- ZIO.succeed(println(QdrantEmbeddingBenchmarkReportFormatter.format(report)))
       _ <- assertIO(report.candidateReports.size == plan.runMode.expectedCandidateCount)
       _ <- assertIO(report.candidateReports.forall(_.aggregate.queryCount == tinyQueries.size))
       _ <- assertIO(report.candidateReports.forall(_.queryMetrics.size == tinyQueries.size))
