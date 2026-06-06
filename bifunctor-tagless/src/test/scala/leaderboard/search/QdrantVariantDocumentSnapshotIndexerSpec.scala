@@ -10,6 +10,7 @@ import leaderboard.search.qdrant.{
   QdrantCollectionCompatibilityExpectation,
   QdrantCollectionCompatibilityGuard,
   QdrantCollectionInfoClient,
+  QdrantSnapshotIndexingCompatibilityGuard,
   QdrantSnapshotIndexingResult,
   QdrantVariantDocumentSnapshotIndexer,
   QdrantVariantDocumentUpsert,
@@ -75,10 +76,9 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(documents), Some(snapshotCallsRef)),
         new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
-        Some(expectation -> compatibleGuard),
       )
 
-      val result = run(indexer.indexSnapshot(expectation.collectionName))
+      val result = run(indexer.indexCompatibleSnapshot(compatibility(compatibleGuard)))
 
       assert(runUio(snapshotCallsRef.get) == 1)
       assert(runUio(indexCallsRef.get) == documents.map(document => expectation.collectionName -> document.variantId))
@@ -96,10 +96,12 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(List(variantDocument(1))), Some(snapshotCallsRef)),
         new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
-        Some(expectation -> guard(new ConstQdrantCollectionInfoClient(Left(failure)))),
       )
 
-      val error = runFail(indexer.indexSnapshot(expectation.collectionName))
+      val failingGuard =
+        guard(new ConstQdrantCollectionInfoClient(Left(failure)))
+
+      val error = runFail(indexer.indexCompatibleSnapshot(compatibility(failingGuard)))
 
       assert(error == failure)
       assert(runUio(snapshotCallsRef.get) == 0)
@@ -112,10 +114,12 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(List(variantDocument(1))), Some(snapshotCallsRef)),
         new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
-        Some(expectation -> guard(new ConstQdrantCollectionInfoClient(Right(collectionInfoJson(dimension = 768))))),
       )
 
-      val error = runFail(indexer.indexSnapshot(expectation.collectionName))
+      val mismatchingGuard =
+        guard(new ConstQdrantCollectionInfoClient(Right(collectionInfoJson(dimension = 768))))
+
+      val error = runFail(indexer.indexCompatibleSnapshot(compatibility(mismatchingGuard)))
 
       error match {
         case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
@@ -133,10 +137,9 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Left(failure)),
         new FakeDocumentIndexer(callsRef, Right(Json.obj())),
-        Some(expectation -> compatibleGuard),
       )
 
-      val error = runFail(indexer.indexSnapshot("beauty-semantic"))
+      val error = runFail(indexer.indexCompatibleSnapshot(compatibility(compatibleGuard)))
 
       assert(error == failure)
       assert(runUio(callsRef.get).isEmpty)
@@ -149,13 +152,12 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(documents)),
         new FailingOnVariantDocumentIndexer(callsRef, documents(1).variantId, failure),
-        Some(expectation -> compatibleGuard),
       )
 
-      val error = runFail(indexer.indexSnapshot("beauty-semantic"))
+      val error = runFail(indexer.indexCompatibleSnapshot(compatibility(compatibleGuard)))
 
       assert(error == failure)
-      assert(runUio(callsRef.get) == documents.take(2).map(document => "beauty-semantic" -> document.variantId))
+      assert(runUio(callsRef.get) == documents.take(2).map(document => expectation.collectionName -> document.variantId))
     }
   }
 
@@ -229,6 +231,9 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
 
   private def compatibleGuard: QdrantCollectionCompatibilityGuard =
     guard(new ConstQdrantCollectionInfoClient(Right(collectionInfoJson())))
+
+  private def compatibility(guard: QdrantCollectionCompatibilityGuard): QdrantSnapshotIndexingCompatibilityGuard =
+    QdrantSnapshotIndexingCompatibilityGuard(expectation, guard)
 
   private def guard(client: QdrantCollectionInfoClient): QdrantCollectionCompatibilityGuard =
     new QdrantCollectionCompatibilityGuard(new QdrantCollectionCompatibilityChecker(client))

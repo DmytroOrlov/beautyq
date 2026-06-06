@@ -10,24 +10,36 @@ final case class QdrantSnapshotIndexingResult(
   indexedVariantIds: List[MasterServiceOfferVariantId],
 )
 
+final case class QdrantSnapshotIndexingCompatibilityGuard(
+  expectation: QdrantCollectionCompatibilityExpectation,
+  guard: QdrantCollectionCompatibilityGuard,
+)
+
 final class QdrantVariantDocumentSnapshotIndexer(
   snapshotProvider: VariantSearchDocumentSnapshotProvider[IO],
   documentIndexer: QdrantVariantDocumentUpsert,
-  compatibilityGuard: Option[(QdrantCollectionCompatibilityExpectation, QdrantCollectionCompatibilityGuard)] = None,
 ) {
   def indexSnapshot(collectionName: String): IO[QueryFailure, QdrantSnapshotIndexingResult] =
+    indexDocuments(collectionName)
+
+  def indexCompatibleSnapshot(
+    compatibility: QdrantSnapshotIndexingCompatibilityGuard,
+  ): IO[QueryFailure, QdrantSnapshotIndexingResult] =
     for {
-      _ <- compatibilityGuard.fold[IO[QueryFailure, Unit]](ZIO.unit) {
-        case (expectation, guard) => guard.requireCompatible(expectation)
+      _ <- compatibility.guard.requireCompatible(compatibility.expectation)
+      result <- indexDocuments(compatibility.expectation.collectionName)
+    } yield result
+
+  private def indexDocuments(collectionName: String): IO[QueryFailure, QdrantSnapshotIndexingResult] =
+    snapshotProvider.loadSnapshot().flatMap { documents =>
+      ZIO.foreach(documents) { document =>
+        documentIndexer.upsertDocument(collectionName, document).as(document.variantId)
+      }.map { indexedVariantIds =>
+        QdrantSnapshotIndexingResult(
+          totalDocumentsLoaded = documents.size,
+          totalDocumentsIndexed = indexedVariantIds.size,
+          indexedVariantIds = indexedVariantIds,
+        )
       }
-      documents <- snapshotProvider.loadSnapshot()
-      indexedVariantIds <- ZIO.foreach(documents) {
-        document =>
-          documentIndexer.upsertDocument(collectionName, document).as(document.variantId)
-      }
-    } yield QdrantSnapshotIndexingResult(
-      totalDocumentsLoaded = documents.size,
-      totalDocumentsIndexed = indexedVariantIds.size,
-      indexedVariantIds = indexedVariantIds,
-    )
+    }
 }
