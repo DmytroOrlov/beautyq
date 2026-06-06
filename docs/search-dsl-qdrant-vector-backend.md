@@ -141,6 +141,27 @@ Current status is intentionally non-production:
 - the env-gated experimental service spec exists
 - no production collection lifecycle exists
 
+Current non-production readiness building blocks:
+
+- `QdrantCollectionIdentity`
+- `QdrantCollectionInfoDecoder`
+- `QdrantCollectionCompatibilityValidator`
+- `QdrantCollectionCompatibilityChecker`
+- `QdrantCollectionCompatibilityGuard`
+- `QdrantVariantDocumentSnapshotIndexer.indexCompatibleSnapshot`
+- `QdrantSnapshotIndexingCompatibilityGuard`
+- env-gated guarded snapshot indexing integration smoke
+
+Safe non-production collection readiness flow:
+
+1. choose an explicit versioned collection name
+2. create an isolated collection outside production lifecycle
+3. build `QdrantCollectionCompatibilityExpectation`
+4. run the read-only compatibility guard
+5. only after compatibility succeeds, load the snapshot
+6. index the snapshot through `QdrantVariantDocumentSnapshotIndexer`
+7. delete temp collections only in tests or non-production experiments
+
 Collection identity must be explicit and versioned. At minimum it should include:
 
 - domain/search spec version
@@ -167,6 +188,18 @@ Non-production policy:
 - tests may delete and recreate isolated collections
 - experiments may use explicit versioned collection names
 
+Forbidden for now:
+
+- no production collection manager
+- no destructive recreate of active collections
+- no alias or blue-green switching
+- no production Distage wiring
+- no Qdrant-as-default
+- no fallback-on-zero-results
+- no score fusion or reranking
+- no HTTP/API metadata surface
+- no Elasticsearch facet replacement
+
 Future production policy:
 
 - no destructive recreate of an active collection
@@ -174,17 +207,11 @@ Future production policy:
 - any future alias switch requires full indexing plus eval and health checks first
 - a rollback strategy is required before production rollout
 
-Non-goals for this step:
+Next code step:
 
-- no collection manager implementation
-- no Distage wiring
-- no HTTP or API changes
-- no routing metadata source
-- no fallback behavior
-- no score fusion or reranking
-- no Elasticsearch facet replacement
-
-The next code step after this doc, if needed, should be pure config or policy types only, with no Qdrant client calls yet.
+- either a non-production explicit experiment composition helper
+- or config-only types for experiment collection readiness
+- still no production wiring
 
 ## 8. Safe implementation sequence
 
