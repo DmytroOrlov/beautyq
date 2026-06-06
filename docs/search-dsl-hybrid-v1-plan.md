@@ -373,7 +373,7 @@ Lifecycle and response decisions:
 Before any future code wiring, require normal `sbt test`, max env full test when llama/Qdrant gates are available, focused fake-only experiment runner tests, and docs review confirming production guardrails.
 
 The construction-safe activation factory with thunked dependencies is implemented.
-The next code step is a tiny synthetic second-domain proof for the generic seams.
+The tiny synthetic second-domain proof for the generic seams is now implemented at test level.
 Production hybrid remains out of scope.
 
 ### Output Shape
@@ -449,6 +449,11 @@ Merge must not happen:
 
 `HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is input to the BeautyQ policy.
 It is a container and diagnostic boundary only, not the policy itself.
+
+A tiny synthetic second-domain test proof now exists in `HybridGenericSecondDomainProofSpec`.
+It uses a fake `ArticleId` domain to show that the generic retrieval container and generic Qdrant indexing seam can be reused at test/proof level outside BeautyQ.
+This is not a second production domain implementation, and it does not mean a production-generic hybrid engine is complete.
+BeautyQ-specific projection, carousel, routing, lifecycle, and metadata work remain separate future work.
 
 ### Channel Responsibilities
 
@@ -533,13 +538,13 @@ Future implementation should be split into small patches:
 3. Done: add pure provider/service response carousel adapter behavior, still without production wiring.
 4. Done: docs/design non-production resource-gating boundary.
 5. Done: construction-safe hybrid experiment activation factory.
-6. test(search): tiny synthetic second-domain proof for generic seams.
+6. Done: test(search) tiny synthetic second-domain proof for generic seams.
 7. Optional later: non-production Distage/test module adapter.
 8. Only later consider routing decision data, pure router tests, Qdrant candidate response model, experimental service path, or hybrid tests for `q_broad_004` and `q_broad_006`.
 9. Only later consider score fusion or reranking.
 
-The next implementation patch should be the second-domain proof.
-It should be pure only and should add no new generic abstractions unless a concrete gap appears.
+The second-domain proof is done.
+Any next implementation patch should keep the same boundary: pure or explicitly non-production only, and no new generic abstractions unless a concrete gap appears.
 
 It must not include:
 
@@ -706,5 +711,5 @@ What is still missing before runtime hybrid:
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
 - an optional later explicit non-production Distage/test module adapter, still disabled by default and still not production
 
-The recommended next step is a tiny synthetic second-domain proof for the generic seams.
+The recommended next step is the optional later non-production Distage/test module adapter, still disabled by default and still not production.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

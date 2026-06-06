@@ -535,6 +535,7 @@ The generic hybrid document retrieval seam now supports:
 * backend-independent channel result storage through `HybridDocumentRetrievalResult[Id]`
 * channel execution diagnostics through `HybridDocumentRetrievalDiagnostics`
 * lexical-first distinct document-id diagnostics without ranking claims
+* a tiny synthetic second-domain test proof through `HybridGenericSecondDomainProofSpec`
 
 `HybridDocumentRetrievalResult[Id]` holds lexical and semantic hits for the same domain id type.
 It preserves lexical hit order, preserves semantic hit order, and keeps lexical and semantic scores separate.
@@ -543,6 +544,11 @@ It preserves lexical hit order, preserves semantic hit order, and keeps lexical 
 It is not merge policy, ranking, score fusion, fallback, reranking, or production routing.
 
 This seam only holds separate channel outputs. It does not implement merge policy, score fusion, reranking, fallback, query routing, production hybrid behavior, Elasticsearch behavior changes, or Qdrant behavior changes.
+
+The synthetic second-domain proof is test-level only.
+It uses a fake `ArticleId` / `ArticleSearchDocument` domain to show that the existing generic retrieval container and Qdrant indexing boundary can be reused beyond BeautyQ without importing BeautyQ ids, carousels, providers, salons, services, or response adapters.
+It does not mean a second production domain implementation exists, and it does not mean a production-generic hybrid engine is complete.
+BeautyQ projection, merge, provider/service grouping, and carousel response logic remain domain-specific.
 
 BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over the generic backend boundary. It keeps the existing `candidates(...)` API and BeautyQ `MasterServiceOfferVariantId` candidate hit shape while exposing generic document hits for reusable semantic infrastructure.
 
@@ -757,7 +763,7 @@ Verification required before any future code wiring:
 * docs review confirming production guardrails
 
 The construction-safe activation factory with thunked dependencies is implemented.
-The next code step is a tiny synthetic second-domain proof for the generic seams.
+The tiny synthetic second-domain proof for the generic seams is now implemented at test level.
 The optional later Distage/test module adapter must remain disabled by default and must not add production wiring.
 
 Domain point ids must be Qdrant-compatible ids:
@@ -791,8 +797,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. test(search): add tiny synthetic second-domain proof for generic seams
-2. optional later: non-production Distage/test module adapter
+1. optional later: non-production Distage/test module adapter
 
 Immediate code target details:
 
@@ -835,6 +840,7 @@ Current stage:
 * generic lexical/Elasticsearch backend result seam exists and is done through `LexicalDocumentHit[Id]` and `LexicalDocumentBackend[F, Id]`
 * generic hybrid document retrieval seam exists and is done through `HybridDocumentRetrievalResult[Id]`
 * generic hybrid document retrieval diagnostics exist through `HybridDocumentRetrievalDiagnostics`
+* tiny synthetic second-domain proof exists and is done through `HybridGenericSecondDomainProofSpec`
 * BeautyQ domain-specific hybrid projection/merge policy model exists and is done through `BeautyQHybridProjectionPolicy.lexicalFirstSemanticSupplement`
 * BeautyQ pure hybrid policy merges only at `MasterServiceOfferVariantId` candidate level, preserves lexical and semantic scores separately, and does not fuse scores, rerank, fallback, route, produce facets, or produce provider/service carousels
 * BeautyQ pure hydrated variant projection adapter exists and is done through `BeautyQHybridVariantProjection.project`
@@ -878,13 +884,12 @@ Current stage:
 
 Immediate next step:
 
-1. test(search): add tiny synthetic second-domain proof for generic seams
-2. optional later: non-production Distage/test module adapter
+1. optional later: non-production Distage/test module adapter
 
 Second-domain proof requirements:
 
-* pure only
-* no new generic abstractions unless a concrete gap appears
+* done: pure-only synthetic proof added
+* done: no new generic abstractions were needed
 
 Later pinned TODO:
 
@@ -892,8 +897,8 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* add a tiny synthetic second-domain proof for the generic seams
 * keep any next implementation pure or explicitly non-production, without production wiring
+* keep any later Distage/test adapter disabled by default and outside production wiring
 
 Benchmark TODOs:
 
@@ -917,7 +922,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is a tiny synthetic second-domain proof for generic seams
+* done: tiny synthetic second-domain proof for generic seams
 
 Wiring TODO:
 
