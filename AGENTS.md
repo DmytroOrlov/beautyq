@@ -22,15 +22,15 @@ Use explicit labels:
 
 Do not call work commit-ready unless `FULL GREEN`, `USER-VERIFIED FULL GREEN`, or the user explicitly accepts focused-only verification.
 
-For `src/main` changes, run focused checks and then full test unless the user says they will run it.
+For `src/main` changes, run focused checks and then full test unless the user accepts focused-only.
 
-If full test fails: stop, report failing suite/test and exact error, and fix only the failure.
+If full test fails, stop, report the failing suite/test and exact error, then fix only that failure.
 
 ## sbt rules
 
 * Do not run sbt commands in parallel.
 * Prefer one chained, project-scoped sbt command.
-* Do not use `-no-server` unless explicitly asked.
+* Do not use `-no-server` unless the user explicitly asks.
 * If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
 * If escalation is unavailable or rejected, report `VERIFICATION BLOCKED` and the exact command for the user.
 * Do not edit source to work around sbt locks.
@@ -62,7 +62,7 @@ cpf "$OUT"
 echo "$OUT"
 ```
 
-Do not rely on generic `Pasted text.txt` or stale `2.txt`.
+Do not rely on generic `Pasted text.txt` or stale numbered files.
 
 ## Warning rules
 
@@ -78,6 +78,7 @@ Do not rely on generic `Pasted text.txt` or stale `2.txt`.
 * `ModuleDef` order and `memoizationRoots` order are not sequencing guarantees.
 * Distage has graph GC; inspect roots, axes, and suite inheritance.
 * Do not remove `@unused` parent repo dependencies if they preserve FK table creation order.
+* Disabled experiment activation must not accidentally construct heavy Qdrant/semantic dependencies. Use explicit axis/config, by-name/factory/resource boundaries, or separate modules.
 
 ## Seed-backed snapshot rule
 
@@ -128,7 +129,7 @@ Preserve:
 * enum values as stable `stringCode`
 * unified numeric storage path
 
-## BeautyQ search rules
+## BeautyQ search principles
 
 Search semantics live in DSL/spec data, not backend interpreters.
 
@@ -138,9 +139,19 @@ Allowed place for BeautyQ semantics:
 
 Do not hardcode service names, query phrases, eval query ids, ranking rules, or attribute semantics inside ES/Qdrant clients, generic parser/interpreter code, or in-memory backends.
 
-Elasticsearch owns lexical search, filters, facets, exact attributes, price/duration, lexical ranking, and normal response assembly.
+Elasticsearch owns:
 
-Qdrant owns semantic candidate recall only.
+* lexical search
+* filters
+* facets
+* exact attributes
+* price/duration
+* lexical ranking
+* normal lexical response assembly
+
+Qdrant owns:
+
+* semantic candidate recall only
 
 Rules:
 
@@ -150,6 +161,36 @@ Rules:
 * Residual text alone must never route to Qdrant.
 * Hard-negative/noise queries must not route to Qdrant because of residual text.
 * Eval query ids may appear in tests/docs, not production routing.
+
+## Current search architecture
+
+Current direction:
+
+```text
+domain DSL/spec
+→ generic lexical/semantic retrieval boundaries
+→ generic hybrid retrieval container
+→ BeautyQ-specific projection/merge policy
+→ explicit non-production experiment
+→ later production design
+```
+
+Already present:
+
+* generic Qdrant document indexing seam
+* Qdrant point-id validation boundary
+* generic semantic document backend/hit
+* generic lexical document backend/hit
+* generic semantic assembly/projection seams
+* generic hybrid retrieval container
+* BeautyQ hybrid projection/merge policy
+* BeautyQ hybrid response pipeline
+* non-production BeautyQ hybrid experiment runner
+* disabled-by-default activation skeleton
+* Qdrant readiness config / collection identity / compatibility guard
+* benchmark reporting and validation infrastructure
+
+These are not production hybrid search.
 
 ## Search task modes
 
@@ -219,22 +260,85 @@ QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true \
 sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
 ```
 
-## Hybrid/fallback rules
+## Hybrid / experiment rules
 
-Hybrid starts with pure model/tests. Runtime hybrid requires explicit user approval.
+Hybrid starts with pure model/tests and explicit non-production experiments. Runtime hybrid requires explicit user approval.
 
 Still forbidden unless explicitly requested:
 
 * `BeautySearchService` production wiring
+* production Distage wiring
 * ES/Qdrant production hybrid calls
 * production fallback behavior
 * score fusion/reranking
 * Qdrant-as-default
 * residual-text routing
 * eval query ids in main code
-* Elasticsearch/Qdrant client behavior changes
+* HTTP/API routing metadata fields
+* production collection manager
+* startup auto-indexing
+* alias/blue-green implementation
+* benchmark decision as automatic model switch
 
-Next runtime work must start with read-only design/validation unless the user explicitly asks to implement.
+Current hybrid policy:
+
+* generic hybrid retrieval container is not a ranking policy
+* BeautyQ projection/merge is domain-specific
+* lexical-first semantic-supplement ordering is explicit
+* ES and Qdrant scores stay separate
+* display scores are not fused ranking scores
+* facets and inferred filters stay lexical/parser-owned unless a separate policy is approved
+
+Before non-production wiring, decide/design:
+
+* activation axis/config
+* disabled means Qdrant dependencies are not constructed
+* who creates readiness config
+* who creates collections
+* who runs snapshot indexing
+* kill switch / explicit invocation path
+* diagnostics surface
+
+## Qdrant lifecycle rules
+
+Versioned collection names are the current policy. No production alias/blue-green yet.
+
+Qdrant readiness must use one source of truth:
+
+* collection name
+* vector name
+* vector dimension
+* distance
+* embedding model identity when available
+
+Dimension/vector/distance mismatch must fail fast.
+
+Delete/recreate is allowed only in tests/non-production experiments. Never silently recreate an active production-like collection.
+
+Snapshot indexing with a guard must index only the collection that was checked for compatibility.
+
+Qdrant point ids must be Qdrant-compatible ids. Arbitrary domain ids belong in payload.
+
+## Benchmark rules
+
+Benchmark output is decision support, not production automation.
+
+Do not use benchmark decisions as:
+
+* automatic model switch
+* routing policy
+* score calibration
+* production rollout signal
+
+Benchmark runner must fail on:
+
+* duplicate candidate ids
+* unexpected candidate ids
+* result query ids without expectations
+* missing expected query results
+* duplicate result query ids per candidate
+
+The benchmark subset is still small. Do not make broad model-quality claims until the subset is expanded.
 
 ## Dictionary rules
 

@@ -283,7 +283,7 @@ It runs injected lexical and semantic document backends plus document lookup and
 
 `BeautyQNonProductionHybridResponseExperiment` exists, but it is not app wiring.
 It is a library/manual/test/local boundary for explicit experiments.
-`BeautyQNonProductionHybridExperimentActivation` exists as a disabled-by-default activation/factory skeleton.
+`BeautyQNonProductionHybridExperimentActivation` exists as a disabled-by-default, construction-safe activation/factory boundary.
 It builds this non-production experiment runner only when explicitly enabled.
 It is not app wiring, not production hybrid, and does not replace production `BeautySearchService`.
 Production `BeautySearchService` remains unchanged.
@@ -303,31 +303,22 @@ final class BeautyQNonProductionHybridResponseExperiment[F[+_, +_]: Error2](
 }
 ```
 
-Current problem:
+Construction-safe thunk/factory boundary status:
 
-- the activation skeleton is library-safe, but not construction-safe for Distage/resource graphs when dependencies are supplied by value
-- `Option[Experiment]` or `buildIfEnabled(...): Option[...]` is not enough if lexical, semantic, Qdrant, lookup, or experiment dependencies are evaluated before the factory call
-- disabled activation must prevent construction/evaluation of semantic, Qdrant, and experiment dependencies
-- returning `None` after dependencies were already built is not sufficient
+- implemented in `BeautyQNonProductionHybridExperimentActivation.buildIfEnabled`
+- dependency parameters are by-name
+- `Disabled` does not evaluate lexical, semantic, Qdrant, lookup, or experiment dependency thunks
+- `Enabled` evaluates each dependency factory once when building the runner
+- building the runner does not call backend or lookup methods
+- tests are fake-only, with no real Distage module and no real Qdrant/ES/Llama resources
 
-Candidate gating strategies to evaluate, not implement here:
+Important limitation:
 
-- module/axis-level gating before resource construction
-- by-name, thunk, or factory dependencies
-- `Resource`/factory-based construction
-- a separate non-production module included only under explicit activation
-
-Preferred immediate code target:
-
-- a small pure construction-safe factory/thunk boundary, not a Distage `ModuleDef`
-- fake-only tests proving `Disabled` does not evaluate the lexical backend thunk
-- fake-only tests proving `Disabled` does not evaluate the semantic backend thunk
-- fake-only tests proving `Disabled` does not evaluate the document lookup thunk
-- fake-only tests proving `Enabled` evaluates each dependency factory exactly once when building the runner
-- no real Distage `ModuleDef`
-- no real Qdrant/ES/Llama resources
-
-This code target creates the invariant that a later Distage/test module adapter can rely on.
+- the thunk/by-name factory is construction-safe only when callers pass unevaluated constructors/thunks
+- this is not final Distage/module resource gating
+- final Distage/module work must ensure disabled mode does not include or build the Qdrant/semantic resource graph at all
+- the experiment remains manual/test/local only
+- production lifecycle, routing, and metadata remain absent by design
 It is not the final resource-gating mechanism.
 
 Activation decisions:
@@ -381,7 +372,8 @@ Lifecycle and response decisions:
 
 Before any future code wiring, require normal `sbt test`, max env full test when llama/Qdrant gates are available, focused fake-only experiment runner tests, and docs review confirming production guardrails.
 
-The next code step is a pure construction-safe activation factory with thunked dependencies.
+The construction-safe activation factory with thunked dependencies is implemented.
+The next code step is a tiny synthetic second-domain proof for the generic seams.
 Production hybrid remains out of scope.
 
 ### Output Shape
@@ -539,23 +531,15 @@ Future implementation should be split into small patches:
 1. Done: add pure BeautyQ hybrid projection/merge policy model/tests only.
 2. Done: add pure BeautyQ provider/service projection policy model/tests only.
 3. Done: add pure provider/service response carousel adapter behavior, still without production wiring.
-4. docs/design: non-production resource-gating boundary.
-5. feat(search): construction-safe hybrid experiment activation factory.
+4. Done: docs/design non-production resource-gating boundary.
+5. Done: construction-safe hybrid experiment activation factory.
 6. test(search): tiny synthetic second-domain proof for generic seams.
 7. Optional later: non-production Distage/test module adapter.
 8. Only later consider routing decision data, pure router tests, Qdrant candidate response model, experimental service path, or hybrid tests for `q_broad_004` and `q_broad_006`.
 9. Only later consider score fusion or reranking.
 
-The next implementation patch should be the construction-safe hybrid experiment activation factory:
-
-- pure/fake-only
-- by-name, thunk, or factory dependencies
-- `Disabled` does not evaluate dependency thunks
-- `Enabled` evaluates each dependency factory exactly once when building the runner
-- no Distage `ModuleDef` yet
-- no real Qdrant/ES/Llama resources
-
-The second-domain proof should be pure only and should add no new generic abstractions unless a concrete gap appears.
+The next implementation patch should be the second-domain proof.
+It should be pure only and should add no new generic abstractions unless a concrete gap appears.
 
 It must not include:
 
@@ -713,15 +697,14 @@ Current implementation ladder:
 12. Pure `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels` provider/service response carousel projection
 13. Pure `BeautyQHybridResponsePipeline.projectResponse` retrieval-to-response composition
 14. Non-production `BeautyQNonProductionHybridResponseExperiment` injected-backend response experiment runner
-15. Disabled-by-default `BeautyQNonProductionHybridExperimentActivation` activation/factory skeleton
+15. Disabled-by-default, construction-safe `BeautyQNonProductionHybridExperimentActivation` activation/factory boundary
 
 What is still missing before runtime hybrid:
 
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- a pure construction-safe activation factory where disabled mode does not evaluate lexical, semantic, lookup, Qdrant, or experiment dependency thunks
 - an optional later explicit non-production Distage/test module adapter, still disabled by default and still not production
 
-The recommended next step is the pure construction-safe activation factory.
+The recommended next step is a tiny synthetic second-domain proof for the generic seams.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

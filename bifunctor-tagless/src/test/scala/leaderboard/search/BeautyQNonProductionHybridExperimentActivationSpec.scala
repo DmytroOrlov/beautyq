@@ -23,9 +23,9 @@ final class BeautyQNonProductionHybridExperimentActivationSpec extends AnyWordSp
     "build no runner when disabled" in {
       val built = BeautyQNonProductionHybridExperimentActivation.buildIfEnabled[IO](
         activation = BeautyQNonProductionHybridExperimentActivation.Disabled,
-        lexicalBackend = fakeLexicalBackend,
-        semanticBackend = fakeSemanticBackend,
-        documentLookup = fakeDocumentLookup,
+        lexicalBackend = fail("Disabled must not evaluate lexical backend thunk"),
+        semanticBackend = fail("Disabled must not evaluate semantic backend thunk"),
+        documentLookup = fail("Disabled must not evaluate document lookup thunk"),
       )
 
       assert(built.isEmpty)
@@ -114,14 +114,65 @@ final class BeautyQNonProductionHybridExperimentActivationSpec extends AnyWordSp
     }
 
     "construct from injected seams without calling lexical semantic or lookup during build" in {
+      var lexicalBuilds = 0
+      var semanticBuilds = 0
+      var lookupBuilds = 0
+      var lexicalCalls = 0
+      var semanticCalls = 0
+      var lookupCalls = 0
+
+      def countedLexicalBackend: LexicalDocumentBackend[IO, MasterServiceOfferVariantId] = {
+        lexicalBuilds += 1
+        new LexicalDocumentBackend[IO, MasterServiceOfferVariantId] {
+          override def documentHits(
+            input: UserSearchInput,
+            intent: ParsedSearchIntent,
+          ): IO[QueryFailure, List[LexicalDocumentHit[MasterServiceOfferVariantId]]] = {
+            lexicalCalls += 1
+            ZIO.dieMessage(s"lexical backend must not be called during activation build: $input $intent")
+          }
+        }
+      }
+
+      def countedSemanticBackend: SemanticDocumentBackend[IO, MasterServiceOfferVariantId] = {
+        semanticBuilds += 1
+        new SemanticDocumentBackend[IO, MasterServiceOfferVariantId] {
+          override def documentHits(
+            input: UserSearchInput,
+            intent: ParsedSearchIntent,
+          ): IO[QueryFailure, List[SemanticDocumentHit[MasterServiceOfferVariantId]]] = {
+            semanticCalls += 1
+            ZIO.dieMessage(s"semantic backend must not be called during activation build: $input $intent")
+          }
+        }
+      }
+
+      def countedDocumentLookup: SemanticDocumentLookup[IO, MasterServiceOfferVariantId, VariantSearchDocument] = {
+        lookupBuilds += 1
+        new SemanticDocumentLookup[IO, MasterServiceOfferVariantId, VariantSearchDocument] {
+          override def lookup(
+            ids: List[MasterServiceOfferVariantId]
+          ): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] = {
+            lookupCalls += 1
+            ZIO.dieMessage(s"document lookup must not be called during activation build: $ids")
+          }
+        }
+      }
+
       val built = BeautyQNonProductionHybridExperimentActivation.buildIfEnabled[IO](
         activation = BeautyQNonProductionHybridExperimentActivation.Enabled(createConfig("pure-build")),
-        lexicalBackend = fakeLexicalBackend,
-        semanticBackend = fakeSemanticBackend,
-        documentLookup = fakeDocumentLookup,
+        lexicalBackend = countedLexicalBackend,
+        semanticBackend = countedSemanticBackend,
+        documentLookup = countedDocumentLookup,
       )
 
       assert(built.nonEmpty)
+      assert(lexicalBuilds == 1)
+      assert(semanticBuilds == 1)
+      assert(lookupBuilds == 1)
+      assert(lexicalCalls == 0)
+      assert(semanticCalls == 0)
+      assert(lookupCalls == 0)
     }
   }
 
