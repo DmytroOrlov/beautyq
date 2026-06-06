@@ -30,13 +30,24 @@ Current measured coverage is split across two separate backend paths:
 - Qdrant-only semantic candidate quality covers `q_broad_004` and `q_broad_006`.
 - ES plus Qdrant cover the current `63/63` eval intent space only as separately measured backends.
 
+Current status note:
+
+- generic lexical result seam exists
+- generic semantic backend, assembly, and projection seams exist
+- generic hybrid retrieval container exists
+- production hybrid orchestration is still not implemented
+
 There is currently no production hybrid behavior:
 
 - no fallback from ES to Qdrant
 - no general Qdrant production default
+- no production routing change
 - no hybrid ranking
 - no score fusion
 - no reranking
+
+The current hybrid retrieval seam is a container/diagnostic boundary only.
+It does not add score fusion, reranking, fallback, or a production routing change.
 
 The Qdrant semantic quality gate is intentionally environment-gated:
 
@@ -281,6 +292,7 @@ Future implementation should be split into small patches:
 5. Add hybrid tests for `q_broad_004` and `q_broad_006`.
 6. Add regression tests proving lexical and hard-negative queries still stay ES-only.
 7. Only later consider score fusion or reranking.
+8. Design domain-specific hybrid projection/merge policy before production wiring.
 
 The first implementation patch should only introduce inspectable routing decisions and pure tests around those decisions.
 
@@ -293,6 +305,10 @@ It must not include:
 - Elasticsearch interpreter changes
 - Qdrant retrieval changes
 - ranking changes
+- score fusion
+- reranking
+- fallback
+- production routing change
 
 ## 10. Generic and Domain Reuse Implications
 
@@ -317,6 +333,7 @@ Backend interpreters should stay generic:
 - Elasticsearch interpreters consume lexical/filter/facet specs.
 - Qdrant interpreters consume vector/search specs.
 - Hybrid routing consumes parser/spec output and future explicit routing metadata.
+- Hybrid retrieval containers stay separate from domain-specific merge policy.
 
 A second domain should be able to reuse:
 
@@ -430,4 +447,5 @@ What is still missing before runtime hybrid:
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
 
-The recommended next step is to keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.
+The recommended next step is to design the domain-specific hybrid projection/merge policy before production wiring.
+Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

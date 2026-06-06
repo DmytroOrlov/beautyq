@@ -45,11 +45,15 @@ Current implemented non-production pieces:
 * `QdrantPointId`
 * `QdrantDocumentPointBuilder`
 * `QdrantSearchDocumentIndexer`
+* `LexicalDocumentHit`
+* `LexicalDocumentBackend`
 * `SemanticDocumentHit`
 * `SemanticDocumentBackend`
 * `SemanticDocumentLookup`
 * `SemanticCandidateAssembler`
 * `SemanticResponseProjector`
+* `HybridDocumentRetrievalResult`
+* `HybridDocumentRetrievalDiagnostics`
 * `QdrantCollectionInfoClient`
 * `QdrantCandidateHitDecoder`
 * `QdrantSemanticCandidateSearch`
@@ -73,6 +77,17 @@ Current implemented non-production pieces:
 The current path is best described as a non-production experimental readiness foundation.
 
 It is not production lifecycle, not production routing, not production fallback, and not production hybrid wiring.
+
+Reusable domain seams/status:
+
+* generic Qdrant document indexing seam: done
+* Qdrant point-id invariant: done
+* generic semantic backend boundary: done
+* generic semantic candidate assembly boundary: done
+* generic semantic response projector boundary: done
+* generic lexical/Elasticsearch result seam: done
+* generic hybrid document retrieval seam: done
+* domain-specific hybrid projection/merge policy: next design step
 
 ## 3. Non-goals for now
 
@@ -507,11 +522,16 @@ The generic hybrid document retrieval seam now supports:
 * channel execution diagnostics through `HybridDocumentRetrievalDiagnostics`
 * lexical-first distinct document-id diagnostics without ranking claims
 
+`HybridDocumentRetrievalResult[Id]` holds lexical and semantic hits for the same domain id type.
+It preserves lexical hit order, preserves semantic hit order, and keeps lexical and semantic scores separate.
+`distinctDocumentIdsInChannelOrder` is a diagnostic/id-list helper only.
+It is not ranking, fusion, fallback, reranking, or production routing.
+
 This seam is only a boundary for holding separate channel outputs. It does not implement score fusion, reranking, fallback, query routing, production hybrid behavior, Elasticsearch behavior changes, or Qdrant behavior changes.
 
 BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over the generic backend boundary. It keeps the existing `candidates(...)` API and BeautyQ `MasterServiceOfferVariantId` candidate hit shape while exposing generic document hits for reusable semantic infrastructure.
 
-BeautyQ variant, provider, and service carousel projection remains domain-specific. The reusable semantic and lexical infrastructure should stop at generic hit boundaries, generic candidate assembly, and the generic response projector boundary; BeautyQ response shape, grouping, carousel limits, facets, and inferred filters stay in BeautyQ-specific projection code.
+BeautyQ variant, provider, and service carousel projection remains domain-specific. `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over the reusable seams; the reusable semantic and lexical infrastructure should stop at generic hit boundaries, generic candidate assembly, the generic response projector boundary, and the generic hybrid retrieval container. BeautyQ response shape, grouping, carousel limits, facets, merge policy, and inferred filters stay in BeautyQ-specific projection code.
 
 Domain point ids must be Qdrant-compatible ids:
 
@@ -544,9 +564,9 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
-2. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
-3. Keep benchmark subset expansion as a pinned later TODO, not the immediate next coding step.
+1. Design domain-specific hybrid projection/merge policy.
+2. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
+3. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
 4. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
 
 Then:
@@ -584,6 +604,7 @@ Current stage:
 * generic hybrid document retrieval diagnostics exist through `HybridDocumentRetrievalDiagnostics`
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
+* `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
 * no production hybrid wiring yet
@@ -629,6 +650,7 @@ Watch items:
 * `ExperimentalHybridRouteDiagnostics.reasonCategory` is a string; make it an ADT only if it becomes an API/log contract
 * confirm `QdrantNonProductionHybridExperiment.build` keeps spec/readiness embedding/vector config consistent before wiring
 * keep benchmark stdout output as manual tooling, not product telemetry
+* raw string point-id helpers may remain for compatibility, but new generic indexing paths must use `QdrantPointId`
 
 Forbidden for now:
 
