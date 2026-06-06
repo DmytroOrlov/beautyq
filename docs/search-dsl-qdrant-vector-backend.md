@@ -652,6 +652,77 @@ The provider/service projection policy also does not produce `BeautySearchRespon
 The response pipeline adapter produces `BeautySearchResponse` only by composing existing pure components; it does not add runtime service integration, Elasticsearch calls, Qdrant calls, llama.cpp calls, score fusion, reranking, fallback, routing, or production wiring.
 The non-production response experiment runner can execute injected lexical and semantic document backends plus document lookup and then call that pure pipeline, but it is not production hybrid and remains disabled by default because it has no app-graph wiring.
 
+### Non-production BeautyQ hybrid experiment activation boundary
+
+`BeautyQNonProductionHybridResponseExperiment` is present and done as a library/manual/test/local boundary.
+It is not app startup wiring, not a replacement for production `BeautySearchService`, and not a production feature.
+It has no default activation.
+
+Current shape:
+
+```scala
+final class BeautyQNonProductionHybridResponseExperiment[F[+_, +_]: Error2](
+  lexicalBackend: LexicalDocumentBackend[F, MasterServiceOfferVariantId],
+  semanticBackend: SemanticDocumentBackend[F, MasterServiceOfferVariantId],
+  documentLookup: SemanticDocumentLookup[F, MasterServiceOfferVariantId, VariantSearchDocument],
+) {
+  def search(
+    input: UserSearchInput,
+    intent: ParsedSearchIntent,
+  ): F[QueryFailure, BeautyQNonProductionHybridResponseExperimentResult]
+}
+```
+
+Activation rules:
+
+* any future activation must be explicit and disabled by default
+* activation must not be inferred from `Mode.Test` alone
+* activation must not be enabled by `Mode.Prod`
+* acceptable future shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
+* unacceptable shapes are implicit production default, silent `Mode.Test` behavior, HTTP request flag without separate API design, and residual-text-based automatic semantic routing
+
+Wiring boundary:
+
+* future wiring may bind the runner only behind a named non-production boundary
+* wiring must use injected lexical backend, semantic backend, and document lookup
+* wiring must not create Qdrant collections
+* wiring must not index snapshots on startup
+* production search must not depend on Qdrant availability
+* production `BeautySearchService` must not change
+
+Routing and metadata boundary:
+
+* the runner takes an already parsed `ParsedSearchIntent`
+* the runner does not own parser behavior
+* the runner does not own production routing
+* the runner does not introduce HTTP/API metadata fields
+* the runner does not implement fallback-on-zero-results
+* the runner does not implement residual-text routing
+
+Lifecycle boundary:
+
+* Qdrant collection readiness and snapshot indexing remain explicit setup steps
+* collection create/delete/recreate remains outside production app lifecycle
+* alias/blue-green lifecycle is not implemented
+* production collection manager is not implemented
+
+Response semantics:
+
+* the runner uses the pure `BeautyQHybridResponsePipeline`
+* no-fusion, no-reranking, no-fallback, and no-routing semantics remain unchanged
+* provider/service `bestScore` values remain display-only where produced by the pure adapter
+* facets and inferred filters remain ES/parser-owned
+
+Verification required before any future code wiring:
+
+* normal `sbt test`
+* max env full test when llama/Qdrant gates are available
+* focused fake-only experiment runner tests
+* docs review confirming production guardrails
+
+The next code step, if accepted, is only a non-production activation/module skeleton.
+It must remain disabled by default and must not add production wiring.
+
 Domain point ids must be Qdrant-compatible ids:
 
 * UUID ids render as JSON strings
@@ -683,7 +754,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Design explicit non-production activation/wiring boundary, still not production.
+1. Add a design-approved non-production activation/module skeleton, still disabled by default and still not production.
 2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
@@ -757,7 +828,7 @@ Current stage:
 
 Immediate next step:
 
-* design explicit non-production activation/wiring boundary, still not production
+* add a design-approved non-production activation/module skeleton, still disabled by default and still not production
 
 Later pinned TODO:
 
@@ -765,7 +836,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* design explicit non-production activation/wiring boundary, still not production
+* add a design-approved non-production activation/module skeleton, still disabled by default and still not production
 * keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
@@ -790,7 +861,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is designing explicit non-production activation/wiring boundary, still not production
+* next code step is a design-approved non-production activation/module skeleton, still disabled by default and still not production
 
 Wiring TODO:
 

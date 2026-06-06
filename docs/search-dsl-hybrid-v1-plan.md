@@ -277,6 +277,68 @@ It composes pure retrieval projection into `BeautySearchResponse`.
 The experiment runner is fake-testable/manual-library boundary only, not production hybrid.
 It runs injected lexical and semantic document backends plus document lookup and then calls the pure pipeline.
 
+### Non-production activation and wiring boundary
+
+`BeautyQNonProductionHybridResponseExperiment` exists, but it is not app wiring.
+It is a library/manual/test/local boundary for explicit experiments.
+It has no default activation and does not replace production `BeautySearchService`.
+
+Current shape:
+
+```scala
+final class BeautyQNonProductionHybridResponseExperiment[F[+_, +_]: Error2](
+  lexicalBackend: LexicalDocumentBackend[F, MasterServiceOfferVariantId],
+  semanticBackend: SemanticDocumentBackend[F, MasterServiceOfferVariantId],
+  documentLookup: SemanticDocumentLookup[F, MasterServiceOfferVariantId, VariantSearchDocument],
+) {
+  def search(
+    input: UserSearchInput,
+    intent: ParsedSearchIntent,
+  ): F[QueryFailure, BeautyQNonProductionHybridResponseExperimentResult]
+}
+```
+
+Activation decisions:
+
+- future activation must be explicit and disabled by default
+- activation must not be inferred from `Mode.Test` alone
+- activation must not be enabled by `Mode.Prod`
+- acceptable future shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
+- unacceptable shapes are implicit production default, silent `Mode.Test` behavior, HTTP request flag without separate API design, and residual-text-based automatic semantic routing
+
+Wiring decisions:
+
+- future wiring may bind the runner only behind a named non-production boundary
+- wiring must use injected lexical backend, semantic backend, and document lookup
+- wiring must not create Qdrant collections
+- wiring must not index snapshots on startup
+- production search must not depend on Qdrant availability
+- production `BeautySearchService` must not change
+
+Routing and metadata decisions:
+
+- the runner takes already parsed `ParsedSearchIntent`
+- the runner does not own parser behavior
+- the runner does not own production routing
+- the runner does not introduce HTTP/API metadata fields
+- the runner does not implement fallback-on-zero-results
+- the runner does not implement residual-text routing
+
+Lifecycle and response decisions:
+
+- Qdrant collection readiness and snapshot indexing remain explicit setup steps
+- collection create/delete/recreate remains outside production app lifecycle
+- alias/blue-green lifecycle and production collection manager are not implemented
+- the runner uses the pure `BeautyQHybridResponsePipeline`
+- no-fusion, no-reranking, no-fallback, and no-routing semantics remain unchanged
+- provider/service `bestScore` values remain display-only where produced by the pure adapter
+- facets and inferred filters remain ES/parser-owned
+
+Before any future code wiring, require normal `sbt test`, max env full test when llama/Qdrant gates are available, focused fake-only experiment runner tests, and docs review confirming production guardrails.
+
+The next step is a design-approved non-production activation skeleton only, not production wiring.
+Production hybrid remains out of scope.
+
 ### Output Shape
 
 The final BeautyQ hybrid output remains `BeautySearchResponse`.
@@ -440,8 +502,8 @@ Future implementation should be split into small patches:
 9. Add regression tests proving lexical and hard-negative queries still stay ES-only.
 10. Only later consider score fusion or reranking.
 
-The next implementation patch should decide the non-production adapter/wiring boundary.
-It should not add runtime wiring.
+The next implementation patch may add only a design-approved non-production activation skeleton.
+It should remain disabled by default and must not add production wiring.
 
 It must not include:
 
@@ -604,7 +666,7 @@ What is still missing before runtime hybrid:
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- explicit non-production activation/wiring design, still not production
+- a design-approved non-production activation skeleton, still disabled by default and still not production
 
-The recommended next step is explicit non-production activation/wiring design, not runtime production wiring.
+The recommended next step is a design-approved non-production activation skeleton, not runtime production wiring.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.
