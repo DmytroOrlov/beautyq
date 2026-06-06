@@ -626,8 +626,8 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Design/decide the `BeautySearchResponse` adapter score/display policy before any response projection.
-2. Keep any next implementation to pure response adapter tests only, without production wiring.
+1. Design provider/service carousel policy or non-production adapter wiring, with no production wiring.
+2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
 
@@ -670,6 +670,12 @@ Current stage:
 * BeautyQ pure hybrid policy merges only at `MasterServiceOfferVariantId` candidate level, preserves lexical and semantic scores separately, and does not fuse scores, rerank, fallback, route, produce facets, or produce provider/service carousels
 * BeautyQ pure hydrated variant projection adapter exists and is done through `BeautyQHybridVariantProjection.project`
 * BeautyQ pure hydrated variant projection adapter hydrates only variant candidates from `VariantSearchDocument`, preserves separate lexical and semantic scores, and fails clearly on missing documents
+* BeautyQ pure variant-only response adapter exists and is done through `BeautyQHybridResponseAdapter.variantOnlyResponse`
+* BeautyQ pure variant-only response adapter builds `variantCarousel` only from hydrated variant candidates
+* BeautyQ pure variant-only response adapter intentionally suppresses `providerCarousel`, `serviceIntentCarousel`, `facets`, and `inferredFilters`
+* `VariantSearchResult.score` in the pure hybrid response adapter is display-only under `LexicalThenSemantic`: lexical score when present, otherwise semantic score, otherwise `0.0`
+* the pure hybrid response adapter display score is not a fused score, not a ranking score, and is not used to reorder candidates
+* provider/service carousel derivation remains future work because `bestScore` semantics need a separate policy
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
@@ -684,8 +690,8 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* design/decide the `BeautySearchResponse` adapter score/display policy before any response projection
-* keep any next implementation to pure response adapter tests only, without production wiring
+* design provider/service carousel policy before deriving `bestScore`, or design non-production adapter wiring
+* keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
 
@@ -709,7 +715,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is designing/deciding the `BeautySearchResponse` adapter score/display policy before any response projection
+* next code step is designing provider/service carousel policy or non-production adapter wiring, but still no production wiring
 
 Wiring TODO:
 
