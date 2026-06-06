@@ -259,7 +259,9 @@ Qdrant should not be asked to compute exact filters or canonical facet counts in
 
 ## 8. BeautyQ Hybrid Projection/Merge Policy
 
-This section defines the BeautyQ-specific policy boundary before any pure policy model or non-production wiring is implemented.
+This section defines the BeautyQ-specific policy boundary.
+The pure policy model now exists as `BeautyQHybridProjectionPolicy.lexicalFirstSemanticSupplement`.
+The pure hydrated variant projection adapter now exists as `BeautyQHybridVariantProjection.project`.
 
 It does not implement production hybrid.
 It does not change production `BeautySearchService`.
@@ -275,7 +277,15 @@ The variant carousel is the primary merge surface:
 - ids appearing in both channels are represented once
 - channel diagnostics and channel-local scores may be retained for inspection
 - ES scores and Qdrant scores are not directly comparable
-- final score fusion is not defined here
+- score fusion is not defined or implemented here
+
+The hydrated variant projection adapter is not full response projection:
+
+- it hydrates only variant candidates from `VariantSearchDocument`
+- it preserves separate lexical and semantic scores
+- it does not fuse scores
+- it fails clearly when a policy candidate has no matching document
+- it does not build `BeautySearchResponse`, provider carousel, service carousel, facets, or inferred filters
 
 Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
 They are not raw Qdrant outputs.
@@ -298,7 +308,7 @@ Merge must not happen:
 - inside the Elasticsearch query interpreter
 - as production route switching
 
-`HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is input to the future BeautyQ policy.
+`HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is input to the BeautyQ policy.
 It is a container and diagnostic boundary only, not the policy itself.
 
 ### Channel Responsibilities
@@ -320,14 +330,16 @@ Qdrant remains semantic recall only:
 
 ### Overlap and Ordering
 
-Overlap policy for the first pure model:
+Implemented policy:
 
-- duplicate document ids across channels collapse to one variant candidate
-- preserve enough diagnostics to know which channels matched
-- do not fuse ES and Qdrant scores
-- do not introduce reranking
-
-Lexical-first or semantic-supplement ordering may be considered later, but must be explicit in a pure policy patch.
+- `lexicalFirstSemanticSupplement` emits lexical candidates first
+- semantic-only candidates append after lexical candidates
+- overlap collapses to one candidate by `MasterServiceOfferVariantId`
+- duplicate lexical ids use the first lexical hit
+- duplicate semantic ids use the first semantic hit
+- lexical and semantic scores are preserved separately
+- candidate sources record lexical, semantic, or both
+- no score fusion, reranking, fallback, query routing, provider/service carousel production, facets, or inferred filters are implemented
 
 ### Forbidden In This Design
 
@@ -377,16 +389,19 @@ Hybrid tests should prove routing behavior as well as result quality. A broad qu
 
 Future implementation should be split into small patches:
 
-1. Add pure BeautyQ hybrid projection/merge policy model/tests only.
-2. Add routing decision data model only.
-3. Add pure router tests only.
-4. Add Qdrant candidate response model.
-5. Add experimental hybrid service path.
-6. Add hybrid tests for `q_broad_004` and `q_broad_006`.
-7. Add regression tests proving lexical and hard-negative queries still stay ES-only.
-8. Only later consider score fusion or reranking.
+1. Done: add pure BeautyQ hybrid projection/merge policy model/tests only.
+2. Next: decide whether to add a non-production adapter from policy candidates into BeautyQ response projection, still without production wiring.
+3. Add non-production adapter/pure projection tests only if the adapter boundary is accepted.
+4. Add routing decision data model only.
+5. Add pure router tests only.
+6. Add Qdrant candidate response model.
+7. Add experimental hybrid service path.
+8. Add hybrid tests for `q_broad_004` and `q_broad_006`.
+9. Add regression tests proving lexical and hard-negative queries still stay ES-only.
+10. Only later consider score fusion or reranking.
 
-The first implementation patch after this design should only introduce the pure BeautyQ projection/merge policy model and tests.
+The next implementation patch after the pure policy model should only consider a non-production adapter or pure projection tests.
+It should not add runtime wiring.
 
 It must not include:
 
@@ -536,13 +551,15 @@ Current implementation ladder:
 5. `QdrantCandidateResponseProjector`
 6. `ExperimentalHybridSearchBackend`
 7. `ExperimentalHybridRouteDecider`
+8. Pure `BeautyQHybridProjectionPolicy`
+9. Pure `BeautyQHybridVariantProjection`
 
 What is still missing before runtime hybrid:
 
-- pure BeautyQ domain-specific hybrid projection/merge policy model/tests
+- a decided `BeautySearchResponse` adapter score/display policy before any response projection
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
 
-The recommended next code step is pure BeautyQ domain-specific hybrid projection/merge policy model/tests only.
+The recommended next code step is deciding the `BeautySearchResponse` adapter score/display policy before creating any response projection, still without production wiring.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

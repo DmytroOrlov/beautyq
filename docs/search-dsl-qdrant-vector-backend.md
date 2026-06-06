@@ -552,13 +552,27 @@ BeautyQ variant, provider, and service carousel projection remains domain-specif
 
 The future BeautyQ hybrid output remains `BeautySearchResponse`.
 
-The primary merge surface is the variant carousel:
+The pure BeautyQ domain-specific hybrid projection/merge policy model now exists as
+`BeautyQHybridProjectionPolicy.lexicalFirstSemanticSupplement`.
+The pure hydrated variant projection adapter now exists as `BeautyQHybridVariantProjection.project`.
+
+The implemented pure policy is lexical-first semantic supplement:
 
 * Elasticsearch contributes deterministic lexical/filter/facet results.
 * Qdrant contributes semantic recall candidates by `MasterServiceOfferVariantId`.
 * overlapping variant ids from both channels must be represented once.
-* both channel diagnostics and channel-local scores may be retained for diagnostics.
+* lexical hits are preserved first, with duplicate lexical ids deduplicated by first hit.
+* semantic-only ids append after lexical ids, preserving first semantic-hit order.
+* both channel diagnostics and channel-local scores are retained separately.
 * ES and Qdrant scores are not directly comparable and must not be fused in this design.
+
+The implemented pure hydrated variant projection adapter:
+
+* hydrates only variant candidates from `VariantSearchDocument`
+* preserves policy candidate order
+* preserves lexical and semantic scores separately
+* preserves candidate sources
+* fails clearly when a policy candidate has no matching `VariantSearchDocument`
 
 Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
 They are not raw Qdrant outputs.
@@ -573,11 +587,13 @@ Facets and inferred filters remain ES/parser-owned:
 Merge must happen at the domain candidate/document id level, then project into BeautyQ carousels.
 It must not happen at raw Qdrant point level, inside the Qdrant backend, or inside the Elasticsearch query interpreter.
 
-`HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is the input container for a future BeautyQ policy.
+`HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is the input container for the BeautyQ policy.
 It is not itself the policy.
 
-The first pure policy may consider lexical-first or semantic-supplement ordering, but that choice must be explicit in a later pure policy patch.
-This document does not define final score fusion, reranking, fallback, or production routing.
+The implemented pure policy merges only at the `MasterServiceOfferVariantId` candidate level.
+It does not fuse scores, rerank, fallback, route queries, produce facets, or produce provider/service carousels.
+It does not define production routing.
+The hydrated variant projection adapter also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
 
 Domain point ids must be Qdrant-compatible ids:
 
@@ -610,8 +626,8 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Pure BeautyQ domain-specific hybrid projection/merge policy model/tests, only after this design is accepted.
-2. Only later consider non-production explicit wiring.
+1. Design/decide the `BeautySearchResponse` adapter score/display policy before any response projection.
+2. Keep any next implementation to pure response adapter tests only, without production wiring.
 
 Then:
 
@@ -650,6 +666,10 @@ Current stage:
 * generic lexical/Elasticsearch backend result seam exists and is done through `LexicalDocumentHit[Id]` and `LexicalDocumentBackend[F, Id]`
 * generic hybrid document retrieval seam exists and is done through `HybridDocumentRetrievalResult[Id]`
 * generic hybrid document retrieval diagnostics exist through `HybridDocumentRetrievalDiagnostics`
+* BeautyQ domain-specific hybrid projection/merge policy model exists and is done through `BeautyQHybridProjectionPolicy.lexicalFirstSemanticSupplement`
+* BeautyQ pure hybrid policy merges only at `MasterServiceOfferVariantId` candidate level, preserves lexical and semantic scores separately, and does not fuse scores, rerank, fallback, route, produce facets, or produce provider/service carousels
+* BeautyQ pure hydrated variant projection adapter exists and is done through `BeautyQHybridVariantProjection.project`
+* BeautyQ pure hydrated variant projection adapter hydrates only variant candidates from `VariantSearchDocument`, preserves separate lexical and semantic scores, and fails clearly on missing documents
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
@@ -664,8 +684,8 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* pure BeautyQ domain-specific hybrid projection/merge policy model/tests, only after this design is accepted
-* only later consider non-production explicit wiring
+* design/decide the `BeautySearchResponse` adapter score/display policy before any response projection
+* keep any next implementation to pure response adapter tests only, without production wiring
 
 Benchmark TODOs:
 
@@ -689,7 +709,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is pure BeautyQ domain-specific hybrid projection/merge policy model/tests, only after this design is accepted
+* next code step is designing/deciding the `BeautySearchResponse` adapter score/display policy before any response projection
 
 Wiring TODO:
 
