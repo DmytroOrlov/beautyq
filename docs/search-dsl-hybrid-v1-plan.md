@@ -340,13 +340,18 @@ Lifecycle and response decisions:
 - collection create/delete/recreate remains outside production app lifecycle
 - alias/blue-green lifecycle and production collection manager are not implemented
 - the runner uses the pure `BeautyQHybridResponsePipeline`
+- explicit hybrid carousel limits exist through `BeautyQHybridResponseCarouselLimits`
+- variant, provider, and service carousels are explicitly limited after policy/projection order is established
+- the limit policy derives from `UserSearchInput` and `BeautySearchSpecV1.carouselSpec`: variants use `min(input.limit, spec.carouselSpec.variantSize)` with negative values normalized to empty output, providers use `spec.carouselSpec.providerSize`, and service intents use `spec.carouselSpec.serviceIntentSize`
+- limits make the pure pipeline closer to the response contract, but the pipeline remains response-shaped and non-production rather than production-ready
 - no-fusion, no-reranking, no-fallback, and no-routing semantics remain unchanged
 - provider/service `bestScore` values remain display-only where produced by the pure adapter
 - facets and inferred filters remain ES/parser-owned
+- activation factory by-value dependencies are library-safe but not sufficient for Distage resource gating
 
 Before any future code wiring, require normal `sbt test`, max env full test when llama/Qdrant gates are available, focused fake-only experiment runner tests, and docs review confirming production guardrails.
 
-The next step is deciding whether to add a test-only/non-production module adapter around this activation skeleton, not production wiring.
+The next step is non-production activation/module design where disabled mode does not construct Qdrant or semantic resources.
 Production hybrid remains out of scope.
 
 ### Output Shape
@@ -512,7 +517,7 @@ Future implementation should be split into small patches:
 9. Add regression tests proving lexical and hard-negative queries still stay ES-only.
 10. Only later consider score fusion or reranking.
 
-The next implementation patch may decide whether to add a test-only/non-production module adapter around the activation skeleton.
+The next implementation patch may design a non-production activation/module boundary where disabled mode does not construct Qdrant or semantic resources.
 It should remain disabled by default and must not add production wiring.
 
 It must not include:
@@ -677,7 +682,7 @@ What is still missing before runtime hybrid:
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- an explicit test-only/non-production module adapter around the activation skeleton, still disabled by default and still not production
+- an explicit non-production activation/module boundary where disabled mode does not construct Qdrant or semantic resources, still disabled by default and still not production
 
-The recommended next step is deciding whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring.
+The recommended next step is non-production activation/module design where disabled mode does not construct Qdrant or semantic resources.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

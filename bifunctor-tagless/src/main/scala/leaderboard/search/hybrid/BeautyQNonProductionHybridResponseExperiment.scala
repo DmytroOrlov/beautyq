@@ -3,6 +3,7 @@ package leaderboard.search.hybrid
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.VariantSearchDocument
+import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.lexical.LexicalDocumentBackend
 import leaderboard.search.semantic.{SemanticDocumentBackend, SemanticDocumentLookup}
 import leaderboard.search.{BeautySearchResponse, ParsedSearchIntent, UserSearchInput}
@@ -32,9 +33,10 @@ final class BeautyQNonProductionHybridResponseExperiment[F[+_, +_]: Error2](
       F.flatMap(semanticBackend.documentHits(input, intent)) { semanticHits =>
         val retrieval = HybridDocumentRetrievalResult.fromHits(lexicalHits, semanticHits)
         val distinctVariantIds = HybridDocumentRetrievalResult.distinctDocumentIdsInChannelOrder(retrieval)
+        val limits = BeautyQHybridResponseCarouselLimits.fromSearchSpecAndInput(BeautySearchSpecV1.spec, input)
 
         F.flatMap(documentLookup.lookup(distinctVariantIds)) { documentsByVariantId =>
-          BeautyQHybridResponsePipeline.projectResponse(retrieval, documentsByVariantId) match {
+          BeautyQHybridResponsePipeline.projectResponse(retrieval, documentsByVariantId, limits) match {
             case Right(pipelineResult) =>
               F.pure(
                 BeautyQNonProductionHybridResponseExperimentResult(

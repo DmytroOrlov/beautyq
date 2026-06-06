@@ -2,6 +2,8 @@ package leaderboard.search.hybrid
 
 import leaderboard.search.{BeautySearchResponse, ProviderSearchResult, ServiceIntentSearchResult, VariantSearchResult}
 import leaderboard.search.document.VariantSearchDocument
+import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.UserSearchInput
 
 sealed trait BeautyQHybridDisplayScorePolicy
 object BeautyQHybridDisplayScorePolicy {
@@ -21,6 +23,31 @@ final case class BeautyQHybridResponseAdapterResult(
   response: BeautySearchResponse,
   diagnostics: BeautyQHybridResponseAdapterDiagnostics,
 )
+
+final case class BeautyQHybridResponseCarouselLimits(
+  variantSize: Int,
+  providerSize: Int,
+  serviceIntentSize: Int,
+) {
+  def normalized: BeautyQHybridResponseCarouselLimits =
+    BeautyQHybridResponseCarouselLimits(
+      variantSize = math.max(0, variantSize),
+      providerSize = math.max(0, providerSize),
+      serviceIntentSize = math.max(0, serviceIntentSize),
+    )
+}
+
+object BeautyQHybridResponseCarouselLimits {
+  def fromSearchSpecAndInput(
+    spec: BeautySearchSpec,
+    input: UserSearchInput,
+  ): BeautyQHybridResponseCarouselLimits =
+    BeautyQHybridResponseCarouselLimits(
+      variantSize = math.min(input.limit, spec.carouselSpec.variantSize),
+      providerSize = spec.carouselSpec.providerSize,
+      serviceIntentSize = spec.carouselSpec.serviceIntentSize,
+    ).normalized
+}
 
 object BeautyQHybridResponseAdapter {
   def variantOnlyResponse(
@@ -52,16 +79,18 @@ object BeautyQHybridResponseAdapter {
   def responseWithProviderServiceCarousels(
     variantProjection: BeautyQHybridVariantProjectionResult,
     providerServiceProjection: BeautyQHybridProviderServiceProjectionResult,
+    limits: BeautyQHybridResponseCarouselLimits,
     displayScorePolicy: BeautyQHybridDisplayScorePolicy =
       BeautyQHybridDisplayScorePolicy.LexicalThenSemantic,
   ): BeautyQHybridResponseAdapterResult = {
-    val variantResults = toVariantResults(variantProjection, displayScorePolicy)
+    val normalizedLimits = limits.normalized
+    val variantResults = toVariantResults(variantProjection, displayScorePolicy).take(normalizedLimits.variantSize)
 
     BeautyQHybridResponseAdapterResult(
       response = BeautySearchResponse(
         variantCarousel = variantResults,
-        providerCarousel = providerServiceProjection.providerCandidates.map(toProviderResult),
-        serviceIntentCarousel = providerServiceProjection.serviceIntentCandidates.map(toServiceIntentResult),
+        providerCarousel = providerServiceProjection.providerCandidates.map(toProviderResult).take(normalizedLimits.providerSize),
+        serviceIntentCarousel = providerServiceProjection.serviceIntentCandidates.map(toServiceIntentResult).take(normalizedLimits.serviceIntentSize),
         facets = Nil,
         inferredFilters = Nil,
       ),

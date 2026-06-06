@@ -204,12 +204,31 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
       assert(result.response.variantCarousel.map(_.variantId) == List(lexical.variantId))
       assert(calls.map(_.productPrefix) == List("Lexical", "Semantic", "Lookup"))
     }
+
+    "derive explicit response limits from BeautySearchSpecV1 and input limit" in {
+      val documents = (25 to 36).toList.map(index => variantDocument(index))
+      val searchInput = input.copy(limit = 2)
+
+      val (result, _) = runSuccess(
+        lexicalHits = documents.map(document => LexicalDocumentHit(document.variantId, document.variantId.hashCode.toDouble)),
+        semanticHits = Nil,
+        documents = documents,
+        searchInput = searchInput,
+        parsedIntent = intentFor(searchInput),
+      )
+
+      assert(result.response.variantCarousel.map(_.variantId) == documents.take(2).map(_.variantId))
+      assert(result.response.providerCarousel.map(_.masterLocationId) == documents.take(10).map(_.masterLocationId))
+      assert(result.response.serviceIntentCarousel.map(_.serviceId) == documents.take(10).map(_.serviceId))
+    }
   }
 
   private def runSuccess(
     lexicalHits: List[LexicalDocumentHit[MasterServiceOfferVariantId]],
     semanticHits: List[SemanticDocumentHit[MasterServiceOfferVariantId]],
     documents: List[VariantSearchDocument],
+    searchInput: UserSearchInput = input,
+    parsedIntent: ParsedSearchIntent = intent,
   ): (leaderboard.search.hybrid.BeautyQNonProductionHybridResponseExperimentResult, List[Call]) =
     run {
       Ref.make(List.empty[Call]).flatMap { callsRef =>
@@ -218,7 +237,7 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
           lexicalResult = Right(lexicalHits),
           semanticResult = Right(semanticHits),
           lookupResult = Right(documents.iterator.map(document => document.variantId -> document).toMap),
-        ).search(input, intent).zip(callsRef.get.map(_.reverse))
+        ).search(searchInput, parsedIntent).zip(callsRef.get.map(_.reverse))
       }
     }
 
@@ -300,12 +319,14 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
   private type CallLog = List[Call]
 
   private val input = UserSearchInput(query = "synthetic non-production hybrid", userLat = None, userLon = None, limit = 10)
-  private val intent = ParsedSearchIntent(
-    originalQuery = input.query,
+  private val intent = intentFor(input)
+
+  private def intentFor(searchInput: UserSearchInput): ParsedSearchIntent = ParsedSearchIntent(
+    originalQuery = searchInput.query,
     normalizedTokens = List("synthetic", "non-production", "hybrid"),
     explicitConstraints = Nil,
     softBoosts = Nil,
-    remainingText = input.query,
+    remainingText = searchInput.query,
   )
 
   private def variantDocument(

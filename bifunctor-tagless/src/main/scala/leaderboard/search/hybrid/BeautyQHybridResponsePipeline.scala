@@ -20,6 +20,7 @@ object BeautyQHybridResponsePipeline {
   def projectResponse(
     retrieval: HybridDocumentRetrievalResult[MasterServiceOfferVariantId],
     documentsByVariantId: Map[MasterServiceOfferVariantId, VariantSearchDocument],
+    limits: BeautyQHybridResponseCarouselLimits,
     displayScorePolicy: BeautyQHybridDisplayScorePolicy =
       BeautyQHybridDisplayScorePolicy.LexicalThenSemantic,
   ): Either[QueryFailure, BeautyQHybridResponsePipelineResult] = {
@@ -32,6 +33,7 @@ object BeautyQHybridResponsePipeline {
         BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels(
           variantProjection = variantProjection,
           providerServiceProjection = providerServiceProjection,
+          limits = limits,
           displayScorePolicy = displayScorePolicy,
         )
 

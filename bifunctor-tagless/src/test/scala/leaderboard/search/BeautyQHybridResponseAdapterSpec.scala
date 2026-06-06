@@ -13,6 +13,7 @@ import leaderboard.search.hybrid.{
   BeautyQHybridProviderServiceProjectionDiagnostics,
   BeautyQHybridProviderServiceProjectionResult,
   BeautyQHybridResponseAdapter,
+  BeautyQHybridResponseCarouselLimits,
   BeautyQHybridServiceIntentCandidate,
   BeautyQHybridVariantProjectionDiagnostics,
   BeautyQHybridVariantProjectionResult,
@@ -300,6 +301,95 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
       assert(response.facets.isEmpty)
       assert(response.inferredFilters.isEmpty)
     }
+
+    "respect explicit variant provider and service carousel limits after preserving order" in {
+      val first = variantDocument(32)
+      val second = variantDocument(33)
+      val third = variantDocument(34)
+
+      val response = adaptWithProviderService(
+        variantCandidates = List(
+          candidate(first, lexicalScore = Some(0.1), semanticScore = None),
+          candidate(second, lexicalScore = None, semanticScore = Some(99.0)),
+          candidate(third, lexicalScore = Some(0.2), semanticScore = Some(100.0)),
+        ),
+        providerCandidates = List(
+          providerCandidate(first, representativeDisplayScore = 0.1),
+          providerCandidate(second, representativeDisplayScore = 99.0),
+          providerCandidate(third, representativeDisplayScore = 0.2),
+        ),
+        serviceIntentCandidates = List(
+          serviceIntentCandidate(first, representativeDisplayScore = 0.1),
+          serviceIntentCandidate(second, representativeDisplayScore = 99.0),
+          serviceIntentCandidate(third, representativeDisplayScore = 0.2),
+        ),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 2, providerSize = 1, serviceIntentSize = 2),
+      ).response
+
+      assert(response.variantCarousel.map(_.variantId) == List(first.variantId, second.variantId))
+      assert(response.variantCarousel.map(_.score) == List(0.1, 99.0))
+      assert(response.providerCarousel.map(_.masterLocationId) == List(first.masterLocationId))
+      assert(response.providerCarousel.map(_.bestScore) == List(0.1))
+      assert(response.serviceIntentCarousel.map(_.serviceId) == List(first.serviceId, second.serviceId))
+      assert(response.serviceIntentCarousel.map(_.bestScore) == List(0.1, 99.0))
+      assert(response.facets.isEmpty)
+      assert(response.inferredFilters.isEmpty)
+    }
+
+    "return empty carousels for zero explicit limits" in {
+      val first = variantDocument(35)
+      val second = variantDocument(36)
+
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(first, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(providerCandidate(first, representativeDisplayScore = 1.0)),
+        serviceIntentCandidates = List(serviceIntentCandidate(second, representativeDisplayScore = 2.0)),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 0, providerSize = 0, serviceIntentSize = 0),
+      ).response
+
+      assert(response.variantCarousel.isEmpty)
+      assert(response.providerCarousel.isEmpty)
+      assert(response.serviceIntentCarousel.isEmpty)
+      assert(response.facets.isEmpty)
+      assert(response.inferredFilters.isEmpty)
+    }
+
+    "normalize negative explicit limits to empty carousels" in {
+      val document = variantDocument(37)
+
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(document, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(providerCandidate(document, representativeDisplayScore = 1.0)),
+        serviceIntentCandidates = List(serviceIntentCandidate(document, representativeDisplayScore = 1.0)),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = -1, providerSize = -2, serviceIntentSize = -3),
+      ).response
+
+      assert(response.variantCarousel.isEmpty)
+      assert(response.providerCarousel.isEmpty)
+      assert(response.serviceIntentCarousel.isEmpty)
+    }
+
+    "keep provider sample id cap when provider carousel is limited" in {
+      val first = variantDocument(38)
+      val second = variantDocument(39)
+
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(first, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(
+          providerCandidate(
+            first,
+            representativeDisplayScore = 1.0,
+            sampleMatchingVariantIds = List(variantId(910), variantId(911), variantId(912), variantId(913)),
+          ),
+          providerCandidate(second, representativeDisplayScore = 2.0),
+        ),
+        serviceIntentCandidates = Nil,
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 10, providerSize = 1, serviceIntentSize = 10),
+      ).response
+
+      assert(response.providerCarousel.map(_.masterLocationId) == List(first.masterLocationId))
+      assert(response.providerCarousel.head.sampleMatchingVariantIds == List(variantId(910), variantId(911), variantId(912)))
+    }
   }
 
   private def adapt(candidates: BeautyQHybridProjectedVariantCandidate*) =
@@ -311,6 +401,7 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
     variantCandidates: List[BeautyQHybridProjectedVariantCandidate],
     providerCandidates: List[BeautyQHybridProviderCandidate],
     serviceIntentCandidates: List[BeautyQHybridServiceIntentCandidate],
+    limits: BeautyQHybridResponseCarouselLimits = BeautyQHybridResponseCarouselLimits(100, 100, 100),
   ) =
     BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels(
       variantProjection = variantProjection(variantCandidates),
@@ -323,6 +414,7 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
           serviceIntentCandidateCount = serviceIntentCandidates.size,
         ),
       ),
+      limits = limits,
     )
 
   private def variantProjection(candidates: List[BeautyQHybridProjectedVariantCandidate]) =

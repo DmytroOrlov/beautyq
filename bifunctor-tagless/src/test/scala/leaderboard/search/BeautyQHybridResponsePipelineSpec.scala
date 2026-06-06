@@ -5,7 +5,7 @@ import java.util.UUID
 import leaderboard.model.MasterServiceOfferVariantId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
-import leaderboard.search.hybrid.{BeautyQHybridResponsePipeline, HybridDocumentRetrievalResult}
+import leaderboard.search.hybrid.{BeautyQHybridResponseCarouselLimits, BeautyQHybridResponsePipeline, HybridDocumentRetrievalResult}
 import leaderboard.search.lexical.LexicalDocumentHit
 import leaderboard.search.semantic.SemanticDocumentHit
 import org.scalatest.wordspec.AnyWordSpec
@@ -144,6 +144,7 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
           semanticHits = Nil,
         ),
         documentsByVariantId = Map.empty,
+        limits = defaultLimits,
       )
 
       assert(result.isLeft)
@@ -161,6 +162,7 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
           semanticHits = List(SemanticDocumentHit(missingId, 0.92)),
         ),
         documentsByVariantId = Map(present.variantId -> present),
+        limits = defaultLimits,
       )
 
       assert(result.isLeft)
@@ -211,20 +213,62 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
       assert(result.response.providerCarousel.map(_.bestScore) == List(0.1, 50.0, 0.99))
       assert(result.response.serviceIntentCarousel.map(_.bestScore) == List(0.1, 50.0, 0.99))
     }
+
+    "pass explicit carousel limits through to the response adapter after policy order is established" in {
+      val firstLexical = variantDocument(26, masterLocationIndex = 1000, serviceIndex = 2000)
+      val secondLexical = variantDocument(27, masterLocationIndex = 1001, serviceIndex = 2001)
+      val semantic = variantDocument(28, masterLocationIndex = 1002, serviceIndex = 2002)
+
+      val result = project(
+        lexicalHits = List(
+          LexicalDocumentHit(firstLexical.variantId, 0.1),
+          LexicalDocumentHit(secondLexical.variantId, 99.0),
+        ),
+        semanticHits = List(SemanticDocumentHit(semantic.variantId, 0.95)),
+        documents = List(firstLexical, secondLexical, semantic),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 2, providerSize = 1, serviceIntentSize = 2),
+      )
+
+      assert(result.response.variantCarousel.map(_.variantId) == List(firstLexical.variantId, secondLexical.variantId))
+      assert(result.response.variantCarousel.map(_.score) == List(0.1, 99.0))
+      assert(result.response.providerCarousel.map(_.masterLocationId) == List(firstLexical.masterLocationId))
+      assert(result.response.providerCarousel.map(_.bestScore) == List(0.1))
+      assert(result.response.serviceIntentCarousel.map(_.serviceId) == List(firstLexical.serviceId, secondLexical.serviceId))
+      assert(result.response.serviceIntentCarousel.map(_.bestScore) == List(0.1, 99.0))
+    }
+
+    "return empty carousels when explicit pipeline limits are zero" in {
+      val document = variantDocument(29)
+
+      val result = project(
+        lexicalHits = List(LexicalDocumentHit(document.variantId, 1.0)),
+        semanticHits = Nil,
+        documents = List(document),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 0, providerSize = 0, serviceIntentSize = 0),
+      )
+
+      assert(result.response.variantCarousel.isEmpty)
+      assert(result.response.providerCarousel.isEmpty)
+      assert(result.response.serviceIntentCarousel.isEmpty)
+    }
   }
 
   private def project(
     lexicalHits: List[LexicalDocumentHit[MasterServiceOfferVariantId]],
     semanticHits: List[SemanticDocumentHit[MasterServiceOfferVariantId]],
     documents: List[VariantSearchDocument],
+    limits: BeautyQHybridResponseCarouselLimits = defaultLimits,
   ) =
     BeautyQHybridResponsePipeline.projectResponse(
       retrieval = HybridDocumentRetrievalResult.fromHits(lexicalHits, semanticHits),
       documentsByVariantId = documents.map(document => document.variantId -> document).toMap,
+      limits = limits,
     ) match {
       case Right(result) => result
       case Left(error) => fail(error.message)
     }
+
+  private val defaultLimits = BeautyQHybridResponseCarouselLimits(100, 100, 100)
 
   private def variantDocument(
     index: Int,

@@ -599,9 +599,13 @@ The implemented pure provider/service projection policy:
 The implemented pure provider/service response carousel adapter:
 
 * builds provider and service carousels from intermediate projection candidates
+* applies explicit hybrid carousel limits to `variantCarousel`, `providerCarousel`, and `serviceIntentCarousel`
+* derives the default non-production limit policy from `UserSearchInput` and `BeautySearchSpecV1.carouselSpec`: `variantCarousel` uses `min(input.limit, spec.carouselSpec.variantSize)` after normalizing negative limits to empty output, `providerCarousel` uses `spec.carouselSpec.providerSize`, and `serviceIntentCarousel` uses `spec.carouselSpec.serviceIntentSize`
+* truncates only after policy/projection order has already been established
 * maps `representativeDisplayScore` into `ProviderSearchResult.bestScore` and `ServiceIntentSearchResult.bestScore`
 * treats those `bestScore` values as display-only, not fusion, not ranking, not reranking, and not score-calibrated ES/Qdrant comparison
 * preserves provider and service carousel order from projection order instead of sorting by score
+* does not use limits as ranking, reranking, score sorting, score fusion, fallback, or routing
 * limits provider sample matching variant ids to the existing response convention of 3 ids
 * keeps `facets` and `inferredFilters` empty because they remain ES/parser-owned in this pure hybrid adapter
 * does not call Elasticsearch or Qdrant
@@ -611,6 +615,7 @@ The implemented pure response pipeline adapter:
 
 * composes only existing pure pieces: policy -> variant hydration -> provider/service projection -> response adapter
 * projects `HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` plus hydrated `VariantSearchDocument` values into `BeautySearchResponse`
+* requires explicit `BeautyQHybridResponseCarouselLimits` instead of silently using unlimited response carousels
 * returns `BeautySearchResponse` plus combined policy, variant projection, provider/service projection, and response adapter diagnostics
 * propagates missing-document `QueryFailure` from variant hydration without building a response
 * preserves lexical-first semantic-supplement order from the pure policy
@@ -716,7 +721,12 @@ Lifecycle boundary:
 Response semantics:
 
 * the runner uses the pure `BeautyQHybridResponsePipeline`
+* variant, provider, and service carousels are explicitly limited
+* truncation happens after policy/projection order is established
+* limits do not imply ranking, reranking, score sorting, score fusion, fallback, or routing
+* the runner derives `BeautyQHybridResponseCarouselLimits` from `BeautySearchSpecV1.spec` and `UserSearchInput`: variants use `min(input.limit, spec.carouselSpec.variantSize)` with negative values normalized to empty output, providers use `spec.carouselSpec.providerSize`, and services use `spec.carouselSpec.serviceIntentSize`
 * no-fusion, no-reranking, no-fallback, and no-routing semantics remain unchanged
+* `VariantSearchResult.score`, `ProviderSearchResult.bestScore`, and `ServiceIntentSearchResult.bestScore` are display-only in the hybrid adapter
 * provider/service `bestScore` values remain display-only where produced by the pure adapter
 * facets and inferred filters remain ES/parser-owned
 
@@ -727,7 +737,7 @@ Verification required before any future code wiring:
 * focused fake-only experiment runner tests
 * docs review confirming production guardrails
 
-The next code step, if accepted, is only a non-production activation/module skeleton.
+The next code step, if accepted, is only designing a non-production activation/module boundary with dependency construction guarded before resources are built.
 It must remain disabled by default and must not add production wiring.
 
 Domain point ids must be Qdrant-compatible ids:
@@ -761,7 +771,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Decide whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring.
+1. Design non-production activation/module boundary with dependency construction guarded before resources are built.
 2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
@@ -814,6 +824,9 @@ Current stage:
 * BeautyQ pure provider/service projection policy creates intermediate provider/service candidates only, groups by `masterLocationId` and `serviceId`, and preserves group order by first candidate occurrence in policy order
 * `representativeDisplayScore` in the pure provider/service projection policy is display-only under `LexicalThenSemantic`, not ranking, fusion, or reranking
 * BeautyQ pure provider/service response carousel adapter exists and is done through `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels`
+* BeautyQ explicit hybrid carousel limit policy exists and is done through `BeautyQHybridResponseCarouselLimits`
+* BeautyQ hybrid response carousels are explicitly limited: variants use `min(input.limit, spec.carouselSpec.variantSize)` where limits are derived from `BeautySearchSpecV1.spec` and `UserSearchInput`, providers use `spec.carouselSpec.providerSize`, and service intents use `spec.carouselSpec.serviceIntentSize`
+* BeautyQ hybrid carousel truncation happens after policy/projection order is established and does not add ranking, reranking, score sorting, score fusion, fallback, or routing
 * BeautyQ pure provider/service response carousel adapter maps `representativeDisplayScore` into provider/service `bestScore` fields as display-only values, not fusion, ranking, reranking, or score calibration
 * BeautyQ pure provider/service response carousel adapter preserves projection order instead of sorting by score
 * BeautyQ pure provider/service response carousel adapter limits provider sample matching variant ids to 3
@@ -838,7 +851,7 @@ Current stage:
 
 Immediate next step:
 
-* decide whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring
+* design non-production activation/module boundary with dependency construction guarded before resources are built
 
 Later pinned TODO:
 
@@ -846,7 +859,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* decide whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring
+* design non-production activation/module boundary with dependency construction guarded before resources are built
 * keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
@@ -871,7 +884,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is deciding whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring
+* next code step is designing a non-production activation/module boundary with dependency construction guarded before resources are built
 
 Wiring TODO:
 
