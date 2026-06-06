@@ -267,11 +267,15 @@ The pure provider/service projection policy model now exists as `BeautyQHybridPr
 The pure provider/service response carousel adapter now exists as
 `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels`.
 The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
+The non-production BeautyQ hybrid response experiment runner now exists as
+`BeautyQNonProductionHybridResponseExperiment`.
 
 It does not implement production hybrid.
 It does not change production `BeautySearchService`.
 It does not define HTTP/API metadata.
 It composes pure retrieval projection into `BeautySearchResponse`.
+The experiment runner is fake-testable/manual-library boundary only, not production hybrid.
+It runs injected lexical and semantic document backends plus document lookup and then calls the pure pipeline.
 
 ### Output Shape
 
@@ -593,13 +597,14 @@ Current implementation ladder:
 11. Pure `BeautyQHybridProviderServiceProjection` intermediate provider/service candidates
 12. Pure `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels` provider/service response carousel projection
 13. Pure `BeautyQHybridResponsePipeline.projectResponse` retrieval-to-response composition
+14. Non-production `BeautyQNonProductionHybridResponseExperiment` injected-backend response experiment runner
 
 What is still missing before runtime hybrid:
 
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- non-production adapter/wiring boundary design, still disabled by default and not production
+- explicit non-production activation/wiring design, still not production
 
-The recommended next step is non-production adapter/wiring design, not runtime wiring yet.
+The recommended next step is explicit non-production activation/wiring design, not runtime production wiring.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

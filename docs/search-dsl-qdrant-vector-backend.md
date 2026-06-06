@@ -560,6 +560,8 @@ The pure provider/service projection policy model now exists as
 The pure provider/service response carousel adapter now exists as
 `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels`.
 The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
+The non-production BeautyQ hybrid response experiment runner now exists as
+`BeautyQNonProductionHybridResponseExperiment`.
 
 The implemented pure policy is lexical-first semantic supplement:
 
@@ -615,6 +617,17 @@ The implemented pure response pipeline adapter:
 * does not do score fusion, reranking, fallback, routing, or production wiring
 * does not implement runtime service integration
 
+The implemented non-production BeautyQ hybrid response experiment runner:
+
+* is a library/manual/test/local boundary only
+* runs injected `LexicalDocumentBackend`, injected `SemanticDocumentBackend`, and injected `SemanticDocumentLookup`
+* hydrates distinct variant ids in lexical-first channel order
+* calls the pure `BeautyQHybridResponsePipeline.projectResponse`
+* returns `BeautySearchResponse` plus lexical hit count, semantic hit count, distinct id count, and pipeline diagnostics
+* propagates backend, lookup, and missing-document failures without fallback or silent dropping
+* does not add Distage wiring, HTTP/API, production `BeautySearchService`, routing metadata source, fallback, score fusion, reranking, or collection lifecycle
+* remains disabled by default because nothing wires it into the app graph
+
 Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
 They are not raw Qdrant outputs.
 
@@ -637,6 +650,7 @@ It does not define production routing.
 The hydrated variant projection adapter also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
 The provider/service projection policy also does not produce `BeautySearchResponse`, provider carousel, service carousel, facets, inferred filters, score fusion, reranking, fallback, routing, or production wiring.
 The response pipeline adapter produces `BeautySearchResponse` only by composing existing pure components; it does not add runtime service integration, Elasticsearch calls, Qdrant calls, llama.cpp calls, score fusion, reranking, fallback, routing, or production wiring.
+The non-production response experiment runner can execute injected lexical and semantic document backends plus document lookup and then call that pure pipeline, but it is not production hybrid and remains disabled by default because it has no app-graph wiring.
 
 Domain point ids must be Qdrant-compatible ids:
 
@@ -669,7 +683,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Design non-production adapter wiring boundary with explicit activation, still disabled by default and not production.
+1. Design explicit non-production activation/wiring boundary, still not production.
 2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
@@ -729,6 +743,10 @@ Current stage:
 * BeautyQ pure response pipeline adapter exists and is done through `BeautyQHybridResponsePipeline.projectResponse`
 * BeautyQ pure response pipeline adapter composes only existing pure pieces: policy -> variant hydration -> provider/service projection -> response adapter
 * BeautyQ pure response pipeline adapter returns `BeautySearchResponse` plus diagnostics and still does not call ES/Qdrant/llama, fuse scores, rerank, fallback, route, wire production, or implement runtime service integration
+* BeautyQ non-production hybrid response experiment runner exists and is done through `BeautyQNonProductionHybridResponseExperiment`
+* BeautyQ non-production hybrid response experiment runner is a library/manual/test/local boundary only: it runs injected lexical and semantic document backends plus document lookup and then calls the pure `BeautyQHybridResponsePipeline`
+* BeautyQ non-production hybrid response experiment runner does not add Distage wiring, HTTP/API, production `BeautySearchService`, routing metadata source, fallback, score fusion, reranking, collection lifecycle, or default runtime behavior
+* BeautyQ non-production hybrid response experiment runner remains disabled by default because nothing wires it into the app graph
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
@@ -739,7 +757,7 @@ Current stage:
 
 Immediate next step:
 
-* design non-production adapter wiring boundary with explicit activation, still disabled by default and not production
+* design explicit non-production activation/wiring boundary, still not production
 
 Later pinned TODO:
 
@@ -747,7 +765,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* design non-production adapter wiring boundary with explicit activation, still disabled by default and not production
+* design explicit non-production activation/wiring boundary, still not production
 * keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
@@ -772,7 +790,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is deciding non-production adapter wiring boundary, still disabled by default and not production
+* next code step is designing explicit non-production activation/wiring boundary, still not production
 
 Wiring TODO:
 
