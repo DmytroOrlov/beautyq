@@ -42,6 +42,9 @@ Current implemented non-production pieces:
 * `QdrantClient`
 * `QdrantSearchClient`
 * `QdrantPointUpsertClient`
+* `QdrantPointId`
+* `QdrantDocumentPointBuilder`
+* `QdrantSearchDocumentIndexer`
 * `QdrantCollectionInfoClient`
 * `QdrantCandidateHitDecoder`
 * `QdrantSemanticCandidateSearch`
@@ -453,7 +456,23 @@ A new domain should provide:
 * a domain `SearchDocumentSpec`
 * an optional `EmbeddingSpec`
 * optional `VectorSearchSpec`
+* a domain `QdrantDocumentPointBuilder`
 * domain eval data
+
+The generic document indexing seam now supports:
+
+* domain document + `SearchDocumentSpec`
+* `EmbeddingSpec`
+* domain `QdrantDocumentPointBuilder`
+* injected embedding client
+* injected Qdrant point-upsert client
+
+Domain point ids must be Qdrant-compatible ids:
+
+* UUID ids render as JSON strings
+* unsigned integer ids render as JSON numbers
+* arbitrary domain strings must not be used as Qdrant point ids
+* arbitrary domain strings such as slugs, service codes, or natural ids belong in payload fields
 
 The Qdrant path should not depend on BeautyQ domain classes except through typed spec/document parameters.
 
@@ -507,6 +526,8 @@ Current stage:
 
 * non-production experimental Qdrant path exists
 * readiness config, compatibility guard, guarded snapshot indexing, semantic backend, experimental service, and benchmark tooling exist
+* generic Qdrant document indexing seam exists
+* Qdrant point ids are constrained to UUID or unsigned integer ids
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
 * no production hybrid wiring yet
@@ -516,6 +537,7 @@ Immediate design/code next step:
 
 * keep `LeaderboardPlugin` unchanged for now
 * do not add Distage wiring until there is a real search-service graph boundary
+* add a generic semantic candidate assembly/projector boundary
 * if a non-production experiment module is later added, it must be named and explicitly activated
 * before wiring, prefer either:
   * a small design-only note for the future experiment axis/config shape, or

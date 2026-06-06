@@ -30,10 +30,16 @@ object QdrantJsonInterpreter {
     )
 
   def upsertPointJson(id: String, vectorName: String, vector: List[Double], payload: Map[String, Json]): Json =
+    upsertPointJson(Json.fromString(id), vectorName, vector, payload)
+
+  def upsertPointJson(id: QdrantPointId, vectorName: String, vector: List[Double], payload: Map[String, Json]): Json =
+    upsertPointJson(id.asJson, vectorName, vector, payload)
+
+  private def upsertPointJson(id: Json, vectorName: String, vector: List[Double], payload: Map[String, Json]): Json =
     Json.obj(
       "points" -> Json.arr(
         Json.obj(
-          "id" -> Json.fromString(id),
+          "id" -> id,
           "vector" -> Json.obj(
             vectorName -> Json.arr(vector.map(Json.fromDoubleOrNull): _*),
           ),
