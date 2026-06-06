@@ -46,6 +46,7 @@ Current implemented non-production pieces:
 * `QdrantDocumentPointBuilder`
 * `QdrantSearchDocumentIndexer`
 * `SemanticDocumentHit`
+* `SemanticDocumentBackend`
 * `SemanticDocumentLookup`
 * `SemanticCandidateAssembler`
 * `SemanticResponseProjector`
@@ -483,6 +484,15 @@ The generic semantic response projector boundary now supports:
 * domain response types as an output boundary
 * pure projection through `SemanticResponseProjector[Assembly, Response]`
 
+The generic semantic backend boundary now supports:
+
+* semantic recall input through `UserSearchInput`
+* parsed intent input through `ParsedSearchIntent`
+* domain document ids through `SemanticDocumentHit[Id]`
+* backend-independent semantic hit retrieval through `SemanticDocumentBackend[F, Id]`
+
+BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over the generic backend boundary. It keeps the existing `candidates(...)` API and BeautyQ `MasterServiceOfferVariantId` candidate hit shape while exposing generic document hits for reusable semantic infrastructure.
+
 BeautyQ variant, provider, and service carousel projection remains domain-specific. The reusable semantic infrastructure should stop at generic candidate assembly and the generic response projector boundary; BeautyQ response shape, grouping, carousel limits, facets, and inferred filters stay in BeautyQ-specific projection code.
 
 Domain point ids must be Qdrant-compatible ids:
@@ -549,7 +559,9 @@ Current stage:
 * generic Qdrant document indexing seam exists and is done
 * Qdrant point ids are constrained to UUID or unsigned integer ids
 * generic semantic candidate assembly boundary exists and is done
-* generic semantic response projector boundary is present through `SemanticResponseProjector[Assembly, Response]`
+* generic semantic response projector boundary exists and is done through `SemanticResponseProjector[Assembly, Response]`
+* generic semantic backend boundary is present through `SemanticDocumentBackend[F, Id]`
+* BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
@@ -558,6 +570,7 @@ Current stage:
 
 Immediate design/code next step:
 
+* generic lexical/Elasticsearch backend result seam
 * keep `LeaderboardPlugin` unchanged for now
 * do not add Distage wiring until there is a real search-service graph boundary
 * if a non-production experiment module is later added, it must be named and explicitly activated

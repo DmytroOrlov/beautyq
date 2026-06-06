@@ -10,6 +10,15 @@ final case class SemanticCandidateHit(
   score: Double,
 )
 
+object SemanticCandidateHit {
+  def toDocumentHit(hit: SemanticCandidateHit): SemanticDocumentHit[MasterServiceOfferVariantId] =
+    SemanticDocumentHit(hit.variantId, hit.score)
+}
+
+trait SemanticDocumentBackend[F[_, _], Id] {
+  def documentHits(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, List[SemanticDocumentHit[Id]]]
+}
+
 trait SemanticCandidateBackend[F[_, _]] {
   def candidates(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, List[SemanticCandidateHit]]
 }
