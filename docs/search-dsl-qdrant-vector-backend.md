@@ -562,6 +562,8 @@ The pure provider/service response carousel adapter now exists as
 The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
 The non-production BeautyQ hybrid response experiment runner now exists as
 `BeautyQNonProductionHybridResponseExperiment`.
+The disabled-by-default non-production activation/factory skeleton now exists as
+`BeautyQNonProductionHybridExperimentActivation`.
 
 The implemented pure policy is lexical-first semantic supplement:
 
@@ -655,8 +657,9 @@ The non-production response experiment runner can execute injected lexical and s
 ### Non-production BeautyQ hybrid experiment activation boundary
 
 `BeautyQNonProductionHybridResponseExperiment` is present and done as a library/manual/test/local boundary.
+`BeautyQNonProductionHybridExperimentActivation` is present and done as a disabled-by-default activation/factory skeleton.
 It is not app startup wiring, not a replacement for production `BeautySearchService`, and not a production feature.
-It has no default activation.
+Its default activation is `Disabled`, and it builds the non-production experiment runner only when explicitly enabled.
 
 Current shape:
 
@@ -675,16 +678,19 @@ final class BeautyQNonProductionHybridResponseExperiment[F[+_, +_]: Error2](
 
 Activation rules:
 
-* any future activation must be explicit and disabled by default
+* activation is explicit and disabled by default
+* enabled activation builds only `BeautyQNonProductionHybridResponseExperiment`
+* allowed invocation modes are manual task, test setup, and local experiment only
 * activation must not be inferred from `Mode.Test` alone
 * activation must not be enabled by `Mode.Prod`
-* acceptable future shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
+* acceptable future wiring shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
 * unacceptable shapes are implicit production default, silent `Mode.Test` behavior, HTTP request flag without separate API design, and residual-text-based automatic semantic routing
 
 Wiring boundary:
 
 * future wiring may bind the runner only behind a named non-production boundary
 * wiring must use injected lexical backend, semantic backend, and document lookup
+* the activation skeleton does not add Distage wiring, `LeaderboardPlugin`, `BeautySearchService`, HTTP/API, production routing, collection lifecycle, or startup indexing
 * wiring must not create Qdrant collections
 * wiring must not index snapshots on startup
 * production search must not depend on Qdrant availability
@@ -695,6 +701,7 @@ Routing and metadata boundary:
 * the runner takes an already parsed `ParsedSearchIntent`
 * the runner does not own parser behavior
 * the runner does not own production routing
+* routing remains explicit-invocation-only
 * the runner does not introduce HTTP/API metadata fields
 * the runner does not implement fallback-on-zero-results
 * the runner does not implement residual-text routing
@@ -754,7 +761,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Add a design-approved non-production activation/module skeleton, still disabled by default and still not production.
+1. Decide whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring.
 2. Keep any next implementation pure or explicitly non-production, without changing the production `BeautySearchService`.
 
 Then:
@@ -817,7 +824,10 @@ Current stage:
 * BeautyQ non-production hybrid response experiment runner exists and is done through `BeautyQNonProductionHybridResponseExperiment`
 * BeautyQ non-production hybrid response experiment runner is a library/manual/test/local boundary only: it runs injected lexical and semantic document backends plus document lookup and then calls the pure `BeautyQHybridResponsePipeline`
 * BeautyQ non-production hybrid response experiment runner does not add Distage wiring, HTTP/API, production `BeautySearchService`, routing metadata source, fallback, score fusion, reranking, collection lifecycle, or default runtime behavior
-* BeautyQ non-production hybrid response experiment runner remains disabled by default because nothing wires it into the app graph
+* BeautyQ disabled-by-default non-production hybrid activation/factory skeleton exists and is done through `BeautyQNonProductionHybridExperimentActivation`
+* BeautyQ non-production hybrid activation builds the runner only when explicitly enabled and remains outside Distage, `LeaderboardPlugin`, `BeautySearchService`, HTTP/API, production routing, collection lifecycle, startup indexing, and default runtime behavior
+* BeautyQ non-production hybrid activation allows manual task, test setup, and local experiment invocation modes only
+* BeautyQ non-production hybrid activation routing remains explicit-invocation-only
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over reusable seams
@@ -828,7 +838,7 @@ Current stage:
 
 Immediate next step:
 
-* add a design-approved non-production activation/module skeleton, still disabled by default and still not production
+* decide whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring
 
 Later pinned TODO:
 
@@ -836,7 +846,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* add a design-approved non-production activation/module skeleton, still disabled by default and still not production
+* decide whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring
 * keep any next implementation pure or explicitly non-production, without production wiring
 
 Benchmark TODOs:
@@ -861,7 +871,7 @@ Review follow-up status:
 * done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next code step is a design-approved non-production activation/module skeleton, still disabled by default and still not production
+* next code step is deciding whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring
 
 Wiring TODO:
 

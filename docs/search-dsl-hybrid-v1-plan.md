@@ -269,6 +269,8 @@ The pure provider/service response carousel adapter now exists as
 The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
 The non-production BeautyQ hybrid response experiment runner now exists as
 `BeautyQNonProductionHybridResponseExperiment`.
+The disabled-by-default non-production activation/factory skeleton now exists as
+`BeautyQNonProductionHybridExperimentActivation`.
 
 It does not implement production hybrid.
 It does not change production `BeautySearchService`.
@@ -281,7 +283,10 @@ It runs injected lexical and semantic document backends plus document lookup and
 
 `BeautyQNonProductionHybridResponseExperiment` exists, but it is not app wiring.
 It is a library/manual/test/local boundary for explicit experiments.
-It has no default activation and does not replace production `BeautySearchService`.
+`BeautyQNonProductionHybridExperimentActivation` exists as a disabled-by-default activation/factory skeleton.
+It builds this non-production experiment runner only when explicitly enabled.
+It is not app wiring, not production hybrid, and does not replace production `BeautySearchService`.
+Production `BeautySearchService` remains unchanged.
 
 Current shape:
 
@@ -300,16 +305,20 @@ final class BeautyQNonProductionHybridResponseExperiment[F[+_, +_]: Error2](
 
 Activation decisions:
 
-- future activation must be explicit and disabled by default
+- activation is explicit and disabled by default
+- enabled activation builds only `BeautyQNonProductionHybridResponseExperiment`
+- allowed invocation modes are manual task, test setup, and local experiment only
 - activation must not be inferred from `Mode.Test` alone
 - activation must not be enabled by `Mode.Prod`
-- acceptable future shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
+- future module work must remain explicit non-production/test-only and disabled by default
+- acceptable future wiring shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
 - unacceptable shapes are implicit production default, silent `Mode.Test` behavior, HTTP request flag without separate API design, and residual-text-based automatic semantic routing
 
 Wiring decisions:
 
 - future wiring may bind the runner only behind a named non-production boundary
 - wiring must use injected lexical backend, semantic backend, and document lookup
+- the activation skeleton does not add Distage wiring, `LeaderboardPlugin`, `BeautySearchService`, HTTP/API, production routing, collection lifecycle, or startup indexing
 - wiring must not create Qdrant collections
 - wiring must not index snapshots on startup
 - production search must not depend on Qdrant availability
@@ -320,6 +329,7 @@ Routing and metadata decisions:
 - the runner takes already parsed `ParsedSearchIntent`
 - the runner does not own parser behavior
 - the runner does not own production routing
+- routing remains explicit-invocation-only
 - the runner does not introduce HTTP/API metadata fields
 - the runner does not implement fallback-on-zero-results
 - the runner does not implement residual-text routing
@@ -336,7 +346,7 @@ Lifecycle and response decisions:
 
 Before any future code wiring, require normal `sbt test`, max env full test when llama/Qdrant gates are available, focused fake-only experiment runner tests, and docs review confirming production guardrails.
 
-The next step is a design-approved non-production activation skeleton only, not production wiring.
+The next step is deciding whether to add a test-only/non-production module adapter around this activation skeleton, not production wiring.
 Production hybrid remains out of scope.
 
 ### Output Shape
@@ -502,7 +512,7 @@ Future implementation should be split into small patches:
 9. Add regression tests proving lexical and hard-negative queries still stay ES-only.
 10. Only later consider score fusion or reranking.
 
-The next implementation patch may add only a design-approved non-production activation skeleton.
+The next implementation patch may decide whether to add a test-only/non-production module adapter around the activation skeleton.
 It should remain disabled by default and must not add production wiring.
 
 It must not include:
@@ -660,13 +670,14 @@ Current implementation ladder:
 12. Pure `BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels` provider/service response carousel projection
 13. Pure `BeautyQHybridResponsePipeline.projectResponse` retrieval-to-response composition
 14. Non-production `BeautyQNonProductionHybridResponseExperiment` injected-backend response experiment runner
+15. Disabled-by-default `BeautyQNonProductionHybridExperimentActivation` activation/factory skeleton
 
 What is still missing before runtime hybrid:
 
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- a design-approved non-production activation skeleton, still disabled by default and still not production
+- an explicit test-only/non-production module adapter around the activation skeleton, still disabled by default and still not production
 
-The recommended next step is a design-approved non-production activation skeleton, not runtime production wiring.
+The recommended next step is deciding whether to add a test-only/non-production module adapter around this activation skeleton, still without production wiring.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.
