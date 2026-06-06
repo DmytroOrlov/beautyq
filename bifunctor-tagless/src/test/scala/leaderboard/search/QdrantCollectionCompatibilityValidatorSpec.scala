@@ -19,10 +19,18 @@ final class QdrantCollectionCompatibilityValidatorSpec extends AnyWordSpec {
       assert(result == Right(Right(())))
     }
 
+    "use expected collection name when qdrant omits collection name" in {
+      val result = QdrantCollectionCompatibilityValidator.validate(
+        expectation,
+        collectionInfoJson(includeObservedCollectionName = false),
+      )
+
+      assert(result == Right(Right(())))
+    }
+
     "propagate decode failure" in {
       val json = Json.obj(
         "result" -> Json.obj(
-          "name" -> expectation.collectionName.asJson,
           "config" -> Json.obj(
             "params" -> Json.obj()
           )
@@ -110,10 +118,10 @@ final class QdrantCollectionCompatibilityValidatorSpec extends AnyWordSpec {
     observedCollectionName: String = expectation.collectionName,
     observedVectorName: String = expectation.vectorName,
     observedEmbeddingModelName: Option[String] = None,
+    includeObservedCollectionName: Boolean = true,
   ): Json =
     Json.obj(
       "result" -> Json.obj(
-        "name" -> observedCollectionName.asJson,
         "config" -> Json.obj(
           "params" -> Json.obj(
             "vectors" -> Json.obj(
@@ -124,6 +132,12 @@ final class QdrantCollectionCompatibilityValidatorSpec extends AnyWordSpec {
             )
           )
         ),
+      ).deepMerge(
+        Option.when(includeObservedCollectionName)(
+          Json.obj(
+            "name" -> observedCollectionName.asJson
+          )
+        ).getOrElse(Json.obj())
       ).deepMerge(
         observedEmbeddingModelName.fold(Json.obj()) { embeddingModelName =>
           Json.obj(

@@ -33,6 +33,14 @@ final class QdrantCollectionCompatibilityCheckerSpec extends AnyWordSpec {
       assert(result == Right(()))
     }
 
+    "return success when qdrant omits collection name" in {
+      val client = new ConstQdrantCollectionInfoClient(Right(collectionInfoJson(includeObservedCollectionName = false)))
+
+      val result = run(new QdrantCollectionCompatibilityChecker(client).check(expectation))
+
+      assert(result == Right(()))
+    }
+
     "propagate client QueryFailure" in {
       val failure = QueryFailure.operation("get-qdrant-collection-info", "qdrant failed")
       val client = new ConstQdrantCollectionInfoClient(Left(failure))
@@ -112,10 +120,10 @@ final class QdrantCollectionCompatibilityCheckerSpec extends AnyWordSpec {
     dimension: Int = expectation.expectedDimension,
     distance: String = "Cosine",
     observedEmbeddingModelName: Option[String] = None,
+    includeObservedCollectionName: Boolean = true,
   ): Json =
     Json.obj(
       "result" -> Json.obj(
-        "name" -> observedCollectionName.asJson,
         "config" -> Json.obj(
           "params" -> Json.obj(
             "vectors" -> Json.obj(
@@ -126,6 +134,12 @@ final class QdrantCollectionCompatibilityCheckerSpec extends AnyWordSpec {
             )
           )
         ),
+      ).deepMerge(
+        Option.when(includeObservedCollectionName)(
+          Json.obj(
+            "name" -> observedCollectionName.asJson
+          )
+        ).getOrElse(Json.obj())
       ).deepMerge(
         observedEmbeddingModelName.fold(Json.obj()) { embeddingModelName =>
           Json.obj(

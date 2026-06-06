@@ -14,7 +14,7 @@ object QdrantCollectionCompatibilityValidator {
     collectionInfoJson: Json,
   ): ValidationResult =
     for {
-      observedCollectionName <- decodeObservedCollectionName(collectionInfoJson)
+      observedCollectionName <- Right(decodeObservedCollectionName(collectionInfoJson).getOrElse(expected.collectionName))
       observedVectorName <- decodeObservedVectorName(collectionInfoJson)
       observed <- QdrantCollectionInfoDecoder.decode(
         collectionName = observedCollectionName,
@@ -26,11 +26,11 @@ object QdrantCollectionCompatibilityValidator {
       observed.copy(embeddingModelName = decodeObservedEmbeddingModelName(collectionInfoJson)),
     )
 
-  private def decodeObservedCollectionName(json: Json): Either[QueryFailure, String] =
+  private def decodeObservedCollectionName(json: Json): Option[String] =
     List(
       json.hcursor.downField("result").get[String]("name").toOption,
       json.hcursor.get[String]("name").toOption,
-    ).flatten.headOption.toRight(failure("Missing collection name in Qdrant collection info"))
+    ).flatten.headOption
 
   private def decodeObservedVectorName(json: Json): Either[QueryFailure, String] = {
     val vectorNames = List(
