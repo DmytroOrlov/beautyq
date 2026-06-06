@@ -36,6 +36,7 @@ Current status note:
 - generic semantic backend, assembly, and projection seams exist
 - generic hybrid retrieval container exists
 - production hybrid orchestration is still not implemented
+- generic retrieval/indexing boundaries are present within the current search DSL, but a full generic search engine is not complete
 
 There is currently no production hybrid behavior:
 
@@ -46,9 +47,10 @@ There is currently no production hybrid behavior:
 - no score fusion
 - no reranking
 
-The current hybrid retrieval seam is a container/diagnostic boundary only.
+The current generic hybrid retrieval seam is a container/diagnostic boundary only.
 It does not add score fusion, reranking, fallback, or a production routing change.
-The generic seam is not merge policy, and production hybrid remains out of scope.
+It is not a BeautyQ projection/merge policy.
+Production hybrid remains out of scope.
 
 The Qdrant semantic quality gate is intentionally environment-gated:
 
@@ -79,8 +81,7 @@ Qdrant owns semantic recall behavior:
 
 - broad and conversational discovery
 - semantic candidate variant ids
-- semantic candidate provider ids
-- semantic candidate service ids
+- candidate ids that can be hydrated into BeautyQ domain projections
 - discovery cases where the lexical dictionary should not be expanded
 
 Qdrant must not own production-critical deterministic behavior in V1:
@@ -132,18 +133,14 @@ The query ids `q_broad_004` and `q_broad_006` may appear in eval data, tests, an
 
 ### Fallback
 
-ES-to-Qdrant fallback should be more conservative than the broad semantic Qdrant candidate route.
+Fallback-on-zero-results is forbidden in the current design.
 
-Potential fallback signals:
+Future fallback, if considered, must be designed separately after the BeautyQ projection/merge policy is pure-tested.
+It must be more conservative than the broad semantic Qdrant candidate route and must not be smuggled into the first policy patch.
 
-- ES returns zero hits and the parser has no strong explicit constraints.
-- ES returns low-confidence or weak broad result mass, but this is not implemented yet.
-- Parser output has no explicit constraints and no hard-negative signals; any `remainingText` is diagnostic context only.
+Fallback remains blocked when the query is explicitly constrained or known to be a hard negative:
 
-Low confidence must not be used as a routing signal until a concrete confidence metric is defined and tested.
-
-Fallback must be blocked when the query is explicitly constrained or known to be a hard negative:
-
+- no fallback for zero ES hits
 - no fallback for explicit service constraints
 - no fallback for exact attribute/filter constraints
 - no fallback for price or duration filters
@@ -260,7 +257,101 @@ If candidate-derived facets or inferred filters are added later, they should be 
 
 Qdrant should not be asked to compute exact filters or canonical facet counts in Hybrid V1.
 
-## 8. Eval Gates Before Production
+## 8. BeautyQ Hybrid Projection/Merge Policy
+
+This section defines the BeautyQ-specific policy boundary before any pure policy model or non-production wiring is implemented.
+
+It does not implement production hybrid.
+It does not change production `BeautySearchService`.
+It does not define HTTP/API metadata.
+
+### Output Shape
+
+The final BeautyQ hybrid output remains `BeautySearchResponse`.
+
+The variant carousel is the primary merge surface:
+
+- lexical ES hits and semantic Qdrant hits are combined by `MasterServiceOfferVariantId`
+- ids appearing in both channels are represented once
+- channel diagnostics and channel-local scores may be retained for inspection
+- ES scores and Qdrant scores are not directly comparable
+- final score fusion is not defined here
+
+Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
+They are not raw Qdrant outputs.
+
+Facets and inferred filters remain ES/parser-owned:
+
+- Qdrant does not produce facets
+- Qdrant does not produce inferred filters
+- Qdrant does not own authoritative filter semantics
+- Qdrant-only experimental responses may use empty facets and empty inferred filters
+
+### Merge Boundary
+
+Merge happens at the domain candidate/document id level, then projects into BeautyQ carousels.
+
+Merge must not happen:
+
+- at raw Qdrant point level
+- inside the Qdrant backend
+- inside the Elasticsearch query interpreter
+- as production route switching
+
+`HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is input to the future BeautyQ policy.
+It is a container and diagnostic boundary only, not the policy itself.
+
+### Channel Responsibilities
+
+Elasticsearch remains the deterministic baseline for:
+
+- filters
+- facets
+- exact lexical behavior
+- canonical structured constraints
+- normal response assembly for lexical paths
+
+Qdrant remains semantic recall only:
+
+- it proposes semantic variant candidates
+- it does not replace ES filters or facets
+- it does not own inferred filters
+- its scores are channel-local diagnostics
+
+### Overlap and Ordering
+
+Overlap policy for the first pure model:
+
+- duplicate document ids across channels collapse to one variant candidate
+- preserve enough diagnostics to know which channels matched
+- do not fuse ES and Qdrant scores
+- do not introduce reranking
+
+Lexical-first or semantic-supplement ordering may be considered later, but must be explicit in a pure policy patch.
+
+### Forbidden In This Design
+
+- fallback-on-zero-results
+- residual-text semantic routing
+- production route switch
+- score fusion/reranking
+- replacing ES facets/filters
+- Qdrant-as-default
+- HTTP/API metadata contract
+- startup indexing
+- production collection lifecycle
+
+### Experiment Output Expectations
+
+An acceptable non-production experiment may produce variant candidates from semantic recall.
+
+Provider and service carousels must remain domain projections over hydrated variant, provider, and service data.
+
+Empty facets and empty inferred filters are acceptable for a Qdrant-only experimental path.
+
+Production response parity is not required yet.
+
+## 9. Eval Gates Before Production
 
 Production rollout should require these gates before any hybrid or fallback path becomes user-facing:
 
@@ -282,20 +373,20 @@ QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true
 
 Hybrid tests should prove routing behavior as well as result quality. A broad query passing through Qdrant is not enough if lexical or hard-negative queries also start routing to Qdrant unintentionally.
 
-## 9. Implementation Sequence
+## 10. Implementation Sequence
 
 Future implementation should be split into small patches:
 
-1. Add routing decision data model only.
-2. Add pure router tests only.
-3. Add Qdrant candidate response model.
-4. Add experimental hybrid service path.
-5. Add hybrid tests for `q_broad_004` and `q_broad_006`.
-6. Add regression tests proving lexical and hard-negative queries still stay ES-only.
-7. Only later consider score fusion or reranking.
-8. Design domain-specific hybrid projection/merge policy before production wiring.
+1. Add pure BeautyQ hybrid projection/merge policy model/tests only.
+2. Add routing decision data model only.
+3. Add pure router tests only.
+4. Add Qdrant candidate response model.
+5. Add experimental hybrid service path.
+6. Add hybrid tests for `q_broad_004` and `q_broad_006`.
+7. Add regression tests proving lexical and hard-negative queries still stay ES-only.
+8. Only later consider score fusion or reranking.
 
-The first implementation patch should only introduce inspectable routing decisions and pure tests around those decisions.
+The first implementation patch after this design should only introduce the pure BeautyQ projection/merge policy model and tests.
 
 It must not include:
 
@@ -305,13 +396,15 @@ It must not include:
 - production routing changes
 - Elasticsearch interpreter changes
 - Qdrant retrieval changes
+- Distage wiring
+- HTTP/API changes
 - ranking changes
 - score fusion
 - reranking
 - fallback
 - production routing change
 
-## 10. Generic and Domain Reuse Implications
+## 11. Generic and Domain Reuse Implications
 
 Hybrid routing should be described in DSL/spec terms where possible.
 
@@ -342,6 +435,7 @@ A second domain should be able to reuse:
 - Qdrant semantic backend
 - routing concepts
 - eval workflow
+- hybrid retrieval containers and diagnostics
 
 The second domain should provide its own:
 
@@ -351,10 +445,11 @@ The second domain should provide its own:
 - semantic embedding text spec
 - eval dataset
 - routing eval cases
+- projection/merge policy
 
 This keeps the search DSL direction generic while allowing BeautyQ to remain the first measured domain.
 
-## 11. Risks and Anti-patterns
+## 12. Risks and Anti-patterns
 
 The main risks are caused by using semantic fallback too broadly.
 
@@ -374,7 +469,7 @@ Avoid these anti-patterns:
 
 Hybrid V1 should stay narrow: prove the two known broad semantic gaps, preserve the ES baseline, and keep the backend interpreters mechanical.
 
-## 12. Experimental Routing Metadata Note
+## 13. Experimental Routing Metadata Note
 
 `ExperimentalHybridRouteDecider` takes an injected metadata provider because the current codebase has no production-safe source of `SearchRoutingMetadata`.
 At present, metadata is only supplied from tests and eval scaffolding, and `BeautySearchBackend.search(input, intent)` does not carry routing metadata through the production path.
@@ -444,9 +539,10 @@ Current implementation ladder:
 
 What is still missing before runtime hybrid:
 
+- pure BeautyQ domain-specific hybrid projection/merge policy model/tests
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
 
-The recommended next step is to design the domain-specific hybrid projection/merge policy before production wiring.
+The recommended next code step is pure BeautyQ domain-specific hybrid projection/merge policy model/tests only.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

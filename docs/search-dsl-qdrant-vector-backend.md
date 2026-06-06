@@ -90,12 +90,15 @@ Reusable domain seams/status:
 * generic semantic response projector boundary: done
 * generic lexical/Elasticsearch result seam: done
 * generic hybrid document retrieval seam: done
-* domain-specific hybrid projection/merge policy: next design step
+* ES matched_queries decoding correctness follow-up: done
+* benchmark complete-query validation correctness follow-up: done
+* domain-specific hybrid projection/merge policy: immediate next design step
 
 ### Review follow-ups before projection/merge policy
 
 * Done: ES matched queries decoding now reads real ES `matched_queries`, keeps fallback for legacy/test `_matched_queries`, and documents that generic lexical `matchedFields` currently means ES matched query names / lexical diagnostics, not highlights.
 * Done: benchmark validation hardening now fails clearly if a candidate returns fewer results than expected query ids, requires each candidate result set to cover the selected benchmark query ids, and keeps the existing duplicate candidate id / unexpected candidate id / unexpected query id validations.
+* Pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
 * Hybrid diagnostics clarity: review `HybridDocumentRetrievalDiagnostics` executed flags, avoid implying lexical/semantic channels executed when representing lexical-only or semantic-only retrieval, and either pass execution flags explicitly later or keep the current helper scoped to both-channel retrieval.
 * Qdrant point id naming/compatibility: clarify that current numeric id support is JVM-safe non-negative `Long`, not the full unsigned 64-bit range, record the possible later rename from `UnsignedLong` to `NonNegativeLong` or equivalent, and note that legacy raw-string `upsertPointJson(id: String, ...)` may remain for compatibility while new generic indexing paths must use `QdrantPointId`.
 * Abstraction proliferation guardrail: do not add new generic seams unless they are needed by a second domain proof, projection/merge policy, or a concrete correctness gap.
@@ -545,6 +548,37 @@ BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over the ge
 
 BeautyQ variant, provider, and service carousel projection remains domain-specific. `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector` remain BeautyQ-specific implementations over the reusable seams; the reusable semantic and lexical infrastructure should stop at generic hit boundaries, generic candidate assembly, the generic response projector boundary, and the generic hybrid retrieval container. BeautyQ response shape, grouping, carousel limits, facets, merge policy, and inferred filters stay in BeautyQ-specific projection code.
 
+### BeautyQ hybrid projection/merge policy boundary
+
+The future BeautyQ hybrid output remains `BeautySearchResponse`.
+
+The primary merge surface is the variant carousel:
+
+* Elasticsearch contributes deterministic lexical/filter/facet results.
+* Qdrant contributes semantic recall candidates by `MasterServiceOfferVariantId`.
+* overlapping variant ids from both channels must be represented once.
+* both channel diagnostics and channel-local scores may be retained for diagnostics.
+* ES and Qdrant scores are not directly comparable and must not be fused in this design.
+
+Provider and service carousels remain BeautyQ-specific projections over hydrated variant, provider, and service data.
+They are not raw Qdrant outputs.
+
+Facets and inferred filters remain ES/parser-owned:
+
+* Qdrant does not produce canonical facets.
+* Qdrant does not produce inferred filters.
+* Qdrant does not own authoritative filter semantics.
+* Qdrant-only experiments may return empty facets and empty inferred filters.
+
+Merge must happen at the domain candidate/document id level, then project into BeautyQ carousels.
+It must not happen at raw Qdrant point level, inside the Qdrant backend, or inside the Elasticsearch query interpreter.
+
+`HybridDocumentRetrievalResult[MasterServiceOfferVariantId]` is the input container for a future BeautyQ policy.
+It is not itself the policy.
+
+The first pure policy may consider lexical-first or semantic-supplement ordering, but that choice must be explicit in a later pure policy patch.
+This document does not define final score fusion, reranking, fallback, or production routing.
+
 Domain point ids must be Qdrant-compatible ids:
 
 * UUID ids render as JSON strings
@@ -576,16 +610,15 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Design-only BeautyQ domain-specific hybrid projection/merge policy.
-2. Then pure policy model/tests if the design is accepted.
-3. Only later consider non-production explicit wiring.
+1. Pure BeautyQ domain-specific hybrid projection/merge policy model/tests, only after this design is accepted.
+2. Only later consider non-production explicit wiring.
 
 Then:
 
-4. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
-5. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
-6. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
-7. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
+3. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
+4. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
+5. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
+6. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
 
 Still not next:
 
@@ -631,8 +664,7 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* design-only BeautyQ domain-specific hybrid projection/merge policy
-* then pure policy model/tests if the design is accepted
+* pure BeautyQ domain-specific hybrid projection/merge policy model/tests, only after this design is accepted
 * only later consider non-production explicit wiring
 
 Benchmark TODOs:
@@ -654,10 +686,10 @@ Benchmark hardening TODO:
 Review follow-up status:
 
 * done: ES `matched_queries` decoding fix/verification
-* done: benchmark missing-result validation in the runner/report path
+* done: benchmark complete-query validation in the runner/report path
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
-* next design step remains BeautyQ domain-specific hybrid projection/merge policy
+* next code step is pure BeautyQ domain-specific hybrid projection/merge policy model/tests, only after this design is accepted
 
 Wiring TODO:
 
