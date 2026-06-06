@@ -94,8 +94,8 @@ Reusable domain seams/status:
 
 ### Review follow-ups before projection/merge policy
 
-* ES matched queries decoding: verify/fix the ES response adapter to read real ES `matched_queries`, keep fallback for legacy/test `_matched_queries` if needed, and document that generic lexical `matchedFields` currently means ES matched query names / lexical diagnostics, not highlights.
-* Benchmark validation hardening: fail clearly if a candidate returns fewer results than expected query ids, require each candidate result set to cover the selected benchmark query ids, and keep the existing duplicate candidate id / unexpected candidate id / unexpected query id validations.
+* Done: ES matched queries decoding now reads real ES `matched_queries`, keeps fallback for legacy/test `_matched_queries`, and documents that generic lexical `matchedFields` currently means ES matched query names / lexical diagnostics, not highlights.
+* Done: benchmark validation hardening now fails clearly if a candidate returns fewer results than expected query ids, requires each candidate result set to cover the selected benchmark query ids, and keeps the existing duplicate candidate id / unexpected candidate id / unexpected query id validations.
 * Hybrid diagnostics clarity: review `HybridDocumentRetrievalDiagnostics` executed flags, avoid implying lexical/semantic channels executed when representing lexical-only or semantic-only retrieval, and either pass execution flags explicitly later or keep the current helper scoped to both-channel retrieval.
 * Qdrant point id naming/compatibility: clarify that current numeric id support is JVM-safe non-negative `Long`, not the full unsigned 64-bit range, record the possible later rename from `UnsignedLong` to `NonNegativeLong` or equivalent, and note that legacy raw-string `upsertPointJson(id: String, ...)` may remain for compatibility while new generic indexing paths must use `QdrantPointId`.
 * Abstraction proliferation guardrail: do not add new generic seams unless they are needed by a second domain proof, projection/merge policy, or a concrete correctness gap.
@@ -576,18 +576,16 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. Fix/verify ES `matched_queries` decoding.
-2. Harden benchmark runner against missing expected query results per candidate.
-3. Design-only BeautyQ domain-specific hybrid projection/merge policy.
-4. Then pure policy model/tests if the design is accepted.
-5. Only later consider non-production explicit wiring.
+1. Design-only BeautyQ domain-specific hybrid projection/merge policy.
+2. Then pure policy model/tests if the design is accepted.
+3. Only later consider non-production explicit wiring.
 
 Then:
 
-6. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
-7. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
-8. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
-9. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
+4. Keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent.
+5. Do not add Distage wiring until there is a real named experiment boundary and a clear consumer.
+6. Continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments.
+7. Later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately.
 
 Still not next:
 
@@ -633,8 +631,6 @@ Later pinned TODO:
 
 Immediate design/code next step:
 
-* fix/verify ES `matched_queries` decoding
-* harden benchmark runner against missing expected query results per candidate
 * design-only BeautyQ domain-specific hybrid projection/merge policy
 * then pure policy model/tests if the design is accepted
 * only later consider non-production explicit wiring
@@ -649,11 +645,19 @@ Benchmark TODOs:
 
 Benchmark hardening TODO:
 
-* duplicate candidate ids should fail or report clearly before report generation
-* result query ids without expectations should fail or report clearly in the runner/report path
-* candidate executor results for the wrong candidate id should fail clearly
-* candidate result sets must cover the selected benchmark query ids and fail clearly when they return fewer results than expected
+* done: duplicate candidate ids fail clearly before report generation
+* done: result query ids without expectations fail clearly in the runner/report path
+* done: candidate executor results for the wrong candidate id fail clearly
+* done: candidate result sets cover the selected benchmark query ids and fail clearly when they return fewer results than expected
 * keep the decision policy documented as a manual evaluation aid, not a production auto-switch
+
+Review follow-up status:
+
+* done: ES `matched_queries` decoding fix/verification
+* done: benchmark missing-result validation in the runner/report path
+* pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
+* forbidden production paths remain unchanged
+* next design step remains BeautyQ domain-specific hybrid projection/merge policy
 
 Wiring TODO:
 

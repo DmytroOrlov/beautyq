@@ -70,7 +70,9 @@ final class QdrantEmbeddingBenchmarkRunner(
     results: List[QdrantEmbeddingBenchmarkQueryResult],
     expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
   ): IO[QueryFailure, Unit] =
-    ZIO.foreachDiscard(results)(validateResult(candidate, _, expectationsByQueryId))
+    ZIO.foreachDiscard(results)(validateResult(candidate, _, expectationsByQueryId)) *>
+      validateDistinctResultQueryIds(candidate, results) *>
+      validateResultCoverage(candidate, results, expectationsByQueryId)
 
   private def validateResult(
     candidate: QdrantEmbeddingBenchmarkCandidate,
@@ -101,6 +103,41 @@ final class QdrantEmbeddingBenchmarkRunner(
         s"Candidate ${candidate.candidateId} returned benchmark result for query ${result.queryId} without an expectation",
       )
     ).when(!expectationsByQueryId.contains(result.queryId)).unit
+
+  private def validateDistinctResultQueryIds(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    results: List[QdrantEmbeddingBenchmarkQueryResult],
+  ): IO[QueryFailure, Unit] = {
+    val duplicateQueryIds = results
+      .groupBy(_.queryId)
+      .collect {
+        case (queryId, matchingResults) if matchingResults.size > 1 => queryId
+      }
+      .toList
+      .sorted
+
+    ZIO.fail(
+      QueryFailure.operation(
+        "qdrant-embedding-benchmark-runner",
+        s"Candidate ${candidate.candidateId} returned duplicate benchmark result query id(s): ${duplicateQueryIds.mkString(", ")}",
+      )
+    ).when(duplicateQueryIds.nonEmpty).unit
+  }
+
+  private def validateResultCoverage(
+    candidate: QdrantEmbeddingBenchmarkCandidate,
+    results: List[QdrantEmbeddingBenchmarkQueryResult],
+    expectationsByQueryId: Map[String, QdrantEmbeddingBenchmarkExpected],
+  ): IO[QueryFailure, Unit] = {
+    val missingQueryIds = (expectationsByQueryId.keySet -- results.iterator.map(_.queryId).toSet).toList.sorted
+
+    ZIO.fail(
+      QueryFailure.operation(
+        "qdrant-embedding-benchmark-runner",
+        s"Candidate ${candidate.candidateId} did not return benchmark result(s) for expected query id(s): ${missingQueryIds.mkString(", ")}",
+      )
+    ).when(missingQueryIds.nonEmpty).unit
+  }
 
   private def expectationsByQueryId(queries: List[BeautySearchEvalQuery]): Map[String, QdrantEmbeddingBenchmarkExpected] =
     queries.map { query =>
