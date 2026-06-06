@@ -14,6 +14,7 @@ import leaderboard.search.qdrant.{
   QdrantEmbeddingBenchmarkCandidate,
   QdrantEmbeddingBenchmarkExecutorConfig,
   QdrantEmbeddingBenchmarkPlan,
+  QdrantEmbeddingBenchmarkQuerySubset,
   QdrantEmbeddingBenchmarkQdrantCandidateExecutor,
   QdrantEmbeddingBenchmarkReportFormatter,
   QdrantEmbeddingBenchmarkReportJson,
@@ -166,10 +167,12 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
     )
 
   private def tinyQueries: List[BeautySearchEvalQuery] = {
-    val queryIds = Set("q_broad_004")
-    val queries = BeautySearchEvalInventory.evalSuite.queries.filter(query => queryIds(query.id))
-    assert(queries.map(_.id).toSet == queryIds)
-    queries
+    QdrantEmbeddingBenchmarkQuerySubset
+      .select(
+        QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke,
+        BeautySearchEvalInventory.evalSuite.queries,
+      )
+      .fold(error => throw new RuntimeException(error.message), identity)
   }
 
   private def snapshotProvider(
