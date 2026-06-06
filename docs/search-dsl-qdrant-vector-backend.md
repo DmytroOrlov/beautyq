@@ -131,7 +131,7 @@ The important constraint is that this text shape must be specified through `Embe
 
 That keeps embedding behavior reviewable, testable, and reusable across domains.
 
-## 7. Collection lifecycle and versioning policy
+## 7. Non-production collection readiness flow
 
 Current status is intentionally non-production:
 
@@ -152,15 +152,29 @@ Current non-production readiness building blocks:
 - `QdrantSnapshotIndexingCompatibilityGuard`
 - env-gated guarded snapshot indexing integration smoke
 
-Safe non-production collection readiness flow:
+The current readiness flow is a guardrail for experiments and smoke tests. It does not manage production
+collection lifecycle.
 
-1. choose an explicit versioned collection name
-2. create an isolated collection outside production lifecycle
-3. build `QdrantCollectionCompatibilityExpectation`
-4. run the read-only compatibility guard
-5. only after compatibility succeeds, load the snapshot
-6. index the snapshot through `QdrantVariantDocumentSnapshotIndexer`
-7. delete temp collections only in tests or non-production experiments
+Safe sequence:
+
+1. Choose an explicit versioned collection identity with `QdrantCollectionIdentityInput`.
+2. Render the collection name through `QdrantCollectionIdentity.renderCollectionName`.
+3. Create that collection as an isolated non-production collection.
+4. Build `QdrantCollectionCompatibilityExpectation` from the active `EmbeddingSpec` and `VectorSearchSpec`.
+5. Read collection info through `QdrantCollectionCompatibilityChecker`.
+6. Decode the observed single named vector through `QdrantCollectionInfoDecoder`.
+7. Validate name, vector name, dimension, distance, and optional embedding model metadata with `QdrantCollectionCompatibilityValidator`.
+8. Enforce fail-fast compatibility through `QdrantCollectionCompatibilityGuard.requireCompatible`.
+9. Only after the guard succeeds, load the repository-backed snapshot.
+10. Index the snapshot through `QdrantVariantDocumentSnapshotIndexer.indexCompatibleSnapshot`.
+11. Delete temporary collections only in tests or isolated non-production experiments.
+
+The guarded indexer intentionally sequences readiness before data loading:
+
+- `QdrantSnapshotIndexingCompatibilityGuard` carries the expected collection identity and guard.
+- `indexCompatibleSnapshot` calls `requireCompatible` first.
+- snapshot loading and document upserts happen only after compatibility succeeds.
+- compatibility failures stop indexing instead of recreating, mutating, or falling back to another collection.
 
 Collection identity must be explicit and versioned. At minimum it should include:
 
@@ -179,6 +193,7 @@ Compatibility must be strict:
 
 - expected dimension comes from `EmbeddingSpec`
 - collection vector config must match the expected dimension, vector name, and distance metric
+- optional observed `metadata.embeddingModelName` must match the expected embedding model when present
 - mismatch must fail fast
 - there must be no silent recreate in production-like paths
 
@@ -187,8 +202,9 @@ Non-production policy:
 - tests may create unique temporary collections
 - tests may delete and recreate isolated collections
 - experiments may use explicit versioned collection names
+- experiments must validate compatibility before loading and indexing snapshots
 
-Forbidden for now:
+Production lifecycle work remains explicitly out of scope:
 
 - no production collection manager
 - no destructive recreate of active collections
@@ -200,14 +216,14 @@ Forbidden for now:
 - no HTTP/API metadata surface
 - no Elasticsearch facet replacement
 
-Future production policy:
+Future production policy, if implemented later:
 
 - no destructive recreate of an active collection
 - alias and blue-green collection management are deferred
 - any future alias switch requires full indexing plus eval and health checks first
 - a rollback strategy is required before production rollout
 
-Next code step:
+Possible next code step, still non-production:
 
 - either a non-production explicit experiment composition helper
 - or config-only types for experiment collection readiness
