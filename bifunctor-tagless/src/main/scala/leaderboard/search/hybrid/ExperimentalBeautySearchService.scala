@@ -19,7 +19,7 @@ final class ExperimentalBeautySearchService[F[+_, +_]: Error2](
 
   def search(input: UserSearchInput, metadata: SearchRoutingMetadata): F[QueryFailure, BeautySearchResponse] = {
     val intent = parser.parse(input)
-    val routeDecider = new ExperimentalHybridRouteDecider(router, (_, _) => metadata)
+    val routeDecider = routeDeciderFor(metadata)
     val backend = new ExperimentalHybridSearchBackend[F](
       spec,
       lexicalBackend,
@@ -30,4 +30,17 @@ final class ExperimentalBeautySearchService[F[+_, +_]: Error2](
 
     backend.search(input, intent)
   }
+
+  def diagnose(
+    input: UserSearchInput,
+    metadata: SearchRoutingMetadata,
+  ): ExperimentalHybridRouteDiagnostics = {
+    val intent = parser.parse(input)
+    val routeDecider = routeDeciderFor(metadata)
+
+    routeDecider.decideWithDiagnostics(input, intent)
+  }
+
+  private def routeDeciderFor(metadata: SearchRoutingMetadata): ExperimentalHybridRouteDecider =
+    new ExperimentalHybridRouteDecider(router, (_, _) => metadata)
 }

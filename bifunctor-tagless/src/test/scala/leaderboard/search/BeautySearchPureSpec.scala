@@ -7,7 +7,7 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDo
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.embedding.EmbeddingClient
-import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalHybridRouteDecider, ExperimentalHybridSearchBackend}
+import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalHybridRouteDecider, ExperimentalHybridRouteDiagnostics, ExperimentalHybridSearchBackend}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -497,6 +497,40 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(lexical.lastInput.contains(input))
       assert(lexical.lastIntent.contains(expectedIntent))
       assert(expectedIntent.explicitConstraints.nonEmpty)
+    }
+
+    "diagnose broad semantic metadata as QdrantCandidateRoute without backend calls" in {
+      val input = UserSearchInput("synthetic semantic diagnostics probe", None, None, limit = 10)
+      val lexical = new ThrowingBeautySearchBackend
+      val semantic = new ThrowingSemanticCandidateBackend
+      val lookup = new ThrowingVariantSearchDocumentLookup
+      val service = experimentalService(lexical, semantic, lookup)
+
+      val diagnostics = service.diagnose(input, SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)))
+
+      assert(diagnostics == ExperimentalHybridRouteDiagnostics(
+        route = SearchBackendRoute.QdrantCandidateRoute,
+        routingSignal = Some(SearchRoutingSignal.BroadSemanticCandidate),
+        usesLexicalBackend = false,
+        usesSemanticBackend = true,
+        fallbackRequested = false,
+        fallbackImplemented = false,
+        reasonCategory = "semantic-candidates",
+      ))
+    }
+
+    "diagnose preserves the routing signal" in {
+      val input = UserSearchInput("synthetic noisy diagnostics probe", None, None)
+      val service = experimentalService(
+        new ThrowingBeautySearchBackend,
+        new ThrowingSemanticCandidateBackend,
+        new ThrowingVariantSearchDocumentLookup,
+      )
+
+      val diagnostics = service.diagnose(input, SearchRoutingMetadata(signal = Some(SearchRoutingSignal.HardNegativeOrNoiseGuard)))
+
+      assert(diagnostics.route == SearchBackendRoute.ElasticsearchOnly)
+      assert(diagnostics.routingSignal.contains(SearchRoutingSignal.HardNegativeOrNoiseGuard))
     }
 
     "stay separate from the existing BeautySearchService and BeautySearchBackend contracts" in {
@@ -1616,7 +1650,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     )
 
   private def experimentalService(
-    lexical: FakeBeautySearchBackend,
+    lexical: BeautySearchBackend[IO],
     semantic: SemanticCandidateBackend[IO],
     lookup: VariantSearchDocumentLookup[IO],
   ) =
@@ -1663,6 +1697,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       ZIO.dieMessage(s"Lexical backend must not be called for ${input.query}: $intent")
   }
 
+  private final class ThrowingBeautySearchBackend extends BeautySearchBackend[IO] {
+    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
+      throw new IllegalStateException(s"Lexical backend must not be invoked for ${input.query}: $intent")
+  }
+
   private final case class SemanticProbe(
     calls: Int,
     lastInput: Option[UserSearchInput],
@@ -1697,6 +1736,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       ZIO.dieMessage(s"Semantic backend must not be called for ${input.query}: $intent")
   }
 
+  private final class ThrowingSemanticCandidateBackend extends SemanticCandidateBackend[IO] {
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] =
+      throw new IllegalStateException(s"Semantic backend must not be invoked for ${input.query}: $intent")
+  }
+
   private final case class LookupProbe(
     calls: Int,
     lastVariantIds: Option[List[MasterServiceOfferVariantId]],
@@ -1729,6 +1773,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private final class FailingVariantSearchDocumentLookup extends VariantSearchDocumentLookup[IO] {
     override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
       ZIO.dieMessage(s"Variant lookup must not be called for $variantIds")
+  }
+
+  private final class ThrowingVariantSearchDocumentLookup extends VariantSearchDocumentLookup[IO] {
+    override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
+      throw new IllegalStateException(s"Variant lookup must not be invoked for $variantIds")
   }
 
   private final class FakeSemanticCandidateBackend(
