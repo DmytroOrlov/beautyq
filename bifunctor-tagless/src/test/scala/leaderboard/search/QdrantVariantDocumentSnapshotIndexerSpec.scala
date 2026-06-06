@@ -1,10 +1,19 @@
 package leaderboard.search
 
 import io.circe.Json
+import io.circe.syntax.*
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
-import leaderboard.search.dsl.SearchGeoPoint
-import leaderboard.search.qdrant.{QdrantSnapshotIndexingResult, QdrantVariantDocumentSnapshotIndexer, QdrantVariantDocumentUpsert}
+import leaderboard.search.dsl.{SearchGeoPoint, VectorDistance}
+import leaderboard.search.qdrant.{
+  QdrantCollectionCompatibilityChecker,
+  QdrantCollectionCompatibilityExpectation,
+  QdrantCollectionCompatibilityGuard,
+  QdrantCollectionInfoClient,
+  QdrantSnapshotIndexingResult,
+  QdrantVariantDocumentSnapshotIndexer,
+  QdrantVariantDocumentUpsert,
+}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Ref, Runtime, Unsafe, ZIO}
 
@@ -59,12 +68,72 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       assert(runUio(callsRef.get).isEmpty)
     }
 
-    "propagate snapshot provider failure without indexing" in {
+    "index snapshot normally when compatible guard succeeds" in {
+      val documents = List(variantDocument(1), variantDocument(2))
+      val snapshotCallsRef = runUio(Ref.make(0))
+      val indexCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val indexer = new QdrantVariantDocumentSnapshotIndexer(
+        new FakeSnapshotProvider(Right(documents), Some(snapshotCallsRef)),
+        new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
+        Some(expectation -> compatibleGuard),
+      )
+
+      val result = run(indexer.indexSnapshot(expectation.collectionName))
+
+      assert(runUio(snapshotCallsRef.get) == 1)
+      assert(runUio(indexCallsRef.get) == documents.map(document => expectation.collectionName -> document.variantId))
+      assert(result == QdrantSnapshotIndexingResult(
+        totalDocumentsLoaded = 2,
+        totalDocumentsIndexed = 2,
+        indexedVariantIds = documents.map(_.variantId),
+      ))
+    }
+
+    "propagate guard QueryFailure without loading snapshot or indexing" in {
+      val failure = QueryFailure.operation("get-qdrant-collection-info", "qdrant failed")
+      val snapshotCallsRef = runUio(Ref.make(0))
+      val indexCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val indexer = new QdrantVariantDocumentSnapshotIndexer(
+        new FakeSnapshotProvider(Right(List(variantDocument(1))), Some(snapshotCallsRef)),
+        new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
+        Some(expectation -> guard(new ConstQdrantCollectionInfoClient(Left(failure)))),
+      )
+
+      val error = runFail(indexer.indexSnapshot(expectation.collectionName))
+
+      assert(error == failure)
+      assert(runUio(snapshotCallsRef.get) == 0)
+      assert(runUio(indexCallsRef.get).isEmpty)
+    }
+
+    "propagate guard mismatch QueryFailure without loading snapshot or indexing" in {
+      val snapshotCallsRef = runUio(Ref.make(0))
+      val indexCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val indexer = new QdrantVariantDocumentSnapshotIndexer(
+        new FakeSnapshotProvider(Right(List(variantDocument(1))), Some(snapshotCallsRef)),
+        new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
+        Some(expectation -> guard(new ConstQdrantCollectionInfoClient(Right(collectionInfoJson(dimension = 768))))),
+      )
+
+      val error = runFail(indexer.indexSnapshot(expectation.collectionName))
+
+      error match {
+        case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
+          assert(message.contains("DimensionMismatch(expected=1024, observed=768)"))
+        case other =>
+          fail(s"Expected qdrant-collection-compatibility failure, got $other")
+      }
+      assert(runUio(snapshotCallsRef.get) == 0)
+      assert(runUio(indexCallsRef.get).isEmpty)
+    }
+
+    "propagate snapshot provider failure without indexing when compatible guard succeeds" in {
       val failure = QueryFailure.operation("load-snapshot", "snapshot failed")
       val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Left(failure)),
         new FakeDocumentIndexer(callsRef, Right(Json.obj())),
+        Some(expectation -> compatibleGuard),
       )
 
       val error = runFail(indexer.indexSnapshot("beauty-semantic"))
@@ -73,13 +142,14 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
       assert(runUio(callsRef.get).isEmpty)
     }
 
-    "propagate first indexing failure" in {
+    "propagate first indexing failure when compatible guard succeeds" in {
       val documents = List(variantDocument(1), variantDocument(2), variantDocument(3))
       val failure = QueryFailure.operation("index-document", "indexing failed")
       val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(documents)),
         new FailingOnVariantDocumentIndexer(callsRef, documents(1).variantId, failure),
+        Some(expectation -> compatibleGuard),
       )
 
       val error = runFail(indexer.indexSnapshot("beauty-semantic"))
@@ -90,10 +160,11 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
   }
 
   private final class FakeSnapshotProvider(
-    result: Either[QueryFailure, List[VariantSearchDocument]]
+    result: Either[QueryFailure, List[VariantSearchDocument]],
+    callsRef: Option[Ref[Int]] = None,
   ) extends VariantSearchDocumentSnapshotProvider[IO] {
     override def loadSnapshot(): IO[QueryFailure, List[VariantSearchDocument]] =
-      ZIO.fromEither(result)
+      ZIO.foreachDiscard(callsRef)(_.update(_ + 1)) *> ZIO.fromEither(result)
   }
 
   private final class FakeDocumentIndexer(
@@ -146,6 +217,57 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
 
   private def uuid(index: Int, suffix: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-${index * 100 + suffix}%012d")
+
+  private val expectation =
+    QdrantCollectionCompatibilityExpectation(
+      collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine",
+      vectorName = "variant-embedding",
+      expectedDimension = 1024,
+      expectedDistance = VectorDistance.Cosine,
+      embeddingModelName = "llama-cpp-embedding",
+    )
+
+  private def compatibleGuard: QdrantCollectionCompatibilityGuard =
+    guard(new ConstQdrantCollectionInfoClient(Right(collectionInfoJson())))
+
+  private def guard(client: QdrantCollectionInfoClient): QdrantCollectionCompatibilityGuard =
+    new QdrantCollectionCompatibilityGuard(new QdrantCollectionCompatibilityChecker(client))
+
+  private final class ConstQdrantCollectionInfoClient(result: Either[QueryFailure, Json]) extends QdrantCollectionInfoClient {
+    override def collectionInfo(path: String): IO[QueryFailure, Json] =
+      ZIO.fromEither(result)
+  }
+
+  private def collectionInfoJson(
+    observedCollectionName: String = expectation.collectionName,
+    observedVectorName: String = expectation.vectorName,
+    dimension: Int = expectation.expectedDimension,
+    distance: String = "Cosine",
+    observedEmbeddingModelName: Option[String] = None,
+  ): Json =
+    Json.obj(
+      "result" -> Json.obj(
+        "name" -> observedCollectionName.asJson,
+        "config" -> Json.obj(
+          "params" -> Json.obj(
+            "vectors" -> Json.obj(
+              observedVectorName -> Json.obj(
+                "size" -> dimension.asJson,
+                "distance" -> distance.asJson,
+              )
+            )
+          )
+        ),
+      ).deepMerge(
+        observedEmbeddingModelName.fold(Json.obj()) { embeddingModelName =>
+          Json.obj(
+            "metadata" -> Json.obj(
+              "embeddingModelName" -> embeddingModelName.asJson
+            )
+          )
+        }
+      )
+    )
 
   private def run[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe { implicit unsafe =>

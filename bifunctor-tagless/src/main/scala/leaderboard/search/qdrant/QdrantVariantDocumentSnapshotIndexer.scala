@@ -13,9 +13,13 @@ final case class QdrantSnapshotIndexingResult(
 final class QdrantVariantDocumentSnapshotIndexer(
   snapshotProvider: VariantSearchDocumentSnapshotProvider[IO],
   documentIndexer: QdrantVariantDocumentUpsert,
+  compatibilityGuard: Option[(QdrantCollectionCompatibilityExpectation, QdrantCollectionCompatibilityGuard)] = None,
 ) {
   def indexSnapshot(collectionName: String): IO[QueryFailure, QdrantSnapshotIndexingResult] =
     for {
+      _ <- compatibilityGuard.fold[IO[QueryFailure, Unit]](ZIO.unit) {
+        case (expectation, guard) => guard.requireCompatible(expectation)
+      }
       documents <- snapshotProvider.loadSnapshot()
       indexedVariantIds <- ZIO.foreach(documents) {
         document =>
