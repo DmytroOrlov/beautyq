@@ -45,6 +45,9 @@ Current implemented non-production pieces:
 * `QdrantPointId`
 * `QdrantDocumentPointBuilder`
 * `QdrantSearchDocumentIndexer`
+* `SemanticDocumentHit`
+* `SemanticDocumentLookup`
+* `SemanticCandidateAssembler`
 * `QdrantCollectionInfoClient`
 * `QdrantCandidateHitDecoder`
 * `QdrantSemanticCandidateSearch`
@@ -467,6 +470,12 @@ The generic document indexing seam now supports:
 * injected embedding client
 * injected Qdrant point-upsert client
 
+The generic semantic candidate assembly seam now supports:
+
+* domain document ids through `SemanticDocumentHit[Id]`
+* domain document hydration through `SemanticDocumentLookup[F, Id, Doc]`
+* pure, order-preserving hit/document candidate assembly through `SemanticCandidateAssembler`
+
 Domain point ids must be Qdrant-compatible ids:
 
 * UUID ids render as JSON strings
@@ -477,6 +486,8 @@ Domain point ids must be Qdrant-compatible ids:
 The Qdrant path should not depend on BeautyQ domain classes except through typed spec/document parameters.
 
 That keeps the vector backend reusable and helps the search DSL evolve into a reusable cross-domain architecture rather than a BeautyQ-only implementation.
+
+BeautyQ candidate grouping and response projection remain domain-specific. `QdrantCandidateAssembler` still owns BeautyQ variant/provider/service grouping, while its generic hit/document assembly step can be reused by other domains.
 
 ## 13. Guardrails
 
@@ -526,8 +537,10 @@ Current stage:
 
 * non-production experimental Qdrant path exists
 * readiness config, compatibility guard, guarded snapshot indexing, semantic backend, experimental service, and benchmark tooling exist
-* generic Qdrant document indexing seam exists
+* generic Qdrant document indexing seam exists and is done
 * Qdrant point ids are constrained to UUID or unsigned integer ids
+* generic semantic candidate assembly boundary exists
+* generic semantic response projector boundary is still in progress/deferred; BeautyQ projection remains domain-specific
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
 * no production hybrid wiring yet
@@ -537,7 +550,7 @@ Immediate design/code next step:
 
 * keep `LeaderboardPlugin` unchanged for now
 * do not add Distage wiring until there is a real search-service graph boundary
-* add a generic semantic candidate assembly/projector boundary
+* continue the generic semantic projector boundary separately if another domain needs reusable response projection
 * if a non-production experiment module is later added, it must be named and explicitly activated
 * before wiring, prefer either:
   * a small design-only note for the future experiment axis/config shape, or

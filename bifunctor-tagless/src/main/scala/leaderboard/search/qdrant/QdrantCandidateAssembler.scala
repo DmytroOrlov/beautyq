@@ -2,7 +2,7 @@ package leaderboard.search.qdrant
 
 import leaderboard.model.{MasterLocationId, MasterServiceOfferVariantId, ServiceId}
 import leaderboard.search.document.VariantSearchDocument
-import leaderboard.search.semantic.SemanticCandidateHit
+import leaderboard.search.semantic.{SemanticCandidateAssembler, SemanticCandidateHit, SemanticDocumentHit}
 
 final case class QdrantCandidateHit(
   variantId: MasterServiceOfferVariantId,
@@ -37,8 +37,9 @@ final case class QdrantCandidateAssembly(
 object QdrantCandidateAssembler {
   def assemble(hits: List[SemanticCandidateHit], documents: List[VariantSearchDocument]): QdrantCandidateAssembly = {
     val documentsById = documents.iterator.map(document => document.variantId -> document).toMap
-    val variantCandidates = deduplicateHitsByVariantId(hits).flatMap { hit =>
-      documentsById.get(hit.variantId).map(document => QdrantVariantCandidate(document, hit.score))
+    val documentHits = hits.map(hit => SemanticDocumentHit(hit.variantId, hit.score))
+    val variantCandidates = SemanticCandidateAssembler.assembleUnique(documentHits, documentsById) { (hit, document) =>
+      QdrantVariantCandidate(document, hit.score)
     }
 
     QdrantCandidateAssembly(
@@ -46,19 +47,6 @@ object QdrantCandidateAssembler {
       providerCandidates = groupByMasterLocationId(variantCandidates),
       serviceCandidates = groupByServiceId(variantCandidates),
     )
-  }
-
-  private def deduplicateHitsByVariantId(hits: List[SemanticCandidateHit]): List[SemanticCandidateHit] = {
-    val (_, deduplicatedReverse) = hits.foldLeft((Set.empty[MasterServiceOfferVariantId], List.empty[SemanticCandidateHit])) {
-      case ((seen, deduplicated), hit) =>
-        if (seen(hit.variantId)) {
-          (seen, deduplicated)
-        } else {
-          (seen + hit.variantId, hit :: deduplicated)
-        }
-    }
-
-    deduplicatedReverse.reverse
   }
 
   private def groupByMasterLocationId(

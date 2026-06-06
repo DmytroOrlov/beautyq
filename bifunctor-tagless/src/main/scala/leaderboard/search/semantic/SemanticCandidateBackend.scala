@@ -14,7 +14,7 @@ trait SemanticCandidateBackend[F[_, _]] {
   def candidates(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, List[SemanticCandidateHit]]
 }
 
-trait VariantSearchDocumentLookup[F[_, _]] {
+trait VariantSearchDocumentLookup[F[_, _]] extends SemanticDocumentLookup[F, MasterServiceOfferVariantId, VariantSearchDocument] {
   def lookup(variantIds: List[MasterServiceOfferVariantId]): F[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]]
 }
 
