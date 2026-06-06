@@ -2,6 +2,15 @@ package leaderboard.search.qdrant
 
 import leaderboard.search.*
 import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.semantic.SemanticResponseProjector
+
+final class QdrantBeautySearchResponseProjector(
+  spec: BeautySearchSpec,
+  input: UserSearchInput,
+) extends SemanticResponseProjector[QdrantCandidateAssembly, BeautySearchResponse] {
+  override def project(assembly: QdrantCandidateAssembly): BeautySearchResponse =
+    QdrantCandidateResponseProjector.project(spec, input, assembly)
+}
 
 object QdrantCandidateResponseProjector {
   def project(

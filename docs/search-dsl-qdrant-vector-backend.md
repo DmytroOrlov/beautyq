@@ -48,6 +48,7 @@ Current implemented non-production pieces:
 * `SemanticDocumentHit`
 * `SemanticDocumentLookup`
 * `SemanticCandidateAssembler`
+* `SemanticResponseProjector`
 * `QdrantCollectionInfoClient`
 * `QdrantCandidateHitDecoder`
 * `QdrantSemanticCandidateSearch`
@@ -476,6 +477,14 @@ The generic semantic candidate assembly seam now supports:
 * domain document hydration through `SemanticDocumentLookup[F, Id, Doc]`
 * pure, order-preserving hit/document candidate assembly through `SemanticCandidateAssembler`
 
+The generic semantic response projector boundary now supports:
+
+* domain assembly types as an input boundary
+* domain response types as an output boundary
+* pure projection through `SemanticResponseProjector[Assembly, Response]`
+
+BeautyQ variant, provider, and service carousel projection remains domain-specific. The reusable semantic infrastructure should stop at generic candidate assembly and the generic response projector boundary; BeautyQ response shape, grouping, carousel limits, facets, and inferred filters stay in BeautyQ-specific projection code.
+
 Domain point ids must be Qdrant-compatible ids:
 
 * UUID ids render as JSON strings
@@ -539,8 +548,9 @@ Current stage:
 * readiness config, compatibility guard, guarded snapshot indexing, semantic backend, experimental service, and benchmark tooling exist
 * generic Qdrant document indexing seam exists and is done
 * Qdrant point ids are constrained to UUID or unsigned integer ids
-* generic semantic candidate assembly boundary exists
-* generic semantic response projector boundary is still in progress/deferred; BeautyQ projection remains domain-specific
+* generic semantic candidate assembly boundary exists and is done
+* generic semantic response projector boundary is present through `SemanticResponseProjector[Assembly, Response]`
+* BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
 * no production hybrid wiring yet
@@ -550,7 +560,6 @@ Immediate design/code next step:
 
 * keep `LeaderboardPlugin` unchanged for now
 * do not add Distage wiring until there is a real search-service graph boundary
-* continue the generic semantic projector boundary separately if another domain needs reusable response projection
 * if a non-production experiment module is later added, it must be named and explicitly activated
 * before wiring, prefer either:
   * a small design-only note for the future experiment axis/config shape, or

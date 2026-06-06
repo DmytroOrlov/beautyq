@@ -15,6 +15,10 @@ trait SemanticCandidateAssembler[Id, Doc, Candidate] {
   def assemble(hits: List[SemanticDocumentHit[Id]], documents: Map[Id, Doc]): List[Candidate]
 }
 
+trait SemanticResponseProjector[Assembly, Response] {
+  def project(assembly: Assembly): Response
+}
+
 object SemanticCandidateAssembler {
   def assembleUnique[Id, Doc, Candidate](
     hits: List[SemanticDocumentHit[Id]],
