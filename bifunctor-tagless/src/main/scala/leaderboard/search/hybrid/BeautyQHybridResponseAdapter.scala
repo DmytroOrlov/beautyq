@@ -1,6 +1,6 @@
 package leaderboard.search.hybrid
 
-import leaderboard.search.{BeautySearchResponse, VariantSearchResult}
+import leaderboard.search.{BeautySearchResponse, ProviderSearchResult, ServiceIntentSearchResult, VariantSearchResult}
 import leaderboard.search.document.VariantSearchDocument
 
 sealed trait BeautyQHybridDisplayScorePolicy
@@ -28,12 +28,7 @@ object BeautyQHybridResponseAdapter {
     displayScorePolicy: BeautyQHybridDisplayScorePolicy =
       BeautyQHybridDisplayScorePolicy.LexicalThenSemantic,
   ): BeautyQHybridResponseAdapterResult = {
-    val variantResults = projection.candidates.map(candidate =>
-      toVariantResult(
-        document = candidate.document,
-        score = displayScore(candidate, displayScorePolicy),
-      )
-    )
+    val variantResults = toVariantResults(projection, displayScorePolicy)
 
     BeautyQHybridResponseAdapterResult(
       response = BeautySearchResponse(
@@ -53,6 +48,44 @@ object BeautyQHybridResponseAdapter {
       ),
     )
   }
+
+  def responseWithProviderServiceCarousels(
+    variantProjection: BeautyQHybridVariantProjectionResult,
+    providerServiceProjection: BeautyQHybridProviderServiceProjectionResult,
+    displayScorePolicy: BeautyQHybridDisplayScorePolicy =
+      BeautyQHybridDisplayScorePolicy.LexicalThenSemantic,
+  ): BeautyQHybridResponseAdapterResult = {
+    val variantResults = toVariantResults(variantProjection, displayScorePolicy)
+
+    BeautyQHybridResponseAdapterResult(
+      response = BeautySearchResponse(
+        variantCarousel = variantResults,
+        providerCarousel = providerServiceProjection.providerCandidates.map(toProviderResult),
+        serviceIntentCarousel = providerServiceProjection.serviceIntentCandidates.map(toServiceIntentResult),
+        facets = Nil,
+        inferredFilters = Nil,
+      ),
+      diagnostics = BeautyQHybridResponseAdapterDiagnostics(
+        inputCandidateCount = variantProjection.candidates.size,
+        variantResultCount = variantResults.size,
+        providerCarouselSuppressed = false,
+        serviceIntentCarouselSuppressed = false,
+        facetsSuppressed = true,
+        inferredFiltersSuppressed = true,
+      ),
+    )
+  }
+
+  private def toVariantResults(
+    projection: BeautyQHybridVariantProjectionResult,
+    displayScorePolicy: BeautyQHybridDisplayScorePolicy,
+  ): List[VariantSearchResult] =
+    projection.candidates.map(candidate =>
+      toVariantResult(
+        document = candidate.document,
+        score = displayScore(candidate, displayScorePolicy),
+      )
+    )
 
   private def displayScore(
     candidate: BeautyQHybridProjectedVariantCandidate,
@@ -87,5 +120,28 @@ object BeautyQHybridResponseAdapter {
       bigDecimalAttributes = document.bigDecimalAttributes,
       score = score,
       distanceKm = None,
+    )
+
+  private def toProviderResult(candidate: BeautyQHybridProviderCandidate): ProviderSearchResult =
+    ProviderSearchResult(
+      masterId = candidate.masterId,
+      masterName = candidate.masterName,
+      masterLocationId = candidate.masterLocationId,
+      locationName = candidate.locationName,
+      address = candidate.address,
+      matchingVariantCount = candidate.matchingVariantCount,
+      sampleMatchingVariantIds = candidate.sampleMatchingVariantIds.take(3),
+      bestScore = candidate.representativeDisplayScore,
+      distanceKm = None,
+    )
+
+  private def toServiceIntentResult(candidate: BeautyQHybridServiceIntentCandidate): ServiceIntentSearchResult =
+    ServiceIntentSearchResult(
+      serviceId = candidate.serviceId,
+      serviceName = candidate.serviceName,
+      categoryId = candidate.categoryId,
+      categoryName = candidate.categoryName,
+      matchingVariantCount = candidate.matchingVariantCount,
+      bestScore = candidate.representativeDisplayScore,
     )
 }

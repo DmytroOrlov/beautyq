@@ -7,8 +7,13 @@ import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.BeautyQHybridCandidateSource.{Lexical, Semantic}
 import leaderboard.search.hybrid.{
+  BeautyQHybridCandidateSource,
   BeautyQHybridProjectedVariantCandidate,
+  BeautyQHybridProviderCandidate,
+  BeautyQHybridProviderServiceProjectionDiagnostics,
+  BeautyQHybridProviderServiceProjectionResult,
   BeautyQHybridResponseAdapter,
+  BeautyQHybridServiceIntentCandidate,
   BeautyQHybridVariantProjectionDiagnostics,
   BeautyQHybridVariantProjectionResult,
 }
@@ -152,18 +157,214 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
       assert(result.bigDecimalAttributes == document.bigDecimalAttributes)
       assert(result.distanceKm.isEmpty)
     }
+
+    "build provider and service carousels while preserving variant carousel behavior" in {
+      val first = variantDocument(19)
+      val second = variantDocument(20)
+      val response = adaptWithProviderService(
+        variantCandidates = List(
+          candidate(first, lexicalScore = Some(2.4), semanticScore = Some(0.7)),
+          candidate(second, lexicalScore = None, semanticScore = Some(0.91)),
+        ),
+        providerCandidates = List(providerCandidate(first, representativeDisplayScore = 0.1)),
+        serviceIntentCandidates = List(serviceIntentCandidate(second, representativeDisplayScore = 0.2)),
+      ).response
+
+      assert(response.variantCarousel.map(_.variantId) == List(first.variantId, second.variantId))
+      assert(response.variantCarousel.map(_.score) == List(2.4, 0.91))
+      assert(response.providerCarousel.map(_.masterLocationId) == List(first.masterLocationId))
+      assert(response.serviceIntentCarousel.map(_.serviceId) == List(second.serviceId))
+    }
+
+    "populate provider carousel from provider projection candidates" in {
+      val document = variantDocument(21)
+      val provider = providerCandidate(document, representativeDisplayScore = 0.42)
+
+      val result = adaptWithProviderService(
+        variantCandidates = List(candidate(document, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(provider),
+        serviceIntentCandidates = Nil,
+      ).response.providerCarousel.head
+
+      assert(result.masterId == provider.masterId)
+      assert(result.masterName == provider.masterName)
+      assert(result.masterLocationId == provider.masterLocationId)
+      assert(result.locationName == provider.locationName)
+      assert(result.address == provider.address)
+      assert(result.matchingVariantCount == provider.matchingVariantCount)
+      assert(result.sampleMatchingVariantIds == provider.sampleMatchingVariantIds)
+    }
+
+    "populate service intent carousel from service projection candidates" in {
+      val document = variantDocument(22)
+      val serviceIntent = serviceIntentCandidate(document, representativeDisplayScore = 0.77)
+
+      val result = adaptWithProviderService(
+        variantCandidates = List(candidate(document, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = Nil,
+        serviceIntentCandidates = List(serviceIntent),
+      ).response.serviceIntentCarousel.head
+
+      assert(result.serviceId == serviceIntent.serviceId)
+      assert(result.serviceName == serviceIntent.serviceName)
+      assert(result.categoryId == serviceIntent.categoryId)
+      assert(result.categoryName == serviceIntent.categoryName)
+      assert(result.matchingVariantCount == serviceIntent.matchingVariantCount)
+    }
+
+    "preserve provider order instead of score sorting" in {
+      val lowScore = variantDocument(23)
+      val highScore = variantDocument(24)
+
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(lowScore, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(
+          providerCandidate(lowScore, representativeDisplayScore = 0.2),
+          providerCandidate(highScore, representativeDisplayScore = 99.0),
+        ),
+        serviceIntentCandidates = Nil,
+      ).response
+
+      assert(response.providerCarousel.map(_.masterLocationId) == List(lowScore.masterLocationId, highScore.masterLocationId))
+      assert(response.providerCarousel.map(_.bestScore) == List(0.2, 99.0))
+    }
+
+    "preserve service intent order instead of score sorting" in {
+      val lowScore = variantDocument(25)
+      val highScore = variantDocument(26)
+
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(lowScore, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = Nil,
+        serviceIntentCandidates = List(
+          serviceIntentCandidate(lowScore, representativeDisplayScore = 0.3),
+          serviceIntentCandidate(highScore, representativeDisplayScore = 88.0),
+        ),
+      ).response
+
+      assert(response.serviceIntentCarousel.map(_.serviceId) == List(lowScore.serviceId, highScore.serviceId))
+      assert(response.serviceIntentCarousel.map(_.bestScore) == List(0.3, 88.0))
+    }
+
+    "map provider and service representative display scores into bestScore" in {
+      val providerDocument = variantDocument(27)
+      val serviceDocument = variantDocument(28)
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(providerDocument, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(providerCandidate(providerDocument, representativeDisplayScore = 12.34)),
+        serviceIntentCandidates = List(serviceIntentCandidate(serviceDocument, representativeDisplayScore = 56.78)),
+      ).response
+
+      assert(response.providerCarousel.head.bestScore == 12.34)
+      assert(response.serviceIntentCarousel.head.bestScore == 56.78)
+    }
+
+    "limit provider sample matching variant ids to three and keep distance empty" in {
+      val document = variantDocument(29)
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(document, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(
+          providerCandidate(
+            document,
+            representativeDisplayScore = 1.0,
+            sampleMatchingVariantIds = List(variantId(900), variantId(901), variantId(902), variantId(903)),
+          )
+        ),
+        serviceIntentCandidates = Nil,
+      ).response
+
+      assert(response.providerCarousel.head.sampleMatchingVariantIds == List(variantId(900), variantId(901), variantId(902)))
+      assert(response.providerCarousel.head.distanceKm.isEmpty)
+    }
+
+    "keep facets and inferred filters empty with provider and service carousels" in {
+      val document = variantDocument(30)
+      val response = adaptWithProviderService(
+        variantCandidates = List(candidate(document, lexicalScore = Some(1.0), semanticScore = None)),
+        providerCandidates = List(providerCandidate(document, representativeDisplayScore = 1.0)),
+        serviceIntentCandidates = List(serviceIntentCandidate(document, representativeDisplayScore = 1.0)),
+      ).response
+
+      assert(response.facets.isEmpty)
+      assert(response.inferredFilters.isEmpty)
+    }
+
+    "keep variantOnlyResponse behavior unchanged" in {
+      val document = variantDocument(31)
+      val response = adapt(candidate(document, lexicalScore = Some(5.0), semanticScore = Some(0.9))).response
+
+      assert(response.variantCarousel.map(_.variantId) == List(document.variantId))
+      assert(response.variantCarousel.map(_.score) == List(5.0))
+      assert(response.providerCarousel.isEmpty)
+      assert(response.serviceIntentCarousel.isEmpty)
+      assert(response.facets.isEmpty)
+      assert(response.inferredFilters.isEmpty)
+    }
   }
 
   private def adapt(candidates: BeautyQHybridProjectedVariantCandidate*) =
     BeautyQHybridResponseAdapter.variantOnlyResponse(
-      BeautyQHybridVariantProjectionResult(
-        candidates = candidates.toList,
-        diagnostics = BeautyQHybridVariantProjectionDiagnostics(
-          inputCandidateCount = candidates.size,
-          projectedCandidateCount = candidates.size,
-          missingDocumentIds = Nil,
+      variantProjection(candidates.toList)
+    )
+
+  private def adaptWithProviderService(
+    variantCandidates: List[BeautyQHybridProjectedVariantCandidate],
+    providerCandidates: List[BeautyQHybridProviderCandidate],
+    serviceIntentCandidates: List[BeautyQHybridServiceIntentCandidate],
+  ) =
+    BeautyQHybridResponseAdapter.responseWithProviderServiceCarousels(
+      variantProjection = variantProjection(variantCandidates),
+      providerServiceProjection = BeautyQHybridProviderServiceProjectionResult(
+        providerCandidates = providerCandidates,
+        serviceIntentCandidates = serviceIntentCandidates,
+        diagnostics = BeautyQHybridProviderServiceProjectionDiagnostics(
+          inputCandidateCount = variantCandidates.size,
+          providerCandidateCount = providerCandidates.size,
+          serviceIntentCandidateCount = serviceIntentCandidates.size,
         ),
-      )
+      ),
+    )
+
+  private def variantProjection(candidates: List[BeautyQHybridProjectedVariantCandidate]) =
+    BeautyQHybridVariantProjectionResult(
+      candidates = candidates,
+      diagnostics = BeautyQHybridVariantProjectionDiagnostics(
+        inputCandidateCount = candidates.size,
+        projectedCandidateCount = candidates.size,
+        missingDocumentIds = Nil,
+      ),
+    )
+
+  private def providerCandidate(
+    document: VariantSearchDocument,
+    representativeDisplayScore: Double,
+    sampleMatchingVariantIds: List[MasterServiceOfferVariantId] = Nil,
+  ): BeautyQHybridProviderCandidate =
+    BeautyQHybridProviderCandidate(
+      masterId = document.masterId,
+      masterName = document.masterName,
+      masterLocationId = document.masterLocationId,
+      locationName = document.locationName,
+      address = document.address,
+      matchingVariantCount = 4,
+      sampleMatchingVariantIds =
+        if (sampleMatchingVariantIds.nonEmpty) sampleMatchingVariantIds else List(document.variantId, variantId(800)),
+      representativeDisplayScore = representativeDisplayScore,
+      sources = Set(BeautyQHybridCandidateSource.Lexical),
+    )
+
+  private def serviceIntentCandidate(
+    document: VariantSearchDocument,
+    representativeDisplayScore: Double,
+  ): BeautyQHybridServiceIntentCandidate =
+    BeautyQHybridServiceIntentCandidate(
+      serviceId = document.serviceId,
+      serviceName = document.serviceName,
+      categoryId = document.categoryId,
+      categoryName = document.categoryName,
+      matchingVariantCount = 2,
+      representativeDisplayScore = representativeDisplayScore,
+      sources = Set(BeautyQHybridCandidateSource.Semantic),
     )
 
   private def candidate(
