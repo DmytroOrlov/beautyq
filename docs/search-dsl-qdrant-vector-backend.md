@@ -694,13 +694,15 @@ Construction-safe thunk/factory boundary status:
 * `Disabled` does not evaluate lexical, semantic, Qdrant, lookup, or experiment dependency thunks
 * `Enabled` evaluates each dependency factory once when building the runner
 * building the runner does not call backend or lookup methods
-* tests are fake-only, with no real Distage module and no real Qdrant/ES/Llama resources
+* fake-only tests also prove an explicit test module/composition boundary: disabled module selection binds only an optional empty runner/root and does not include or build fake semantic/Qdrant/lookup resources; enabled module selection explicitly includes fake lexical, semantic, and lookup resources and builds the experiment runner
+* these tests use no real Qdrant/ES/Llama resources
 
 Important limitation:
 
 * the thunk/by-name factory is construction-safe only when callers pass unevaluated constructors/thunks
-* this is not final Distage/module resource gating
-* final Distage/module work must ensure disabled mode does not include or build the Qdrant/semantic resource graph at all
+* the current module proof is fake-only and test-level
+* this is not final Distage/module resource gating for real resources
+* real non-production Distage/module work must still ensure disabled mode does not include or build the real Qdrant/semantic resource graph at all
 * the experiment remains manual/test/local only
 * production lifecycle, routing, and metadata remain absent by design
 
@@ -869,7 +871,8 @@ Current stage:
 * BeautyQ non-production hybrid response experiment runner does not add Distage wiring, HTTP/API, production `BeautySearchService`, routing metadata source, fallback, score fusion, reranking, collection lifecycle, or default runtime behavior
 * BeautyQ disabled-by-default non-production hybrid activation/factory boundary exists and is done through `BeautyQNonProductionHybridExperimentActivation`
 * BeautyQ non-production hybrid activation uses a construction-safe thunk/factory boundary: disabled mode does not evaluate dependency thunks, and enabled mode evaluates each dependency factory once when building the runner
-* this construction-safe factory boundary is not final Distage/module resource gating; future Distage/module work must ensure disabled mode does not include or build the Qdrant/semantic resource graph at all
+* fake-only explicit non-production module gating proof exists and is done: disabled graph excludes fake semantic/Qdrant/lookup resource bindings entirely, while enabled graph explicitly includes fake resources and builds the experiment runner
+* this construction-safe factory boundary plus fake-only module proof is not final Distage/module resource gating for real resources; real non-production module work must still ensure disabled mode does not include or build the real Qdrant/semantic resource graph at all
 * BeautyQ non-production hybrid activation remains outside Distage, `LeaderboardPlugin`, `BeautySearchService`, HTTP/API, production routing, collection lifecycle, startup indexing, and default runtime behavior
 * BeautyQ non-production hybrid activation allows manual task, test setup, and local experiment invocation modes only
 * BeautyQ non-production hybrid activation routing remains explicit-invocation-only
@@ -879,12 +882,12 @@ Current stage:
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
 * production default remains Elasticsearch-only
 * no production hybrid wiring yet
-* no Qdrant hybrid Distage wiring yet
-* no final Distage/module resource gating yet
+* no real Qdrant hybrid Distage wiring yet
+* no final Distage/module resource gating for real resources yet
 
 Immediate next step:
 
-1. optional later: non-production Distage/test module adapter
+1. optional later: benchmark subset expansion
 
 Second-domain proof requirements:
 
@@ -923,10 +926,11 @@ Review follow-up status:
 * pinned later: expand benchmark subset with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`
 * forbidden production paths remain unchanged
 * done: tiny synthetic second-domain proof for generic seams
+* done: fake-only explicit non-production module gating proof
 
 Wiring TODO:
 
-* design the non-production Distage/axis adapter only after the pure disabled-mode invariant is used as its boundary
+* design the real non-production Qdrant/ES/Llama module adapter separately before including real resources
 * no production `BeautySearchService` change yet
 * no startup auto-indexing
 * collection creation remains outside the production app lifecycle

@@ -310,13 +310,17 @@ Construction-safe thunk/factory boundary status:
 - `Disabled` does not evaluate lexical, semantic, Qdrant, lookup, or experiment dependency thunks
 - `Enabled` evaluates each dependency factory once when building the runner
 - building the runner does not call backend or lookup methods
-- tests are fake-only, with no real Distage module and no real Qdrant/ES/Llama resources
+- fake-only tests also prove an explicit test module/composition boundary:
+  disabled module selection binds only an optional empty runner/root and does not include or build fake semantic/Qdrant/lookup resources;
+  enabled module selection explicitly includes fake lexical, semantic, and lookup resources and builds the experiment runner
+- these tests use no real Qdrant/ES/Llama resources
 
 Important limitation:
 
 - the thunk/by-name factory is construction-safe only when callers pass unevaluated constructors/thunks
-- this is not final Distage/module resource gating
-- final Distage/module work must ensure disabled mode does not include or build the Qdrant/semantic resource graph at all
+- the current module proof is fake-only and test-level
+- this is not final Distage/module resource gating for real resources
+- real non-production Distage/module work must still ensure disabled mode does not include or build the real Qdrant/semantic resource graph at all
 - the experiment remains manual/test/local only
 - production lifecycle, routing, and metadata remain absent by design
 It is not the final resource-gating mechanism.
@@ -539,11 +543,13 @@ Future implementation should be split into small patches:
 4. Done: docs/design non-production resource-gating boundary.
 5. Done: construction-safe hybrid experiment activation factory.
 6. Done: test(search) tiny synthetic second-domain proof for generic seams.
-7. Optional later: non-production Distage/test module adapter.
-8. Only later consider routing decision data, pure router tests, Qdrant candidate response model, experimental service path, or hybrid tests for `q_broad_004` and `q_broad_006`.
-9. Only later consider score fusion or reranking.
+7. Done: fake-only explicit non-production Distage/test module gating proof.
+8. Optional later: benchmark subset expansion with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
+9. Later, with separate design: real non-production Qdrant/ES/Llama module adapter and resource lifecycle.
+10. Much later: production lifecycle, routing, metadata, score fusion, or reranking decisions.
 
 The second-domain proof is done.
+The fake-only explicit module gating proof is done.
 Any next implementation patch should keep the same boundary: pure or explicitly non-production only, and no new generic abstractions unless a concrete gap appears.
 
 It must not include:
@@ -703,13 +709,15 @@ Current implementation ladder:
 13. Pure `BeautyQHybridResponsePipeline.projectResponse` retrieval-to-response composition
 14. Non-production `BeautyQNonProductionHybridResponseExperiment` injected-backend response experiment runner
 15. Disabled-by-default, construction-safe `BeautyQNonProductionHybridExperimentActivation` activation/factory boundary
+16. Fake-only explicit non-production Distage/test module gating proof
 
 What is still missing before runtime hybrid:
 
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- an optional later explicit non-production Distage/test module adapter, still disabled by default and still not production
+- a real non-production Qdrant/ES/Llama module adapter, still requiring separate design and still not production
 
-The recommended next step is the optional later non-production Distage/test module adapter, still disabled by default and still not production.
+The recommended later step may be benchmark subset expansion.
+The real non-production Qdrant/ES/Llama module adapter remains later and needs separate design before real resources are included.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.
