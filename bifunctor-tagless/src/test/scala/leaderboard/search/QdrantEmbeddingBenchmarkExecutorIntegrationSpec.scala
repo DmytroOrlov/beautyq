@@ -140,7 +140,7 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
       )
       report <- new QdrantEmbeddingBenchmarkRunner(executor).run(plan.copy(candidates = candidates), tinyQueries)
       jsonReport = QdrantEmbeddingBenchmarkReportJson.encodeReportString(report)
-      _ <- ZIO.succeed(println(QdrantEmbeddingBenchmarkReportFormatter.format(report)))
+      _ <- ZIO.succeed(println(QdrantEmbeddingBenchmarkReportFormatter.formatWithDecisions(report)))
       _ <- ZIO.succeed(println("BEGIN_QDRANT_EMBEDDING_BENCHMARK_JSON"))
       _ <- ZIO.succeed(println(jsonReport))
       _ <- ZIO.succeed(println("END_QDRANT_EMBEDDING_BENCHMARK_JSON"))

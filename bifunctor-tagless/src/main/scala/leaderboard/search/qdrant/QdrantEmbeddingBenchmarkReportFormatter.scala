@@ -53,6 +53,24 @@ object QdrantEmbeddingBenchmarkReportFormatter {
     builder.result()
   }
 
+  def formatWithDecisions(
+    report: QdrantEmbeddingBenchmarkReport,
+    thresholds: QdrantEmbeddingBenchmarkDecisionThresholds = QdrantEmbeddingBenchmarkDecisionPolicy.ConservativeDefaultThresholds,
+  ): String = {
+    val builder = new StringBuilder(format(report))
+
+    if (report.comparisons.nonEmpty) {
+      line(builder, "")
+      line(builder, "decisions:")
+      report.comparisons.foreach { comparison =>
+        val decision = QdrantEmbeddingBenchmarkDecisionPolicy.decide(comparison, thresholds)
+        builder.append(QdrantEmbeddingBenchmarkSavedReportComparison.formatDecision(decision))
+      }
+    }
+
+    builder.result()
+  }
+
   private def line(builder: StringBuilder, value: String): Unit = {
     builder.append(value)
     builder.append('\n')

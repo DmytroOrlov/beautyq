@@ -441,6 +441,123 @@ final class QdrantEmbeddingBenchmarkSpec extends AnyWordSpec {
       assert(formatted.contains("meanQueryLatencyMsDelta: -20.0000"))
     }
 
+    "format report with decisions without changing the no-comparison output" in {
+      val report = QdrantEmbeddingBenchmark.report(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
+          candidates = List(
+            QdrantEmbeddingBenchmarkCandidate("qwen3-0_6b", "Qwen3-Embedding-0.6B", "http://localhost:8081", 1024),
+          ),
+          k = 5,
+        ),
+        queryResultsByCandidateId = Map.empty,
+        expectationsByQueryId = Map.empty,
+      )
+
+      assert(QdrantEmbeddingBenchmarkReportFormatter.formatWithDecisions(report) == QdrantEmbeddingBenchmarkReportFormatter.format(report))
+    }
+
+    "format decisions with verdicts, reasons, candidate ids, and metric deltas" in {
+      val leftCandidate = QdrantEmbeddingBenchmarkCandidate("qwen3-0_6b", "Qwen3-Embedding-0.6B", "http://localhost:8081", 1024)
+      val rightCandidate = QdrantEmbeddingBenchmarkCandidate("qwen3-4b", "Qwen3-Embedding-4B", "http://localhost:8082", 2560)
+      val report = QdrantEmbeddingBenchmark.report(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+          candidates = List(leftCandidate, rightCandidate),
+          k = 5,
+        ),
+        queryResultsByCandidateId = Map(
+          leftCandidate.candidateId -> List(
+            queryResult(
+              candidateId = leftCandidate.candidateId,
+              queryId = "q1",
+              topVariantIds = List(variantId(9)),
+              topProviderIds = List(providerId(9)),
+              topServiceIds = List(serviceId(9)),
+              queryLatencyMs = Some(40),
+            )
+          ),
+          rightCandidate.candidateId -> List(
+            queryResult(
+              candidateId = rightCandidate.candidateId,
+              queryId = "q1",
+              topVariantIds = List(variantId(1)),
+              topProviderIds = List(providerId(1)),
+              topServiceIds = List(serviceId(1)),
+              queryLatencyMs = Some(20),
+            )
+          ),
+        ),
+        expectationsByQueryId = Map(
+          "q1" -> expectedResult(
+            acceptableVariantIds = List(variantId(1)),
+            acceptableProviderIds = List(providerId(1)),
+            acceptableServiceIds = List(serviceId(1)),
+          )
+        ),
+      )
+
+      val formatted = QdrantEmbeddingBenchmarkReportFormatter.formatWithDecisions(report)
+
+      assert(formatted.contains("decisions:"))
+      assert(formatted.contains("baselineCandidateId: qwen3-0_6b"))
+      assert(formatted.contains("candidateId: qwen3-4b"))
+      assert(formatted.contains("verdict: CandidateWorthSwitching"))
+      assert(formatted.contains("reasons:"))
+      assert(formatted.contains("variantRecallAtKDelta: +1.0000"))
+      assert(formatted.contains("meanReciprocalRankAtKDelta: +1.0000"))
+      assert(formatted.contains("providerHitRateAtKDelta: +1.0000"))
+      assert(formatted.contains("serviceHitRateAtKDelta: +1.0000"))
+      assert(formatted.contains("meanQueryLatencyMsDelta: -20.0000"))
+    }
+
+    "format decisions as keep baseline for neutral quality and worse latency" in {
+      val leftCandidate = QdrantEmbeddingBenchmarkCandidate("baseline", "Baseline", "http://localhost:8081", 1024)
+      val rightCandidate = QdrantEmbeddingBenchmarkCandidate("candidate", "Candidate", "http://localhost:8082", 2560)
+      val report = QdrantEmbeddingBenchmark.report(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+          candidates = List(leftCandidate, rightCandidate),
+          k = 5,
+        ),
+        queryResultsByCandidateId = Map(
+          leftCandidate.candidateId -> List(
+            queryResult(
+              candidateId = leftCandidate.candidateId,
+              queryId = "q1",
+              topVariantIds = List(variantId(9)),
+              topProviderIds = List(providerId(9)),
+              topServiceIds = List(serviceId(9)),
+              queryLatencyMs = Some(40),
+            )
+          ),
+          rightCandidate.candidateId -> List(
+            queryResult(
+              candidateId = rightCandidate.candidateId,
+              queryId = "q1",
+              topVariantIds = List(variantId(9)),
+              topProviderIds = List(providerId(9)),
+              topServiceIds = List(serviceId(9)),
+              queryLatencyMs = Some(55),
+            )
+          ),
+        ),
+        expectationsByQueryId = Map(
+          "q1" -> expectedResult(
+            acceptableVariantIds = List(variantId(1)),
+            acceptableProviderIds = List(providerId(1)),
+            acceptableServiceIds = List(serviceId(1)),
+          )
+        ),
+      )
+
+      val formatted = QdrantEmbeddingBenchmarkReportFormatter.formatWithDecisions(report)
+
+      assert(formatted.contains("verdict: KeepBaseline"))
+      assert(formatted.contains("Keep baseline baseline over candidate"))
+      assert(formatted.contains("meanQueryLatencyMsDelta: +15.0000"))
+    }
+
     "omit latency delta cleanly when absent" in {
       val report = QdrantEmbeddingBenchmarkReportFormatter.format(
         leaderboard.search.qdrant.QdrantEmbeddingBenchmarkReport(
