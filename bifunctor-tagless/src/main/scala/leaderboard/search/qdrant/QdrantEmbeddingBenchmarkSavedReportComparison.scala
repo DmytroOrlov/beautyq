@@ -26,6 +26,20 @@ object QdrantEmbeddingBenchmarkSavedReportComparison {
       comparison <- compareReports(leftReport, rightReport)
     } yield comparison
 
+  def compareReportsWithDecision(
+    left: QdrantEmbeddingBenchmarkReport,
+    right: QdrantEmbeddingBenchmarkReport,
+    thresholds: QdrantEmbeddingBenchmarkDecisionThresholds = QdrantEmbeddingBenchmarkDecisionPolicy.ConservativeDefaultThresholds,
+  ): Either[QueryFailure, QdrantEmbeddingBenchmarkDecision] =
+    compareReports(left, right).map(QdrantEmbeddingBenchmarkDecisionPolicy.decide(_, thresholds))
+
+  def compareReportJsonStringsWithDecision(
+    leftJson: String,
+    rightJson: String,
+    thresholds: QdrantEmbeddingBenchmarkDecisionThresholds = QdrantEmbeddingBenchmarkDecisionPolicy.ConservativeDefaultThresholds,
+  ): Either[QueryFailure, QdrantEmbeddingBenchmarkDecision] =
+    compareReportJsonStrings(leftJson, rightJson).map(QdrantEmbeddingBenchmarkDecisionPolicy.decide(_, thresholds))
+
   def formatComparison(comparison: QdrantEmbeddingBenchmarkComparison): String = {
     val builder = new StringBuilder
 
@@ -37,6 +51,25 @@ object QdrantEmbeddingBenchmarkSavedReportComparison {
     line(builder, s"providerHitRateAtKDelta: ${formatDelta(comparison.providerHitRateAtKDelta)}")
     line(builder, s"serviceHitRateAtKDelta: ${formatDelta(comparison.serviceHitRateAtKDelta)}")
     line(builder, s"meanQueryLatencyMsDelta: ${comparison.meanQueryLatencyMsDelta.fold("-")(formatDelta)}")
+
+    builder.result()
+  }
+
+  def formatDecision(decision: QdrantEmbeddingBenchmarkDecision): String = {
+    val builder = new StringBuilder
+
+    line(builder, "Qdrant embedding benchmark saved-report decision")
+    line(builder, s"baselineCandidateId: ${decision.comparison.left.candidateId}")
+    line(builder, s"candidateId: ${decision.comparison.right.candidateId}")
+    line(builder, s"verdict: ${decision.verdict}")
+    line(builder, "reasons:")
+    if (decision.reasons.isEmpty) {
+      line(builder, "- <none>")
+    } else {
+      decision.reasons.foreach(reason => line(builder, s"- $reason"))
+    }
+    line(builder, "comparison:")
+    builder.append(formatComparison(decision.comparison))
 
     builder.result()
   }

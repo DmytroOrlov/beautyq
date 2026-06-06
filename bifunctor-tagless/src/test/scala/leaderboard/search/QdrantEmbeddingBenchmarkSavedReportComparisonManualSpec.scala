@@ -18,11 +18,11 @@ final class QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec extends AnyW
           sys.env.get(QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.EnvRightJson),
         ) match {
           case (Some(leftJson), Some(rightJson)) =>
-            QdrantEmbeddingBenchmarkSavedReportComparison.compareReportJsonStrings(leftJson, rightJson) match {
+            QdrantEmbeddingBenchmarkSavedReportComparison.compareReportJsonStringsWithDecision(leftJson, rightJson) match {
               case Left(failure) =>
                 fail(s"unexpected saved-report comparison failure: $failure")
-              case Right(comparison) =>
-                val formatted = QdrantEmbeddingBenchmarkSavedReportComparison.formatComparison(comparison)
+              case Right(decision) =>
+                val formatted = QdrantEmbeddingBenchmarkSavedReportComparison.formatDecision(decision)
                 println("BEGIN_QDRANT_EMBEDDING_BENCHMARK_COMPARISON")
                 println(formatted)
                 println("END_QDRANT_EMBEDDING_BENCHMARK_COMPARISON")

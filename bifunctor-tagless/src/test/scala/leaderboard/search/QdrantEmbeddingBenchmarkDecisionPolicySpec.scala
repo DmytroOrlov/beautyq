@@ -72,7 +72,7 @@ final class QdrantEmbeddingBenchmarkDecisionPolicySpec extends AnyWordSpec {
 
       assert(decision.verdict == QdrantEmbeddingBenchmarkDecisionVerdict.CandidateWorthFurtherEvaluation)
       assert(decision.reasons.exists(_.contains("Latency unknown")))
-      assert(decision.reasons.exists(_.contains("variantRecallAtKDelta=+0.0600")))
+      assert(decision.reasons.exists(_.contains("improves variantRecallAtKDelta to +0.0600")))
     }
 
     "reject candidate when provider or service hit rate regresses" in {

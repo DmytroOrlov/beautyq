@@ -12,6 +12,8 @@ import leaderboard.search.qdrant.{
   QdrantEmbeddingBenchmarkReport,
   QdrantEmbeddingBenchmarkReportJson,
   QdrantEmbeddingBenchmarkRunMode,
+  QdrantEmbeddingBenchmarkDecisionPolicy,
+  QdrantEmbeddingBenchmarkDecisionVerdict,
   QdrantEmbeddingBenchmarkSavedReportComparison,
 }
 import org.scalatest.wordspec.AnyWordSpec
@@ -106,9 +108,49 @@ final class QdrantEmbeddingBenchmarkSavedReportComparisonSpec extends AnyWordSpe
       assert(comparison.variantRecallAtKDelta == 1.0)
     }
 
+    "compare reports with decision" in {
+      val decision = compareDecision(
+        report(singleCandidateReport(candidate("baseline"), aggregate("baseline", variantRecallAtK = 0.0, meanReciprocalRankAtK = 0.0, meanQueryLatencyMs = Some(40.0)))),
+        report(singleCandidateReport(candidate("candidate"), aggregate("candidate", variantRecallAtK = 1.0, meanReciprocalRankAtK = 1.0, meanQueryLatencyMs = Some(20.0)))),
+      )
+
+      assert(decision.verdict == QdrantEmbeddingBenchmarkDecisionVerdict.CandidateWorthSwitching)
+      assert(decision.reasons.nonEmpty)
+      assert(decision.comparison.left.candidateId == "baseline")
+      assert(decision.comparison.right.candidateId == "candidate")
+    }
+
+    "compare reports with decision keeps baseline for neutral quality and worse latency" in {
+      val decision = compareDecision(
+        report(singleCandidateReport(candidate("baseline"), aggregate("baseline", variantRecallAtK = 0.5, meanReciprocalRankAtK = 0.5, meanQueryLatencyMs = Some(40.0)))),
+        report(singleCandidateReport(candidate("candidate"), aggregate("candidate", variantRecallAtK = 0.5, meanReciprocalRankAtK = 0.5, meanQueryLatencyMs = Some(55.0)))),
+      )
+
+      assert(decision.verdict == QdrantEmbeddingBenchmarkDecisionVerdict.KeepBaseline)
+      assert(decision.reasons.exists(_.contains("Keep baseline baseline over candidate")))
+    }
+
+    "compare JSON strings with decision" in {
+      val leftJson = QdrantEmbeddingBenchmarkReportJson.encodeReportString(
+        report(singleCandidateReport(candidate("baseline"), aggregate("baseline", variantRecallAtK = 0.0, meanReciprocalRankAtK = 0.0, meanQueryLatencyMs = Some(40.0))))
+      )
+      val rightJson = QdrantEmbeddingBenchmarkReportJson.encodeReportString(
+        report(singleCandidateReport(candidate("candidate"), aggregate("candidate", variantRecallAtK = 1.0, meanReciprocalRankAtK = 1.0, meanQueryLatencyMs = Some(20.0))))
+      )
+
+      val decision = QdrantEmbeddingBenchmarkSavedReportComparison.compareReportJsonStringsWithDecision(leftJson, rightJson).fold(
+        failure => fail(s"unexpected comparison failure: $failure", QueryFailureToThrowable(failure)),
+        identity,
+      )
+
+      assert(decision.verdict == QdrantEmbeddingBenchmarkDecisionVerdict.CandidateWorthSwitching)
+      assert(decision.comparison.left.candidateId == "baseline")
+      assert(decision.comparison.right.candidateId == "candidate")
+    }
+
     "fail clearly on invalid JSON string" in {
       val failure = QdrantEmbeddingBenchmarkSavedReportComparison
-        .compareReportJsonStrings("{", QdrantEmbeddingBenchmarkReportJson.encodeReportString(report(singleCandidateReport(candidate("right"), aggregate("right")))))
+        .compareReportJsonStringsWithDecision("{", QdrantEmbeddingBenchmarkReportJson.encodeReportString(report(singleCandidateReport(candidate("right"), aggregate("right")))))
         .swap
         .toOption
         .getOrElse(fail("expected failure"))
@@ -120,6 +162,33 @@ final class QdrantEmbeddingBenchmarkSavedReportComparisonSpec extends AnyWordSpe
         case other =>
           fail(s"expected OperationFailure, got $other")
       }
+    }
+
+    "format decision with candidate ids, verdict, reasons, and metric names" in {
+      val decision = QdrantEmbeddingBenchmarkDecisionPolicy.decide(
+        QdrantEmbeddingBenchmarkComparison(
+          left = aggregate("baseline", meanQueryLatencyMs = Some(40.0)),
+          right = aggregate("candidate", meanQueryLatencyMs = Some(25.0)),
+          variantRecallAtKDelta = 1.0,
+          meanReciprocalRankAtKDelta = 0.5,
+          providerHitRateAtKDelta = 1.0,
+          serviceHitRateAtKDelta = 0.0,
+          meanQueryLatencyMsDelta = Some(-15.0),
+        )
+      )
+
+      val formatted = QdrantEmbeddingBenchmarkSavedReportComparison.formatDecision(decision)
+
+      assert(formatted.contains("baselineCandidateId: baseline"))
+      assert(formatted.contains("candidateId: candidate"))
+      assert(formatted.contains("verdict: CandidateWorthSwitching"))
+      assert(formatted.contains("reasons:"))
+      assert(formatted.contains("variantRecallAtKDelta"))
+      assert(formatted.contains("meanReciprocalRankAtKDelta"))
+      assert(formatted.contains("providerHitRateAtKDelta"))
+      assert(formatted.contains("serviceHitRateAtKDelta"))
+      assert(formatted.contains("meanQueryLatencyMsDelta"))
+      assert(decision.reasons.forall(formatted.contains))
     }
 
     "format comparison with candidate ids and deltas" in {
@@ -159,6 +228,15 @@ final class QdrantEmbeddingBenchmarkSavedReportComparisonSpec extends AnyWordSpe
     right: QdrantEmbeddingBenchmarkReport,
   ): QdrantEmbeddingBenchmarkComparison =
     QdrantEmbeddingBenchmarkSavedReportComparison.compareReports(left, right).fold(
+      failure => fail(s"unexpected comparison failure: $failure", QueryFailureToThrowable(failure)),
+      identity,
+    )
+
+  private def compareDecision(
+    left: QdrantEmbeddingBenchmarkReport,
+    right: QdrantEmbeddingBenchmarkReport,
+  ) =
+    QdrantEmbeddingBenchmarkSavedReportComparison.compareReportsWithDecision(left, right).fold(
       failure => fail(s"unexpected comparison failure: $failure", QueryFailureToThrowable(failure)),
       identity,
     )
