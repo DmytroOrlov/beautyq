@@ -440,3 +440,59 @@ Still not next:
 * score fusion/reranking
 * collection manager / alias switching
 * startup indexing hook
+
+## 15. Living plan and TODOs
+
+Current stage:
+
+* non-production experimental Qdrant path exists
+* readiness config, compatibility guard, guarded snapshot indexing, semantic backend, experimental service, and benchmark tooling exist
+* production default remains Elasticsearch-only
+* no production hybrid wiring yet
+
+Immediate design next step:
+
+* design the non-production experiment module and axis boundary
+* decide explicit activation and config
+* decide which bindings stay non-production/test-only
+* keep the production graph ES-only
+
+Benchmark TODOs:
+
+* expand the benchmark subset beyond `q_broad_004` and `q_broad_006`
+* use explicit query ids first; do not invent taxonomy until `queryTypes` are standardized
+* later include broad semantic, hard-negative, lexical-looking, domain-diverse, and cross-domain queries
+* rerun 0.6B vs 4B after subset expansion
+* current tiny benchmark verdict: 0.6B is preferred on the current subset because 4B had no quality gain and higher latency
+
+Benchmark hardening TODO:
+
+* fail or report clearly on duplicate candidate ids
+* fail or report clearly when a result query id has no expectation
+* keep the decision policy documented as a manual evaluation aid, not a production auto-switch
+
+Wiring TODO:
+
+* design the non-production Distage/axis boundary before any wiring
+* no production `BeautySearchService` change yet
+* no startup auto-indexing
+* collection creation remains outside the production app lifecycle
+
+Watch items:
+
+* env-gated specs may start heavy resources before cancel
+* `ExperimentalHybridRouteDiagnostics.reasonCategory` is a string; make it an ADT only if it becomes an API/log contract
+* confirm `QdrantNonProductionHybridExperiment.build` keeps spec/readiness embedding/vector config consistent before wiring
+
+Forbidden for now:
+
+* production Distage wiring
+* Qdrant-as-default
+* fallback-on-zero-results
+* residual-text routing
+* HTTP/API metadata field
+* score fusion/reranking
+* production collection manager
+* alias/blue-green implementation
+* startup auto-indexing
+* using the benchmark decision policy as a production auto-switch
