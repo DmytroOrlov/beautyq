@@ -499,6 +499,16 @@ The generic lexical/Elasticsearch result seam now supports:
 * backend-independent lexical score and matched-field hit metadata
 * backend-independent lexical hit retrieval through `LexicalDocumentBackend[F, Id]`
 
+The generic hybrid document retrieval seam now supports:
+
+* lexical hits through `LexicalDocumentHit[Id]`
+* semantic hits through `SemanticDocumentHit[Id]`
+* backend-independent channel result storage through `HybridDocumentRetrievalResult[Id]`
+* channel execution diagnostics through `HybridDocumentRetrievalDiagnostics`
+* lexical-first distinct document-id diagnostics without ranking claims
+
+This seam is only a boundary for holding separate channel outputs. It does not implement score fusion, reranking, fallback, query routing, production hybrid behavior, Elasticsearch behavior changes, or Qdrant behavior changes.
+
 BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over the generic backend boundary. It keeps the existing `candidates(...)` API and BeautyQ `MasterServiceOfferVariantId` candidate hit shape while exposing generic document hits for reusable semantic infrastructure.
 
 BeautyQ variant, provider, and service carousel projection remains domain-specific. The reusable semantic and lexical infrastructure should stop at generic hit boundaries, generic candidate assembly, and the generic response projector boundary; BeautyQ response shape, grouping, carousel limits, facets, and inferred filters stay in BeautyQ-specific projection code.
@@ -569,7 +579,9 @@ Current stage:
 * generic semantic candidate assembly boundary exists and is done
 * generic semantic response projector boundary exists and is done through `SemanticResponseProjector[Assembly, Response]`
 * generic semantic backend boundary exists and is done through `SemanticDocumentBackend[F, Id]`
-* generic lexical/Elasticsearch backend result seam exists through `LexicalDocumentHit[Id]` and `LexicalDocumentBackend[F, Id]`
+* generic lexical/Elasticsearch backend result seam exists and is done through `LexicalDocumentHit[Id]` and `LexicalDocumentBackend[F, Id]`
+* generic hybrid document retrieval seam exists and is done through `HybridDocumentRetrievalResult[Id]`
+* generic hybrid document retrieval diagnostics exist through `HybridDocumentRetrievalDiagnostics`
 * BeautyQ `SemanticCandidateBackend` remains a domain-specific adapter over generic semantic document hits
 * BeautyQ variant/provider/service projection remains domain-specific
 * `QdrantNonProductionHybridExperiment` is the runtime boundary for local/test/manual experiments
@@ -579,7 +591,7 @@ Current stage:
 
 Immediate design/code next step:
 
-* design generic hybrid orchestration seam between lexical and semantic hits
+* design domain-specific hybrid projection/merge policy
 * keep `LeaderboardPlugin` unchanged for now
 * do not add Distage wiring until there is a real search-service graph boundary
 * if a non-production experiment module is later added, it must be named and explicitly activated
