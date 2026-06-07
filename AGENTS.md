@@ -1,16 +1,29 @@
 # AGENTS.md
 
-## Core rules
+## Operating rules
 
 * Inspect nearby repo code before using framework APIs from memory.
-* One patch = one purpose.
-* Do not mix code, tests, docs, build files, and AGENTS edits unless explicitly asked.
+* One patch = one purpose. Do not mix code, tests, docs, build files, and AGENTS edits unless explicitly asked.
 * Do not make broad refactors while fixing one failing test.
 * Existing focused tests and route-level HTTP contract tests are source of truth.
 * Do not commit debug output, logs, build artifacts, or temporary `println`.
-* If the requested change needs wider scope, stop and report.
+* If the requested change needs wider scope, stop and report the smallest safe next step.
 
-## Verification rules
+## Architecture review context
+
+Use `docs/codebase-review/README.md` as the navigation entrypoint when you need current BeautyQ architecture context. `docs/codebase-review/INVENTORY.md` is the factual index; the other files are human-oriented architecture guides.
+
+Do not treat roadmap docs or experiments as production behavior. The reviewed status is:
+
+* No production HTTP Beauty search route or production `BeautySearchService` / `BeautySearchBackend` binding was found in inspected app wiring.
+* `BeautySearchService.Impl` is the verified service implementation name; do not use stale `BeautySearchService.Live` wording.
+* Qdrant and hybrid search are non-production/manual-local/experimental unless a task explicitly changes that.
+* Elasticsearch has interpreters/client/integration-test coverage, but no verified production Beauty search runtime wiring.
+* `Salon` is not a first-class inspected model; current domain uses `Master` and `MasterLocation`.
+* `MasterServiceOfferVariant` is the central purchasable/search-result unit. Do not call it bookable unless implementing real booking/scheduling support.
+* Benchmark output is decision support, not production automation.
+
+## Verification labels
 
 Use explicit labels:
 
@@ -22,9 +35,7 @@ Use explicit labels:
 
 Do not call work commit-ready unless `FULL GREEN`, `USER-VERIFIED FULL GREEN`, or the user explicitly accepts focused-only verification.
 
-For `src/main` changes, run focused checks and then full test unless the user accepts focused-only.
-
-If full test fails, stop, report the failing suite/test and exact error, then fix only that failure.
+For `src/main` changes, run focused checks and then full test unless the user accepts focused-only. If full test fails, stop, report the failing suite/test and exact error, then fix only that failure.
 
 ## sbt rules
 
@@ -64,7 +75,7 @@ echo "$OUT"
 
 Do not rely on generic `Pasted text.txt` or stale numbered files.
 
-## Warning rules
+## Scala warning rules
 
 * Do not add `@nowarn` as a first fix.
 * Never add `@nowarn("msg=Unreachable")`.
@@ -72,7 +83,7 @@ Do not rely on generic `Pasted text.txt` or stale numbered files.
 * `@nowarn` is allowed only when exact, narrow, intentional, and explained.
 * Prefer removing unused imports, params, or dead code.
 
-## Distage rules
+## Distage and seed rules
 
 * Distage startup follows dependency edges, not binding order.
 * `ModuleDef` order and `memoizationRoots` order are not sequencing guarantees.
@@ -80,14 +91,7 @@ Do not rely on generic `Pasted text.txt` or stale numbered files.
 * Do not remove `@unused` parent repo dependencies if they preserve FK table creation order.
 * Disabled experiment activation must not accidentally construct heavy Qdrant/semantic dependencies. Use explicit axis/config, by-name/factory/resource boundaries, or separate modules.
 
-## Seed-backed snapshot rule
-
-If a test reads seed JSON and then loads a repo-backed seed-scoped snapshot, it must depend directly on `BeautyQSeedReady` before repository reads.
-
-Applies to:
-
-* `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories`
-* any seed-json + shared-Postgres snapshot path
+If a test reads seed JSON and then loads a repo-backed seed-scoped snapshot, it must depend directly on `BeautyQSeedReady` before repository reads. This applies to `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` and any seed-json + shared-Postgres snapshot path.
 
 Required shape:
 
@@ -102,9 +106,7 @@ private def loadDocuments(
   ...
 ```
 
-Do not rely on `Mode.Test`, `memoizationRoots`, isolated green runs, or timing.
-
-If a spec is green alone but full suite fails with `Seed-scoped search snapshot is missing Category/Service/Master`, check for a missing direct `BeautyQSeedReady` edge before changing search, Qdrant, Elasticsearch, or seed data.
+Do not rely on `Mode.Test`, `memoizationRoots`, isolated green runs, or timing. If a spec is green alone but full suite fails with `Seed-scoped search snapshot is missing Category/Service/Master`, check for a missing direct `BeautyQSeedReady` edge before changing search, Qdrant, Elasticsearch, or seed data.
 
 ## HTTP / Tapir rules
 
@@ -113,8 +115,8 @@ If a spec is green alone but full suite fails with `Seed-scoped search snapshot 
 * Reuse existing support helpers.
 * Do not migrate many endpoints in one patch.
 * Do not change malformed path/body/exception contracts unless explicitly asked.
-
-Beauty single-entity GETs use typed `200 domain JSON / 404 HttpApiFailure JSON`. `ProfileApi` is out of that scope.
+* Beauty single-entity GETs use typed `200 domain JSON / 404 HttpApiFailure JSON`; `ProfileApi` is out of that scope.
+* Route-level contract tests override assumptions from old planning docs or Tapir defaults.
 
 ## MasterServiceOfferVariant invariants
 
@@ -129,6 +131,8 @@ Preserve:
 * enum values as stable `stringCode`
 * unified numeric storage path
 
+`MasterServiceOfferVariants.Postgres` uses `masterServiceOffers` and `masterLocations` as `@unused` FK readiness edges; `serviceVariantSchemas` is an active validation collaborator.
+
 ## BeautyQ search principles
 
 Search semantics live in DSL/spec data, not backend interpreters.
@@ -139,19 +143,9 @@ Allowed place for BeautyQ semantics:
 
 Do not hardcode service names, query phrases, eval query ids, ranking rules, or attribute semantics inside ES/Qdrant clients, generic parser/interpreter code, or in-memory backends.
 
-Elasticsearch owns:
+Elasticsearch owns lexical search, filters, facets, exact attributes, price/duration, lexical ranking, and normal lexical response assembly.
 
-* lexical search
-* filters
-* facets
-* exact attributes
-* price/duration
-* lexical ranking
-* normal lexical response assembly
-
-Qdrant owns:
-
-* semantic candidate recall only
+Qdrant owns semantic candidate recall only.
 
 Rules:
 
@@ -161,8 +155,6 @@ Rules:
 * Residual text alone must never route to Qdrant.
 * Hard-negative/noise queries must not route to Qdrant because of residual text.
 * Eval query ids may appear in tests/docs, not production routing.
-
-## Current search architecture
 
 Current direction:
 
@@ -175,22 +167,7 @@ domain DSL/spec
 → later production design
 ```
 
-Already present:
-
-* generic Qdrant document indexing seam
-* Qdrant point-id validation boundary
-* generic semantic document backend/hit
-* generic lexical document backend/hit
-* generic semantic assembly/projection seams
-* generic hybrid retrieval container
-* BeautyQ hybrid projection/merge policy
-* BeautyQ hybrid response pipeline
-* non-production BeautyQ hybrid experiment runner
-* disabled-by-default activation skeleton
-* Qdrant readiness config / collection identity / compatibility guard
-* benchmark reporting and validation infrastructure
-
-These are not production hybrid search.
+Already-present seams are not production hybrid search. Runtime hybrid requires explicit user approval.
 
 ## Search task modes
 
@@ -234,35 +211,9 @@ Forbidden unless explicitly requested:
 * llama.cpp Dockerization
 * starting/stopping llama.cpp from code
 
-llama.cpp is manual-only:
+llama.cpp is manual-only. Qdrant semantic eval requires `LLAMA_CPP_EMBEDDING_URL`; quality assertions require `QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true`.
 
-```bash
-~/git/llama.cpp/build/bin/llama-server \
-  -m ~/git/Qwen3-Embedding-0.6B-Q8_0.gguf \
-  --embedding \
-  --pooling last \
-  -ub 8192 \
-  --port 8081
-```
-
-Env-gated Qdrant run:
-
-```bash
-LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
-sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
-```
-
-Quality gate:
-
-```bash
-LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
-QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true \
-sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
-```
-
-## Hybrid / experiment rules
-
-Hybrid starts with pure model/tests and explicit non-production experiments. Runtime hybrid requires explicit user approval.
+### Hybrid / experiment
 
 Still forbidden unless explicitly requested:
 
@@ -280,71 +231,40 @@ Still forbidden unless explicitly requested:
 * alias/blue-green implementation
 * benchmark decision as automatic model switch
 
-Current hybrid policy:
+Hybrid policy:
 
-* generic hybrid retrieval container is not a ranking policy
-* BeautyQ projection/merge is domain-specific
-* lexical-first semantic-supplement ordering is explicit
-* ES and Qdrant scores stay separate
-* display scores are not fused ranking scores
-* facets and inferred filters stay lexical/parser-owned unless a separate policy is approved
+* generic hybrid retrieval container is not a ranking policy;
+* BeautyQ projection/merge is domain-specific;
+* lexical-first semantic-supplement ordering is explicit;
+* ES and Qdrant scores stay separate;
+* display scores are not fused ranking scores;
+* facets and inferred filters stay lexical/parser-owned unless a separate policy is approved.
 
-Before non-production wiring, decide/design:
-
-* activation axis/config
-* disabled means Qdrant dependencies are not constructed
-* who creates readiness config
-* who creates collections
-* who runs snapshot indexing
-* kill switch / explicit invocation path
-* diagnostics surface
+Before non-production wiring, decide activation axis/config, disabled-construction behavior, readiness config ownership, collection creation, snapshot indexing, kill switch, explicit invocation path, and diagnostics surface.
 
 ## Qdrant lifecycle rules
 
-Versioned collection names are the current policy. No production alias/blue-green yet.
-
-Qdrant readiness must use one source of truth:
-
-* collection name
-* vector name
-* vector dimension
-* distance
-* embedding model identity when available
-
-Dimension/vector/distance mismatch must fail fast.
-
-Delete/recreate is allowed only in tests/non-production experiments. Never silently recreate an active production-like collection.
-
-Snapshot indexing with a guard must index only the collection that was checked for compatibility.
-
-Qdrant point ids must be Qdrant-compatible ids. Arbitrary domain ids belong in payload.
+* Versioned collection names are the current policy. No production alias/blue-green yet.
+* Qdrant readiness must use one source of truth: collection name, vector name, vector dimension, distance, and embedding model identity when available.
+* Dimension/vector/distance mismatch must fail fast.
+* Delete/recreate is allowed only in tests/non-production experiments.
+* Never silently recreate an active production-like collection.
+* Snapshot indexing with a guard must index only the collection checked for compatibility.
+* Qdrant point ids must be Qdrant-compatible ids. Arbitrary domain ids belong in payload.
 
 ## Benchmark rules
 
 Benchmark output is decision support, not production automation.
 
-Do not use benchmark decisions as:
+Do not use benchmark decisions as automatic model switch, routing policy, score calibration, or production rollout signal.
 
-* automatic model switch
-* routing policy
-* score calibration
-* production rollout signal
-
-Benchmark runner must fail on:
-
-* duplicate candidate ids
-* unexpected candidate ids
-* result query ids without expectations
-* missing expected query results
-* duplicate result query ids per candidate
+Benchmark runner must fail on duplicate candidate ids, unexpected candidate ids, result query ids without expectations, missing expected query results, and duplicate result query ids per candidate.
 
 The benchmark subset is still small. Do not make broad model-quality claims until the subset is expanded.
 
 ## Dictionary rules
 
-Keep dictionary fixes narrow.
-
-Prefer exact phrases, contextual `requires`, conflict-preventing `excludes`, and safe no-op residual cleanup.
+Keep dictionary fixes narrow. Prefer exact phrases, contextual `requires`, conflict-preventing `excludes`, and safe no-op residual cleanup.
 
 Do not add broad unconditional triggers such as:
 
@@ -356,8 +276,7 @@ Do not add broad unconditional triggers such as:
 * `коррекция`
 * `снятие`
 
-Do not implement generic NLP/negation for one failing query.
-Do not fix a query by changing ranking unless explicitly requested.
+Do not implement generic NLP/negation for one failing query. Do not fix a query by changing ranking unless explicitly requested.
 
 ## Failure protocol
 
