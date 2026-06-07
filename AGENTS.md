@@ -1,35 +1,87 @@
 # AGENTS.md
 
+## Purpose
+
+This file contains stable repo-specific guardrails for BeautyQ work. Prompts should not repeat these rules unless a task needs a local exception. Inline only task-specific facts, exact signatures, changed files, and verification commands.
+
 ## Operating rules
 
 * Inspect nearby repo code before using framework APIs from memory.
-* One patch = one purpose. Do not mix code, tests, docs, build files, and AGENTS edits unless explicitly asked.
+* One patch = one purpose. Do not mix unrelated risk layers.
 * Do not make broad refactors while fixing one failing test.
 * Existing focused tests and route-level HTTP contract tests are source of truth.
-* Do not commit debug output, logs, build artifacts, or temporary `println`.
-* If the requested change needs wider scope, stop and report the smallest safe next step.
+* Do not commit debug output, logs, build artifacts, copied dependency sources, or temporary `println`.
+* Do not create `izumi/` or copy Distage/source dependency files into the repo.
+* If a requested change needs wider scope, stop and report the smallest safe next step.
+* Commit messages should be extended by default: subject plus body covering behavior, tests, unchanged boundaries, and verification caveats.
+
+## Prompt / agent discipline
+
+Stable rules live here. Do not paste the same long architecture warnings into every prompt.
+
+When preparing prompts for weaker agents:
+
+* Use small, mechanical tasks.
+* Prefer one new test file or one existing spec update.
+* Avoid design, Distage internals, runtime wiring, and multi-layer changes.
+* Inline exact current signatures and files from the latest bundle.
+* Give exact validation commands.
+* Do not ask weak agents to infer architecture from docs.
+
+Recommended `qwen3.6-35b-a3b` thinking budgets:
+
+* `thinking-budget=128`: one-line docs tweak, delete/rename, mechanical fix.
+* `thinking-budget=256`: small docs-only patch or simple test copied from an existing pattern.
+* `thinking-budget=512`: test-only patch with existing Distage/ModuleDef/route/fake-client setup.
+* `thinking-budget=1024`: only if comparing several existing specs or likely compile fixes around Distage/ZIO/typeclasses.
+* `4096+`: do not use Qwen; split the task or wait for GPT-5.5.
+
+Docs cadence:
+
+* Do not update docs after every tiny characterization test.
+* Batch related characterization results into one docs patch.
+* Update docs immediately when production exposure, runtime behavior, architecture policy, or roadmap status changes.
+* Documentation should record the result/current state, not serve as scratchpad for every micro-step.
 
 ## Architecture review context
 
-Use `docs/codebase-review/README.md` as the navigation entrypoint when you need current BeautyQ architecture context. `docs/codebase-review/INVENTORY.md` is the factual index; the other files are human-oriented architecture guides.
+Use `docs/codebase-review/README.md` as the navigation entrypoint for BeautyQ architecture. `docs/codebase-review/INVENTORY.md` is the factual index; the other files are human-oriented architecture guides.
 
-Do not treat roadmap docs or experiments as production behavior. The reviewed status is:
+Do not treat roadmap docs or experiments as production behavior. Check current code/tests when production wiring matters.
 
-* No production HTTP Beauty search route or production `BeautySearchService` / `BeautySearchBackend` binding was found in inspected app wiring.
+Current verified BeautyQ search status:
+
+* `POST /beauty-search` is production-exposed through `LeaderboardPlugin`.
+* The production include is `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+* The production backend is seed-resource catalog snapshot + `InMemorySearchBackend`.
+* This production route is lexical/simple/catalog-first.
+* It is not Elasticsearch, Qdrant, or hybrid search.
 * `BeautySearchService.Impl` is the verified service implementation name; do not use stale `BeautySearchService.Live` wording.
-* Qdrant and hybrid search are non-production/manual-local/experimental unless a task explicitly changes that.
-* Elasticsearch has interpreters/client/integration-test coverage, but no verified production Beauty search runtime wiring.
+* The earlier `BeautySearchProductionInclusionActivation` / handle / included-apis boundary still exists as a staging/helper boundary, but it is not the active gate for the currently exposed route.
+* A real kill switch / enable-disable production route gate remains future work.
 * `Salon` is not a first-class inspected model; current domain uses `Master` and `MasterLocation`.
 * `MasterServiceOfferVariant` is the central purchasable/search-result unit. Do not call it bookable unless implementing real booking/scheduling support.
 * Benchmark output is decision support, not production automation.
+
+Current production route characterization:
+
+* Limit behavior:
+  * positive limit returns `200 OK` with variants capped by requested limit;
+  * zero and negative limits return `200 OK` with empty variant carousel;
+  * huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
+* Invalid request behavior currently returns `500 InternalServerError` with empty body for malformed JSON, empty body, wrong limit type, and missing required fields. This is current behavior, not desired final contract.
+* Coordinates are not range-validated: out-of-range and huge finite `userLat` / `userLon` currently return `200 OK`.
+* Query text is not length-validated: empty, whitespace-only, normal, and very long queries currently return `200 OK`.
+* `BeautySearchReadyCatalogDocuments` rejects empty/blank source and empty documents, and preserves non-empty source/documents.
+* Freshness, refresh/replacement, staleness bounds, structured errors, typed 4xx validation, observability, and kill-switch remain future hardening.
 
 ## Verification labels
 
 Use explicit labels:
 
 * `FOCUSED GREEN`: requested focused suite passed; full repo status unknown.
-* `FULL GREEN`: full `sbt test` passed.
-* `FULL RED`: full `sbt test` failed.
+* `FULL GREEN`: full `sbt test` or requested full project test passed.
+* `FULL RED`: full test failed.
 * `VERIFICATION BLOCKED`: sbt/docker/local permissions blocked verification.
 * `USER-VERIFIED FULL GREEN`: user ran the exact command and reported green.
 
@@ -41,10 +93,16 @@ For `src/main` changes, run focused checks and then full test unless the user ac
 
 * Do not run sbt commands in parallel.
 * Prefer one chained, project-scoped sbt command.
-* Do not use `-no-server` unless the user explicitly asks.
+* Do not use `-no-server` unless explicitly asked.
+* `sbt --shutdown` is not valid for this repo launcher. Do not use it.
 * If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
 * If escalation is unavailable or rejected, report `VERIFICATION BLOCKED` and the exact command for the user.
 * Do not edit source to work around sbt locks.
+* If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup:
+  * do not run `sbt --shutdown`;
+  * run `sbt clean` or remove generated `target` directories;
+  * rerun the same focused command;
+  * report this as build-artifact cleanup, not source change.
 
 Preferred focused shape:
 
@@ -52,7 +110,7 @@ Preferred focused shape:
 sbt 'project bifunctor-tagless' Test/compile 'testOnly leaderboard.search.BeautySearchPureSpec'
 ```
 
-Cold runtime reset:
+Cold runtime reset when explicitly needed:
 
 ```bash
 docker rm -f $(docker ps -a -q -f "label=distage.type") || true
@@ -66,12 +124,14 @@ When collecting context for ChatGPT, write a unique file and copy that file:
 
 ```bash
 OUT="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM.txt"
-{ echo "## git status <random> <topic>"; git status --short; } > "$OUT"
+{ echo "## git status <topic>"; git status --short; } > "$OUT"
 cpf "$OUT"
 echo "$OUT"
 ```
 
-Do not rely on generic `Pasted text.txt` or stale numbered files.
+Do not rely on generic `Pasted text.txt`, screenshots, or stale numbered files for repo state.
+
+A bundle should include only what the next prompt needs. For weak agents, prefer compact bundles around changed files, nearby specs, and anchors.
 
 ## Scala warning rules
 
@@ -86,6 +146,7 @@ Do not rely on generic `Pasted text.txt` or stale numbered files.
 * Distage startup follows dependency edges, not binding order.
 * `ModuleDef` order and `memoizationRoots` order are not sequencing guarantees.
 * Distage has graph GC; inspect roots, axes, and suite inheritance.
+* Weak set contributions may require concrete retention roots in tests. Do not fake weak-set proof with alias bindings that bypass the weak set.
 * Do not remove `@unused` parent repo dependencies if they preserve FK table creation order.
 * Disabled experiment activation must not accidentally construct heavy Qdrant/semantic dependencies. Use explicit axis/config, by-name/factory/resource boundaries, or separate modules.
 
@@ -113,8 +174,15 @@ Do not rely on `Mode.Test`, `memoizationRoots`, isolated green runs, or timing. 
 * Reuse existing support helpers.
 * Do not migrate many endpoints in one patch.
 * Do not change malformed path/body/exception contracts unless explicitly asked.
-* Beauty single-entity GETs use typed `200 domain JSON / 404 HttpApiFailure JSON`; `ProfileApi` is out of that scope.
 * Route-level contract tests override assumptions from old planning docs or Tapir defaults.
+
+Beauty search route:
+
+* `POST /beauty-search` is currently production-exposed.
+* Current bad JSON / bad body behavior is characterized as `500` with empty body. Do not call it desired contract.
+* Do not change route JSON, request validation, or `TapirHttpSupport` error mapping without an explicit contract task.
+
+Beauty single-entity GETs use typed `200 domain JSON / 404 HttpApiFailure JSON`; `ProfileApi` is out of that scope.
 
 ## MasterServiceOfferVariant invariants
 
@@ -150,9 +218,25 @@ Allowed place for BeautyQ semantics:
 
 Do not hardcode service names, query phrases, eval query ids, ranking rules, or attribute semantics inside ES/Qdrant clients, generic parser/interpreter code, or in-memory backends.
 
-Elasticsearch owns lexical search, filters, facets, exact attributes, price/duration, lexical ranking, and normal lexical response assembly.
+Current production search route:
 
-Qdrant owns semantic candidate recall only.
+```text
+POST /beauty-search
+→ LeaderboardPlugin
+→ BeautySearchRouteModules.seedCatalogInMemory
+→ BeautyQSeedLoader.ResourceLoader
+→ BeautySearchCatalogSnapshot
+→ BeautySearchReadyCatalogDocuments
+→ InMemorySearchBackend
+→ BeautySearchService.Impl
+→ BeautySearchApi
+```
+
+This route is seed-resource catalog snapshot + in-memory backend. It is not ES/Qdrant/hybrid.
+
+Elasticsearch owns future lexical production candidates: filters, facets, exact attributes, price/duration, lexical ranking, and normal lexical response assembly. It is not currently the production Beauty search backend.
+
+Qdrant owns semantic candidate recall only. It is not currently the production Beauty search backend.
 
 Rules:
 
@@ -179,6 +263,24 @@ Already-present seams are not production hybrid search. Runtime hybrid requires 
 ## Search task modes
 
 Pick one mode before editing. Do not mix modes.
+
+### Production Beauty route hardening
+
+Allowed:
+
+* route-level characterization tests;
+* narrow contract tests;
+* readiness/source diagnostics;
+* explicit kill-switch design or implementation when requested;
+* docs batch after a group of related characterization tests.
+
+Forbidden unless explicitly requested:
+
+* Qdrant/hybrid/Elasticsearch backend changes;
+* route JSON changes;
+* global Tapir error behavior changes;
+* ranking rewrites;
+* production data-source replacement.
 
 ### Pure eval / parser / DSL
 
@@ -224,9 +326,7 @@ llama.cpp is manual-only. Qdrant semantic eval requires `LLAMA_CPP_EMBEDDING_URL
 
 Still forbidden unless explicitly requested:
 
-* `BeautySearchService` production wiring
-* production Distage wiring
-* ES/Qdrant production hybrid calls
+* production hybrid calls
 * production fallback behavior
 * score fusion/reranking
 * Qdrant-as-default
@@ -247,7 +347,34 @@ Hybrid policy:
 * display scores are not fused ranking scores;
 * facets and inferred filters stay lexical/parser-owned unless a separate policy is approved.
 
-Before non-production wiring, decide activation axis/config, disabled-construction behavior, readiness config ownership, collection creation, snapshot indexing, kill switch, explicit invocation path, and diagnostics surface.
+Before non-production real-resource wiring, decide activation/config, disabled-construction behavior, readiness config ownership, collection creation, snapshot indexing, kill switch, explicit invocation path, and diagnostics surface.
+
+## Qdrant / hybrid roadmap status
+
+Current Qdrant/hybrid status:
+
+* Generic lexical/semantic/hybrid seams exist.
+* Qdrant point id, point builder, indexing, readiness, compatibility, and snapshot indexing guards exist.
+* BeautyQ hybrid projection/pipeline exists with explicit carousel limits.
+* Non-production composition and activation tests exist.
+* Composition build is characterized as side-effect-free; `indexSnapshot()` and `semanticBackend.candidates(...)` are explicit calls.
+* Readiness/compatibility guard behavior is characterized with fakes.
+* Qdrant/hybrid remains non-production/manual-local/experimental.
+* No production Qdrant/hybrid route is wired.
+
+Near-term target:
+
+```text
+non-production real-resource Qdrant/hybrid manual runner
+```
+
+Not target yet:
+
+```text
+production hybrid backend
+```
+
+Approximate remaining work to the near-term target is tracked conversationally in qwen-runs; keep it out of code/docs unless asked.
 
 ## Qdrant lifecycle rules
 
