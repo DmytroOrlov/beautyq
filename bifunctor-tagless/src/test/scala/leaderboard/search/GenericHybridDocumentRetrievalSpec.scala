@@ -91,5 +91,76 @@ final class GenericHybridDocumentRetrievalSpec extends AnyWordSpec {
       assert(result.lexicalHits.head.documentId == lexicalId)
       assert(result.semanticHits.head.documentId == semanticId)
     }
+
+    "handle empty retrieval result with zero diagnostics" in {
+      val result = HybridDocumentRetrievalResult.fromHits(
+        lexicalHits = Nil,
+        semanticHits = Nil,
+      )
+
+      val diagnostics = HybridDocumentRetrievalResult.diagnostics(result)
+
+      assert(result.lexicalHits == Nil)
+      assert(result.semanticHits == Nil)
+      assert(diagnostics.lexicalHitCount == 0)
+      assert(diagnostics.semanticHitCount == 0)
+      assert(diagnostics.lexicalExecuted)
+      assert(diagnostics.semanticExecuted)
+      assert(HybridDocumentRetrievalResult.distinctDocumentIdsInChannelOrder(result) == Nil)
+    }
+
+    "report lexical-only diagnostics when semantic channel is empty" in {
+      val result = HybridDocumentRetrievalResult.fromHits(
+        lexicalHits = List(LexicalDocumentHit("lex-1", 5.0), LexicalDocumentHit("lex-2", 3.0)),
+        semanticHits = Nil,
+      )
+
+      val diagnostics = HybridDocumentRetrievalResult.diagnostics(result)
+
+      assert(result.lexicalHits.size == 2)
+      assert(result.semanticHits == Nil)
+      assert(diagnostics.lexicalHitCount == 2)
+      assert(diagnostics.semanticHitCount == 0)
+      assert(diagnostics.lexicalExecuted)
+      assert(diagnostics.semanticExecuted)
+      assert(HybridDocumentRetrievalResult.distinctDocumentIdsInChannelOrder(result) == List("lex-1", "lex-2"))
+    }
+
+    "report semantic-only diagnostics when lexical channel is empty" in {
+      val result = HybridDocumentRetrievalResult.fromHits(
+        lexicalHits = Nil,
+        semanticHits = List(SemanticDocumentHit("sem-1", 0.75), SemanticDocumentHit("sem-2", 0.60)),
+      )
+
+      val diagnostics = HybridDocumentRetrievalResult.diagnostics(result)
+
+      assert(result.lexicalHits == Nil)
+      assert(result.semanticHits.size == 2)
+      assert(diagnostics.lexicalHitCount == 0)
+      assert(diagnostics.semanticHitCount == 2)
+      assert(diagnostics.lexicalExecuted)
+      assert(diagnostics.semanticExecuted)
+      assert(HybridDocumentRetrievalResult.distinctDocumentIdsInChannelOrder(result) == List("sem-1", "sem-2"))
+    }
+
+    "not imply route decisions such as fallback, reranking, or runtime selection" in {
+      val result = HybridDocumentRetrievalResult.fromHits(
+        lexicalHits = List(LexicalDocumentHit("doc-1", 4.0)),
+        semanticHits = List(SemanticDocumentHit("doc-2", 0.55)),
+      )
+
+      val diagnostics = HybridDocumentRetrievalResult.diagnostics(result)
+
+      assert(!result.productElementNames.toSet("fallback"))
+      assert(!result.productElementNames.toSet("reranked"))
+      assert(!result.productElementNames.toSet("routeSelection"))
+      assert(!result.productElementNames.toSet("decision"))
+      assert(!result.productElementNames.toSet("selectedChannel"))
+      assert(!diagnostics.productElementNames.toSet("fallback"))
+      assert(!diagnostics.productElementNames.toSet("reranked"))
+      assert(!diagnostics.productElementNames.toSet("routeSelection"))
+      assert(!diagnostics.productElementNames.toSet("decision"))
+      assert(!diagnostics.productElementNames.toSet("selectedChannel"))
+    }
   }
 }
