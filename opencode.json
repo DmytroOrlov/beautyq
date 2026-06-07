@@ -3,35 +3,6 @@
   "plugin": [
     "opencode-antigravity-auth@latest"
   ],
-  "provider": {
-    "llamacpp8080": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "llama.cpp (local 8080)",
-      "options": {
-        "baseURL": "http://127.0.0.1:8080/v1",
-        "apiKey": "local"
-      },
-      "models": {
-        "qwen35": {
-          "name": "local:8080 Qwen3.5 35B A3B",
-          "variants": {
-            "default": {
-              "limit": {
-                "context": 196608,
-                "output": 8192
-              }
-            },
-            "128k": {
-              "limit": {
-                "context": 262144,
-                "output": 8192
-              }
-            }
-          }
-        }
-      }
-    }
-  },
   "model": "llamacpp8080/qwen35",
   "small_model": "llamacpp8080/qwen35",
   "agent": {
