@@ -2,14 +2,12 @@ package leaderboard
 
 import io.circe.parser.parse
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
-import leaderboard.http.HttpApiFailure
+import leaderboard.api.BeautySearchApi
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
 import leaderboard.search.dsl.SearchConstraint
 import org.http4s.Status
-import sttp.tapir.server.ServerEndpoint
-import sttp.capabilities.fs2.Fs2Streams
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
 
@@ -104,15 +102,7 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
   private def app(
     state: BeautySearchApiContractState
   ) =
-    tapirHttpSupport.toRoutes(List(searchEndpoint(state))).orNotFound
-
-  private def searchEndpoint(
-    state: BeautySearchApiContractState
-  ): ServerEndpoint[Fs2Streams[IO[Throwable, _]], IO[Throwable, _]] =
-    tapirEndpoints.searchBeauty.serverLogic[IO[Throwable, _]] {
-      input =>
-        HttpApiFailure.fromQueryEffect(state.service.search(input))
-    }
+    new BeautySearchApi[IO](state.service, tapirEndpoints, tapirHttpSupport).http.orNotFound
 
   private val emptySearchResponse: BeautySearchResponse =
     BeautySearchResponse(

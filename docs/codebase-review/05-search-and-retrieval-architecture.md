@@ -27,27 +27,29 @@ Implemented/current:
 - `BeautySearchService[F]`: service interface with `search(input)`.
 - `BeautySearchService.Impl`: parses input with `BeautySearchIntentParser` and delegates to a `BeautySearchBackend[F]`.
 - `BeautySearchTapirEndpoints`: pure unwired contract skeleton for `POST /beauty-search`.
-- `BeautySearchApiHttpContractSuite`: route-level contract skeleton using a test-local fake `BeautySearchService`.
+- `BeautySearchApi`: thin unwired API adapter from `BeautySearchTapirEndpoints` to `BeautySearchService[F]`.
+- `BeautySearchApiHttpContractSuite`: route-level adapter contract using a test-local fake `BeautySearchService`.
 
 Production-wired/current:
 
 - Pass-2 inspection found no binding for `BeautySearchService.Impl`, `BeautySearchService`, or `BeautySearchBackend` in `LeaderboardPlugin.scala`.
-- No production `SearchApi`, search role, or `/beauty-search` route wiring was found.
+- No production search role or `/beauty-search` route wiring was found.
 - No production `BeautySearchBackend` binding was found.
-- The pure Tapir endpoint is not included in `LeaderboardPlugin.modules.api` and does not expose search by itself.
+- The pure Tapir endpoint and unwired API adapter are not included in `LeaderboardPlugin.modules.api` and do not expose search by themselves.
+- `LeaderboardPlugin` was not changed for the unwired adapter.
 
 Design boundary:
 
-- The implemented model/service/contract boundary is real code, but future implementation still requires explicit adapter/role/binding before Beauty search can be considered production-exposed.
+- The implemented model/service/contract/adapter boundary is real code, but future implementation still requires explicit role/binding before Beauty search can be considered production-exposed.
 - Do not infer production availability from the existence of `BeautySearchService.Impl`, `BeautySearchBackend[F]`, or related search models.
-- Do not infer production availability from `BeautySearchTapirEndpoints`; it is a pure contract skeleton only.
+- Do not infer production availability from `BeautySearchTapirEndpoints` or `BeautySearchApi`; they remain unwired.
 
 Test-only/fake-only:
 
 - `BeautySearchPureSpec.scala` constructs `BeautySearchService.Impl` directly with fake or in-memory backends.
 - `FakeBeautySearchBackend`, `FailingBeautySearchBackend`, and `ThrowingBeautySearchBackend` are test-local helpers inside `BeautySearchPureSpec.scala`.
 - `InMemorySearchBackend` is the pure regression backend described in `docs/beautyq-search-dsl-v1.md` and used by pure tests.
-- `BeautySearchApiHttpContractSuite.scala` constructs a test-local fake `BeautySearchService`; it does not use Qdrant, hybrid, Elasticsearch, repository snapshots, or production DI.
+- `BeautySearchApiHttpContractSuite.scala` constructs a test-local fake `BeautySearchService` through `BeautySearchApi`; it does not use Qdrant, hybrid, Elasticsearch, repository snapshots, file IO, Docker, or production DI.
 
 Non-production experiment:
 

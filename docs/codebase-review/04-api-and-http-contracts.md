@@ -78,27 +78,27 @@ Contract skeleton/current:
 - Error output uses the existing `HttpApiFailureTapirSupport.endpointBase` non-single-entity behavior; route contract tests currently pin backend/query failure as `500` with an empty body through existing support.
 - Empty search responses are explicit arrays for all carousel/facet/filter fields, not `null`.
 - Diagnostics and routing metadata are not exposed by this contract skeleton; any diagnostics API remains future design.
-- `BeautySearchApiHttpContractSuite.scala` exercises the route through a test-local fake `BeautySearchService` only.
+- `BeautySearchApi.scala` is a thin, unwired API adapter that bridges `BeautySearchTapirEndpoints` to `BeautySearchService[F]`.
+- `BeautySearchApiHttpContractSuite.scala` exercises the adapter route through a test-local fake `BeautySearchService` only.
 
 Production-wired/current:
 
-- No search API adapter was found under `bifunctor-tagless/src/main/scala/leaderboard/api`.
 - No search role was found in `LeaderboardRole.scala`.
 - `LeaderboardPlugin.modules.api` does not bind `BeautySearchService`, `BeautySearchBackend`, search endpoints, or a search `HttpApi`.
-- Targeted searches for `SearchApi`, `SearchRoute`, and production `/beauty-search` wiring found no production HTTP route.
+- `LeaderboardPlugin` was not changed for the unwired adapter, and targeted searches for production `/beauty-search` wiring found no production HTTP route.
 - The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
 
 Conclusion:
 
-- Beauty search now has a pure route contract skeleton, but it is not exposed as a production HTTP route in inspected runtime app wiring.
-- Production Beauty search requires explicit route/binding. No confirmed `SearchApi`, search role, or production `/beauty-search` route was found in inspected wiring.
-- No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton.
+- Beauty search now has a pure route contract skeleton and thin unwired API adapter, but it is not exposed as a production HTTP route in inspected runtime app wiring.
+- Production Beauty search requires explicit route/binding. No confirmed production search role or production `/beauty-search` route was found in inspected wiring.
+- No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton or unwired adapter.
 
 Future implementation boundary:
 
-- The next production Beauty search step should prove `BeautySearchService.Impl` binding and backend readiness explicitly, or separately design backend readiness before binding.
-- Future production wiring still needs explicit decisions for API adapter/role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
-- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton.
+- The next production Beauty search step should be `test(search): prove BeautySearchService.Impl binding with fake/in-memory backend` or `docs(search): design BeautySearchBackend readiness/freshness boundary`.
+- Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
+- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton or unwired adapter.
 
 ## Contract Tests
 
