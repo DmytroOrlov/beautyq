@@ -36,11 +36,12 @@ Implemented/current:
 - `BeautySearchCatalogBackendReadinessSpec`: focused proof that seed resource data is converted to a `BeautySearchCatalogSnapshot`, flattened into `VariantSearchDocument` rows, wrapped in the src/main ready-document handle, and then used to construct `InMemorySearchBackend` and `BeautySearchService.Impl[IO]`.
 - `BeautySearchCatalogBackendModuleSpec`: focused proof that the opt-in catalog/in-memory backend module materializes ready documents, backend, and service and answers a simple search without API, HTTP, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
 - `BeautySearchAppGraphBoundarySpec`: focused test-only Distage app-graph boundary proof that assembles `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchService.Impl[IO]`, `BeautySearchIntentParser`, `BeautySearchSpecV1.spec`, and a fake `BeautySearchBackend[IO]` only through a spec-local module/composition.
-- `BeautySearchProductionInclusionActivation`: disabled-by-default production inclusion activation boundary.
+- `BeautySearchProductionInclusionActivation`: disabled-by-default production inclusion activation boundary. This is a staging/helper boundary; it is NOT the active production gate for `/beauty-search`.
 - `BeautySearchProductionInclusionHandle`: optional API handle that does not implement `HttpApi` and does not expose routes by itself.
 - `BeautySearchProductionInclusionBoundarySpec`: focused proof that Disabled avoids evaluating/constructing the API/service/backend graph and Enabled can explicitly assemble the stack in a test-local module.
 - `BeautySearchProductionIncludeModuleSpec`: focused test-only proof that an include module can remain disabled by default at an API aggregation boundary.
 - The include-module proof uses a src/main `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; Disabled contributes no Beauty search API, and Enabled can explicitly contribute one `BeautySearchApi`. This helper does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
+- The old disabled inclusion boundary is a staging/helper boundary. It is not the active production gate for `/beauty-search`. The route is exposed directly by `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`, not by toggling the old inclusion handle. A real kill switch / enable-disable route gate remains future hardening.
 - `BeautySearchPluginModules.api[F]`: opt-in src/main helper that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set only when explicitly included.
 - `BeautySearchOptInHttpApiModuleSpec`: focused proof that the opt-in module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, with the repo's role-style concrete API retention edge and a fake `BeautySearchService[IO]` that is not called during graph construction.
 - `BeautySearchRouteModules.seedCatalogInMemory[F]`: explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies the seed resource loader.
@@ -265,16 +266,15 @@ Decision policy boundary:
 
 Production-wired/current:
 
-- No production Beauty search HTTP route found.
-- No `BeautySearchService` binding found.
-- No `BeautySearchBackend` binding found.
-- An opt-in catalog/in-memory `BeautySearchService`/`BeautySearchBackend` module exists, but it is not included in `LeaderboardPlugin` default modules and is not a production default binding.
-- The seed-catalog/in-memory route module is included in `LeaderboardPlugin.modules.api` and is production route exposure.
-- No production Beauty search app-graph inclusion found; the complete-stack proof is test-local only.
+- `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- `BeautySearchService.Impl[F]` and `BeautySearchBackend[F]` are production-bound through the included route module.
+- `BeautySearchApi[F]` is production-exposed through the same include.
+- The backend is seed-resource catalog snapshot readiness plus `InMemorySearchBackend[F]`.
+- This is lexical/simple/catalog-first. It is not Elasticsearch, not Qdrant, and not hybrid.
 - No Elasticsearch search backend binding found.
 - No Qdrant/hybrid production binding found.
-- No `SearchApi`, search role, or production `/beauty-search` route found in inspected wiring.
-- A disabled-by-default Beauty search production inclusion activation/handle boundary exists, but no `LeaderboardPlugin` include or production route exposure uses it yet.
+- No search role in `LeaderboardRole.scala`.
+- `BeautySearchProductionInclusionActivation`/`Handle`/`IncludedApis` still exist as a staging/helper boundary, but they are NOT the active production gate. The route is exposed directly via `LeaderboardPlugin.modules.api` include, not via the old inclusion handle. A real kill switch / enable-disable route gate remains future hardening.
 
 Implemented/current but mostly test/experiment exercised:
 
