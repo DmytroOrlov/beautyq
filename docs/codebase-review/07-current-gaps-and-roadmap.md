@@ -11,6 +11,7 @@ Gap:
 - A pure Beauty search route contract skeleton exists, but no production Beauty search HTTP route was found.
 - A thin unwired Beauty search API adapter exists, but it is not included in the production app graph.
 - The production Beauty search API boundary remains a contract/design boundary, not a verified runtime boundary.
+- The current proof set is present, but production inclusion is still absent: pure `POST /beauty-search`, thin unwired `BeautySearchApi`, fake-service route contract suite, fake-backend `BeautySearchService.Impl` binding proof, test-only catalog snapshot/in-memory backend readiness proof, and test-only complete app-graph boundary proof.
 
 Evidence:
 
@@ -24,16 +25,20 @@ Evidence:
 - `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
 - `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
 - `LeaderboardPlugin` was not changed for the app-graph boundary proof.
+- `LeaderboardPlugin.modules.api` is the production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined set.
+- Adding `BeautySearchApi` there would expose `POST /beauty-search`; that is the production inclusion boundary.
 - `LeaderboardRole.scala` has no search role.
 - No `BeautySearchService` or `BeautySearchBackend` production binding was added.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added.
 - Qdrant/hybrid remain non-production/manual-local/experimental and are not default.
+- No enable/disable or rollback mechanism exists yet for production inclusion.
 
 Future implementation:
 
 - Production Beauty search requires explicit route/binding.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
-- The next step should be `docs(search): design explicit production app inclusion patch`.
+- The next code patch should be `feat(search): add disabled-by-default Beauty search production inclusion boundary`.
+- That future code patch should introduce an explicit activation/config boundary, default to Disabled, prove Disabled does not build `BeautySearchApi`, `BeautySearchService`, or `BeautySearchBackend`, prove Enabled can explicitly include the existing catalog/in-memory stack, and avoid touching production route exposure unless explicitly approved in that patch.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 
 ### BeautySearchService Wiring
@@ -50,6 +55,7 @@ Evidence:
 - `BeautySearchCatalogBackendReadinessSpec.scala` constructs `BeautySearchService.Impl[IO]` with `InMemorySearchBackend[IO]` from an explicit test-local ready-document handle in `src/test` only.
 - `BeautySearchAppGraphBoundarySpec.scala` assembles `BeautySearchApi[IO]` and `BeautySearchService.Impl[IO]` through a test-local `ModuleDef` and fake `BeautySearchBackend[IO]` in `src/test` only.
 - `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
+- The proof set includes a complete app-graph boundary, but that remains test-local and not production-exposed yet.
 
 Acceptance criteria for future implementation:
 
@@ -101,6 +107,7 @@ Preserved boundary:
 - No production collection lifecycle.
 - No startup indexing.
 - No HTTP routing metadata for hybrid without separate design.
+- No production inclusion boundary should default to Qdrant/hybrid or use them as fallback/rollback.
 
 ### Seed-Scoped Repository Snapshot Readiness Edge
 
@@ -133,6 +140,7 @@ Boundary:
 - It does not change `LeaderboardPlugin` or add a search role/API inclusion.
 - It does not add repository-backed production snapshot wiring, startup indexing, Elasticsearch lifecycle, Qdrant/hybrid routing, fallback, reranking, score fusion, or benchmark-driven model switching.
 - Production backend selection and freshness/refresh/staleness policy remain future work.
+- The seed-resource/catalog/in-memory path proves a startup readiness shape only. It does not solve production freshness, staleness bounds, runtime catalog replacement, repository-vs-seed source-of-truth choice, or stale-catalog observability.
 
 ### Salon / Availability Domain
 
@@ -185,6 +193,7 @@ Recommendation:
 Current blockers:
 
 - Search API contract skeleton exists, but no production search API adapter/role/wiring exists.
+- No disabled-by-default production inclusion boundary exists yet.
 - No production `BeautySearchService` binding.
 - No production lexical backend binding.
 - No production Elasticsearch client/indexing lifecycle.
@@ -201,6 +210,7 @@ Current blockers:
 - No decided logging/metrics/tracing surface.
 - No decided production backend-readiness failure behavior.
 - No decided rollout strategy for first production exposure.
+- No rollback/disable story for future production inclusion.
 
 ## Repository / Persistence Risks
 
@@ -231,8 +241,8 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. `docs(search): design explicit production app inclusion patch`.
-2. `test(search): prove production app-graph inclusion remains explicit and disabled-by-default`.
+1. `feat(search): add disabled-by-default Beauty search production inclusion boundary`.
+2. `test(search): prove disabled and enabled production inclusion behavior explicitly`.
 3. Keep Qdrant/hybrid out of first production exposure unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
 4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.
 5. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.

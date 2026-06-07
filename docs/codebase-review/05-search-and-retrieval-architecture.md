@@ -41,12 +41,16 @@ Production-wired/current:
 - The pure Tapir endpoint and unwired API adapter are not included in `LeaderboardPlugin.modules.api` and do not expose search by themselves.
 - `LeaderboardPlugin` was not changed for the unwired adapter, fake-backend service binding proof, catalog snapshot/in-memory backend readiness proof, or app-graph boundary proof.
 - No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs.
+- `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined API set.
+- Adding `BeautySearchApi` to that set would expose `POST /beauty-search`; the app-graph boundary proof does not imply production inclusion.
 
 Design boundary:
 
 - The implemented model/service/contract/adapter boundary is real code, but future implementation still requires explicit role/binding before Beauty search can be considered production-exposed.
 - Do not infer production availability from the existence of `BeautySearchService.Impl`, `BeautySearchBackend[F]`, or related search models.
 - Do not infer production availability from `BeautySearchTapirEndpoints` or `BeautySearchApi`; they remain unwired.
+- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a test-only catalog snapshot/in-memory readiness proof, and a test-only complete app-graph boundary proof.
+- None of those proofs make the route production-exposed yet.
 
 Test-only/fake-only:
 
@@ -88,7 +92,8 @@ Resolved mismatch:
 - `SeedScopedFromRepositories` now depends directly on `BeautyQSeedReady`, resolving the previously documented repository-instruction mismatch for seed-json plus repository snapshot paths.
 - This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
 - The explicit `BeautyQSeedReady` edge does not by itself solve production search readiness. Future implementation still needs a source-of-truth and freshness design for repository snapshots, Elasticsearch indexes, and any production search-read model.
-- The catalog snapshot/in-memory readiness proof only proves explicit test-local document readiness before backend construction. It does not define production freshness, refresh, staleness, repository snapshot ownership, index lifecycle, or production backend selection.
+- The catalog snapshot/in-memory readiness proof only proves explicit test-local document readiness before backend construction. It does not define production freshness, refresh, staleness, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
+- That proof is a startup readiness shape only. It does not make the route production-exposed, and it leaves the production freshness/staleness problem unresolved.
 
 ## D. Elasticsearch Path
 
@@ -244,10 +249,14 @@ Production-wired/current:
 - No Elasticsearch search backend binding found.
 - No Qdrant/hybrid production binding found.
 - No `SearchApi`, search role, or production `/beauty-search` route found in inspected wiring.
+- No enable/disable or rollback mechanism was found for Beauty search production inclusion.
 
 Implemented/current but mostly test/experiment exercised:
 
 - Pure `POST /beauty-search` Tapir contract skeleton and fake-service route contract tests.
+- Thin unwired `BeautySearchApi`.
+- Fake-backend `BeautySearchService.Impl` binding proof.
+- Test-only catalog snapshot/in-memory backend readiness proof.
 - Test-only explicit app-graph boundary proof for the Beauty search API/service/backend stack.
 - Search DSL/spec.
 - Parser.

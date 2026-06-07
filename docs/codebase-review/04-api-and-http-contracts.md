@@ -100,18 +100,21 @@ Production-wired/current:
 - The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the binding proof or catalog backend readiness proof.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the app-graph boundary proof.
+- `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes those APIs to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined `HttpApi` set.
+- Therefore adding `BeautySearchApi` to that weak set would expose `POST /beauty-search`; that is a production inclusion decision, not a proof-only wiring detail.
 
 Conclusion:
 
-- Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, test-only catalog snapshot/in-memory backend readiness proof, and test-only explicit app-graph boundary proof, but it is not exposed as a production HTTP route in inspected runtime app wiring.
+- Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, test-only catalog snapshot/in-memory backend readiness proof, and test-only explicit app-graph boundary proof, but it is not production-exposed yet.
 - Production Beauty search requires explicit route/binding. No confirmed production search role or production `/beauty-search` route was found in inspected wiring.
-- No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton, unwired adapter, or fake-backend service binding proof.
+- No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton, unwired adapter, fake-backend service binding proof, or app-graph boundary proof.
+- The next code patch should be a disabled-by-default production inclusion boundary, not an always-on route include.
 
 Future implementation boundary:
 
-- The next production Beauty search step should be `docs(search): design explicit production app inclusion patch`.
-- Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
-- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton or unwired adapter.
+- The next production Beauty search step should be `feat(search): add disabled-by-default Beauty search production inclusion boundary`.
+- Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, diagnostics visibility, and rollback/disable behavior.
+- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton, unwired adapter, or any current proof.
 
 ## Contract Tests
 
