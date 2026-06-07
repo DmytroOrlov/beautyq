@@ -19,9 +19,11 @@ Evidence:
 - `BeautySearchApiHttpContractSuite.scala` tests the adapter route through a fake service only.
 - `BeautySearchServiceBindingSpec.scala` proves a focused test-only Distage module can assemble `BeautySearchService.Impl[IO]` with `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
 - `BeautySearchCatalogBackendReadinessSpec.scala` proves a focused test-only catalog snapshot/in-memory backend readiness boundary with explicit ready documents before `InMemorySearchBackend` construction.
+- `BeautySearchAppGraphBoundarySpec.scala` proves a focused test-only explicit app-graph boundary can assemble `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchService.Impl[IO]`, `BeautySearchIntentParser`, `BeautySearchSpecV1.spec`, and a fake `BeautySearchBackend[IO]`.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
 - `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
+- `LeaderboardPlugin` was not changed for the app-graph boundary proof.
 - `LeaderboardRole.scala` has no search role.
 - No `BeautySearchService` or `BeautySearchBackend` production binding was added.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added.
@@ -31,14 +33,14 @@ Future implementation:
 
 - Production Beauty search requires explicit route/binding.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
-- The next step should be `docs(search): design production Beauty search app-graph inclusion boundary`.
+- The next step should be `docs(search): design explicit production app inclusion patch`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 
 ### BeautySearchService Wiring
 
 Gap:
 
-- `BeautySearchService.Impl` is implemented and has a fake-backend test-only Distage binding proof, but it is not production-bound in inspected DI wiring.
+- `BeautySearchService.Impl` is implemented and has fake-backend test-only Distage binding and app-graph boundary proofs, but it is not production-bound in inspected DI wiring.
 
 Evidence:
 
@@ -46,6 +48,7 @@ Evidence:
 - Targeted searches found test-local construction in `BeautySearchPureSpec.scala`, not bindings in `LeaderboardPlugin.scala`.
 - `BeautySearchServiceBindingSpec.scala` binds `BeautySearchService[IO]` to `BeautySearchService.Impl[IO]` with a fake `BeautySearchBackend[IO]` in `src/test` only and verifies parser handoff, successful backend response pass-through, and backend failure pass-through.
 - `BeautySearchCatalogBackendReadinessSpec.scala` constructs `BeautySearchService.Impl[IO]` with `InMemorySearchBackend[IO]` from an explicit test-local ready-document handle in `src/test` only.
+- `BeautySearchAppGraphBoundarySpec.scala` assembles `BeautySearchApi[IO]` and `BeautySearchService.Impl[IO]` through a test-local `ModuleDef` and fake `BeautySearchBackend[IO]` in `src/test` only.
 - `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
 
 Acceptance criteria for future implementation:
@@ -228,7 +231,7 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. `docs(search): design production Beauty search app-graph inclusion boundary`.
+1. `docs(search): design explicit production app inclusion patch`.
 2. `test(search): prove production app-graph inclusion remains explicit and disabled-by-default`.
 3. Keep Qdrant/hybrid out of first production exposure unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
 4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.

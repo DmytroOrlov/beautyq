@@ -1,0 +1,132 @@
+package leaderboard.search
+
+import distage.{Injector, ModuleDef}
+import izumi.distage.model.definition.{Activation, LocatorPrivacy}
+import izumi.distage.model.plan.Roots
+import leaderboard.HttpContractTestSupport
+import leaderboard.api.BeautySearchApi
+import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.model.QueryFailure
+import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
+import leaderboard.search.parser.BeautySearchIntentParser
+import org.http4s.Status
+import org.scalatest.wordspec.AnyWordSpec
+import zio.interop.catz.*
+import zio.{IO, Runtime, Unsafe, ZIO}
+
+final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContractTestSupport {
+  "Beauty search app-graph boundary" should {
+    "assemble the API/service/backend stack only through an explicit test-local module" in {
+      val backend = new RecordingBeautySearchBackend(emptySearchResponse)
+      val stack   = buildStack(backend)
+      val input   = UserSearchInput("plain query", userLat = None, userLon = None, limit = 2)
+
+      val response = runIO(stack.service.search(input))
+
+      assert(stack.api != null)
+      assert(stack.service.isInstanceOf[BeautySearchService.Impl[IO]])
+      assert(response == emptySearchResponse)
+      assert(backend.calls == Vector(BackendCall(input, stack.parser.parse(input))))
+      assert(backend.calls.head.intent.remainingText == "plain query")
+    }
+
+    "expose the assembled API route from the same explicit test-local module" in {
+      val backend = new RecordingBeautySearchBackend(emptySearchResponse)
+      val stack   = buildStack(backend)
+
+      val observed = runIO(
+        observe(
+          stack.api.http.orNotFound,
+          postJson("/beauty-search", """{"query":"маникюр","userLat":null,"userLon":null,"limit":1}"""),
+        )
+      )
+
+      assert(observed.status == Status.Ok)
+      assert(observed.body == """{"variantCarousel":[],"providerCarousel":[],"serviceIntentCarousel":[],"facets":[],"inferredFilters":[]}""")
+      assert(backend.calls.map(_.input) == Vector(UserSearchInput("маникюр", userLat = None, userLon = None, limit = 1)))
+    }
+  }
+
+  private def buildStack(backend: RecordingBeautySearchBackend): BeautySearchTestAppStack = {
+    val module = new ModuleDef {
+      make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
+      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
+      make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
+      make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
+      make[BeautySearchBackend[IO]].fromValue(backend)
+      make[BeautySearchService[IO]].from {
+        (parser: BeautySearchIntentParser, backend: BeautySearchBackend[IO]) =>
+          new BeautySearchService.Impl[IO](parser, backend)
+      }
+      make[BeautySearchApi[IO]].from {
+        (
+          service: BeautySearchService[IO],
+          endpoints: BeautySearchTapirEndpoints,
+          tapirHttpSupport: TapirHttpSupport[IO],
+        ) =>
+          new BeautySearchApi[IO](service, endpoints, tapirHttpSupport)
+      }
+      make[BeautySearchTestAppStack].from {
+        (
+          api: BeautySearchApi[IO],
+          service: BeautySearchService[IO],
+          backend: BeautySearchBackend[IO],
+          parser: BeautySearchIntentParser,
+          endpoints: BeautySearchTapirEndpoints,
+          tapirHttpSupport: TapirHttpSupport[IO],
+        ) =>
+          BeautySearchTestAppStack(api, service, backend, parser, endpoints, tapirHttpSupport)
+      }
+    }
+
+    val locator = Injector().produce(
+      bindings = module,
+      roots = Roots.target[BeautySearchTestAppStack],
+      activation = Activation.empty,
+      locatorPrivacy = LocatorPrivacy.PublicByDefault,
+    ).unsafeGet()
+
+    locator.get[BeautySearchTestAppStack]
+  }
+
+  private final case class BeautySearchTestAppStack(
+    api: BeautySearchApi[IO],
+    service: BeautySearchService[IO],
+    backend: BeautySearchBackend[IO],
+    parser: BeautySearchIntentParser,
+    endpoints: BeautySearchTapirEndpoints,
+    tapirHttpSupport: TapirHttpSupport[IO],
+  )
+
+  private final class RecordingBeautySearchBackend(
+    response: BeautySearchResponse
+  ) extends BeautySearchBackend[IO] {
+    private var recordedCalls: Vector[BackendCall] = Vector.empty
+
+    def calls: Vector[BackendCall] = recordedCalls
+
+    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] = {
+      recordedCalls = recordedCalls :+ BackendCall(input, intent)
+      ZIO.succeed(response)
+    }
+  }
+
+  private final case class BackendCall(
+    input: UserSearchInput,
+    intent: ParsedSearchIntent,
+  )
+
+  private val emptySearchResponse: BeautySearchResponse =
+    BeautySearchResponse(
+      variantCarousel = Nil,
+      providerCarousel = Nil,
+      serviceIntentCarousel = Nil,
+      facets = Nil,
+      inferredFilters = Nil,
+    )
+
+  private def runIO[E, A](effect: ZIO[Any, E, A]): A =
+    Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
+    }
+}
