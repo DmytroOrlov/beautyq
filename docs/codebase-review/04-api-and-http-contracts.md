@@ -92,6 +92,9 @@ Contract skeleton/current:
 - `BeautySearchProductionInclusionBoundarySpec.scala` proves default Disabled, Disabled by-name API thunk safety, Disabled module exclusion of API/service/backend construction, and Enabled explicit test-local assembly with a fake backend.
 - `BeautySearchProductionIncludeModuleSpec.scala` proves the include-module shape at a production `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` aggregation boundary: Disabled contributes no Beauty search API, while Enabled can explicitly contribute one `BeautySearchApi` through the inclusion handle.
 - `BeautySearchProductionIncludedApis` is a src/main helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; it does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
+- `BeautySearchPluginModules.api[F]` is a src/main opt-in helper module that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set when explicitly included.
+- `BeautySearchOptInHttpApiModuleSpec.scala` proves the opt-in module can contribute exactly one `BeautySearchApi[IO]` to the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, using the repo's role-style concrete API retention edge, a fake `BeautySearchService[IO]`, and no server startup.
+- `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; it still does not add `BeautySearchApi` to `many[HttpApi[F]]`, and `/beauty-search` is not production-exposed.
 
 Production-wired/current:
 
@@ -103,7 +106,11 @@ Production-wired/current:
 - `LeaderboardPlugin` was not changed for the app-graph boundary proof.
 - `LeaderboardPlugin` was not changed for the production inclusion boundary proof.
 - `LeaderboardPlugin` was not changed for the include-module shape proof.
+- `LeaderboardPlugin` was not changed for the opt-in Beauty search HttpApi module proof.
+- `BeautySearchPluginModules.api[F]` is not included by `LeaderboardPlugin` default modules.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
+- The default plugin still contributes no `BeautySearchApi` to the production `many[HttpApi[F]]` set.
+- The production `BeautySearchService`/`BeautySearchBackend` binding is still absent.
 - The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the binding proof or catalog backend readiness proof.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the app-graph boundary proof.
@@ -115,8 +122,11 @@ Production-wired/current:
 Conclusion:
 
 - Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, test-only catalog snapshot/in-memory backend readiness proof, test-only explicit app-graph boundary proof, disabled-by-default production inclusion activation/handle boundary, and a test-only disabled-by-default include-module aggregation proof, but it is not production-exposed yet.
+- `LeaderboardPlugin.modules.api` now carries the disabled inclusion boundary only; `BeautySearchApi` is still not part of production `many[HttpApi[F]]`.
 - Production Beauty search requires explicit route/binding. No confirmed production search role or production `/beauty-search` route was found in inspected wiring.
 - No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton, unwired adapter, fake-backend service binding proof, app-graph boundary proof, or production inclusion boundary proof.
+- The next implementation step is an explicit enabled include design/patch; the current disabled boundary is not route exposure.
+- The next step before actual production route exposure is an enabled `LeaderboardPlugin` include design/patch that decides readiness/freshness and service/backend binding, then includes the opt-in API contribution explicitly.
 - Disabled avoids evaluating/constructing the API/service/backend graph; Enabled can explicitly assemble the Beauty search stack in a test proof.
 
 Future implementation boundary:

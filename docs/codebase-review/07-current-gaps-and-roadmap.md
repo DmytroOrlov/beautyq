@@ -11,7 +11,7 @@ Gap:
 - A pure Beauty search route contract skeleton exists, but no production Beauty search HTTP route was found.
 - A thin unwired Beauty search API adapter exists, but it is not included in the production app graph.
 - The production Beauty search API boundary now has a disabled-by-default activation/handle proof, but it remains unused by production route wiring.
-- The current proof set is present, but production route inclusion is still absent: pure `POST /beauty-search`, thin unwired `BeautySearchApi`, fake-service route contract suite, fake-backend `BeautySearchService.Impl` binding proof, test-only catalog snapshot/in-memory backend readiness proof, test-only complete app-graph boundary proof, disabled-by-default production inclusion boundary proof, and test-only disabled-by-default include-module aggregation proof.
+- The current proof set is present, but production route inclusion is still absent: pure `POST /beauty-search`, thin unwired `BeautySearchApi`, fake-service route contract suite, fake-backend `BeautySearchService.Impl` binding proof, test-only catalog snapshot/in-memory backend readiness proof, test-only complete app-graph boundary proof, disabled-by-default production inclusion boundary proof, test-only disabled-by-default include-module aggregation proof, and an explicit opt-in HttpApi module proof.
 
 Evidence:
 
@@ -24,13 +24,18 @@ Evidence:
 - `BeautySearchProductionInclusionActivation` and `BeautySearchProductionInclusionHandle` provide a disabled-by-default activation/handle boundary; Disabled avoids evaluating/constructing the API/service/backend graph, and Enabled can explicitly assemble the stack in a test proof.
 - `BeautySearchProductionIncludeModuleSpec.scala` proves an include-module shape at a src/main `BeautySearchProductionIncludedApis` API aggregation boundary: Disabled contributes no Beauty search API, and Enabled explicitly contributes exactly one `BeautySearchApi`.
 - The include-module proof uses a src/main `BeautySearchProductionIncludedApis` helper that converts an enabled handle to a local `HttpApi` list, not production `many[HttpApi[F]]`.
+- `BeautySearchPluginModules.api[F]` is a src/main opt-in helper module that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set when explicitly included.
+- `BeautySearchOptInHttpApiModuleSpec.scala` proves that explicit helper contributes exactly one `BeautySearchApi[IO]` through the same `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, with the repo's role-style concrete API retention edge and a fake service that is not called during graph construction.
+- `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; `BeautySearchApi` is still not part of production `many[HttpApi[F]]`, `/beauty-search` is still not production-exposed, and the production `BeautySearchService`/`BeautySearchBackend` binding remains absent.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
 - `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
 - `LeaderboardPlugin` was not changed for the app-graph boundary proof.
 - `LeaderboardPlugin` was not changed for the production inclusion boundary proof.
 - `LeaderboardPlugin` was not changed for the include-module shape proof.
+- `LeaderboardPlugin` was not changed for the opt-in HttpApi module proof, and `BeautySearchPluginModules.api[F]` is not included by default modules.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
+- The default plugin still contributes no `BeautySearchApi` to the production `many[HttpApi[F]]` set.
 - `LeaderboardPlugin.modules.api` is the production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined set.
 - Adding `BeautySearchApi` there would expose `POST /beauty-search`; that is the production inclusion boundary.
 - `LeaderboardRole.scala` has no search role.
@@ -42,6 +47,8 @@ Evidence:
 Future implementation:
 
 - Production Beauty search requires explicit route/binding.
+- The next step is an explicit enabled include design/patch, not default route exposure.
+- The new opt-in HttpApi module makes the weak-set contribution mechanically available, but actual `LeaderboardPlugin` inclusion still requires a separate enabled design/patch after readiness/freshness and production service/backend binding are decided.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
 - The next code patch should be `docs(search): design actual LeaderboardPlugin include patch` or `feat(search): include Beauty search route in LeaderboardPlugin behind disabled-by-default activation`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
@@ -148,15 +155,6 @@ Boundary:
 - Production backend selection and freshness/refresh/staleness policy remain future work.
 - The seed-resource/catalog/in-memory path proves a startup readiness shape only. It does not solve production freshness, staleness bounds, runtime catalog replacement, repository-vs-seed source-of-truth choice, or stale-catalog observability.
 
-### Distage Plugin Include Hazard
-
-Current hazard:
-
-- Whole-plugin `include(LeaderboardPlugin.modules.api[IO])` in focused unit specs triggers intermittent `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
-- The NPE is `Cannot invoke "izumi.distage.model.definition.ModuleBase.iterator()" because the return value of "izumi.distage.model.definition.dsl.IncludesDSL$Include.bindings()" is null`.
-- BeautySearchProductionInclusion* constructors are not proven root cause; the minimal reproduced hazard is the ad-hoc `include()` call itself.
-- Future route/plugin exposure tests should avoid ad-hoc whole-plugin includes; prefer targeted modules or established testkit fixtures.
-
 ### Salon / Availability Domain
 
 Gap:
@@ -209,6 +207,7 @@ Current blockers:
 
 - Search API contract skeleton exists, but no production search API adapter/role/wiring exists.
 - Disabled-by-default production inclusion activation/handle boundary exists, a src/main `BeautySearchProductionIncludedApis` include-module helper exists, and a test-local include-module aggregation proof exists, but no production include module or `LeaderboardPlugin` wiring uses it yet.
+- An explicit opt-in `BeautySearchPluginModules.api[F]` helper exists for the real `many[HttpApi[F]]` weak-set contribution, but it is not included by `LeaderboardPlugin` default modules.
 - No production `BeautySearchService` binding.
 - No production lexical backend binding.
 - No production Elasticsearch client/indexing lifecycle.
