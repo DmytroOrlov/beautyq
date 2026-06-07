@@ -24,6 +24,7 @@ Evidence:
 - `BeautySearchProductionInclusionActivation` and `BeautySearchProductionInclusionHandle` provide a disabled-by-default activation/handle boundary; Disabled avoids evaluating/constructing the API/service/backend graph, and Enabled can explicitly assemble the stack in a test proof.
 - `BeautySearchProductionIncludeModuleSpec.scala` proves an include-module shape at a src/main `BeautySearchProductionIncludedApis` API aggregation boundary: Disabled contributes no Beauty search API, and Enabled explicitly contributes exactly one `BeautySearchApi`.
 - The include-module proof uses a src/main `BeautySearchProductionIncludedApis` helper that converts an enabled handle to a local `HttpApi` list, not production `many[HttpApi[F]]`.
+- `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; `BeautySearchApi` is still not part of production `many[HttpApi[F]]`, `/beauty-search` is still not production-exposed, and the production `BeautySearchService`/`BeautySearchBackend` binding remains absent.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
 - `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
@@ -42,6 +43,7 @@ Evidence:
 Future implementation:
 
 - Production Beauty search requires explicit route/binding.
+- The next step is an explicit enabled include design/patch, not default route exposure.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
 - The next code patch should be `docs(search): design actual LeaderboardPlugin include patch` or `feat(search): include Beauty search route in LeaderboardPlugin behind disabled-by-default activation`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.

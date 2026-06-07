@@ -37,6 +37,7 @@ Implemented/current:
 - `BeautySearchProductionInclusionBoundarySpec`: focused proof that Disabled avoids evaluating/constructing the API/service/backend graph and Enabled can explicitly assemble the stack in a test-local module.
 - `BeautySearchProductionIncludeModuleSpec`: focused test-only proof that an include module can remain disabled by default at an API aggregation boundary.
 - The include-module proof uses a src/main `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; Disabled contributes no Beauty search API, and Enabled can explicitly contribute one `BeautySearchApi`. This helper does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
+- `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; `BeautySearchApi` is still not added to production `many[HttpApi[F]]`, `/beauty-search` is still not production-exposed, and the production `BeautySearchService`/`BeautySearchBackend` binding remains absent.
 
 Production-wired/current:
 
@@ -50,6 +51,7 @@ Production-wired/current:
 - No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs.
 - `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined API set.
 - Adding `BeautySearchApi` to that set would expose `POST /beauty-search`; the app-graph boundary proof does not imply production inclusion.
+- The current `LeaderboardPlugin` wiring stops at the disabled inclusion boundary; the next step is an explicit enabled include design/patch if production route exposure is desired.
 
 Design boundary:
 

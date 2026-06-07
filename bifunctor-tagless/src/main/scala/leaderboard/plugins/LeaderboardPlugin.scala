@@ -9,7 +9,7 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
+import leaderboard.api.{BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle, BeautySearchProductionIncludedApis, CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints, TapirHttpSupport}
@@ -93,6 +93,12 @@ object LeaderboardPlugin extends PluginDef {
       // The `profile` API
       make[ProfileTapirEndpoints].fromValue(ProfileTapirEndpoints)
       make[ProfileApi[F]]
+      // Disabled Beauty search inclusion boundary only; not route exposure.
+      make[BeautySearchProductionInclusionActivation].fromValue(BeautySearchProductionInclusionActivation.default)
+      make[BeautySearchProductionInclusionHandle[F]].fromValue(BeautySearchProductionInclusionHandle.disabled[F])
+      make[BeautySearchProductionIncludedApis[F]].from { (handle: BeautySearchProductionInclusionHandle[F]) =>
+        BeautySearchProductionIncludedApis.fromHandle(handle)
+      }
 
       // A set of all APIs
       many[HttpApi[F]]
