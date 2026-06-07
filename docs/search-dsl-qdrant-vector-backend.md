@@ -86,6 +86,13 @@ The current path is best described as a non-production experimental readiness fo
 
 It is not production lifecycle, not production routing, not production fallback, and not production hybrid wiring.
 
+The real-resource non-production hybrid adapter boundary for future v0 is now recorded at docs level only.
+That adapter is not implemented yet.
+Its scope is semantic-side only: Qdrant semantic backend, embedding/Llama client, document lookup, readiness/compatibility guard, and explicit manual/test/local invocation.
+The Elasticsearch lexical/filter/facet baseline remains separate and injected as the existing lexical backend.
+This future v0 is manual/test/local only.
+It is not production hybrid, not a `BeautySearchService` replacement, not Qdrant-as-default, and not a combined Qdrant+ES+Llama production module.
+
 Reusable domain seams/status:
 
 * generic Qdrant document indexing seam: done
@@ -352,6 +359,8 @@ Not allowed yet:
 ### Future non-production wiring rule
 
 Future non-production wiring, if added, must be behind an explicit named experiment boundary.
+The recorded v0 boundary is a real-resource non-production adapter only for the semantic side.
+It keeps the Elasticsearch baseline separate and injected.
 
 Acceptable future shapes:
 
@@ -359,6 +368,7 @@ Acceptable future shapes:
 * explicit test-only experiment axis
 * explicit non-production experiment axis/config
 * explicit manual/admin experiment task
+* explicit local runner flag or explicit non-production invocation object
 
 Unacceptable shapes:
 
@@ -368,6 +378,8 @@ Unacceptable shapes:
 * automatic production startup indexing
 * automatic collection create/delete/recreate in app startup
 * production search depending on Qdrant availability
+* automatic include from `LeaderboardPlugin`
+* HTTP request flag without separate API design
 
 ### Allowed experiment bindings
 
@@ -381,16 +393,21 @@ If a future non-production module is added, it may bind only experiment-scoped c
 * `QdrantCollectionCompatibilityGuard`
 * snapshot provider / upsert / indexer for explicit test or manual setup
 * explicit `SearchRoutingMetadata` source for the experiment
+* embedding/Llama client for explicit local/test/manual invocation only
+* explicit semantic document lookup for the experiment
 
 These bindings must not become the production default graph.
+Disabled mode must not include or build Qdrant, embedding/Llama, semantic backend, lookup, indexing, or experiment resources.
+Returning `None` after real resources were already constructed is insufficient.
+The existing by-name construction-safe factory and fake-only module gating proof already support this invariant, and the future real-resource adapter v0 must preserve it.
 
 ### Experiment lifecycle ownership
 
 Collection lifecycle remains outside the production app:
 
-* collection creation is manual/test/local setup
+* collection creation is explicit manual/test/local setup only
 * collection deletion is test/local cleanup only
-* snapshot indexing is explicit test/manual action
+* snapshot indexing is explicit manual/local/test action only
 * no production startup hook
 * no request-time indexing
 * no hidden indexing side effect from constructing a service
@@ -398,6 +415,10 @@ Collection lifecycle remains outside the production app:
 Versioned collection names remain the current policy.
 
 Alias/blue-green switching, rollback, production collection manager, and destructive recreate policies are deferred production-lifecycle work.
+The future v0 adapter may read/check an existing non-production collection and verify compatibility expectation.
+It must fail fast if incompatible.
+It must not create production collections automatically, alias-swap, run blue/green lifecycle, or delete/recreate collections.
+Collection setup remains explicit manual setup, not module startup.
 
 ### Snapshot indexing trigger
 
@@ -414,6 +435,9 @@ Not acceptable yet:
 * production app startup hook
 * production request-time indexing
 * hidden side effect of constructing the search service
+* indexing when activation is `Disabled`
+
+Guarded snapshot indexing, if used by future v0, may only be explicit manual/local/test invocation.
 
 ### Metadata boundary
 
@@ -440,13 +464,17 @@ Production lifecycle work remains explicitly out of scope.
 
 Before production rollout, the system would need:
 
+* timeout budget
+* retry policy
 * production-safe collection manager design
 * collection versioning policy
 * alias or blue/green switching design
 * rollback strategy
 * stale snapshot/freshness policy
+* Qdrant freshness relative to Elasticsearch
 * batching/retry/backpressure/idempotency for indexing
 * operational diagnostics
+* observability/metrics/tracing
 * route observability
 * metadata source design
 * rollout and kill-switch design
@@ -454,6 +482,9 @@ Before production rollout, the system would need:
 * score calibration/fusion/reranking design, if needed
 
 Production destructive recreation of an active collection is forbidden.
+
+These gaps do not block a manual/local/test v0 adapter, but they do block production promotion.
+Any future v0 adapter must report them as unresolved and remain non-production.
 
 Any future alias switch would require:
 
@@ -810,17 +841,26 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. optional later: non-production Distage/test module adapter
+1. small explicit manual adapter/handle skeleton
 
 Immediate code target details:
 
-* the second-domain proof should be pure only and should add no new generic abstractions unless a concrete gap appears
+* keep it explicit manual/test/local only
+* prefer a small adapter/handle skeleton before any full Distage/module shape
+* no real Qdrant/Llama implementation yet if avoidable
+* no `LeaderboardPlugin`
+* no `BeautySearchService`
+* no startup indexing
+* disabled graph must still exclude real-resource bindings
 
 Later:
 
 * keep `LeaderboardPlugin` unchanged while the production search-service graph boundary is still absent
 * continue using `QdrantNonProductionHybridExperiment` for manual/test/local experiments
-* later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, and rollback separately
+* later: real semantic-side adapter only with Qdrant backend, embedding/Llama client, lookup, and readiness guard
+* later: manual local runner with explicit invocation only
+* later: larger benchmark taxonomy expansion
+* later design metadata source, collection lifecycle, fallback, fusion, reranking, rollout, rollback, freshness, and observability separately
 
 Still not next:
 
@@ -942,7 +982,14 @@ Review follow-up status:
 
 Wiring TODO:
 
-* design the real non-production Qdrant/ES/Llama module adapter separately before including real resources
+* done: record docs boundary for future real-resource non-production hybrid adapter v0
+* next: small explicit manual adapter/handle skeleton only
+* later: real semantic-side adapter only with Qdrant backend, embedding/Llama client, lookup, and readiness guard
+* later: explicit manual/local runner only
+* later: lifecycle/freshness/observability design
+* much later: production routing/API/metadata design
+* keep the Elasticsearch lexical/filter/facet baseline separate and injected as the existing lexical backend
+* the future v0 adapter remains manual/test/local only and is not a combined Qdrant+ES+Llama production module
 * no production `BeautySearchService` change yet
 * no startup auto-indexing
 * collection creation remains outside the production app lifecycle
@@ -959,6 +1006,19 @@ Wiring TODO:
 * startup auto-indexing stays forbidden for now
 * benchmark decision policy as an automatic model switch stays forbidden for now
 * real Qdrant resource construction in disabled mode stays forbidden for now
+
+Acceptance criteria for any future real-resource adapter patch:
+
+* report how `Enabled` is explicitly selected
+* report why the disabled graph does not include/build Qdrant/Llama resources
+* report where readiness/compatibility is checked
+* report whether collection creation is impossible or explicit-only
+* report whether snapshot indexing is impossible or explicit-only
+* report why no startup indexing occurs
+* report why no `BeautySearchService` path changed
+* report why no `LeaderboardPlugin` production include changed
+* report why benchmark decisions cannot affect runtime model choice
+* report what timeout/freshness/observability gaps remain
 
 Watch items:
 

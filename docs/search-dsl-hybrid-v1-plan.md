@@ -2,9 +2,13 @@
 
 ## 1. Goal
 
-Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall.
+This plan records a non-production hybrid-search foundation, not a production hybrid rollout.
+The next recorded real-resource boundary is a future manual/test/local adapter v0, not a combined Qdrant+ES+Llama production module.
+
+Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall only at explicit non-production boundaries.
 
 It should not replace the Elasticsearch V1 path. Elasticsearch remains the deterministic baseline for lexical search, filters, facets, and standard response assembly.
+That lexical baseline remains separate and injected as the existing lexical backend.
 
 Qdrant should add recall for the narrow semantic gap already proven by the current Qdrant-only eval slice:
 
@@ -40,6 +44,9 @@ Current status note:
 - generic lexical result seam exists
 - generic semantic backend, assembly, and projection seams exist
 - generic hybrid retrieval container exists
+- pure BeautyQ hybrid projection pipeline is experiment-ready
+- non-production activation/module gating proof exists
+- real-resource non-production adapter is not implemented yet
 - production hybrid orchestration is still not implemented
 - generic retrieval/indexing boundaries are present within the current search DSL, but a full generic search engine is not complete
 
@@ -56,6 +63,7 @@ The current generic hybrid retrieval seam is a container/diagnostic boundary onl
 It does not add score fusion, reranking, fallback, or a production routing change.
 It is not a BeautyQ projection/merge policy.
 Production hybrid remains out of scope.
+The future real-resource adapter v0 remains manual/test/local only, not production, not a `BeautySearchService` replacement, not Qdrant-as-default, and not a combined Qdrant+ES+Llama production module.
 
 The Qdrant semantic quality gate is intentionally environment-gated:
 
@@ -330,6 +338,8 @@ Important limitation:
 - real non-production Distage/module work must still ensure disabled mode does not include or build the real Qdrant/semantic resource graph at all
 - the experiment remains manual/test/local only
 - production lifecycle, routing, and metadata remain absent by design
+- returning `None` after real resources were already constructed would be insufficient
+- real-resource adapter v0 must preserve the disabled-graph invariant: disabled mode must not include or build Qdrant, embedding/Llama, semantic backend, lookup, indexing, or experiment resources
 It is not the final resource-gating mechanism.
 
 Activation decisions:
@@ -340,12 +350,14 @@ Activation decisions:
 - activation must not be inferred from `Mode.Test` alone
 - activation must not be enabled by `Mode.Prod`
 - future module work must remain explicit non-production/test-only and disabled by default
-- acceptable future wiring shapes are explicit local experiment config, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production module with named activation
+- acceptable future wiring shapes are explicit config/env/manual test parameter, explicit local runner flag, explicit test-only experiment axis, explicit manual/admin task boundary, or explicit non-production invocation object/module with named activation
 - unacceptable shapes are implicit production default, silent `Mode.Test` behavior, HTTP request flag without separate API design, and residual-text-based automatic semantic routing
 
 Wiring decisions:
 
 - future wiring may bind the runner only behind a named non-production boundary
+- the lexical side remains separate and injected as the existing Elasticsearch baseline backend
+- the semantic side of future v0 is the only real-resource target: Qdrant backend, embedding/Llama client, document lookup, and readiness/compatibility guard
 - wiring must use injected lexical backend, semantic backend, and document lookup
 - the activation skeleton does not add Distage wiring, `LeaderboardPlugin`, `BeautySearchService`, HTTP/API, production routing, collection lifecycle, or startup indexing
 - wiring must not create Qdrant collections
@@ -367,13 +379,22 @@ Routing and metadata decisions:
 Lifecycle and response decisions:
 
 - Qdrant collection readiness and snapshot indexing remain explicit setup steps
+- future v0 may read/check an existing non-production collection and verify compatibility expectation
+- future v0 must fail fast on collection identity/version, vector size/distance, embedding/vector config, or collection compatibility mismatch
+- future v0 must not silently fallback to Elasticsearch, create collections silently, or switch model automatically
 - collection create/delete/recreate remains outside production app lifecycle
+- collection setup remains explicit manual setup, not module startup
 - alias/blue-green lifecycle and production collection manager are not implemented
+- no startup indexing
+- no indexing as a side effect of module inclusion or runner resolution
+- no indexing when activation is `Disabled`
+- guarded snapshot indexing may only be explicit manual/local/test invocation
 - the runner uses the pure `BeautyQHybridResponsePipeline`
 - explicit hybrid carousel limits exist through `BeautyQHybridResponseCarouselLimits`
 - variant, provider, and service carousels are explicitly limited after policy/projection order is established
 - the non-production experiment currently derives `BeautyQHybridResponseCarouselLimits` from `BeautySearchSpecV1.spec` and `UserSearchInput`: variants use `min(input.limit, spec.carouselSpec.variantSize)` with negative values normalized to empty output, providers use `spec.carouselSpec.providerSize`, and service intents use `spec.carouselSpec.serviceIntentSize`
-- a future wiring step must decide whether `BeautySearchSpecV1.spec` remains hardcoded in the experiment or becomes injected/configured
+- this remains acceptable for manual/local v0
+- future production design must still decide whether `BeautySearchSpecV1.spec` remains hardcoded in the experiment or becomes injected/configured/versioned per route/parser contract
 - limits make the pure pipeline closer to the response contract, but the pipeline remains response-shaped and non-production rather than production-ready
 - no-fusion, no-reranking, no-fallback, and no-routing semantics remain unchanged
 - truncation happens after policy/projection order is established, with no score sorting before truncation
@@ -552,9 +573,13 @@ Future implementation should be split into small patches:
 6. Done: test(search) tiny synthetic second-domain proof for generic seams.
 7. Done: fake-only explicit non-production Distage/test module gating proof.
 8. Done: benchmark subset expansion with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
-9. Later, with separate design: real non-production Qdrant/ES/Llama module adapter and resource lifecycle.
-10. Much later: production lifecycle, routing, metadata, score fusion, or reranking decisions.
-11. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
+9. Done: docs record real-resource non-production hybrid adapter boundary.
+10. Next code step: small explicit manual adapter/handle skeleton.
+11. Later: real semantic-side adapter only: Qdrant backend + embedding/Llama client + lookup + readiness guard.
+12. Later: manual local runner with explicit invocation only.
+13. Later design: lifecycle/freshness/observability.
+14. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
+15. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
 
 The second-domain proof is done.
 The fake-only explicit module gating proof is done.
@@ -576,6 +601,19 @@ It must not include:
 - fallback
 - production routing change
 - real Qdrant resource construction in disabled mode
+
+Any future real-resource adapter patch must report:
+
+- how `Enabled` is explicitly selected
+- why the disabled graph does not include/build Qdrant/Llama resources
+- where readiness/compatibility is checked
+- whether collection creation is impossible or explicit-only
+- whether snapshot indexing is impossible or explicit-only
+- why no startup indexing occurs
+- why no `BeautySearchService` path changed
+- why no `LeaderboardPlugin` production include changed
+- why benchmark decisions cannot affect runtime model choice
+- what timeout/freshness/observability gaps remain
 
 ## 11. Generic and Domain Reuse Implications
 
@@ -664,14 +702,20 @@ Current state is still experimental and test-scoped. The existing pieces are use
 
 These pieces are not production-ready yet because the runtime lifecycle and operational contracts are still missing:
 
+- timeout budget
+- retry policy
 - a production-safe `SearchRoutingMetadata` source
 - runtime `VariantSearchDocument` snapshot/freshness lifecycle
+- Qdrant freshness relative to Elasticsearch
 - a production `VariantSearchDocumentLookup`
 - a production Qdrant collection lifecycle
 - a collection versioning and vector-dimension compatibility policy
 - a production indexing lifecycle with batching, retry, and backpressure
 - route-decision observability and diagnostics
+- observability/metrics/tracing
 - defined fallback semantics
+- kill switch semantics
+- rollback behavior
 - score calibration, score fusion, or reranking policy
 - Elasticsearch facet/filter parity for any hybrid user-facing path
 - a rollout strategy
@@ -682,8 +726,13 @@ Until those gaps are closed, the following remain explicitly forbidden:
 - residual-text routing
 - eval query ids in main code
 - fallback-on-zero-results
+- `BeautySearchService` replacement
 - production Distage wiring
+- `LeaderboardPlugin` production path changes
 - HTTP/API metadata surface
+- runtime model switch from benchmark decisions
+- startup auto-indexing
+- alias/blue-green lifecycle
 - Elasticsearch facet replacement by the Qdrant path
 
 Safe future metadata sources are limited to:
