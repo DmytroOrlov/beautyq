@@ -198,6 +198,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
     val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedReady,
       seed,
       categories,
       services,

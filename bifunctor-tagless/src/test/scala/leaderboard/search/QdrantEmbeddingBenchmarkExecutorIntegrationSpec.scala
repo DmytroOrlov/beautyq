@@ -210,6 +210,7 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
     @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
     val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedReady,
       seed,
       categories,
       services,

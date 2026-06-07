@@ -451,6 +451,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[leaderboard.search.document.VariantSearchDocument]] = {
     val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedReady,
       seed,
       categories,
       services,

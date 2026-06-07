@@ -7,7 +7,9 @@ import leaderboard.model.Category.CategoryId
 import leaderboard.model.*
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.dsl.SearchGeoPoint
-import leaderboard.seed.BeautyQSeedData
+import leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}
+
+import scala.annotation.unused
 
 final case class BeautySearchCatalogSnapshot(
   categories: List[Category],
@@ -361,6 +363,7 @@ object BeautySearchCatalogSnapshotLoader {
   }
 
   final class SeedScopedFromRepositories[F[+_, +_]: Error2](
+    @unused seedReady: BeautyQSeedReady,
     seed: BeautyQSeedData,
     categories: Categories[F],
     services: Services[F],

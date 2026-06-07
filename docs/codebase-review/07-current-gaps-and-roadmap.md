@@ -53,13 +53,13 @@ Evidence:
 
 ### Seed-Scoped Repository Snapshot Readiness Edge
 
-Gap:
+Resolved mismatch:
 
-- `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` does not directly depend on `BeautyQSeedReady`.
+- `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` now depends directly on `BeautyQSeedReady`.
 
 Evidence:
 
-- Constructor in `search/document/VariantSearchDocument.scala` takes seed and repositories only.
+- Constructor in `search/document/VariantSearchDocument.scala` now takes `BeautyQSeedReady`, seed data, and repository collaborators.
 - AGENTS instructions require seed-json plus shared-Postgres snapshot paths to depend directly on `BeautyQSeedReady` before repository reads.
 
 ### Salon / Availability Domain
@@ -131,7 +131,7 @@ Risks:
 - Schema lives in repository resources rather than migrations, so startup graph dependencies are critical.
 - Removing `@unused` parent repo dependencies can break FK-backed table creation order.
 - Seed insertion is sequential but not documented as one global transaction.
-- Search snapshot loaders can fail if repository seed rows are not ready; the direct `BeautyQSeedReady` edge is missing in `SeedScopedFromRepositories`.
+- Search snapshot loaders still rely on repository seed rows being ready in shared-resource environments, but `SeedScopedFromRepositories` now expresses the direct `BeautyQSeedReady` edge required by repository instructions.
 
 ## Benchmark / Eval Gaps
 
@@ -153,7 +153,7 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. Add a direct `BeautyQSeedReady` dependency to `SeedScopedFromRepositories` if the seed-backed snapshot rule is still intended.
+1. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
 2. Decide whether Beauty search should have a production HTTP API; if yes, start with a typed route contract test before wiring runtime search.
 3. If Elasticsearch is the intended production lexical backend, add explicit backend/client/index lifecycle design before implementation.
 4. Keep Qdrant/hybrid behind explicit non-production activation until lifecycle, routing, freshness, observability, and kill-switch decisions are documented.

@@ -142,6 +142,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
     @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
     val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedReady,
       seed,
       categories,
       services,

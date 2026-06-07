@@ -128,11 +128,12 @@ Implemented/current:
 
 - `BeautySearchCatalogSnapshotLoader.FromRepositories` loads categories recursively, services by category, schemas by service, masters, locations, offers, and variants.
 - `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` uses seed ids and then loads existing repository rows, failing when a seed-scoped entity is missing.
+- `SeedScopedFromRepositories` now takes a direct `BeautyQSeedReady` constructor dependency before repository collaborators, matching the seed-json plus shared-Postgres snapshot readiness rule without changing loader behavior.
 
-Gap:
+Resolved mismatch:
 
-- `SeedScopedFromRepositories` currently takes `seed`, repositories, and schemas, but not `BeautyQSeedReady`. The repository instruction says seed-json plus shared-Postgres snapshot paths must depend directly on `BeautyQSeedReady` before repository reads.
-- `BeautySearchElasticsearchIntegrationSpec.loadAndIndexDocuments` accepts `seedReady: BeautyQSeedReady` but passes only `seed` and repositories into `SeedScopedFromRepositories`. The readiness edge is therefore in the helper method, not in the loader constructor.
+- Pass-3 review recorded this as a dependency-rule mismatch rather than a proven runtime failure.
+- The mismatch is now resolved by moving the direct readiness edge into `SeedScopedFromRepositories` itself, so seed-scoped repository snapshot paths express `BeautyQSeedReady` explicitly at construction time.
 
 ## Transaction Boundaries
 

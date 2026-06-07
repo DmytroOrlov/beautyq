@@ -105,9 +105,9 @@ Implemented/current:
 - Inserter: `BeautyQSeedInserter.Impl` in `seed/BeautyQSeedInserter.scala`.
 - Readiness marker: `BeautyQSeedReady.Noop` for `Mode.Prod`, `BeautyQSeedReady.LoadAndInsert` for `Mode.Test`.
 
-Gap:
+Resolved mismatch:
 
-- `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` in `search/document/VariantSearchDocument.scala` does not take `BeautyQSeedReady` directly in its constructor, even though repo instructions require seed-json plus repository snapshot paths to depend directly on `BeautyQSeedReady` before repository reads.
+- `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` in `search/document/VariantSearchDocument.scala` now takes `BeautyQSeedReady` directly in its constructor, resolving the previously documented dependency-rule mismatch for seed-json plus repository snapshot paths.
 
 ## Search Package Structure
 

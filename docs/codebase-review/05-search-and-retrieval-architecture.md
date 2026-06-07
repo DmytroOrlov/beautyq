@@ -62,9 +62,10 @@ Important behavior:
 - It denormalizes service, category, provider, location, attribute, price, duration, and geo fields into one document.
 - `BeautySearchSpecV1` generates dynamic attribute fields from `AttributeDefinition.all`.
 
-Gap:
+Resolved mismatch:
 
-- `SeedScopedFromRepositories` does not directly depend on `BeautyQSeedReady`. The repository instructions require that direct edge for seed-json plus repository snapshot paths, so this is recorded as a rule mismatch rather than a runtime failure proven by tests.
+- `SeedScopedFromRepositories` now depends directly on `BeautyQSeedReady`, resolving the previously documented repository-instruction mismatch for seed-json plus repository snapshot paths.
+- This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
 
 ## D. Elasticsearch Path
 
