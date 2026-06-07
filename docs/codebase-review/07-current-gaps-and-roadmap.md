@@ -12,6 +12,7 @@ Current status:
 - The included route stack is `BeautySearchRouteModules.seedCatalogInMemory[F]`.
 - The backend is startup seed-resource catalog snapshot readiness plus `InMemorySearchBackend[F]`.
 - This closes the route exposure gap only. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
+- `BeautySearchProductionRouteLimitSpec` characterizes the limit parameter behavior: limit 3 returns non-empty `variantCarousel` size <= 3; limit 0 and limit -5 return `200 OK` with empty `variantCarousel`; limit 100000 returns `variantCarousel` size capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`. Zero and negative limits currently return `200 OK` with empty `variantCarousel`. Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`. This is current behavior, not a full validation or error policy.
 
 Evidence:
 
@@ -48,8 +49,9 @@ Evidence:
 Future implementation:
 
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
+- Limit behavior is characterized by `BeautySearchProductionRouteLimitSpec` (zero/negative → 200 OK empty carousel; huge → capped by `variantSize`). This is current behavior, not a full validation or error policy.
 - The next code patch should design or implement observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the included seed-resource/in-memory route.
-- Future production hardening still needs explicit decisions for timeout behavior, diagnostics visibility, source-of-truth reconciliation, and stale-catalog handling.
+- Future production hardening still needs explicit decisions for timeout behavior, diagnostics visibility, source-of-truth reconciliation, stale-catalog handling, bad JSON handling, typed error responses, max query length, lat/lon validation, freshness/staleness, observability, and kill-switch.
 
 ### BeautySearchService Wiring
 
@@ -231,6 +233,13 @@ Current blockers:
 - No decided production backend-readiness failure behavior.
 - No decided rollout strategy for first production exposure.
 - No rollback/disable story for future production inclusion.
+- Bad JSON body handling and typed error responses are not yet designed.
+- Max query length is not enforced.
+- Lat/lon validation is not implemented.
+- Freshness/staleness bounds are not defined.
+- Observability surface is not designed.
+- Kill-switch behavior is not implemented.
+- Qdrant/hybrid/Elasticsearch are not production backends for this route.
 
 ## Repository / Persistence Risks
 

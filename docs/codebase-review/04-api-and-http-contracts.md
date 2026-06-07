@@ -102,6 +102,12 @@ Contract skeleton/current:
 - `BeautySearchOptInRouteModuleSpec.scala` proves that this composed module contributes exactly one `BeautySearchApi[IO]` to the same real `Set[HttpApi[IO]]` shape and can answer one `POST /beauty-search` smoke request from seed-resource catalog data without starting `HttpServer`.
 - `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, so `POST /beauty-search` is production-included in the default API graph.
 - `BeautySearchProductionRouteExposureSpec.scala` proves the default plugin API graph contributes `BeautySearchApi[IO]` through the same `Set[HttpApi[IO]]` shape consumed by `HttpServer.Impl` and can answer one non-empty `POST /beauty-search` response without starting `HttpServer`.
+- `BeautySearchProductionRouteLimitSpec.scala` characterizes `POST /beauty-search` limit parameter behavior through the same `LeaderboardPlugin.modules.api` include with seed-resource catalog snapshot + `InMemorySearchBackend`:
+  - `limit` 3 → `200 OK`, non-empty `variantCarousel`, size <= 3.
+  - `limit` 0 → `200 OK`, empty `variantCarousel`.
+  - `limit` -5 → `200 OK`, empty `variantCarousel`.
+  - `limit` 100000 → `200 OK`, `variantCarousel` size <= `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
+- This is current production route behavior, not a full validation or error policy. Zero and negative limits return `200 OK` with empty `variantCarousel`. Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 Production-wired/current:
 
