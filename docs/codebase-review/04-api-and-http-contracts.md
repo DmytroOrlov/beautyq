@@ -136,6 +136,25 @@ Future implementation boundary:
 - Future production work still needs explicit decisions for freshness behavior, timeout behavior, observability, diagnostics visibility, runtime refresh/replacement, and rollback/disable behavior.
 - Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by this production include.
 
+## Beauty Search Route Error Behavior
+
+Characterized/current:
+
+- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior through the production `LeaderboardPlugin.modules.api` API graph with seed-resource catalog snapshot + `InMemorySearchBackend`.
+- Malformed JSON body → `500 InternalServerError`, empty body.
+- Empty body → `500 InternalServerError`, empty body.
+- Wrong `limit` type (string instead of integer) → `500 InternalServerError`, empty body.
+- Missing required field (`query`) → `500 InternalServerError`, empty body.
+
+This is current behavior, not the desired final validation contract. The route currently lacks:
+
+- Typed `4xx` error responses (e.g., `400 BadRequest` for malformed JSON, missing fields, type mismatches).
+- Structured error bodies with error codes and messages.
+- Request validation (query length limits, lat/lon range validation).
+- Freshness/staleness reporting at the route boundary.
+- Observability surface (logging, metrics, tracing for bad requests).
+- Kill-switch behavior that would short-circuit the route with a structured response.
+
 ## Contract Tests
 
 Architectural source of truth:
