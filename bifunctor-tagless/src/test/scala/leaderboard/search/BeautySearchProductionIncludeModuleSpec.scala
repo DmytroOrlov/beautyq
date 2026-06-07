@@ -3,7 +3,7 @@ package leaderboard.search
 import distage.{Injector, ModuleDef}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
-import leaderboard.api.{BeautySearchApi, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle, HttpApi}
+import leaderboard.api.{BeautySearchApi, BeautySearchProductionIncludedApis, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle}
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
@@ -13,7 +13,56 @@ import zio.interop.catz.*
 import zio.{IO, ZIO}
 
 final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
-  "Beauty search production include module shape" should {
+  "BeautySearchProductionIncludedApis" should {
+    "be empty when built from disabled handle" in {
+      val handle = BeautySearchProductionInclusionHandle.disabled[IO]
+      val included = BeautySearchProductionIncludedApis.fromHandle(handle)
+
+      assert(included.apis.isEmpty)
+    }
+
+    "have exactly one API when built from enabled handle" in {
+      val counters = ConstructionCounters()
+      val fakeApi = buildFakeApi(counters)
+      val handle = BeautySearchProductionInclusionHandle(Some(fakeApi))
+      val included = BeautySearchProductionIncludedApis.fromHandle(handle)
+
+      assert(included.apis.size == 1)
+      assert(included.apis.collect { case _: BeautySearchApi[IO] => true }.headOption.isDefined)
+    }
+
+    "be empty and not evaluate thunk when buildIfEnabled is Disabled" in {
+      val counters = ConstructionCounters()
+      val handle = BeautySearchProductionInclusionHandle.buildIfEnabled[IO](
+        activation = BeautySearchProductionInclusionActivation.Disabled,
+        api = {
+          counters.apiConstructed += 1
+          buildFakeApi(counters)
+        },
+      )
+
+      val included = BeautySearchProductionIncludedApis.fromHandle(handle)
+
+      assert(included.apis.isEmpty)
+      assert(counters.apiConstructed == 0)
+    }
+
+    "evaluate thunk exactly once when buildIfEnabled is Enabled" in {
+      val counters = ConstructionCounters()
+      val handle = BeautySearchProductionInclusionHandle.buildIfEnabled[IO](
+        activation = BeautySearchProductionInclusionActivation.Enabled,
+        api = {
+          counters.apiConstructed += 1
+          buildFakeApi(counters)
+        },
+      )
+
+      val included = BeautySearchProductionIncludedApis.fromHandle(handle)
+
+      assert(included.apis.size == 1)
+      assert(counters.apiConstructed == 1)
+    }
+
     "contribute no Beauty search API to the test-local HttpApi aggregation result when Disabled" in {
       val counters = ConstructionCounters()
       val included = buildIncludedApis(disabledIncludeModule)
@@ -46,18 +95,17 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
 
   private def disabledIncludeModule: ModuleDef = new ModuleDef {
     include(disabledHandleModule)
-    include(testLocalIncludeModule)
+    make[BeautySearchProductionIncludedApis[IO]].from {
+      (handle: BeautySearchProductionInclusionHandle[IO]) =>
+        BeautySearchProductionIncludedApis.fromHandle(handle)
+    }
   }
 
   private def enabledIncludeModule(counters: ConstructionCounters): ModuleDef = new ModuleDef {
     include(enabledStackModule(counters))
-    include(testLocalIncludeModule)
-  }
-
-  private def testLocalIncludeModule: ModuleDef = new ModuleDef {
-    make[BeautySearchIncludedApis[IO]].from {
+    make[BeautySearchProductionIncludedApis[IO]].from {
       (handle: BeautySearchProductionInclusionHandle[IO]) =>
-        BeautySearchIncludedApis(handle.toOption.toList)
+        BeautySearchProductionIncludedApis.fromHandle(handle)
     }
   }
 
@@ -93,22 +141,27 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
     }
   }
 
-  private def buildIncludedApis(module: ModuleDef): BeautySearchIncludedApis[IO] = {
+  private def buildIncludedApis(module: ModuleDef): BeautySearchProductionIncludedApis[IO] = {
     val locator = Injector().produce(
       bindings = module,
-      roots = Roots.target[BeautySearchIncludedApis[IO]],
+      roots = Roots.target[BeautySearchProductionIncludedApis[IO]],
       activation = Activation.empty,
       locatorPrivacy = LocatorPrivacy.PublicByDefault,
     ).unsafeGet()
 
-    locator.get[BeautySearchIncludedApis[IO]]
+    locator.get[BeautySearchProductionIncludedApis[IO]]
   }
 
-  private final case class BeautySearchIncludedApis[F[+_, +_]](
-    apis: List[HttpApi[F]]
-  )
+  private def buildFakeApi(counters: ConstructionCounters): BeautySearchApi[IO] = {
+    val backend = new RecordingBeautySearchBackend(counters, emptySearchResponse)
+    val service = new BeautySearchService.Impl[IO](
+      new BeautySearchIntentParser(BeautySearchSpecV1.spec),
+      backend,
+    )
+    new BeautySearchApi[IO](service, BeautySearchTapirEndpoints, new TapirHttpSupport[IO])
+  }
 
-  private final class RecordingBeautySearchBackend(
+  private final case class RecordingBeautySearchBackend(
     counters: ConstructionCounters,
     response: BeautySearchResponse,
   ) extends BeautySearchBackend[IO] {

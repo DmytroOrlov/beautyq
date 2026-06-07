@@ -90,8 +90,8 @@ Contract skeleton/current:
 - The app-graph boundary proof does not use `LeaderboardPlugin`, production app graph wiring, production DI modules, Qdrant, hybrid search, Elasticsearch, repository snapshots, seed loaders, Docker, startup indexing, or production backend bindings.
 - `BeautySearchProductionInclusionActivation` and `BeautySearchProductionInclusionHandle` now provide a disabled-by-default production inclusion boundary.
 - `BeautySearchProductionInclusionBoundarySpec.scala` proves default Disabled, Disabled by-name API thunk safety, Disabled module exclusion of API/service/backend construction, and Enabled explicit test-local assembly with a fake backend.
-- `BeautySearchProductionIncludeModuleSpec.scala` proves the future include-module shape at a test-local API aggregation boundary: Disabled contributes no Beauty search API, while Enabled can explicitly contribute one `BeautySearchApi` through the inclusion handle.
-- The include-module proof uses a test-local `BeautySearchIncludedApis[F](apis: List[HttpApi[F]])` result rather than production `many[HttpApi[F]]`; it is a shape proof, not production wiring.
+- `BeautySearchProductionIncludeModuleSpec.scala` proves the include-module shape at a production `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` aggregation boundary: Disabled contributes no Beauty search API, while Enabled can explicitly contribute one `BeautySearchApi` through the inclusion handle.
+- `BeautySearchProductionIncludedApis` is a src/main helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; it does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
 
 Production-wired/current:
 
