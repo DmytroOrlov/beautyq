@@ -30,7 +30,11 @@ Implemented/current:
 - `BeautySearchApi`: thin unwired API adapter from `BeautySearchTapirEndpoints` to `BeautySearchService[F]`.
 - `BeautySearchApiHttpContractSuite`: route-level adapter contract using a test-local fake `BeautySearchService`.
 - `BeautySearchServiceBindingSpec`: focused test-only Distage module proof that assembles `BeautySearchService.Impl[IO]` from `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
-- `BeautySearchCatalogBackendReadinessSpec`: focused test-only proof that seed resource data is converted to a `BeautySearchCatalogSnapshot`, flattened into `VariantSearchDocument` rows, wrapped in an explicit ready-document handle, and then used to construct `InMemorySearchBackend` and `BeautySearchService.Impl[IO]`.
+- `BeautySearchReadyCatalogDocuments`: src/main ready-catalog document helper with an explicit source label and validated non-empty document list. It has no timestamp, freshness, refresh, or production replacement semantics.
+- `BeautySearchCatalogBackendFactory.fromSeedLoader`: typed helper that converts `BeautyQSeedLoader` data to `BeautySearchCatalogSnapshot`, flattens it through `VariantSearchDocumentBuilder`, and validates `BeautySearchReadyCatalogDocuments`.
+- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]`: opt-in src/main module that binds `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, `BeautySearchReadyCatalogDocuments`, `InMemorySearchBackend[F]` as `BeautySearchBackend[F]`, and `BeautySearchService.Impl[F]` as `BeautySearchService[F]` when explicitly included with a `BeautyQSeedLoader`.
+- `BeautySearchCatalogBackendReadinessSpec`: focused proof that seed resource data is converted to a `BeautySearchCatalogSnapshot`, flattened into `VariantSearchDocument` rows, wrapped in the src/main ready-document handle, and then used to construct `InMemorySearchBackend` and `BeautySearchService.Impl[IO]`.
+- `BeautySearchCatalogBackendModuleSpec`: focused proof that the opt-in catalog/in-memory backend module materializes ready documents, backend, and service and answers a simple search without API, HTTP, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
 - `BeautySearchAppGraphBoundarySpec`: focused test-only Distage app-graph boundary proof that assembles `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchService.Impl[IO]`, `BeautySearchIntentParser`, `BeautySearchSpecV1.spec`, and a fake `BeautySearchBackend[IO]` only through a spec-local module/composition.
 - `BeautySearchProductionInclusionActivation`: disabled-by-default production inclusion activation boundary.
 - `BeautySearchProductionInclusionHandle`: optional API handle that does not implement `HttpApi` and does not expose routes by itself.
@@ -50,6 +54,7 @@ Production-wired/current:
 - `LeaderboardPlugin` was not changed for the unwired adapter, fake-backend service binding proof, catalog snapshot/in-memory backend readiness proof, app-graph boundary proof, or production inclusion boundary proof.
 - `LeaderboardPlugin` was not changed for the include-module shape proof.
 - `LeaderboardPlugin` was not changed for the opt-in HttpApi module proof, and `BeautySearchPluginModules.api[F]` is not included by default modules.
+- `LeaderboardPlugin` was not changed for the opt-in catalog/in-memory backend module proof, and `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` is not included by default modules.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
 - The default plugin still contributes no `BeautySearchApi` to the production `many[HttpApi[F]]` set.
 - No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs.
@@ -63,7 +68,7 @@ Design boundary:
 - The implemented model/service/contract/adapter boundary is real code, but future implementation still requires explicit role/binding before Beauty search can be considered production-exposed.
 - Do not infer production availability from the existence of `BeautySearchService.Impl`, `BeautySearchBackend[F]`, or related search models.
 - Do not infer production availability from `BeautySearchTapirEndpoints` or `BeautySearchApi`; they remain unwired.
-- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a test-only catalog snapshot/in-memory readiness proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
+- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
 - None of those proofs make the route production-exposed yet.
 
 Test-only/fake-only:
@@ -73,7 +78,8 @@ Test-only/fake-only:
 - `InMemorySearchBackend` is the pure regression backend described in `docs/beautyq-search-dsl-v1.md` and used by pure tests.
 - `BeautySearchApiHttpContractSuite.scala` constructs a test-local fake `BeautySearchService` through `BeautySearchApi`; it does not use Qdrant, hybrid, Elasticsearch, repository snapshots, file IO, Docker, or production DI.
 - `BeautySearchServiceBindingSpec.scala` binds a test-local fake `BeautySearchBackend[IO]` and `BeautySearchService.Impl[IO]` through Distage, calls `search(UserSearchInput(...))`, verifies the fake backend receives the parser-produced `ParsedSearchIntent`, verifies response pass-through, and verifies `QueryFailure` pass-through. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, file IO, Docker, or production DI modules.
-- `BeautySearchCatalogBackendReadinessSpec.scala` uses a test-local `ReadyCatalogDocuments(source, documents)` handle with source `seed-resource-loader`; it rejects empty document readiness before backend construction, then constructs `InMemorySearchBackend[IO]` and `BeautySearchService.Impl[IO]` directly. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production DI modules.
+- `BeautySearchCatalogBackendReadinessSpec.scala` uses the src/main `BeautySearchReadyCatalogDocuments(source, documents)` handle with source `seed-resource-loader`; it rejects empty document readiness before backend construction, then constructs `InMemorySearchBackend[IO]` and `BeautySearchService.Impl[IO]` directly. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or default production DI modules.
+- `BeautySearchCatalogBackendModuleSpec.scala` includes only `BeautySearchCatalogBackendModules.seedResourceInMemory[IO]` plus a `BeautyQSeedLoader.ResourceLoader` binding, roots a local probe, and proves the opt-in module assembles ready documents, `InMemorySearchBackend[IO]`, and `BeautySearchService.Impl[IO]`. It does not use `BeautySearchApi`, `HttpApi`, `LeaderboardPlugin`, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, route exposure, or production default bindings.
 - `BeautySearchAppGraphBoundarySpec.scala` binds the complete Beauty search API/service/backend stack through a spec-local `ModuleDef` and targets a test-local stack root. The fake backend records parser-produced intents and returns an empty response; the spec also issues one request through the assembled `BeautySearchApi`. It does not use `LeaderboardPlugin`, production app graph magic, Qdrant, hybrid search, Elasticsearch, repository snapshots, seed loaders, Docker, startup indexing, or production DI modules.
 - `BeautySearchProductionInclusionBoundarySpec.scala` binds only `BeautySearchProductionInclusionHandle.disabled[IO]` in the Disabled module and does not bind fake `BeautySearchApi`, `BeautySearchService`, or `BeautySearchBackend`; its Enabled module uses a fake backend and proves construction without backend calls. It does not use `LeaderboardPlugin`, production app graph wiring, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production backend bindings.
 - `BeautySearchProductionIncludeModuleSpec.scala` uses a src/main `BeautySearchProductionIncludedApis[IO]` helper to build an include result from `BeautySearchProductionInclusionHandle[IO]`. Its Disabled module binds only the disabled handle and contributes no APIs. Its Enabled module explicitly constructs `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchService.Impl[IO]`, `BeautySearchIntentParser`, `BeautySearchSpecV1.spec`, and a fake `BeautySearchBackend[IO]`, contributes exactly one `BeautySearchApi`, and proves backend construction does not call the backend. It does not use production `many[HttpApi[F]]`, `LeaderboardPlugin`, production app graph wiring, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production backend bindings.
@@ -262,6 +268,7 @@ Production-wired/current:
 - No production Beauty search HTTP route found.
 - No `BeautySearchService` binding found.
 - No `BeautySearchBackend` binding found.
+- An opt-in catalog/in-memory `BeautySearchService`/`BeautySearchBackend` module exists, but it is not included in `LeaderboardPlugin` default modules and is not a production default binding.
 - No production Beauty search app-graph inclusion found; the complete-stack proof is test-local only.
 - No Elasticsearch search backend binding found.
 - No Qdrant/hybrid production binding found.
@@ -273,7 +280,7 @@ Implemented/current but mostly test/experiment exercised:
 - Pure `POST /beauty-search` Tapir contract skeleton and fake-service route contract tests.
 - Thin unwired `BeautySearchApi`.
 - Fake-backend `BeautySearchService.Impl` binding proof.
-- Test-only catalog snapshot/in-memory backend readiness proof.
+- Src/main ready-catalog document helper and opt-in catalog/in-memory backend/service module with focused proof.
 - Test-only explicit app-graph boundary proof for the Beauty search API/service/backend stack.
 - Disabled-by-default production inclusion activation/handle proof.
 - Search DSL/spec.
