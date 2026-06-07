@@ -4,12 +4,13 @@ import distage.StandardAxis.Repo
 import distage.config.ConfigModuleDef
 import distage.{Mode, ModuleDef, Scene, TagKK}
 import doobie.util.transactor.Transactor
+import izumi.functional.bio.Error2
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
+import leaderboard.api.{BeautySearchProductionIncludedApis, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle, CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints, TapirHttpSupport}
@@ -67,7 +68,7 @@ object LeaderboardPlugin extends PluginDef {
       include(BundledRolesModule[F[Throwable, _]](version = Version.parse("1.0.0")))
     }
 
-    def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+    def api[F[+_, +_]: TagKK: Error2]: ModuleDef = new ModuleDef {
       // The `ladder` API
       make[LadderTapirEndpoints].fromValue(LadderTapirEndpoints)
       make[TapirHttpSupport[F]]
@@ -93,6 +94,13 @@ object LeaderboardPlugin extends PluginDef {
       // The `profile` API
       make[ProfileTapirEndpoints].fromValue(ProfileTapirEndpoints)
       make[ProfileApi[F]]
+      // Disabled Beauty search inclusion boundary only; not route exposure.
+      make[BeautySearchProductionInclusionActivation].fromValue(BeautySearchProductionInclusionActivation.default)
+      make[BeautySearchProductionInclusionHandle[F]].fromValue(BeautySearchProductionInclusionHandle.disabled[F])
+      make[BeautySearchProductionIncludedApis[F]].from { (handle: BeautySearchProductionInclusionHandle[F]) =>
+        BeautySearchProductionIncludedApis.fromHandle(handle)
+      }
+      include(BeautySearchRouteModules.seedCatalogInMemory[F])
 
       // A set of all APIs
       many[HttpApi[F]]

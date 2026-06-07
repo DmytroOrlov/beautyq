@@ -100,49 +100,35 @@ Contract skeleton/current:
 - `BeautySearchOptInHttpApiModuleSpec.scala` proves the opt-in module can contribute exactly one `BeautySearchApi[IO]` to the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, using the repo's role-style concrete API retention edge, a fake `BeautySearchService[IO]`, and no server startup.
 - `BeautySearchRouteModules.seedCatalogInMemory[F]` is a src/main explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies `BeautyQSeedLoader.ResourceLoader`.
 - `BeautySearchOptInRouteModuleSpec.scala` proves that this composed module contributes exactly one `BeautySearchApi[IO]` to the same real `Set[HttpApi[IO]]` shape and can answer one `POST /beauty-search` smoke request from seed-resource catalog data without starting `HttpServer`.
-- `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; it still does not add `BeautySearchApi` to `many[HttpApi[F]]`, and `/beauty-search` is not production-exposed.
+- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, so `POST /beauty-search` is production-included in the default API graph.
+- `BeautySearchProductionRouteExposureSpec.scala` proves the default plugin API graph contributes `BeautySearchApi[IO]` through the same `Set[HttpApi[IO]]` shape consumed by `HttpServer.Impl` and can answer one non-empty `POST /beauty-search` response without starting `HttpServer`.
 
 Production-wired/current:
 
 - No search role was found in `LeaderboardRole.scala`.
-- `LeaderboardPlugin.modules.api` does not bind `BeautySearchService`, `BeautySearchBackend`, search endpoints, or a search `HttpApi`.
-- `LeaderboardPlugin` was not changed for the unwired adapter, and targeted searches for production `/beauty-search` wiring found no production HTTP route.
-- `LeaderboardPlugin` was not changed for the fake-backend binding proof.
-- `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
-- `LeaderboardPlugin` was not changed for the app-graph boundary proof.
-- `LeaderboardPlugin` was not changed for the production inclusion boundary proof.
-- `LeaderboardPlugin` was not changed for the include-module shape proof.
-- `LeaderboardPlugin` was not changed for the opt-in Beauty search HttpApi module proof.
-- `LeaderboardPlugin` was not changed for the opt-in catalog/in-memory backend/service module proof.
-- `LeaderboardPlugin` was not changed for the opt-in end-to-end route module proof, and `BeautySearchRouteModules.seedCatalogInMemory[F]` is not included by default modules.
-- `BeautySearchPluginModules.api[F]` is not included by `LeaderboardPlugin` default modules.
-- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` is not included by `LeaderboardPlugin` default modules.
-- `BeautySearchApi` was not added to `many[HttpApi[F]]`.
-- The default plugin still contributes no `BeautySearchApi` to the production `many[HttpApi[F]]` set.
-- The production default `BeautySearchService`/`BeautySearchBackend` binding is still absent; the catalog/in-memory module is explicit opt-in only.
-- The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
-- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the binding proof, catalog backend readiness proof, or opt-in catalog/in-memory backend module.
-- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the app-graph boundary proof.
-- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant/hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the production inclusion boundary proof.
-- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant/hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the include-module shape proof or opt-in end-to-end route module.
+- `LeaderboardPlugin.modules.api` includes `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- The included module binds `BeautySearchService.Impl[F]` and `BeautySearchBackend[F]` through `BeautySearchCatalogBackendModules.seedResourceInMemory[F]`.
+- The backend source is the startup seed-resource catalog snapshot: `BeautyQSeedLoader.ResourceLoader` loads seed JSON, `BeautySearchCatalogSnapshot.fromSeedData` builds the catalog snapshot, `VariantSearchDocumentBuilder.build` flattens it, `BeautySearchReadyCatalogDocuments` marks it ready, and `InMemorySearchBackend[F]` serves it.
+- This production exposure is lexical/simple/catalog-first. It is not Elasticsearch, not Qdrant, and not hybrid.
+- No repository-backed production snapshot wiring, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, fallback, reranking, score fusion, startup indexing, or benchmark-driven routing policy is added.
+- Startup seed-resource snapshot readiness is the only readiness behavior in this include.
+- Production freshness, refresh, staleness bounds, runtime catalog replacement, source-of-truth reconciliation, stale-catalog observability, and kill-switch behavior remain unresolved.
+- There is no runtime refresh or replacement policy yet.
+- Benchmark decisions do not affect routing.
 - `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes those APIs to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined `HttpApi` set.
-- Therefore adding `BeautySearchApi` to that weak set would expose `POST /beauty-search`; that is a production inclusion decision, not a proof-only wiring detail.
+- Because `BeautySearchRouteModules.seedCatalogInMemory[F]` contributes `BeautySearchApi[F]` to that weak set, `POST /beauty-search` is now production-exposed through the default API graph.
 
 Conclusion:
 
-- Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, src/main ready-catalog document helper, opt-in catalog/in-memory backend/service module, opt-in HttpApi module, explicit opt-in end-to-end route module, focused module proofs, test-only explicit app-graph boundary proof, disabled-by-default production inclusion activation/handle boundary, and a test-only disabled-by-default include-module aggregation proof, but it is not production-exposed yet.
-- `LeaderboardPlugin.modules.api` now carries the disabled inclusion boundary only; `BeautySearchApi` is still not part of production `many[HttpApi[F]]`.
-- Production Beauty search requires explicit route/binding. No confirmed production search role or production `/beauty-search` route was found in inspected wiring.
-- No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton, unwired adapter, fake-backend service binding proof, app-graph boundary proof, or production inclusion boundary proof.
-- The next implementation step is an explicit enabled include design/patch; the current disabled boundary is not route exposure.
-- The next step before actual production route exposure is an enabled `LeaderboardPlugin` include design/patch that decides activation, readiness, freshness/staleness, and service/backend acceptance criteria, then includes the opt-in route module explicitly.
-- Disabled avoids evaluating/constructing the API/service/backend graph; Enabled can explicitly assemble the Beauty search stack in a test proof.
+- Beauty search now has production route exposure through `LeaderboardPlugin.modules.api`.
+- The exposed backend is the seed-resource catalog snapshot plus `InMemorySearchBackend`; it is not Elasticsearch, Qdrant, or hybrid.
+- The route JSON contract and search semantics remain the existing `BeautySearchTapirEndpoints`/`BeautySearchSpecV1` behavior.
+- The next production hardening step is observability, freshness/staleness, runtime refresh/replacement, and kill-switch design, not Qdrant/hybrid work.
 
 Future implementation boundary:
 
-- The next production Beauty search step should be `docs(search): design actual LeaderboardPlugin include patch`.
-- Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, diagnostics visibility, and rollback/disable behavior.
-- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton, unwired adapter, or any current proof.
+- Future production work still needs explicit decisions for freshness behavior, timeout behavior, observability, diagnostics visibility, runtime refresh/replacement, and rollback/disable behavior.
+- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by this production include.
 
 ## Contract Tests
 
@@ -171,4 +157,5 @@ What they protect:
 Rule for future docs/edits:
 
 - For HTTP behavior, route-level contract tests are the source of truth. Do not update docs based only on adapter intuition.
-- Beauty search HTTP behavior is currently defined only by the pure unwired endpoint plus route-level contract skeleton tests; do not infer production runtime exposure from those tests.
+- Beauty search HTTP behavior is defined by the pure Tapir endpoint, route-level contract tests, and the default `LeaderboardPlugin.modules.api` include of `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- Production runtime exposure is seed-resource catalog snapshot plus `InMemorySearchBackend`; do not infer Elasticsearch, Qdrant, hybrid, fallback, reranking, or score fusion from route availability.

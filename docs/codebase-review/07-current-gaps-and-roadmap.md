@@ -6,12 +6,12 @@ This file separates current gaps from future recommendations. Do not read recomm
 
 ### Search HTTP Exposure
 
-Gap:
+Current status:
 
-- A pure Beauty search route contract skeleton exists, but no production Beauty search HTTP route was found.
-- A thin unwired Beauty search API adapter exists, but it is not included in the production app graph.
-- The production Beauty search API boundary now has a disabled-by-default activation/handle proof, but it remains unused by production route wiring.
-- The current proof set is present, but production route inclusion is still absent: pure `POST /beauty-search`, thin unwired `BeautySearchApi`, fake-service route contract suite, fake-backend `BeautySearchService.Impl` binding proof, src/main ready-catalog document helper, opt-in catalog/in-memory backend/service module proof, test-only complete app-graph boundary proof, disabled-by-default production inclusion boundary proof, test-only disabled-by-default include-module aggregation proof, and an explicit opt-in HttpApi module proof.
+- `POST /beauty-search` is now production-included through `LeaderboardPlugin.modules.api`.
+- The included route stack is `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- The backend is startup seed-resource catalog snapshot readiness plus `InMemorySearchBackend[F]`.
+- This closes the route exposure gap only. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
 
 Evidence:
 
@@ -31,40 +31,33 @@ Evidence:
 - `BeautySearchOptInHttpApiModuleSpec.scala` proves that explicit helper contributes exactly one `BeautySearchApi[IO]` through the same `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, with the repo's role-style concrete API retention edge and a fake service that is not called during graph construction.
 - `BeautySearchRouteModules.seedCatalogInMemory[F]` is a src/main explicit opt-in end-to-end route module that composes the opt-in seed-resource catalog/in-memory backend/service module with the opt-in HttpApi module.
 - `BeautySearchOptInRouteModuleSpec.scala` proves that explicit composed module contributes exactly one `BeautySearchApi[IO]` through the same real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` smoke response without `HttpServer`, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
-- `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; `BeautySearchApi` is still not part of production `many[HttpApi[F]]`, `/beauty-search` is still not production-exposed, and the production `BeautySearchService`/`BeautySearchBackend` binding remains absent.
-- `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
-- `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
-- `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
-- `LeaderboardPlugin` was not changed for the app-graph boundary proof.
-- `LeaderboardPlugin` was not changed for the production inclusion boundary proof.
-- `LeaderboardPlugin` was not changed for the include-module shape proof.
-- `LeaderboardPlugin` was not changed for the opt-in HttpApi module proof, and `BeautySearchPluginModules.api[F]` is not included by default modules.
-- `LeaderboardPlugin` was not changed for the opt-in catalog/in-memory backend/service module proof, and `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` is not included by default modules.
-- `LeaderboardPlugin` was not changed for the opt-in end-to-end route module proof, and `BeautySearchRouteModules.seedCatalogInMemory[F]` is not included by default modules.
-- `BeautySearchApi` was not added to `many[HttpApi[F]]`.
-- The default plugin still contributes no `BeautySearchApi` to the production `many[HttpApi[F]]` set.
+- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, so `POST /beauty-search` is production-included in the default API graph.
+- `BeautySearchProductionRouteExposureSpec.scala` proves that default graph contributes exactly one `BeautySearchApi[IO]` through the same real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response without `HttpServer`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
+- The production-included backend source is the startup seed-resource catalog snapshot plus `InMemorySearchBackend[F]`.
+- This is lexical/simple/catalog-first. It is not Elasticsearch, not Qdrant, and not hybrid.
+- It does not add repository snapshot wiring, startup indexing, fallback, reranking, score fusion, or benchmark-driven routing.
 - `LeaderboardPlugin.modules.api` is the production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined set.
-- Adding `BeautySearchApi` there would expose `POST /beauty-search`; that is the production inclusion boundary.
+- `BeautySearchApi[F]` is now contributed there by `BeautySearchRouteModules.seedCatalogInMemory[F]`, so `/beauty-search` is production-exposed.
 - `LeaderboardRole.scala` has no search role.
-- No default production `BeautySearchService` or `BeautySearchBackend` binding was added; the catalog/in-memory module is explicit opt-in only.
-- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added. The seed-resource catalog route path is startup snapshot readiness only, not production freshness.
+- Production freshness/refresh/staleness policy, runtime catalog replacement, source-of-truth reconciliation, stale-catalog observability, and kill-switch behavior remain unresolved.
+- There is no runtime refresh or replacement policy yet.
+- Benchmark decisions do not affect routing.
 - Qdrant/hybrid remain non-production/manual-local/experimental and are not default.
-- Production app inclusion remains absent; backend freshness/staleness policy and Elasticsearch lifecycle remain future work.
+- Backend freshness/staleness policy and production hardening remain future work.
 
 Future implementation:
 
-- Production Beauty search requires explicit route/binding.
-- The next step is an explicit enabled include design/patch, not default route exposure.
-- The new opt-in route module makes the seed-catalog/in-memory route stack mechanically available, but actual `LeaderboardPlugin` inclusion still requires a separate enabled design/patch with explicit activation, readiness, freshness/staleness, and production binding acceptance criteria.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
-- The next code patch should be `docs(search): design actual LeaderboardPlugin include patch` or `feat(search): include Beauty search route in LeaderboardPlugin behind disabled-by-default activation`.
-- Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
+- The next code patch should design or implement observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the included seed-resource/in-memory route.
+- Future production hardening still needs explicit decisions for timeout behavior, diagnostics visibility, source-of-truth reconciliation, and stale-catalog handling.
 
 ### BeautySearchService Wiring
 
-Gap:
+Current status:
 
-- `BeautySearchService.Impl` is implemented and has fake-backend test-only Distage binding and app-graph boundary proofs, but it is not production-bound in inspected DI wiring.
+- `BeautySearchService.Impl` is production-bound through `BeautySearchRouteModules.seedCatalogInMemory[F]`, included by `LeaderboardPlugin.modules.api`.
+- The bound backend is `InMemorySearchBackend[F]` over seed-resource ready catalog documents.
+- The remaining gap is not service binding; it is freshness, refresh/replacement, observability, kill switch, and production source-of-truth policy.
 
 Evidence:
 
@@ -72,19 +65,18 @@ Evidence:
 - Targeted searches found test-local construction in `BeautySearchPureSpec.scala`, not bindings in `LeaderboardPlugin.scala`.
 - `BeautySearchServiceBindingSpec.scala` binds `BeautySearchService[IO]` to `BeautySearchService.Impl[IO]` with a fake `BeautySearchBackend[IO]` in `src/test` only and verifies parser handoff, successful backend response pass-through, and backend failure pass-through.
 - `BeautySearchCatalogBackendReadinessSpec.scala` constructs `BeautySearchService.Impl[IO]` with `InMemorySearchBackend[IO]` from the src/main `BeautySearchReadyCatalogDocuments` handle.
-- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` can bind `BeautySearchService.Impl[F]` with `InMemorySearchBackend[F]` when explicitly included, but it is not included in `LeaderboardPlugin` default modules.
+- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` binds `BeautySearchService.Impl[F]` with `InMemorySearchBackend[F]` and is now included in the default API graph through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
 - `BeautySearchAppGraphBoundarySpec.scala` assembles `BeautySearchApi[IO]` and `BeautySearchService.Impl[IO]` through a test-local `ModuleDef` and fake `BeautySearchBackend[IO]` in `src/test` only.
 - `BeautySearchProductionIncludeModuleSpec.scala` assembles `BeautySearchApi[IO]` and `BeautySearchService.Impl[IO]` through a src/main-backed enabled include module only; the disabled include module contributes no API and constructs no API/service/backend.
 - `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
-- The proof set includes a complete app-graph boundary, but that remains test-local and not production-exposed yet.
+- `BeautySearchProductionRouteExposureSpec.scala` proves the default API graph exposes the route through `Set[HttpApi[IO]]`.
 
 Acceptance criteria for future implementation:
 
-- Future production binding must answer where `BeautySearchService.Impl` is bound.
-- It must answer which `BeautySearchBackend` is bound.
-- It must guarantee catalog/index readiness explicitly.
+- Future production hardening must define freshness/staleness reporting and runtime replacement behavior.
+- It must define stale-catalog observability and kill-switch behavior.
+- It must decide whether seed-resource startup snapshot readiness remains acceptable as product behavior.
 - It must define parser/backend failure representation.
-- It must show route-level contract tests that prove the HTTP contract.
 - It must define diagnostics and observability exposure.
 
 ### Elasticsearch Runtime Backend
@@ -153,17 +145,17 @@ Implemented proof and opt-in module:
 
 - `BeautySearchReadyCatalogDocuments` is a src/main helper that wraps a source label plus `VariantSearchDocument` list, rejects empty source labels, rejects empty document lists, and preserves documents unchanged.
 - `BeautySearchCatalogBackendFactory.fromSeedLoader` loads seed data through a provided `BeautyQSeedLoader`, creates `BeautySearchCatalogSnapshot.fromSeedData(seedData)`, builds documents with `VariantSearchDocumentBuilder.build(snapshot)`, and wraps them in `BeautySearchReadyCatalogDocuments(source, documents)`.
-- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` is an explicit opt-in `ModuleDef` that binds ready documents, `InMemorySearchBackend[F]`, and `BeautySearchService.Impl[F]`; it is not included by `LeaderboardPlugin`.
-- `BeautySearchRouteModules.seedCatalogInMemory[F]` composes that backend/service module with the opt-in `BeautySearchApi` contribution; it is not included by `LeaderboardPlugin`.
+- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` binds ready documents, `InMemorySearchBackend[F]`, and `BeautySearchService.Impl[F]`; it is included in production through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- `BeautySearchRouteModules.seedCatalogInMemory[F]` composes that backend/service module with the opt-in `BeautySearchApi` contribution; it is included by `LeaderboardPlugin.modules.api`.
 - `BeautySearchCatalogBackendReadinessSpec.scala` still proves the direct seed-resource to snapshot to documents to ready-handle path before constructing `InMemorySearchBackend`.
 - `BeautySearchCatalogBackendModuleSpec.scala` proves the opt-in module materializes ready documents, backend, and service and can answer a simple search.
 - The proof asserts the ready source label is explicit (`seed-resource-loader`), documents are non-empty, empty ready documents are rejected before backend construction, and `BeautySearchService.Impl[IO]` returns non-empty variant/provider/service carousels through the in-memory backend.
 
 Boundary:
 
-- This is not production exposure.
-- It does not bind `BeautySearchService` or `BeautySearchBackend` in default production DI.
-- It does not change `LeaderboardPlugin` or add a search role/API inclusion.
+- This is now production route exposure through `LeaderboardPlugin.modules.api`.
+- It binds `BeautySearchService` and `BeautySearchBackend` in the default API graph only through the seed-resource/in-memory module.
+- It does not add a search role.
 - It does not add repository-backed production snapshot wiring, startup indexing, Elasticsearch lifecycle, Qdrant/hybrid routing, fallback, reranking, score fusion, or benchmark-driven model switching.
 - Production backend selection and freshness/refresh/staleness policy remain future work.
 - The seed-resource/catalog/in-memory path is startup snapshot readiness only. It does not solve production freshness, staleness bounds, runtime catalog replacement, repository-vs-seed source-of-truth choice, or stale-catalog observability.
@@ -218,13 +210,12 @@ Recommendation:
 
 Current blockers:
 
-- Search API contract skeleton exists, but no production search API adapter/role/wiring exists.
-- Disabled-by-default production inclusion activation/handle boundary exists, a src/main `BeautySearchProductionIncludedApis` include-module helper exists, and a test-local include-module aggregation proof exists, but no production include module or `LeaderboardPlugin` wiring uses it yet.
-- An explicit opt-in `BeautySearchPluginModules.api[F]` helper exists for the real `many[HttpApi[F]]` weak-set contribution, but it is not included by `LeaderboardPlugin` default modules.
-- An explicit opt-in catalog/in-memory `BeautySearchService`/`BeautySearchBackend` module exists, but it is not included by `LeaderboardPlugin` default modules.
-- An explicit opt-in end-to-end seed-catalog/in-memory route module exists, but it is not included by `LeaderboardPlugin` default modules.
-- No default production `BeautySearchService` binding.
-- No production lexical backend binding.
+- Search route exposure exists through `LeaderboardPlugin.modules.api`.
+- Default production `BeautySearchService` binding exists through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- Default production lexical/simple backend binding exists as seed-resource ready catalog documents plus `InMemorySearchBackend[F]`.
+- No production freshness/refresh/staleness policy.
+- No runtime catalog replacement policy.
+- No stale-catalog observability or kill switch.
 - No production Elasticsearch client/indexing lifecycle.
 - No explicit search index creation/update lifecycle.
 - No production collection manager for Qdrant.
@@ -270,9 +261,9 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. Design and implement explicit enabled `LeaderboardPlugin` include composition using `BeautySearchRouteModules.seedCatalogInMemory` only after activation, readiness, freshness/staleness, and route exposure acceptance criteria are agreed.
-2. `docs(search): document readiness/freshness blockers first if seed-resource startup snapshot readiness is not acceptable for enabled production inclusion`.
-3. Keep Qdrant/hybrid out of first production exposure unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
-4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.
+1. Design observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the seed-resource/in-memory production route.
+2. Document and implement the production freshness contract before treating seed-resource startup snapshot readiness as a durable product behavior.
+3. Keep Qdrant/hybrid out of this production hardening path unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
+4. If Elasticsearch is chosen later, add explicit backend/client/index lifecycle and freshness design before production binding.
 5. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
 6. Reconcile stale docs before relying on them in future implementation passes.
