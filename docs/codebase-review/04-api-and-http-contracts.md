@@ -98,6 +98,8 @@ Contract skeleton/current:
 - `BeautySearchProductionIncludedApis` is a src/main helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; it does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
 - `BeautySearchPluginModules.api[F]` is a src/main opt-in helper module that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set when explicitly included.
 - `BeautySearchOptInHttpApiModuleSpec.scala` proves the opt-in module can contribute exactly one `BeautySearchApi[IO]` to the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, using the repo's role-style concrete API retention edge, a fake `BeautySearchService[IO]`, and no server startup.
+- `BeautySearchRouteModules.seedCatalogInMemory[F]` is a src/main explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies `BeautyQSeedLoader.ResourceLoader`.
+- `BeautySearchOptInRouteModuleSpec.scala` proves that this composed module contributes exactly one `BeautySearchApi[IO]` to the same real `Set[HttpApi[IO]]` shape and can answer one `POST /beauty-search` smoke request from seed-resource catalog data without starting `HttpServer`.
 - `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; it still does not add `BeautySearchApi` to `many[HttpApi[F]]`, and `/beauty-search` is not production-exposed.
 
 Production-wired/current:
@@ -112,6 +114,7 @@ Production-wired/current:
 - `LeaderboardPlugin` was not changed for the include-module shape proof.
 - `LeaderboardPlugin` was not changed for the opt-in Beauty search HttpApi module proof.
 - `LeaderboardPlugin` was not changed for the opt-in catalog/in-memory backend/service module proof.
+- `LeaderboardPlugin` was not changed for the opt-in end-to-end route module proof, and `BeautySearchRouteModules.seedCatalogInMemory[F]` is not included by default modules.
 - `BeautySearchPluginModules.api[F]` is not included by `LeaderboardPlugin` default modules.
 - `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` is not included by `LeaderboardPlugin` default modules.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
@@ -121,18 +124,18 @@ Production-wired/current:
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the binding proof, catalog backend readiness proof, or opt-in catalog/in-memory backend module.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the app-graph boundary proof.
 - No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant/hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the production inclusion boundary proof.
-- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant/hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the include-module shape proof.
+- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant/hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the include-module shape proof or opt-in end-to-end route module.
 - `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes those APIs to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined `HttpApi` set.
 - Therefore adding `BeautySearchApi` to that weak set would expose `POST /beauty-search`; that is a production inclusion decision, not a proof-only wiring detail.
 
 Conclusion:
 
-- Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, src/main ready-catalog document helper, opt-in catalog/in-memory backend/service module, focused module proof, test-only explicit app-graph boundary proof, disabled-by-default production inclusion activation/handle boundary, and a test-only disabled-by-default include-module aggregation proof, but it is not production-exposed yet.
+- Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, src/main ready-catalog document helper, opt-in catalog/in-memory backend/service module, opt-in HttpApi module, explicit opt-in end-to-end route module, focused module proofs, test-only explicit app-graph boundary proof, disabled-by-default production inclusion activation/handle boundary, and a test-only disabled-by-default include-module aggregation proof, but it is not production-exposed yet.
 - `LeaderboardPlugin.modules.api` now carries the disabled inclusion boundary only; `BeautySearchApi` is still not part of production `many[HttpApi[F]]`.
 - Production Beauty search requires explicit route/binding. No confirmed production search role or production `/beauty-search` route was found in inspected wiring.
 - No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton, unwired adapter, fake-backend service binding proof, app-graph boundary proof, or production inclusion boundary proof.
 - The next implementation step is an explicit enabled include design/patch; the current disabled boundary is not route exposure.
-- The next step before actual production route exposure is an enabled `LeaderboardPlugin` include design/patch that decides readiness/freshness and service/backend binding, then includes the opt-in API contribution explicitly.
+- The next step before actual production route exposure is an enabled `LeaderboardPlugin` include design/patch that decides activation, readiness, freshness/staleness, and service/backend acceptance criteria, then includes the opt-in route module explicitly.
 - Disabled avoids evaluating/constructing the API/service/backend graph; Enabled can explicitly assemble the Beauty search stack in a test proof.
 
 Future implementation boundary:

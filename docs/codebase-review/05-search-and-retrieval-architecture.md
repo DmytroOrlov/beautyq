@@ -43,6 +43,8 @@ Implemented/current:
 - The include-module proof uses a src/main `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; Disabled contributes no Beauty search API, and Enabled can explicitly contribute one `BeautySearchApi`. This helper does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
 - `BeautySearchPluginModules.api[F]`: opt-in src/main helper that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set only when explicitly included.
 - `BeautySearchOptInHttpApiModuleSpec`: focused proof that the opt-in module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, with the repo's role-style concrete API retention edge and a fake `BeautySearchService[IO]` that is not called during graph construction.
+- `BeautySearchRouteModules.seedCatalogInMemory[F]`: explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies the seed resource loader.
+- `BeautySearchOptInRouteModuleSpec`: focused proof that the composed opt-in route module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response from the seed-resource catalog/in-memory backend without `HttpServer`, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
 - `LeaderboardPlugin.modules.api` now binds the disabled Beauty search inclusion boundary only; `BeautySearchApi` is still not added to production `many[HttpApi[F]]`, `/beauty-search` is still not production-exposed, and the production `BeautySearchService`/`BeautySearchBackend` binding remains absent.
 
 Production-wired/current:
@@ -55,20 +57,21 @@ Production-wired/current:
 - `LeaderboardPlugin` was not changed for the include-module shape proof.
 - `LeaderboardPlugin` was not changed for the opt-in HttpApi module proof, and `BeautySearchPluginModules.api[F]` is not included by default modules.
 - `LeaderboardPlugin` was not changed for the opt-in catalog/in-memory backend module proof, and `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` is not included by default modules.
+- `LeaderboardPlugin` was not changed for the opt-in route module proof, and `BeautySearchRouteModules.seedCatalogInMemory[F]` is not included by default modules.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
 - The default plugin still contributes no `BeautySearchApi` to the production `many[HttpApi[F]]` set.
-- No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs.
+- No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs. The seed-resource catalog route path is startup snapshot readiness only, not production freshness.
 - `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined API set.
 - Adding `BeautySearchApi` to that set would expose `POST /beauty-search`; the app-graph boundary proof does not imply production inclusion.
 - The current `LeaderboardPlugin` wiring stops at the disabled inclusion boundary; the next step is an explicit enabled include design/patch if production route exposure is desired.
-- The opt-in HttpApi helper makes the API contribution mechanically available, but actual `LeaderboardPlugin` inclusion remains blocked on explicit readiness/freshness and production service/backend binding decisions.
+- The opt-in route helper makes the complete seed-catalog/in-memory route stack mechanically available, but actual `LeaderboardPlugin` inclusion remains blocked on explicit activation, readiness, freshness/staleness, and production service/backend acceptance decisions.
 
 Design boundary:
 
 - The implemented model/service/contract/adapter boundary is real code, but future implementation still requires explicit role/binding before Beauty search can be considered production-exposed.
 - Do not infer production availability from the existence of `BeautySearchService.Impl`, `BeautySearchBackend[F]`, or related search models.
 - Do not infer production availability from `BeautySearchTapirEndpoints` or `BeautySearchApi`; they remain unwired.
-- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
+- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, an opt-in HttpApi module proof, an explicit opt-in end-to-end route module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
 - None of those proofs make the route production-exposed yet.
 
 Test-only/fake-only:
@@ -269,6 +272,7 @@ Production-wired/current:
 - No `BeautySearchService` binding found.
 - No `BeautySearchBackend` binding found.
 - An opt-in catalog/in-memory `BeautySearchService`/`BeautySearchBackend` module exists, but it is not included in `LeaderboardPlugin` default modules and is not a production default binding.
+- An opt-in end-to-end seed-catalog/in-memory route module exists, but it is not included in `LeaderboardPlugin` default modules and is not production route exposure.
 - No production Beauty search app-graph inclusion found; the complete-stack proof is test-local only.
 - No Elasticsearch search backend binding found.
 - No Qdrant/hybrid production binding found.
@@ -281,6 +285,7 @@ Implemented/current but mostly test/experiment exercised:
 - Thin unwired `BeautySearchApi`.
 - Fake-backend `BeautySearchService.Impl` binding proof.
 - Src/main ready-catalog document helper and opt-in catalog/in-memory backend/service module with focused proof.
+- Src/main opt-in end-to-end seed-catalog/in-memory route module with focused smoke proof.
 - Test-only explicit app-graph boundary proof for the Beauty search API/service/backend stack.
 - Disabled-by-default production inclusion activation/handle proof.
 - Search DSL/spec.
@@ -294,9 +299,9 @@ Implemented/current but mostly test/experiment exercised:
 
 Service binding acceptance criteria for future implementation:
 
-- Future production binding must answer where `BeautySearchService.Impl` is bound.
-- It must answer which `BeautySearchBackend` is bound first.
-- It must define how catalog/index readiness is guaranteed.
+- Future production binding must answer where `BeautySearchService.Impl` is bound or included.
+- It must answer which `BeautySearchBackend` is bound first and whether the seed-catalog/in-memory route module is acceptable for initial enabled exposure.
+- It must define how catalog/index readiness and freshness/staleness are guaranteed.
 - It must define how parser/backend failures are represented at the route boundary.
 - It must show which route-level contract tests prove request/response/error behavior.
 - It must define how diagnostics and observability are exposed.

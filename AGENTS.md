@@ -60,8 +60,6 @@ find . -type d -name target -print0 | xargs -0 rm -rf
 sbt test
 ```
 
-Use `sbt --shutdown` only for stale compile/classpath state, not for runtime test failures.
-
 ## Context bundle rule
 
 When collecting context for ChatGPT, write a unique file and copy that file:
