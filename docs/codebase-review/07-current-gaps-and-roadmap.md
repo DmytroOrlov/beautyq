@@ -8,20 +8,24 @@ This file separates current gaps from future recommendations. Do not read recomm
 
 Gap:
 
-- No production Beauty search HTTP route was found.
-- The production Beauty search API boundary remains a design boundary, not a verified runtime boundary.
+- A pure Beauty search route contract skeleton exists, but no production Beauty search HTTP route was found.
+- The production Beauty search API boundary remains a contract/design boundary, not a verified runtime boundary.
 
 Evidence:
 
-- No `SearchApi` or `SearchTapirEndpoints` under `bifunctor-tagless/src/main/scala/leaderboard/api` or `http/tapir`.
+- `BeautySearchTapirEndpoints.scala` defines an unwired `POST /beauty-search` contract.
+- `BeautySearchApiHttpContractSuite.scala` tests the route contract through a fake/in-memory service only.
+- No `SearchApi` exists under `bifunctor-tagless/src/main/scala/leaderboard/api`.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardRole.scala` has no search role.
+- No `BeautySearchService` or `BeautySearchBackend` production binding was added.
 
 Future implementation:
 
 - Production Beauty search requires explicit route/binding.
-- Start from route contract design and route-level contract tests before wiring a runtime backend.
-- The future route contract still needs explicit decisions for path, method, request JSON, response JSON, error model, empty/null behavior, limit behavior, and diagnostics visibility.
+- The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
+- The next step is explicit `BeautySearchService.Impl` binding proof or backend readiness design before any production runtime exposure.
+- Future production wiring still needs explicit decisions for API adapter/role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 
 ### BeautySearchService Wiring
 
@@ -153,7 +157,7 @@ Recommendation:
 
 Current blockers:
 
-- No search API contract.
+- Search API contract skeleton exists, but no production search API adapter/role/wiring exists.
 - No production `BeautySearchService` binding.
 - No production lexical backend binding.
 - No production Elasticsearch client/indexing lifecycle.
@@ -200,10 +204,9 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. `test/docs(search): add production Beauty search route contract skeleton`.
-2. Scope that future step to route contract tests first with a fake, catalog snapshot, or in-memory backend only.
-3. Keep Qdrant/hybrid out of that first production route-contract step: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
+1. Prove a later production binding of `BeautySearchService.Impl` explicitly in runtime wiring instead of inferring availability from class existence.
+2. Decide backend readiness before any production search binding: fake/in-memory/catalog snapshot, Elasticsearch lexical lifecycle, or another explicitly scoped path.
+3. Keep Qdrant/hybrid out of first production exposure unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
 4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.
-5. Prove a later production binding of `BeautySearchService.Impl` explicitly in runtime wiring instead of inferring availability from class existence.
-6. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
-7. Reconcile stale docs before relying on them in future implementation passes.
+5. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
+6. Reconcile stale docs before relying on them in future implementation passes.

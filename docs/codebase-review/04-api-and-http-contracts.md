@@ -69,25 +69,36 @@ Stale-doc warning:
 
 ## Beauty Search HTTP Route
 
+Contract skeleton/current:
+
+- `BeautySearchTapirEndpoints.scala` defines a pure, unwired Beauty search Tapir contract.
+- Contract path/method: `POST /beauty-search`.
+- Request body: `UserSearchInput` JSON with `query`, `userLat`, `userLon`, and `limit`.
+- Response body: `BeautySearchResponse` JSON preserving the existing variant carousel, provider carousel, service intent carousel, facets, and inferred filters model.
+- Error output uses the existing `HttpApiFailureTapirSupport.endpointBase` non-single-entity behavior; route contract tests currently pin backend/query failure as `500` with an empty body through existing support.
+- Empty search responses are explicit arrays for all carousel/facet/filter fields, not `null`.
+- Diagnostics and routing metadata are not exposed by this contract skeleton; any diagnostics API remains future design.
+- `BeautySearchApiHttpContractSuite.scala` exercises the route through a test-local fake `BeautySearchService` only.
+
 Production-wired/current:
 
 - No search API adapter was found under `bifunctor-tagless/src/main/scala/leaderboard/api`.
-- No `SearchTapirEndpoints` file was found under `leaderboard/http/tapir`.
 - No search role was found in `LeaderboardRole.scala`.
 - `LeaderboardPlugin.modules.api` does not bind `BeautySearchService`, `BeautySearchBackend`, search endpoints, or a search `HttpApi`.
-- Targeted searches for `SearchApi`, `SearchRoute`, `Tapir.*Search`, and `/search` found no production HTTP route.
+- Targeted searches for `SearchApi`, `SearchRoute`, and production `/beauty-search` wiring found no production HTTP route.
 - The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
 
 Conclusion:
 
-- Beauty search is implemented as models/interpreters/tests/experiments, but it is not exposed as a production HTTP route in inspected runtime app wiring.
-- Production Beauty search requires explicit route/binding. No confirmed `SearchApi`, search Tapir endpoint, or `/search` route was found in inspected wiring.
+- Beauty search now has a pure route contract skeleton, but it is not exposed as a production HTTP route in inspected runtime app wiring.
+- Production Beauty search requires explicit route/binding. No confirmed `SearchApi`, search role, or production `/beauty-search` route was found in inspected wiring.
+- No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton.
 
 Future implementation boundary:
 
-- The first production Beauty search step should be a route contract design plus route-level contract tests, not backend-first wiring.
-- That future route contract still needs explicit decisions for route path, HTTP method, request JSON shape, response JSON shape, error model, empty/null behavior, limit behavior, and diagnostics visibility.
-- If a route name such as `/search` is discussed in later work, treat it as future design unless current source adds a verified convention.
+- The next production Beauty search step should prove `BeautySearchService.Impl` binding and backend readiness explicitly, or separately design backend readiness before binding.
+- Future production wiring still needs explicit decisions for API adapter/role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
+- Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton.
 
 ## Contract Tests
 
@@ -103,6 +114,7 @@ Architectural source of truth:
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
 - `TapirHttpSupportContractSuite.scala`
+- `BeautySearchApiHttpContractSuite.scala`
 
 What they protect:
 
@@ -115,4 +127,4 @@ What they protect:
 Rule for future docs/edits:
 
 - For HTTP behavior, route-level contract tests are the source of truth. Do not update docs based only on adapter intuition.
-- For future Beauty search HTTP behavior, route-level contract tests must define the contract explicitly; do not rely on Tapir defaults.
+- Beauty search HTTP behavior is currently defined only by the pure unwired endpoint plus route-level contract skeleton tests; do not infer production runtime exposure from those tests.

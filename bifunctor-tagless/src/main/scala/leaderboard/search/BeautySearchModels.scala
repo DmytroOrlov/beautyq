@@ -1,5 +1,7 @@
 package leaderboard.search
 
+import io.circe.Codec
+import io.circe.generic.semiauto
 import izumi.functional.bio.Error2
 import leaderboard.model.*
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -14,6 +16,10 @@ final case class UserSearchInput(
   limit: Int = 10,
 )
 
+object UserSearchInput {
+  implicit val codec: Codec.AsObject[UserSearchInput] = semiauto.deriveCodec
+}
+
 final case class ParsedSearchIntent(
   originalQuery: String,
   normalizedTokens: List[String],
@@ -22,20 +28,36 @@ final case class ParsedSearchIntent(
   remainingText: String,
 )
 
+object ParsedSearchIntent {
+  implicit val codec: Codec.AsObject[ParsedSearchIntent] = semiauto.deriveCodec
+}
+
 final case class BeautySearchAppliedFilter(
   constraint: SearchConstraint,
   explicit: Boolean,
 )
+
+object BeautySearchAppliedFilter {
+  implicit val codec: Codec.AsObject[BeautySearchAppliedFilter] = semiauto.deriveCodec
+}
 
 final case class BeautySearchFacetValue(
   value: String,
   count: Int,
 )
 
+object BeautySearchFacetValue {
+  implicit val codec: Codec.AsObject[BeautySearchFacetValue] = semiauto.deriveCodec
+}
+
 final case class BeautySearchFacet(
   fieldPath: String,
   values: List[BeautySearchFacetValue],
 )
+
+object BeautySearchFacet {
+  implicit val codec: Codec.AsObject[BeautySearchFacet] = semiauto.deriveCodec
+}
 
 final case class VariantSearchResult(
   variantId: MasterServiceOfferVariantId,
@@ -62,6 +84,10 @@ final case class VariantSearchResult(
   distanceKm: Option[BigDecimal],
 )
 
+object VariantSearchResult {
+  implicit val codec: Codec.AsObject[VariantSearchResult] = semiauto.deriveCodec
+}
+
 final case class ProviderSearchResult(
   masterId: MasterId,
   masterName: String,
@@ -74,6 +100,10 @@ final case class ProviderSearchResult(
   distanceKm: Option[BigDecimal],
 )
 
+object ProviderSearchResult {
+  implicit val codec: Codec.AsObject[ProviderSearchResult] = semiauto.deriveCodec
+}
+
 final case class ServiceIntentSearchResult(
   serviceId: ServiceId,
   serviceName: String,
@@ -83,6 +113,10 @@ final case class ServiceIntentSearchResult(
   bestScore: Double,
 )
 
+object ServiceIntentSearchResult {
+  implicit val codec: Codec.AsObject[ServiceIntentSearchResult] = semiauto.deriveCodec
+}
+
 final case class BeautySearchResponse(
   variantCarousel: List[VariantSearchResult],
   providerCarousel: List[ProviderSearchResult],
@@ -90,6 +124,10 @@ final case class BeautySearchResponse(
   facets: List[BeautySearchFacet],
   inferredFilters: List[BeautySearchAppliedFilter],
 )
+
+object BeautySearchResponse {
+  implicit val codec: Codec.AsObject[BeautySearchResponse] = semiauto.deriveCodec
+}
 
 trait BeautySearchBackend[F[_, _]] {
   def search(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, BeautySearchResponse]
