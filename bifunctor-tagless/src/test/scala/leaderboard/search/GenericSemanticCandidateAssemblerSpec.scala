@@ -59,6 +59,54 @@ final class GenericSemanticCandidateAssemblerSpec extends AnyWordSpec {
       ))
     }
 
+    "return empty list when semantic hits are empty" in {
+      val hits = List.empty[SemanticDocumentHit[String]]
+
+      val candidates = assemble(hits)
+
+      assert(candidates.isEmpty)
+    }
+
+    "return empty list when lookup returns empty document map" in {
+      val hits = List(
+        SemanticDocumentHit("missing-1", 0.5),
+        SemanticDocumentHit("missing-2", 0.3),
+      )
+      val emptyDocumentsById = Map.empty[String, TestSemanticDocument]
+
+      val result = SemanticCandidateAssembler.assembleUnique(hits, emptyDocumentsById) { (hit, doc) =>
+        TestSemanticCandidate(doc.id, doc.title, hit.score)
+      }
+
+      assert(result.isEmpty)
+    }
+
+    "skip all hits when all document ids are missing from lookup" in {
+      val hits = List(
+        SemanticDocumentHit("missing-1", 0.9),
+        SemanticDocumentHit("missing-2", 0.7),
+        SemanticDocumentHit("missing-3", 0.5),
+      )
+
+      val candidates = assemble(hits)
+
+      assert(candidates.isEmpty)
+    }
+
+    "handle duplicate hits with identical scores (first-wins)" in {
+      val hits = List(
+        SemanticDocumentHit("doc-1", 0.5),
+        SemanticDocumentHit("doc-1", 0.5),
+        SemanticDocumentHit("doc-2", 0.5),
+      )
+
+      val candidates = assemble(hits)
+
+      assert(candidates.map(_.id) == List("doc-1", "doc-2"))
+      assert(candidates.map(_.score) == List(0.5, 0.5))
+      assert(candidates.size == 2)
+    }
+
     "allow generic document lookup contracts without BeautyQ document types" in {
       val lookup: SemanticDocumentLookup[EitherQueryFailure, String, TestSemanticDocument] = new TestSemanticDocumentLookup(testDocuments)
 
