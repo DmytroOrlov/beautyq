@@ -11,7 +11,7 @@ Gap:
 - A pure Beauty search route contract skeleton exists, but no production Beauty search HTTP route was found.
 - A thin unwired Beauty search API adapter exists, but it is not included in the production app graph.
 - The production Beauty search API boundary now has a disabled-by-default activation/handle proof, but it remains unused by production route wiring.
-- The current proof set is present, but production route inclusion is still absent: pure `POST /beauty-search`, thin unwired `BeautySearchApi`, fake-service route contract suite, fake-backend `BeautySearchService.Impl` binding proof, test-only catalog snapshot/in-memory backend readiness proof, test-only complete app-graph boundary proof, and disabled-by-default production inclusion boundary proof.
+- The current proof set is present, but production route inclusion is still absent: pure `POST /beauty-search`, thin unwired `BeautySearchApi`, fake-service route contract suite, fake-backend `BeautySearchService.Impl` binding proof, test-only catalog snapshot/in-memory backend readiness proof, test-only complete app-graph boundary proof, disabled-by-default production inclusion boundary proof, and test-only disabled-by-default include-module aggregation proof.
 
 Evidence:
 
@@ -22,11 +22,14 @@ Evidence:
 - `BeautySearchCatalogBackendReadinessSpec.scala` proves a focused test-only catalog snapshot/in-memory backend readiness boundary with explicit ready documents before `InMemorySearchBackend` construction.
 - `BeautySearchAppGraphBoundarySpec.scala` proves a focused test-only explicit app-graph boundary can assemble `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchService.Impl[IO]`, `BeautySearchIntentParser`, `BeautySearchSpecV1.spec`, and a fake `BeautySearchBackend[IO]`.
 - `BeautySearchProductionInclusionActivation` and `BeautySearchProductionInclusionHandle` provide a disabled-by-default activation/handle boundary; Disabled avoids evaluating/constructing the API/service/backend graph, and Enabled can explicitly assemble the stack in a test proof.
+- `BeautySearchProductionIncludeModuleSpec.scala` proves a future include-module shape at a test-local API aggregation boundary: Disabled contributes no Beauty search API, and Enabled explicitly contributes exactly one `BeautySearchApi`.
+- The include-module proof uses a test-local include result, not production `many[HttpApi[F]]`.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
 - `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
 - `LeaderboardPlugin` was not changed for the app-graph boundary proof.
 - `LeaderboardPlugin` was not changed for the production inclusion boundary proof.
+- `LeaderboardPlugin` was not changed for the include-module shape proof.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
 - `LeaderboardPlugin.modules.api` is the production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined set.
 - Adding `BeautySearchApi` there would expose `POST /beauty-search`; that is the production inclusion boundary.
@@ -40,7 +43,7 @@ Future implementation:
 
 - Production Beauty search requires explicit route/binding.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
-- The next code patch should be `docs(search): design explicit LeaderboardPlugin inclusion with activation` or `test(search): prove production include module remains disabled by default`.
+- The next code patch should be `docs(search): design actual LeaderboardPlugin include patch` or `feat(search): include Beauty search route in LeaderboardPlugin behind disabled-by-default activation`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 
 ### BeautySearchService Wiring
@@ -56,6 +59,7 @@ Evidence:
 - `BeautySearchServiceBindingSpec.scala` binds `BeautySearchService[IO]` to `BeautySearchService.Impl[IO]` with a fake `BeautySearchBackend[IO]` in `src/test` only and verifies parser handoff, successful backend response pass-through, and backend failure pass-through.
 - `BeautySearchCatalogBackendReadinessSpec.scala` constructs `BeautySearchService.Impl[IO]` with `InMemorySearchBackend[IO]` from an explicit test-local ready-document handle in `src/test` only.
 - `BeautySearchAppGraphBoundarySpec.scala` assembles `BeautySearchApi[IO]` and `BeautySearchService.Impl[IO]` through a test-local `ModuleDef` and fake `BeautySearchBackend[IO]` in `src/test` only.
+- `BeautySearchProductionIncludeModuleSpec.scala` assembles `BeautySearchApi[IO]` and `BeautySearchService.Impl[IO]` through a test-local enabled include module only; the disabled include module contributes no API and constructs no API/service/backend.
 - `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
 - The proof set includes a complete app-graph boundary, but that remains test-local and not production-exposed yet.
 
@@ -195,7 +199,7 @@ Recommendation:
 Current blockers:
 
 - Search API contract skeleton exists, but no production search API adapter/role/wiring exists.
-- Disabled-by-default production inclusion activation/handle boundary exists, but no production include module or `LeaderboardPlugin` wiring uses it yet.
+- Disabled-by-default production inclusion activation/handle boundary exists, and a test-local include-module aggregation proof exists, but no production include module or `LeaderboardPlugin` wiring uses it yet.
 - No production `BeautySearchService` binding.
 - No production lexical backend binding.
 - No production Elasticsearch client/indexing lifecycle.

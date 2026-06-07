@@ -35,6 +35,8 @@ Implemented/current:
 - `BeautySearchProductionInclusionActivation`: disabled-by-default production inclusion activation boundary.
 - `BeautySearchProductionInclusionHandle`: optional API handle that does not implement `HttpApi` and does not expose routes by itself.
 - `BeautySearchProductionInclusionBoundarySpec`: focused proof that Disabled avoids evaluating/constructing the API/service/backend graph and Enabled can explicitly assemble the stack in a test-local module.
+- `BeautySearchProductionIncludeModuleSpec`: focused test-only proof that a future include module can remain disabled by default at an API aggregation boundary.
+- The include-module proof uses a test-local `BeautySearchIncludedApis[F](apis: List[HttpApi[F]])` aggregation result rather than production `many[HttpApi[F]]`; Disabled contributes no Beauty search API, and Enabled can explicitly contribute one `BeautySearchApi`.
 
 Production-wired/current:
 
@@ -43,6 +45,7 @@ Production-wired/current:
 - No production `BeautySearchBackend` binding was found.
 - The pure Tapir endpoint and unwired API adapter are not included in `LeaderboardPlugin.modules.api` and do not expose search by themselves.
 - `LeaderboardPlugin` was not changed for the unwired adapter, fake-backend service binding proof, catalog snapshot/in-memory backend readiness proof, app-graph boundary proof, or production inclusion boundary proof.
+- `LeaderboardPlugin` was not changed for the include-module shape proof.
 - `BeautySearchApi` was not added to `many[HttpApi[F]]`.
 - No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs.
 - `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined API set.
@@ -53,7 +56,7 @@ Design boundary:
 - The implemented model/service/contract/adapter boundary is real code, but future implementation still requires explicit role/binding before Beauty search can be considered production-exposed.
 - Do not infer production availability from the existence of `BeautySearchService.Impl`, `BeautySearchBackend[F]`, or related search models.
 - Do not infer production availability from `BeautySearchTapirEndpoints` or `BeautySearchApi`; they remain unwired.
-- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a test-only catalog snapshot/in-memory readiness proof, a test-only complete app-graph boundary proof, and a disabled-by-default production inclusion activation/handle proof.
+- The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a test-only catalog snapshot/in-memory readiness proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
 - None of those proofs make the route production-exposed yet.
 
 Test-only/fake-only:
@@ -66,6 +69,7 @@ Test-only/fake-only:
 - `BeautySearchCatalogBackendReadinessSpec.scala` uses a test-local `ReadyCatalogDocuments(source, documents)` handle with source `seed-resource-loader`; it rejects empty document readiness before backend construction, then constructs `InMemorySearchBackend[IO]` and `BeautySearchService.Impl[IO]` directly. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production DI modules.
 - `BeautySearchAppGraphBoundarySpec.scala` binds the complete Beauty search API/service/backend stack through a spec-local `ModuleDef` and targets a test-local stack root. The fake backend records parser-produced intents and returns an empty response; the spec also issues one request through the assembled `BeautySearchApi`. It does not use `LeaderboardPlugin`, production app graph magic, Qdrant, hybrid search, Elasticsearch, repository snapshots, seed loaders, Docker, startup indexing, or production DI modules.
 - `BeautySearchProductionInclusionBoundarySpec.scala` binds only `BeautySearchProductionInclusionHandle.disabled[IO]` in the Disabled module and does not bind fake `BeautySearchApi`, `BeautySearchService`, or `BeautySearchBackend`; its Enabled module uses a fake backend and proves construction without backend calls. It does not use `LeaderboardPlugin`, production app graph wiring, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production backend bindings.
+- `BeautySearchProductionIncludeModuleSpec.scala` binds a test-local include result from `BeautySearchProductionInclusionHandle[IO]`. Its Disabled module binds only the disabled handle and contributes no APIs. Its Enabled module explicitly constructs `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchService.Impl[IO]`, `BeautySearchIntentParser`, `BeautySearchSpecV1.spec`, and a fake `BeautySearchBackend[IO]`, contributes exactly one `BeautySearchApi`, and proves backend construction does not call the backend. It does not use production `many[HttpApi[F]]`, `LeaderboardPlugin`, production app graph wiring, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production backend bindings.
 
 Non-production experiment:
 
