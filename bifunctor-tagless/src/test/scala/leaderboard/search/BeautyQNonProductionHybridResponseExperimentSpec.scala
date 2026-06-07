@@ -221,6 +221,136 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
       assert(result.response.providerCarousel.map(_.masterLocationId) == documents.take(10).map(_.masterLocationId))
       assert(result.response.serviceIntentCarousel.map(_.serviceId) == documents.take(10).map(_.serviceId))
     }
+
+    "construction is side-effect-free: constructing does not call backends or lookup" in {
+      val _ = Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe.run(Ref.make(List.empty[Call])).getOrThrowFiberFailure()
+      }
+
+      val constructed = new BeautyQNonProductionHybridResponseExperiment[IO](
+        lexicalBackend = new LexicalDocumentBackend[IO, MasterServiceOfferVariantId] {
+          override def documentHits(
+            input: UserSearchInput,
+            intent: ParsedSearchIntent,
+          ): IO[QueryFailure, List[LexicalDocumentHit[MasterServiceOfferVariantId]]] =
+            ZIO.dieMessage("lexical backend must not be called during construction")
+        },
+        semanticBackend = new SemanticDocumentBackend[IO, MasterServiceOfferVariantId] {
+          override def documentHits(
+            input: UserSearchInput,
+            intent: ParsedSearchIntent,
+          ): IO[QueryFailure, List[SemanticDocumentHit[MasterServiceOfferVariantId]]] =
+            ZIO.dieMessage("semantic backend must not be called during construction")
+        },
+        documentLookup = new SemanticDocumentLookup[IO, MasterServiceOfferVariantId, VariantSearchDocument] {
+          override def lookup(
+            ids: List[MasterServiceOfferVariantId]
+          ): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
+            ZIO.dieMessage("document lookup must not be called during construction")
+        },
+      )
+
+      assert(constructed.isInstanceOf[BeautyQNonProductionHybridResponseExperiment[IO]])
+    }
+
+    "lexical backend called exactly once with input and intent" in {
+      val lexical = variantDocument(30)
+
+      val (_, calls) = runSuccess(
+        lexicalHits = List(LexicalDocumentHit(lexical.variantId, 1.0)),
+        semanticHits = Nil,
+        documents = List(lexical),
+      )
+
+      val lexicalCalls = calls.collect { case Call.Lexical(i, _) => i }
+      assert(lexicalCalls.size == 1)
+      assert(lexicalCalls.head == input)
+    }
+
+    "semantic backend called exactly once with input and intent" in {
+      val semantic = variantDocument(31)
+
+      val (_, calls) = runSuccess(
+        lexicalHits = Nil,
+        semanticHits = List(SemanticDocumentHit(semantic.variantId, 0.9)),
+        documents = List(semantic),
+      )
+
+      val semanticCalls = calls.collect { case Call.Semantic(i, _) => i }
+      assert(semanticCalls.size == 1)
+      assert(semanticCalls.head == input)
+    }
+
+    "semantic-only result produces response with semantic candidates" in {
+      val semantic = variantDocument(32)
+
+      val (result, calls) = runSuccess(
+        lexicalHits = Nil,
+        semanticHits = List(SemanticDocumentHit(semantic.variantId, 0.85)),
+        documents = List(semantic),
+      )
+
+      assert(result.response.variantCarousel.map(_.variantId) == List(semantic.variantId))
+      assert(result.diagnostics.lexicalHitCount == 0)
+      assert(result.diagnostics.semanticHitCount == 1)
+      assert(calls.exists(_.isInstanceOf[Call.Lexical]))
+      assert(calls.exists(_.isInstanceOf[Call.Semantic]))
+    }
+
+    "lookup receives distinct ids: duplicates collapsed, overlap represented once" in {
+      val shared = variantDocument(33)
+      val lexicalOnly = variantDocument(34)
+      val semanticOnly = variantDocument(35)
+
+      val (_, calls) = runSuccess(
+        lexicalHits = List(
+          LexicalDocumentHit(shared.variantId, 1.0),
+          LexicalDocumentHit(lexicalOnly.variantId, 2.0),
+          LexicalDocumentHit(shared.variantId, 0.5),
+        ),
+        semanticHits = List(
+          SemanticDocumentHit(shared.variantId, 0.9),
+          SemanticDocumentHit(semanticOnly.variantId, 0.8),
+        ),
+        documents = List(shared, lexicalOnly, semanticOnly),
+      )
+
+      val lookupIds = calls.collectFirst { case Call.Lookup(ids) => ids }.get
+      assert(lookupIds == List(shared.variantId, lexicalOnly.variantId, semanticOnly.variantId))
+      assert(lookupIds.size == 3)
+    }
+
+    "semantic-only ids passed to lookup when lexical is empty" in {
+      val semantic1 = variantDocument(36)
+      val semantic2 = variantDocument(37)
+
+      val (_, calls) = runSuccess(
+        lexicalHits = Nil,
+        semanticHits = List(
+          SemanticDocumentHit(semantic1.variantId, 0.9),
+          SemanticDocumentHit(semantic2.variantId, 0.8),
+        ),
+        documents = List(semantic1, semantic2),
+      )
+
+      val lookupIds = calls.collectFirst { case Call.Lookup(ids) => ids }.get
+      assert(lookupIds == List(semantic1.variantId, semantic2.variantId))
+    }
+
+    "missing lookup document propagates QueryFailure through pipeline" in {
+      val lexical = variantDocument(38)
+      val missingId = variantId(39)
+
+      val error = runFailure(
+        lexicalResult = Right(List(LexicalDocumentHit(lexical.variantId, 1.0), LexicalDocumentHit(missingId, 0.5))),
+        semanticResult = Right(Nil),
+        lookupResult = Right(Map(lexical.variantId -> lexical)),
+      )
+
+      assert(error.isInstanceOf[QueryFailure])
+      assert(error.message.contains("Missing VariantSearchDocument"))
+      assert(error.message.contains(missingId.toString))
+    }
   }
 
   private def runSuccess(
