@@ -30,6 +30,7 @@ Implemented/current:
 - `BeautySearchApi`: thin unwired API adapter from `BeautySearchTapirEndpoints` to `BeautySearchService[F]`.
 - `BeautySearchApiHttpContractSuite`: route-level adapter contract using a test-local fake `BeautySearchService`.
 - `BeautySearchServiceBindingSpec`: focused test-only Distage module proof that assembles `BeautySearchService.Impl[IO]` from `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
+- `BeautySearchCatalogBackendReadinessSpec`: focused test-only proof that seed resource data is converted to a `BeautySearchCatalogSnapshot`, flattened into `VariantSearchDocument` rows, wrapped in an explicit ready-document handle, and then used to construct `InMemorySearchBackend` and `BeautySearchService.Impl[IO]`.
 
 Production-wired/current:
 
@@ -37,8 +38,8 @@ Production-wired/current:
 - No production search role or `/beauty-search` route wiring was found.
 - No production `BeautySearchBackend` binding was found.
 - The pure Tapir endpoint and unwired API adapter are not included in `LeaderboardPlugin.modules.api` and do not expose search by themselves.
-- `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
-- No production backend selection, readiness/freshness boundary, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the binding proof.
+- `LeaderboardPlugin` was not changed for the unwired adapter, fake-backend service binding proof, or catalog snapshot/in-memory backend readiness proof.
+- No production backend selection, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by these proofs.
 
 Design boundary:
 
@@ -53,6 +54,7 @@ Test-only/fake-only:
 - `InMemorySearchBackend` is the pure regression backend described in `docs/beautyq-search-dsl-v1.md` and used by pure tests.
 - `BeautySearchApiHttpContractSuite.scala` constructs a test-local fake `BeautySearchService` through `BeautySearchApi`; it does not use Qdrant, hybrid, Elasticsearch, repository snapshots, file IO, Docker, or production DI.
 - `BeautySearchServiceBindingSpec.scala` binds a test-local fake `BeautySearchBackend[IO]` and `BeautySearchService.Impl[IO]` through Distage, calls `search(UserSearchInput(...))`, verifies the fake backend receives the parser-produced `ParsedSearchIntent`, verifies response pass-through, and verifies `QueryFailure` pass-through. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, file IO, Docker, or production DI modules.
+- `BeautySearchCatalogBackendReadinessSpec.scala` uses a test-local `ReadyCatalogDocuments(source, documents)` handle with source `seed-resource-loader`; it rejects empty document readiness before backend construction, then constructs `InMemorySearchBackend[IO]` and `BeautySearchService.Impl[IO]` directly. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production DI modules.
 
 Non-production experiment:
 
@@ -70,6 +72,7 @@ Implemented/current:
 - Snapshot model: `BeautySearchCatalogSnapshot`.
 - Snapshot loaders: `FromRepositories` and `SeedScopedFromRepositories`.
 - Document builder: `VariantSearchDocumentBuilder.build(snapshot)`.
+- Test-only ready-document proof: `BeautySearchCatalogBackendReadinessSpec` wraps built documents in a test-local readiness handle before constructing the in-memory backend.
 
 Important behavior:
 
@@ -83,6 +86,7 @@ Resolved mismatch:
 - `SeedScopedFromRepositories` now depends directly on `BeautyQSeedReady`, resolving the previously documented repository-instruction mismatch for seed-json plus repository snapshot paths.
 - This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
 - The explicit `BeautyQSeedReady` edge does not by itself solve production search readiness. Future implementation still needs a source-of-truth and freshness design for repository snapshots, Elasticsearch indexes, and any production search-read model.
+- The catalog snapshot/in-memory readiness proof only proves explicit test-local document readiness before backend construction. It does not define production freshness, refresh, staleness, repository snapshot ownership, index lifecycle, or production backend selection.
 
 ## D. Elasticsearch Path
 

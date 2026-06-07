@@ -82,6 +82,9 @@ Contract skeleton/current:
 - `BeautySearchApiHttpContractSuite.scala` exercises the adapter route through a test-local fake `BeautySearchService` only.
 - `BeautySearchServiceBindingSpec.scala` proves a focused test-only Distage module can assemble `BeautySearchService.Impl[IO]` with `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
 - The binding proof exercises parser handoff, successful backend response pass-through, and backend `QueryFailure` pass-through without using `BeautySearchApi`, `LeaderboardPlugin`, HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, or Docker.
+- `BeautySearchCatalogBackendReadinessSpec.scala` proves a test-only catalog snapshot/in-memory backend readiness boundary: seed data is loaded through `BeautyQSeedLoader.ResourceLoader`, converted with `BeautySearchCatalogSnapshot.fromSeedData`, flattened with `VariantSearchDocumentBuilder.build`, wrapped in an explicit ready-document handle, and only then used to construct `InMemorySearchBackend` and `BeautySearchService.Impl`.
+- The catalog backend readiness proof rejects empty ready documents before backend construction and uses the explicit source label `seed-resource-loader`.
+- The readiness proof does not use `BeautySearchApi`, `LeaderboardPlugin`, HTTP routes, production DI modules, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production backend bindings.
 
 Production-wired/current:
 
@@ -89,18 +92,19 @@ Production-wired/current:
 - `LeaderboardPlugin.modules.api` does not bind `BeautySearchService`, `BeautySearchBackend`, search endpoints, or a search `HttpApi`.
 - `LeaderboardPlugin` was not changed for the unwired adapter, and targeted searches for production `/beauty-search` wiring found no production HTTP route.
 - `LeaderboardPlugin` was not changed for the fake-backend binding proof.
+- `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
 - The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
-- No production `BeautySearchBackend` choice, readiness boundary, freshness boundary, indexing lifecycle, or startup indexing behavior was added by the binding proof.
+- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, indexing lifecycle, or startup indexing behavior was added by the binding proof or catalog backend readiness proof.
 
 Conclusion:
 
-- Beauty search now has a pure route contract skeleton, thin unwired API adapter, and fake-backend service binding proof, but it is not exposed as a production HTTP route in inspected runtime app wiring.
+- Beauty search now has a pure route contract skeleton, thin unwired API adapter, fake-backend service binding proof, and test-only catalog snapshot/in-memory backend readiness proof, but it is not exposed as a production HTTP route in inspected runtime app wiring.
 - Production Beauty search requires explicit route/binding. No confirmed production search role or production `/beauty-search` route was found in inspected wiring.
 - No `LeaderboardPlugin` include, role registration, `BeautySearchService` production binding, or `BeautySearchBackend` production binding was added by the contract skeleton, unwired adapter, or fake-backend service binding proof.
 
 Future implementation boundary:
 
-- The next production Beauty search step should be `docs(search): design BeautySearchBackend readiness/freshness boundary`.
+- The next production Beauty search step should be `docs(search): design production Beauty search app-graph inclusion boundary`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 - Qdrant/hybrid remain non-production/manual-local/experimental and are not selected by the route contract skeleton or unwired adapter.
 

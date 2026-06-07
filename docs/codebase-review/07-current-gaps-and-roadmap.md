@@ -18,18 +18,20 @@ Evidence:
 - `BeautySearchApi.scala` bridges the pure endpoint to `BeautySearchService[F]` without backend creation or production wiring.
 - `BeautySearchApiHttpContractSuite.scala` tests the adapter route through a fake service only.
 - `BeautySearchServiceBindingSpec.scala` proves a focused test-only Distage module can assemble `BeautySearchService.Impl[IO]` with `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
+- `BeautySearchCatalogBackendReadinessSpec.scala` proves a focused test-only catalog snapshot/in-memory backend readiness boundary with explicit ready documents before `InMemorySearchBackend` construction.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
+- `LeaderboardPlugin` was not changed for the catalog snapshot/in-memory backend readiness proof.
 - `LeaderboardRole.scala` has no search role.
 - No `BeautySearchService` or `BeautySearchBackend` production binding was added.
-- No production `BeautySearchBackend` choice, readiness/freshness boundary, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added.
+- No production `BeautySearchBackend` choice, freshness/refresh/staleness policy, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added.
 - Qdrant/hybrid remain non-production/manual-local/experimental and are not default.
 
 Future implementation:
 
 - Production Beauty search requires explicit route/binding.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
-- The next step should be `docs(search): design BeautySearchBackend readiness/freshness boundary`.
+- The next step should be `docs(search): design production Beauty search app-graph inclusion boundary`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 
 ### BeautySearchService Wiring
@@ -43,6 +45,7 @@ Evidence:
 - `BeautySearchService.Impl` exists in `search/BeautySearchModels.scala`.
 - Targeted searches found test-local construction in `BeautySearchPureSpec.scala`, not bindings in `LeaderboardPlugin.scala`.
 - `BeautySearchServiceBindingSpec.scala` binds `BeautySearchService[IO]` to `BeautySearchService.Impl[IO]` with a fake `BeautySearchBackend[IO]` in `src/test` only and verifies parser handoff, successful backend response pass-through, and backend failure pass-through.
+- `BeautySearchCatalogBackendReadinessSpec.scala` constructs `BeautySearchService.Impl[IO]` with `InMemorySearchBackend[IO]` from an explicit test-local ready-document handle in `src/test` only.
 - `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
 
 Acceptance criteria for future implementation:
@@ -113,6 +116,21 @@ Boundary:
 - It does not make production Beauty search ready.
 - Future production design still needs source-of-truth and freshness decisions for repository snapshots, Elasticsearch indexes, catalog/index freshness, and whether seed-scoped data is suitable for any production search path.
 
+### Catalog Snapshot / In-Memory Backend Readiness Proof
+
+Implemented test-only proof:
+
+- `BeautySearchCatalogBackendReadinessSpec.scala` loads seed data through `BeautyQSeedLoader.ResourceLoader`, creates `BeautySearchCatalogSnapshot.fromSeedData(seedData)`, builds documents with `VariantSearchDocumentBuilder.build(snapshot)`, and wraps them in a test-local `ReadyCatalogDocuments(source, documents)` handle before constructing `InMemorySearchBackend`.
+- The proof asserts the ready source label is explicit (`seed-resource-loader`), documents are non-empty, empty ready documents are rejected before backend construction, and `BeautySearchService.Impl[IO]` returns non-empty variant/provider/service carousels through the in-memory backend.
+
+Boundary:
+
+- This is not production exposure.
+- It does not bind `BeautySearchService` or `BeautySearchBackend` in production DI.
+- It does not change `LeaderboardPlugin` or add a search role/API inclusion.
+- It does not add repository-backed production snapshot wiring, startup indexing, Elasticsearch lifecycle, Qdrant/hybrid routing, fallback, reranking, score fusion, or benchmark-driven model switching.
+- Production backend selection and freshness/refresh/staleness policy remain future work.
+
 ### Salon / Availability Domain
 
 Gap:
@@ -178,7 +196,7 @@ Current blockers:
 - No decided parser/backend error shape.
 - No decided timeout behavior.
 - No decided logging/metrics/tracing surface.
-- No decided backend-readiness failure behavior.
+- No decided production backend-readiness failure behavior.
 - No decided rollout strategy for first production exposure.
 
 ## Repository / Persistence Risks
@@ -210,8 +228,8 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. `docs(search): design BeautySearchBackend readiness/freshness boundary`.
-2. `test(search): prove catalog snapshot/in-memory backend readiness boundary`.
+1. `docs(search): design production Beauty search app-graph inclusion boundary`.
+2. `test(search): prove production app-graph inclusion remains explicit and disabled-by-default`.
 3. Keep Qdrant/hybrid out of first production exposure unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
 4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.
 5. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
