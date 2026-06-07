@@ -251,6 +251,95 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
       assert(result.response.providerCarousel.isEmpty)
       assert(result.response.serviceIntentCarousel.isEmpty)
     }
+
+    "fail with missing document for overlapping lexical+semantic id" in {
+      val missingId = variantId(30)
+
+      val result = BeautyQHybridResponsePipeline.projectResponse(
+        retrieval = HybridDocumentRetrievalResult.fromHits(
+          lexicalHits = List(LexicalDocumentHit(missingId, 5.0)),
+          semanticHits = List(SemanticDocumentHit(missingId, 0.85)),
+        ),
+        documentsByVariantId = Map.empty,
+        limits = defaultLimits,
+      )
+
+      assert(result.isLeft)
+      assert(result.left.exists(_.message.contains("Missing VariantSearchDocument")))
+      assert(result.left.exists(_.message.contains(missingId.toString)))
+    }
+
+    "return empty carousels for empty retrieval result" in {
+      val result = BeautyQHybridResponsePipeline.projectResponse(
+        retrieval = HybridDocumentRetrievalResult.fromHits(
+          lexicalHits = Nil,
+          semanticHits = Nil,
+        ),
+        documentsByVariantId = Map.empty,
+        limits = defaultLimits,
+      )
+
+      result match {
+        case Right(r) =>
+          assert(r.response.variantCarousel.isEmpty)
+          assert(r.response.providerCarousel.isEmpty)
+          assert(r.response.serviceIntentCarousel.isEmpty)
+          assert(r.response.facets.isEmpty)
+          assert(r.response.inferredFilters.isEmpty)
+          assert(r.diagnostics.policy.lexicalInputCount == 0)
+          assert(r.diagnostics.policy.semanticInputCount == 0)
+          assert(r.diagnostics.policy.overlapCount == 0)
+          assert(r.diagnostics.variantProjection.inputCandidateCount == 0)
+          assert(r.diagnostics.variantProjection.projectedCandidateCount == 0)
+          assert(r.diagnostics.variantProjection.missingDocumentIds.isEmpty)
+        case Left(error) => fail(error.message)
+      }
+    }
+
+    "truncate variants after lexical-first/semantic-supplement order" in {
+      val lexical1 = variantDocument(31, masterLocationIndex = 1000, serviceIndex = 2000)
+      val lexical2 = variantDocument(32, masterLocationIndex = 1001, serviceIndex = 2001)
+      val semantic1 = variantDocument(33, masterLocationIndex = 1002, serviceIndex = 2002)
+      val semantic2 = variantDocument(34, masterLocationIndex = 1003, serviceIndex = 2003)
+
+      val result = project(
+        lexicalHits = List(
+          LexicalDocumentHit(lexical1.variantId, 1.0),
+          LexicalDocumentHit(lexical2.variantId, 2.0),
+        ),
+        semanticHits = List(
+          SemanticDocumentHit(semantic1.variantId, 0.9),
+          SemanticDocumentHit(semantic2.variantId, 0.8),
+        ),
+        documents = List(lexical1, lexical2, semantic1, semantic2),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 3, providerSize = 10, serviceIntentSize = 10),
+      )
+
+      assert(result.response.variantCarousel.map(_.variantId) == List(lexical1.variantId, lexical2.variantId, semantic1.variantId))
+      assert(result.response.variantCarousel.map(_.score) == List(1.0, 2.0, 0.9))
+    }
+
+    "truncate provider/service carousels with explicit limits" in {
+      val lexical1 = variantDocument(35, masterLocationIndex = 1000, serviceIndex = 2000)
+      val lexical2 = variantDocument(36, masterLocationIndex = 1001, serviceIndex = 2001)
+      val semantic1 = variantDocument(37, masterLocationIndex = 1002, serviceIndex = 2002)
+
+      val result = project(
+        lexicalHits = List(
+          LexicalDocumentHit(lexical1.variantId, 1.0),
+          LexicalDocumentHit(lexical2.variantId, 2.0),
+        ),
+        semanticHits = List(
+          SemanticDocumentHit(semantic1.variantId, 0.9),
+        ),
+        documents = List(lexical1, lexical2, semantic1),
+        limits = BeautyQHybridResponseCarouselLimits(variantSize = 3, providerSize = 1, serviceIntentSize = 2),
+      )
+
+      assert(result.response.variantCarousel.map(_.variantId) == List(lexical1.variantId, lexical2.variantId, semantic1.variantId))
+      assert(result.response.providerCarousel.map(_.masterLocationId) == List(lexical1.masterLocationId))
+      assert(result.response.serviceIntentCarousel.map(_.serviceId) == List(lexical1.serviceId, lexical2.serviceId))
+    }
   }
 
   private def project(
