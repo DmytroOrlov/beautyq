@@ -110,6 +110,40 @@ Contract skeleton/current:
   - `limit` 100000 → `200 OK`, `variantCarousel` size <= `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 - This is current production route behavior, not a full validation or error policy. Zero and negative limits return `200 OK` with empty `variantCarousel`. Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
+## Beauty Search Production Route Coordinate Behavior
+
+Characterized/current:
+
+- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior through the production `LeaderboardPlugin.modules.api` API graph with seed-resource catalog snapshot + `InMemorySearchBackend`.
+- Normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, non-empty `variantCarousel`.
+- Latitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3).
+- Longitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3).
+- Huge finite coordinates (lat 1e9, lon -1e9) → `200 OK`, bounded `variantCarousel` (size <= 3).
+- The current route does not validate coordinate ranges; all finite numeric values are accepted.
+
+This is current behavior, not the desired final validation contract. The route currently lacks:
+
+- Latitude/longitude range validation (e.g., lat must be -90..90, lon must be -180..180).
+- Typed `4xx` error responses for invalid coordinate values.
+- Structured error bodies describing coordinate validation failures.
+
+## Beauty Search Production Route Query Behavior
+
+Characterized/current:
+
+- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior through the production `LeaderboardPlugin.modules.api` API graph with seed-resource catalog snapshot + `InMemorySearchBackend`.
+- Empty query string → `200 OK`, non-empty `variantCarousel`.
+- Whitespace-only query string → `200 OK`, bounded `variantCarousel` (size <= 3).
+- Normal query text ("nails") → `200 OK`, bounded `variantCarousel` (size <= 3).
+- Very long query string (e.g., "nails " repeated 1000 times) → `200 OK`, bounded `variantCarousel` (size <= 3).
+- The current route does not enforce query length validation.
+
+This is current behavior, not the desired final validation contract. The route currently lacks:
+
+- Maximum query length enforcement.
+- Typed `4xx` error responses for excessively long queries.
+- Structured error bodies describing query validation failures.
+
 Production-wired/current:
 
 - No search role was found in `LeaderboardRole.scala`.
