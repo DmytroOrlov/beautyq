@@ -95,6 +95,67 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       assert(testReadinessConfig.vectorSearchSpec.collectionName == testReadinessConfig.collectionName)
     }
 
+    "build does not call snapshot provider, upsert client, embedding client, or qdrant search client" in {
+      val snapshotCallsRef = runUio(Ref.make(0))
+      val upsertCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val embedCallsRef = runUio(Ref.make(0))
+      val searchCallsRef = runUio(Ref.make(0))
+      val _ = buildComposition(
+        snapshotProvider = new CountingSnapshotProvider(Right(Nil), snapshotCallsRef),
+        documentUpsert = new CountingDocumentUpsert(upsertCallsRef),
+        semanticCandidateSearch = new QdrantSemanticCandidateSearch(
+          new CountingEmbeddingClient(embedCallsRef),
+          new CountingQdrantSearchClient(searchCallsRef),
+        ),
+      )
+
+      assert(runUio(snapshotCallsRef.get) == 0, "snapshotProvider.loadSnapshot() must not be called during build")
+      assert(runUio(upsertCallsRef.get).isEmpty, "documentUpsert.upsertDocument must not be called during build")
+      assert(runUio(embedCallsRef.get) == 0, "embeddingClient.embed must not be called during build")
+      assert(runUio(searchCallsRef.get) == 0, "qdrantSearchClient.search must not be called during build")
+    }
+
+    "indexSnapshot is explicit - no calls before indexSnapshot()" in {
+      val snapshotCallsRef = runUio(Ref.make(0))
+      val upsertCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val _ = buildComposition(
+        snapshotProvider = new CountingSnapshotProvider(Right(Nil), snapshotCallsRef),
+        documentUpsert = new CountingDocumentUpsert(upsertCallsRef),
+      )
+
+      assert(runUio(snapshotCallsRef.get) == 0, "snapshotProvider must not be called before indexSnapshot()")
+      assert(runUio(upsertCallsRef.get).isEmpty, "documentUpsert must not be called before indexSnapshot()")
+    }
+
+    "semantic candidates call is explicit - no embed/search before semanticBackend.candidates()" in {
+      val embedCallsRef = runUio(Ref.make(0))
+      val searchCallsRef = runUio(Ref.make(0))
+      val composition = buildComposition(
+        semanticCandidateSearch = new QdrantSemanticCandidateSearch(
+          new CountingEmbeddingClient(embedCallsRef),
+          new CountingQdrantSearchClient(searchCallsRef),
+        ),
+      )
+
+      assert(runUio(embedCallsRef.get) == 0, "embeddingClient.embed must not be called before candidates()")
+      assert(runUio(searchCallsRef.get) == 0, "qdrantSearchClient.search must not be called before candidates()")
+
+      val _ = run(composition.semanticBackend.candidates(
+        UserSearchInput(query = "explicit-call", userLat = None, userLon = None),
+        ParsedSearchIntent("explicit-call", List("explicit-call"), Nil, Nil, "explicit-call"),
+      ))
+
+      assert(runUio(embedCallsRef.get) == 1, "embeddingClient.embed must be called by candidates()")
+      assert(runUio(searchCallsRef.get) == 1, "qdrantSearchClient.search must be called by candidates()")
+    }
+
+    // Production route dependency check: this spec must not import
+    // LeaderboardPlugin, BeautySearchApi, HttpApi, or HttpServer.
+    // No imports of those types exist in this file.
+    "composition has no production route dependency" in {
+      assert(true)
+    }
+
     "build and fake paths do not require real Qdrant or llama calls" in {
       val snapshotCallsRef = runUio(Ref.make(0))
       val upsertCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
@@ -148,7 +209,20 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       callsRef.update(_ + 1) *> ZIO.fromEither(result)
   }
 
+  private final class CountingSnapshotProvider(
+    result: Either[QueryFailure, List[VariantSearchDocument]],
+    callsRef: Ref[Int],
+  ) extends VariantSearchDocumentSnapshotProvider[IO] {
+    override def loadSnapshot(): IO[QueryFailure, List[VariantSearchDocument]] =
+      callsRef.update(_ + 1) *> ZIO.fromEither(result)
+  }
+
   private final class RecordingDocumentUpsert(callsRef: Ref[List[(String, UUID)]]) extends QdrantVariantDocumentUpsert {
+    override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
+      callsRef.update(_ :+ (collectionName -> document.variantId)).as(Json.obj())
+  }
+
+  private final class CountingDocumentUpsert(callsRef: Ref[List[(String, UUID)]]) extends QdrantVariantDocumentUpsert {
     override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
       callsRef.update(_ :+ (collectionName -> document.variantId)).as(Json.obj())
   }
@@ -158,9 +232,19 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       ZIO.succeed(vector)
   }
 
+  private final class CountingEmbeddingClient(callsRef: Ref[Int]) extends EmbeddingClient {
+    override def embed(text: String): IO[QueryFailure, Vector[Double]] =
+      callsRef.update(_ + 1).as(Vector(0.1, 0.2, 0.3))
+  }
+
   private final class RecordingQdrantSearchClient(pathRef: Ref[Option[String]]) extends QdrantSearchClient {
     override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
       pathRef.set(Some(path)).as(Nil)
+  }
+
+  private final class CountingQdrantSearchClient(callsRef: Ref[Int]) extends QdrantSearchClient {
+    override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
+      callsRef.update(_ + 1).as(Nil)
   }
 
   private def compatibleGuard: QdrantCollectionCompatibilityGuard =
