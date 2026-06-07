@@ -150,6 +150,11 @@ What not to infer:
 - Passing Qdrant tests does not make Qdrant the production backend.
 - Hybrid projection tests do not implement production fallback or score fusion.
 
+Related design boundary:
+
+- Implemented search service/backend classes do not by themselves imply a production API boundary.
+- Production Beauty search still requires explicit route/binding, with route-level contract tests defining the HTTP contract before any runtime backend is treated as production-exposed.
+
 ## Decision 8: Benchmark Decision Policy Is Decision Support
 
 Statement:

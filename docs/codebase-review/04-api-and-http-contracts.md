@@ -76,10 +76,18 @@ Production-wired/current:
 - No search role was found in `LeaderboardRole.scala`.
 - `LeaderboardPlugin.modules.api` does not bind `BeautySearchService`, `BeautySearchBackend`, search endpoints, or a search `HttpApi`.
 - Targeted searches for `SearchApi`, `SearchRoute`, `Tapir.*Search`, and `/search` found no production HTTP route.
+- The implemented search model/service boundary exists in code as `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1`, but that design boundary is not found in inspected wiring as a production route.
 
 Conclusion:
 
 - Beauty search is implemented as models/interpreters/tests/experiments, but it is not exposed as a production HTTP route in inspected runtime app wiring.
+- Production Beauty search requires explicit route/binding. No confirmed `SearchApi`, search Tapir endpoint, or `/search` route was found in inspected wiring.
+
+Future implementation boundary:
+
+- The first production Beauty search step should be a route contract design plus route-level contract tests, not backend-first wiring.
+- That future route contract still needs explicit decisions for route path, HTTP method, request JSON shape, response JSON shape, error model, empty/null behavior, limit behavior, and diagnostics visibility.
+- If a route name such as `/search` is discussed in later work, treat it as future design unless current source adds a verified convention.
 
 ## Contract Tests
 
@@ -107,3 +115,4 @@ What they protect:
 Rule for future docs/edits:
 
 - For HTTP behavior, route-level contract tests are the source of truth. Do not update docs based only on adapter intuition.
+- For future Beauty search HTTP behavior, route-level contract tests must define the contract explicitly; do not rely on Tapir defaults.

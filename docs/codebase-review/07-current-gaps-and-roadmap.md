@@ -9,12 +9,19 @@ This file separates current gaps from future recommendations. Do not read recomm
 Gap:
 
 - No production Beauty search HTTP route was found.
+- The production Beauty search API boundary remains a design boundary, not a verified runtime boundary.
 
 Evidence:
 
 - No `SearchApi` or `SearchTapirEndpoints` under `bifunctor-tagless/src/main/scala/leaderboard/api` or `http/tapir`.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
 - `LeaderboardRole.scala` has no search role.
+
+Future implementation:
+
+- Production Beauty search requires explicit route/binding.
+- Start from route contract design and route-level contract tests before wiring a runtime backend.
+- The future route contract still needs explicit decisions for path, method, request JSON, response JSON, error model, empty/null behavior, limit behavior, and diagnostics visibility.
 
 ### BeautySearchService Wiring
 
@@ -26,6 +33,16 @@ Evidence:
 
 - `BeautySearchService.Impl` exists in `search/BeautySearchModels.scala`.
 - Targeted searches found test-local construction in `BeautySearchPureSpec.scala`, not bindings in `LeaderboardPlugin.scala`.
+- `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
+
+Acceptance criteria for future implementation:
+
+- Future production binding must answer where `BeautySearchService.Impl` is bound.
+- It must answer which `BeautySearchBackend` is bound.
+- It must guarantee catalog/index readiness explicitly.
+- It must define parser/backend failure representation.
+- It must show route-level contract tests that prove the HTTP contract.
+- It must define diagnostics and observability exposure.
 
 ### Elasticsearch Runtime Backend
 
@@ -39,6 +56,12 @@ Evidence:
 - `BeautySearchElasticsearchIntegrationSpec.scala` creates indexes and executes search through `ElasticsearchTestClient.scala`.
 - `LeaderboardPlugin.scala` has no Elasticsearch-backed search binding.
 
+Future implementation boundary:
+
+- The first production backend should stay lexical/simple-first.
+- A fake, catalog snapshot, or in-memory backend is a valid first controlled route-contract backend.
+- If Elasticsearch is selected later, it requires explicit index lifecycle, readiness, freshness, and failure-behavior design before production binding.
+
 ### Qdrant / Hybrid Production Boundary
 
 Gap:
@@ -51,6 +74,18 @@ Evidence:
 - Classes are named `QdrantNonProductionExperiment*`, `BeautyQNonProductionHybrid*`, and `Experimental*`.
 - `LeaderboardPlugin.scala` has no Qdrant/hybrid search binding.
 
+Preserved boundary:
+
+- No Qdrant-as-default.
+- No hybrid-as-default.
+- No residual-text semantic route.
+- No fallback-on-zero-results.
+- No score fusion/reranking.
+- No benchmark-driven runtime model switching.
+- No production collection lifecycle.
+- No startup indexing.
+- No HTTP routing metadata for hybrid without separate design.
+
 ### Seed-Scoped Repository Snapshot Readiness Edge
 
 Resolved mismatch:
@@ -61,6 +96,12 @@ Evidence:
 
 - Constructor in `search/document/VariantSearchDocument.scala` now takes `BeautyQSeedReady`, seed data, and repository collaborators.
 - AGENTS instructions require seed-json plus shared-Postgres snapshot paths to depend directly on `BeautyQSeedReady` before repository reads.
+
+Boundary:
+
+- This resolves the seed-scoped dependency-rule mismatch only.
+- It does not make production Beauty search ready.
+- Future production design still needs source-of-truth and freshness decisions for repository snapshots, Elasticsearch indexes, catalog/index freshness, and whether seed-scoped data is suitable for any production search path.
 
 ### Salon / Availability Domain
 
@@ -123,6 +164,12 @@ Current blockers:
 - No production routing metadata/API contract.
 - No production fallback semantics.
 - No score fusion/reranking policy, and docs currently say not to add one implicitly.
+- No decided request diagnostics contract.
+- No decided parser/backend error shape.
+- No decided timeout behavior.
+- No decided logging/metrics/tracing surface.
+- No decided backend-readiness failure behavior.
+- No decided rollout strategy for first production exposure.
 
 ## Repository / Persistence Risks
 
@@ -153,8 +200,10 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
-2. Decide whether Beauty search should have a production HTTP API; if yes, start with a typed route contract test before wiring runtime search.
-3. If Elasticsearch is the intended production lexical backend, add explicit backend/client/index lifecycle design before implementation.
-4. Keep Qdrant/hybrid behind explicit non-production activation until lifecycle, routing, freshness, observability, and kill-switch decisions are documented.
-5. Reconcile stale docs before relying on them in future implementation passes.
+1. `test/docs(search): add production Beauty search route contract skeleton`.
+2. Scope that future step to route contract tests first with a fake, catalog snapshot, or in-memory backend only.
+3. Keep Qdrant/hybrid out of that first production route-contract step: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
+4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.
+5. Prove a later production binding of `BeautySearchService.Impl` explicitly in runtime wiring instead of inferring availability from class existence.
+6. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
+7. Reconcile stale docs before relying on them in future implementation passes.

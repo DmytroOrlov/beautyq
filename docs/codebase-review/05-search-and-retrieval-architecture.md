@@ -31,6 +31,12 @@ Production-wired/current:
 
 - Pass-2 inspection found no binding for `BeautySearchService.Impl`, `BeautySearchService`, or `BeautySearchBackend` in `LeaderboardPlugin.scala`.
 - No production `SearchApi`, search role, or `/search` route was found.
+- No confirmed search Tapir endpoint or production `BeautySearchBackend` binding was found.
+
+Design boundary:
+
+- The implemented model/service boundary is real code, but future implementation still requires explicit route/binding before Beauty search can be considered production-exposed.
+- Do not infer production availability from the existence of `BeautySearchService.Impl`, `BeautySearchBackend[F]`, or related search models.
 
 Test-only/fake-only:
 
@@ -66,6 +72,7 @@ Resolved mismatch:
 
 - `SeedScopedFromRepositories` now depends directly on `BeautyQSeedReady`, resolving the previously documented repository-instruction mismatch for seed-json plus repository snapshot paths.
 - This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
+- The explicit `BeautyQSeedReady` edge does not by itself solve production search readiness. Future implementation still needs a source-of-truth and freshness design for repository snapshots, Elasticsearch indexes, and any production search-read model.
 
 ## D. Elasticsearch Path
 
@@ -98,6 +105,12 @@ Classification:
 - Interpreters: implemented/current pure code.
 - Test client and Docker integration: integration-test-only.
 - Production runtime Elasticsearch search path: unclear/absent in inspected wiring.
+
+Future implementation boundary:
+
+- If Elasticsearch is selected for future production search, the first production backend should stay lexical/simple-first.
+- A controlled first route contract can use a catalog snapshot or in-memory backend before any Elasticsearch runtime lifecycle is introduced.
+- Elasticsearch should only be considered for a production backend after index lifecycle, readiness, failure behavior, freshness, and observability are explicitly designed.
 
 ## E. Qdrant / Vector Path
 
@@ -170,8 +183,16 @@ What is not implemented for production:
 - No production fallback-on-zero-results.
 - No score fusion/reranking.
 - No Qdrant-as-default.
+- No hybrid-as-default.
+- No residual-text semantic route for production.
 - No production collection manager or startup auto-indexing.
 - No API routing metadata contract.
+- No benchmark-driven runtime model switching.
+
+Production boundary:
+
+- Qdrant and hybrid stay non-production/manual-local/experimental until lifecycle, routing, freshness, observability, kill-switch, and collection-management questions are resolved.
+- Elasticsearch/Qdrant/hybrid implemented pieces do not by themselves imply production wiring.
 
 ## G. Benchmarks / Eval
 
@@ -205,6 +226,7 @@ Production-wired/current:
 - No `BeautySearchBackend` binding found.
 - No Elasticsearch search backend binding found.
 - No Qdrant/hybrid production binding found.
+- No confirmed search Tapir endpoint, `SearchApi`, or `/search` route found in inspected wiring.
 
 Implemented/current but mostly test/experiment exercised:
 
@@ -216,3 +238,12 @@ Implemented/current but mostly test/experiment exercised:
 - Qdrant/vector components.
 - Hybrid/generic retrieval seams.
 - Eval/benchmark code.
+
+Service binding acceptance criteria for future implementation:
+
+- Future production binding must answer where `BeautySearchService.Impl` is bound.
+- It must answer which `BeautySearchBackend` is bound first.
+- It must define how catalog/index readiness is guaranteed.
+- It must define how parser/backend failures are represented at the route boundary.
+- It must show which route-level contract tests prove request/response/error behavior.
+- It must define how diagnostics and observability are exposed.
