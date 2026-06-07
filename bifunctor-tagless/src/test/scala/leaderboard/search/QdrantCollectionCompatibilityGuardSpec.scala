@@ -91,6 +91,68 @@ final class QdrantCollectionCompatibilityGuardSpec extends AnyWordSpec {
           fail(s"Expected qdrant-collection-compatibility failure, got $other")
       }
     }
+
+    "convert distance-only mismatch to QueryFailure.operation" in {
+      val client = new ConstQdrantCollectionInfoClient(Right(collectionInfoJson(
+        distance = "Dot",
+      )))
+
+      val error = runFail(guard(client).requireCompatible(expectation))
+
+      error match {
+        case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
+          assert(message.contains("DistanceMismatch(expected=Cosine, observed=Dot)"))
+        case other =>
+          fail(s"Expected qdrant-collection-compatibility failure, got $other")
+      }
+    }
+
+    "convert embedding model mismatch to QueryFailure.operation" in {
+      val client = new ConstQdrantCollectionInfoClient(Right(collectionInfoJson(
+        observedEmbeddingModelName = Some("other-embedding-model"),
+      )))
+
+      val error = runFail(guard(client).requireCompatible(expectation))
+
+      error match {
+        case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
+          assert(message.contains("EmbeddingModelMismatch(expected=llama-cpp-embedding, observed=other-embedding-model)"))
+        case other =>
+          fail(s"Expected qdrant-collection-compatibility failure, got $other")
+      }
+    }
+
+    "fail with decode QueryFailure when result is null (params.vectors missing)" in {
+      val client = new ConstQdrantCollectionInfoClient(Right(Json.obj(
+        "result" -> Json.Null
+      )))
+
+      val error = runFail(guard(client).requireCompatible(expectation))
+
+      error match {
+        case QueryFailure.OperationFailure("validate-qdrant-collection-compatibility", message) =>
+          assert(message == "Missing params.vectors in Qdrant collection info")
+        case other =>
+          fail(s"Expected validate-qdrant-collection-compatibility failure, got $other")
+      }
+    }
+
+    "fail with decode QueryFailure when config is missing (params.vectors missing)" in {
+      val client = new ConstQdrantCollectionInfoClient(Right(Json.obj(
+        "result" -> Json.obj(
+          "name" -> expectation.collectionName.asJson,
+        )
+      )))
+
+      val error = runFail(guard(client).requireCompatible(expectation))
+
+      error match {
+        case QueryFailure.OperationFailure("validate-qdrant-collection-compatibility", message) =>
+          assert(message == "Missing params.vectors in Qdrant collection info")
+        case other =>
+          fail(s"Expected validate-qdrant-collection-compatibility failure, got $other")
+      }
+    }
   }
 
   private val expectation =
