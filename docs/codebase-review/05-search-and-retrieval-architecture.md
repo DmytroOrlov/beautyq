@@ -29,6 +29,7 @@ Implemented/current:
 - `BeautySearchTapirEndpoints`: pure unwired contract skeleton for `POST /beauty-search`.
 - `BeautySearchApi`: thin unwired API adapter from `BeautySearchTapirEndpoints` to `BeautySearchService[F]`.
 - `BeautySearchApiHttpContractSuite`: route-level adapter contract using a test-local fake `BeautySearchService`.
+- `BeautySearchServiceBindingSpec`: focused test-only Distage module proof that assembles `BeautySearchService.Impl[IO]` from `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
 
 Production-wired/current:
 
@@ -36,7 +37,8 @@ Production-wired/current:
 - No production search role or `/beauty-search` route wiring was found.
 - No production `BeautySearchBackend` binding was found.
 - The pure Tapir endpoint and unwired API adapter are not included in `LeaderboardPlugin.modules.api` and do not expose search by themselves.
-- `LeaderboardPlugin` was not changed for the unwired adapter.
+- `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
+- No production backend selection, readiness/freshness boundary, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added by the binding proof.
 
 Design boundary:
 
@@ -50,6 +52,7 @@ Test-only/fake-only:
 - `FakeBeautySearchBackend`, `FailingBeautySearchBackend`, and `ThrowingBeautySearchBackend` are test-local helpers inside `BeautySearchPureSpec.scala`.
 - `InMemorySearchBackend` is the pure regression backend described in `docs/beautyq-search-dsl-v1.md` and used by pure tests.
 - `BeautySearchApiHttpContractSuite.scala` constructs a test-local fake `BeautySearchService` through `BeautySearchApi`; it does not use Qdrant, hybrid, Elasticsearch, repository snapshots, file IO, Docker, or production DI.
+- `BeautySearchServiceBindingSpec.scala` binds a test-local fake `BeautySearchBackend[IO]` and `BeautySearchService.Impl[IO]` through Distage, calls `search(UserSearchInput(...))`, verifies the fake backend receives the parser-produced `ParsedSearchIntent`, verifies response pass-through, and verifies `QueryFailure` pass-through. It does not use `BeautySearchApi`, `LeaderboardPlugin`, real HTTP routes, Qdrant, hybrid search, Elasticsearch, repository snapshots, file IO, Docker, or production DI modules.
 
 Non-production experiment:
 

@@ -17,29 +17,32 @@ Evidence:
 - `BeautySearchTapirEndpoints.scala` defines an unwired `POST /beauty-search` contract.
 - `BeautySearchApi.scala` bridges the pure endpoint to `BeautySearchService[F]` without backend creation or production wiring.
 - `BeautySearchApiHttpContractSuite.scala` tests the adapter route through a fake service only.
+- `BeautySearchServiceBindingSpec.scala` proves a focused test-only Distage module can assemble `BeautySearchService.Impl[IO]` with `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, and a fake in-memory `BeautySearchBackend[IO]`.
 - `LeaderboardPlugin.modules.api` does not bind search services/endpoints.
-- `LeaderboardPlugin` was not changed for the unwired adapter.
+- `LeaderboardPlugin` was not changed for the unwired adapter or fake-backend service binding proof.
 - `LeaderboardRole.scala` has no search role.
 - No `BeautySearchService` or `BeautySearchBackend` production binding was added.
+- No production `BeautySearchBackend` choice, readiness/freshness boundary, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, repository snapshot wiring, startup indexing, fallback, reranking, or score fusion was added.
 - Qdrant/hybrid remain non-production/manual-local/experimental and are not default.
 
 Future implementation:
 
 - Production Beauty search requires explicit route/binding.
 - The route contract skeleton has chosen `POST /beauty-search`, `UserSearchInput` request JSON, `BeautySearchResponse` response JSON, existing coarse non-single-entity error behavior, explicit empty-array responses, and no diagnostics exposure.
-- The next step should be `test(search): prove BeautySearchService.Impl binding with fake/in-memory backend` or `docs(search): design BeautySearchBackend readiness/freshness boundary`.
+- The next step should be `docs(search): design BeautySearchBackend readiness/freshness boundary`.
 - Future production wiring still needs explicit decisions for role inclusion, backend selection, readiness behavior, timeout behavior, observability, and diagnostics visibility.
 
 ### BeautySearchService Wiring
 
 Gap:
 
-- `BeautySearchService.Impl` is implemented but not production-bound in inspected DI wiring.
+- `BeautySearchService.Impl` is implemented and has a fake-backend test-only Distage binding proof, but it is not production-bound in inspected DI wiring.
 
 Evidence:
 
 - `BeautySearchService.Impl` exists in `search/BeautySearchModels.scala`.
 - Targeted searches found test-local construction in `BeautySearchPureSpec.scala`, not bindings in `LeaderboardPlugin.scala`.
+- `BeautySearchServiceBindingSpec.scala` binds `BeautySearchService[IO]` to `BeautySearchService.Impl[IO]` with a fake `BeautySearchBackend[IO]` in `src/test` only and verifies parser handoff, successful backend response pass-through, and backend failure pass-through.
 - `UserSearchInput`, `ParsedSearchIntent`, `BeautySearchResponse`, `BeautySearchBackend[F]`, `BeautySearchService[F]`, `BeautySearchService.Impl`, and `BeautySearchSpecV1` exist as implemented model/service pieces.
 
 Acceptance criteria for future implementation:
@@ -207,8 +210,8 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. `test(search): prove BeautySearchService.Impl binding with fake/in-memory backend`.
-2. `docs(search): design BeautySearchBackend readiness/freshness boundary`.
+1. `docs(search): design BeautySearchBackend readiness/freshness boundary`.
+2. `test(search): prove catalog snapshot/in-memory backend readiness boundary`.
 3. Keep Qdrant/hybrid out of first production exposure unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
 4. If Elasticsearch is chosen after that, add explicit backend/client/index lifecycle and freshness design before production binding.
 5. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
