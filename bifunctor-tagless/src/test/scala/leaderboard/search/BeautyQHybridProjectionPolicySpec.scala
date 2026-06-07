@@ -168,6 +168,58 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
       assert(result.diagnostics.lexicalInputCount == 1)
       assert(result.diagnostics.semanticInputCount == 1)
     }
+
+    "not reorder semantic-only candidates by higher semantic score" in {
+      val first = variantId(22)
+      val second = variantId(23)
+
+      val result = project(
+        lexicalHits = Nil,
+        semanticHits = List(
+          SemanticDocumentHit(first, 0.30),
+          SemanticDocumentHit(second, 0.95),
+        ),
+      )
+
+      assert(result.candidates.map(_.variantId) == List(first, second))
+    }
+
+    "not move mixed candidate with higher semantic score ahead of lexical-only" in {
+      val lexicalOnly = variantId(24)
+      val mixed = variantId(25)
+
+      val result = project(
+        lexicalHits = List(LexicalDocumentHit(lexicalOnly, 5.0)),
+        semanticHits = List(
+          SemanticDocumentHit(mixed, 0.99),
+          SemanticDocumentHit(lexicalOnly, 0.10),
+        ),
+      )
+
+      assert(result.candidates.map(_.variantId) == List(lexicalOnly, mixed))
+      assert(result.candidates.head.semanticScore == Some(0.10))
+      assert(result.candidates.tail.head.semanticScore == Some(0.99))
+    }
+
+    "not reorder output candidates by any score magnitude" in {
+      val lowLexical = variantId(26)
+      val highSemanticOnly = variantId(27)
+      val midMixed = variantId(28)
+
+      val result = project(
+        lexicalHits = List(
+          LexicalDocumentHit(lowLexical, 0.5),
+          LexicalDocumentHit(midMixed, 1.0),
+        ),
+        semanticHits = List(
+          SemanticDocumentHit(highSemanticOnly, 0.99),
+          SemanticDocumentHit(midMixed, 0.80),
+          SemanticDocumentHit(lowLexical, 0.70),
+        ),
+      )
+
+      assert(result.candidates.map(_.variantId) == List(lowLexical, midMixed, highSemanticOnly))
+    }
   }
 
   private def project(
