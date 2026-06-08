@@ -25,7 +25,7 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
 
       val response = runIO(stack.service.search(input))
 
-      assert(stack.api != null)
+      assert(stack.api.isInstanceOf[BeautySearchApi[IO]])
       assert(stack.service.isInstanceOf[BeautySearchService.Impl[IO]])
       assert(response == emptySearchResponse)
       assert(expectedIntent.remainingText == "plain query")
@@ -119,11 +119,6 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
     }
   }
 
-  private final case class BackendCall(
-    input: UserSearchInput,
-    intent: ParsedSearchIntent,
-  )
-
   private val emptySearchResponse: BeautySearchResponse =
     BeautySearchResponse(
       variantCarousel = Nil,
@@ -133,7 +128,7 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
       inferredFilters = Nil,
     )
 
-  private def runIO[E, A](effect: ZIO[Any, E, A]): A =
+  private def runIO[E, A](effect: IO[E, A]): A =
     Unsafe.unsafe { implicit unsafe =>
       Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }

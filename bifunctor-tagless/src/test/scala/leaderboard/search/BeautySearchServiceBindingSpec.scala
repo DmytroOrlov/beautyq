@@ -89,7 +89,7 @@ final class BeautySearchServiceBindingSpec extends AnyWordSpec {
     }
   }
 
-  private def runIO[E, A](effect: ZIO[Any, E, A]): A =
+  private def runIO[E, A](effect: IO[E, A]): A =
     Unsafe.unsafe { implicit unsafe =>
       Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }
