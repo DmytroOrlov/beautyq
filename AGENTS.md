@@ -208,6 +208,37 @@ Preserve:
 - The hazard is ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])` which can trigger `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
 - Any changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require full `sbt 'project bifunctor-tagless' test`; repeat full once for plugin/module shape changes.
 
+## FP test-style guardrails
+
+Derived from recent refactor lessons. Do not repeat in every prompt.
+
+### Avoid Java-style mutable spies in Scala tests
+
+* Do not introduce `var` call logs, mutable counters, `Recording*` spies, or `called/calls` probes by default.
+* Prefer immutable fixtures, scripted fakes, expecting fakes, fail-if-called collaborators, and assertions over returned responses/failures/diagnostics.
+* Do not mechanically replace `var` with `ZIO Ref`, `AtomicInteger`, `AtomicReference`, or mutable collections.
+
+### Remaining `var` exceptions must be explicit
+
+* Local `var` is acceptable only when the exact contract is by-name/exactly-once evaluation and a pure rewrite would weaken the test or make it much noisier.
+* Current accepted examples are exact-once thunk checks such as `apiEvaluations` / `apiConstructed`.
+
+### Avoid Java-style null assertions
+
+* Do not use `assert(x != null)` / `assert(x == null)`.
+* Prefer type assertions, `Option`, pattern matching, or behavior that proves the value was materialized.
+
+### Keep effect runners local and typed
+
+* If a ScalaTest spec needs to run ZIO effects, use a small local helper such as `runIO(effect: IO[E, A])`.
+* Do not spread raw `Runtime.default.unsafe.run(...).getOrThrowFiberFailure()` boilerplate through tests unless the surrounding suite already has that style and refactoring is out of scope.
+
+### Distage focused specs must avoid whole-plugin includes
+
+* Do not use `include(LeaderboardPlugin.modules.api[IO])` inside ad-hoc focused/unit spec `ModuleDef`s.
+* Use targeted modules or existing app/role fixtures instead.
+* Full `sbt 'project bifunctor-tagless' test` remains the production graph validation.
+
 ## BeautyQ search principles
 
 Search semantics live in DSL/spec data, not backend interpreters.
