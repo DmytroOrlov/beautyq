@@ -148,6 +148,15 @@ Boundary:
 - Production backend selection and freshness/refresh/staleness policy remain future work.
 - The seed-resource/catalog/in-memory path proves a startup readiness shape only. It does not solve production freshness, staleness bounds, runtime catalog replacement, repository-vs-seed source-of-truth choice, or stale-catalog observability.
 
+### Distage Plugin Include Hazard
+
+Current hazard:
+
+- Whole-plugin `include(LeaderboardPlugin.modules.api[IO])` in focused unit specs triggers intermittent `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
+- The NPE is `Cannot invoke "izumi.distage.model.definition.ModuleBase.iterator()" because the return value of "izumi.distage.model.definition.dsl.IncludesDSL$Include.bindings()" is null`.
+- BeautySearchProductionInclusion* constructors are not proven root cause; the minimal reproduced hazard is the ad-hoc `include()` call itself.
+- Future route/plugin exposure tests should avoid ad-hoc whole-plugin includes; prefer targeted modules or established testkit fixtures.
+
 ### Salon / Availability Domain
 
 Gap:

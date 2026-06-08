@@ -133,6 +133,15 @@ Preserve:
 
 `MasterServiceOfferVariants.Postgres` uses `masterServiceOffers` and `masterLocations` as `@unused` FK readiness edges; `serviceVariantSchemas` is an active validation collaborator.
 
+## Distage plugin include guardrail
+
+- Do not use `include(LeaderboardPlugin.modules.api[IO])` inside focused/unit spec `ModuleDef`s.
+- Prefer targeted modules in specs that bind only the types the test needs.
+- If the whole production plugin graph must be tested, use an established app/role/testkit fixture or full-suite validation, not ad-hoc `include()` calls.
+- `BeautySearchProductionInclusion*` plugin bindings in `LeaderboardPlugin.modules.api` are unnecessary unless there is an explicit production design, but they are not proven direct root cause of the NPE.
+- The hazard is ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])` which can trigger `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
+- Any changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require full `sbt 'project bifunctor-tagless' test`; repeat full once for plugin/module shape changes.
+
 ## BeautyQ search principles
 
 Search semantics live in DSL/spec data, not backend interpreters.
