@@ -8,7 +8,8 @@ import io.circe.parser.parse
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
-import leaderboard.plugins.LeaderboardPlugin
+import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -16,8 +17,8 @@ import zio.interop.catz.*
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
 
 final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with HttpContractTestSupport {
-  "LeaderboardPlugin.modules.api" should {
-    "expose BeautySearchApi through the default API set and serve the seed-catalog route" in {
+  "BeautySearchRouteModules.seedCatalogInMemory" should {
+    "expose BeautySearchApi in the HttpApi set and serve the seed-catalog route" in {
       val probe = buildProbe()
       val apis  = probe.allHttpApis
 
@@ -39,7 +40,9 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Htt
 
   private def buildProbe(): BeautySearchProductionRouteExposureProbe = {
     val module = new distage.ModuleDef {
-      include(LeaderboardPlugin.modules.api[IO])
+      include(BeautySearchRouteModules.seedCatalogInMemory[IO])
+      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
+      make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchProductionRouteExposureProbe].from {
         (

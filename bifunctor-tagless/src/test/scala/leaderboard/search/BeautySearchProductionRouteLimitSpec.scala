@@ -8,7 +8,8 @@ import io.circe.parser.parse
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
-import leaderboard.plugins.LeaderboardPlugin
+import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
@@ -98,7 +99,9 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with HttpCo
 
   private def buildProbe(): BeautySearchProductionRouteLimitProbe = {
     val module = new distage.ModuleDef {
-      include(LeaderboardPlugin.modules.api[IO])
+      include(BeautySearchRouteModules.seedCatalogInMemory[IO])
+      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
+      make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchProductionRouteLimitProbe].from {
         (
