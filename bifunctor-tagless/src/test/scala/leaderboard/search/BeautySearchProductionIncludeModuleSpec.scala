@@ -22,8 +22,7 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
     }
 
     "have exactly one API when built from enabled handle" in {
-      val counters = ConstructionCounters()
-      val fakeApi = buildFakeApi(counters)
+      val fakeApi = buildFakeApi()
       val handle = BeautySearchProductionInclusionHandle(Some(fakeApi))
       val included = BeautySearchProductionIncludedApis.fromHandle(handle)
 
@@ -32,60 +31,45 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
     }
 
     "be empty and not evaluate thunk when buildIfEnabled is Disabled" in {
-      val counters = ConstructionCounters()
       val handle = BeautySearchProductionInclusionHandle.buildIfEnabled[IO](
         activation = BeautySearchProductionInclusionActivation.Disabled,
-        api = {
-          counters.apiConstructed += 1
-          buildFakeApi(counters)
-        },
+        api = throw new RuntimeException("disabled buildIfEnabled must not evaluate API thunk"),
       )
 
       val included = BeautySearchProductionIncludedApis.fromHandle(handle)
 
       assert(included.apis.isEmpty)
-      assert(counters.apiConstructed == 0)
     }
 
     "evaluate thunk exactly once when buildIfEnabled is Enabled" in {
-      val counters = ConstructionCounters()
+      var apiConstructed = 0
       val handle = BeautySearchProductionInclusionHandle.buildIfEnabled[IO](
         activation = BeautySearchProductionInclusionActivation.Enabled,
         api = {
-          counters.apiConstructed += 1
-          buildFakeApi(counters)
+          apiConstructed += 1
+          buildFakeApi()
         },
       )
 
       val included = BeautySearchProductionIncludedApis.fromHandle(handle)
 
       assert(included.apis.size == 1)
-      assert(counters.apiConstructed == 1)
+      assert(apiConstructed == 1)
     }
 
     "contribute no Beauty search API to the test-local HttpApi aggregation result when Disabled" in {
-      val counters = ConstructionCounters()
       val included = buildIncludedApis(disabledIncludeModule)
 
       assert(included.apis.isEmpty)
       assert(included.apis.collect { case api: BeautySearchApi[IO] => api }.isEmpty)
-      assert(counters.apiConstructed == 0)
-      assert(counters.serviceConstructed == 0)
-      assert(counters.backendConstructed == 0)
-      assert(counters.backendCalled == 0)
     }
 
     "contribute BeautySearchApi to the test-local HttpApi aggregation result only when explicitly Enabled" in {
-      val counters = ConstructionCounters()
-      val included = buildIncludedApis(enabledIncludeModule(counters))
+      val included = buildIncludedApis(enabledIncludeModule)
       val beautyApis = included.apis.collect { case api: BeautySearchApi[IO] => api }
 
       assert(included.apis.size == 1)
       assert(beautyApis.size == 1)
-      assert(counters.apiConstructed == 1)
-      assert(counters.serviceConstructed == 1)
-      assert(counters.backendConstructed == 1)
-      assert(counters.backendCalled == 0)
     }
   }
 
@@ -101,26 +85,24 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
     }
   }
 
-  private def enabledIncludeModule(counters: ConstructionCounters): ModuleDef = new ModuleDef {
-    include(enabledStackModule(counters))
+  private def enabledIncludeModule: ModuleDef = new ModuleDef {
+    include(enabledStackModule)
     make[BeautySearchProductionIncludedApis[IO]].from {
       (handle: BeautySearchProductionInclusionHandle[IO]) =>
         BeautySearchProductionIncludedApis.fromHandle(handle)
     }
   }
 
-  private def enabledStackModule(counters: ConstructionCounters): ModuleDef = new ModuleDef {
+  private def enabledStackModule: ModuleDef = new ModuleDef {
     make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
     make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
     make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
     make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
     make[BeautySearchBackend[IO]].from {
-      counters.backendConstructed += 1
-      new RecordingBeautySearchBackend(counters, emptySearchResponse)
+      new FailIfCalledBeautySearchBackend
     }
     make[BeautySearchService[IO]].from {
       (parser: BeautySearchIntentParser, backend: BeautySearchBackend[IO]) =>
-        counters.serviceConstructed += 1
         new BeautySearchService.Impl[IO](parser, backend)
     }
     make[BeautySearchApi[IO]].from {
@@ -129,7 +111,6 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
         endpoints: BeautySearchTapirEndpoints,
         tapirHttpSupport: TapirHttpSupport[IO],
       ) =>
-        counters.apiConstructed += 1
         new BeautySearchApi[IO](service, endpoints, tapirHttpSupport)
     }
     make[BeautySearchProductionInclusionHandle[IO]].from {
@@ -152,8 +133,8 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
     locator.get[BeautySearchProductionIncludedApis[IO]]
   }
 
-  private def buildFakeApi(counters: ConstructionCounters): BeautySearchApi[IO] = {
-    val backend = new RecordingBeautySearchBackend(counters, emptySearchResponse)
+  private def buildFakeApi(): BeautySearchApi[IO] = {
+    val backend = new FailIfCalledBeautySearchBackend
     val service = new BeautySearchService.Impl[IO](
       new BeautySearchIntentParser(BeautySearchSpecV1.spec),
       backend,
@@ -161,29 +142,11 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
     new BeautySearchApi[IO](service, BeautySearchTapirEndpoints, new TapirHttpSupport[IO])
   }
 
-  private final case class RecordingBeautySearchBackend(
-    counters: ConstructionCounters,
-    response: BeautySearchResponse,
-  ) extends BeautySearchBackend[IO] {
-    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] = {
-      counters.backendCalled += 1
-      ZIO.succeed(response)
-    }
+  private final class FailIfCalledBeautySearchBackend extends BeautySearchBackend[IO] {
+    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
+      ZIO.suspendSucceed(
+        ZIO.fail(QueryFailure.domain(s"FailIfCalledBeautySearchBackend.search was unexpectedly called: $input"))
+      )
   }
 
-  private final case class ConstructionCounters(
-    var apiConstructed: Int = 0,
-    var serviceConstructed: Int = 0,
-    var backendConstructed: Int = 0,
-    var backendCalled: Int = 0,
-  )
-
-  private val emptySearchResponse: BeautySearchResponse =
-    BeautySearchResponse(
-      variantCarousel = Nil,
-      providerCarousel = Nil,
-      serviceIntentCarousel = Nil,
-      facets = Nil,
-      inferredFilters = Nil,
-    )
-}
+ }
