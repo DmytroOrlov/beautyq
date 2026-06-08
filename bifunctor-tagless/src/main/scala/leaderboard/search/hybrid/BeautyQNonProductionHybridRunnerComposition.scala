@@ -8,7 +8,7 @@ import leaderboard.search.semantic.SemanticDocumentLookup
 import zio.IO
 
 object BeautyQNonProductionHybridRunnerComposition {
-  def apply(
+  def fromQdrantComposition(
     lexicalBackend: LexicalDocumentBackend[IO, MasterServiceOfferVariantId],
     qdrantComposition: QdrantNonProductionExperimentComposition,
     documentLookup: SemanticDocumentLookup[IO, MasterServiceOfferVariantId, VariantSearchDocument],

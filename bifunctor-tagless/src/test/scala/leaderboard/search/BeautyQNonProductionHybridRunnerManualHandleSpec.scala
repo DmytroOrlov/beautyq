@@ -6,7 +6,7 @@ import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
-import leaderboard.search.hybrid.{BeautyQNonProductionHybridExperimentRunner, BeautyQNonProductionHybridRunnerComposition}
+import leaderboard.search.hybrid.BeautyQNonProductionHybridRunnerManualHandle
 import leaderboard.search.lexical.{LexicalDocumentBackend, LexicalDocumentHit}
 import leaderboard.search.qdrant.{
   QdrantCollectionCompatibilityChecker,
@@ -26,31 +26,63 @@ import zio.{IO, Runtime, Unsafe, ZIO}
 
 import java.util.UUID
 
-final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec {
+final class BeautyQNonProductionHybridRunnerManualHandleSpec extends AnyWordSpec {
 
-  "BeautyQNonProductionHybridRunnerComposition" should {
+  "BeautyQNonProductionHybridRunnerManualHandle" should {
 
-    "composition helper is side-effect-free" in {
-      val runner: BeautyQNonProductionHybridExperimentRunner[IO] =
-        BeautyQNonProductionHybridRunnerComposition.fromQdrantComposition(
-          lexicalBackend = new FailIfCalledLexicalBackend,
-          qdrantComposition = buildCompositionWith(
-            semanticCandidateSearch = new QdrantSemanticCandidateSearch(
-              new FailIfCalledEmbeddingClient,
-              new FailIfCalledQdrantSearchClient,
-            ),
+    "handle construction is side-effect-free" in {
+      val handle = BeautyQNonProductionHybridRunnerManualHandle.fromQdrantComposition(
+        lexicalBackend = new FailIfCalledLexicalBackend,
+        qdrantComposition = buildCompositionWith(
+          readinessConfig = testReadinessConfig,
+          compatibilityGuard = compatibleGuard,
+          snapshotProvider = new FailIfCalledSnapshotProvider,
+          documentUpsert = new FailIfCalledDocumentUpsert,
+          semanticCandidateSearch = new QdrantSemanticCandidateSearch(
+            new FailIfCalledEmbeddingClient,
+            new FailIfCalledQdrantSearchClient,
           ),
-          documentLookup = new FailIfCalledDocumentLookup,
-        )
+        ),
+        documentLookup = new FailIfCalledDocumentLookup,
+      )
 
-      assert(runner.isInstanceOf[BeautyQNonProductionHybridExperimentRunner[IO]])
+      assert(handle.isInstanceOf[BeautyQNonProductionHybridRunnerManualHandle])
     }
 
-    "composed runner uses qdrant semantic backend" in {
+    "indexSnapshot is explicit and delegates to Qdrant composition" in {
+      val composition = buildCompositionWith(
+        readinessConfig = testReadinessConfig,
+        compatibilityGuard = compatibleGuard,
+        snapshotProvider = new ScriptedSnapshotProvider,
+        documentUpsert = new FailIfCalledDocumentUpsert,
+        semanticCandidateSearch = new QdrantSemanticCandidateSearch(
+          new FailIfCalledEmbeddingClient,
+          new FailIfCalledQdrantSearchClient,
+        ),
+      )
+
+      val handle = BeautyQNonProductionHybridRunnerManualHandle.fromQdrantComposition(
+        lexicalBackend = new FailIfCalledLexicalBackend,
+        qdrantComposition = composition,
+        documentLookup = new FailIfCalledDocumentLookup,
+      )
+
+      val result = run(handle.indexSnapshot())
+
+      assert(result.totalDocumentsLoaded == 0)
+      assert(result.totalDocumentsIndexed == 0)
+      assert(result.indexedVariantIds.isEmpty)
+    }
+
+    "run is explicit and does not index snapshot implicitly" in {
       val expectedHitId = UUID.fromString("00000000-0000-0000-0000-000000000101")
       val semanticDoc = variantDocumentWithId(1, expectedHitId)
 
       val composition = buildCompositionWith(
+        readinessConfig = testReadinessConfig,
+        compatibilityGuard = compatibleGuard,
+        snapshotProvider = new FailIfCalledSnapshotProvider,
+        documentUpsert = new FailIfCalledDocumentUpsert,
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ExpectingEmbeddingClient(input.query),
           new ExpectingQdrantSearchClient(
@@ -61,13 +93,13 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
         ),
       )
 
-      val runner = BeautyQNonProductionHybridRunnerComposition.fromQdrantComposition(
+      val handle = BeautyQNonProductionHybridRunnerManualHandle.fromQdrantComposition(
         lexicalBackend = new ScriptedLexicalBackend(Nil),
         qdrantComposition = composition,
         documentLookup = new ScriptedDocumentLookup(Map(expectedHitId -> semanticDoc)),
       )
 
-      val result = run(runner.run(input, intent))
+      val result = run(handle.run(input, intent))
 
       assert(result.response.variantCarousel.map(_.variantId) == List(expectedHitId))
       assert(result.diagnostics.lexicalHitCount == 0)
@@ -75,53 +107,14 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
       assert(result.diagnostics.distinctVariantIdCount == 1)
     }
 
-    "composed runner preserves lexical + semantic overlap behavior" in {
-      val lexicalOnlyId = UUID.fromString("00000000-0000-0000-0000-000000000201")
-      val overlapId = UUID.fromString("00000000-0000-0000-0000-000000000202")
-      val semanticOnlyId = UUID.fromString("00000000-0000-0000-0000-000000000203")
-
-      val docA = variantDocumentWithId(2, lexicalOnlyId)
-      val docB = variantDocumentWithId(3, overlapId)
-      val docC = variantDocumentWithId(4, semanticOnlyId)
-
-      val composition = buildCompositionWith(
-        semanticCandidateSearch = new QdrantSemanticCandidateSearch(
-          new ConstEmbeddingClient(Vector(0.1, 0.2, 0.3)),
-          new ScriptedQdrantSearchClient(
-            List(
-              searchHit(overlapId, 0.88),
-              searchHit(semanticOnlyId, 0.76),
-            ),
-          ),
-        ),
-      )
-
-      val runner = BeautyQNonProductionHybridRunnerComposition.fromQdrantComposition(
-        lexicalBackend = new ScriptedLexicalBackend(
-          List(
-            LexicalDocumentHit(lexicalOnlyId, 5.0),
-            LexicalDocumentHit(overlapId, 3.0),
-          ),
-        ),
-        qdrantComposition = composition,
-        documentLookup = new ScriptedDocumentLookup(Map(
-          lexicalOnlyId -> docA,
-          overlapId -> docB,
-          semanticOnlyId -> docC,
-        )),
-      )
-
-      val result = run(runner.run(input, intent))
-
-      val variantIds = result.response.variantCarousel.map(_.variantId)
-      assert(variantIds == List(lexicalOnlyId, overlapId, semanticOnlyId))
-      assert(result.diagnostics.distinctVariantIdCount == 3)
-    }
-
-    "composed runner propagates missing lookup document failure" in {
+    "missing lookup document propagates QueryFailure through handle.run" in {
       val missingId = UUID.fromString("00000000-0000-0000-0000-000000000303")
 
       val composition = buildCompositionWith(
+        readinessConfig = testReadinessConfig,
+        compatibilityGuard = compatibleGuard,
+        snapshotProvider = new ScriptedSnapshotProvider,
+        documentUpsert = new FailIfCalledDocumentUpsert,
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.5)),
           new ExpectingQdrantSearchClient(
@@ -132,13 +125,13 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
         ),
       )
 
-      val runner = BeautyQNonProductionHybridRunnerComposition.fromQdrantComposition(
+      val handle = BeautyQNonProductionHybridRunnerManualHandle.fromQdrantComposition(
         lexicalBackend = new ScriptedLexicalBackend(Nil),
         qdrantComposition = composition,
         documentLookup = new ScriptedDocumentLookup(Map.empty),
       )
 
-      val error = run(runner.run(input, intent).either).swap.getOrElse(fail("expected QueryFailure"))
+      val error = run(handle.run(input, intent).either).swap.getOrElse(fail("expected QueryFailure"))
 
       assert(error.message.contains("Missing VariantSearchDocument"))
       assert(error.message.contains(missingId.toString))
@@ -148,10 +141,10 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
   // --- Composition builder ---
 
   private def buildCompositionWith(
-    readinessConfig: QdrantCollectionReadinessConfig = testReadinessConfig,
-    compatibilityGuard: QdrantCollectionCompatibilityGuard = compatibleGuard,
-    snapshotProvider: VariantSearchDocumentSnapshotProvider[IO] = new FailIfCalledSnapshotProvider,
-    documentUpsert: QdrantVariantDocumentUpsert = new FailIfCalledDocumentUpsert,
+    readinessConfig: QdrantCollectionReadinessConfig,
+    compatibilityGuard: QdrantCollectionCompatibilityGuard,
+    snapshotProvider: VariantSearchDocumentSnapshotProvider[IO],
+    documentUpsert: QdrantVariantDocumentUpsert,
     semanticCandidateSearch: QdrantSemanticCandidateSearch,
   ): QdrantNonProductionExperimentComposition =
     QdrantNonProductionExperimentComposition.build(
@@ -216,6 +209,11 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
       ZIO.succeed(result)
   }
 
+  private final class ScriptedSnapshotProvider extends VariantSearchDocumentSnapshotProvider[IO] {
+    override def loadSnapshot(): IO[QueryFailure, List[VariantSearchDocument]] =
+      ZIO.succeed(Nil)
+  }
+
   private final class ExpectingEmbeddingClient(expectedQuery: String) extends EmbeddingClient {
     override def embed(text: String): IO[QueryFailure, Vector[Double]] =
       ZIO.fromEither(
@@ -249,20 +247,6 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
     override def embed(text: String): IO[QueryFailure, Vector[Double]] =
       ZIO.succeed(vector)
   }
-
-  private final class ScriptedQdrantSearchClient(
-    result: List[QdrantSearchHit],
-  ) extends QdrantSearchClient {
-    override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
-      ZIO.succeed(result)
-  }
-
-  private def searchHit(variantId: UUID, score: Double): QdrantSearchHit =
-    QdrantSearchHit(
-      id = variantId.toString,
-      payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(variantId.toString))),
-      score = score,
-    )
 
   // --- Helpers ---
 
@@ -369,5 +353,3 @@ final class BeautyQNonProductionHybridRunnerCompositionSpec extends AnyWordSpec 
       Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }
 }
-
-
