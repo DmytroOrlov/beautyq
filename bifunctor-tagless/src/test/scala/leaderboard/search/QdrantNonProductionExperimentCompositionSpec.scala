@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import io.circe.Json
+import io.circe.{Json, JsonObject}
 import io.circe.syntax.*
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
@@ -41,7 +41,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       val document = variantDocument(1)
       val composition = buildComposition(
         snapshotProvider = new ScriptedSnapshotProvider(Right(List(document))),
-        documentUpsert = new ExpectingDocumentUpsert(document.variantId),
+        documentUpsert = new ExpectingDocumentUpsert(testReadinessConfig.collectionName, document.variantId),
       )
 
       val result = run(composition.indexSnapshot())
@@ -69,10 +69,11 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
     }
 
     "semantic backend uses readinessConfig vectorSearchSpec collectionName in Qdrant search path" in {
+      val expectedHitId = UUID.fromString("00000000-0000-0000-0000-000000000101")
       val composition = buildComposition(
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.1, 0.2, 0.3)),
-          new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName),
+          new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName, expectedHitId, 0.95),
         )
       )
 
@@ -81,7 +82,9 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
         ParsedSearchIntent("semantic query", List("semantic", "query"), Nil, Nil, "ignored residual"),
       ))
 
-      assert(result.isEmpty)
+      assert(result.nonEmpty)
+      assert(result.head.variantId == expectedHitId)
+      assert(result.head.score == 0.95)
       assert(testReadinessConfig.vectorSearchSpec.collectionName == testReadinessConfig.collectionName)
     }
 
@@ -113,17 +116,22 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       )
 
       // Phase 2: expecting collaborators prove embed/search are invoked by candidates().
+      val expectedHitId = UUID.fromString("00000000-0000-0000-0000-000000000202")
       val composition = buildComposition(
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ExpectingEmbeddingClient("explicit-call"),
-          new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName),
+          new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName, expectedHitId, 0.87),
         ),
       )
 
-      run(composition.semanticBackend.candidates(
+      val result = run(composition.semanticBackend.candidates(
         UserSearchInput(query = "explicit-call", userLat = None, userLon = None),
         ParsedSearchIntent("explicit-call", List("explicit-call"), Nil, Nil, "explicit-call"),
       ))
+
+      assert(result.nonEmpty)
+      assert(result.head.variantId == expectedHitId)
+      assert(result.head.score == 0.87)
     }
 
     // Production route dependency check: this spec must not import
@@ -135,12 +143,13 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
 
     "build and fake paths do not require real Qdrant or llama calls" in {
       val document = variantDocument(1)
+      val expectedHitId = UUID.fromString("00000000-0000-0000-0000-000000000303")
       val composition = buildComposition(
         snapshotProvider = new ScriptedSnapshotProvider(Right(List(document))),
-        documentUpsert = new ExpectingDocumentUpsert(document.variantId),
+        documentUpsert = new ExpectingDocumentUpsert(testReadinessConfig.collectionName, document.variantId),
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.1)),
-          new ExpectingQdrantSearchClient(testReadinessConfig.collectionName),
+          new ExpectingQdrantSearchClient(testReadinessConfig.collectionName, expectedHitId, 0.72),
         ),
       )
 
@@ -152,7 +161,9 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
 
       assert(indexingResult.totalDocumentsLoaded == 1)
       assert(indexingResult.totalDocumentsIndexed == 1)
-      assert(searchResult.isEmpty)
+      assert(searchResult.nonEmpty)
+      assert(searchResult.head.variantId == expectedHitId)
+      assert(searchResult.head.score == 0.72)
     }
   }
 
@@ -160,10 +171,10 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
     readinessConfig: QdrantCollectionReadinessConfig = testReadinessConfig,
     compatibilityGuard: QdrantCollectionCompatibilityGuard = compatibleGuard,
     snapshotProvider: VariantSearchDocumentSnapshotProvider[IO] = new ScriptedSnapshotProvider(Right(Nil)),
-    documentUpsert: QdrantVariantDocumentUpsert = new ExpectingDocumentUpsert(UUID.randomUUID()),
+    documentUpsert: QdrantVariantDocumentUpsert = new ExpectingDocumentUpsert(testReadinessConfig.collectionName, UUID.randomUUID()),
     semanticCandidateSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(
       new ConstEmbeddingClient(Vector(0.1)),
-      new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName),
+      new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName, UUID.randomUUID(), 0.0),
     ),
   ): QdrantNonProductionExperimentComposition =
     QdrantNonProductionExperimentComposition.build(
@@ -205,11 +216,15 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       ZIO.fromEither(result)
   }
 
-  private final class ExpectingDocumentUpsert(expectedVariantId: UUID) extends QdrantVariantDocumentUpsert {
+  private final class ExpectingDocumentUpsert(
+    expectedCollectionName: String,
+    expectedVariantId: UUID,
+  ) extends QdrantVariantDocumentUpsert {
     override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
       ZIO.fromEither(
-        if (document.variantId == expectedVariantId) Right(Json.obj())
-        else Left(QueryFailure.OperationFailure("expecting-upsert", s"unexpected variantId: ${document.variantId}, expected: $expectedVariantId"))
+        if (collectionName == expectedCollectionName && document.variantId == expectedVariantId) Right(Json.obj())
+        else Left(QueryFailure.OperationFailure("expecting-upsert",
+          s"mismatch: collectionName=${if (collectionName == expectedCollectionName) "ok" else "FAIL"} variantId=${if (document.variantId == expectedVariantId) "ok" else "FAIL"}"))
       )
   }
 
@@ -221,11 +236,24 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       )
   }
 
-  private final class ExpectingQdrantSearchClient(expectedCollectionName: String) extends QdrantSearchClient {
+  private final class ExpectingQdrantSearchClient(
+    expectedCollectionName: String,
+    expectedVariantId: UUID,
+    expectedScore: Double,
+  ) extends QdrantSearchClient {
     override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
       ZIO.fromEither(
-        if (path.contains(s"/collections/${expectedCollectionName}/")) Right(Nil)
-        else Left(QueryFailure.OperationFailure("expecting-search", s"unexpected path: '$path', expected to contain: /collections/${expectedCollectionName}/"))
+        if (path == s"/collections/${expectedCollectionName}/points/search")
+          Right(List(searchHit(expectedVariantId, expectedScore)))
+        else Left(QueryFailure.OperationFailure("expecting-search",
+          s"unexpected path: '$path', expected: /collections/${expectedCollectionName}/points/search"))
+      )
+
+    private def searchHit(variantId: UUID, score: Double): QdrantSearchHit =
+      QdrantSearchHit(
+        id = variantId.toString,
+        payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(variantId.toString))),
+        score = score,
       )
   }
 

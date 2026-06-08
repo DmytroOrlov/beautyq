@@ -241,8 +241,8 @@ Derived from recent refactor lessons. Do not repeat in every prompt.
 
 ### Distinguish Ref fixture vs Ref spy
 
-* `Ref` as a test fixture for immutable state tracking (e.g. HTTP contract state recording inputs/results) is acceptable.
-* `Ref` as a recording spy — recording call counts, call sequences, captured inputs, or "was called" checks — is a whitebox smell.
+* `Ref` as in-memory test fixture / repository state is acceptable (e.g. HTTP contract state recording inputs/results).
+* `Ref` as recording spy — recording call counts, call sequences, captured inputs, or "was called" checks — is a smell.
 * Prefer expecting fakes, scripted fakes, and fail-if-called collaborators over recording through `Ref`.
 
 ### Avoid Recording/Counting fake naming
