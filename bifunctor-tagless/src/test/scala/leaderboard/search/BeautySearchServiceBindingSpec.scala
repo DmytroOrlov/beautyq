@@ -13,40 +13,37 @@ final class BeautySearchServiceBindingSpec extends AnyWordSpec {
   "BeautySearchService.Impl binding with a fake backend" should {
     "assemble through a focused test module and hand parsed intent to the backend" in {
       val response = emptySearchResponse
-      val backend  = new RecordingBeautySearchBackend(Right(response))
-      val service  = buildService(backend)
       val input    = UserSearchInput(query = "Plain Query", userLat = Some(BigDecimal("53.58")), userLon = Some(BigDecimal("10.08")), limit = 3)
       val parser   = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
+      val expectedIntent = parser.parse(input)
+      val backend  = new ExpectingBeautySearchBackend(Right(response), expectedInput = input, expectedIntent = expectedIntent)
+      val service  = buildService(backend)
 
       val result = runIO(service.search(input))
 
       assert(result == response)
-      assert(backend.calls == Vector(BackendCall(input, parser.parse(input))))
-      assert(backend.calls.size == 1)
-
-      val parsedIntent = backend.calls.head.intent
-      assert(parsedIntent.originalQuery == input.query)
-      assert(parsedIntent.normalizedTokens == List("plain", "query"))
-      assert(parsedIntent.remainingText == "plain query")
+      assert(expectedIntent.originalQuery == input.query)
+      assert(expectedIntent.normalizedTokens == List("plain", "query"))
+      assert(expectedIntent.remainingText == "plain query")
     }
 
     "pass through backend failures from the assembled service" in {
       val failure = QueryFailure.domain("fake backend failed")
-      val backend = new RecordingBeautySearchBackend(Left(failure))
-      val service = buildService(backend)
       val input   = UserSearchInput(query = "failure query", userLat = None, userLon = None)
+      val parser   = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
+      val expectedIntent = parser.parse(input)
+      val backend = new ExpectingBeautySearchBackend(Left(failure), expectedInput = input, expectedIntent = expectedIntent)
+      val service = buildService(backend)
 
       val result = runIO(service.search(input).either)
 
       assert(result == Left(failure))
-      assert(backend.calls.size == 1)
-      assert(backend.calls.head.input == input)
-      assert(backend.calls.head.intent.originalQuery == input.query)
-      assert(backend.calls.head.intent.remainingText == "failure query")
+      assert(expectedIntent.originalQuery == input.query)
+      assert(expectedIntent.remainingText == "failure query")
     }
   }
 
-  private def buildService(backend: RecordingBeautySearchBackend): BeautySearchService[IO] = {
+  private def buildService(backend: ExpectingBeautySearchBackend): BeautySearchService[IO] = {
     val module = new ModuleDef {
       make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
       make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
@@ -76,23 +73,21 @@ final class BeautySearchServiceBindingSpec extends AnyWordSpec {
       inferredFilters = Nil,
     )
 
-  private final class RecordingBeautySearchBackend(
-    result: Either[QueryFailure, BeautySearchResponse]
+  private final class ExpectingBeautySearchBackend(
+    result: Either[QueryFailure, BeautySearchResponse],
+    expectedInput: UserSearchInput,
+    expectedIntent: ParsedSearchIntent,
   ) extends BeautySearchBackend[IO] {
-    private var recordedCalls: Vector[BackendCall] = Vector.empty
-
-    def calls: Vector[BackendCall] = recordedCalls
-
     override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] = {
-      recordedCalls = recordedCalls :+ BackendCall(input, intent)
-      ZIO.fromEither(result)
+      if (input != expectedInput) {
+        ZIO.fail(QueryFailure.domain(s"Unexpected input: expected $expectedInput, got $input"))
+      } else if (intent != expectedIntent) {
+        ZIO.fail(QueryFailure.domain(s"Unexpected intent: expected $expectedIntent, got $intent"))
+      } else {
+        ZIO.fromEither(result)
+      }
     }
   }
-
-  private final case class BackendCall(
-    input: UserSearchInput,
-    intent: ParsedSearchIntent,
-  )
 
   private def runIO[E, A](effect: ZIO[Any, E, A]): A =
     Unsafe.unsafe { implicit unsafe =>

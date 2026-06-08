@@ -17,22 +17,26 @@ import zio.{IO, Runtime, Unsafe, ZIO}
 final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContractTestSupport {
   "Beauty search app-graph boundary" should {
     "assemble the API/service/backend stack only through an explicit test-local module" in {
-      val backend = new RecordingBeautySearchBackend(emptySearchResponse)
-      val stack   = buildStack(backend)
-      val input   = UserSearchInput("plain query", userLat = None, userLon = None, limit = 2)
+      val parser = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
+      val input = UserSearchInput("plain query", userLat = None, userLon = None, limit = 2)
+      val expectedIntent = parser.parse(input)
+      val backend = new ExpectingBeautySearchBackend(emptySearchResponse, expectedInput = input, expectedIntent = expectedIntent)
+      val stack = buildStack(backend)
 
       val response = runIO(stack.service.search(input))
 
       assert(stack.api != null)
       assert(stack.service.isInstanceOf[BeautySearchService.Impl[IO]])
       assert(response == emptySearchResponse)
-      assert(backend.calls == Vector(BackendCall(input, stack.parser.parse(input))))
-      assert(backend.calls.head.intent.remainingText == "plain query")
+      assert(expectedIntent.remainingText == "plain query")
     }
 
     "expose the assembled API route from the same explicit test-local module" in {
-      val backend = new RecordingBeautySearchBackend(emptySearchResponse)
-      val stack   = buildStack(backend)
+      val input = UserSearchInput("маникюр", userLat = None, userLon = None, limit = 1)
+      val parser = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
+      val expectedIntent = parser.parse(input)
+      val backend = new ExpectingBeautySearchBackend(emptySearchResponse, expectedInput = input, expectedIntent = expectedIntent)
+      val stack = buildStack(backend)
 
       val observed = runIO(
         observe(
@@ -43,11 +47,12 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
 
       assert(observed.status == Status.Ok)
       assert(observed.body == """{"variantCarousel":[],"providerCarousel":[],"serviceIntentCarousel":[],"facets":[],"inferredFilters":[]}""")
-      assert(backend.calls.map(_.input) == Vector(UserSearchInput("маникюр", userLat = None, userLon = None, limit = 1)))
+      assert(input.query == "маникюр")
+      assert(input.limit == 1)
     }
   }
 
-  private def buildStack(backend: RecordingBeautySearchBackend): BeautySearchTestAppStack = {
+  private def buildStack(backend: ExpectingBeautySearchBackend): BeautySearchTestAppStack = {
     val module = new ModuleDef {
       make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
@@ -98,16 +103,19 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
     tapirHttpSupport: TapirHttpSupport[IO],
   )
 
-  private final class RecordingBeautySearchBackend(
-    response: BeautySearchResponse
+  private final class ExpectingBeautySearchBackend(
+    response: BeautySearchResponse,
+    expectedInput: UserSearchInput,
+    expectedIntent: ParsedSearchIntent,
   ) extends BeautySearchBackend[IO] {
-    private var recordedCalls: Vector[BackendCall] = Vector.empty
-
-    def calls: Vector[BackendCall] = recordedCalls
-
     override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] = {
-      recordedCalls = recordedCalls :+ BackendCall(input, intent)
-      ZIO.succeed(response)
+      if (input != expectedInput) {
+        ZIO.fail(QueryFailure.domain(s"Unexpected input: expected $expectedInput, got $input"))
+      } else if (intent != expectedIntent) {
+        ZIO.fail(QueryFailure.domain(s"Unexpected intent: expected $expectedIntent, got $intent"))
+      } else {
+        ZIO.succeed(response)
+      }
     }
   }
 

@@ -111,21 +111,15 @@ final class QdrantNonProductionExperimentActivationSpec extends AnyWordSpec {
     }
 
     "Enabled activation wraps a config but does not build Qdrant dependencies" in {
-      var configCreated = false
-
       val config = QdrantNonProductionExperimentConfig.create(
         experimentId = "no-dep-build",
         readinessConfig = readinessConfig,
         indexingTrigger = QdrantNonProductionExperimentIndexingTrigger.ManualTask,
         metadataSource = QdrantNonProductionExperimentMetadataSource.ExplicitMetadataOnly,
-      ).fold(failure => fail(s"Expected valid config, got $failure"), { c =>
-        configCreated = true
-        c
-      })
+      ).fold(failure => fail(s"Expected valid config, got $failure"), identity)
 
       val activation = QdrantNonProductionExperimentActivation.Enabled(config)
 
-      assert(configCreated)
       assert(activation.isInstanceOf[QdrantNonProductionExperimentActivation.Enabled])
       assert(!activation.isInstanceOf[QdrantNonProductionExperimentActivation.Disabled.type])
       assert(activation.config.experimentId == "no-dep-build")

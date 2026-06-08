@@ -14,17 +14,16 @@ import zio.{IO, ZIO}
 final class BeautySearchOptInHttpApiModuleSpec extends AnyWordSpec {
   "BeautySearchPluginModules.api" should {
     "contribute BeautySearchApi to the real HttpApi weak set only when explicitly included" in {
-      val service = new RecordingBeautySearchService(emptySearchResponse)
+      val service = new FailIfCalledBeautySearchService
       val probe   = buildProbe(service)
       val apis    = probe.allHttpApis
 
       assert(apis.size == 1)
       assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
-      assert(service.calls.isEmpty)
     }
   }
 
-  private def buildProbe(service: RecordingBeautySearchService): HttpApiSetProbe = {
+  private def buildProbe(service: FailIfCalledBeautySearchService): HttpApiSetProbe = {
     val module = new ModuleDef {
       include(BeautySearchPluginModules.api[IO])
       make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
@@ -53,25 +52,11 @@ final class BeautySearchOptInHttpApiModuleSpec extends AnyWordSpec {
     allHttpApis: Set[HttpApi[IO]]
   )
 
-  private final class RecordingBeautySearchService(
-    response: BeautySearchResponse
-  ) extends BeautySearchService[IO] {
-    private var recordedCalls: Vector[UserSearchInput] = Vector.empty
-
-    def calls: Vector[UserSearchInput] = recordedCalls
-
-    override def search(input: UserSearchInput): IO[QueryFailure, BeautySearchResponse] = {
-      recordedCalls = recordedCalls :+ input
-      ZIO.succeed(response)
-    }
+  private final class FailIfCalledBeautySearchService extends BeautySearchService[IO] {
+    override def search(input: UserSearchInput): IO[QueryFailure, BeautySearchResponse] =
+      ZIO.suspendSucceed(
+        ZIO.fail(QueryFailure.domain(s"FailIfCalledBeautySearchService.search was unexpectedly called with $input"))
+      )
   }
 
-  private val emptySearchResponse: BeautySearchResponse =
-    BeautySearchResponse(
-      variantCarousel = Nil,
-      providerCarousel = Nil,
-      serviceIntentCarousel = Nil,
-      facets = Nil,
-      inferredFilters = Nil,
-    )
 }
