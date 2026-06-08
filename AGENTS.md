@@ -239,6 +239,32 @@ Derived from recent refactor lessons. Do not repeat in every prompt.
 * Use targeted modules or existing app/role fixtures instead.
 * Full `sbt 'project bifunctor-tagless' test` remains the production graph validation.
 
+### Distinguish Ref fixture vs Ref spy
+
+* `Ref` as a test fixture for immutable state tracking (e.g. HTTP contract state recording inputs/results) is acceptable.
+* `Ref` as a recording spy — recording call counts, call sequences, captured inputs, or "was called" checks — is a whitebox smell.
+* Prefer expecting fakes, scripted fakes, and fail-if-called collaborators over recording through `Ref`.
+
+### Avoid Recording/Counting fake naming
+
+* Avoid new fake names like `Recording*`, `Counting*`, `CallCounter`, `RecordingSpy`.
+* Prefer names that describe behavior:
+  * `Expecting*` — validates expected inputs, fails on unexpected ones.
+  * `Scripted*` — returns configured results based on input.
+  * `FailIfCalled*` — proves a collaborator is not used on a code path.
+  * `Stub*` — returns fixed results without recording.
+
+### Avoid exact call-count assertions
+
+* Prefer expecting fake that validates expected input and fails on unexpected input.
+* Prefer fail-if-called fake to prove a collaborator is not used.
+* Prefer scripted fake that returns configured result and test asserts response/failure/diagnostics.
+* Exact-once by-name thunk checks remain allowed as explicit exceptions (see "Remaining `var` exceptions").
+
+### Reference pattern
+
+* `BeautySearchAppGraphBoundarySpec.ExpectingBeautySearchBackend` — fails on unexpected input/intent, returns scripted result. Use this pattern instead of Recording/Counting fakes.
+
 ## BeautyQ search principles
 
 Search semantics live in DSL/spec data, not backend interpreters.
