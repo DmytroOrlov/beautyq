@@ -18,7 +18,24 @@ There are three variants of the example project:
 
 To launch tests that require postgres ensure you have a `docker` daemon running in the background.
 
-Use `sbt test` to launch the tests.
+Use
+``` 
+docker rm -f $(docker ps -a -q -f "label=distage.type") || true
+find . -type d -name target -print0 | xargs -0 rm -rf
+LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
+QDRANT_COLLECTION_COMPATIBILITY_INTEGRATION=true \
+QDRANT_SNAPSHOT_INDEXING_COMPATIBILITY_INTEGRATION=true \
+QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true \
+QDRANT_EMBEDDING_BENCHMARK_SINGLE_ENDPOINT=true \
+QDRANT_EMBEDDING_BENCHMARK_ENDPOINT=http://localhost:8081 \
+QDRANT_EMBEDDING_BENCHMARK_DUAL_ENDPOINT=true \
+QDRANT_EMBEDDING_SMALL_URL=http://localhost:8081 \
+QDRANT_EMBEDDING_LARGE_URL=http://localhost:8082 \
+BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE=true \
+BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true \
+sbt test
+```
+to launch the tests.
 
 You can launch the application with the following command.
 

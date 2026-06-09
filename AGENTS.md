@@ -1,47 +1,10 @@
-# AGENTS.md
-
-## Purpose
-
-This file contains stable repo-specific guardrails for BeautyQ work. Prompts should not repeat these rules unless a task needs a local exception. Inline only task-specific facts, exact signatures, changed files, and validation commands.
-
 ## Operating rules
 
 * Inspect nearby repo code before using framework APIs from memory.
 * One patch = one purpose. Do not mix unrelated risk layers.
 * Do not make broad refactors while fixing one failing test.
 * Existing focused tests and route-level HTTP contract tests are source of truth.
-* Do not commit debug output, logs, build artifacts, copied dependency sources, or temporary `println`.
-* Do not create `izumi/` or copy Distage/source dependency files into the repo.
 * If a requested change needs wider scope, stop and report the smallest safe next step.
-* Commit messages should be extended by default: subject plus body covering behavior, tests, unchanged boundaries, and verification caveats.
-
-## Prompt / agent discipline
-
-Stable rules live here. Do not paste the same long architecture warnings into every prompt.
-
-When preparing prompts for weaker agents:
-
-* Use small mechanical tasks.
-* Prefer one new test file or one existing spec update.
-* Avoid asking weak agents to infer architecture from docs.
-* Avoid broad design, Distage internals, runtime wiring, and multi-layer changes.
-* Inline exact current signatures, changed files, nearby patterns, and validation commands from the latest bundle.
-
-Recommended `qwen3.6-35b-a3b` thinking budgets:
-
-* `thinking-budget=128`: one-line docs tweak, delete/rename, mechanical fix.
-* `thinking-budget=256`: small docs-only patch or simple test copied from an existing pattern.
-* `thinking-budget=512`: test-only patch with existing Distage/ModuleDef/route/fake-client setup.
-* `thinking-budget=1024`: comparing several existing specs or likely compile fixes around Distage/ZIO/typeclasses.
-* `2048`: larger stack replay, conflict resolution, or semantic test refactor across several files.
-* `4096+`: do not use Qwen; split the task or wait for GPT-5.5.
-
-Docs cadence:
-
-* Do not update docs after every tiny characterization test.
-* Batch related characterization results into one docs patch.
-* Update docs immediately when production exposure, runtime behavior, architecture policy, or roadmap status changes.
-* Documentation should record the result/current state, not serve as scratchpad for every micro-step.
 
 ## Architecture review context
 
@@ -74,32 +37,16 @@ Current production route characterization:
 * `BeautySearchReadyCatalogDocuments` rejects empty/blank source and empty documents, and preserves non-empty source/documents.
 * Freshness, refresh/replacement, staleness bounds, structured errors, typed 4xx validation, observability, and kill-switch remain future hardening.
 
-## Verification labels
-
-Use explicit labels:
-
-* `FOCUSED GREEN`: requested focused suite passed; full repo status unknown.
-* `FULL GREEN`: full `sbt test` or requested full project test passed.
-* `FULL RED`: full test failed.
-* `VERIFICATION BLOCKED`: sbt/docker/local permissions blocked verification.
-* `USER-VERIFIED FULL GREEN`: user ran the exact command and reported green.
-
-Do not call work commit-ready unless `FULL GREEN`, `USER-VERIFIED FULL GREEN`, or the user explicitly accepts focused-only verification.
-
-For `src/main` changes, run focused checks and then full test unless the user accepts focused-only. If full test fails, stop, report the failing suite/test and exact error, then fix only that failure. If full fails only in a known pre-existing external integration suite, report it explicitly and do not call the run `FULL GREEN`.
-
 ## sbt rules
 
 * Do not run sbt commands in parallel.
 * Prefer one chained, project-scoped sbt command.
 * Do not use `-no-server` unless explicitly asked.
-* `sbt --shutdown` is not valid for this repo launcher. Do not use it.
 * If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
 * If escalation is unavailable or rejected, report `VERIFICATION BLOCKED` and the exact command for the user.
 * Do not edit source to work around sbt locks.
 * If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup:
 
-  * do not run `sbt --shutdown`;
   * run `sbt clean` or remove generated `target` directories;
   * rerun the same focused command;
   * report this as build-artifact cleanup, not source change.
@@ -107,7 +54,7 @@ For `src/main` changes, run focused checks and then full test unless the user ac
 Preferred focused shape:
 
 ```bash
-sbt 'project bifunctor-tagless' Test/compile 'testOnly leaderboard.search.BeautySearchPureSpec'
+sbt Test/compile 'testOnly leaderboard.search.BeautySearchPureSpec'
 ```
 
 Cold runtime reset when explicitly needed:
@@ -178,8 +125,6 @@ Use one of these instead:
 * full-suite validation for production graph coverage.
 
 `BeautySearchProductionInclusion*` plugin bindings in `LeaderboardPlugin.modules.api` are unnecessary unless there is an explicit production design, but they are not proven direct root cause of the NPE. The reproduced hazard is ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])`, which can trigger `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
-
-Any changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require full `sbt 'project bifunctor-tagless' test`; repeat full once for plugin/module shape changes because the failure was intermittent.
 
 ## Constructive test taxonomy and FP test style
 
