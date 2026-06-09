@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file contains stable repo-specific guardrails for BeautyQ work. Prompts should not repeat these rules unless a task needs a local exception. Inline only task-specific facts, exact signatures, changed files, and verification commands.
+This file contains stable repo-specific guardrails for BeautyQ work. Prompts should not repeat these rules unless a task needs a local exception. Inline only task-specific facts, exact signatures, changed files, and validation commands.
 
 ## Operating rules
 
@@ -21,19 +21,19 @@ Stable rules live here. Do not paste the same long architecture warnings into ev
 
 When preparing prompts for weaker agents:
 
-* Use small, mechanical tasks.
+* Use small mechanical tasks.
 * Prefer one new test file or one existing spec update.
-* Avoid design, Distage internals, runtime wiring, and multi-layer changes.
-* Inline exact current signatures and files from the latest bundle.
-* Give exact validation commands.
-* Do not ask weak agents to infer architecture from docs.
+* Avoid asking weak agents to infer architecture from docs.
+* Avoid broad design, Distage internals, runtime wiring, and multi-layer changes.
+* Inline exact current signatures, changed files, nearby patterns, and validation commands from the latest bundle.
 
 Recommended `qwen3.6-35b-a3b` thinking budgets:
 
 * `thinking-budget=128`: one-line docs tweak, delete/rename, mechanical fix.
 * `thinking-budget=256`: small docs-only patch or simple test copied from an existing pattern.
 * `thinking-budget=512`: test-only patch with existing Distage/ModuleDef/route/fake-client setup.
-* `thinking-budget=1024`: only if comparing several existing specs or likely compile fixes around Distage/ZIO/typeclasses.
+* `thinking-budget=1024`: comparing several existing specs or likely compile fixes around Distage/ZIO/typeclasses.
+* `2048`: larger stack replay, conflict resolution, or semantic test refactor across several files.
 * `4096+`: do not use Qwen; split the task or wait for GPT-5.5.
 
 Docs cadence:
@@ -65,11 +65,10 @@ Current verified BeautyQ search status:
 
 Current production route characterization:
 
-* Limit behavior:
-  * positive limit returns `200 OK` with variants capped by requested limit;
-  * zero and negative limits return `200 OK` with empty variant carousel;
-  * huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
-* Invalid request behavior currently returns `500 InternalServerError` with empty body for malformed JSON, empty body, wrong limit type, and missing required fields. This is current behavior, not desired final contract.
+* Positive limit returns `200 OK` with variants capped by requested limit.
+* Zero and negative limits return `200 OK` with empty variant carousel.
+* Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
+* Malformed JSON, empty body, wrong limit type, and missing required fields currently return `500 InternalServerError` with empty body. This is current behavior, not desired final contract.
 * Coordinates are not range-validated: out-of-range and huge finite `userLat` / `userLon` currently return `200 OK`.
 * Query text is not length-validated: empty, whitespace-only, normal, and very long queries currently return `200 OK`.
 * `BeautySearchReadyCatalogDocuments` rejects empty/blank source and empty documents, and preserves non-empty source/documents.
@@ -87,7 +86,7 @@ Use explicit labels:
 
 Do not call work commit-ready unless `FULL GREEN`, `USER-VERIFIED FULL GREEN`, or the user explicitly accepts focused-only verification.
 
-For `src/main` changes, run focused checks and then full test unless the user accepts focused-only. If full test fails, stop, report the failing suite/test and exact error, then fix only that failure.
+For `src/main` changes, run focused checks and then full test unless the user accepts focused-only. If full test fails, stop, report the failing suite/test and exact error, then fix only that failure. If full fails only in a known pre-existing external integration suite, report it explicitly and do not call the run `FULL GREEN`.
 
 ## sbt rules
 
@@ -99,6 +98,7 @@ For `src/main` changes, run focused checks and then full test unless the user ac
 * If escalation is unavailable or rejected, report `VERIFICATION BLOCKED` and the exact command for the user.
 * Do not edit source to work around sbt locks.
 * If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup:
+
   * do not run `sbt --shutdown`;
   * run `sbt clean` or remove generated `target` directories;
   * rerun the same focused command;
@@ -167,6 +167,116 @@ private def loadDocuments(
 
 Do not rely on `Mode.Test`, `memoizationRoots`, isolated green runs, or timing. If a spec is green alone but full suite fails with `Seed-scoped search snapshot is missing Category/Service/Master`, check for a missing direct `BeautyQSeedReady` edge before changing search, Qdrant, Elasticsearch, or seed data.
 
+## Distage plugin include guardrail
+
+Do not use `include(LeaderboardPlugin.modules.api[IO])` inside focused/unit spec `ModuleDef`s.
+
+Use one of these instead:
+
+* targeted modules that bind only the types the test needs;
+* existing app/role/testkit fixtures;
+* full-suite validation for production graph coverage.
+
+`BeautySearchProductionInclusion*` plugin bindings in `LeaderboardPlugin.modules.api` are unnecessary unless there is an explicit production design, but they are not proven direct root cause of the NPE. The reproduced hazard is ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])`, which can trigger `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
+
+Any changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require full `sbt 'project bifunctor-tagless' test`; repeat full once for plugin/module shape changes because the failure was intermittent.
+
+## Constructive test taxonomy and FP test style
+
+Use constructive test taxonomy vocabulary instead of relying on the old `unit / functional / integration` labels.
+
+Axes:
+
+* Intention: `Contractual`, `Regression`, `Progression`, `Benchmark`.
+* Encapsulation: `Blackbox`, `Effectual`, `Whitebox`.
+* Isolation: `Atomic`, `Group`, `Communication`.
+
+Default target for new tests:
+
+* Prefer `Contractual + Blackbox + Atomic` for pure functions, parsers, codecs, policies, and single algebras.
+* Prefer `Contractual + Blackbox + Group` for service/module seams assembled from several in-process components.
+* Use `Communication` only when the test really talks to an external process such as Postgres, Qdrant, Elasticsearch, Llama, Docker, or HTTP.
+* Use `Whitebox` only when the internal detail is the explicit contract, such as by-name exact-once thunk evaluation.
+
+### Dual test tactic
+
+Prefer abstract contract suites over duplicated implementation-specific tests.
+
+Good shape:
+
+* one abstract suite against an interface, algebra, service, repository, or module contract;
+* concrete subclasses for `Repo.Dummy`, `Repo.Prod`, or other Distage activation axes;
+* identical behavioral assertions across implementations;
+* communication-heavy subclasses gated/canceled when external resources are unavailable.
+
+Pattern:
+
+```scala
+abstract class LadderTest extends LeaderboardTest
+final class LadderTestDummy extends LadderTest with DummyTest
+final class LadderTestPostgres extends LadderTest with ProdTest
+```
+
+This keeps the contract stable while Distage activation chooses implementation.
+
+### Distage/ZIO fixture style
+
+Prefer:
+
+* argument injection for explicit per-test dependencies;
+* ZIO environment accessors for readable service scenarios;
+* targeted `ModuleDef`s that bind only the types needed by the spec;
+* immutable fixture case classes;
+* deterministic fixture services such as `Rnd[F]`;
+* local typed effect runners such as `runIO(effect: IO[E, A])`.
+
+Avoid:
+
+* suite-level mutable state;
+* ad-hoc global singletons;
+* direct random/time/UUID generation in contractual tests unless uniqueness is the actual contract;
+* raw `Runtime.default.unsafe.run(...).getOrThrowFiberFailure()` boilerplate spread through tests;
+* focused specs that include the whole production plugin graph.
+
+`memoizationRoots` may optimize heavy fixture lifecycle across a suite, but it is not a sequencing guarantee and must not be used as a hidden readiness dependency.
+
+### Test doubles
+
+Do not introduce `var` call logs, mutable counters, `Recording*` spies, `Counting*` fakes, `CallCounter`, `RecordingSpy`, or `called/calls` probes by default.
+
+Prefer names and behavior that state the contract:
+
+* `Expecting*` validates expected inputs and fails on unexpected ones.
+* `Scripted*` returns configured results based on input.
+* `FailIfCalled*` proves a collaborator is not used on a path.
+* `Stub*` returns fixed results without recording.
+
+Do not mechanically replace `var` with `ZIO Ref`, `AtomicInteger`, `AtomicReference`, or mutable collections.
+
+`Ref` as in-memory test fixture / repository state is acceptable. `Ref` as recording spy for call counts, call sequences, captured inputs, or “was called” checks is a smell.
+
+Avoid exact call-count assertions unless call count is the explicit contract. Prefer expecting fakes, fail-if-called fakes, scripted fakes, and assertions over returned responses/failures/diagnostics.
+
+Local `var` is acceptable only when the exact contract is by-name/exactly-once evaluation and a pure rewrite would weaken the test or make it much noisier. Current accepted examples are exact-once thunk checks such as `apiEvaluations` / `apiConstructed`.
+
+Do not use `assert(x != null)` / `assert(x == null)`. Prefer type assertions, `Option`, pattern matching, or behavior that proves the value was materialized.
+
+Reference pattern:
+
+* `BeautySearchAppGraphBoundarySpec.ExpectingBeautySearchBackend` — fails on unexpected input/intent and returns scripted result.
+
+### Communication tests
+
+Communication tests are allowed when they verify an adapter or external resource boundary, but they must be explicit.
+
+Rules:
+
+* Use env gates or cancellation for tests requiring Docker, Qdrant, Elasticsearch, Llama, or external services.
+* Keep communication tests out of focused unit/module proof tasks unless explicitly requested.
+* Prefer one communication boundary per test.
+* Avoid combining Postgres + Qdrant + Llama + HTTP unless the task is explicitly an end-to-end smoke.
+* Report missing environment as canceled/blocked, not as product behavior failure.
+
 ## HTTP / Tapir rules
 
 * Put pure Tapir endpoint contracts in `leaderboard/http/tapir/*TapirEndpoints.scala`.
@@ -198,72 +308,6 @@ Preserve:
 * unified numeric storage path
 
 `MasterServiceOfferVariants.Postgres` uses `masterServiceOffers` and `masterLocations` as `@unused` FK readiness edges; `serviceVariantSchemas` is an active validation collaborator.
-
-## Distage plugin include guardrail
-
-- Do not use `include(LeaderboardPlugin.modules.api[IO])` inside focused/unit spec `ModuleDef`s.
-- Prefer targeted modules in specs that bind only the types the test needs.
-- If the whole production plugin graph must be tested, use an established app/role/testkit fixture or full-suite validation, not ad-hoc `include()` calls.
-- `BeautySearchProductionInclusion*` plugin bindings in `LeaderboardPlugin.modules.api` are unnecessary unless there is an explicit production design, but they are not proven direct root cause of the NPE.
-- The hazard is ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])` which can trigger `IncludesDSL$Include.interpret` NPE in Distage 1.2.20 and 1.2.25.
-- Any changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require full `sbt 'project bifunctor-tagless' test`; repeat full once for plugin/module shape changes.
-
-## FP test-style guardrails
-
-Derived from recent refactor lessons. Do not repeat in every prompt.
-
-### Avoid Java-style mutable spies in Scala tests
-
-* Do not introduce `var` call logs, mutable counters, `Recording*` spies, or `called/calls` probes by default.
-* Prefer immutable fixtures, scripted fakes, expecting fakes, fail-if-called collaborators, and assertions over returned responses/failures/diagnostics.
-* Do not mechanically replace `var` with `ZIO Ref`, `AtomicInteger`, `AtomicReference`, or mutable collections.
-
-### Remaining `var` exceptions must be explicit
-
-* Local `var` is acceptable only when the exact contract is by-name/exactly-once evaluation and a pure rewrite would weaken the test or make it much noisier.
-* Current accepted examples are exact-once thunk checks such as `apiEvaluations` / `apiConstructed`.
-
-### Avoid Java-style null assertions
-
-* Do not use `assert(x != null)` / `assert(x == null)`.
-* Prefer type assertions, `Option`, pattern matching, or behavior that proves the value was materialized.
-
-### Keep effect runners local and typed
-
-* If a ScalaTest spec needs to run ZIO effects, use a small local helper such as `runIO(effect: IO[E, A])`.
-* Do not spread raw `Runtime.default.unsafe.run(...).getOrThrowFiberFailure()` boilerplate through tests unless the surrounding suite already has that style and refactoring is out of scope.
-
-### Distage focused specs must avoid whole-plugin includes
-
-* Do not use `include(LeaderboardPlugin.modules.api[IO])` inside ad-hoc focused/unit spec `ModuleDef`s.
-* Use targeted modules or existing app/role fixtures instead.
-* Full `sbt 'project bifunctor-tagless' test` remains the production graph validation.
-
-### Distinguish Ref fixture vs Ref spy
-
-* `Ref` as in-memory test fixture / repository state is acceptable (e.g. HTTP contract state recording inputs/results).
-* `Ref` as recording spy — recording call counts, call sequences, captured inputs, or "was called" checks — is a smell.
-* Prefer expecting fakes, scripted fakes, and fail-if-called collaborators over recording through `Ref`.
-
-### Avoid Recording/Counting fake naming
-
-* Avoid new fake names like `Recording*`, `Counting*`, `CallCounter`, `RecordingSpy`.
-* Prefer names that describe behavior:
-  * `Expecting*` — validates expected inputs, fails on unexpected ones.
-  * `Scripted*` — returns configured results based on input.
-  * `FailIfCalled*` — proves a collaborator is not used on a code path.
-  * `Stub*` — returns fixed results without recording.
-
-### Avoid exact call-count assertions
-
-* Prefer expecting fake that validates expected input and fails on unexpected input.
-* Prefer fail-if-called fake to prove a collaborator is not used.
-* Prefer scripted fake that returns configured result and test asserts response/failure/diagnostics.
-* Exact-once by-name thunk checks remain allowed as explicit exceptions (see "Remaining `var` exceptions").
-
-### Reference pattern
-
-* `BeautySearchAppGraphBoundarySpec.ExpectingBeautySearchBackend` — fails on unexpected input/intent, returns scripted result. Use this pattern instead of Recording/Counting fakes.
 
 ## BeautyQ search principles
 
@@ -414,7 +458,16 @@ Current Qdrant/hybrid status:
 * Qdrant point id, point builder, indexing, readiness, compatibility, and snapshot indexing guards exist.
 * BeautyQ hybrid projection/pipeline exists with explicit carousel limits.
 * Non-production composition and activation tests exist.
-* Composition build is characterized as side-effect-free; `indexSnapshot()` and `semanticBackend.candidates(...)` are explicit calls.
+* Manual/local runner boundaries exist or are being built incrementally:
+
+  * runner composition boundary;
+  * manual lifecycle handle;
+  * manual input boundary;
+  * adapter-input boundary;
+  * Qdrant-client input boundary;
+  * real-client input boundary.
+* Composition build is characterized as side-effect-free.
+* `indexSnapshot()` and `run(...)` / `semanticBackend.candidates(...)` must remain explicit calls.
 * Readiness/compatibility guard behavior is characterized with fakes.
 * Qdrant/hybrid remains non-production/manual-local/experimental.
 * No production Qdrant/hybrid route is wired.
