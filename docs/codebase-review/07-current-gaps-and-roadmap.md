@@ -129,12 +129,29 @@ The current phase is between:
 - C: production `/beauty-search` hybrid backend — future.
 
 The codebase now contains pure control-plane value/decision types:
+`BeautySearchHybridSnapshotIdentity`,
+`BeautySearchHybridCollectionIdentity`,
+`BeautySearchHybridFreshnessPolicy`,
 `BeautySearchHybridRuntimeMode` (`SeedCatalogOnly`, `HybridShadow`,
 `HybridServe`), `BeautySearchHybridServingPolicy`,
-`BeautySearchHybridReadinessStatus`, and `BeautySearchHybridServingDecision`.
+`BeautySearchHybridReadinessStatus`, `BeautySearchHybridServingDecision`,
+`BeautySearchHybridReadiness[F]`, `BeautySearchHybridDiagnosticsSink[F]`,
+`BeautySearchHybridDiagnosticsEvent.DecisionEvaluated`, and
+`BeautySearchHybridDecisionEvaluator[F]`.
 They live in
 `leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala` and are
 covered by `BeautySearchHybridControlPlaneSpec.scala`.
+
+Semantics:
+
+- `SeedCatalogOnly` keeps the existing seed-catalog production path.
+- `HybridShadow` is diagnostics/shadow only and must not affect user response.
+- `HybridServe` can serve only when readiness is `Ready`.
+- `NotReady` conservatively resolves to `UseSeedCatalogOnly` in v0.
+- `BeautySearchHybridDecisionEvaluator[F]` only reads readiness, computes
+  decision, reports diagnostics via `DecisionEvaluated`, and returns decision.
+  It does not run hybrid retrieval, indexing, Qdrant, Llama, HTTP, or route
+  behavior.
 
 This control-plane layer is intentional preparation for B, not production route
 wiring. It is not a deviation from the roadmap. It is required before B so that

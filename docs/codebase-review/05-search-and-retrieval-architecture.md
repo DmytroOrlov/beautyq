@@ -263,6 +263,45 @@ Production boundary:
 - Qdrant and hybrid stay non-production/manual-local/experimental until lifecycle, routing, freshness, observability, kill-switch, and collection-management questions are resolved.
 - Elasticsearch/Qdrant/hybrid implemented pieces do not by themselves imply production wiring.
 
+## F2. Hybrid Control-Plane v0
+
+Implemented:
+
+- File: `leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`
+- Value types: `BeautySearchHybridSnapshotIdentity`,
+  `BeautySearchHybridCollectionIdentity`,
+  `BeautySearchHybridFreshnessPolicy`,
+  `BeautySearchHybridRuntimeMode` (`SeedCatalogOnly`, `HybridShadow`,
+  `HybridServe`), `BeautySearchHybridServingPolicy`,
+  `BeautySearchHybridReadinessStatus`,
+  `BeautySearchHybridServingDecision`
+- Interfaces: `BeautySearchHybridReadiness[F]`,
+  `BeautySearchHybridDiagnosticsSink[F]`
+- Diagnostics event:
+  `BeautySearchHybridDiagnosticsEvent.DecisionEvaluated`
+- Evaluator: `BeautySearchHybridDecisionEvaluator[F]`
+- Spec: `BeautySearchHybridControlPlaneSpec.scala`
+
+Conservative serving policy:
+
+- Default: `SeedCatalogOnly` — keeps existing seed-catalog production path.
+- `HybridShadow` — diagnostics/shadow only; must not affect user response.
+- `HybridServe` — can serve only when readiness is `Ready`.
+- `NotReady` — conservatively resolves to `UseSeedCatalogOnly` in v0.
+
+Evaluator contract:
+
+- `BeautySearchHybridDecisionEvaluator[F]` reads readiness, computes
+  decision, reports diagnostics via `DecisionEvaluated`, returns decision.
+- It does not run hybrid retrieval, indexing, Qdrant, Llama, HTTP, or
+  route behavior.
+
+Not production wiring:
+
+- Control-plane types are not wired into `LeaderboardPlugin.modules.api`.
+- Not route wiring.
+- No Qdrant/Llama construction.
+
 ## G. Benchmarks / Eval
 
 Implemented/current:

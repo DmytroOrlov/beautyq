@@ -577,9 +577,10 @@ Future implementation should be split into small patches:
 8. Done: benchmark subset expansion with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
 9. Done: docs record real-resource non-production hybrid adapter boundary.
 10. Done: non-production real-resource Qdrant/hybrid manual runner milestone reached (manual adapter/handle, env-gated indexing and retrieval smokes, Distage module-shape proofs).
-11. Later design: lifecycle/freshness/observability.
-12. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
-13. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
+11. Done: production-hybrid control-plane v0 — value/decision types, readiness/diagnostics interfaces, `BeautySearchHybridDecisionEvaluator[F]` with conservative policy (`SeedCatalogOnly` default, `HybridShadow` diagnostics-only, `HybridServe` requires `Ready`, `NotReady` → `UseSeedCatalogOnly`); covered by `BeautySearchHybridControlPlaneSpec`; not production wiring.
+12. Later design: lifecycle/freshness/observability.
+13. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
+14. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
 
 The second-domain proof is done.
 The fake-only explicit module gating proof is done.
