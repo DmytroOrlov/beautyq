@@ -1,8 +1,10 @@
 package leaderboard.search
 
+import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 import leaderboard.search.hybrid.control._
 import org.scalatest.wordspec.AnyWordSpec
+import zio.{IO, Runtime, Unsafe, ZIO}
 
 final class BeautySearchHybridControlPlaneSpec extends AnyWordSpec {
 
@@ -227,4 +229,95 @@ final class BeautySearchHybridControlPlaneSpec extends AnyWordSpec {
       assert(decision == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
     }
   }
+
+  "BeautySearchHybridReadiness" should {
+    "return Ready status from readiness interface" in {
+      val ready = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(ready)
+      }
+
+      val result = runIO(readiness.status())
+
+      assert(result == ready)
+    }
+
+    "return NotReady status from readiness interface" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("collection missing")
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(notReady)
+      }
+
+      val result = runIO(readiness.status())
+
+      assert(result == notReady)
+    }
+
+    "propagate QueryFailure from readiness interface" in {
+      val failure = QueryFailure.domain("readiness check failed")
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.fail(failure)
+      }
+
+      val result = Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe.run(readiness.status().either).getOrThrowFiberFailure()
+      }
+
+      assert(result == Left(failure))
+    }
+  }
+
+  "BeautySearchHybridDiagnosticsEvent.DecisionEvaluated" should {
+    "preserve decision evaluation fields" in {
+      val policy = BeautySearchHybridServingPolicy.default
+      val readiness = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val decision = BeautySearchHybridServingDecision.ServeHybrid(readiness)
+      val event = BeautySearchHybridDiagnosticsEvent.DecisionEvaluated(policy, readiness, decision)
+
+      event match {
+        case BeautySearchHybridDiagnosticsEvent.DecisionEvaluated(actualPolicy, actualReadiness, actualDecision) =>
+          assert(actualPolicy == policy)
+          assert(actualReadiness == readiness)
+          assert(actualDecision == decision)
+
+        case other =>
+          fail(s"Expected DecisionEvaluated, got $other")
+      }
+    }
+  }
+
+  "BeautySearchHybridDiagnosticsSink" should {
+    "accept decision event" in {
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = ZIO.unit
+      }
+
+      val event = BeautySearchHybridDiagnosticsEvent.DecisionEvaluated(
+        policy = BeautySearchHybridServingPolicy.default,
+        readiness = BeautySearchHybridReadinessStatus.Ready(
+          snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+          collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+          indexedDocumentCount = 10,
+        ),
+        decision = BeautySearchHybridServingDecision.UseSeedCatalogOnly,
+      )
+
+      val result = runIO(sink.report(event))
+
+      assert(result == ())
+    }
+  }
+
+  private def runIO[E, A](effect: IO[E, A]): A =
+    Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
+    }
 }

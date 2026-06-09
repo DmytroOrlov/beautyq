@@ -1,5 +1,6 @@
 package leaderboard.search.hybrid.control
 
+import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 
 final case class BeautySearchHybridSnapshotIdentity(
@@ -87,4 +88,22 @@ object BeautySearchHybridServingDecision {
             UseSeedCatalogOnly
         }
     }
+}
+
+trait BeautySearchHybridReadiness[F[+_, +_]] {
+  def status(): F[QueryFailure, BeautySearchHybridReadinessStatus]
+}
+
+trait BeautySearchHybridDiagnosticsSink[F[+_, +_]] {
+  def report(event: BeautySearchHybridDiagnosticsEvent): F[Nothing, Unit]
+}
+
+sealed trait BeautySearchHybridDiagnosticsEvent
+
+object BeautySearchHybridDiagnosticsEvent {
+  final case class DecisionEvaluated(
+    policy: BeautySearchHybridServingPolicy,
+    readiness: BeautySearchHybridReadinessStatus,
+    decision: BeautySearchHybridServingDecision,
+  ) extends BeautySearchHybridDiagnosticsEvent
 }
