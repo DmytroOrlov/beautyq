@@ -8,6 +8,9 @@ This file separates current gaps from future recommendations. Do not read recomm
 
 Current status:
 
+- Production `POST /beauty-search` is seed-resource catalog snapshot +
+  `InMemorySearchBackend[F]`. It is not hybrid, not Qdrant, and not
+  Elasticsearch.
 - `POST /beauty-search` is now production-included through `LeaderboardPlugin.modules.api`.
 - The included route stack is `BeautySearchRouteModules.seedCatalogInMemory[F]`.
 - The backend is startup seed-resource catalog snapshot readiness plus `InMemorySearchBackend[F]`.
@@ -116,6 +119,33 @@ Milestone reached:
 Remaining gap:
 
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
+
+### Current phase: A -> B, production-hybrid control-plane v0
+
+The current phase is between:
+
+- A: non-production real-resource Qdrant/hybrid manual runner — reached.
+- B: production-hidden opt-in Qdrant/hybrid module, not routed — not started.
+- C: production `/beauty-search` hybrid backend — future.
+
+The codebase now contains pure control-plane value/decision types:
+`BeautySearchHybridRuntimeMode` (`SeedCatalogOnly`, `HybridShadow`,
+`HybridServe`), `BeautySearchHybridServingPolicy`,
+`BeautySearchHybridReadinessStatus`, and `BeautySearchHybridServingDecision`.
+They live in
+`leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala` and are
+covered by `BeautySearchHybridControlPlaneSpec.scala`.
+
+This control-plane layer is intentional preparation for B, not production route
+wiring. It is not a deviation from the roadmap. It is required before B so that
+the future hidden module has an explicit activation mode, readiness gate,
+collection identity/version surface, freshness/staleness policy, kill-switch
+integration point, observability/readiness surface, and conservative default
+behavior.
+
+B has not started as production module wiring. The control-plane types are not
+wired into `LeaderboardPlugin.modules.api`, not used by the production
+`/beauty-search` route, and do not construct Qdrant/Llama resources.
 
 Evidence:
 
