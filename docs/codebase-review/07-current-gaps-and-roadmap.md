@@ -110,7 +110,7 @@ Milestone reached:
 - `non-production real-resource Qdrant/hybrid manual runner` is achieved.
 - Manual runner layers exist: runner composition boundary, manual lifecycle handle, manual input boundary, adapter-input boundary, Qdrant-client input boundary, real-client input boundary, targeted Distage module-shape proof.
 - Env-gated real Qdrant smokes cover explicit indexing (`indexSnapshot()`) and explicit retrieval (`run(...)`) with real Qdrant.
-- External-enabled full validation passed: 848 tests, 125 suites, 848 succeeded, 0 failed, 0 aborted, 1 canceled.
+- User-verified external-enabled full validation run: 848 tests, 125 suites, 848 succeeded, 0 failed, 0 aborted, 1 canceled.
 - Env gates used: `BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE=true`, `BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true`, plus Qdrant/Llama benchmark/integration gates.
 
 Remaining gap:

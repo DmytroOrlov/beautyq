@@ -491,7 +491,7 @@ Status:
   * `BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true` — explicit retrieval via `run(...)` with real Qdrant.
 * Targeted Distage module-shape proofs exist for the non-production runner.
 * Real Llama remains an external/manual dependency where applicable.
-* External-enabled full validation passed:
+* User-verified external-enabled full validation run:
 
   * 848 tests
   * 125 suites

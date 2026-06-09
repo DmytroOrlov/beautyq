@@ -3,7 +3,7 @@
 ## 1. Goal
 
 This plan records a non-production hybrid-search foundation, not a production hybrid rollout.
-The next recorded real-resource boundary is a future manual/test/local adapter v0, not a combined Qdrant+ES+Llama production module.
+The reached non-production manual real-resource runner remains manual/test/local only, not a combined Qdrant+ES+Llama production module.
 
 Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall only at explicit non-production boundaries.
 
@@ -64,7 +64,7 @@ The current generic hybrid retrieval seam is a container/diagnostic boundary onl
 It does not add score fusion, reranking, fallback, or a production routing change.
 It is not a BeautyQ projection/merge policy.
 Production hybrid remains out of scope.
-The future real-resource adapter v0 remains manual/test/local only, not production, not a `BeautySearchService` replacement, not Qdrant-as-default, and not a combined Qdrant+ES+Llama production module.
+The reached non-production manual real-resource runner remains manual/test/local only, not production, not a `BeautySearchService` replacement, not Qdrant-as-default, and not a combined Qdrant+ES+Llama production module.
 
 The Qdrant semantic quality gate is intentionally environment-gated:
 
