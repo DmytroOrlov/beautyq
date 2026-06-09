@@ -263,9 +263,7 @@ final class BeautySearchHybridControlPlaneSpec extends AnyWordSpec {
         override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.fail(failure)
       }
 
-      val result = Unsafe.unsafe { implicit unsafe =>
-        Runtime.default.unsafe.run(readiness.status().either).getOrThrowFiberFailure()
-      }
+      val result = runIO(readiness.status().either)
 
       assert(result == Left(failure))
     }
