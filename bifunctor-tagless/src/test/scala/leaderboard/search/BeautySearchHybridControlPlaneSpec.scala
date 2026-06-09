@@ -123,4 +123,108 @@ final class BeautySearchHybridControlPlaneSpec extends AnyWordSpec {
       assert(BeautySearchHybridRuntimeMode.SeedCatalogOnly != BeautySearchHybridRuntimeMode.HybridServe)
     }
   }
+
+  "BeautySearchHybridServingDecision.decide" should {
+    "use seed catalog when mode is SeedCatalogOnly and readiness is Ready" in {
+      val ready = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.SeedCatalogOnly,
+        requireReadyForServing = true,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, ready)
+
+      assert(decision == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
+    }
+
+    "use seed catalog when mode is SeedCatalogOnly and readiness is NotReady" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("collection missing")
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.SeedCatalogOnly,
+        requireReadyForServing = false,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, notReady)
+
+      assert(decision == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
+    }
+
+    "return RunHybridShadow when mode is HybridShadow and readiness is Ready" in {
+      val ready = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridShadow,
+        requireReadyForServing = true,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, ready)
+
+      assert(decision == BeautySearchHybridServingDecision.RunHybridShadow)
+    }
+
+    "return RunHybridShadow when mode is HybridShadow and readiness is NotReady" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("not ready yet")
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridShadow,
+        requireReadyForServing = true,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, notReady)
+
+      assert(decision == BeautySearchHybridServingDecision.RunHybridShadow)
+    }
+
+    "serve hybrid when mode is HybridServe and readiness is Ready" in {
+      val ready = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridServe,
+        requireReadyForServing = true,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, ready)
+
+      decision match {
+        case BeautySearchHybridServingDecision.ServeHybrid(actualReady) =>
+          assert(actualReady == ready)
+
+        case other =>
+          fail(s"Expected ServeHybrid decision, got $other")
+      }
+    }
+
+    "use seed catalog when mode is HybridServe, readiness is NotReady, and requireReadyForServing is true" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("collection missing")
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridServe,
+        requireReadyForServing = true,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, notReady)
+
+      assert(decision == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
+    }
+
+    "use seed catalog when mode is HybridServe, readiness is NotReady, and requireReadyForServing is false" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("collection missing")
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridServe,
+        requireReadyForServing = false,
+      )
+
+      val decision = BeautySearchHybridServingDecision.decide(policy, notReady)
+
+      assert(decision == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
+    }
+  }
 }

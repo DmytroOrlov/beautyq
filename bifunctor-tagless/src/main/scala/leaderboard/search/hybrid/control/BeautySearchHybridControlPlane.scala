@@ -58,3 +58,33 @@ object BeautySearchHybridServingPolicy {
       requireReadyForServing = true,
     )
 }
+
+sealed trait BeautySearchHybridServingDecision
+object BeautySearchHybridServingDecision {
+  case object UseSeedCatalogOnly extends BeautySearchHybridServingDecision
+  case object RunHybridShadow extends BeautySearchHybridServingDecision
+  final case class ServeHybrid(
+    readiness: BeautySearchHybridReadinessStatus.Ready,
+  ) extends BeautySearchHybridServingDecision
+
+  def decide(
+    policy: BeautySearchHybridServingPolicy,
+    readiness: BeautySearchHybridReadinessStatus,
+  ): BeautySearchHybridServingDecision =
+    policy.mode match {
+      case BeautySearchHybridRuntimeMode.SeedCatalogOnly =>
+        UseSeedCatalogOnly
+
+      case BeautySearchHybridRuntimeMode.HybridShadow =>
+        RunHybridShadow
+
+      case BeautySearchHybridRuntimeMode.HybridServe =>
+        readiness match {
+          case ready: BeautySearchHybridReadinessStatus.Ready =>
+            ServeHybrid(ready)
+
+          case _: BeautySearchHybridReadinessStatus.NotReady =>
+            UseSeedCatalogOnly
+        }
+    }
+}
