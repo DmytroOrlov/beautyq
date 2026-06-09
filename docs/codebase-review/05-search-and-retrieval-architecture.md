@@ -187,6 +187,26 @@ Integration-test-only / Docker-backed:
 - `QdrantCollectionCompatibilityIntegrationSpec.scala` is env-gated by `QDRANT_COLLECTION_COMPATIBILITY_INTEGRATION`.
 - `QdrantSnapshotIndexingCompatibilityIntegrationSpec.scala` is env-gated by `QDRANT_SNAPSHOT_INDEXING_COMPATIBILITY_INTEGRATION`.
 
+Non-production Qdrant/hybrid runner status:
+
+* Production `/beauty-search` remains seed-resource catalog snapshot + in-memory lexical/simple backend.
+* Qdrant/hybrid is still non-production/manual-local.
+* Manual runner layers now exist:
+
+  * runner composition boundary;
+  * manual lifecycle handle;
+  * manual input boundary;
+  * adapter-input boundary;
+  * Qdrant-client input boundary;
+  * real-client input boundary;
+  * targeted Distage module-shape proof.
+* Env-gated real Qdrant smokes cover:
+
+  * explicit indexing via `indexSnapshot()` with real Qdrant (`BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE=true`);
+  * explicit retrieval via `run(...)` with real Qdrant (`BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true`).
+* These smokes use real Qdrant, but not production route wiring.
+* External-enabled full validation: 848 tests, 125 suites, 848 succeeded, 0 failed, 0 aborted, 1 canceled.
+
 Production-wired/current:
 
 - No Qdrant production search binding was found in `LeaderboardPlugin.scala`.

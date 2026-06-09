@@ -46,7 +46,8 @@ Current status note:
 - generic hybrid retrieval container exists
 - pure BeautyQ hybrid projection pipeline is experiment-ready
 - non-production activation/module gating proof exists
-- real-resource non-production adapter is not implemented yet
+- non-production real-resource Qdrant/hybrid manual runner milestone is reached
+- real-resource non-production adapter smokes exist: indexing (`indexSnapshot()`) and retrieval (`run(...)`) with real Qdrant, env-gated
 - production hybrid orchestration is still not implemented
 - generic retrieval/indexing boundaries are present within the current search DSL, but a full generic search engine is not complete
 
@@ -406,6 +407,7 @@ Before any future code wiring, require normal `sbt test`, max env full test when
 
 The construction-safe activation factory with thunked dependencies is implemented.
 The tiny synthetic second-domain proof for the generic seams is now implemented at test level.
+The non-production real-resource Qdrant/hybrid manual runner milestone is reached.
 Production hybrid remains out of scope.
 
 ### Output Shape
@@ -574,15 +576,14 @@ Future implementation should be split into small patches:
 7. Done: fake-only explicit non-production Distage/test module gating proof.
 8. Done: benchmark subset expansion with more explicit eval query ids beyond `q_broad_004` and `q_broad_006`.
 9. Done: docs record real-resource non-production hybrid adapter boundary.
-10. Next code step: small explicit manual adapter/handle skeleton.
-11. Later: real semantic-side adapter only: Qdrant backend + embedding/Llama client + lookup + readiness guard.
-12. Later: manual local runner with explicit invocation only.
-13. Later design: lifecycle/freshness/observability.
-14. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
-15. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
+10. Done: non-production real-resource Qdrant/hybrid manual runner milestone reached (manual adapter/handle, env-gated indexing and retrieval smokes, Distage module-shape proofs).
+11. Later design: lifecycle/freshness/observability.
+12. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
+13. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
 
 The second-domain proof is done.
 The fake-only explicit module gating proof is done.
+The non-production real-resource Qdrant/hybrid manual runner is done.
 Any next implementation patch should keep the same boundary: pure or explicitly non-production only, and no new generic abstractions unless a concrete gap appears.
 
 It must not include:
@@ -773,8 +774,8 @@ What is still missing before runtime hybrid:
 - a real explicit metadata source
 - a production-safe provider for `SearchRoutingMetadata`
 - a disabled-by-default provider that keeps routing on `ElasticsearchOnly` unless explicitly enabled
-- a real non-production Qdrant/ES/Llama module adapter, still requiring separate design and still not production
+- production hybrid design (lifecycle, routing, freshness, observability, kill-switch, collection management)
 
 The recommended later step may be benchmark subset expansion.
-The real non-production Qdrant/ES/Llama module adapter remains later and needs separate design before real resources are included.
+Production hybrid remains later and needs separate design before any production resources are included.
 Keep the provider absent until a real explicit metadata source exists. When one is added, it should default to `ElasticsearchOnly` and require explicit opt-in to route anything else.

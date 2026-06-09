@@ -458,7 +458,7 @@ Current Qdrant/hybrid status:
 * Qdrant point id, point builder, indexing, readiness, compatibility, and snapshot indexing guards exist.
 * BeautyQ hybrid projection/pipeline exists with explicit carousel limits.
 * Non-production composition and activation tests exist.
-* Manual/local runner boundaries exist or are being built incrementally:
+* Manual/local runner boundaries exist:
 
   * runner composition boundary;
   * manual lifecycle handle;
@@ -472,11 +472,33 @@ Current Qdrant/hybrid status:
 * Qdrant/hybrid remains non-production/manual-local/experimental.
 * No production Qdrant/hybrid route is wired.
 
-Near-term target:
+Milestone reached:
 
 ```text
 non-production real-resource Qdrant/hybrid manual runner
 ```
+
+Status:
+
+* Manual lifecycle remains explicit:
+
+  * construct inputs / handle = side-effect-free
+  * `indexSnapshot()` = explicit indexing
+  * `run(...)` = explicit hybrid retrieval
+* Env-gated communication smokes validate real Qdrant indexing and retrieval paths:
+
+  * `BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE=true` — explicit indexing via `indexSnapshot()` with real Qdrant;
+  * `BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true` — explicit retrieval via `run(...)` with real Qdrant.
+* Targeted Distage module-shape proofs exist for the non-production runner.
+* Real Llama remains an external/manual dependency where applicable.
+* External-enabled full validation passed:
+
+  * 848 tests
+  * 125 suites
+  * 848 succeeded
+  * 0 failed
+  * 0 aborted
+  * 1 canceled
 
 Not target yet:
 
@@ -484,7 +506,7 @@ Not target yet:
 production hybrid backend
 ```
 
-Approximate remaining work to the near-term target is tracked conversationally in qwen-runs; keep it out of code/docs unless asked.
+Remaining work after this milestone is tracked conversationally in qwen-runs; keep it out of code/docs unless asked.
 
 ## Qdrant lifecycle rules
 
