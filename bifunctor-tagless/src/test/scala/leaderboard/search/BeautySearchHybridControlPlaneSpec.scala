@@ -4,6 +4,7 @@ import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 import leaderboard.search.hybrid.control._
 import org.scalatest.wordspec.AnyWordSpec
+import izumi.functional.bio._
 import zio.{IO, Runtime, Unsafe, ZIO}
 
 final class BeautySearchHybridControlPlaneSpec extends AnyWordSpec {
@@ -311,6 +312,145 @@ final class BeautySearchHybridControlPlaneSpec extends AnyWordSpec {
       val result = runIO(sink.report(event))
 
       assert(result == ())
+    }
+  }
+
+  "BeautySearchHybridDecisionEvaluator" should {
+    "return UseSeedCatalogOnly for default policy with Ready readiness" in {
+      val ready = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val policy = BeautySearchHybridServingPolicy.default
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(ready)
+      }
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = ZIO.unit
+      }
+      val evaluator = new BeautySearchHybridDecisionEvaluator[IO](policy, readiness, sink)
+
+      val result = runIO(evaluator.evaluate())
+
+      assert(result == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
+    }
+
+    "return RunHybridShadow for HybridShadow policy" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("collection missing")
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridShadow,
+        requireReadyForServing = true,
+      )
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(notReady)
+      }
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = ZIO.unit
+      }
+      val evaluator = new BeautySearchHybridDecisionEvaluator[IO](policy, readiness, sink)
+
+      val result = runIO(evaluator.evaluate())
+
+      assert(result == BeautySearchHybridServingDecision.RunHybridShadow)
+    }
+
+    "return ServeHybrid for HybridServe policy with Ready readiness" in {
+      val ready = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridServe,
+        requireReadyForServing = true,
+      )
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(ready)
+      }
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = ZIO.unit
+      }
+      val evaluator = new BeautySearchHybridDecisionEvaluator[IO](policy, readiness, sink)
+
+      val result = runIO(evaluator.evaluate())
+
+      result match {
+        case BeautySearchHybridServingDecision.ServeHybrid(serveReady) =>
+          assert(serveReady == ready)
+
+        case other =>
+          fail(s"Expected ServeHybrid, got $other")
+      }
+    }
+
+    "return UseSeedCatalogOnly for HybridServe policy with NotReady readiness" in {
+      val notReady = BeautySearchHybridReadinessStatus.NotReady("collection missing")
+      val policy = BeautySearchHybridServingPolicy(
+        mode = BeautySearchHybridRuntimeMode.HybridServe,
+        requireReadyForServing = true,
+      )
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(notReady)
+      }
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = ZIO.unit
+      }
+      val evaluator = new BeautySearchHybridDecisionEvaluator[IO](policy, readiness, sink)
+
+      val result = runIO(evaluator.evaluate())
+
+      assert(result == BeautySearchHybridServingDecision.UseSeedCatalogOnly)
+    }
+
+    "propagate readiness QueryFailure and not require diagnostics success" in {
+      val failure = QueryFailure.domain("readiness check failed")
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.fail(failure)
+      }
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = ZIO.unit
+      }
+      val evaluator = new BeautySearchHybridDecisionEvaluator[IO](BeautySearchHybridServingPolicy.default, readiness, sink)
+
+      val result = runIO(evaluator.evaluate().either)
+
+      assert(result == Left(failure))
+    }
+
+    "report DecisionEvaluated event through sink" in {
+      val expectedReady = BeautySearchHybridReadinessStatus.Ready(
+        snapshot = BeautySearchHybridSnapshotIdentity("seed", "v1", 10),
+        collection = BeautySearchHybridCollectionIdentity("c", "v", "m", 1024, VectorDistance.Cosine),
+        indexedDocumentCount = 10,
+      )
+      val expectedDecision = BeautySearchHybridServingDecision.UseSeedCatalogOnly
+      val expectedEvent = BeautySearchHybridDiagnosticsEvent.DecisionEvaluated(
+        policy = BeautySearchHybridServingPolicy.default,
+        readiness = expectedReady,
+        decision = expectedDecision,
+      )
+      val readiness = new BeautySearchHybridReadiness[IO] {
+        override def status(): IO[QueryFailure, BeautySearchHybridReadinessStatus] = ZIO.succeed(expectedReady)
+      }
+      val sink = new BeautySearchHybridDiagnosticsSink[IO] {
+        override def report(event: BeautySearchHybridDiagnosticsEvent): IO[Nothing, Unit] = {
+          if (event != expectedEvent) {
+            ZIO.dieMessage(s"Unexpected event: $event")
+          } else {
+            ZIO.unit
+          }
+        }
+      }
+      val evaluator = new BeautySearchHybridDecisionEvaluator[IO](
+        policy = BeautySearchHybridServingPolicy.default,
+        readiness = readiness,
+        diagnosticsSink = sink,
+      )
+
+      val result = runIO(evaluator.evaluate())
+
+      assert(result == expectedDecision)
     }
   }
 

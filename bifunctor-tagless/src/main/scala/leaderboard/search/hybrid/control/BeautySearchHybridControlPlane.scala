@@ -1,5 +1,6 @@
 package leaderboard.search.hybrid.control
 
+import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 
@@ -106,4 +107,24 @@ object BeautySearchHybridDiagnosticsEvent {
     readiness: BeautySearchHybridReadinessStatus,
     decision: BeautySearchHybridServingDecision,
   ) extends BeautySearchHybridDiagnosticsEvent
+}
+
+final class BeautySearchHybridDecisionEvaluator[F[+_, +_]: Error2](
+  policy: BeautySearchHybridServingPolicy,
+  readiness: BeautySearchHybridReadiness[F],
+  diagnosticsSink: BeautySearchHybridDiagnosticsSink[F],
+) {
+
+  def evaluate(): F[QueryFailure, BeautySearchHybridServingDecision] = {
+    F.flatMap(readiness.status()) { status =>
+      val decision = BeautySearchHybridServingDecision.decide(policy, status)
+      F.map(diagnosticsSink.report(
+        BeautySearchHybridDiagnosticsEvent.DecisionEvaluated(
+          policy = policy,
+          readiness = status,
+          decision = decision,
+        )
+      ))(_ => decision)
+    }
+  }
 }
