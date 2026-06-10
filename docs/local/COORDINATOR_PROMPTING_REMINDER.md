@@ -392,7 +392,21 @@ Coordinator checks patch/bundle. The agent report does not need to prove every n
 
 ---
 
-## 1.11 What goes to AGENTS.md vs this file vs prompt
+## 1.11 Commit messages
+
+The user commits manually; delegated agents do not commit.
+
+Non-trivial commits should use extended commit messages: subject + body.
+
+Body should state behavior/result, verification, and explicit non-goals or unchanged production boundaries.
+
+One-line commit messages are acceptable only for tiny mechanical cleanups.
+
+Do not confuse short agent reports with short commit messages; reports may be short, commit messages should preserve project context.
+
+When preparing a commit message in chat, provide the full extended message unless the user asks for short subject only.
+
+## 1.12 What goes to AGENTS.md vs this file vs prompt
 
 Put in `AGENTS.md` when it is stable repo behavior for all agents:
 

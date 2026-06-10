@@ -121,7 +121,7 @@ Resolved mismatch:
 - This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
 - The explicit `BeautyQSeedReady` edge does not by itself solve production search readiness. Future implementation still needs a source-of-truth and freshness design for repository snapshots, Elasticsearch indexes, and any production search-read model.
 - The catalog snapshot/in-memory readiness proof only proves explicit test-local document readiness before backend construction. It does not define production freshness, refresh, staleness, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
-- That proof is a startup readiness shape only. It does not make the route production-exposed, and it leaves the production freshness/staleness problem unresolved.
+- That proof originally characterized startup readiness only. Current production route exposure exists separately through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`. The exposed route still uses seed-resource catalog + `InMemorySearchBackend`; it does not solve freshness, refresh, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
 
 ## D. Elasticsearch Path
 
@@ -205,7 +205,7 @@ Non-production Qdrant/hybrid runner status:
   * explicit indexing via `indexSnapshot()` with real Qdrant (`BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE=true`);
   * explicit retrieval via `run(...)` with real Qdrant (`BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true`).
 * These smokes use real Qdrant, but not production route wiring.
-* User-verified external-enabled full validation run: 848 tests, 125 suites, 848 succeeded, 0 failed, 0 aborted, 1 canceled.
+* User-verified external-enabled full validation run was reported green.
 
 Production-wired/current:
 
@@ -352,7 +352,7 @@ Current ES eval pieces include:
 * `BeautySearchElasticsearchIntegrationSpec` — Docker-backed integration eval subsets.
 * `ElasticsearchSearchResponseInterpreterSpec` — response interpreter unit tests.
 
-The next B-lite step is normalized `EngineEvalResult`; `BeautySearchResponse` projection must not be treated as the benchmark core.
+The next B-lite step is connecting ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`. The pure `EngineEval` comparison model is implemented.
 
 ES-native eval measures:
 
@@ -397,15 +397,24 @@ Simulated hybrid computes:
 * Qdrant noise rate on hard negatives.
 * Simulated hybrid gain over ES-alone.
 
-### Design concepts (roadmap)
+### Design concepts (implemented)
 
-* `EngineEvalQueryClass` — exact_service, category, structured_filter, price_duration, geo_local, semantic_vague, broad_intent, hard_negative, mixed.
-* `EngineExpectedRole` — es_should_handle, qdrant_may_complement, qdrant_should_stay_silent, hybrid_may_improve.
-* `EngineEvalResult` — engine, queryId, variantIds, scores/diagnostics where available.
+Implemented pure EngineEval model (full API and metric semantics in handoff doc):
+
+* `EngineEval.scala`: `EngineEvalEngine` (Elasticsearch, Qdrant, SimulatedHybrid), `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, `EngineEvalComparisonMetrics.from(...)`.
+* `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.
+
+M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) status:
+
+* Started by the pure `EngineEval` comparison model.
+* Not complete.
+* Next work: connect ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`.
+* Still offline/eval only.
+* Production route wiring exists for `POST /beauty-search` via seed-resource catalog + `InMemorySearchBackend`. Elasticsearch, Qdrant, and hybrid remain not production-wired.
 
 ### Test taxonomy for B-lite
 
-* Atomic / Contractual: eval query classification model, engine expected role model, `EngineEvalResult` model, ES result normalization, Qdrant result normalization, complement/noise/overlap metric calculations, simulated hybrid merge.
+* Atomic / Contractual: eval query classification model, engine expected role model, `EngineEvalResult` model (implemented), ES result normalization, Qdrant result normalization, complement/noise/overlap metric calculations (implemented via `EngineEvalComparisonMetrics.from`), simulated hybrid merge.
 * Group / Contractual: fake ES executor → benchmark report, fake Qdrant executor → benchmark report, fake ES + Qdrant results → simulated hybrid report.
 * Communication: ES Docker benchmark smoke, Qdrant Docker/Llama benchmark smoke, env-gated only.
 * Benchmark: ES-alone report, Qdrant-alone report, simulated-hybrid report, saved report comparison.
@@ -435,40 +444,28 @@ Decision policy boundary:
 
 ## Current Production Search Status Summary
 
+For full current state, see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
+
 Production-wired/current:
 
 - `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- `BeautySearchService.Impl[F]` and `BeautySearchBackend[F]` are production-bound through the included route module.
-- `BeautySearchApi[F]` is production-exposed through the same include.
 - The backend is seed-resource catalog snapshot readiness plus `InMemorySearchBackend[F]`.
 - This is lexical/simple/catalog-first. It is not Elasticsearch, not Qdrant, and not hybrid.
 - No Elasticsearch search backend binding found.
 - No Qdrant/hybrid production binding found.
 - No search role in `LeaderboardRole.scala`.
-- `BeautySearchProductionInclusionActivation`/`Handle`/`IncludedApis` still exist as a staging/helper boundary, but they are NOT the active production gate. The route is exposed directly via `LeaderboardPlugin.modules.api` include, not via the old inclusion handle. A real kill switch / enable-disable route gate remains future hardening.
 
-Implemented/current but mostly test/experiment exercised:
+Implemented but mostly test/experiment exercised:
 
-- Pure `POST /beauty-search` Tapir contract skeleton and fake-service route contract tests.
-- Thin unwired `BeautySearchApi`.
-- Fake-backend `BeautySearchService.Impl` binding proof.
-- Src/main ready-catalog document helper and opt-in catalog/in-memory backend/service module with focused proof.
-- Src/main opt-in end-to-end seed-catalog/in-memory route module with focused smoke proof.
-- Test-only explicit app-graph boundary proof for the Beauty search API/service/backend stack.
-- Disabled-by-default production inclusion activation/handle proof.
-- Search DSL/spec.
-- Parser.
-- Document builder/snapshot loaders.
-- In-memory backend.
+- Search DSL/spec, parser, document builder/snapshot loaders.
 - Elasticsearch interpreters.
-- Qdrant/vector components.
-- Hybrid/generic retrieval seams.
+- Qdrant/vector components, hybrid/generic retrieval seams.
 - Eval/benchmark code.
 
 Service binding acceptance criteria for future implementation:
 
-- Future production binding must answer where `BeautySearchService.Impl` is bound or included.
-- It must answer which `BeautySearchBackend` is bound first and whether the seed-catalog/in-memory route module is acceptable for initial enabled exposure.
+- Future production-grade backend migration must answer where the replacement `BeautySearchService`/`BeautySearchBackend` binding is selected and how it replaces or coexists with the current seed/in-memory route.
+- It must answer which `BeautySearchBackend` is bound first.
 - It must define how catalog/index readiness and freshness/staleness are guaranteed.
 - It must define how parser/backend failures are represented at the route boundary.
 - It must show which route-level contract tests prove request/response/error behavior.

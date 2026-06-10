@@ -216,3 +216,26 @@ New coverage should continue to follow this rule:
 
 1. Add explicit Qdrant quality assertions only after the embedding model and config are stable.
 2. Design fallback or hybrid criteria later as a separate measured change.
+
+## B-lite EngineEval Model
+
+Full API and metric semantics in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
+
+The pure `EngineEval` comparison model is implemented for B-lite ES-native + Qdrant-native eval:
+
+* `EngineEval.scala`: `EngineEvalEngine` (Elasticsearch, Qdrant, SimulatedHybrid), `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, `EngineEvalComparisonMetrics.from(...)`.
+* `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.
+
+Key semantics:
+
+* `EngineEvalQueryClass` is taxonomy metadata for future eval inventory classification; it is not currently an input to `EngineEvalComparisonMetrics.from(...)`.
+* `EngineExpectedRole` drives first-pass metrics.
+* Metrics count distinct variant ids by default.
+* `qdrantNoiseCount` counts distinct Qdrant ids only when expected role is `QdrantShouldStaySilent`; otherwise it is 0.
+* Focused result reported: last reported focused verification was green.
+
+ES-native and Qdrant-native engines should each be designed from their own primitives:
+
+* Elasticsearch: mappings, analyzers, bool/filter/range/geo queries, aggregations/facets, scoring/boosting, pagination/search_after.
+* Qdrant: embedding text, model identity, dimension, distance, topK, scoreThreshold, payload filters.
+* Product response assembly is a projection over engine-native results. Engines must not be forced to mimic the current in-memory backend.

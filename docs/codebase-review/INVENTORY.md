@@ -674,14 +674,14 @@ Supported by code/docs:
 
 Uncertain boundaries:
 
-- Production search API boundary is uncertain: search services/models exist, but this pass did not find search API binding in `LeaderboardPlugin.modules.api`.
+- Superseded historical pass-1 uncertainty: this pass did not find a production search API binding in `LeaderboardPlugin.modules.api`. Current source state: `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`. The exposed backend is seed-resource catalog + `InMemorySearchBackend`; Elasticsearch, Qdrant, and hybrid remain not production-wired.
 - Elasticsearch runtime boundary is partly uncertain: pure interpreters and integration tests exist, but production client/resource composition was not fully traced.
 - `BeautySearchSpec` naming is domain-specific, while docs call some pieces reusable/generic; pass 2 should distinguish actual generic API from BeautyQ-named reusable code.
 - Provider vs salon boundary is uncertain: code has `Master` and `MasterLocation`; requested salon concept is not first-class in inspected source.
 
 ## 11. Open questions for pass 2
 
-- Is there a production HTTP route or role for Beauty search, or is current search exercised only by tests/experiments? Evidence to inspect: `LeaderboardPlugin.modules.api`, all `leaderboard.api` files, and search service bindings.
+- Superseded historical open question: pass 1 asked whether Beauty search had a production HTTP route or role, or was exercised only by tests/experiments. Current source state: `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`. The exposed backend is seed-resource catalog + `InMemorySearchBackend`; Elasticsearch, Qdrant, and hybrid remain not production-wired. Evidence to inspect remains: `LeaderboardPlugin.modules.api`, all `leaderboard.api` files, and search service bindings.
 - How exactly is `BeautySearchService.Impl` constructed and used? Does any production path bind Elasticsearch/in-memory/Qdrant as `BeautySearchBackend`?
 - Are Elasticsearch client/index creation and ingestion wired as runtime resources, or only test/integration helpers? Inspect `ElasticsearchDockerPlugin`, integration specs, and any client classes not captured by symbol grep.
 - What is the exact status of `MasterServiceOfferVariantApi` typed GET migration? Reconcile `docs/http-master-service-offer-variant-typed-get-plan.md`, `docs/http-legacy-json-contracts.md`, Tapir endpoint source, and route-level tests.

@@ -9,7 +9,7 @@ Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic re
 
 ## 1.5. B-lite Strategic Direction
 
-B-lite is the current strategic direction after the B2 hidden control-plane module proof.
+B-lite is the current strategic direction after the B2 hidden control-plane module proof. Full status in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 Production serving stays sequential and safe:
 
@@ -29,7 +29,7 @@ ES-native eval and Qdrant-native eval appear early and together
 ```
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-The next target is M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison.
+M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is started by the pure `EngineEval` comparison model. M-ESQ-EVAL is not complete. Next work: connect ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`.
 
 Simulated hybrid belongs in benchmark/eval only. It must not imply route wiring, HybridServe, or auto-supplement production responses.
 
@@ -615,7 +615,7 @@ Future implementation should be split into small patches:
 9. Done: docs record real-resource non-production hybrid adapter boundary.
 10. Done: non-production real-resource Qdrant/hybrid manual runner milestone reached (manual adapter/handle, env-gated indexing and retrieval smokes, Distage module-shape proofs).
 11. Done: production-hybrid control-plane v0 — value/decision types, readiness/diagnostics interfaces, `BeautySearchHybridDecisionEvaluator[F]` with conservative policy (`SeedCatalogOnly` default, `HybridShadow` diagnostics-only, `HybridServe` requires `Ready`, `NotReady` → `UseSeedCatalogOnly`); covered by `BeautySearchHybridControlPlaneSpec`; not production wiring.
-12. Current: B-lite — pause runtime hybrid module expansion after control-plane module proof; build ES-native + Qdrant-native eval comparison (M-ESQ-EVAL).
+12. Current: B-lite — pure `EngineEval` comparison model implemented (`EngineEval.scala`, `EngineEvalSpec.scala`); M-ESQ-EVAL started, not complete; next step: connect ES/Qdrant eval outputs to normalized `EngineEvalResult`; still offline/eval only; runtime hybrid remains paused.
 13. M-ESQ-EVAL: ES-native eval, Qdrant-native eval, simulated hybrid (offline only), overlap/complement/noise metrics.
 14. Later design: lifecycle/freshness/observability.
 15. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.

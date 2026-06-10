@@ -226,7 +226,7 @@ Pass 3 audited and hardened the generated documentation under `docs/codebase-rev
 
 ## Remaining open questions
 
-- Whether search exposure exists outside inspected main-source HTTP/API/role/plugin paths remains unproven; pass-3 wording says no production route/binding was found in inspected source.
+- Superseded historical note: pass-3 wording said no production route/binding was found in inspected source. Current known route wiring is `POST /beauty-search` through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`; the exposed backend is seed-resource catalog snapshot + `InMemorySearchBackend`, not ES/Qdrant/hybrid.
 - Whether stale planning docs should be retired or rewritten remains a documentation-management question.
 - Whether `SeedScopedFromRepositories` should be changed to depend directly on `BeautyQSeedReady` remains an implementation question.
 - Whether availability/scheduling is intended but absent remains a product/domain question requiring human confirmation.

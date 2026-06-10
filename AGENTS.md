@@ -11,7 +11,6 @@ Stable repo-specific guardrails for BeautyQ work. Prompts should not repeat this
 * Do not commit logs, build artifacts, copied dependency sources, temporary `println`, or debug output.
 * Do not create `izumi/` or copy Distage/source dependency files into the repo.
 * If the requested change needs wider scope, stop and report the smallest safe next step.
-* Commit messages should include behavior, tests, unchanged boundaries, and verification caveats.
 
 ## Prompt / delegated-agent discipline
 
@@ -26,6 +25,8 @@ For delegated agents, use direct cheap tasks:
 Do not ask weak agents to explore broad design, Distage internals, runtime wiring, or multi-layer changes. Architecture/audit is coordinator work; agents edit code/docs and run focused checks.
 
 Agent reports should be short: files changed, focused result, deviations/compile fixes, and blocked verification.
+
+Coordinator prompt-writing rules live in `docs/local/COORDINATOR_PROMPTING_REMINDER.md`. Use it before drafting MiniMax/Qwen/MiMo prompts. Do not paste it to delegated agents.
 
 Docs cadence:
 
@@ -130,6 +131,8 @@ Current route characterization:
 ## Architecture docs
 
 Use `docs/codebase-review/README.md` as architecture entrypoint. `docs/codebase-review/INVENTORY.md` is the factual index. Do not treat roadmap docs or experiments as production behavior; check current code/tests when production wiring matters.
+
+For the current BeautyQ search state (route wiring, backend roles, milestones, B-lite status, forbidden paths), see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. It is the canonical handoff for new chats.
 
 ## Distage and seed rules
 
@@ -337,6 +340,18 @@ Rules:
 * Hard-negative/noise queries must not route to Qdrant because of residual text.
 * Eval query ids may appear in tests/docs, not production routing.
 
+ES-native principle:
+
+* Elasticsearch should be designed from Elasticsearch primitives: mappings, analyzers, bool/filter/range/geo queries, aggregations/facets, scoring/boosting, pagination/search_after, profile/debug where useful.
+* Product response assembly is a projection over engine-native results.
+* ES must not be forced to mimic current in-memory response order/scoring.
+
+Qdrant-native principle:
+
+* Qdrant should be designed from Qdrant primitives: embedding text, model identity, dimension, distance, topK, scoreThreshold, payload filters, missing lookup handling.
+* Qdrant is semantic recall/complement candidate, not auto-helper.
+* Hard filters/facets/price/duration/exact business constraints remain lexical/parser/ES-owned unless separately approved.
+
 Hybrid policy:
 
 * generic hybrid retrieval container is not ranking policy;
@@ -413,20 +428,7 @@ B-lite guardrails:
 * No Qdrant auto-supplement or `HybridServe` from benchmark alone.
 * Resource-backed hidden Qdrant/hybrid module work is paused until ES/Qdrant eval comparison is improved.
 
-M-ESQ-EVAL target:
-
-* eval queries have query class / expected engine role;
-* ES executor can produce normalized engine-eval results;
-* Qdrant executor can produce normalized engine-eval results;
-* simulated hybrid report computes overlap/complement/noise;
-* benchmark report does not change production behavior.
-
-Metric rules:
-
-* Engine comparison counts by distinct variant ids unless a metric explicitly says it counts ranked slots or duplicates.
-* Recall/complement/overlap/gain metrics should not be inflated by duplicate ids.
-* Duplicate ids are either a separate validation failure or a separate duplicate-count metric.
-* `qdrantNoiseCount` should count Qdrant hits only when the expected role says Qdrant should stay silent; otherwise it is zero.
+M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison): started by pure `EngineEval` model, not complete. Full status, API, and metric semantics in handoff doc.
 
 Not target yet:
 

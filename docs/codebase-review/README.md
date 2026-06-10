@@ -27,14 +27,15 @@ Read these docs in order:
 7. Seed data comes from `bifunctor-tagless/src/main/resources/seed/wandsbek_hamburg_beauty_services_seed_ready.json`, decoded by `BeautyQSeedLoader.ResourceLoader`, inserted by `BeautyQSeedInserter.Impl`, and represented in DI by `BeautyQSeedReady`.
 8. HTTP APIs are role-backed `*Api` adapters in `leaderboard.api` using pure `*TapirEndpoints` definitions in `leaderboard.http.tapir`.
 9. Search code is implemented as models, DSL/spec, document snapshots, parser, in-memory backend, Elasticsearch interpreters, Qdrant/vector components, generic retrieval seams, hybrid experiments, and benchmark/eval code.
-10. Targeted pass-2 and pass-3 inspection found no production `BeautySearchService`, `BeautySearchBackend`, search API, Elasticsearch search backend, Qdrant backend, or hybrid binding in `LeaderboardPlugin.scala`; Beauty search remains a design boundary that requires explicit route/binding for future implementation.
+10. `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`. The exposed backend is seed-resource catalog snapshot + `InMemorySearchBackend`. Elasticsearch, Qdrant, and hybrid remain not production-wired.
+
+For the full current BeautyQ search state (route behavior, backend roles, milestones, B-lite status, M-ESQ-EVAL, forbidden paths), see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 ## What Is Definitely Not Production-Ready Yet
 
 - Qdrant/hybrid is not production-wired: docs `search-dsl-qdrant-vector-backend.md` and `search-dsl-hybrid-v1-plan.md` call it non-production/manual/local/experimental, and `LeaderboardPlugin.scala` does not bind Qdrant or hybrid search services.
 - `ExperimentalBeautySearchService` is separate from `BeautySearchService` and tests assert that separation in `BeautySearchPureSpec`.
 - Benchmark decision policy is decision support, not production automation, per `docs/search-dsl-qdrant-vector-backend.md`, `docs/search-dsl-hybrid-v1-plan.md`, and `QdrantEmbeddingBenchmarkDecisionPolicy` tests.
-- Search HTTP exposure is not production-wired in inspected source: no `SearchApi`, `/search` Tapir endpoint, or search role appears in main API/role/plugin wiring.
 - Real-resource Qdrant/Llama tests are env-gated/manual/local or Docker-backed; they do not prove production lifecycle.
 
 ## Generated Docs

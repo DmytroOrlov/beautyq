@@ -308,3 +308,44 @@ Without GPT, avoid or prohibit:
   EngineEvalResult, or Qdrant/semantic resources disabled mode behavior.
 * Do not treat these indexes as truth or as the project's official benchmark.
 * Do not use this policy to justify production model switching.
+
+## 9. BeautyQ Coordinator Workflow Override
+
+The generic model selection policy above is subordinate to the current BeautyQ
+coordinator workflow documented in `docs/local/COORDINATOR_PROMPTING_REMINDER.md`.
+
+### Role split
+
+* Coordinator/GPT does architecture, audit, design, and strategy.
+* MiniMax/Qwen/MiMo should not be asked for broad architecture/audit/design
+  unless explicitly requested as narrow final verification.
+* MiniMax/Qwen/MiMo are primarily for bounded edits, focused checks,
+  mechanical docs/code patches, and narrow claim verification.
+
+### What agents receive
+
+Agents should get:
+
+* Exact read/edit files.
+* Exact behavior to add or verify.
+* Focused validation command.
+* Short-report requirement.
+
+Agents should not get:
+
+* Broad repo audit.
+* Architecture design.
+* "Use attached bundle."
+* "Find all relevant files."
+* Unused suggested params.
+
+### B-lite EngineEval prompt rules
+
+For B-lite EngineEval prompts to MiniMax/Qwen/MiMo:
+
+* `MasterServiceOfferVariantId` is a UUID alias; inline deterministic UUID
+  fixtures in prompts instead of making agents search for id construction.
+* `EngineEvalQueryClass` is taxonomy metadata.
+* `EngineExpectedRole` drives first-pass metrics.
+* Do not include `queryClass` in metrics functions unless behavior uses it.
+* B-lite metrics count distinct variant ids by default.
