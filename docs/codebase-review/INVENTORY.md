@@ -34,6 +34,7 @@ Build/module observations:
 - `docs/LOCAL_LLM_DISTAGE_APP_MODEL.md`: local reference for Distage app model and schema-order rules. Evidence: documents that repo DDL runs in resource constructors and FK-backed tables should express parent-table dependencies through constructor dependencies.
 - `docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md`: local reference for Izumi/BIO/Distage style. Evidence: focuses on `F[+_, +_]`, `Applicative2`, `Error2`, `Lifecycle`, `ModuleDef`, etc.
 - `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`: local reference for Tapir HTTP migration pattern. Evidence: says pure endpoint contracts are in `*TapirEndpoints.scala`, adapters in `leaderboard.api.*Api`, and `TapirHttpSupport` centralizes route interpreter policy.
+- `docs/LOCAL_LLM_MODEL_SELECTION_POLICY.md`: local operational guidance for choosing an LLM model during local development and review loops. Evidence: includes model capability table, derived value formulas, GPT-saving and No-GPT mode selection logic, decision matrix, and cost-aware guidance.
 
 Documentation drift noted:
 
