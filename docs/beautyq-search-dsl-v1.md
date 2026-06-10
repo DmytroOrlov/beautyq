@@ -106,7 +106,12 @@ The Elasticsearch interpreters must remain mechanical. If a search behavior affe
 
 ### In-memory
 
-`InMemorySearchBackend` applies the same parsed intent and shared response assembly without Docker.
+`InMemorySearchBackend` is a temporary seed-backed MVP/product-contract stabilizer.
+It is not an in-memory Elasticsearch and must not be treated as an ES scoring/order/analyzer oracle.
+
+Each engine (Elasticsearch, Qdrant) should be designed from its own primitives/capabilities:
+mappings/analyzers for ES, embedding/text/vectors for Qdrant.
+Product response projection adapts engine-native results into `BeautySearchResponse`.
 
 This is the main regression harness for search semantics.
 

@@ -120,13 +120,39 @@ Remaining gap:
 
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
 
-### Current phase: A -> B, production-hybrid control-plane v0
+### Current phase: A -> B-lite, ES/Qdrant eval comparison
 
 The current phase is between:
 
 - A: non-production real-resource Qdrant/hybrid manual runner — reached.
-- B: production-hidden opt-in Qdrant/hybrid module, not routed — not started.
+- A→B: production-hybrid control-plane v0 — reached.
+- B1: production-hidden hybrid activation/handle — reached.
+- B2: production-hidden hybrid control-plane modules — reached.
+- B-lite: ES-native + Qdrant-native benchmark comparison — current target.
+- resource-backed hidden Qdrant/hybrid module expansion — paused.
 - C: production `/beauty-search` hybrid backend — future.
+
+B-lite is the current strategic direction after B2.
+
+Production serving stays sequential and safe:
+
+```text
+current seed/in-memory route
+  -> ES lexical baseline
+  -> Qdrant shadow only if eval proves complement
+  -> controlled hybrid only after readiness/kill-switch/policy
+```
+
+Eval/benchmark advances in parallel:
+
+```text
+ES-native eval and Qdrant-native eval appear early and together
+  -> compare ES-alone, Qdrant-alone, simulated hybrid
+  -> decide from metrics, not from architecture enthusiasm
+```
+
+Runtime hybrid module expansion is paused after the hidden control-plane module proof.
+The next target is an ES-native + Qdrant-native eval comparison layer.
 
 The codebase now contains pure control-plane value/decision types:
 `BeautySearchHybridSnapshotIdentity`,
@@ -182,6 +208,78 @@ Preserved boundary:
 - No startup indexing.
 - No HTTP routing metadata for hybrid without separate design.
 - No production inclusion boundary should default to Qdrant/hybrid or use them as fallback/rollback.
+
+### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
+
+Target milestone:
+
+```text
+M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
+```
+
+Goal:
+
+* Build ES-native eval and Qdrant-native eval comparison layer.
+* Compare ES-alone, Qdrant-alone, and simulated hybrid (offline only).
+* Decide from metrics, not from architecture enthusiasm.
+* Keep production serving unchanged during eval development.
+
+Current benchmark pieces (exist but not yet unified):
+
+* `BeautySearchEval` / `BeautySearchEvalInventory` — common eval dataset / expectations.
+* `BeautySearchElasticsearchIntegrationSpec` — ES Docker/integration eval subsets.
+* `QdrantSemanticCandidateEvalSpec` — Qdrant semantic candidate eval, currently narrower/broad subset focused.
+* `QdrantEmbeddingBenchmark*` — embedding endpoint/model benchmark, saved report comparison, single/dual endpoint gates.
+* `HybridDocumentRetrieval` / hybrid response specs — merge/dedup/diagnostics mechanics.
+
+Problem:
+
+These pieces are useful but not yet a single ES-native + Qdrant-native engine comparison layer.
+
+Design concepts (roadmap terms, not necessarily implemented code):
+
+* `EngineEvalQueryClass` — exact_service, category, structured_filter, price_duration, geo_local, semantic_vague, broad_intent, hard_negative, mixed.
+* `EngineExpectedRole` — es_should_handle, qdrant_may_complement, qdrant_should_stay_silent, hybrid_may_improve.
+* `EngineEvalResult` — engine, queryId, variantIds, scores/diagnostics where available.
+
+Metrics to add:
+
+* ES recall by query class.
+* Qdrant recall by semantic/broad class.
+* Qdrant complement over ES misses.
+* Qdrant noise rate on hard negatives / structured queries.
+* ES ∩ Qdrant overlap.
+* Simulated hybrid gain over ES-alone.
+* Missing lookup rate.
+* Latency if available.
+
+Most important:
+
+* Qdrant complement over ES misses.
+* Qdrant noise rate.
+
+Simulated hybrid:
+
+* Simulated hybrid belongs in benchmark/eval only.
+* Simulated hybrid should combine ES EngineEvalResult + Qdrant EngineEvalResult offline.
+* It must not imply route wiring.
+* It must not imply HybridServe.
+* It must not auto-supplement production responses.
+
+Constructive test taxonomy for B-lite:
+
+* Atomic / Contractual: eval query classification model, engine expected role model, EngineEvalResult model, ES result normalization, Qdrant result normalization, complement/noise/overlap metric calculations, simulated hybrid merge.
+* Group / Contractual: fake ES executor → benchmark report, fake Qdrant executor → benchmark report, fake ES + Qdrant results → simulated hybrid report.
+* Communication: ES Docker benchmark smoke, Qdrant Docker/Llama benchmark smoke, env-gated only.
+* Benchmark: ES-alone report, Qdrant-alone report, simulated-hybrid report, saved report comparison.
+
+Readiness criteria:
+
+* Eval queries have `queryClass` / `expectedEngineRole`.
+* ES executor can produce normalized `EngineEvalResult`.
+* Qdrant executor can produce normalized `EngineEvalResult`.
+* Simulated hybrid report computes overlap/complement/noise.
+* Benchmark report does not change production behavior.
 
 ### Seed-Scoped Repository Snapshot Readiness Edge
 
@@ -332,7 +430,9 @@ These are recommendations only, not current architecture:
 
 1. Design observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the seed-resource/in-memory production route.
 2. Document and implement the production freshness contract before treating seed-resource startup snapshot readiness as a durable product behavior.
-3. Keep Qdrant/hybrid out of this production hardening path unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
-4. If Elasticsearch is chosen later, add explicit backend/client/index lifecycle and freshness design before production binding.
-5. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
-6. Reconcile stale docs before relying on them in future implementation passes.
+3. Build M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison. Compare ES-alone, Qdrant-alone, and simulated hybrid (offline only). Decide from metrics.
+4. Pause runtime hybrid module expansion until ES/Qdrant eval comparison is improved.
+5. Keep Qdrant/hybrid out of this production hardening path unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
+6. Before Elasticsearch production binding, add explicit backend/client/index lifecycle and freshness design.
+7. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
+8. Reconcile stale docs before relying on them in future implementation passes.

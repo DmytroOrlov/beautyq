@@ -7,7 +7,44 @@ The reached non-production manual real-resource runner remains manual/test/local
 
 Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall only at explicit non-production boundaries.
 
-It should not replace the Elasticsearch V1 path. Elasticsearch remains the deterministic baseline for lexical search, filters, facets, and standard response assembly.
+## 1.5. B-lite Strategic Direction
+
+B-lite is the current strategic direction after the B2 hidden control-plane module proof.
+
+Production serving stays sequential and safe:
+
+```text
+current seed/in-memory route
+  -> ES lexical baseline
+  -> Qdrant shadow only if eval proves complement
+  -> controlled hybrid only after readiness/kill-switch/policy
+```
+
+Eval/benchmark advances in parallel:
+
+```text
+ES-native eval and Qdrant-native eval appear early and together
+  -> compare ES-alone, Qdrant-alone, simulated hybrid
+  -> decide from metrics, not from architecture enthusiasm
+```
+
+Runtime hybrid module expansion is paused after the hidden control-plane module proof.
+The next target is M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison.
+
+Simulated hybrid belongs in benchmark/eval only. It must not imply route wiring, HybridServe, or auto-supplement production responses.
+
+Guardrails:
+
+* Pause runtime hybrid module expansion until ES/Qdrant eval comparison is improved.
+* ES and Qdrant may advance in eval/benchmark together, but production serving remains sequential.
+* No Qdrant auto-supplement / HybridServe from benchmark alone.
+* Simulated hybrid belongs to offline benchmark/eval, not route/runtime behavior.
+* InMemorySearchBackend is a temporary seed-backed MVP/product-contract stabilizer. It is not an in-memory Elasticsearch and must not be treated as ES scoring/order/analyzer oracle.
+* Elasticsearch should be designed from ES primitives: mappings, analyzers, bool/filter/range/geo queries, aggregations/facets, scoring/boosting.
+* Qdrant should be designed from Qdrant primitives: embedding text, model identity, dimension, distance, topK, scoreThreshold, payload filters, missing lookup handling, semantic complement/noise.
+* Product response projection adapts engine-native results into `BeautySearchResponse`; engines must not be forced to mimic the current in-memory backend.
+
+It should not replace the Elasticsearch V1 path. Elasticsearch is the intended lexical retrieval baseline for text search, structured filters, facets, and exact/range/geo constraints. Product response assembly remains a projection layer over engine-native results.
 That lexical baseline remains separate and injected as the existing lexical backend.
 
 Qdrant should add recall for the narrow semantic gap already proven by the current Qdrant-only eval slice:
@@ -491,7 +528,7 @@ BeautyQ-specific projection, carousel, routing, lifecycle, and metadata work rem
 
 ### Channel Responsibilities
 
-Elasticsearch remains the deterministic baseline for:
+Elasticsearch is the intended lexical retrieval baseline for:
 
 - filters
 - facets
@@ -578,9 +615,11 @@ Future implementation should be split into small patches:
 9. Done: docs record real-resource non-production hybrid adapter boundary.
 10. Done: non-production real-resource Qdrant/hybrid manual runner milestone reached (manual adapter/handle, env-gated indexing and retrieval smokes, Distage module-shape proofs).
 11. Done: production-hybrid control-plane v0 — value/decision types, readiness/diagnostics interfaces, `BeautySearchHybridDecisionEvaluator[F]` with conservative policy (`SeedCatalogOnly` default, `HybridShadow` diagnostics-only, `HybridServe` requires `Ready`, `NotReady` → `UseSeedCatalogOnly`); covered by `BeautySearchHybridControlPlaneSpec`; not production wiring.
-12. Later design: lifecycle/freshness/observability.
-13. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
-14. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
+12. Current: B-lite — pause runtime hybrid module expansion after control-plane module proof; build ES-native + Qdrant-native eval comparison (M-ESQ-EVAL).
+13. M-ESQ-EVAL: ES-native eval, Qdrant-native eval, simulated hybrid (offline only), overlap/complement/noise metrics.
+14. Later design: lifecycle/freshness/observability.
+15. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.
+16. Later: larger benchmark taxonomy expansion covering hard negatives, near-miss semantic queries, noisy/typo cases, multilingual cases, and broader second-domain eval cases when available.
 
 The second-domain proof is done.
 The fake-only explicit module gating proof is done.

@@ -453,6 +453,19 @@ production hybrid backend
 
 Remaining work after this milestone is tracked conversationally in qwen-runs; keep it out of code/docs unless asked.
 
+## B-lite strategic direction (current)
+
+B-lite is the current strategic direction after the B2 hidden control-plane module proof.
+
+Guardrails:
+
+* B-lite: pause runtime hybrid expansion after hidden control-plane module proof.
+* ES/Qdrant may advance together only in eval/benchmark.
+* Production serving remains sequential.
+* Simulated hybrid is offline-only.
+* No Qdrant auto-supplement / HybridServe from benchmark alone.
+* InMemorySearchBackend is not an in-memory Elasticsearch or ES oracle.
+
 ## Qdrant lifecycle rules
 
 * Versioned collection names are the current policy. No production alias/blue-green yet.

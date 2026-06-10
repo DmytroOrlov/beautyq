@@ -302,6 +302,114 @@ Not production wiring:
 - Not route wiring.
 - No Qdrant/Llama construction.
 
+## F3. B-lite: ES-native + Qdrant-native Eval Architecture
+
+Current strategic direction after B2:
+
+```text
+Production serving:
+  current seed/in-memory route
+  -> ES lexical baseline
+  -> Qdrant shadow only if eval proves complement
+  -> controlled hybrid only after readiness/kill-switch/policy
+
+Eval/benchmark:
+  ES-native eval and Qdrant-native eval appear early and together
+  -> compare ES-alone, Qdrant-alone, simulated hybrid
+  -> decide from metrics, not from architecture enthusiasm
+```
+
+Runtime hybrid module expansion is paused after the hidden control-plane module proof.
+The next target is an ES-native + Qdrant-native eval comparison layer.
+
+### InMemorySearchBackend role
+
+`InMemorySearchBackend` is a temporary seed-backed MVP/product-contract stabilizer.
+
+It is not:
+
+* an in-memory Elasticsearch.
+* the oracle for ES scoring/order/analyzer behavior.
+* a semantic reference for Qdrant.
+
+Elasticsearch should be designed from Elasticsearch primitives/capabilities:
+
+* mappings, analyzers, bool/filter/range/geo queries, aggregations/facets, scoring/boosting, pagination/search_after, profile/debug where useful.
+
+Qdrant should be designed from Qdrant primitives/capabilities:
+
+* embedding text, model identity, dimension, distance, topK, scoreThreshold, payload filters, missing lookup handling, semantic complement/noise.
+
+Product response projection adapts engine-native results into `BeautySearchResponse`.
+Engines must not be forced to mimic the current in-memory backend.
+
+### ES-native eval path
+
+Current ES eval pieces include:
+
+* `ElasticsearchSearchRequestInterpreter.request(spec, input, intent)` — ES request from spec.
+* `ElasticsearchSearchResponseInterpreter.interpret` — ES response to `BeautySearchResponse`.
+* `BeautySearchElasticsearchIntegrationSpec` — Docker-backed integration eval subsets.
+* `ElasticsearchSearchResponseInterpreterSpec` — response interpreter unit tests.
+
+The next B-lite step is normalized `EngineEvalResult`; `BeautySearchResponse` projection must not be treated as the benchmark core.
+
+ES-native eval measures:
+
+* lexical recall by query class.
+* filter/facet accuracy.
+* price/duration constraint enforcement.
+* geo constraint accuracy.
+* exact attribute filtering.
+* scoring/ranking sanity under fixed mapping/analyzer/query fixtures.
+
+### Qdrant-native eval path
+
+Qdrant-native eval uses:
+
+* `QdrantSemanticCandidateBackend` — semantic candidate retrieval.
+* `QdrantSemanticCandidateSearch` — query embedding + search.
+* `QdrantEmbeddingBenchmark*` — embedding endpoint/model benchmarking.
+* `QdrantSemanticCandidateEvalSpec` — semantic candidate eval.
+
+Qdrant-native eval measures:
+
+* semantic recall for broad/conversational queries.
+* complement over ES misses.
+* noise rate on hard negatives / structured queries.
+* embedding quality by model/endpoint.
+
+### Simulated hybrid (offline only)
+
+Simulated hybrid belongs in benchmark/eval only.
+
+Simulated hybrid:
+
+* combines ES `EngineEvalResult` + Qdrant `EngineEvalResult` offline.
+* must not imply route wiring.
+* must not imply `HybridServe`.
+* must not auto-supplement production responses.
+
+Simulated hybrid computes:
+
+* ES ∩ Qdrant overlap.
+* Qdrant complement over ES misses.
+* Qdrant noise rate on hard negatives.
+* Simulated hybrid gain over ES-alone.
+
+### Design concepts (roadmap)
+
+* `EngineEvalQueryClass` — exact_service, category, structured_filter, price_duration, geo_local, semantic_vague, broad_intent, hard_negative, mixed.
+* `EngineExpectedRole` — es_should_handle, qdrant_may_complement, qdrant_should_stay_silent, hybrid_may_improve.
+* `EngineEvalResult` — engine, queryId, variantIds, scores/diagnostics where available.
+
+### Test taxonomy for B-lite
+
+* Atomic / Contractual: eval query classification model, engine expected role model, `EngineEvalResult` model, ES result normalization, Qdrant result normalization, complement/noise/overlap metric calculations, simulated hybrid merge.
+* Group / Contractual: fake ES executor → benchmark report, fake Qdrant executor → benchmark report, fake ES + Qdrant results → simulated hybrid report.
+* Communication: ES Docker benchmark smoke, Qdrant Docker/Llama benchmark smoke, env-gated only.
+* Benchmark: ES-alone report, Qdrant-alone report, simulated-hybrid report, saved report comparison.
+
 ## G. Benchmarks / Eval
 
 Implemented/current:
