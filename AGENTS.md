@@ -14,19 +14,10 @@ Stable repo-specific guardrails for BeautyQ work. Prompts should not repeat this
 
 ## Prompt / delegated-agent discipline
 
-For delegated agents, use direct cheap tasks:
-
-* exact files to read;
-* exact files to edit;
-* exact behavior/proofs to add;
-* snippets/mechanical recipe where useful;
-* focused validation command only unless coordinator asks for full test.
-
-Do not ask weak agents to explore broad design, Distage internals, runtime wiring, or multi-layer changes. Architecture/audit is coordinator work; agents edit code/docs and run focused checks.
-
-Agent reports should be short: files changed, focused result, deviations/compile fixes, and blocked verification.
-
-Coordinator prompt-writing rules live in `docs/local/COORDINATOR_PROMPTING_REMINDER.md`. Use it before drafting MiniMax/Qwen/MiMo prompts. Do not paste it to delegated agents.
+* Do not perform broad architecture/audit/design unless explicitly asked.
+* Make bounded edits and focused checks only.
+* If the requested change needs wider scope, stop and report the smallest safe next step.
+* Reports should be short: focused result, deviations/compile fixes, blocked verification.
 
 Docs cadence:
 
@@ -75,19 +66,6 @@ docker rm -f $(docker ps -a -q -f "label=distage.type") || true
 find . -type d -name target -print0 | xargs -0 rm -rf
 sbt 'project bifunctor-tagless' test
 ```
-
-## Context bundles
-
-Write a unique bundle file and copy that file:
-
-```bash
-OUT="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM.txt"
-{ echo "## status"; git status --short; } > "$OUT"
-cpf "$OUT"
-echo "$OUT"
-```
-
-Keep bundles small. Include only current status, compact diff, signatures, nearby specs, and hazard anchors. Do not include `/tmp`, full target output, screenshots, generic pasted files, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
 
 ## Current BeautyQ production search
 

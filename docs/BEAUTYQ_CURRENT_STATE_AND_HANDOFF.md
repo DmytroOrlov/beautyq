@@ -136,3 +136,5 @@ Documented as characterized, not as desired final contract:
 * `docs/beautyq-search-dsl-v1.md` — search DSL V1 and eval coverage
 * `docs/local/COORDINATOR_PROMPTING_REMINDER.md` — coordinator prompt-writing guidance
 * `docs/LOCAL_LLM_MODEL_SELECTION_POLICY.md` — model selection policy
+
+Coordinator workflow rules, including source-truth gating and documentation ownership, live in `docs/local/COORDINATOR_PROMPTING_REMINDER.md`.

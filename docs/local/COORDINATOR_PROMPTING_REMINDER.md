@@ -160,7 +160,6 @@ Validation:
 Do not run full sbt test unless explicitly requested.
 
 Report only:
-- files changed
 - focused result
 - deviations/compile fixes
 ```
@@ -369,9 +368,6 @@ Use direct equality for case objects.
 Good report:
 
 ```text
-Files changed:
-- ...
-
 Focused result:
 - command ...
 - N tests passed
@@ -422,7 +418,7 @@ benchmark is decision support, not production automation
 Put in this coordinator reminder when it is about writing better prompts:
 
 ```text
-inline bundle facts instead of “use attached bundle”
+inline bundle facts instead of "use attached bundle"
 do not include model/thinking boilerplate
 do not ask agents to audit broadly
 include exact id construction/import hints
@@ -440,6 +436,57 @@ exact helper imports
 exact UUID/id construction
 whether queryClass is taxonomy-only
 whether metric counts distinct ids or ranked slots
+```
+
+---
+
+## 1.13 Bundle scripts
+
+Bundles are for the coordinator, not delegated agents.
+
+The user may give bundles to the coordinator so the coordinator can avoid broad repo search and write cheaper, more direct prompts.
+
+After reading a bundle, the coordinator must inline important facts into the delegated prompt.
+
+Do not write delegated prompts that say `use attached bundle`.
+
+### Bundle script rules
+
+* Bundle scripts must write to a unique `/tmp/beautyq-<topic>-<timestamp>-$RANDOM.txt`.
+* Bundle scripts must include only task-relevant status, compact diff, signatures, nearby specs, docs anchors, and hazard scans.
+* Bundle scripts should cap/truncate output when it may grow large.
+* Bundle scripts must run `wc -c "$OUT"`.
+* Bundle scripts must run `cpf "$OUT"` near the end.
+* Bundle scripts must print `echo "$OUT"` last.
+* `cpf "$OUT"` is required because the user relies on it to copy/upload the bundle.
+* Do not include `/tmp`, full `target`, generated build output, screenshots, generic pasted files, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
+
+### Canonical shell shape
+
+```bash
+OUT="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM.txt"
+
+{
+  echo "## status"
+  git status --short
+  echo
+
+  echo "## relevant anchors"
+  rg -n "PatternA|PatternB" AGENTS.md docs bifunctor-tagless/src/main bifunctor-tagless/src/test || true
+} > "$OUT" 2>&1
+
+python3 - <<'PY' "$OUT"
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+data = p.read_text(errors="replace")
+limit = 700_000
+if len(data.encode()) > limit:
+    p.write_text(data[:limit] + "\n\n## TRUNCATED\n")
+PY
+
+wc -c "$OUT"
+cpf "$OUT"
+echo "$OUT"
 ```
 
 ---
@@ -694,7 +741,6 @@ The user runs full after coordinator review.
 MiniMax/Qwen/MiMo reports should be tiny:
 
 ```text
-files changed
 focused result
 deviations/compile fixes
 ```
@@ -892,3 +938,31 @@ Did I separate GPT-capable tasks from MiniMax/Qwen/MiMo mechanical tasks?
 ```
 
 If any answer is bad, rewrite the prompt before sending.
+
+---
+
+# 6. Documentation ownership
+
+Before adding or changing a documented fact, identify its canonical owner.
+
+Prefer one canonical owner per fact. Other docs should use short summaries and pointers. If ownership or drift is unclear, the coordinator should request or build a focused docs bundle before writing a docs prompt.
+
+This is coordinator work, not a default delegated-agent task. Delegated agents should not perform broad duplicate hunts unless explicitly asked. Agent docs prompts should name exact read/edit files and state which doc is the canonical owner, which copies should become pointers, and which short safety-critical guardrails must remain duplicated.
+
+Duplicate only safety-critical guardrails that must be visible at multiple entrypoints; keep those duplicates short and free of implementation detail. Do not copy long API lists, metric semantics, roadmap state, verification counts, bundle rules, or prompt-writing rules into multiple docs.
+
+Exact volatile verification counts belong in reports or commit messages, not long-lived docs.
+
+Classify each docs patch as adding new truth to the canonical owner, moving truth to the canonical owner, replacing duplicate truth with a pointer, or intentionally preserving a short safety-critical guardrail.
+
+---
+
+# 7. Source-truth gate
+
+Before any patch design or delegated-agent prompt, source-confirm the relevant files, types, functions, and fields.
+
+Docs and handoff establish current state and priorities; they are not enough for exact patch APIs. If source truth is missing, ask the user for a focused bundle and stop.
+
+Do not invent conceptual APIs, method signatures, field mappings, test recipes, or agent tasks from docs/memory. This applies before every task, not only during onboarding.
+
+This gate is coordinator responsibility. Delegated prompts should contain exact source-confirmed facts, read/edit files, and validation commands; they should not ask agents to compensate with broad repo searches unless explicitly intended.
