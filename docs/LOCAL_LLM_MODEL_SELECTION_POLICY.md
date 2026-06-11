@@ -12,24 +12,23 @@ It is not a benchmark. It is not product architecture. It is not runtime routing
 It is a practical repo-local heuristic for developers who need to pick a model
 from the currently available endpoints.
 
-The main operational constraint is GPT availability: if most development work is
-done on GPT-5.5 medium/high/xhigh, GPT usage can be exhausted for more than half
-of the week. Therefore GPT should be reserved for high-leverage review and
-risk decisions. Token-heavy repository exploration, drafting, documentation,
-mechanical edits, and first-pass patch planning should usually go to cheaper
-models.
+Model choice follows task type and risk, not GPT availability. See section 9 for
+the current BeautyQ decision order. The main operational constraint is that GPT
+usage can be exhausted for more than half of the week; therefore GPT should be
+reserved for complex code writing and very high-risk production work, not routine
+review or token-heavy exploration.
 
 ## 1. Model Capability Table
 
 | Model | Blended price USD / 1M tokens | Intelligence Index | Coding Index | Agentic Index |
-|---|---:|---:|---:|---:|
-| GPT-5.5 xhigh | 4.35 | 60.2 | 59.1 | 74.1 |
-| GPT-5.5 high | 4.35 | 58.9 | 58.5 | 72.0 |
-| GPT-5.5 medium | 4.35 | 56.7 | 56.2 | 69.4 |
-| MiniMax-M3 | 0.22 | 54.7 | 43.4 | 68.6 |
-| MiMo-V2.5-Pro | 0.18 | 53.8 | 45.5 | 67.4 |
-| MiMo-V2.5 | 0.06 | 49.0 | 42.1 | 65.5 |
-| Qwen3.6 35B A3B | 0.37 | 43.5 | 35.2 | 58.3 |
+|---|------------------------------:|---:|---:|---:|
+| GPT-5.5 xhigh |                          4.35 | 60.2 | 59.1 | 74.1 |
+| GPT-5.5 high |                          4.35 | 58.9 | 58.5 | 72.0 |
+| GPT-5.5 medium |                          4.35 | 56.7 | 56.2 | 69.4 |
+| MiniMax-M3 |                          0.22 | 54.7 | 43.4 | 68.6 |
+| MiMo-V2.5-Pro |                          0.18 | 53.8 | 45.5 | 67.4 |
+| MiMo-V2.5 |                          0.06 | 49.0 | 42.1 | 65.5 |
+| Qwen3.6 35B A3B |                           0.0 | 43.5 | 35.2 | 58.3 |
 
 Notes:
 
@@ -107,7 +106,8 @@ Use:
 
 ### Default rule
 
-Do not spend GPT on token-heavy first-pass work.
+Model choice is driven by task type, source-truth status, and risk, not by
+GPT availability mode. See section 9 for the BeautyQ decision order.
 
 Use cheaper models for:
 
@@ -128,7 +128,10 @@ Use GPT for:
 * reviewing narrow high-risk diffs;
 * validating test strategy for risky changes.
 
-## 4. GPT-Saving Mode
+## 4. GPT-Saving Mode (reference)
+
+These model-specific notes are reference material, not the primary decision flow.
+Primary decision flow is in section 9.
 
 GPT is still available, but should be conserved.
 
@@ -212,7 +215,7 @@ Do not use as the only author for complex Scala or architecture changes.
 
 ### Qwen3.6 35B A3B
 
-Qwen3.6 35B A3B is the local slow fallback for strong-cost-saving scenarios.
+Qwen3.6 35B A3B is the free local slow fallback for strong-cost-saving scenarios.
 
 Use it when conserving GPT or paid endpoint usage matters more than latency.
 
@@ -228,7 +231,10 @@ Use for:
 Do not use it as the primary model for complex Scala architecture without review.
 Its Intelligence Index 43.5 and Coding Index 35.2 are the lowest in this set.
 
-## 5. No-GPT Mode
+## 5. No-GPT Mode (reference)
+
+These model-specific notes are reference material, not the primary decision flow.
+Primary decision flow is in section 9.
 
 Weekly usage limit = 0% remaining. Work must run without GPT.
 
@@ -237,7 +243,7 @@ Weekly usage limit = 0% remaining. Work must run without GPT.
 1. **MiniMax-M3** — repo audit, agentic planning, architecture drafts,
    multi-step patch orchestration.
 2. **MiMo-V2.5-Pro** — bounded code/doc worker for specific changes.
-3. **Qwen3.6 35B A3B** — slow local fallback for docs, policies, summaries,
+3. **Qwen3.6 35B A3B** — free slow local fallback for docs, policies, summaries,
    repeated instruction checks, and strong-cost-saving runs where latency is
    acceptable.
 4. **MiMo-V2.5** — ultra-cheap mechanical helper.
@@ -309,43 +315,71 @@ Without GPT, avoid or prohibit:
 * Do not treat these indexes as truth or as the project's official benchmark.
 * Do not use this policy to justify production model switching.
 
-## 9. BeautyQ Coordinator Workflow Override
+## 9. Current BeautyQ model policy
 
 The generic model selection policy above is subordinate to the current BeautyQ
 coordinator workflow documented in `docs/local/COORDINATOR_PROMPTING_REMINDER.md`.
 
-### Role split
+### Decision order
 
-* Coordinator/GPT does architecture, audit, design, and strategy.
-* MiniMax/Qwen/MiMo should not be asked for broad architecture/audit/design
-  unless explicitly requested as narrow final verification.
-* MiniMax/Qwen/MiMo are primarily for bounded edits, focused checks,
-  mechanical docs/code patches, and narrow claim verification.
+Model choice must follow this order:
 
-### What agents receive
+1. Source truth:
 
-Agents should get:
+   * If required source facts are missing, ask for a focused bundle and stop.
+   * Do not use a stronger model to invent missing APIs, signatures, fields, or tests.
 
-* Exact read/edit files.
-* Exact behavior to add or verify.
-* Focused validation command.
-* Short-report requirement.
+2. Task type and risk:
 
-Agents should not get:
+   * mechanical docs/code cleanup;
+   * bounded docs/code patch from exact recipe;
+   * source-confirmed inventory / narrow verification;
+   * complex Scala/Distage/ZIO/resource code;
+   * production route/lifecycle/runtime/backend migration.
 
-* Broad repo audit.
-* Architecture design.
-* "Use attached bundle."
-* "Find all relevant files."
-* Unused suggested params.
+3. User preference:
 
-### B-lite EngineEval prompt rules
+   * cost-saving;
+   * time-saving / avoid slow local;
+   * quality/safety-first.
 
-For B-lite EngineEval prompts to MiniMax/Qwen/MiMo:
+4. Model choice.
 
-* `MasterServiceOfferVariantId` is a UUID alias; inline deterministic UUID
-  fixtures in prompts instead of making agents search for id construction.
-* `EngineEvalQueryClass` is taxonomy metadata.
-* `EngineExpectedRole` drives first-pass metrics.
-* Do not include `queryClass` in metrics functions unless behavior uses it.
-* B-lite metrics count distinct variant ids by default.
+### Model roles
+
+Use exact model/tier names:
+
+* `Qwen 256/512`: tiny mechanical docs/code edits.
+* `Qwen 1024/2048`: bounded pure code or docs patches with exact recipe.
+* `Qwen 4096`: larger but still source-confirmed local work; not broad architecture/design.
+* `MiMo-V2.5`: cheap cloud worker for bounded mechanical edits, simple docs, simple tests.
+* `MiMo-V2.5-Pro`: stronger cloud worker for bounded medium-risk docs/code patches and applying coordinator-designed recipes.
+* `MiniMax-M3`: preferred stronger non-GPT option for source-confirmed coding/agentic repo work, source-confirmed inventory, and narrow verification when GPT should be saved.
+* `GPT-5.5-medium`: complex code writer when cheaper/local models are likely to waste iterations.
+* `GPT-5.5-high`: very high-risk/complex production, lifecycle, runtime, Distage graph, or backend-migration code.
+
+Do not use vague names like `Qwen`, `MiMo`, or `GPT` when the recommendation is meant to be actionable.
+
+### Coordinator role
+
+Review, audit, architecture, and design are coordinator responsibilities. The coordinator should ask the user for focused bundles when source truth is missing. Do not spend GPT-agent runs on review that the coordinator can perform from a bundle.
+
+### Examples
+
+* Exact docs wording replace:
+  `Qwen 256/512` or `MiMo-V2.5`. GPT not needed.
+
+* Docs dedup/handoff:
+  Coordinator designs ownership. `MiMo-V2.5-Pro` applies exact edits. `Qwen 2048/4096` only if the prompt is fully mechanical.
+
+* Pure EngineEval-style metric patch:
+  `MiMo-V2.5-Pro` or `Qwen 1024/2048` from exact recipe. Coordinator reviews patch from bundle. `GPT-5.5-medium` only if Scala/API complexity is expected.
+
+* Source-confirmed seam inventory:
+  Coordinator does review/design from bundle. `MiniMax-M3` may do narrow source-confirmed inventory with exact file list and complete bundle. `Qwen 4096` may do narrow local inventory, not final architecture/design.
+
+* Complex Scala/Distage/resource code:
+  `GPT-5.5-medium` for code writing. `MiniMax-M3` or `MiMo-V2.5-Pro` only if the recipe is exact and production risk is controlled. `GPT-5.5-high` only if production/lifecycle risk is high.
+
+* Production route/lifecycle/runtime search behavior:
+  `GPT-5.5-high` if implementing. If GPT is unavailable, reduce to source-confirmed inventory/open questions or wait.

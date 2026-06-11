@@ -41,12 +41,30 @@ Correct workflow:
 ```text
 user gives bundle
 → coordinator reads bundle
-→ coordinator extracts exact facts/files/types
-→ coordinator designs the next minimal patch
-→ delegated agent receives a direct edit recipe
-→ user/coordinator reviews patch
+→ coordinator extracts exact facts/files/types/imports
+→ coordinator designs the next minimal patch or asks for an additional focused bundle if needed
+→ delegated agent receives a direct edit recipe only after source truth is sufficient
+→ coordinator reviews patch
+→ coordinator proposes commit message
+→ coordinator applies the one-step lookahead rule for the next response
 → user runs full test when coordinator recommends it
 ```
+
+One-step lookahead rule:
+
+After closing patch N, the coordinator must include exactly one of these in the same response:
+
+```text
+If N+1 is source-confirmed:
+  include the delegated-agent prompt for N+1.
+  If N+2 is visible but not source-confirmed, also include the focused source-truth bundle request for N+2.
+
+If N+1 is not source-confirmed:
+  include only the focused source-truth bundle request for N+1.
+  Do not write a delegated-agent prompt.
+```
+
+Never write delegated-agent prompts from guesses about APIs, fields, imports, signatures, or test seams.
 
 Do not ask an agent to do broad architecture/audit if the coordinator can do it.
 
@@ -265,9 +283,11 @@ Do not add `@unused`.
 
 ## 1.7 Task-local facts belong in prompts
 
-Do not make agents search for task-local facts.
+Do not make agents search for task-local facts. Inline them.
 
-Inline them.
+Prompts should be written to avoid preventable follow-up iterations, especially compile-fix iterations. If the coordinator knows a required package path, exact import, constructor shape, helper, alias, nearby fixture style, validation command, forbidden scope edge, or non-goal, include it in the delegated prompt.
+
+For code/test prompts, include exact imports for any non-local classes, types, helpers, or syntax the patch is expected to use. This is required prompt input, not optional convenience.
 
 Examples:
 
@@ -791,7 +811,9 @@ This prevents expensive compiler-flag spelunking.
 
 ---
 
-## 3.9 Give id/import hints
+## 3.9 Give id/construction hints
+
+For imports and other compile-iteration prevention rules, see `1.7 Task-local facts belong in prompts`.
 
 If a task uses domain ids, provide construction hints or the exact file to inspect.
 
@@ -830,6 +852,36 @@ read all docs and integrate strategy
 ```
 
 unless there is no GPT and the coordinator has already extracted exact required wording.
+
+---
+
+## 3.11 Model recommendation block
+
+For non-trivial delegated prompts, provide a separate coordinator note before the prompt:
+
+```text
+Task classification:
+- Type:
+- Source truth:
+- Risk:
+- Preference:
+- Availability:
+
+Run recommendation:
+- Cheapest likely to work:
+- Faster cloud option:
+- Stronger non-GPT option:
+- GPT option, only if justified:
+- If source truth is missing:
+```
+
+This note is not part of the delegated prompt unless the user asks. Keep delegated prompts model-agnostic: no `Model: ...`, no `thinking-budget=...`, and no boilerplate such as `Use AGENTS.md`.
+
+Coordinator handles review, audit, and design from source bundles. Use GPT-5.5-medium mainly for complex code writing; use GPT-5.5-high only for very high-risk/complex production, lifecycle, runtime, or backend-migration code.
+
+Use exact model/tier names. Do not write vague `Qwen`, `MiMo`, or `GPT`: choose a Qwen budget, `MiMo-V2.5`, `MiMo-V2.5-Pro`, `MiniMax-M3`, or `GPT-5.5-medium/high`.
+
+If source truth is missing, recommend requesting a focused bundle first; do not recommend a stronger model to infer missing APIs.
 
 ---
 
@@ -929,12 +981,12 @@ Ask:
 Did I ask the agent to audit/design when I can do it?
 Did I say “use attached bundle” instead of inlining facts?
 Did I include exact read/edit files?
-Did I include task-specific imports/id hints?
+Did I include known imports, package paths, constructors, aliases, fixture style, test style, validation command, and boundaries needed to avoid preventable follow-up/compile-fix iterations?
 Did I include an unused suggested param?
 Did I tell it not to run full sbt test?
 Did I keep report short?
 Did I avoid model/thinking boilerplate?
-Did I separate GPT-capable tasks from MiniMax/Qwen/MiMo mechanical tasks?
+Did I provide a model recommendation block for non-trivial delegated prompts?
 ```
 
 If any answer is bad, rewrite the prompt before sending.
@@ -955,9 +1007,13 @@ Exact volatile verification counts belong in reports or commit messages, not lon
 
 Classify each docs patch as adding new truth to the canonical owner, moving truth to the canonical owner, replacing duplicate truth with a pointer, or intentionally preserving a short safety-critical guardrail.
 
+The source-truth gate is safety-critical and must not be deduplicated away; keep the canonical rule in this file and only link to it from other docs.
+
 ---
 
 # 7. Source-truth gate
+
+This section is a protected coordinator invariant. Do not remove, shorten, soften, or move it into `AGENTS.md`. It may only be replaced by wording that is at least as strict: missing source truth must stop patch planning, delegated-agent prompts, adjacent "safe" patches, and invented helpers/APIs.
 
 Before any patch design or delegated-agent prompt, source-confirm the relevant files, types, functions, and fields.
 
@@ -966,3 +1022,11 @@ Docs and handoff establish current state and priorities; they are not enough for
 Do not invent conceptual APIs, method signatures, field mappings, test recipes, or agent tasks from docs/memory. This applies before every task, not only during onboarding.
 
 This gate is coordinator responsibility. Delegated prompts should contain exact source-confirmed facts, read/edit files, and validation commands; they should not ask agents to compensate with broad repo searches unless explicitly intended.
+
+If the requested output includes a patch proposal, exact read/edit files, a test recipe, or a delegated-agent prompt, but required source truth is missing, explicitly decline that part of the output. Ask for a focused bundle and stop.
+
+Do not salvage a source-incomplete task by inventing a source-independent helper, adapter, model API, field mapping, merge rule, or test plan unless the current bundle source-confirms that this helper/API is the next required seam.
+
+Do not rescope a source-incomplete task into an adjacent “safe” patch. If the requested task requires missing anchors, stop at the bundle request unless the user explicitly approves a different task after seeing the missing-source report.
+
+A partial inventory may list `SOURCE_CONFIRMED` and `DOC_LEVEL_ONLY` facts, but when required anchors are missing it must end with a bundle request, not a patch proposal. The source-truth gate has higher priority than the requested output shape.

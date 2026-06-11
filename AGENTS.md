@@ -40,7 +40,7 @@ Do not call work commit-ready unless full verification passed, user verified it,
 
 Default repo rule: `src/main` changes need focused checks plus full test. Exception: when a coordinator prompt explicitly says not to run full `sbt test`, delegated agents run only requested focused checks and report that full verification is left to the coordinator/user. Focused-only checks are never `FULL GREEN`.
 
-If full test fails, stop. Report suite/test, exact error, changed files, whether it reproduces alone, and whether it appears related. Then fix only that failure with the smallest safe change. If an external env is missing, report canceled/blocked, not product behavior failure.
+If full test fails, stop. Report suite/test, exact error, whether it reproduces alone, and whether it appears related. Then fix only that failure with the smallest safe change. If an external env is missing, report canceled/blocked, not product behavior failure.
 
 ## sbt rules
 
@@ -464,7 +464,6 @@ Report:
 
 * suite/test name;
 * exact error;
-* changed files;
 * whether it reproduces alone;
 * whether it appears related to the patch;
 * smallest safe next diagnostic command.
