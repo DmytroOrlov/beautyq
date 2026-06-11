@@ -115,6 +115,44 @@ object EngineEvalQueryReport {
   }
 }
 
+final case class EngineEvalAggregateMetrics(
+  queryCount: Int,
+  expectedVariantCount: Int,
+  esRecallCount: Int,
+  qdrantRecallCount: Int,
+  qdrantComplementCount: Int,
+  qdrantNoiseCount: Int,
+  overlapCount: Int,
+  simulatedHybridGainCount: Int,
+)
+
+object EngineEvalAggregateMetrics {
+  def from(queryReports: List[EngineEvalQueryReport]): EngineEvalAggregateMetrics =
+    EngineEvalAggregateMetrics(
+      queryCount = queryReports.size,
+      expectedVariantCount = queryReports.map(_.expectedVariantIds.size).sum,
+      esRecallCount = queryReports.map(_.metrics.esRecallCount).sum,
+      qdrantRecallCount = queryReports.map(_.metrics.qdrantRecallCount).sum,
+      qdrantComplementCount = queryReports.map(_.metrics.qdrantComplementCount).sum,
+      qdrantNoiseCount = queryReports.map(_.metrics.qdrantNoiseCount).sum,
+      overlapCount = queryReports.map(_.metrics.overlapCount).sum,
+      simulatedHybridGainCount = queryReports.map(_.metrics.simulatedHybridGainCount).sum,
+    )
+}
+
+final case class EngineEvalAggregateReport(
+  queryReports: List[EngineEvalQueryReport],
+  aggregate: EngineEvalAggregateMetrics,
+)
+
+object EngineEvalAggregateReport {
+  def from(queryReports: List[EngineEvalQueryReport]): EngineEvalAggregateReport =
+    EngineEvalAggregateReport(
+      queryReports = queryReports,
+      aggregate = EngineEvalAggregateMetrics.from(queryReports),
+    )
+}
+
 object EngineEvalComparisonMetrics {
 
   def from(

@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.model.MasterServiceOfferVariantId
-import leaderboard.search.eval.{BeautySearchEvalReport, EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalQueryReport, EngineEvalResult, EngineExpectedRole}
+import leaderboard.search.eval.{BeautySearchEvalReport, EngineEvalAggregateMetrics, EngineEvalAggregateReport, EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalQueryReport, EngineEvalResult, EngineExpectedRole}
 import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -358,6 +358,91 @@ final class EngineEvalSpec extends AnyWordSpec {
       )
 
       assert(report.metrics.qdrantNoiseCount == 2)
+    }
+  }
+
+  "EngineEvalAggregateMetrics.from" should {
+
+    "sum query count, expected variant count, and all metric counts" in {
+      val es1 = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_agg_a", List(v1, v2, v3))
+      val qdrant1 = EngineEvalResult(EngineEvalEngine.Qdrant, "q_agg_a", List(v2, v3, v4))
+      val report1 = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.HybridMayImprove,
+        expectedVariantIds = Set(v1, v2, v3, v4, v5),
+        es = es1,
+        qdrant = qdrant1,
+      )
+
+      val es2 = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_agg_b", List(v1))
+      val qdrant2 = EngineEvalResult(EngineEvalEngine.Qdrant, "q_agg_b", List(v4, v5))
+      val report2 = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.QdrantShouldStaySilent,
+        expectedVariantIds = Set(v1, v2),
+        es = es2,
+        qdrant = qdrant2,
+      )
+
+      val es3 = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_agg_c", List(v1, v4))
+      val qdrant3 = EngineEvalResult(EngineEvalEngine.Qdrant, "q_agg_c", List(v2, v5))
+      val report3 = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.EsShouldHandle,
+        expectedVariantIds = Set(v1, v2, v4),
+        es = es3,
+        qdrant = qdrant3,
+      )
+
+      val aggregate = EngineEvalAggregateMetrics.from(List(report1, report2, report3))
+
+      assert(aggregate.queryCount == 3)
+      assert(aggregate.expectedVariantCount == 10)
+      assert(aggregate.esRecallCount == report1.metrics.esRecallCount + report2.metrics.esRecallCount + report3.metrics.esRecallCount)
+      assert(aggregate.qdrantRecallCount == report1.metrics.qdrantRecallCount + report2.metrics.qdrantRecallCount + report3.metrics.qdrantRecallCount)
+      assert(aggregate.qdrantComplementCount == report1.metrics.qdrantComplementCount + report2.metrics.qdrantComplementCount + report3.metrics.qdrantComplementCount)
+      assert(aggregate.qdrantNoiseCount == report1.metrics.qdrantNoiseCount + report2.metrics.qdrantNoiseCount + report3.metrics.qdrantNoiseCount)
+      assert(aggregate.overlapCount == report1.metrics.overlapCount + report2.metrics.overlapCount + report3.metrics.overlapCount)
+      assert(aggregate.simulatedHybridGainCount == report1.metrics.simulatedHybridGainCount + report2.metrics.simulatedHybridGainCount + report3.metrics.simulatedHybridGainCount)
+    }
+  }
+
+  "EngineEvalAggregateReport.from" should {
+
+    "preserve query report order and attach aggregate metrics" in {
+      val es1 = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_agg_1", List(v1, v2))
+      val qdrant1 = EngineEvalResult(EngineEvalEngine.Qdrant, "q_agg_1", List(v3))
+      val report1 = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.EsShouldHandle,
+        expectedVariantIds = Set(v1, v2, v3),
+        es = es1,
+        qdrant = qdrant1,
+      )
+
+      val es2 = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_agg_2", List(v4))
+      val qdrant2 = EngineEvalResult(EngineEvalEngine.Qdrant, "q_agg_2", List(v5))
+      val report2 = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.QdrantMayComplement,
+        expectedVariantIds = Set(v4, v5),
+        es = es2,
+        qdrant = qdrant2,
+      )
+
+      val report = EngineEvalAggregateReport.from(List(report1, report2))
+
+      assert(report.queryReports.map(_.queryId) == List("q_agg_1", "q_agg_2"))
+      assert(report.aggregate.queryCount == 2)
+    }
+
+    "return empty aggregate report with zero counts for empty input" in {
+      val report = EngineEvalAggregateReport.from(Nil)
+
+      assert(report.queryReports.isEmpty)
+      assert(report.aggregate.queryCount == 0)
+      assert(report.aggregate.expectedVariantCount == 0)
+      assert(report.aggregate.esRecallCount == 0)
+      assert(report.aggregate.qdrantRecallCount == 0)
+      assert(report.aggregate.qdrantComplementCount == 0)
+      assert(report.aggregate.qdrantNoiseCount == 0)
+      assert(report.aggregate.overlapCount == 0)
+      assert(report.aggregate.simulatedHybridGainCount == 0)
     }
   }
 }
