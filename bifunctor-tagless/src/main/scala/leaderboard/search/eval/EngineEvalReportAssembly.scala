@@ -1,7 +1,7 @@
 package leaderboard.search.eval
 
 import leaderboard.model.QueryFailure
-import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
+import leaderboard.search.qdrant.{QdrantEmbeddingBenchmarkQueryResult, QdrantEmbeddingBenchmarkRunOutput}
 
 object EngineEvalReportAssembly {
 
@@ -29,6 +29,18 @@ object EngineEvalReportAssembly {
         }
       }
     } yield EngineEvalAggregateReport.from(queryReports)
+
+  def fromOutputsForQdrantCandidate(
+    queries: List[BeautySearchEvalQuery],
+    expectedRolesByQueryId: Map[String, EngineExpectedRole],
+    esReports: List[BeautySearchEvalReport],
+    qdrantRunOutput: QdrantEmbeddingBenchmarkRunOutput,
+    qdrantCandidateId: String,
+  ): Either[QueryFailure, EngineEvalAggregateReport] =
+    qdrantRunOutput.queryResultsByCandidateId.get(qdrantCandidateId) match {
+      case Some(qdrantResults) => fromOutputs(queries, expectedRolesByQueryId, esReports, qdrantResults)
+      case None                => Left(failure(s"missing Qdrant benchmark results for candidate id: $qdrantCandidateId"))
+    }
 
   private val OperationName = "engine-eval-report-assembly"
 

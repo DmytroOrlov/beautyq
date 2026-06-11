@@ -12,7 +12,14 @@ import leaderboard.search.eval.{
   EvalServiceExpectation,
   EvalVariantExpectation,
 }
-import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
+import leaderboard.search.qdrant.{
+  QdrantEmbeddingBenchmark,
+  QdrantEmbeddingBenchmarkCandidate,
+  QdrantEmbeddingBenchmarkPlan,
+  QdrantEmbeddingBenchmarkQueryResult,
+  QdrantEmbeddingBenchmarkRunMode,
+  QdrantEmbeddingBenchmarkRunOutput,
+}
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.util.UUID
@@ -204,6 +211,117 @@ final class EngineEvalReportAssemblySpec extends AnyWordSpec {
     }
   }
 
+  "EngineEvalReportAssembly.fromOutputsForQdrantCandidate" should {
+
+    "assemble using selected candidate query results from QdrantEmbeddingBenchmarkRunOutput" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+      val v3 = variantId(3)
+      val v4 = variantId(4)
+      val v5 = variantId(5)
+      val q1 = evalQuery("q_out_1", acceptableVariantIds = List(v1, v2))
+      val q2 = evalQuery("q_out_2", acceptableVariantIds = List(v3, v4, v5))
+      val queries = List(q2, q1)
+
+      val esReports = List(
+        esReport("q_out_1", List(v1, v3)),
+        esReport("q_out_2", List(v3, v4, v5)),
+      )
+      val candidateAResults = List(
+        qdrantResultWithCandidate("candidate-a", "q_out_1", List(v2, v4)),
+        qdrantResultWithCandidate("candidate-a", "q_out_2", List(v3, v5, v1)),
+      )
+      val candidateBResults = List(
+        qdrantResultWithCandidate("candidate-b", "q_out_1", List(v5)),
+        qdrantResultWithCandidate("candidate-b", "q_out_2", List(v4)),
+      )
+      val runOutput = qdrantRunOutput(
+        "candidate-a" -> candidateAResults,
+        "candidate-b" -> candidateBResults,
+      )
+      val roles = Map(
+        "q_out_1" -> EngineExpectedRole.HybridMayImprove,
+        "q_out_2" -> EngineExpectedRole.EsShouldHandle,
+      )
+
+      val result = EngineEvalReportAssembly.fromOutputsForQdrantCandidate(queries, roles, esReports, runOutput, "candidate-a")
+
+      result match {
+        case Right(report) =>
+          assert(report.queryReports.map(_.queryId) == List("q_out_2", "q_out_1"))
+          val q1Report = report.queryReports.find(_.queryId == "q_out_1").get
+          val q2Report = report.queryReports.find(_.queryId == "q_out_2").get
+          assert(q1Report.qdrant.variantIds == List(v2, v4))
+          assert(q2Report.qdrant.variantIds == List(v3, v5, v1))
+        case Left(failure) =>
+          fail(s"expected Right, got Left($failure)")
+      }
+    }
+
+    "fail clearly when selected candidate id is missing" in {
+      val v1 = variantId(1)
+      val q = evalQuery("q_miss_cand", acceptableVariantIds = List(v1))
+      val queries = List(q)
+
+      val runOutput = qdrantRunOutput(
+        "candidate-a" -> List(qdrantResultWithCandidate("candidate-a", "q_miss_cand", List(v1))),
+      )
+
+      val result = EngineEvalReportAssembly.fromOutputsForQdrantCandidate(
+        queries,
+        Map("q_miss_cand" -> EngineExpectedRole.EsShouldHandle),
+        List(esReport("q_miss_cand", List(v1))),
+        runOutput,
+        "candidate-missing",
+      )
+
+      result match {
+        case Left(QueryFailure.OperationFailure(operationName, message)) =>
+          assert(operationName == "engine-eval-report-assembly")
+          assert(message.contains("missing Qdrant benchmark results for candidate id"))
+          assert(message.contains("candidate-missing"))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
+    }
+
+    "propagate existing assembly validation for selected candidate results" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+      val q1 = evalQuery("q_val_1", acceptableVariantIds = List(v1))
+      val q2 = evalQuery("q_val_2", acceptableVariantIds = List(v2))
+      val queries = List(q1, q2)
+
+      val esReports = List(
+        esReport("q_val_1", List(v1)),
+        esReport("q_val_2", List(v2)),
+      )
+      val runOutput = qdrantRunOutput(
+        "candidate-a" -> List(qdrantResultWithCandidate("candidate-a", "q_val_1", List(v1))),
+      )
+
+      val result = EngineEvalReportAssembly.fromOutputsForQdrantCandidate(
+        queries,
+        Map(
+          "q_val_1" -> EngineExpectedRole.EsShouldHandle,
+          "q_val_2" -> EngineExpectedRole.EsShouldHandle,
+        ),
+        esReports,
+        runOutput,
+        "candidate-a",
+      )
+
+      result match {
+        case Left(QueryFailure.OperationFailure(operationName, message)) =>
+          assert(operationName == "engine-eval-report-assembly")
+          assert(message.contains("q_val_2"))
+          assert(message.contains("missing Qdrant result"))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
+    }
+  }
+
   private def variantId(slot: Int): MasterServiceOfferVariantId =
     UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x")
 
@@ -249,4 +367,40 @@ final class EngineEvalReportAssemblySpec extends AnyWordSpec {
       topServiceIds = Nil,
       scores = Nil,
     )
+
+  private def qdrantResultWithCandidate(
+    candidateId: String,
+    queryId: String,
+    topVariantIds: List[MasterServiceOfferVariantId],
+  ): QdrantEmbeddingBenchmarkQueryResult =
+    QdrantEmbeddingBenchmarkQueryResult(
+      candidateId = candidateId,
+      queryId = queryId,
+      queryText = s"query $queryId",
+      topVariantIds = topVariantIds,
+      topProviderIds = Nil,
+      topServiceIds = Nil,
+      scores = Nil,
+    )
+
+  private def qdrantRunOutput(
+    results: (String, List[QdrantEmbeddingBenchmarkQueryResult])*
+  ): QdrantEmbeddingBenchmarkRunOutput = {
+    val candidateIds = results.map(_._1)
+    val candidates = candidateIds.map(id =>
+      QdrantEmbeddingBenchmarkCandidate(
+        candidateId = id,
+        modelName = s"model-$id",
+        endpointLabel = s"endpoint-$id",
+        vectorDimension = 1024,
+      )
+    )
+    val plan = QdrantEmbeddingBenchmarkPlan(
+      runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
+      candidates = candidates.toList,
+      k = 1,
+    )
+    val report = QdrantEmbeddingBenchmark.report(plan, results.toMap, Map.empty)
+    QdrantEmbeddingBenchmarkRunOutput(report, results.toMap)
+  }
 }
