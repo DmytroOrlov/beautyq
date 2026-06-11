@@ -259,7 +259,7 @@ event match {
 * Never add `@nowarn("msg=Unreachable")`.
 * Fix unreachable matches instead of suppressing them.
 * `@nowarn` must be exact, narrow, intentional, and explained.
-* Prefer removing unused imports, params, locals, and dead code.
+*  After implementing a patch, remove imports, params, locals, and dead code that are not used by the final code or tests. If focused compile fails only because of unused, remove unused and rerun the same focused command once. Report this as a compile fix, not as a behavior deviation.
 
 ## HTTP / Tapir rules
 
