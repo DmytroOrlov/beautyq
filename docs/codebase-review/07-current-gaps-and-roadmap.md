@@ -188,6 +188,21 @@ Goal:
 * Decide from metrics, not from architecture enthusiasm.
 * Keep production serving unchanged during eval development.
 
+## Current nearest search checkpoint
+
+```text
+current production /beauty-search:
+  seed resource catalog + InMemorySearchBackend
+
+next business-visible checkpoint:
+  same seed catalog + Elasticsearch retrieval behind /beauty-search
+```
+
+The goal is not yet full production search lifecycle. The goal is to demonstrate
+the first ES-backed production route over controlled seed data before adding
+freshness, repository-backed indexing, Qdrant shadowing, hybrid serving, score
+fusion, fallback, or production collection lifecycle.
+
 Current benchmark pieces (exist but not yet unified):
 
 * `BeautySearchEval` / `BeautySearchEvalInventory` — common eval dataset / expectations.

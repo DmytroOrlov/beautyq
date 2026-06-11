@@ -102,6 +102,30 @@ Documented as characterized, not as desired final contract:
 * Compute ES-alone / Qdrant-alone / offline simulated-hybrid reports.
 * Keep it offline/eval-only.
 
+## 6.5. Product search north star and nearest checkpoint
+
+Final direction:
+Build useful free-string BeautyQ search that turns user text into domain-aware
+product results by combining:
+
+* DSL/spec-owned domain semantics for fast adaptation to new domains;
+* Elasticsearch strengths for lexical precision, filters, facets, exact/range/geo
+  constraints, analyzers, aggregations, and deterministic baseline retrieval;
+* Qdrant strengths for semantic recall/complement on broad, conversational, and
+  vague queries;
+* explicit eval/benchmark reporting before any production hybrid or routing
+  decision.
+
+Nearest production checkpoint:
+Expose the existing seed BeautyQ catalog through the production `/beauty-search`
+route using Elasticsearch retrieval instead of `InMemorySearchBackend`.
+
+This checkpoint is intentionally narrower than the final search direction:
+it proves a business-visible ES-backed production route over seed data only. It
+does not solve repository freshness, startup reindexing, alias/blue-green,
+Qdrant shadowing, hybrid serving, score fusion, fallback, or production
+collection lifecycle.
+
 ## 7. Forbidden paths
 
 * No production hybrid.
