@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.model.MasterServiceOfferVariantId
-import leaderboard.search.eval.{BeautySearchEvalReport, EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalResult, EngineExpectedRole}
+import leaderboard.search.eval.{BeautySearchEvalReport, EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalQueryReport, EngineEvalResult, EngineExpectedRole}
 import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -302,6 +302,62 @@ final class EngineEvalSpec extends AnyWordSpec {
       val hybrid = EngineEvalResult.simulatedHybridFrom(es, qdrant)
 
       assert(hybrid.variantIds == List(v1, v2, v4, v3, v5))
+    }
+  }
+
+  "EngineEvalQueryReport.from" should {
+
+    "build a report containing ES, Qdrant, simulated hybrid, and metrics" in {
+      val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_report_01", List(v1, v2))
+      val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_report_01", List(v2, v3, v4))
+      val expected: Set[MasterServiceOfferVariantId] = Set(v1, v2, v3)
+
+      val report = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.HybridMayImprove,
+        expectedVariantIds = expected,
+        es = es,
+        qdrant = qdrant,
+      )
+
+      assert(report.es.variantIds == List(v1, v2))
+      assert(report.qdrant.variantIds == List(v2, v3, v4))
+      assert(report.simulatedHybrid.variantIds == List(v1, v2, v3, v4))
+      assert(report.metrics.esRecallCount == 2)
+      assert(report.metrics.qdrantRecallCount == 2)
+      assert(report.metrics.qdrantComplementCount == 1)
+      assert(report.metrics.simulatedHybridGainCount == 1)
+    }
+
+    "use the ES query id and preserve expected role and expected ids" in {
+      val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_report_es", List(v1, v2))
+      val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_report_qdrant", List(v2, v3))
+      val expected: Set[MasterServiceOfferVariantId] = Set(v1, v2, v3)
+
+      val report = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.HybridMayImprove,
+        expectedVariantIds = expected,
+        es = es,
+        qdrant = qdrant,
+      )
+
+      assert(report.queryId == "q_report_es")
+      assert(report.expectedRole == EngineExpectedRole.HybridMayImprove)
+      assert(report.expectedVariantIds == expected)
+    }
+
+    "pass expected role into metrics, including Qdrant silence/noise behavior" in {
+      val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_report_noise", List(v1, v2, v3))
+      val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_report_noise", List(v4, v4, v5))
+      val expected: Set[MasterServiceOfferVariantId] = Set(v1, v2, v3)
+
+      val report = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.QdrantShouldStaySilent,
+        expectedVariantIds = expected,
+        es = es,
+        qdrant = qdrant,
+      )
+
+      assert(report.metrics.qdrantNoiseCount == 2)
     }
   }
 }

@@ -77,6 +77,44 @@ final case class EngineEvalComparisonMetrics(
   simulatedHybridGainCount: Int,
 )
 
+final case class EngineEvalQueryReport(
+  queryId: String,
+  expectedRole: EngineExpectedRole,
+  expectedVariantIds: Set[MasterServiceOfferVariantId],
+  es: EngineEvalResult,
+  qdrant: EngineEvalResult,
+  simulatedHybrid: EngineEvalResult,
+  metrics: EngineEvalComparisonMetrics,
+)
+
+object EngineEvalQueryReport {
+  def from(
+    expectedRole: EngineExpectedRole,
+    expectedVariantIds: Set[MasterServiceOfferVariantId],
+    es: EngineEvalResult,
+    qdrant: EngineEvalResult,
+  ): EngineEvalQueryReport = {
+    val simulatedHybrid = EngineEvalResult.simulatedHybridFrom(es, qdrant)
+    val metrics = EngineEvalComparisonMetrics.from(
+      expectedRole = expectedRole,
+      expectedVariantIds = expectedVariantIds,
+      es = es,
+      qdrant = qdrant,
+      simulatedHybrid = simulatedHybrid,
+    )
+
+    EngineEvalQueryReport(
+      queryId = es.queryId,
+      expectedRole = expectedRole,
+      expectedVariantIds = expectedVariantIds,
+      es = es,
+      qdrant = qdrant,
+      simulatedHybrid = simulatedHybrid,
+      metrics = metrics,
+    )
+  }
+}
+
 object EngineEvalComparisonMetrics {
 
   def from(
