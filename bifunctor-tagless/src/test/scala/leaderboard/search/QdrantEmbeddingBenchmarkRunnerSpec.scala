@@ -250,6 +250,61 @@ final class QdrantEmbeddingBenchmarkRunnerSpec extends AnyWordSpec {
 
       assert(report.candidateReports.head.aggregate.variantRecallAtK == 1.0)
     }
+
+    "runWithQueryResults returns normal report and raw query results by candidate id" in {
+      val candidate = benchmarkCandidate("candidate-a")
+      val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart, List(candidate), k = 1)
+      val query = evalQuery("q1", acceptableVariantIds = List(variantId(1)))
+      val expectedVariantIds = List(variantId(1), variantId(2))
+      val executor = new StaticExecutor(
+        candidate.candidateId -> List(queryResult(candidate.candidateId, query.id, topVariantIds = expectedVariantIds)),
+      )
+
+      val output = run(new QdrantEmbeddingBenchmarkRunner(executor).runWithQueryResults(plan, List(query)))
+
+      assert(output.report.candidateReports.size == 1)
+      assert(output.queryResultsByCandidateId(candidate.candidateId).map(_.queryId) == List(query.id))
+      assert(output.queryResultsByCandidateId(candidate.candidateId).head.topVariantIds == expectedVariantIds)
+    }
+
+    "run returns the same report as runWithQueryResults.map(_.report)" in {
+      val candidate = benchmarkCandidate("candidate-a")
+      val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart, List(candidate), k = 1)
+      val query = evalQuery("q1", acceptableVariantIds = List(variantId(1)))
+      val executor = new StaticExecutor(
+        candidate.candidateId -> List(queryResult(candidate.candidateId, query.id, topVariantIds = List(variantId(1)))),
+      )
+
+      val runner = new QdrantEmbeddingBenchmarkRunner(executor)
+      val runReport = run(runner.run(plan, List(query)))
+      val runWithReport = run(runner.runWithQueryResults(plan, List(query))).report
+
+      assert(runReport == runWithReport)
+    }
+
+    "runWithQueryResults fails on duplicate query result ids" in {
+      val candidate = benchmarkCandidate("candidate-a")
+      val plan = QdrantEmbeddingBenchmarkPlan(QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart, List(candidate), k = 1)
+      val query = evalQuery("q1", acceptableVariantIds = List(variantId(1)))
+      val executor = new StaticExecutor(
+        candidate.candidateId -> List(
+          queryResult(candidate.candidateId, query.id, topVariantIds = List(variantId(1))),
+          queryResult(candidate.candidateId, query.id, topVariantIds = List(variantId(1))),
+        )
+      )
+
+      val failure = runFail(new QdrantEmbeddingBenchmarkRunner(executor).runWithQueryResults(plan, List(query)))
+
+      failure match {
+        case QueryFailure.OperationFailure(operationName, message) =>
+          assert(operationName == "qdrant-embedding-benchmark-runner")
+          assert(message.contains(candidate.candidateId))
+          assert(message.contains(query.id))
+          assert(message.contains("duplicate benchmark result query id"))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
+    }
   }
 
   private final class StaticExecutor(results: (String, List[QdrantEmbeddingBenchmarkQueryResult])*) extends QdrantEmbeddingBenchmarkCandidateExecutor {

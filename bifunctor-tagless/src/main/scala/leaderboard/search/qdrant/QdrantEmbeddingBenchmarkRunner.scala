@@ -18,6 +18,12 @@ final class QdrantEmbeddingBenchmarkRunner(
     plan: QdrantEmbeddingBenchmarkPlan,
     queries: List[BeautySearchEvalQuery],
   ): IO[QueryFailure, QdrantEmbeddingBenchmarkReport] =
+    runWithQueryResults(plan, queries).map(_.report)
+
+  def runWithQueryResults(
+    plan: QdrantEmbeddingBenchmarkPlan,
+    queries: List[BeautySearchEvalQuery],
+  ): IO[QueryFailure, QdrantEmbeddingBenchmarkRunOutput] =
     for {
       _ <- validatePlan(plan)
       expectedByQueryId = expectationsByQueryId(queries)
@@ -27,11 +33,17 @@ final class QdrantEmbeddingBenchmarkRunner(
           _       <- validateCandidateResults(candidate, results, expectedByQueryId)
         } yield candidate.candidateId -> results
       }
-    } yield QdrantEmbeddingBenchmark.report(
-      plan = plan,
-      queryResultsByCandidateId = candidateResults.toMap,
-      expectationsByQueryId = expectedByQueryId,
-    )
+    } yield {
+      val queryResultsByCandidateId = candidateResults.toMap
+      QdrantEmbeddingBenchmarkRunOutput(
+        report = QdrantEmbeddingBenchmark.report(
+          plan = plan,
+          queryResultsByCandidateId = queryResultsByCandidateId,
+          expectationsByQueryId = expectedByQueryId,
+        ),
+        queryResultsByCandidateId = queryResultsByCandidateId,
+      )
+    }
 
   private def validatePlan(plan: QdrantEmbeddingBenchmarkPlan): IO[QueryFailure, Unit] =
     validateCandidateCount(plan) *> validateDistinctCandidateIds(plan)

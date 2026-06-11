@@ -89,6 +89,11 @@ final case class QdrantEmbeddingBenchmarkReport(
   comparisons: List[QdrantEmbeddingBenchmarkComparison],
 )
 
+final case class QdrantEmbeddingBenchmarkRunOutput(
+  report: QdrantEmbeddingBenchmarkReport,
+  queryResultsByCandidateId: Map[String, List[QdrantEmbeddingBenchmarkQueryResult]],
+)
+
 object QdrantEmbeddingBenchmark {
   def metricsFor(
     result: QdrantEmbeddingBenchmarkQueryResult,
