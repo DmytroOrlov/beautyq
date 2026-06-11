@@ -10,8 +10,9 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSe
 import leaderboard.search.BeautySearchEvalInventory
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
-import leaderboard.search.eval.BeautySearchEvalScorer
+import leaderboard.search.eval.{BeautySearchEvalScorer, EngineEvalReportAssembly, EngineExpectedRole}
 import leaderboard.search.parser.BeautySearchIntentParser
+import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, ZIO}
 
@@ -423,6 +424,45 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
             } yield ()
         }
     }
+
+    "produce ES eval reports consumable by EngineEval assembly" in {
+      (
+        portCfg: ElasticsearchPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
+      ) =>
+        withPreparedIndex(portCfg) {
+          (client, testSpec) =>
+            for {
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
+              queries = evalSuite.queries.filter(query => BeautySearchEvalInventory.firstMilestoneQueryIds.contains(query.id)).take(2)
+              esReports <- executeEvalReports(testSpec, client, queries)
+              syntheticQdrantResults = queries.map { query =>
+                QdrantEmbeddingBenchmarkQueryResult(
+                  candidateId = "synthetic-qdrant",
+                  queryId = query.id,
+                  queryText = query.query,
+                  topVariantIds = query.expectedVariantCarousel.acceptableVariantIds.take(1),
+                  topProviderIds = Nil,
+                  topServiceIds = Nil,
+                  scores = Nil,
+                )
+              }
+              roles = queries.map(query => query.id -> EngineExpectedRole.EsShouldHandle).toMap
+              result = EngineEvalReportAssembly.fromOutputs(queries, roles, esReports, syntheticQdrantResults)
+              report <- ZIO.fromEither(result)
+              _ <- assertIO(report.queryReports.map(_.queryId) == queries.map(_.id))
+              _ <- assertIO(report.aggregate.queryCount == queries.size)
+              _ <- assertIO(report.queryReports.map(_.es.queryId) == queries.map(_.id))
+            } yield ()
+        }
+    }
   }
 
   private def withPreparedIndex[A](
@@ -508,5 +548,19 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
       rawHits = rawResponse.hcursor.downField("hits").downField("total").as[Long].toOption.orElse(rawResponse.hcursor.downField("hits").downField("total").downField("value").as[Long].toOption)
     } yield SearchDebug(intent, requestJson, rawHits, interpreted)
   }
+
+  private def executeEvalReport(
+    spec: leaderboard.search.dsl.BeautySearchSpec,
+    client: ElasticsearchTestClient,
+    query: leaderboard.search.eval.BeautySearchEvalQuery,
+  ): IO[QueryFailure, leaderboard.search.eval.BeautySearchEvalReport] =
+    executeSearch(spec, client, query.query).map(response => BeautySearchEvalScorer.score(query, response))
+
+  private def executeEvalReports(
+    spec: leaderboard.search.dsl.BeautySearchSpec,
+    client: ElasticsearchTestClient,
+    queries: List[leaderboard.search.eval.BeautySearchEvalQuery],
+  ): IO[QueryFailure, List[leaderboard.search.eval.BeautySearchEvalReport]] =
+    ZIO.foreach(queries)(query => executeEvalReport(spec, client, query))
 
 }
