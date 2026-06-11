@@ -1,6 +1,7 @@
 package leaderboard.search.eval
 
 import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 
 enum EngineEvalEngine {
   case Elasticsearch
@@ -32,6 +33,23 @@ final case class EngineEvalResult(
   queryId: String,
   variantIds: List[MasterServiceOfferVariantId],
 )
+
+object EngineEvalResult {
+
+  def fromElasticsearchEvalReport(report: BeautySearchEvalReport): EngineEvalResult =
+    EngineEvalResult(
+      engine = EngineEvalEngine.Elasticsearch,
+      queryId = report.queryId,
+      variantIds = report.topVariantIds,
+    )
+
+  def fromQdrantBenchmarkResult(result: QdrantEmbeddingBenchmarkQueryResult): EngineEvalResult =
+    EngineEvalResult(
+      engine = EngineEvalEngine.Qdrant,
+      queryId = result.queryId,
+      variantIds = result.topVariantIds,
+    )
+}
 
 final case class EngineEvalComparisonMetrics(
   esRecallCount: Int,

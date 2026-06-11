@@ -1,7 +1,8 @@
 package leaderboard.search
 
 import leaderboard.model.MasterServiceOfferVariantId
-import leaderboard.search.eval.{EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalResult, EngineExpectedRole}
+import leaderboard.search.eval.{BeautySearchEvalReport, EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalResult, EngineExpectedRole}
+import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.util.UUID
@@ -196,6 +197,79 @@ final class EngineEvalSpec extends AnyWordSpec {
       assert(metrics.qdrantNoiseCount == 0)
       assert(metrics.overlapCount == 0)
       assert(metrics.simulatedHybridGainCount == 0)
+    }
+  }
+
+  "EngineEvalResult.fromElasticsearchEvalReport" should {
+
+    "normalize a BeautySearchEvalReport into an Elasticsearch EngineEvalResult" in {
+      val report = BeautySearchEvalReport(
+        queryId = "q_es_01",
+        query = "manicure near me",
+        score = 42,
+        failedAssertions = Nil,
+        topVariantIds = List(v1, v2, v3),
+        topProviderLocationIds = Nil,
+        topServiceIds = Nil,
+      )
+
+      val result = EngineEvalResult.fromElasticsearchEvalReport(report)
+
+      assert(result.engine == EngineEvalEngine.Elasticsearch)
+      assert(result.queryId == "q_es_01")
+      assert(result.variantIds == List(v1, v2, v3))
+    }
+  }
+
+  "EngineEvalResult.fromQdrantBenchmarkResult" should {
+
+    "normalize a QdrantEmbeddingBenchmarkQueryResult into a Qdrant EngineEvalResult" in {
+      val benchmarkResult = QdrantEmbeddingBenchmarkQueryResult(
+        candidateId = "candidate_1",
+        queryId = "q_qdrant_01",
+        queryText = "gel nails",
+        topVariantIds = List(v4, v5),
+        topProviderIds = Nil,
+        topServiceIds = Nil,
+        scores = List(0.95, 0.88),
+      )
+
+      val result = EngineEvalResult.fromQdrantBenchmarkResult(benchmarkResult)
+
+      assert(result.engine == EngineEvalEngine.Qdrant)
+      assert(result.queryId == "q_qdrant_01")
+      assert(result.variantIds == List(v4, v5))
+    }
+  }
+
+  "EngineEvalResult normalizers" should {
+
+    "preserve duplicate ids and input order during normalization" in {
+      val report = BeautySearchEvalReport(
+        queryId = "q_dup_01",
+        query = "pedicure",
+        score = 0,
+        failedAssertions = Nil,
+        topVariantIds = List(v1, v1, v2, v3, v3),
+        topProviderLocationIds = Nil,
+        topServiceIds = Nil,
+      )
+
+      val benchmarkResult = QdrantEmbeddingBenchmarkQueryResult(
+        candidateId = "candidate_dup",
+        queryId = "q_dup_02",
+        queryText = "hair color",
+        topVariantIds = List(v5, v4, v4, v3),
+        topProviderIds = Nil,
+        topServiceIds = Nil,
+        scores = List(0.9, 0.8, 0.7, 0.6),
+      )
+
+      val esResult = EngineEvalResult.fromElasticsearchEvalReport(report)
+      val qdrantResult = EngineEvalResult.fromQdrantBenchmarkResult(benchmarkResult)
+
+      assert(esResult.variantIds == List(v1, v1, v2, v3, v3))
+      assert(qdrantResult.variantIds == List(v5, v4, v4, v3))
     }
   }
 }
