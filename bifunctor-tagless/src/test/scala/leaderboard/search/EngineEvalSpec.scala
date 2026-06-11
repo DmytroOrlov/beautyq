@@ -272,4 +272,36 @@ final class EngineEvalSpec extends AnyWordSpec {
       assert(qdrantResult.variantIds == List(v5, v4, v4, v3))
     }
   }
+
+  "EngineEvalResult.simulatedHybridFrom" should {
+
+    "create a SimulatedHybrid result using the ES query id" in {
+      val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_hybrid_01", List(v1, v2))
+      val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_hybrid_01", List(v3))
+
+      val hybrid = EngineEvalResult.simulatedHybridFrom(es, qdrant)
+
+      assert(hybrid.engine == EngineEvalEngine.SimulatedHybrid)
+      assert(hybrid.queryId == "q_hybrid_01")
+      assert(hybrid.variantIds == List(v1, v2, v3))
+    }
+
+    "keep ES ids first and append only Qdrant complements in Qdrant order" in {
+      val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_hybrid_02", List(v1, v2, v4))
+      val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_hybrid_02", List(v2, v3, v5, v1))
+
+      val hybrid = EngineEvalResult.simulatedHybridFrom(es, qdrant)
+
+      assert(hybrid.variantIds == List(v1, v2, v4, v3, v5))
+    }
+
+    "remove duplicate ids while preserving first occurrence order across ES then Qdrant" in {
+      val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_hybrid_03", List(v1, v1, v2, v4))
+      val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_hybrid_03", List(v2, v3, v3, v5, v1))
+
+      val hybrid = EngineEvalResult.simulatedHybridFrom(es, qdrant)
+
+      assert(hybrid.variantIds == List(v1, v2, v4, v3, v5))
+    }
+  }
 }

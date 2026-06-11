@@ -49,6 +49,23 @@ object EngineEvalResult {
       queryId = result.queryId,
       variantIds = result.topVariantIds,
     )
+
+  def simulatedHybridFrom(
+    es: EngineEvalResult,
+    qdrant: EngineEvalResult,
+  ): EngineEvalResult =
+    EngineEvalResult(
+      engine = EngineEvalEngine.SimulatedHybrid,
+      queryId = es.queryId,
+      variantIds = distinctInOrder(es.variantIds ++ qdrant.variantIds),
+    )
+
+  private def distinctInOrder(ids: List[MasterServiceOfferVariantId]): List[MasterServiceOfferVariantId] =
+    ids.foldLeft((Set.empty[MasterServiceOfferVariantId], List.empty[MasterServiceOfferVariantId])) {
+      case ((seen, acc), id) =>
+        if (seen.contains(id)) (seen, acc)
+        else (seen + id, id :: acc)
+    }._2.reverse
 }
 
 final case class EngineEvalComparisonMetrics(
