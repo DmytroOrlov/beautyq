@@ -223,7 +223,7 @@ Do not use:
 * `assert(true)`;
 * empty success branches in pattern matches;
 * partial matches in expecting fakes;
-* `Option.get`;
+* Do not use unsafe extraction such as `.toOption.get`, `Option.get`, `RightProjection.get`, or `LeftProjection.get`. In production code, preserve typed errors with `Either`, `ZIO.fromEither`, or explicit domain failures. In tests, use pattern matching with `fail(...)` so failures keep useful context.
 * `isInstanceOf` / `asInstanceOf` when pattern matching is practical;
 * `assert(x == null)` / `assert(x != null)`.
 

@@ -78,7 +78,10 @@ abstract class VariantAttributeJsonSpec extends LeaderboardTest with VariantTest
           decoded = json.as[MasterServiceOfferVariant]
           _      <- assertIO(decoded.exists(_.booleanAttributes.get(AttributeDefinition.WithRemoval).contains(true)))
           _      <- assertIO(decoded.exists(_.booleanAttributes.get(AttributeDefinition.WithDesign).contains(false)))
-          encoded = decoded.toOption.get.asJson
+          encoded <- decoded match {
+            case Right(v) => ZIO.succeed(v.asJson)
+            case Left(e)  => ZIO.dieMessage(s"expected Right, got: $e")
+          }
           _      <- assertIO(encoded.hcursor.downField("booleanAttributes").downField("with_removal").as[Boolean].contains(true))
           _      <- assertIO(encoded.hcursor.downField("booleanAttributes").downField("with_design").as[Boolean].contains(false))
         } yield ()
@@ -115,7 +118,10 @@ abstract class VariantAttributeJsonSpec extends LeaderboardTest with VariantTest
           _      <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.PmuAreaAttribute).contains(PmuArea.Brows)))
           _      <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.FacialTreatmentTypeAttribute).contains(FacialTreatmentType.Microneedling)))
           _      <- assertIO(decoded.exists(_.enumAttributes.get(AttributeDefinition.BodyAreaAttribute).contains(BodyArea.UpperLip)))
-          encoded = decoded.toOption.get.asJson
+          encoded <- decoded match {
+            case Right(v) => ZIO.succeed(v.asJson)
+            case Left(e)  => ZIO.dieMessage(s"expected Right, got: $e")
+          }
           _      <- assertIO(encoded.hcursor.downField("enumAttributes").downField("nail_service_type").as[String].contains("manicure"))
           _      <- assertIO(encoded.hcursor.downField("enumAttributes").downField("lash_service_type").as[String].contains("extension"))
           _      <- assertIO(encoded.hcursor.downField("enumAttributes").downField("lash_volume").as[String].contains("volume2_d"))

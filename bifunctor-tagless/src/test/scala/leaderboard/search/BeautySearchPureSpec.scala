@@ -1016,8 +1016,14 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val input = UserSearchInput("query", None, None)
       val intent = ParsedSearchIntent("query", List("query"), Nil, Nil, "")
-      val withFacet = ElasticsearchSearchRequestInterpreter.request(specWithFacet, input, intent).toOption.get
-      val withoutFacet = ElasticsearchSearchRequestInterpreter.request(specWithoutFacet, input, intent).toOption.get
+      val withFacet = ElasticsearchSearchRequestInterpreter.request(specWithFacet, input, intent) match {
+        case Right(j) => j
+        case Left(e)  => fail(s"expected Right, got: $e")
+      }
+      val withoutFacet = ElasticsearchSearchRequestInterpreter.request(specWithoutFacet, input, intent) match {
+        case Right(j) => j
+        case Left(e)  => fail(s"expected Right, got: $e")
+      }
 
       assert(withFacet.hcursor.downField("aggs").downField("agg_serviceName").focus.nonEmpty)
       assert(withoutFacet.hcursor.downField("aggs").downField("agg_serviceName").focus.isEmpty)

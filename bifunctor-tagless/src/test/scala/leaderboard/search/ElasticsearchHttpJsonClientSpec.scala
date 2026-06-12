@@ -72,7 +72,10 @@ final class ElasticsearchHttpJsonClientSpec extends AnyWordSpec {
           case "/index" if method == "PUT" =>
             assert(method == "PUT")
             assert(contentType == "application/json")
-            val parsed = parse(body).toOption.get
+            val parsed = parse(body) match {
+              case Right(j) => j
+              case Left(e)  => fail(s"expected Right, got: $e")
+            }
             assert(parsed.hcursor.get[Boolean]("flag").toOption.contains(true))
             exchange.sendResponseHeaders(200, okBytes.length)
             Using.resource(exchange.getResponseBody)(_.write(okBytes))
@@ -80,7 +83,10 @@ final class ElasticsearchHttpJsonClientSpec extends AnyWordSpec {
           case "/index/_search" if method == "POST" =>
             assert(method == "POST")
             assert(contentType == "application/json")
-            val parsed = parse(body).toOption.get
+            val parsed = parse(body) match {
+              case Right(j) => j
+              case Left(e)  => fail(s"expected Right, got: $e")
+            }
             assert(parsed.hcursor.get[String]("query").toOption.contains("test"))
             exchange.sendResponseHeaders(200, okBytes.length)
             Using.resource(exchange.getResponseBody)(_.write(okBytes))
