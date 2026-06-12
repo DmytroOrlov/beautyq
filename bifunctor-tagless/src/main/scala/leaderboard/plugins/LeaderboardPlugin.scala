@@ -11,7 +11,7 @@ import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
 import leaderboard.api.{BeautySearchProductionIncludedApis, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle, CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
-import leaderboard.config.{PostgresCfg, PostgresPortCfg}
+import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints, TapirHttpSupport}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
@@ -27,6 +27,7 @@ import scala.concurrent.duration.*
 object LeaderboardPlugin extends PluginDef {
   include(modules.roles[IO])
   include(modules.api[IO])
+  include(BeautySearchRouteModules.apiElasticsearch)
   include(modules.repoDummy[IO])
   include(modules.repoProd[IO])
   include(modules.seed[IO])
@@ -168,6 +169,7 @@ object LeaderboardPlugin extends PluginDef {
 
     val configs: ConfigModuleDef = new ConfigModuleDef {
       makeConfig[PostgresCfg]("postgres")
+      makeConfig[ElasticsearchPortCfg]("elasticsearch")
     }
     val prodConfigs: ConfigModuleDef = new ConfigModuleDef {
       // only use this if Scene axis is set to Provided

@@ -22,4 +22,8 @@ object BeautySearchRouteModules {
     include(ElasticsearchClientModules.portConfigured)
     include(seedCatalogElasticsearch)
   }
+
+  def apiElasticsearch: ModuleDef = new ModuleDef {
+    include(seedCatalogElasticsearchPortConfigured)
+  }
 }

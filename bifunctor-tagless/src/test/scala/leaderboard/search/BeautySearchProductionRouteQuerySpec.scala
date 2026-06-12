@@ -2,12 +2,14 @@ package leaderboard.search
 
 import cats.syntax.all.*
 import cats.effect.Async
+import com.sun.net.httpserver.{HttpExchange, HttpServer}
 import distage.Injector
 import fs2.text
 import io.circe.parser.parse
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
+import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
@@ -16,100 +18,126 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.interop.catz.*
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
 
+import java.net.InetSocketAddress
+import java.nio.charset.StandardCharsets
+import scala.io.Source
+import scala.util.Using
+
 final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with HttpContractTestSupport {
   "POST /beauty-search query text inputs" should {
     "return current behavior for empty query string" in {
-      val probe = buildProbe()
-      val apis  = probe.allHttpApis
+      withEsServer { port =>
+        val probe = buildProbe(port)
+        val apis  = probe.allHttpApis
 
-      assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
+        assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
 
-      val response = runIO(
-        observeRoute(
-          apis,
-          postJson("/beauty-search", """{"query":"","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+        val response = runIO(
+          observeRoute(
+            apis,
+            postJson("/beauty-search", """{"query":"","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+          )
         )
-      )
 
-      val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-      val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(response.status == Status.Ok)
 
-      if (response.status == Status.Ok) {
-        assert(carousel.asArray.exists(_.nonEmpty), "200 OK for empty query; carousel should be non-empty")
-      } else {
-        assert(response.status != Status.Ok, s"unexpected status for empty query: ${response.status}")
+        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
+        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(carousel.asArray.exists(_.isEmpty), "ES zero-hit: carousel should be empty"): Unit
       }
     }
 
     "return current behavior for whitespace-only query string" in {
-      val probe = buildProbe()
-      val apis  = probe.allHttpApis
+      withEsServer { port =>
+        val probe = buildProbe(port)
+        val apis  = probe.allHttpApis
 
-      val response = runIO(
-        observeRoute(
-          apis,
-          postJson("/beauty-search", """{"query":"     ","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+        val response = runIO(
+          observeRoute(
+            apis,
+            postJson("/beauty-search", """{"query":"     ","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+          )
         )
-      )
 
-      val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-      val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(response.status == Status.Ok)
 
-      if (response.status == Status.Ok) {
-        assert(carousel.asArray.exists(_.size <= 3))
-      } else {
-        assert(response.status != Status.Ok, s"unexpected status for whitespace-only query: ${response.status}")
+        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
+        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(carousel.asArray.exists(_.isEmpty)): Unit
       }
     }
 
     "return current behavior for normal text query" in {
-      val probe = buildProbe()
-      val apis  = probe.allHttpApis
+      withEsServer { port =>
+        val probe = buildProbe(port)
+        val apis  = probe.allHttpApis
 
-      val response = runIO(
-        observeRoute(
-          apis,
-          postJson("/beauty-search", """{"query":"nails","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+        val response = runIO(
+          observeRoute(
+            apis,
+            postJson("/beauty-search", """{"query":"nails","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+          )
         )
-      )
 
-      val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-      val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(response.status == Status.Ok)
 
-      if (response.status == Status.Ok) {
-        assert(carousel.asArray.exists(_.size <= 3))
-      } else {
-        assert(response.status != Status.Ok, s"unexpected status for normal text query: ${response.status}")
+        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
+        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(carousel.asArray.exists(_.isEmpty)): Unit
       }
     }
 
     "return current behavior for very long query string" in {
-      val probe = buildProbe()
-      val apis  = probe.allHttpApis
+      withEsServer { port =>
+        val probe = buildProbe(port)
+        val apis  = probe.allHttpApis
 
-      val longQuery = ("nails " * 1000)
+        val longQuery = ("nails " * 1000)
 
-      val response = runIO(
-        observeRoute(
-          apis,
-          postJson("/beauty-search", s"""{"query":"$longQuery","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+        val response = runIO(
+          observeRoute(
+            apis,
+            postJson("/beauty-search", s"""{"query":"$longQuery","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+          )
         )
-      )
 
-      val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-      val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(response.status == Status.Ok)
 
-      if (response.status == Status.Ok) {
-        assert(carousel.asArray.exists(_.size <= 3))
-      } else {
-        assert(response.status != Status.Ok, s"unexpected status for very long query: ${response.status}")
+        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
+        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
+        assert(carousel.asArray.exists(_.isEmpty)): Unit
       }
     }
   }
 
-  private def buildProbe(): BeautySearchProductionRouteQueryProbe = {
+  private def withEsServer(f: Int => Unit): Unit = {
+    val server = HttpServer.create(new InetSocketAddress(0), 0)
+    try {
+      server.createContext(
+        "/",
+        (exchange: HttpExchange) => {
+          val path = exchange.getRequestURI.getPath
+          val body = Using.resource(exchange.getRequestBody)(in => Source.fromInputStream(in, "UTF-8").mkString)
+          val _    = body
+          val responseBody =
+            if (path.endsWith("_search")) """{"hits":{"hits":[]}}"""
+            else """{"acknowledged":true}"""
+          val bytes = responseBody.getBytes(StandardCharsets.UTF_8)
+          exchange.sendResponseHeaders(200, bytes.length)
+          Using.resource(exchange.getResponseBody)(_.write(bytes))
+        }: Unit
+      )
+      server.start()
+      f(server.getAddress.getPort)
+    } finally {
+      server.stop(0)
+    }
+  }
+
+  private def buildProbe(port: Int): BeautySearchProductionRouteQueryProbe = {
     val module = new distage.ModuleDef {
-      include(BeautySearchRouteModules.seedCatalogInMemory[IO])
+      include(BeautySearchRouteModules.apiElasticsearch)
+      make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
       make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
       make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[Async[Task]].fromValue(Async[Task])
@@ -118,8 +146,7 @@ final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with HttpCo
           beautySearchApi: BeautySearchApi[IO],
           allHttpApis: Set[HttpApi[IO]],
         ) =>
-          val _ = beautySearchApi
-          BeautySearchProductionRouteQueryProbe(allHttpApis)
+          BeautySearchProductionRouteQueryProbe(beautySearchApi, allHttpApis)
       }
     }
 
@@ -150,7 +177,8 @@ final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with HttpCo
   }
 
   private final case class BeautySearchProductionRouteQueryProbe(
-    allHttpApis: Set[HttpApi[IO]]
+    beautySearchApi: BeautySearchApi[IO],
+    allHttpApis: Set[HttpApi[IO]],
   )
 
   private def runIO[E, A](effect: ZIO[Any, E, A]): A =
