@@ -253,13 +253,14 @@ event match {
 }
 ```
 
-## Scala warning rules
+## Scala rules
 
 * Do not add `@nowarn` as a first fix.
 * Never add `@nowarn("msg=Unreachable")`.
 * Fix unreachable matches instead of suppressing them.
 * `@nowarn` must be exact, narrow, intentional, and explained.
 * Prompt-provided imports and helper snippets are candidate source-truth, not paste-all requirements. Use only the imports/helpers needed by the final code or tests. Before running validation or compilation, prune unused imports, params, locals, helper methods, and dead code. Report pruning prompt-provided unused symbols as a normal compile-safety step, not as a behavior deviation.
+* In Scala 3 tests, avoid `E175` discarded-value fixes by making Unit-returning lambdas, callbacks, and match branches explicitly return `Unit`. Do not leave `assert(...)` as the final discarded value in a context typed as `Unit`; add a final `(): Unit` or otherwise make the branch return `Unit` before running validation.
 
 ## HTTP / Tapir rules
 
