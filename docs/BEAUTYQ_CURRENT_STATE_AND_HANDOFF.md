@@ -62,7 +62,7 @@ Documented as characterized, not as desired final contract:
 ## 5. Current priority: ES seed route stabilization
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
-* ES seed-route checkpoint is reached: 945 passed, 0 failed, 12 canceled.
+* ES seed-route checkpoint is reached: latest full verification 956 passed, 0 failed, 1 canceled.
 * Next priority: stabilize/demo ES seed route; verify business demo readiness over real ES environment.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.
@@ -110,7 +110,7 @@ Documented as characterized, not as desired final contract:
 * Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
 * Keep it offline/eval-only.
 
-## 6.5. Product search north star and nearest checkpoint
+## 6.5. Product search north star
 
 Final direction:
 Build useful free-string BeautyQ search that turns user text into domain-aware
@@ -124,42 +124,30 @@ product results by combining:
 * explicit eval/benchmark reporting before any production hybrid or routing
   decision.
 
-Nearest production checkpoint (reached):
-Default production `/beauty-search` now uses ES-backed seed route.
-
-Current production `/beauty-search` is ES-backed over the seed catalog.
-
-It is still a seed-data checkpoint, not full production search lifecycle:
-startup prepares the seed catalog into Elasticsearch and route retrieval uses
-`ElasticsearchSearchBackend`. `seedCatalogInMemory` remains available as a
-rollback/non-default module.
-
-This checkpoint proves a business-visible ES-backed `/beauty-search` path over
-controlled seed data. It does not solve repository freshness, live indexing,
-alias/blue-green rollout, Qdrant shadowing, hybrid serving, fallback, score
-fusion, reranking, or production lifecycle management.
-
-## 6.7. ES seed-route checkpoint status (reached)
+## 6.6. ES seed-route checkpoint status (reached)
 
 Reached:
 * `BeautySearchCatalogBackendModules.seedResourceElasticsearch` (production-hidden);
 * `BeautySearchRouteModules.seedCatalogElasticsearch` (production-hidden);
 * `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` composes ES client module + ES seed route;
 * `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`;
+* `ElasticsearchSeedIndexInitializer` uses bodyless `POST /<index>/_refresh` via `ElasticsearchJsonClient.post(path)`, because real Elasticsearch rejects `_refresh` with a JSON body;
 * default production `/beauty-search` switched from `seedCatalogInMemory` to ES-backed seed route;
 * explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`;
-* full verification after default switch: 945 passed, 0 failed, 12 canceled.
+* demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`;
+* `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route;
+* latest full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
 
 Important observed route behavior:
 When Elasticsearch returns zero hits, the ES-backed route can still return
 non-empty facets and inferred filters because those are derived from catalog,
 spec, and parsed intent metadata rather than only from hit lists.
 
-Still not done (same as before):
-* repository freshness, live/repository indexing, aliases/blue-green, Qdrant shadowing,
-  hybrid serving, fallback, score fusion, reranking, and production lifecycle.
+Full lifecycle gaps remain: repository freshness, live/repository indexing,
+aliases/blue-green, Qdrant shadowing, hybrid serving, fallback, score fusion,
+reranking, and production lifecycle management.
 
-## 7. Forbidden paths
+## 6.7. Forbidden paths
 
 * No production hybrid.
 * No route switch from benchmark alone.

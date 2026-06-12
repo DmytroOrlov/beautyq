@@ -57,18 +57,11 @@ Implemented/current:
 Production-wired/current:
 
 - `LeaderboardPlugin.modules.api` includes `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES-backed seed route, default).
-- The default API graph now binds `BeautySearchService.Impl[F]`, `BeautySearchBackend[F]`, `BeautySearchApi[F]`, and `BeautySearchTapirEndpoints` through the included route/backend/API modules.
-- The backend source is seed-resource catalog snapshot readiness: `BeautyQSeedLoader.ResourceLoader` to `BeautySearchReadyCatalogDocuments` to `ElasticsearchSeedIndexInitializer` to `ElasticsearchSearchBackend[F]`.
-- This production exposure is lexical/simple/catalog-first.
+- The backend source is seed-resource catalog snapshot readiness: `BeautyQSeedLoader.ResourceLoader` → `BeautySearchReadyCatalogDocuments` → `ElasticsearchSeedIndexInitializer` → `ElasticsearchSearchBackend[F]`.
 - `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
-- It is not Qdrant, not hybrid.
 - `seedCatalogInMemory` remains available as rollback/non-default.
-- It does not add repository snapshot wiring, startup indexing, fallback, reranking, score fusion, or benchmark-driven routing.
-- Production freshness/refresh/staleness, runtime refresh/replacement, catalog source-of-truth, stale-catalog observability, and kill-switch behavior remain unresolved.
-- There is no runtime refresh or replacement policy yet.
-- Benchmark decisions do not affect routing.
+- No repository snapshot wiring, startup indexing, fallback, reranking, score fusion, or benchmark-driven routing.
 - `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes them to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined API set.
-- Because the included route module contributes `BeautySearchApi[F]` to that set, `POST /beauty-search` is now production-exposed through the default API graph.
 
 Design boundary:
 
@@ -123,7 +116,7 @@ Resolved mismatch:
 - This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
 - The explicit `BeautyQSeedReady` edge does not by itself solve production search readiness. Future implementation still needs a source-of-truth and freshness design for repository snapshots, Elasticsearch indexes, and any production search-read model.
 - The catalog snapshot/in-memory readiness proof only proves explicit test-local document readiness before backend construction. It does not define production freshness, refresh, staleness, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
-- That proof originally characterized startup readiness only. Current production route exposure exists through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES-backed seed route, default). The exposed route uses seed-resource catalog + `ElasticsearchSearchBackend`; it does not solve freshness, refresh, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
+- That proof originally characterized startup readiness only.
 
 ## D. Elasticsearch Path
 
@@ -151,6 +144,7 @@ Production-wired/current:
 - ES seed route is default: `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` → `ElasticsearchSearchBackend`.
 - `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
 - `ElasticsearchSeedIndexInitializer` prepares seed catalog in ES.
+- `_refresh` is bodyless: `ElasticsearchSeedIndexInitializer` calls `ElasticsearchJsonClient.post(path)` (no body), because real Elasticsearch rejects `_refresh` with a JSON body.
 - No production indexing lifecycle (repository-backed/live), startup reindex, aliases/blue-green, or production collection manager was found.
 
 Classification:

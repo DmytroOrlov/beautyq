@@ -74,26 +74,28 @@ Current production route:
 ```text
 POST /beauty-search
 → LeaderboardPlugin
-→ BeautySearchRouteModules.seedCatalogInMemory
+→ BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured
+→ BeautySearchRouteModules.seedCatalogElasticsearch
+→ BeautySearchCatalogBackendModules.seedResourceElasticsearch
 → BeautyQSeedLoader.ResourceLoader
-→ BeautySearchCatalogSnapshot
 → BeautySearchReadyCatalogDocuments
-→ InMemorySearchBackend
+→ ElasticsearchSeedIndexInitializer
+→ ElasticsearchSearchBackend
 → BeautySearchService.Impl
 → BeautySearchApi
 ```
 
 Facts to preserve:
 
-* Production `/beauty-search` is seed-resource catalog snapshot + `InMemorySearchBackend`.
+* Production `/beauty-search` is ES-backed over seed-resource catalog snapshot.
 * It is lexical/simple/catalog-first.
-* It is not Elasticsearch, Qdrant, or hybrid search.
 * `BeautySearchService.Impl` is the verified implementation name; do not use stale `BeautySearchService.Live`.
 * `BeautySearchProductionInclusion*` exists as staging/helper boundary, not the active gate for the current route.
 * Real route kill switch / enable-disable gate remains future work.
 * `Salon` is not a first-class inspected model; current domain uses `Master` and `MasterLocation`.
 * `MasterServiceOfferVariant` is the central purchasable/search-result unit. Do not call it bookable unless implementing real booking/scheduling support.
 * Benchmark output is decision support, not production automation.
+* `seedCatalogInMemory` remains available as rollback/non-default.
 
 Current route characterization:
 
@@ -270,6 +272,10 @@ event match {
 * Do not migrate many endpoints in one patch.
 * Do not change malformed path/body/exception contracts unless explicitly asked.
 * Route-level contract tests override planning docs or Tapir defaults.
+* For HTTP client algebras, model method/body semantics explicitly. Do not fake
+  bodyless endpoints by sending empty JSON objects such as `Json.obj()`. If an
+  endpoint is specified or observed as bodyless, add/use a bodyless client method
+  and cover it in both the real client spec and scripted-client tests.
 
 Beauty search route:
 
@@ -304,11 +310,11 @@ Allowed place for BeautyQ semantics:
 
 Do not hardcode service names, query phrases, eval query ids, ranking rules, or attribute semantics inside ES/Qdrant clients, generic parser/interpreter code, or in-memory backends.
 
-Elasticsearch is the intended lexical retrieval baseline for text search, structured filters, facets, exact/range/geo constraints, and normal lexical result retrieval. It is not currently the production Beauty search backend.
+Elasticsearch is the production Beauty search backend (lexical retrieval baseline for text search, structured filters, facets, exact/range/geo constraints).
 
 Qdrant owns semantic candidate recall only. It is not currently the production Beauty search backend.
 
-`InMemorySearchBackend` is a seed-backed MVP/product-contract stabilizer. It is not an in-memory Elasticsearch and must not be treated as ES scoring/order/analyzer oracle.
+`InMemorySearchBackend` is a rollback/regression/pure backend. It is not an in-memory Elasticsearch and must not be treated as ES scoring/order/analyzer oracle.
 
 Rules:
 

@@ -408,7 +408,14 @@ Coordinator checks patch/bundle. The agent report does not need to prove every n
 
 ---
 
-## 1.11 Commit messages
+## 1.11 Transport-boundary debugging
+
+When a real service rejects a scripted-test-compatible request, prefer a narrow
+client algebra correction before continuing higher-level route/demo work. Do not
+spend a stronger model on route-level debugging until the transport boundary
+matches the real service semantics.
+
+## 1.12 Commit messages
 
 The user commits manually; delegated agents do not commit.
 
@@ -422,7 +429,7 @@ Do not confuse short agent reports with short commit messages; reports may be sh
 
 When preparing a commit message in chat, provide the full extended message unless the user asks for short subject only.
 
-## 1.12 What goes to AGENTS.md vs this file vs prompt
+## 1.13 What goes to AGENTS.md vs this file vs prompt
 
 Put in `AGENTS.md` when it is stable repo behavior for all agents:
 
@@ -460,7 +467,7 @@ whether metric counts distinct ids or ranked slots
 
 ---
 
-## 1.13 Bundle scripts
+## 1.14 Bundle scripts
 
 Bundles are for the coordinator, not delegated agents.
 
@@ -511,7 +518,7 @@ echo "$OUT"
 
 ---
 
-# 2. GPT-specific rules
+# 3. GPT-specific rules
 
 These rules apply when GPT is available and is the acting model/agent.
 
@@ -645,7 +652,7 @@ no startup indexing
 
 ---
 
-# 3. MiniMax / Qwen / MiMo rules
+# 4. MiniMax / Qwen / MiMo rules
 
 These rules apply to weaker/local/cheaper models.
 
@@ -885,7 +892,7 @@ If source truth is missing, recommend requesting a focused bundle first; do not 
 
 ---
 
-# 4. B-lite prompt reminder
+# 5. B-lite prompt reminder
 
 This section applies to all models, but especially MiniMax/Qwen/MiMo.
 
@@ -973,7 +980,7 @@ Do not put `queryClass` into a metrics function unless the metric actually uses 
 
 ---
 
-# 5. Before sending any delegated prompt, check
+# 6. Before sending any delegated prompt, check
 
 Ask:
 
@@ -993,7 +1000,7 @@ If any answer is bad, rewrite the prompt before sending.
 
 ---
 
-# 6. Documentation ownership
+# 7. Documentation ownership
 
 Before adding or changing a documented fact, identify its canonical owner.
 
@@ -1011,7 +1018,7 @@ The source-truth gate is safety-critical and must not be deduplicated away; keep
 
 ---
 
-# 7. Source-truth gate
+# 8. Source-truth gate
 
 This section is a protected coordinator invariant. Do not remove, shorten, soften, or move it into `AGENTS.md`. It may only be replaced by wording that is at least as strict: missing source truth must stop patch planning, delegated-agent prompts, adjacent "safe" patches, and invented helpers/APIs.
 

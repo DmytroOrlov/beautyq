@@ -45,7 +45,7 @@ Reached checkpoint (ES seed route, default):
 - `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`.
 - `BeautySearchRouteModules.seedCatalogElasticsearch` → `BeautySearchCatalogBackendModules.seedResourceElasticsearch` → seed catalog → ES index → ES retrieval.
 - `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
-- Full verification after default switch: 945 passed, 0 failed, 12 canceled.
+- Full verification after default switch.
 
 Evidence:
 
@@ -80,7 +80,7 @@ The current phase is between:
 - A→B: production-hybrid control-plane v0 — reached.
 - B1: production-hidden hybrid activation/handle — reached.
 - B2: production-hidden hybrid control-plane modules — reached.
-- ES seed route default: reached (945 passed, 0 failed, 12 canceled).
+- ES seed route default: reached.
 - B-lite: ES-native + Qdrant-native benchmark comparison — eval continues.
 - resource-backed hidden Qdrant/hybrid module expansion — paused.
 - C: production `/beauty-search` hybrid backend — future.
@@ -111,49 +111,27 @@ Rationale for pausing runtime hybrid:
 * ES seed route is now default, but full production lifecycle is not solved.
 * ES-native eval/baseline is not complete.
 * Continuing resource-backed hybrid before ES-native + Qdrant-native comparison would optimize the wrong layer.
-* The pure `EngineEval` comparison model is implemented; the next step is connecting ES and Qdrant executor outputs to normalized `EngineEvalResult`.
+* The pure `EngineEval` comparison/report/assembly layer is implemented. Remaining work is operational/demo-facing: collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use the results to guide later Qdrant shadow/hybrid design.
 
-The codebase now contains pure control-plane value/decision types:
-`BeautySearchHybridSnapshotIdentity`,
-`BeautySearchHybridCollectionIdentity`,
-`BeautySearchHybridFreshnessPolicy`,
-`BeautySearchHybridRuntimeMode` (`SeedCatalogOnly`, `HybridShadow`,
-`HybridServe`), `BeautySearchHybridServingPolicy`,
-`BeautySearchHybridReadinessStatus`, `BeautySearchHybridServingDecision`,
-`BeautySearchHybridReadiness[F]`, `BeautySearchHybridDiagnosticsSink[F]`,
-`BeautySearchHybridDiagnosticsEvent.DecisionEvaluated`, and
-`BeautySearchHybridDecisionEvaluator[F]`.
-They live in
-`leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala` and are
-covered by `BeautySearchHybridControlPlaneSpec.scala`.
-
-Semantics:
-
-- `SeedCatalogOnly` keeps the existing seed-catalog production path.
-- `HybridShadow` is diagnostics/shadow only and must not affect user response.
-- `HybridServe` can serve only when readiness is `Ready`.
-- `NotReady` conservatively resolves to `UseSeedCatalogOnly` in v0.
-- `BeautySearchHybridDecisionEvaluator[F]` only reads readiness, computes
-  decision, reports diagnostics via `DecisionEvaluated`, and returns decision.
-  It does not run hybrid retrieval, indexing, Qdrant, Llama, HTTP, or route
-  behavior.
+The codebase contains pure control-plane value/decision types in
+`leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`
+(`BeautySearchHybridSnapshotIdentity`, `BeautySearchHybridCollectionIdentity`,
+`BeautySearchHybridFreshnessPolicy`, `BeautySearchHybridRuntimeMode`,
+`BeautySearchHybridServingPolicy`, `BeautySearchHybridReadinessStatus`,
+`BeautySearchHybridServingDecision`, `BeautySearchHybridReadiness[F]`,
+`BeautySearchHybridDiagnosticsSink[F]`, `BeautySearchHybridDiagnosticsEvent.DecisionEvaluated`,
+`BeautySearchHybridDecisionEvaluator[F]`), covered by
+`BeautySearchHybridControlPlaneSpec.scala`.
 
 This control-plane layer is intentional preparation for B, not production route
-wiring. It is not a deviation from the roadmap. It is required before B so that
-the future hidden module has an explicit activation mode, readiness gate,
-collection identity/version surface, freshness/staleness policy, kill-switch
-integration point, observability/readiness surface, and conservative default
-behavior.
+wiring. It is required before B so that the future hidden module has an
+explicit activation mode, readiness gate, collection identity/version surface,
+freshness/staleness policy, kill-switch integration point, observability/readiness
+surface, and conservative default behavior.
 
 B has not started as production module wiring. The control-plane types are not
 wired into `LeaderboardPlugin.modules.api`, not used by the production
 `/beauty-search` route, and do not construct Qdrant/Llama resources.
-
-Evidence:
-
-- Docs `search-dsl-qdrant-vector-backend.md` and `search-dsl-hybrid-v1-plan.md` explicitly say production hybrid is not implemented.
-- Classes are named `QdrantNonProductionExperiment*`, `BeautyQNonProductionHybrid*`, and `Experimental*`.
-- `LeaderboardPlugin.scala` has no Qdrant/hybrid search binding.
 
 Preserved boundary:
 
@@ -172,25 +150,15 @@ Preserved boundary:
 
 Full API, status, and metric semantics in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
-Target milestone:
-
-```text
-M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
-```
+Target milestone: `M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison`
 
 Status:
 
-* M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
+* M-ESQ-EVAL pure/report/assembly layer is implemented.
 * Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
-* Still offline/eval only.
-* Production route wiring is now ES-backed seed route. Qdrant and hybrid remain eval-only.
+* Still offline/eval only. Production route wiring is now ES-backed seed route.
 
-Goal:
-
-* Build ES-native eval and Qdrant-native eval comparison layer.
-* Compare ES-alone, Qdrant-alone, and simulated hybrid (offline only).
-* Decide from metrics, not from architecture enthusiasm.
-* Keep production serving unchanged during eval development.
+Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
 
 ## Current nearest search checkpoint
 
@@ -202,41 +170,17 @@ rollback module (available, non-default):
   seed resource catalog + InMemorySearchBackend
 ```
 
-ES seed route default is reached (945 passed, 0 failed, 12 canceled).
+ES seed route default is reached.
 `seedCatalogInMemory` remains available as rollback/non-default.
 
-Next checkpoint: business demo readiness over real ES environment.
+Next checkpoint: business demo readiness / runbook / repeatable demo over real ES environment.
 
 The goal is not yet full production search lifecycle. The goal is to demonstrate
 the first ES-backed production route over controlled seed data before adding
 freshness, repository-backed indexing, Qdrant shadowing, hybrid serving, score
 fusion, fallback, or production collection lifecycle.
 
-Current benchmark pieces (exist but not yet unified):
-
-* `BeautySearchEval` / `BeautySearchEvalInventory` — common eval dataset / expectations.
-* `BeautySearchElasticsearchIntegrationSpec` — ES Docker/integration eval subsets.
-* `QdrantSemanticCandidateEvalSpec` — Qdrant semantic candidate eval.
-* `QdrantEmbeddingBenchmark*` — embedding endpoint/model benchmark.
-* `HybridDocumentRetrieval` / hybrid response specs — merge/dedup/diagnostics mechanics.
-
-Problem:
-
-These pieces are useful but not yet a single ES-native + Qdrant-native engine comparison layer.
-
-Simulated hybrid:
-
-* Simulated hybrid belongs in benchmark/eval only.
-* Simulated hybrid should combine ES EngineEvalResult + Qdrant EngineEvalResult offline.
-* It must not imply route wiring, HybridServe, or auto-supplement production responses.
-
-Readiness criteria:
-
-* Eval queries have `queryClass` / `expectedEngineRole`.
-* ES executor can produce normalized `EngineEvalResult`.
-* Qdrant executor can produce normalized `EngineEvalResult`.
-* Simulated hybrid report computes overlap/complement/noise.
-* Benchmark report does not change production behavior.
+Simulated hybrid belongs in benchmark/eval only: combines ES EngineEvalResult + Qdrant EngineEvalResult offline, must not imply route wiring, HybridServe, or auto-supplement production responses.
 
 ### Seed-Scoped Repository Snapshot Readiness Edge
 
