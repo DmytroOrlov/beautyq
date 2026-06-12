@@ -70,9 +70,14 @@ final class EngineEvalReportJsonSpec extends AnyWordSpec {
         .decodeReportString(EngineEvalReportJson.encodeReportString(original))
         .fold(failure => fail(s"unexpected decode failure: $failure"), identity)
 
-      assert(decoded.queryReports.head.es.variantIds == List(v1, v1, v2))
-      assert(decoded.queryReports.head.expectedRole == EngineExpectedRole.QdrantMayComplement)
-      assert(decoded.queryReports.head.simulatedHybrid.engine == EngineEvalEngine.SimulatedHybrid)
+      decoded.queryReports match {
+        case queryReport :: Nil =>
+          assert(queryReport.es.variantIds == List(v1, v1, v2))
+          assert(queryReport.expectedRole == EngineExpectedRole.QdrantMayComplement)
+          assert(queryReport.simulatedHybrid.engine == EngineEvalEngine.SimulatedHybrid)
+        case other =>
+          fail(s"expected one query report, got ${other.size}: $other")
+      }
     }
 
     "fail clearly on invalid JSON string" in {

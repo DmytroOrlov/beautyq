@@ -103,8 +103,12 @@ final class QdrantEmbeddingBenchmarkReportJsonSpec extends AnyWordSpec {
 
       assert(decoded == report)
       assert(decoded.plan.runMode == QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel)
-      assert(decoded.comparisons.size == 1)
-      assert(decoded.comparisons.head.meanQueryLatencyMsDelta.contains(-15.0))
+      decoded.comparisons match {
+        case comparison :: Nil =>
+          assert(comparison.meanQueryLatencyMsDelta.contains(-15.0))
+        case other =>
+          fail(s"expected one comparison, got ${other.size}: $other")
+      }
     }
 
     "preserve UUID-backed domain ids exactly via related benchmark report json codecs" in {
@@ -148,8 +152,13 @@ final class QdrantEmbeddingBenchmarkReportJsonSpec extends AnyWordSpec {
       val decoded = decode(report)
 
       assert(decoded.candidateReports.map(_.candidate.candidateId) == List("first", "second"))
-      assert(decoded.candidateReports.head.aggregate.meanQueryLatencyMs.isEmpty)
-      assert(decoded.candidateReports(1).aggregate.meanQueryLatencyMs.contains(22.0))
+      decoded.candidateReports match {
+        case first :: second :: Nil =>
+          assert(first.aggregate.meanQueryLatencyMs.isEmpty)
+          assert(second.aggregate.meanQueryLatencyMs.contains(22.0))
+        case other =>
+          fail(s"expected two candidate reports, got ${other.size}: $other")
+      }
     }
 
     "preserve candidate notes across round-trip" in {
@@ -165,22 +174,24 @@ final class QdrantEmbeddingBenchmarkReportJsonSpec extends AnyWordSpec {
 
       val decoded = decode(report)
 
-      assert(decoded.plan.candidates.head.notes.contains("notes stay stable"))
+      decoded.plan.candidates match {
+        case candidate :: Nil =>
+          assert(candidate.notes.contains("notes stay stable"))
+        case other =>
+          fail(s"expected one candidate, got ${other.size}: $other")
+      }
     }
 
     "fail clearly on invalid json decode" in {
-      val failure = QdrantEmbeddingBenchmarkReportJson
-        .decodeReport(Json.obj("plan" -> Json.obj("runMode" -> Json.fromString("WrongMode"))))
-        .swap
-        .toOption
-        .getOrElse(fail("expected decode failure"))
-
-      failure match {
-        case QueryFailure.OperationFailure(operationName, message) =>
+      QdrantEmbeddingBenchmarkReportJson
+        .decodeReport(Json.obj("plan" -> Json.obj("runMode" -> Json.fromString("WrongMode")))) match {
+        case Left(QueryFailure.OperationFailure(operationName, message)) =>
           assert(operationName == "qdrant-embedding-benchmark-report-json")
           assert(message.contains("Unsupported Qdrant embedding benchmark run mode: WrongMode"))
-        case other =>
+        case Left(other) =>
           fail(s"expected OperationFailure, got $other")
+        case Right(value) =>
+          fail(s"expected decode failure, got $value")
       }
     }
 
@@ -291,22 +302,26 @@ final class QdrantEmbeddingBenchmarkReportJsonSpec extends AnyWordSpec {
       val decoded = decodeRunOutput(output)
 
       assert(decoded.queryResultsByCandidateId.keySet == Set(candidate.candidateId))
-      assert(decoded.queryResultsByCandidateId(candidate.candidateId).head.topVariantIds == List(variantId(10), variantId(20)))
+      decoded.queryResultsByCandidateId.get(candidate.candidateId) match {
+        case Some(result :: Nil) =>
+          assert(result.topVariantIds == List(variantId(10), variantId(20)))
+        case Some(other) =>
+          fail(s"expected one query result for ${candidate.candidateId}, got ${other.size}: $other")
+        case None =>
+          fail(s"expected query results for ${candidate.candidateId}, got keys: ${decoded.queryResultsByCandidateId.keySet}")
+      }
     }
 
     "fail clearly on invalid run-output json string" in {
-      val failure = QdrantEmbeddingBenchmarkReportJson
-        .decodeRunOutputString("{invalid json")
-        .swap
-        .toOption
-        .getOrElse(fail("expected decode failure"))
-
-      failure match {
-        case QueryFailure.OperationFailure(operationName, message) =>
+      QdrantEmbeddingBenchmarkReportJson
+        .decodeRunOutputString("{invalid json") match {
+        case Left(QueryFailure.OperationFailure(operationName, message)) =>
           assert(operationName == "qdrant-embedding-benchmark-report-json")
           assert(message.contains("Invalid Qdrant embedding benchmark report JSON"))
-        case other =>
+        case Left(other) =>
           fail(s"expected OperationFailure, got $other")
+        case Right(value) =>
+          fail(s"expected decode failure, got $value")
       }
     }
   }

@@ -82,10 +82,14 @@ final class EngineEvalReportAssemblySpec extends AnyWordSpec {
 
       result match {
         case Right(report) =>
-          val queryReport = report.queryReports.head
-          assert(queryReport.expectedRole == EngineExpectedRole.QdrantShouldStaySilent)
-          assert(queryReport.expectedVariantIds == Set(v1, v2, v3))
-          assert(queryReport.metrics.qdrantNoiseCount == 2)
+          report.queryReports match {
+            case queryReport :: Nil =>
+              assert(queryReport.expectedRole == EngineExpectedRole.QdrantShouldStaySilent)
+              assert(queryReport.expectedVariantIds == Set(v1, v2, v3))
+              assert(queryReport.metrics.qdrantNoiseCount == 2)
+            case other =>
+              fail(s"expected one query report, got ${other.size}: $other")
+          }
         case Left(failure) =>
           fail(s"expected Right, got Left($failure)")
       }
@@ -249,10 +253,13 @@ final class EngineEvalReportAssemblySpec extends AnyWordSpec {
       result match {
         case Right(report) =>
           assert(report.queryReports.map(_.queryId) == List("q_out_2", "q_out_1"))
-          val q1Report = report.queryReports.find(_.queryId == "q_out_1").get
-          val q2Report = report.queryReports.find(_.queryId == "q_out_2").get
-          assert(q1Report.qdrant.variantIds == List(v2, v4))
-          assert(q2Report.qdrant.variantIds == List(v3, v5, v1))
+          (report.queryReports.find(_.queryId == "q_out_1"), report.queryReports.find(_.queryId == "q_out_2")) match {
+            case (Some(q1Report), Some(q2Report)) =>
+              assert(q1Report.qdrant.variantIds == List(v2, v4))
+              assert(q2Report.qdrant.variantIds == List(v3, v5, v1))
+            case other =>
+              fail(s"expected q_out_1 and q_out_2 reports, got query ids: ${report.queryReports.map(_.queryId)} and lookup result: $other")
+          }
         case Left(failure) =>
           fail(s"expected Right, got Left($failure)")
       }
