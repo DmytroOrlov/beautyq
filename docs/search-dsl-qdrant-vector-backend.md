@@ -325,7 +325,7 @@ This boundary is deliberately outside the production app graph.
 
 There is intentionally no Qdrant hybrid Distage wiring yet.
 
-`LeaderboardPlugin` currently wires roles, APIs, repositories, seed readiness, and config. It now wires the production-exposed seed-resource `/beauty-search` route via `InMemorySearchBackend`. It still does not wire production Elasticsearch, Qdrant, or hybrid search-service graph. Adding Qdrant hybrid bindings there now would either create an unused module or move the project too close to production hybrid search before lifecycle, metadata, and rollout decisions are complete.
+`LeaderboardPlugin` currently wires roles, APIs, repositories, seed readiness, and config. It now wires the production-exposed seed-resource `/beauty-search` route via the ES-backed seed route backed by `ElasticsearchSearchBackend`. `InMemorySearchBackend` remains rollback/non-default. It still does not wire production Qdrant or hybrid search-service graph. Adding Qdrant hybrid bindings there now would either create an unused module or move the project too close to production hybrid search before lifecycle, metadata, and rollout decisions are complete.
 
 The supported runtime boundary for local/test/manual experiments is `QdrantNonProductionHybridExperiment`. It composes readiness/composition with `ExperimentalBeautySearchService`, but it is not part of the production app graph.
 

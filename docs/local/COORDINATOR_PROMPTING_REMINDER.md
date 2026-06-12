@@ -486,6 +486,7 @@ Do not write delegated prompts that say `use attached bundle`.
 * Bundle scripts must run `cpf "$OUT"` near the end.
 * Bundle scripts must print `echo "$OUT"` last.
 * `cpf "$OUT"` is required because the user relies on it to copy/upload the bundle.
+* When requesting a bundle from the user, provide an executable shell script, not only a prose include-list. The script should already contain the exact `rg`, `sed`, `find`, truncation, `wc -c "$OUT"`, `cpf "$OUT"`, and final `echo "$OUT"` steps the user should run.
 * Do not include `/tmp`, full `target`, generated build output, screenshots, generic pasted files, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
 
 ### Canonical shell shape
@@ -994,6 +995,7 @@ Did I tell it not to run full sbt test?
 Did I keep report short?
 Did I avoid model/thinking boilerplate?
 Did I provide a model recommendation block for non-trivial delegated prompts?
+If I need a focused bundle, did I give the user an executable shell script rather than only an include-list?
 ```
 
 If any answer is bad, rewrite the prompt before sending.

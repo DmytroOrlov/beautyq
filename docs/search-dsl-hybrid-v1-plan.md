@@ -39,7 +39,7 @@ Guardrails:
 * ES and Qdrant may advance in eval/benchmark together, but production serving remains sequential.
 * No Qdrant auto-supplement / HybridServe from benchmark alone.
 * Simulated hybrid belongs to offline benchmark/eval, not route/runtime behavior.
-* InMemorySearchBackend is a temporary seed-backed MVP/product-contract stabilizer. It is not an in-memory Elasticsearch and must not be treated as ES scoring/order/analyzer oracle.
+* InMemorySearchBackend is now a rollback/regression/pure backend. It is not an in-memory Elasticsearch and must not be treated as ES scoring/order/analyzer oracle.
 * Elasticsearch should be designed from ES primitives: mappings, analyzers, bool/filter/range/geo queries, aggregations/facets, scoring/boosting.
 * Qdrant should be designed from Qdrant primitives: embedding text, model identity, dimension, distance, topK, scoreThreshold, payload filters, missing lookup handling, semantic complement/noise.
 * Product response projection adapts engine-native results into `BeautySearchResponse`; engines must not be forced to mimic the current in-memory backend.

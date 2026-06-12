@@ -27,7 +27,7 @@ Read these docs in order:
 7. Seed data comes from `bifunctor-tagless/src/main/resources/seed/wandsbek_hamburg_beauty_services_seed_ready.json`, decoded by `BeautyQSeedLoader.ResourceLoader`, inserted by `BeautyQSeedInserter.Impl`, and represented in DI by `BeautyQSeedReady`.
 8. HTTP APIs are role-backed `*Api` adapters in `leaderboard.api` using pure `*TapirEndpoints` definitions in `leaderboard.http.tapir`.
 9. Search code is implemented as models, DSL/spec, document snapshots, parser, in-memory backend, Elasticsearch interpreters, Qdrant/vector components, generic retrieval seams, hybrid experiments, and benchmark/eval code.
-10. `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`. The exposed backend is seed-resource catalog snapshot + `InMemorySearchBackend`. Elasticsearch, Qdrant, and hybrid remain not production-wired.
+10. `POST /beauty-search` is production-exposed through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`. The exposed backend is seed-resource catalog snapshot + `ElasticsearchSearchBackend`. `seedCatalogInMemory` / `InMemorySearchBackend` remain rollback/non-default. Qdrant and hybrid remain not production-wired.
 
 For the full current BeautyQ search state (route behavior, backend roles, milestones, B-lite status, M-ESQ-EVAL, forbidden paths), see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 

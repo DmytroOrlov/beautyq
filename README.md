@@ -11,7 +11,7 @@ This repository currently contains BeautyQ search work. Start with:
 - `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`
 - `docs/codebase-review/README.md`
 
-Current production Beauty search route: `POST /beauty-search` is exposed through the default plugin graph via seed-resource catalog + `InMemorySearchBackend`. Elasticsearch, Qdrant, and hybrid remain non-production / eval / experimental paths.
+Current production Beauty search route: `POST /beauty-search` is exposed through the default plugin graph via seed-resource catalog + `ElasticsearchSearchBackend`. `InMemorySearchBackend` is rollback/non-default. Qdrant and hybrid remain non-production / eval / experimental paths.
 
 Example `distage` project.
 

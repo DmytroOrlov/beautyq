@@ -17,7 +17,7 @@ Evidence:
 - Roles: `LeaderboardRole.scala`.
 - API adapters: `bifunctor-tagless/src/main/scala/leaderboard/api/*.scala`.
 - Tapir contracts: `bifunctor-tagless/src/main/scala/leaderboard/http/tapir/*TapirEndpoints.scala`.
-- DI wiring: `LeaderboardPlugin.modules.api`.
+- DI wiring: `LeaderboardPlugin` top-level (`modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; `modules.api[F]` is rollback/legacy).
 - HTTP composition: `HttpServer.scala` and `many[HttpApi[F]]` in `LeaderboardPlugin.scala`.
 
 ## Role-Backed APIs
@@ -38,7 +38,7 @@ Implemented/current:
 Implemented/current based on source:
 
 - Tapir endpoint files exist for all listed API slices: `Category`, `Service`, `Master`, `MasterLocation`, `MasterServiceOffer`, `MasterServiceOfferVariant`, `Ladder`, and `Profile`.
-- `LeaderboardPlugin.modules.api` binds each `*TapirEndpoints` singleton and each `*Api` adapter.
+- `LeaderboardPlugin.modules.api` (rollback/legacy) and `modules.apiBase[IO]` (current default) each bind `*TapirEndpoints` singletons and `*Api` adapters.
 
 Documentation drift:
 
@@ -96,14 +96,14 @@ Contract skeleton/current:
 - `BeautySearchProductionInclusionBoundarySpec.scala` proves default Disabled, Disabled by-name API thunk safety, Disabled module exclusion of API/service/backend construction, and Enabled explicit test-local assembly with a fake backend.
 - `BeautySearchProductionIncludeModuleSpec.scala` proves the include-module shape at a `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` aggregation boundary: Disabled contributes no Beauty search API, while Enabled can explicitly contribute one `BeautySearchApi` through the inclusion handle.
 - `BeautySearchProductionIncludedApis` is a src/main helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; it does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
-- The old disabled inclusion boundary is a staging/helper boundary. It is not the active production gate for `/beauty-search`. The route is exposed directly by `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`, not by toggling the old inclusion handle. A real kill switch / enable-disable route gate remains future hardening.
+- The old disabled inclusion boundary is a staging/helper boundary. It is not the active production gate for `/beauty-search`. The route is exposed through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, not by toggling the old inclusion handle. `modules.api[F]` / `seedCatalogInMemory[F]` / `InMemorySearchBackend` are rollback/legacy/non-default. A real kill switch / enable-disable route gate remains future hardening.
 - `BeautySearchPluginModules.api[F]` is a src/main opt-in helper module that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set when explicitly included.
 - `BeautySearchOptInHttpApiModuleSpec.scala` proves the opt-in module can contribute exactly one `BeautySearchApi[IO]` to the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, using the repo's role-style concrete API retention edge, a fake `BeautySearchService[IO]`, and no server startup.
 - `BeautySearchRouteModules.seedCatalogInMemory[F]` is a src/main explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies `BeautyQSeedLoader.ResourceLoader`.
 - `BeautySearchOptInRouteModuleSpec.scala` proves that this composed module contributes exactly one `BeautySearchApi[IO]` to the same real `Set[HttpApi[IO]]` shape and can answer one `POST /beauty-search` smoke request from seed-resource catalog data without starting `HttpServer`.
-- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, so `POST /beauty-search` is production-included in the default API graph.
+- `LeaderboardPlugin` top-level now includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, so `POST /beauty-search` is production-exposed in the default API graph via the ES-backed seed route.
 - `BeautySearchProductionRouteExposureSpec.scala` proves the default plugin API graph contributes `BeautySearchApi[IO]` through the same `Set[HttpApi[IO]]` shape consumed by `HttpServer.Impl` and can answer one non-empty `POST /beauty-search` response without starting `HttpServer`.
-- `BeautySearchProductionRouteLimitSpec.scala` characterizes `POST /beauty-search` limit parameter behavior through the same `LeaderboardPlugin.modules.api` include with seed-resource catalog snapshot + `InMemorySearchBackend`:
+- `BeautySearchProductionRouteLimitSpec.scala` characterizes `POST /beauty-search` limit parameter behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`):
   - `limit` 3 → `200 OK`, non-empty `variantCarousel`, size <= 3.
   - `limit` 0 → `200 OK`, empty `variantCarousel`.
   - `limit` -5 → `200 OK`, empty `variantCarousel`.
@@ -112,9 +112,9 @@ Contract skeleton/current:
 
 ## Beauty Search Production Route Coordinate Behavior
 
-Characterized/current:
+Historical/rollback characterization:
 
-- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior through the production `LeaderboardPlugin.modules.api` API graph with seed-resource catalog snapshot + `InMemorySearchBackend`.
+- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`).
 - Normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, non-empty `variantCarousel`.
 - Latitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3).
 - Longitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3).
@@ -129,9 +129,9 @@ This is current behavior, not the desired final validation contract. The route c
 
 ## Beauty Search Production Route Query Behavior
 
-Characterized/current:
+Historical/rollback characterization:
 
-- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior through the production `LeaderboardPlugin.modules.api` API graph with seed-resource catalog snapshot + `InMemorySearchBackend`.
+- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`).
 - Empty query string → `200 OK`, non-empty `variantCarousel`.
 - Whitespace-only query string → `200 OK`, bounded `variantCarousel` (size <= 3).
 - Normal query text ("nails") → `200 OK`, bounded `variantCarousel` (size <= 3).
@@ -147,22 +147,25 @@ This is current behavior, not the desired final validation contract. The route c
 Production-wired/current:
 
 - No search role was found in `LeaderboardRole.scala`.
-- `LeaderboardPlugin.modules.api` includes `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- The included module binds `BeautySearchService.Impl[F]` and `BeautySearchBackend[F]` through `BeautySearchCatalogBackendModules.seedResourceInMemory[F]`.
-- The backend source is the startup seed-resource catalog snapshot: `BeautyQSeedLoader.ResourceLoader` loads seed JSON, `BeautySearchCatalogSnapshot.fromSeedData` builds the catalog snapshot, `VariantSearchDocumentBuilder.build` flattens it, `BeautySearchReadyCatalogDocuments` marks it ready, and `InMemorySearchBackend[F]` serves it.
-- This production exposure is lexical/simple/catalog-first. It is not Elasticsearch, not Qdrant, and not hybrid.
-- No repository-backed production snapshot wiring, Elasticsearch lifecycle, Qdrant lifecycle, hybrid routing, fallback, reranking, score fusion, startup indexing, or benchmark-driven routing policy is added.
+- `LeaderboardPlugin` top-level includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- The ES-backed route module binds `BeautySearchService.Impl[F]` and `ElasticsearchSearchBackend[F]` through `BeautySearchCatalogBackendModules.seedResourceElasticsearch[F]`.
+- The backend source is the startup seed-resource catalog snapshot: `BeautyQSeedLoader.ResourceLoader` loads seed JSON, `BeautySearchCatalogSnapshot.fromSeedData` builds the catalog snapshot, `VariantSearchDocumentBuilder.build` flattens it, `BeautySearchReadyCatalogDocuments` marks it ready, and `ElasticsearchSearchBackend[F]` serves it.
+- This production exposure is lexical/simple/catalog-first over Elasticsearch. It is not Qdrant and not hybrid.
+- `modules.api[F]` / `seedCatalogInMemory[F]` / `InMemorySearchBackend` are retained as rollback/legacy/non-default composition.
+- No repository-backed production snapshot wiring, Qdrant lifecycle, hybrid routing, fallback, reranking, score fusion, startup indexing, or benchmark-driven routing policy is added.
 - Startup seed-resource snapshot readiness is the only readiness behavior in this include.
 - Production freshness, refresh, staleness bounds, runtime catalog replacement, source-of-truth reconciliation, stale-catalog observability, and kill-switch behavior remain unresolved.
 - There is no runtime refresh or replacement policy yet.
 - Benchmark decisions do not affect routing.
-- `LeaderboardPlugin.modules.api` is the real production API aggregation point: it binds Tapir endpoint singletons, binds API adapters, contributes those APIs to `many[HttpApi[F]]`, and `HttpServer.Impl` serves the combined `HttpApi` set.
-- Because `BeautySearchRouteModules.seedCatalogInMemory[F]` contributes `BeautySearchApi[F]` to that weak set, `POST /beauty-search` is now production-exposed through the default API graph.
+- `LeaderboardPlugin` top-level is the real production API aggregation point: `modules.apiBase[IO]` binds base/core API adapters and `HttpServer`, and `BeautySearchRouteModules.apiElasticsearch` contributes the ES-backed Beauty route to the combined `HttpApi` set.
+- Because `BeautySearchRouteModules.apiElasticsearch` contributes `BeautySearchApi[F]` to that set, `POST /beauty-search` is now production-exposed through the default API graph.
+- Route availability must not infer Qdrant, hybrid, fallback, reranking, or score fusion.
 
 Conclusion:
 
-- Beauty search now has production route exposure through `LeaderboardPlugin.modules.api`.
-- The exposed backend is the seed-resource catalog snapshot plus `InMemorySearchBackend`; it is not Elasticsearch, Qdrant, or hybrid.
+- Beauty search now has production route exposure through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- The exposed backend is seed-resource catalog snapshot + `ElasticsearchSearchBackend`; it is not Qdrant or hybrid.
+- `modules.api[F]` / `seedCatalogInMemory[F]` / `InMemorySearchBackend` are rollback/legacy/non-default.
 - The route JSON contract and search semantics remain the existing `BeautySearchTapirEndpoints`/`BeautySearchSpecV1` behavior.
 - The next production hardening step is observability, freshness/staleness, runtime refresh/replacement, and kill-switch design, not Qdrant/hybrid work.
 
@@ -173,9 +176,9 @@ Future implementation boundary:
 
 ## Beauty Search Route Error Behavior
 
-Characterized/current:
+Historical/rollback characterization:
 
-- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior through the production `LeaderboardPlugin.modules.api` API graph with seed-resource catalog snapshot + `InMemorySearchBackend`.
+- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`).
 - Malformed JSON body → `500 InternalServerError`, empty body.
 - Empty body → `500 InternalServerError`, empty body.
 - Wrong `limit` type (string instead of integer) → `500 InternalServerError`, empty body.
@@ -217,5 +220,5 @@ What they protect:
 Rule for future docs/edits:
 
 - For HTTP behavior, route-level contract tests are the source of truth. Do not update docs based only on adapter intuition.
-- Beauty search HTTP behavior is defined by the pure Tapir endpoint, route-level contract tests, and the default `LeaderboardPlugin.modules.api` include of `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- Production runtime exposure is seed-resource catalog snapshot plus `InMemorySearchBackend`; do not infer Elasticsearch, Qdrant, hybrid, fallback, reranking, or score fusion from route availability.
+- Beauty search HTTP behavior is defined by the pure Tapir endpoint, route-level contract tests, and the default `LeaderboardPlugin` top-level include of `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- Production runtime exposure is seed-resource catalog snapshot + `ElasticsearchSearchBackend`; `modules.api[F]` / `seedCatalogInMemory[F]` / `InMemorySearchBackend` are rollback/legacy/non-default; do not infer Qdrant, hybrid, fallback, reranking, or score fusion from route availability.

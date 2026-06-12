@@ -106,7 +106,7 @@ The Elasticsearch interpreters must remain mechanical. If a search behavior affe
 
 ### In-memory
 
-`InMemorySearchBackend` is a temporary seed-backed MVP/product-contract stabilizer.
+`InMemorySearchBackend` is now a rollback/regression/pure backend.
 It is not an in-memory Elasticsearch and must not be treated as an ES scoring/order/analyzer oracle.
 
 Each engine (Elasticsearch, Qdrant) should be designed from its own primitives/capabilities:
