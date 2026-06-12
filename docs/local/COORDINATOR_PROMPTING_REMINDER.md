@@ -66,6 +66,8 @@ If N+1 is not source-confirmed:
 
 Never write delegated-agent prompts from guesses about APIs, fields, imports, signatures, or test seams.
 
+After every accepted patch review / closed patch, include the extended commit message before the N+1 delegated prompt or N+1 bundle request. This ensures the N+1 prompt starts from verified context, not stale drift.
+
 Do not ask an agent to do broad architecture/audit if the coordinator can do it.
 
 Use agents for final cheap verification only when claims are explicit:
@@ -310,6 +312,8 @@ bifunctor-tagless/src/main/scala/leaderboard/search/eval/BeautySearchEval.scala
 
 If a type/import is likely to cause searching, provide it in the prompt.
 
+For high-specificity agent edits, if the coordinator already knows the target hunk, prefer an exact replacement hunk or exact before/after snippet instead of prose-only instructions. This reduces agent interpretation error and prevents avoidable compile-fix iterations.
+
 ---
 
 ## 1.8 Metrics semantics must be explicit
@@ -380,6 +384,8 @@ null assertions
 Use pattern matching when extracting ADTs/options.
 
 Use direct equality for case objects.
+
+For prompts involving decoded `Map`, `List`, `Option`, `Either`, or JSON-derived structures, explicitly require pattern matching with useful `fail(...)` messages. Do not allow direct `Map.apply`, `.head`, `.tail`, `.last`, `.get`, `.toOption.get`, right/left projection `.get`, or similar unsafe extraction unless the task explicitly proves that the operation is total and documents why.
 
 ---
 
