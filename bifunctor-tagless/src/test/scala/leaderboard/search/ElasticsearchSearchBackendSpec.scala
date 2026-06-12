@@ -39,6 +39,8 @@ final class ElasticsearchSearchBackendSpec extends AnyWordSpec {
   ) extends ElasticsearchJsonClient {
     override def putJson(path: String, json: Json): IO[QueryFailure, Json] =
       ZIO.dieMessage(s"unexpected putJson($path)")
+    override def post(path: String): IO[QueryFailure, Json] =
+      ZIO.dieMessage(s"unexpected post($path)")
     override def postJson(path: String, json: Json): IO[QueryFailure, Json] = {
       assert(path == expectedPath, s"expected path $expectedPath, got $path")
       assert(json == expectedRequest, "request JSON mismatch")

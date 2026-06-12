@@ -42,10 +42,12 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
 
   private final class ScriptedElasticsearchJsonClient(
     putJsonFn: (String, Json) => IO[QueryFailure, Json],
+    postFn: String => IO[QueryFailure, Json],
     postJsonFn: (String, Json) => IO[QueryFailure, Json],
     postNdjsonFn: (String, String) => IO[QueryFailure, Json],
   ) extends ElasticsearchJsonClient {
     override def putJson(path: String, json: Json): IO[QueryFailure, Json]       = putJsonFn(path, json)
+    override def post(path: String): IO[QueryFailure, Json]                      = postFn(path)
     override def postJson(path: String, json: Json): IO[QueryFailure, Json]      = postJsonFn(path, json)
     override def postNdjson(path: String, payload: String): IO[QueryFailure, Json] = postNdjsonFn(path, payload)
     override def getJson(path: String): IO[QueryFailure, Json]                   = ZIO.dieMessage(s"unexpected getJson($path)")
@@ -58,8 +60,11 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
   private def succeedingClient: ScriptedElasticsearchJsonClient =
     new ScriptedElasticsearchJsonClient(
       putJsonFn = (_, _) => ZIO.succeed(Json.obj()),
-      postJsonFn = (path, _) =>
+      postFn = (path) =>
         if (path.contains("_refresh")) ZIO.succeed(Json.obj())
+        else ZIO.dieMessage(s"unexpected post($path)"),
+      postJsonFn = (path, _) =>
+        if (path.contains("_search")) ZIO.succeed(emptySearchResponse)
         else ZIO.dieMessage(s"unexpected postJson($path)"),
       postNdjsonFn = (_, _) => ZIO.succeed(Json.obj()),
     )
@@ -91,9 +96,11 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
     "constructed service searches through the Elasticsearch backend" in {
       val searchClient = new ScriptedElasticsearchJsonClient(
         putJsonFn = (_, _) => ZIO.succeed(Json.obj()),
-        postJsonFn = (path, _) =>
+        postFn = (path) =>
           if (path.contains("_refresh")) ZIO.succeed(Json.obj())
-          else if (path.contains("_search")) ZIO.succeed(emptySearchResponse)
+          else ZIO.dieMessage(s"unexpected post($path)"),
+        postJsonFn = (path, _) =>
+          if (path.contains("_search")) ZIO.succeed(emptySearchResponse)
           else ZIO.dieMessage(s"unexpected postJson($path)"),
         postNdjsonFn = (_, _) => ZIO.succeed(Json.obj()),
       )

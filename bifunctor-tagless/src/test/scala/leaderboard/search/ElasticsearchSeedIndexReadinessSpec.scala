@@ -44,11 +44,12 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
 
   private final class ScriptedElasticsearchJsonClient(
     putJsonFn: (String, Json) => IO[QueryFailure, Json],
-    postJsonFn: (String, Json) => IO[QueryFailure, Json],
+    postFn: String => IO[QueryFailure, Json],
     postNdjsonFn: (String, String) => IO[QueryFailure, Json],
   ) extends ElasticsearchJsonClient {
     override def putJson(path: String, json: Json): IO[QueryFailure, Json]       = putJsonFn(path, json)
-    override def postJson(path: String, json: Json): IO[QueryFailure, Json]      = postJsonFn(path, json)
+    override def post(path: String): IO[QueryFailure, Json]                      = postFn(path)
+    override def postJson(path: String, json: Json): IO[QueryFailure, Json]      = ZIO.dieMessage(s"unexpected postJson($path)")
     override def postNdjson(path: String, payload: String): IO[QueryFailure, Json] = postNdjsonFn(path, payload)
     override def getJson(path: String): IO[QueryFailure, Json]                   = ZIO.dieMessage(s"unexpected getJson($path)")
     override def delete(path: String): IO[QueryFailure, Unit]                    = ZIO.dieMessage(s"unexpected delete($path)")
@@ -62,9 +63,8 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
           assert(json == expectedMapping, "putJson mapping mismatch")
           ZIO.succeed(Json.obj())
         },
-        postJsonFn = (path, json) => {
-          assert(path == s"/$expectedIndexName/_refresh", s"postJson path mismatch: $path")
-          assert(json == Json.obj(), "postJson body mismatch")
+        postFn = (path) => {
+          assert(path == s"/$expectedIndexName/_refresh", s"post path mismatch: $path")
           ZIO.succeed(Json.obj())
         },
         postNdjsonFn = (path, payload) => {
@@ -85,7 +85,7 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
       val emptyReady = BeautySearchReadyCatalogDocuments(source = "seed-resource-loader", documents = Nil)
       val client = new ScriptedElasticsearchJsonClient(
         putJsonFn = (_, _) => ZIO.dieMessage("unexpected putJson"),
-        postJsonFn = (_, _) => ZIO.dieMessage("unexpected postJson"),
+        postFn = (_) => ZIO.dieMessage("unexpected post"),
         postNdjsonFn = (_, _) => ZIO.dieMessage("unexpected postNdjson"),
       )
       val initializer = new ElasticsearchSeedIndexInitializer(spec, client)
@@ -104,7 +104,7 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
       val blankSourceReady = BeautySearchReadyCatalogDocuments(source = "   ", documents = subset)
       val client = new ScriptedElasticsearchJsonClient(
         putJsonFn = (_, _) => ZIO.dieMessage("unexpected putJson"),
-        postJsonFn = (_, _) => ZIO.dieMessage("unexpected postJson"),
+        postFn = (_) => ZIO.dieMessage("unexpected post"),
         postNdjsonFn = (_, _) => ZIO.dieMessage("unexpected postNdjson"),
       )
       val initializer = new ElasticsearchSeedIndexInitializer(spec, client)
@@ -122,8 +122,8 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
     "propagate Elasticsearch client failures unchanged" in {
       val client = new ScriptedElasticsearchJsonClient(
         putJsonFn = (_, _) => ZIO.succeed(Json.obj()),
-        postJsonFn = (_, _) => ZIO.succeed(Json.obj()),
-        postNdjsonFn = (_, _) => ZIO.fail(ElasticsearchJsonClient.failure("bulk failed")),
+        postFn = (_) => ZIO.fail(ElasticsearchJsonClient.failure("refresh failed")),
+        postNdjsonFn = (_, _) => ZIO.succeed(Json.obj()),
       )
       val initializer = new ElasticsearchSeedIndexInitializer(spec, client)
       val result = runEither(initializer.prepare(ready))
@@ -131,9 +131,9 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
       result match {
         case Left(QueryFailure.OperationFailure(operationName, message)) =>
           assert(operationName == "elasticsearch-json-client")
-          assert(message == "bulk failed")
+          assert(message == "refresh failed")
         case other =>
-          fail(s"Expected OperationFailure(elasticsearch-json-client, bulk failed), got $other")
+          fail(s"Expected OperationFailure(elasticsearch-json-client, refresh failed), got $other")
       }
     }
   }

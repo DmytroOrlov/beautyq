@@ -103,6 +103,12 @@ final class ElasticsearchHttpJsonClientSpec extends AnyWordSpec {
             exchange.sendResponseHeaders(200, okBytes.length)
             Using.resource(exchange.getResponseBody)(_.write(okBytes))
 
+          case "/index/_refresh" if method == "POST" =>
+            assert(method == "POST")
+            assert(body.isEmpty, s"expected empty body for refresh, got: '$body'")
+            exchange.sendResponseHeaders(200, okBytes.length)
+            Using.resource(exchange.getResponseBody)(_.write(okBytes))
+
           case "/index" if method == "DELETE" =>
             assert(method == "DELETE")
             exchange.sendResponseHeaders(200, okBytes.length)
@@ -125,6 +131,9 @@ final class ElasticsearchHttpJsonClientSpec extends AnyWordSpec {
         val bulkPayload = """{"index":{"_index":"index"}}{"field":"value"}"""
         val ndjsonResult = run(client.postNdjson("/index/_bulk", bulkPayload))
         assert(ndjsonResult == Json.obj("ok" -> Json.fromBoolean(true)))
+
+        val refreshResult = run(client.post("/index/_refresh"))
+        assert(refreshResult == Json.obj("ok" -> Json.fromBoolean(true)))
 
         val getResult = run(client.getJson("/index"))
         assert(getResult == Json.obj("ok" -> Json.fromBoolean(true)))

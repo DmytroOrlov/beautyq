@@ -34,7 +34,7 @@ final class ElasticsearchSeedIndexInitializer(
       _ <- client.putJson(s"/$indexName", mapping)
       payload = ElasticsearchIngestionInterpreter.bulkPayload(spec, ready.documents)
       _ <- client.postNdjson(s"/$indexName/_bulk", payload)
-      _ <- client.postJson(s"/$indexName/_refresh", io.circe.Json.obj())
+      _ <- client.post(s"/$indexName/_refresh")
     } yield ElasticsearchSeedIndexReadiness(
       indexName = indexName,
       source = ready.source,

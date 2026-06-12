@@ -23,12 +23,14 @@ final class ElasticsearchJsonClientSpec extends AnyWordSpec {
 
   private final class ScriptedElasticsearchJsonClient(
     putResult: IO[QueryFailure, Json] = ZIO.succeed(Json.obj()),
+    postResult: IO[QueryFailure, Json] = ZIO.succeed(Json.obj()),
     postJsonResult: IO[QueryFailure, Json] = ZIO.succeed(Json.obj()),
     postNdjsonResult: IO[QueryFailure, Json] = ZIO.succeed(Json.obj()),
     getJsonResult: IO[QueryFailure, Json] = ZIO.succeed(Json.obj()),
     deleteResult: IO[QueryFailure, Unit] = ZIO.unit,
   ) extends ElasticsearchJsonClient {
     override def putJson(path: String, json: Json): IO[QueryFailure, Json]       = putResult
+    override def post(path: String): IO[QueryFailure, Json]                      = postResult
     override def postJson(path: String, json: Json): IO[QueryFailure, Json]      = postJsonResult
     override def postNdjson(path: String, payload: String): IO[QueryFailure, Json] = postNdjsonResult
     override def getJson(path: String): IO[QueryFailure, Json]                   = getJsonResult

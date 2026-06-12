@@ -19,6 +19,9 @@ final class ElasticsearchHttpJsonClient(
   override def putJson(path: String, json: Json): IO[QueryFailure, Json] =
     request("PUT", path, Some(json.noSpaces), "application/json").flatMap(parseJson)
 
+  override def post(path: String): IO[QueryFailure, Json] =
+    request("POST", path, None, "application/json").flatMap(parseJson)
+
   override def postJson(path: String, json: Json): IO[QueryFailure, Json] =
     request("POST", path, Some(json.noSpaces), "application/json").flatMap(parseJson)
 

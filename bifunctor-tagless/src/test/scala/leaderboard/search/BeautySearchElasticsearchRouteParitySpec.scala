@@ -126,6 +126,7 @@ final class BeautySearchElasticsearchRouteParitySpec extends AnyWordSpec with Ht
       make[ElasticsearchJsonClient].from {
         new ElasticsearchJsonClient {
           override def putJson(path: String, json: Json): IO[QueryFailure, Json]       = ZIO.succeed(Json.obj())
+          override def post(path: String): IO[QueryFailure, Json]                      = ZIO.succeed(Json.obj())
           override def postJson(path: String, json: Json): IO[QueryFailure, Json]      =
             if (path.contains("_search")) ZIO.succeed(Json.obj("hits" -> Json.obj("hits" -> Json.arr())))
             else ZIO.succeed(Json.obj())
