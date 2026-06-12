@@ -63,7 +63,7 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached: latest full verification 956 passed, 0 failed, 1 canceled.
-* Next priority: stabilize/demo ES seed route; verify business demo readiness over real ES environment.
+* Business demo ready: runbook, query inventory, and smoke spec all in place.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.
 * Resource-backed hidden Qdrant/hybrid module expansion is paused.
@@ -137,6 +137,12 @@ Reached:
 * demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`;
 * `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route;
 * latest full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
+
+Business-demo ready:
+
+* Default route is ES-backed; demo runbook at `docs/demo/beauty-search-es-seed-demo.md`.
+* Demo query inventory at `docs/demo/beauty-search-es-seed-demo-queries.md`.
+* Business demo smoke spec: `BeautySearchElasticsearchBusinessDemoSpec` — 12 selected demo queries passed focused verification.
 
 Important observed route behavior:
 When Elasticsearch returns zero hits, the ES-backed route can still return

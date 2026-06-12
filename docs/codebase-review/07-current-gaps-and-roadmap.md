@@ -173,7 +173,15 @@ rollback module (available, non-default):
 ES seed route default is reached.
 `seedCatalogInMemory` remains available as rollback/non-default.
 
-Next checkpoint: business demo readiness / runbook / repeatable demo over real ES environment.
+Business demo readiness reached: `BeautySearchElasticsearchBusinessDemoSpec` (12 queries passed focused verification), demo runbook at `docs/demo/beauty-search-es-seed-demo.md`, query inventory at `docs/demo/beauty-search-es-seed-demo-queries.md`.
+
+Remaining next steps:
+
+* Collect business feedback on query/result quality.
+* Optional repeatable demo output snapshots.
+* Repository freshness / live indexing.
+* Operational readiness / observability.
+* Qdrant shadow/hybrid later (B-lite eval: ES-native + Qdrant-native benchmark comparison).
 
 The goal is not yet full production search lifecycle. The goal is to demonstrate
 the first ES-backed production route over controlled seed data before adding
