@@ -69,7 +69,7 @@ object LeaderboardPlugin extends PluginDef {
       include(BundledRolesModule[F[Throwable, _]](version = Version.parse("1.0.0")))
     }
 
-    def api[F[+_, +_]: TagKK: Error2]: ModuleDef = new ModuleDef {
+    def apiBase[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
       // The `ladder` API
       make[LadderTapirEndpoints].fromValue(LadderTapirEndpoints)
       make[TapirHttpSupport[F]]
@@ -101,7 +101,6 @@ object LeaderboardPlugin extends PluginDef {
       make[BeautySearchProductionIncludedApis[F]].from { (handle: BeautySearchProductionInclusionHandle[F]) =>
         BeautySearchProductionIncludedApis.fromHandle(handle)
       }
-      include(BeautySearchRouteModules.seedCatalogInMemory[F])
 
       // A set of all APIs
       many[HttpApi[F]]
@@ -117,6 +116,11 @@ object LeaderboardPlugin extends PluginDef {
       make[HttpServer].fromResource[HttpServer.Impl[F]]
 
       make[Ranks[F]].from[Ranks.Impl[F]]
+    }
+
+    def api[F[+_, +_]: TagKK: Error2]: ModuleDef = new ModuleDef {
+      include(apiBase[F])
+      include(BeautySearchRouteModules.seedCatalogInMemory[F])
     }
 
     def repoDummy[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
