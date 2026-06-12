@@ -5,25 +5,30 @@ Canonical handoff for new chats. Read this first, then see linked docs for deepe
 ## 1. Current production `/beauty-search`
 
 * `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api`.
-* Code source truth: `include(BeautySearchRouteModules.seedCatalogInMemory[F])`.
+* Code source truth: `BeautySearchRouteModules.seedCatalogElasticsearch` (ES-backed seed route, default).
 * Current exposed stack:
 
   ```text
-  BeautySearchRouteModules.seedCatalogInMemory
-  → BeautySearchCatalogBackendModules.seedResourceInMemory
+  LeaderboardPlugin.modules.api
+  → BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured
+  → ElasticsearchClientModules.portConfigured
+  → BeautySearchRouteModules.seedCatalogElasticsearch
+  → BeautySearchCatalogBackendModules.seedResourceElasticsearch
   → BeautyQSeedLoader.ResourceLoader
-  → BeautySearchCatalogSnapshot
   → BeautySearchReadyCatalogDocuments
-  → InMemorySearchBackend
+  → ElasticsearchSeedIndexInitializer
+  → ElasticsearchSearchBackend
   → BeautySearchService.Impl
   → BeautySearchApi
   ```
 
-* Backend is seed-resource catalog snapshot + `InMemorySearchBackend`.
+* Backend is seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
 * It is lexical/simple/catalog-first.
-* It is not Elasticsearch, not Qdrant, not hybrid.
+* `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
+* It is not Qdrant, not hybrid.
 * It is not fresh/repository-backed production catalog lifecycle.
 * Route exposure exists; production-grade search lifecycle remains incomplete.
+* `seedCatalogInMemory` remains available as a rollback/non-default module.
 
 ## 2. Current route behavior characterization
 
@@ -39,7 +44,8 @@ Documented as characterized, not as desired final contract:
 
 ## 3. Search backend roles
 
-* `InMemorySearchBackend` is a seed-backed MVP/product-contract stabilizer.
+* `ElasticsearchSearchBackend` is the current production lexical retrieval backend (seed-backed).
+* `InMemorySearchBackend` is a rollback/regression/pure backend, not current production default.
 * It is not an in-memory Elasticsearch.
 * It must not be treated as ES scoring/order/analyzer oracle.
 * Elasticsearch is the intended lexical retrieval baseline for text search, structured filters, facets, exact/range/geo constraints.
@@ -53,21 +59,24 @@ Documented as characterized, not as desired final contract:
 * **B1/B2**: production-hidden activation/handle + targeted control-plane module proof — reached.
 * First B-lite pure `EngineEval` model — implemented.
 
-## 5. Current priority: B-lite
+## 5. Current priority: ES seed route stabilization
 
-* B-lite = ES-native + Qdrant-native benchmark/eval comparison.
-* Runtime hybrid expansion is paused after B2.
+* Default production `/beauty-search` is now ES-backed over the seed catalog.
+* ES seed-route checkpoint is reached: 945 passed, 0 failed, 12 canceled.
+* Next priority: stabilize/demo ES seed route; verify business demo readiness over real ES environment.
+* B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
+* Runtime hybrid expansion is paused.
 * Resource-backed hidden Qdrant/hybrid module expansion is paused.
 * ES and Qdrant may advance together only in eval/benchmark.
-* Production serving remains sequential:
+* Production serving remains:
 
   ```text
-  current seed/in-memory route
-  → future ES lexical retrieval baseline
+  current ES seed route (default)
   → Qdrant shadow only if eval proves complement
   → controlled hybrid only after readiness/kill-switch/policy
   ```
 
+* `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 
 ## 6. M-ESQ-EVAL
@@ -95,11 +104,10 @@ Documented as characterized, not as desired final contract:
 * Duplicate ids should be a separate validation failure or separate duplicate-count metric if needed later.
 * `qdrantNoiseCount` counts distinct Qdrant ids only when expected role is `QdrantShouldStaySilent`; otherwise it is 0.
 
-### Next work
+### Current M-ESQ-EVAL status / remaining work
 
-* Normalize ES eval/executor output to `EngineEvalResult`.
-* Normalize Qdrant eval/executor output to `EngineEvalResult`.
-* Compute ES-alone / Qdrant-alone / offline simulated-hybrid reports.
+* M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
+* Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
 * Keep it offline/eval-only.
 
 ## 6.5. Product search north star and nearest checkpoint
@@ -116,34 +124,40 @@ product results by combining:
 * explicit eval/benchmark reporting before any production hybrid or routing
   decision.
 
-Nearest production checkpoint:
-Expose the existing seed BeautyQ catalog through the production `/beauty-search`
-route using Elasticsearch retrieval instead of `InMemorySearchBackend`.
+Nearest production checkpoint (reached):
+Default production `/beauty-search` now uses ES-backed seed route.
 
-This checkpoint is intentionally narrower than the final search direction:
-it proves a business-visible ES-backed production route over seed data only. It
-does not solve repository freshness, startup reindexing, alias/blue-green,
-Qdrant shadowing, hybrid serving, score fusion, fallback, or production
-collection lifecycle.
+Current production `/beauty-search` is ES-backed over the seed catalog.
 
-## 6.7. Current ES seed-route checkpoint status
+It is still a seed-data checkpoint, not full production search lifecycle:
+startup prepares the seed catalog into Elasticsearch and route retrieval uses
+`ElasticsearchSearchBackend`. `seedCatalogInMemory` remains available as a
+rollback/non-default module.
 
-Done:
-* production-hidden `BeautySearchCatalogBackendModules.seedResourceElasticsearch`;
-* production-hidden `BeautySearchRouteModules.seedCatalogElasticsearch`;
-* explicit ES route module proof for `POST /beauty-search` with a scripted `ElasticsearchJsonClient`.
+This checkpoint proves a business-visible ES-backed `/beauty-search` path over
+controlled seed data. It does not solve repository freshness, live indexing,
+alias/blue-green rollout, Qdrant shadowing, hybrid serving, fallback, score
+fusion, reranking, or production lifecycle management.
 
-Still not done:
-* default production `/beauty-search` switch from `seedCatalogInMemory` to `seedCatalogElasticsearch`;
-* ES route parity coverage for the current public route behavior;
-* real production Elasticsearch client binding;
-* repository freshness, startup reindex policy, aliases/blue-green, Qdrant shadowing,
-  hybrid serving, fallback, score fusion, reranking, and production lifecycle.
+## 6.7. ES seed-route checkpoint status (reached)
+
+Reached:
+* `BeautySearchCatalogBackendModules.seedResourceElasticsearch` (production-hidden);
+* `BeautySearchRouteModules.seedCatalogElasticsearch` (production-hidden);
+* `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` composes ES client module + ES seed route;
+* `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`;
+* default production `/beauty-search` switched from `seedCatalogInMemory` to ES-backed seed route;
+* explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`;
+* full verification after default switch: 945 passed, 0 failed, 12 canceled.
 
 Important observed route behavior:
 When Elasticsearch returns zero hits, the ES-backed route can still return
 non-empty facets and inferred filters because those are derived from catalog,
 spec, and parsed intent metadata rather than only from hit lists.
+
+Still not done (same as before):
+* repository freshness, live/repository indexing, aliases/blue-green, Qdrant shadowing,
+  hybrid serving, fallback, score fusion, reranking, and production lifecycle.
 
 ## 7. Forbidden paths
 
@@ -159,7 +173,7 @@ spec, and parsed intent metadata rather than only from hit lists.
 * No production kill-switch integration yet.
 * No freshness/reindex production policy yet.
 * No public response schema changes unless explicitly requested.
-* No forcing ES/Qdrant to mimic `InMemorySearchBackend`.
+* No forcing ES/Qdrant to mimic `InMemorySearchBackend` (rollback backend only).
 
 ## 8. Verification and testing protocol
 

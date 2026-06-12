@@ -10,21 +10,23 @@ Full current state is in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 Current status:
 
-- Production `POST /beauty-search` is seed-resource catalog snapshot + `InMemorySearchBackend[F]`. It is not hybrid, not Qdrant, and not Elasticsearch.
-- `POST /beauty-search` is production-included through `LeaderboardPlugin.modules.api` via `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- This closes the route exposure gap only. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
+- Production `POST /beauty-search` is ES-backed seed route: seed catalog → ES index preparation → ES retrieval → Beauty search response projection.
+- `POST /beauty-search` is production-included through `LeaderboardPlugin.modules.api` via `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
+- `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
+- `seedCatalogInMemory` remains available as rollback/non-default.
+- This closes the ES seed-route exposure gap. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
 
 Future implementation:
 
-- The next code patch should design or implement observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the included seed-resource/in-memory route.
+- The next code patch should design or implement observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the ES seed route.
 - Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, and kill-switch.
 
 ### BeautySearchService Wiring
 
 Current status:
 
-- `BeautySearchService.Impl` is production-bound through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- The bound backend is `InMemorySearchBackend[F]` over seed-resource ready catalog documents.
+- `BeautySearchService.Impl` is production-bound through `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
+- The bound backend is `ElasticsearchSearchBackend[F]` over seed-resource ready catalog documents.
 - The remaining gap is not service binding; it is freshness, refresh/replacement, observability, kill switch, and production source-of-truth policy.
 
 Acceptance criteria for future implementation:
@@ -37,23 +39,24 @@ Acceptance criteria for future implementation:
 
 ### Elasticsearch Runtime Backend
 
-Gap:
+Reached checkpoint (ES seed route, default):
 
-- Elasticsearch interpreters and integration tests exist, but no production Elasticsearch `BeautySearchBackend` binding or indexing lifecycle was found.
-- A production-hidden `BeautySearchRouteModules.seedCatalogElasticsearch` route module now exists, composable by any including graph that provides an `ElasticsearchJsonClient` binding.
+- `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` composes ES client module + ES seed route.
+- `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`.
+- `BeautySearchRouteModules.seedCatalogElasticsearch` → `BeautySearchCatalogBackendModules.seedResourceElasticsearch` → seed catalog → ES index → ES retrieval.
 - `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
+- Full verification after default switch: 945 passed, 0 failed, 12 canceled.
 
 Evidence:
 
 - Interpreters live in `leaderboard.search.elasticsearch`.
 - `BeautySearchElasticsearchIntegrationSpec.scala` creates indexes and executes search through `ElasticsearchTestClient.scala`.
-- `LeaderboardPlugin.modules.api` still includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, not the ES route module.
+- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` as default.
 
-Future implementation boundary:
+Remaining gaps:
 
-- The first production backend should stay lexical/simple-first.
-- A fake, catalog snapshot, or in-memory backend is a valid first controlled route-contract backend.
-- If Elasticsearch is selected later, it requires explicit index lifecycle, readiness, freshness, and failure-behavior design before production binding.
+- No repository-backed indexing or live catalog freshness.
+- No startup reindex policy, aliases/blue-green, Qdrant shadowing, hybrid serving, fallback, score fusion, reranking, or production lifecycle.
 
 ### Qdrant / Hybrid Production Boundary
 
@@ -69,7 +72,7 @@ Remaining gap:
 
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
 
-### Current phase: A -> B-lite, ES/Qdrant eval comparison
+### Current phase: ES seed route reached, B-lite eval continues
 
 The current phase is between:
 
@@ -77,17 +80,17 @@ The current phase is between:
 - A→B: production-hybrid control-plane v0 — reached.
 - B1: production-hidden hybrid activation/handle — reached.
 - B2: production-hidden hybrid control-plane modules — reached.
-- B-lite: ES-native + Qdrant-native benchmark comparison — current target.
+- ES seed route default: reached (945 passed, 0 failed, 12 canceled).
+- B-lite: ES-native + Qdrant-native benchmark comparison — eval continues.
 - resource-backed hidden Qdrant/hybrid module expansion — paused.
 - C: production `/beauty-search` hybrid backend — future.
 
-B-lite is the current strategic direction after B2.
+ES seed route default is the current nearest checkpoint. B-lite eval comparison continues as eval-only work.
 
-Production serving stays sequential and safe:
+Production serving:
 
 ```text
-current seed/in-memory route
-  -> ES lexical baseline
+current ES seed route (default)
   -> Qdrant shadow only if eval proves complement
   -> controlled hybrid only after readiness/kill-switch/policy
 ```
@@ -105,7 +108,7 @@ The next target is M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native e
 
 Rationale for pausing runtime hybrid:
 
-* Current production search is still seed/in-memory.
+* ES seed route is now default, but full production lifecycle is not solved.
 * ES-native eval/baseline is not complete.
 * Continuing resource-backed hybrid before ES-native + Qdrant-native comparison would optimize the wrong layer.
 * The pure `EngineEval` comparison model is implemented; the next step is connecting ES and Qdrant executor outputs to normalized `EngineEvalResult`.
@@ -177,11 +180,10 @@ M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
 Status:
 
-* Started by the pure `EngineEval` comparison model.
-* Not complete.
-* Next work: connect ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`.
+* M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
+* Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
 * Still offline/eval only.
-* Production route wiring exists for `POST /beauty-search` via seed-resource catalog + `InMemorySearchBackend`. Elasticsearch, Qdrant, and hybrid remain not production-wired.
+* Production route wiring is now ES-backed seed route. Qdrant and hybrid remain eval-only.
 
 Goal:
 
@@ -193,20 +195,17 @@ Goal:
 ## Current nearest search checkpoint
 
 ```text
-current production /beauty-search:
-  seed resource catalog + InMemorySearchBackend
+current production /beauty-search (reached):
+  seed resource catalog + ElasticsearchSearchBackend (ES seed route, default)
 
-hidden ES seed route module (exists, not default):
-  seed resource catalog + Elasticsearch retrieval behind seedCatalogElasticsearch
+rollback module (available, non-default):
+  seed resource catalog + InMemorySearchBackend
 ```
 
-The hidden ES route module is proven by `BeautySearchElasticsearchRouteModuleSpec`.
-Default production `/beauty-search` has not switched from `seedCatalogInMemory`.
+ES seed route default is reached (945 passed, 0 failed, 12 canceled).
+`seedCatalogInMemory` remains available as rollback/non-default.
 
-Next steps after this checkpoint:
-* route parity specs for the explicit ES module;
-* default graph switch only after parity;
-* full verification after default switch.
+Next checkpoint: business demo readiness over real ES environment.
 
 The goal is not yet full production search lifecycle. The goal is to demonstrate
 the first ES-backed production route over controlled seed data before adding
@@ -259,9 +258,9 @@ Boundary:
 ### Catalog Snapshot / In-Memory Backend Readiness
 
 - `BeautySearchReadyCatalogDocuments` is a src/main helper that wraps a source label plus `VariantSearchDocument` list, rejects empty source labels and empty document lists.
-- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` binds ready documents, `InMemorySearchBackend[F]`, and `BeautySearchService.Impl[F]`; it is included in production through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- This is now production route exposure through `LeaderboardPlugin.modules.api`.
-- The seed-resource/catalog/in-memory path is startup snapshot readiness only. It does not solve production freshness, staleness bounds, runtime catalog replacement, or stale-catalog observability.
+- `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` binds ready documents, `InMemorySearchBackend[F]`, and `BeautySearchService.Impl[F]`; it is available as rollback/non-default through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- The ES seed route is now the default production path through `seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
+- The seed-resource/catalog/in-memory path is rollback/regression readiness only. It does not solve production freshness, staleness bounds, runtime catalog replacement, or stale-catalog observability.
 - Production backend selection and freshness/refresh/staleness policy remain future work.
 
 ### Salon / Availability Domain
@@ -314,9 +313,10 @@ Recommendation:
 
 Current blockers:
 
-- Search route exposure exists through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- Default production `BeautySearchService` binding exists through `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- Default production lexical/simple backend binding exists as seed-resource ready catalog documents plus `InMemorySearchBackend[F]`.
+- Search route exposure exists through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES seed route, default).
+- Default production `BeautySearchService` binding exists through the ES seed route.
+- Default production lexical/simple backend binding exists as seed-resource ready catalog documents plus `ElasticsearchSearchBackend[F]`.
+- `seedCatalogInMemory` remains available as rollback/non-default.
 - The old `BeautySearchProductionInclusionActivation`/`Handle`/`IncludedApis` boundary still exists as a staging/helper boundary but is NOT the active production gate. The route is exposed directly via `LeaderboardPlugin.modules.api` include. A real kill switch / enable-disable route gate remains future hardening.
 - No production freshness/refresh/staleness policy.
 - No runtime catalog replacement policy.
@@ -373,11 +373,11 @@ Gaps:
 
 These are recommendations only, not current architecture:
 
-1. Design observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the seed-resource/in-memory production route.
+1. Design observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the ES seed route.
 2. Document and implement the production freshness contract before treating seed-resource startup snapshot readiness as a durable product behavior.
 3. Build M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison. Compare ES-alone, Qdrant-alone, and simulated hybrid (offline only). Decide from metrics.
 4. Pause runtime hybrid module expansion until ES/Qdrant eval comparison is improved.
 5. Keep Qdrant/hybrid out of this production hardening path unless a separate production design approves it: no Qdrant/hybrid default, no fallback, no reranking, no score fusion, no benchmark-driven routing.
-6. Before Elasticsearch production binding, add explicit backend/client/index lifecycle and freshness design.
+6. Before repository-backed/live indexing, add explicit backend/client/index lifecycle and freshness design.
 7. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
 8. Reconcile stale docs before relying on them in future implementation passes.

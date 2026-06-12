@@ -42,25 +42,27 @@ Implemented/current:
 - `BeautySearchProductionInclusionBoundarySpec`: focused proof that Disabled avoids evaluating/constructing the API/service/backend graph and Enabled can explicitly assemble the stack in a test-local module.
 - `BeautySearchProductionIncludeModuleSpec`: focused test-only proof that an include module can remain disabled by default at an API aggregation boundary.
 - The include-module proof uses a src/main `BeautySearchProductionIncludedApis[F](apis: List[HttpApi[F]])` helper that converts an enabled `BeautySearchProductionInclusionHandle` to a local `HttpApi` list; Disabled contributes no Beauty search API, and Enabled can explicitly contribute one `BeautySearchApi`. This helper does not implement `HttpApi`, does not expose routes by itself, and `BeautySearchApi` was not added to production `many[HttpApi[F]]`.
-- The old disabled inclusion boundary is a staging/helper boundary. It is not the active production gate for `/beauty-search`. The route is exposed directly by `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`, not by toggling the old inclusion handle. A real kill switch / enable-disable route gate remains future hardening.
+- The old disabled inclusion boundary is a staging/helper boundary. It is not the active production gate for `/beauty-search`. The route is exposed directly by `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES seed route, default). `seedCatalogInMemory` remains available as rollback/non-default. A real kill switch / enable-disable route gate remains future hardening.
 - `BeautySearchPluginModules.api[F]`: opt-in src/main helper that binds `BeautySearchTapirEndpoints`, `BeautySearchApi[F]`, and contributes `BeautySearchApi[F]` to a real `many[HttpApi[F]].weak[...]` set only when explicitly included.
 - `BeautySearchOptInHttpApiModuleSpec`: focused proof that the opt-in module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, with the repo's role-style concrete API retention edge and a fake `BeautySearchService[IO]` that is not called during graph construction.
 - `BeautySearchRouteModules.seedCatalogInMemory[F]`: explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies the seed resource loader.
 - `BeautySearchOptInRouteModuleSpec`: focused proof that the composed opt-in route module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response from the seed-resource catalog/in-memory backend without `HttpServer`, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
-- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, so `POST /beauty-search` is production-included in the default API graph.
+- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES-backed seed route, default), so `POST /beauty-search` is production-included in the default API graph.
 - `BeautySearchProductionRouteExposureSpec`: focused proof that the default plugin API graph contributes `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response without `HttpServer`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
-- `BeautySearchProductionRouteLimitSpec`: characterizes `POST /beauty-search` limit parameter behavior through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`: limit 3 returns non-empty `variantCarousel` with size <= 3; limit 0 and limit -5 return `200 OK` with empty `variantCarousel`; limit 100000 returns `variantCarousel` size capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`. This is current production route behavior, not a full validation or error policy. Zero and negative limits return `200 OK` with empty `variantCarousel`. Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
-- `BeautySearchProductionRouteErrorSpec`: characterizes invalid `POST /beauty-search` request behavior through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`: malformed JSON body, empty body, wrong `limit` type (string instead of integer), and missing required field (`query`) all return `500 InternalServerError` with empty body. This is current behavior, not the desired final validation contract. Typed `4xx` errors, structured error bodies, request validation, query length limits, lat/lon validation, freshness/staleness, observability, and kill-switch remain future hardening.
-- `BeautySearchProductionRouteCoordinateSpec`: characterizes `POST /beauty-search` coordinate parameter behavior through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`: normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, non-empty `variantCarousel`; latitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3); longitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3); huge finite coordinates (lat 1e9, lon -1e9) → `200 OK`, bounded `variantCarousel` (size <= 3). The current route does not validate coordinate ranges. This is current behavior, not the desired final validation contract.
-- `BeautySearchProductionRouteQuerySpec`: characterizes `POST /beauty-search` query text parameter behavior through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`: empty query → `200 OK`, non-empty `variantCarousel`; whitespace-only query → `200 OK`, bounded `variantCarousel` (size <= 3); normal query text ("nails") → `200 OK`, bounded `variantCarousel` (size <= 3); very long query (e.g., "nails " repeated 1000 times) → `200 OK`, bounded `variantCarousel` (size <= 3). The current route does not enforce query length validation. This is current behavior, not the desired final validation contract.
+- `BeautySearchProductionRouteLimitSpec`: characterizes `POST /beauty-search` limit parameter behavior through `LeaderboardPlugin.modules.api` with ES-backed seed route: limit 3 returns non-empty `variantCarousel` with size <= 3; limit 0 and limit -5 return `200 OK` with empty `variantCarousel`; limit 100000 returns `variantCarousel` size capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`. This is current production route behavior, not a full validation or error policy. Zero and negative limits return `200 OK` with empty `variantCarousel`. Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
+- `BeautySearchProductionRouteErrorSpec`: characterizes invalid `POST /beauty-search` request behavior through `LeaderboardPlugin.modules.api` with ES-backed seed route: malformed JSON body, empty body, wrong `limit` type (string instead of integer), and missing required field (`query`) all return `500 InternalServerError` with empty body. This is current behavior, not the desired final validation contract. Typed `4xx` errors, structured error bodies, request validation, query length limits, lat/lon validation, freshness/staleness, observability, and kill-switch remain future hardening.
+- `BeautySearchProductionRouteCoordinateSpec`: characterizes `POST /beauty-search` coordinate parameter behavior through `LeaderboardPlugin.modules.api` with ES-backed seed route: normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, non-empty `variantCarousel`; latitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3); longitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3); huge finite coordinates (lat 1e9, lon -1e9) → `200 OK`, bounded `variantCarousel` (size <= 3). The current route does not validate coordinate ranges. This is current behavior, not the desired final validation contract.
+- `BeautySearchProductionRouteQuerySpec`: characterizes `POST /beauty-search` query text parameter behavior through `LeaderboardPlugin.modules.api` with ES-backed seed route: empty query → `200 OK`, non-empty `variantCarousel`; whitespace-only query → `200 OK`, bounded `variantCarousel` (size <= 3); normal query text ("nails") → `200 OK`, bounded `variantCarousel` (size <= 3); very long query (e.g., "nails " repeated 1000 times) → `200 OK`, bounded `variantCarousel` (size <= 3). The current route does not enforce query length validation. This is current behavior, not the desired final validation contract.
 
 Production-wired/current:
 
-- `LeaderboardPlugin.modules.api` includes `BeautySearchRouteModules.seedCatalogInMemory[F]`.
+- `LeaderboardPlugin.modules.api` includes `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES-backed seed route, default).
 - The default API graph now binds `BeautySearchService.Impl[F]`, `BeautySearchBackend[F]`, `BeautySearchApi[F]`, and `BeautySearchTapirEndpoints` through the included route/backend/API modules.
-- The backend source is seed-resource catalog snapshot readiness: `BeautyQSeedLoader.ResourceLoader` to `BeautySearchCatalogSnapshot` to `VariantSearchDocumentBuilder` to `BeautySearchReadyCatalogDocuments` to `InMemorySearchBackend[F]`.
+- The backend source is seed-resource catalog snapshot readiness: `BeautyQSeedLoader.ResourceLoader` to `BeautySearchReadyCatalogDocuments` to `ElasticsearchSeedIndexInitializer` to `ElasticsearchSearchBackend[F]`.
 - This production exposure is lexical/simple/catalog-first.
-- It is not Elasticsearch, not Qdrant, and not hybrid.
+- `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
+- It is not Qdrant, not hybrid.
+- `seedCatalogInMemory` remains available as rollback/non-default.
 - It does not add repository snapshot wiring, startup indexing, fallback, reranking, score fusion, or benchmark-driven routing.
 - Production freshness/refresh/staleness, runtime refresh/replacement, catalog source-of-truth, stale-catalog observability, and kill-switch behavior remain unresolved.
 - There is no runtime refresh or replacement policy yet.
@@ -70,8 +72,8 @@ Production-wired/current:
 
 Design boundary:
 
-- The implemented model/service/contract/adapter boundary is now production-exposed only through the seed-resource/in-memory include.
-- Do not infer Elasticsearch, Qdrant, hybrid, fallback, reranking, score fusion, or benchmark-driven routing from production route availability.
+- The implemented model/service/contract/adapter boundary is now production-exposed only through the ES-backed seed route.
+- Do not infer Qdrant, hybrid, fallback, reranking, score fusion, or benchmark-driven routing from production route availability.
 - The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, an opt-in HttpApi module proof, an explicit opt-in end-to-end route module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
 - The production hardening path should address observability, freshness/staleness, runtime refresh/replacement, and kill-switch design before any Qdrant/hybrid work.
 
@@ -121,7 +123,7 @@ Resolved mismatch:
 - This change addresses dependency expression only; the review distinction remains that the original finding was a rule mismatch, not a runtime failure proven by tests.
 - The explicit `BeautyQSeedReady` edge does not by itself solve production search readiness. Future implementation still needs a source-of-truth and freshness design for repository snapshots, Elasticsearch indexes, and any production search-read model.
 - The catalog snapshot/in-memory readiness proof only proves explicit test-local document readiness before backend construction. It does not define production freshness, refresh, staleness, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
-- That proof originally characterized startup readiness only. Current production route exposure exists separately through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`. The exposed route still uses seed-resource catalog + `InMemorySearchBackend`; it does not solve freshness, refresh, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
+- That proof originally characterized startup readiness only. Current production route exposure exists through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES-backed seed route, default). The exposed route uses seed-resource catalog + `ElasticsearchSearchBackend`; it does not solve freshness, refresh, repository snapshot ownership, index lifecycle, runtime catalog replacement, or production backend selection.
 
 ## D. Elasticsearch Path
 
@@ -146,20 +148,20 @@ Integration-test-only real-resource path:
 
 Production-wired/current:
 
-- No production Elasticsearch search backend binding was found in `LeaderboardPlugin.scala`.
-- No production indexing lifecycle, search API, or `BeautySearchBackend` implementation backed by Elasticsearch was found outside tests/interpreters.
+- ES seed route is default: `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` → `ElasticsearchSearchBackend`.
+- `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
+- `ElasticsearchSeedIndexInitializer` prepares seed catalog in ES.
+- No production indexing lifecycle (repository-backed/live), startup reindex, aliases/blue-green, or production collection manager was found.
 
 Classification:
 
 - Interpreters: implemented/current pure code.
 - Test client and Docker integration: integration-test-only.
-- Production runtime Elasticsearch search path: unclear/absent in inspected wiring.
+- Production runtime Elasticsearch search path: ES seed route is default; full lifecycle remains future work.
 
 Future implementation boundary:
 
-- If Elasticsearch is selected for future production search, the first production backend should stay lexical/simple-first.
-- A controlled first route contract can use a catalog snapshot or in-memory backend before any Elasticsearch runtime lifecycle is introduced.
-- Elasticsearch should only be considered for a production backend after index lifecycle, readiness, failure behavior, freshness, and observability are explicitly designed.
+- Repository-backed/live indexing requires explicit index lifecycle, readiness, failure behavior, freshness, and observability design.
 
 ## E. Qdrant / Vector Path
 
@@ -189,7 +191,7 @@ Integration-test-only / Docker-backed:
 
 Non-production Qdrant/hybrid runner status:
 
-* Production `/beauty-search` remains seed-resource catalog snapshot + in-memory lexical/simple backend.
+* Production `/beauty-search` is ES-backed seed route.
 * Qdrant/hybrid is still non-production/manual-local.
 * Manual runner layers now exist:
 
@@ -324,7 +326,7 @@ The next target is an ES-native + Qdrant-native eval comparison layer.
 
 ### InMemorySearchBackend role
 
-`InMemorySearchBackend` is a temporary seed-backed MVP/product-contract stabilizer.
+`InMemorySearchBackend` is a rollback/regression/pure backend, not current production default.
 
 It is not:
 
@@ -352,7 +354,7 @@ Current ES eval pieces include:
 * `BeautySearchElasticsearchIntegrationSpec` — Docker-backed integration eval subsets.
 * `ElasticsearchSearchResponseInterpreterSpec` — response interpreter unit tests.
 
-The next B-lite step is connecting ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`. The pure `EngineEval` comparison model is implemented.
+The `EngineEval` comparison model and report/assembly layer are implemented. Remaining work is operational/demo-facing use.
 
 ES-native eval measures:
 
@@ -406,11 +408,10 @@ Implemented pure EngineEval model (full API and metric semantics in handoff doc)
 
 M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) status:
 
-* Started by the pure `EngineEval` comparison model.
-* Not complete.
-* Next work: connect ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`.
+* M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
+* Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
 * Still offline/eval only.
-* Production route wiring exists for `POST /beauty-search` via seed-resource catalog + `InMemorySearchBackend`. Elasticsearch, Qdrant, and hybrid remain not production-wired.
+* Production route wiring is now ES-backed seed route; Qdrant and hybrid remain eval-only.
 
 ### Test taxonomy for B-lite
 
@@ -448,10 +449,10 @@ For full current state, see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 Production-wired/current:
 
-- `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogInMemory[F]`.
-- The backend is seed-resource catalog snapshot readiness plus `InMemorySearchBackend[F]`.
-- This is lexical/simple/catalog-first. It is not Elasticsearch, not Qdrant, and not hybrid.
-- No Elasticsearch search backend binding found.
+- `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES-backed seed route, default).
+- The backend is seed-resource catalog snapshot readiness plus `ElasticsearchSearchBackend[F]`.
+- This is lexical/simple/catalog-first. It is not Qdrant, not hybrid.
+- `seedCatalogInMemory` remains available as rollback/non-default.
 - No Qdrant/hybrid production binding found.
 - No search role in `LeaderboardRole.scala`.
 
@@ -464,7 +465,7 @@ Implemented but mostly test/experiment exercised:
 
 Service binding acceptance criteria for future implementation:
 
-- Future production-grade backend migration must answer where the replacement `BeautySearchService`/`BeautySearchBackend` binding is selected and how it replaces or coexists with the current seed/in-memory route.
+- Future production-grade backend migration must answer where the replacement `BeautySearchService`/`BeautySearchBackend` binding is selected and how it replaces or coexists with the current ES seed route.
 - It must answer which `BeautySearchBackend` is bound first.
 - It must define how catalog/index readiness and freshness/staleness are guaranteed.
 - It must define how parser/backend failures are represented at the route boundary.
