@@ -17,4 +17,9 @@ object BeautySearchRouteModules {
     include(BeautySearchPluginModules.api[IO])
     make[BeautyQSeedLoader].from[BeautyQSeedLoader.ResourceLoader]
   }
+
+  def seedCatalogElasticsearchPortConfigured: ModuleDef = new ModuleDef {
+    include(ElasticsearchClientModules.portConfigured)
+    include(seedCatalogElasticsearch)
+  }
 }
