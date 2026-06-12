@@ -11,7 +11,7 @@ Full current state is in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 Current status:
 
 - Production `POST /beauty-search` is ES-backed seed route: seed catalog → ES index preparation → ES retrieval → Beauty search response projection.
-- `POST /beauty-search` is production-included through `LeaderboardPlugin.modules.api` via `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
+- `POST /beauty-search` is production-included through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
 - `seedCatalogInMemory` remains available as rollback/non-default.
 - This closes the ES seed-route exposure gap. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
@@ -51,7 +51,7 @@ Evidence:
 
 - Interpreters live in `leaderboard.search.elasticsearch`.
 - `BeautySearchElasticsearchIntegrationSpec.scala` creates indexes and executes search through `ElasticsearchTestClient.scala`.
-- `LeaderboardPlugin.modules.api` now includes `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` as default.
+- `LeaderboardPlugin` top-level includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch` as default.
 
 Remaining gaps:
 
@@ -130,7 +130,7 @@ freshness/staleness policy, kill-switch integration point, observability/readine
 surface, and conservative default behavior.
 
 B has not started as production module wiring. The control-plane types are not
-wired into `LeaderboardPlugin.modules.api`, not used by the production
+wired into the production route (`modules.apiBase[IO]` + `apiElasticsearch`), not used by the production
 `/beauty-search` route, and do not construct Qdrant/Llama resources.
 
 Preserved boundary:
@@ -265,11 +265,11 @@ Recommendation:
 
 Current blockers:
 
-- Search route exposure exists through `LeaderboardPlugin.modules.api` including `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch` (ES seed route, default).
+- Search route exposure exists through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch` (ES seed route, default).
 - Default production `BeautySearchService` binding exists through the ES seed route.
 - Default production lexical/simple backend binding exists as seed-resource ready catalog documents plus `ElasticsearchSearchBackend[F]`.
 - `seedCatalogInMemory` remains available as rollback/non-default.
-- The old `BeautySearchProductionInclusionActivation`/`Handle`/`IncludedApis` boundary still exists as a staging/helper boundary but is NOT the active production gate. The route is exposed directly via `LeaderboardPlugin.modules.api` include. A real kill switch / enable-disable route gate remains future hardening.
+- The old `BeautySearchProductionInclusionActivation`/`Handle`/`IncludedApis` boundary still exists as a staging/helper boundary but is NOT the active production gate. The route is exposed directly via `LeaderboardPlugin` top-level through `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`. A real kill switch / enable-disable route gate remains future hardening.
 - No production freshness/refresh/staleness policy.
 - No runtime catalog replacement policy.
 - No stale-catalog observability or kill switch.

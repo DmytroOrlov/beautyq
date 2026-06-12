@@ -4,12 +4,16 @@ Canonical handoff for new chats. Read this first, then see linked docs for deepe
 
 ## 1. Current production `/beauty-search`
 
-* `POST /beauty-search` is production-exposed through `LeaderboardPlugin.modules.api`.
-* Code source truth: `BeautySearchRouteModules.seedCatalogElasticsearch` (ES-backed seed route, default).
+* `POST /beauty-search` is production-exposed by `LeaderboardPlugin` through `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+* `modules.apiBase[IO]` provides base/core non-Beauty APIs, `HttpServer`, `Ranks`, and old disabled Beauty inclusion helper bindings (not the active route gate).
+* `BeautySearchRouteModules.apiElasticsearch` provides the ES-backed Beauty route.
+* `modules.api[F]` is retained as rollback/legacy composition (`apiBase[F]` + `seedCatalogInMemory[F]`).
 * Current exposed stack:
 
   ```text
-  LeaderboardPlugin.modules.api
+  LeaderboardPlugin
+  → modules.apiBase[IO] for base/core APIs
+  → BeautySearchRouteModules.apiElasticsearch
   → BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured
   → ElasticsearchClientModules.portConfigured
   → BeautySearchRouteModules.seedCatalogElasticsearch
@@ -28,7 +32,7 @@ Canonical handoff for new chats. Read this first, then see linked docs for deepe
 * It is not Qdrant, not hybrid.
 * It is not fresh/repository-backed production catalog lifecycle.
 * Route exposure exists; production-grade search lifecycle remains incomplete.
-* `seedCatalogInMemory` remains available as a rollback/non-default module.
+* `seedCatalogInMemory` remains available as rollback/non-default.
 
 ## 2. Current route behavior characterization
 
@@ -127,15 +131,15 @@ product results by combining:
 ## 6.6. ES seed-route checkpoint status (reached)
 
 Reached:
-* `BeautySearchCatalogBackendModules.seedResourceElasticsearch` (production-hidden);
-* `BeautySearchRouteModules.seedCatalogElasticsearch` (production-hidden);
-* `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` composes ES client module + ES seed route;
-* `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`;
-* `ElasticsearchSeedIndexInitializer` uses bodyless `POST /<index>/_refresh` via `ElasticsearchJsonClient.post(path)`, because real Elasticsearch rejects `_refresh` with a JSON body;
-* default production `/beauty-search` switched from `seedCatalogInMemory` to ES-backed seed route;
-* explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`;
-* demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`;
-* `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route;
+* `LeaderboardPlugin` top-level includes `modules.apiBase[IO]` + `BeautySearchRouteModules.apiElasticsearch` (ES-backed Beauty route, default).
+* `BeautySearchRouteModules.apiElasticsearch` includes `seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
+* `BeautySearchCatalogBackendModules.seedResourceElasticsearch` is the catalog backend module reached via `seedCatalogElasticsearch`.
+* `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`.
+* `ElasticsearchSeedIndexInitializer` uses bodyless `POST /<index>/_refresh` via `ElasticsearchJsonClient.post(path)`, because real Elasticsearch rejects `_refresh` with a JSON body.
+* default production `/beauty-search` switched from `seedCatalogInMemory` to ES-backed seed route.
+* explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`.
+* demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`.
+* `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route.
 * latest full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
 
 Business-demo ready:
