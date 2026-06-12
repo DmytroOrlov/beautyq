@@ -126,6 +126,25 @@ does not solve repository freshness, startup reindexing, alias/blue-green,
 Qdrant shadowing, hybrid serving, score fusion, fallback, or production
 collection lifecycle.
 
+## 6.7. Current ES seed-route checkpoint status
+
+Done:
+* production-hidden `BeautySearchCatalogBackendModules.seedResourceElasticsearch`;
+* production-hidden `BeautySearchRouteModules.seedCatalogElasticsearch`;
+* explicit ES route module proof for `POST /beauty-search` with a scripted `ElasticsearchJsonClient`.
+
+Still not done:
+* default production `/beauty-search` switch from `seedCatalogInMemory` to `seedCatalogElasticsearch`;
+* ES route parity coverage for the current public route behavior;
+* real production Elasticsearch client binding;
+* repository freshness, startup reindex policy, aliases/blue-green, Qdrant shadowing,
+  hybrid serving, fallback, score fusion, reranking, and production lifecycle.
+
+Important observed route behavior:
+When Elasticsearch returns zero hits, the ES-backed route can still return
+non-empty facets and inferred filters because those are derived from catalog,
+spec, and parsed intent metadata rather than only from hit lists.
+
 ## 7. Forbidden paths
 
 * No production hybrid.

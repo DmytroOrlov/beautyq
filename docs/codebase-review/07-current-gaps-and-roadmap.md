@@ -40,12 +40,14 @@ Acceptance criteria for future implementation:
 Gap:
 
 - Elasticsearch interpreters and integration tests exist, but no production Elasticsearch `BeautySearchBackend` binding or indexing lifecycle was found.
+- A production-hidden `BeautySearchRouteModules.seedCatalogElasticsearch` route module now exists, composable by any including graph that provides an `ElasticsearchJsonClient` binding.
+- `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
 
 Evidence:
 
 - Interpreters live in `leaderboard.search.elasticsearch`.
 - `BeautySearchElasticsearchIntegrationSpec.scala` creates indexes and executes search through `ElasticsearchTestClient.scala`.
-- `LeaderboardPlugin.scala` has no Elasticsearch-backed search binding.
+- `LeaderboardPlugin.modules.api` still includes `BeautySearchRouteModules.seedCatalogInMemory[F]`, not the ES route module.
 
 Future implementation boundary:
 
@@ -194,9 +196,17 @@ Goal:
 current production /beauty-search:
   seed resource catalog + InMemorySearchBackend
 
-next business-visible checkpoint:
-  same seed catalog + Elasticsearch retrieval behind /beauty-search
+hidden ES seed route module (exists, not default):
+  seed resource catalog + Elasticsearch retrieval behind seedCatalogElasticsearch
 ```
+
+The hidden ES route module is proven by `BeautySearchElasticsearchRouteModuleSpec`.
+Default production `/beauty-search` has not switched from `seedCatalogInMemory`.
+
+Next steps after this checkpoint:
+* route parity specs for the explicit ES module;
+* default graph switch only after parity;
+* full verification after default switch.
 
 The goal is not yet full production search lifecycle. The goal is to demonstrate
 the first ES-backed production route over controlled seed data before adding
