@@ -138,16 +138,23 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
           topK = 5,
         ),
       )
-      report <- new QdrantEmbeddingBenchmarkRunner(executor).run(plan.copy(candidates = candidates), tinyQueries)
+      output <- new QdrantEmbeddingBenchmarkRunner(executor).runWithQueryResults(plan.copy(candidates = candidates), tinyQueries)
+      report = output.report
       jsonReport = QdrantEmbeddingBenchmarkReportJson.encodeReportString(report)
+      jsonRunOutput = QdrantEmbeddingBenchmarkReportJson.encodeRunOutputString(output)
       _ <- ZIO.succeed(println(QdrantEmbeddingBenchmarkReportFormatter.formatWithDecisions(report)))
       _ <- ZIO.succeed(println("BEGIN_QDRANT_EMBEDDING_BENCHMARK_JSON"))
       _ <- ZIO.succeed(println(jsonReport))
       _ <- ZIO.succeed(println("END_QDRANT_EMBEDDING_BENCHMARK_JSON"))
+      _ <- ZIO.succeed(println("BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON"))
+      _ <- ZIO.succeed(println(jsonRunOutput))
+      _ <- ZIO.succeed(println("END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON"))
       _ <- assertIO(report.candidateReports.size == plan.runMode.expectedCandidateCount)
       _ <- assertIO(report.candidateReports.forall(_.aggregate.queryCount == tinyQueries.size))
       _ <- assertIO(report.candidateReports.forall(_.queryMetrics.size == tinyQueries.size))
       _ <- assertIO(report.candidateReports.forall(_.aggregate.candidateId.nonEmpty))
+      _ <- assertIO(output.queryResultsByCandidateId.keySet == plan.candidates.map(_.candidateId).toSet)
+      _ <- assertIO(output.queryResultsByCandidateId.values.forall(_.size == tinyQueries.size))
     } yield ()
 
   private def probeCandidateDimension(candidate: QdrantEmbeddingBenchmarkCandidate): IO[QueryFailure, QdrantEmbeddingBenchmarkCandidate] =

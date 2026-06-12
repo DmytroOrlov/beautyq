@@ -15,6 +15,7 @@ import leaderboard.search.qdrant.{
   QdrantEmbeddingBenchmarkReportFormatter,
   QdrantEmbeddingBenchmarkReportJson,
   QdrantEmbeddingBenchmarkRunMode,
+  QdrantEmbeddingBenchmarkRunOutput,
 }
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -207,10 +208,117 @@ final class QdrantEmbeddingBenchmarkReportJsonSpec extends AnyWordSpec {
       assert(formatted.contains("candidate: qwen3-0_6b"))
       assert(formatted.contains("meanQueryLatencyMs: 10.0000"))
     }
+
+    "round-trip a QdrantEmbeddingBenchmarkRunOutput" in {
+      val candidate = benchmarkCandidate("qwen3-0_6b", "Qwen3-Embedding-0.6B", "http://localhost:8081", 1024)
+      val report = QdrantEmbeddingBenchmarkReport(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
+          candidates = List(candidate),
+          k = 5,
+        ),
+        candidateReports = List(
+          candidateReport(candidate, List(queryMetrics("q-1", candidate.candidateId, variantHitRank = Some(1), reciprocalRank = 1.0)))
+        ),
+        comparisons = Nil,
+      )
+      val queryResult = QdrantEmbeddingBenchmarkQueryResult(
+        candidateId = candidate.candidateId,
+        queryId = "q-1",
+        queryText = "test query",
+        topVariantIds = List(variantId(1), variantId(2)),
+        topProviderIds = List(providerId(3)),
+        topServiceIds = List(serviceId(4)),
+        scores = List(0.95, 0.80),
+        queryLatencyMs = Some(15L),
+      )
+      val output = QdrantEmbeddingBenchmarkRunOutput(
+        report = report,
+        queryResultsByCandidateId = Map(candidate.candidateId -> List(queryResult)),
+      )
+
+      val decoded = decodeRunOutput(output)
+
+      assert(decoded == output)
+    }
+
+    "preserve report.plan.runMode in run-output round-trip" in {
+      val candidate = benchmarkCandidate("qwen3-4b", "Qwen3-Embedding-4B", "http://localhost:8082", 2560)
+      val report = QdrantEmbeddingBenchmarkReport(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+          candidates = List(candidate),
+          k = 10,
+        ),
+        candidateReports = Nil,
+        comparisons = Nil,
+      )
+      val output = QdrantEmbeddingBenchmarkRunOutput(
+        report = report,
+        queryResultsByCandidateId = Map.empty,
+      )
+
+      val decoded = decodeRunOutput(output)
+
+      assert(decoded.report.plan.runMode == QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel)
+    }
+
+    "preserve candidate id and topVariantIds in queryResultsByCandidateId round-trip" in {
+      val candidate = benchmarkCandidate("qwen3-0_6b", "Qwen3-Embedding-0.6B", "http://localhost:8081", 1024)
+      val report = QdrantEmbeddingBenchmarkReport(
+        plan = QdrantEmbeddingBenchmarkPlan(
+          runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
+          candidates = List(candidate),
+          k = 3,
+        ),
+        candidateReports = Nil,
+        comparisons = Nil,
+      )
+      val queryResult = QdrantEmbeddingBenchmarkQueryResult(
+        candidateId = candidate.candidateId,
+        queryId = "q-preserve",
+        queryText = "preserve check",
+        topVariantIds = List(variantId(10), variantId(20)),
+        topProviderIds = Nil,
+        topServiceIds = Nil,
+        scores = List(0.88, 0.77),
+      )
+      val output = QdrantEmbeddingBenchmarkRunOutput(
+        report = report,
+        queryResultsByCandidateId = Map(candidate.candidateId -> List(queryResult)),
+      )
+
+      val decoded = decodeRunOutput(output)
+
+      assert(decoded.queryResultsByCandidateId.keySet == Set(candidate.candidateId))
+      assert(decoded.queryResultsByCandidateId(candidate.candidateId).head.topVariantIds == List(variantId(10), variantId(20)))
+    }
+
+    "fail clearly on invalid run-output json string" in {
+      val failure = QdrantEmbeddingBenchmarkReportJson
+        .decodeRunOutputString("{invalid json")
+        .swap
+        .toOption
+        .getOrElse(fail("expected decode failure"))
+
+      failure match {
+        case QueryFailure.OperationFailure(operationName, message) =>
+          assert(operationName == "qdrant-embedding-benchmark-report-json")
+          assert(message.contains("Invalid Qdrant embedding benchmark report JSON"))
+        case other =>
+          fail(s"expected OperationFailure, got $other")
+      }
+    }
   }
 
   private def decode(report: QdrantEmbeddingBenchmarkReport): QdrantEmbeddingBenchmarkReport =
     QdrantEmbeddingBenchmarkReportJson.decodeReportString(QdrantEmbeddingBenchmarkReportJson.encodeReportString(report)).fold(
+      failure => fail(s"unexpected round-trip failure: $failure"),
+      identity,
+    )
+
+  private def decodeRunOutput(output: QdrantEmbeddingBenchmarkRunOutput): QdrantEmbeddingBenchmarkRunOutput =
+    QdrantEmbeddingBenchmarkReportJson.decodeRunOutputString(QdrantEmbeddingBenchmarkReportJson.encodeRunOutputString(output)).fold(
       failure => fail(s"unexpected round-trip failure: $failure"),
       identity,
     )
