@@ -160,10 +160,16 @@ Script rules:
 * After truncation, create `ZIP="$OUT.zip"`, run `zip -9 -j "$ZIP" "$OUT"`, then print `wc -c "$OUT"` and `wc -c "$ZIP"`, then `cpf "$ZIP"`, then `echo "$ZIP"`.
 * Do not include `/tmp`, full `target`, generated build output, screenshots, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
 
+Patch-review bundle DoD (post-agent / patch-review bundles): include `git diff --binary HEAD --` as `tracked-changes-from-head.patch`, include `git diff --binary --cached` as `staged-tracked-changes.patch` and `git diff --binary` as `unstaged-tracked-changes.patch` when useful, collect untracked nonignored files NUL-safely and archive into `untracked-files.tar.gz` with a readable manifest, then zip the whole bundle directory and upload only the zip.
+
 Canonical shell shape:
 
 ```bash
-OUT="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM.txt"
+BASE="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM"
+WORK="$BASE.dir"
+OUT="$WORK/bundle.txt"
+
+mkdir -p "$WORK"
 
 {
   echo "## status"
@@ -174,6 +180,40 @@ OUT="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM.txt"
   rg -n "PatternA|PatternB" AGENTS.md docs bifunctor-tagless/src/main bifunctor-tagless/src/test || true
 } > "$OUT" 2>&1
 
+git --no-pager diff --binary HEAD -- > "$WORK/tracked-changes-from-head.patch" 2>&1 || true
+
+git --no-pager diff --binary --cached > "$WORK/staged-tracked-changes.patch" 2>&1 || true
+
+git --no-pager diff --binary > "$WORK/unstaged-tracked-changes.patch" 2>&1 || true
+
+git ls-files --others --exclude-standard -z > "$WORK/untracked-files.nul"
+
+python3 - <<'PY' "$WORK"
+import pathlib
+import sys
+import tarfile
+
+work = pathlib.Path(sys.argv[1])
+repo = pathlib.Path.cwd()
+nul = work / "untracked-files.nul"
+manifest = work / "untracked-files.manifest.txt"
+tar_path = work / "untracked-files.tar.gz"
+
+items = [p for p in nul.read_bytes().split(b"\0") if p]
+paths = [p.decode("utf-8", errors="replace") for p in items]
+
+manifest.write_text(
+    "\n".join(paths) + ("\n" if paths else ""),
+    encoding="utf-8",
+)
+
+with tarfile.open(tar_path, "w:gz", dereference=False) as tar:
+    for rel in paths:
+        path = repo / rel
+        if path.exists() or path.is_symlink():
+            tar.add(path, arcname=rel, recursive=False)
+PY
+
 python3 - <<'PY' "$OUT"
 import pathlib, sys
 p = pathlib.Path(sys.argv[1])
@@ -183,11 +223,16 @@ if len(data.encode()) > limit:
     p.write_text(data[:limit] + "\n\n## TRUNCATED\n")
 PY
 
-ZIP="$OUT.zip"
+ZIP="$BASE.zip"
 rm -f "$ZIP"
-zip -9 -j "$ZIP" "$OUT" >/dev/null
+(cd "$WORK" && zip -9 -r "$ZIP" .) >/dev/null
 
 wc -c "$OUT"
+wc -c "$WORK/tracked-changes-from-head.patch"
+wc -c "$WORK/staged-tracked-changes.patch"
+wc -c "$WORK/unstaged-tracked-changes.patch"
+wc -c "$WORK/untracked-files.manifest.txt"
+wc -c "$WORK/untracked-files.tar.gz"
 wc -c "$ZIP"
 cpf "$ZIP"
 echo "$ZIP"
