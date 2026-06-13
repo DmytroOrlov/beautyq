@@ -35,117 +35,107 @@ final class QdrantSnapshotIndexingCompatibilityIntegrationSpec extends Leaderboa
       (
         portCfg: QdrantPortCfg,
       ) =>
-        sys.env.get(QdrantSnapshotIndexingCompatibilityIntegrationSpec.EnvGate) match {
-          case Some("true") =>
-            val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-            val collectionName = s"snapshot_indexing_compat_${UUID.randomUUID().toString.replace('-', '_')}"
-            val collectionPath = s"/collections/$collectionName"
-            val vectorSearchSpec = VectorSearchSpec(
-              collectionName = collectionName,
-              vectorName = "compat-vector",
-              topK = 10,
-              scoreThreshold = None,
-            )
-            val embeddingSpec = EmbeddingSpec[Any](
-              vectorName = vectorSearchSpec.vectorName,
-              modelName = "compat-model",
-              dimension = 3,
-              distance = VectorDistance.Cosine,
-              sourceTextFieldPaths = Nil,
-            )
-            val expectation = QdrantCollectionIdentity.compatibilityExpectation(embeddingSpec, vectorSearchSpec)
-            val guard = new QdrantCollectionCompatibilityGuard(
-              new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
-            )
-            val documents = List(variantDocument(1), variantDocument(2))
+        val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
+        val collectionName = s"snapshot_indexing_compat_${UUID.randomUUID().toString.replace('-', '_')}"
+        val collectionPath = s"/collections/$collectionName"
+        val vectorSearchSpec = VectorSearchSpec(
+          collectionName = collectionName,
+          vectorName = "compat-vector",
+          topK = 10,
+          scoreThreshold = None,
+        )
+        val embeddingSpec = EmbeddingSpec[Any](
+          vectorName = vectorSearchSpec.vectorName,
+          modelName = "compat-model",
+          dimension = 3,
+          distance = VectorDistance.Cosine,
+          sourceTextFieldPaths = Nil,
+        )
+        val expectation = QdrantCollectionIdentity.compatibilityExpectation(embeddingSpec, vectorSearchSpec)
+        val guard = new QdrantCollectionCompatibilityGuard(
+          new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
+        )
+        val documents = List(variantDocument(1), variantDocument(2))
 
-            (for {
-              snapshotLoadsRef <- Ref.make(0)
-              upsertCallsRef <- Ref.make(List.empty[(String, MasterServiceOfferVariantId)])
-              indexer = new QdrantVariantDocumentSnapshotIndexer(
-                new FakeSnapshotProvider(documents, snapshotLoadsRef),
-                new RecordingDocumentUpsert(upsertCallsRef),
-              )
-              _ <- qdrantClient.createCollection(
-                collectionPath,
-                QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, embeddingSpec),
-              )
-              result <- indexer.indexCompatibleSnapshot(QdrantSnapshotIndexingCompatibilityGuard(expectation, guard))
-              upsertCalls <- upsertCallsRef.get
-              snapshotLoads <- snapshotLoadsRef.get
-              _ <- ZIO.succeed {
-                assert(result == QdrantSnapshotIndexingResult(
-                  totalDocumentsLoaded = 2,
-                  totalDocumentsIndexed = 2,
-                  indexedVariantIds = documents.map(_.variantId),
-                ))
-                assert(snapshotLoads == 1)
-                assert(upsertCalls == documents.map(document => expectation.collectionName -> document.variantId))
-                assert(upsertCalls.map(_._1).distinct == List(expectation.collectionName))
-              }
-            } yield ()).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
-          case _ =>
-            cancel(s"Set ${QdrantSnapshotIndexingCompatibilityIntegrationSpec.EnvGate}=true to run the Qdrant snapshot indexing compatibility integration smoke")
-        }
+        (for {
+          snapshotLoadsRef <- Ref.make(0)
+          upsertCallsRef <- Ref.make(List.empty[(String, MasterServiceOfferVariantId)])
+          indexer = new QdrantVariantDocumentSnapshotIndexer(
+            new FakeSnapshotProvider(documents, snapshotLoadsRef),
+            new RecordingDocumentUpsert(upsertCallsRef),
+          )
+          _ <- qdrantClient.createCollection(
+            collectionPath,
+            QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, embeddingSpec),
+          )
+          result <- indexer.indexCompatibleSnapshot(QdrantSnapshotIndexingCompatibilityGuard(expectation, guard))
+          upsertCalls <- upsertCallsRef.get
+          snapshotLoads <- snapshotLoadsRef.get
+          _ <- ZIO.succeed {
+            assert(result == QdrantSnapshotIndexingResult(
+              totalDocumentsLoaded = 2,
+              totalDocumentsIndexed = 2,
+              indexedVariantIds = documents.map(_.variantId),
+            ))
+            assert(snapshotLoads == 1)
+            assert(upsertCalls == documents.map(document => expectation.collectionName -> document.variantId))
+            assert(upsertCalls.map(_._1).distinct == List(expectation.collectionName))
+          }
+        } yield ()).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
     }
 
     "fail before snapshot loading and upserts when the real guard sees a dimension mismatch" in {
       (
         portCfg: QdrantPortCfg,
       ) =>
-        sys.env.get(QdrantSnapshotIndexingCompatibilityIntegrationSpec.EnvGate) match {
-          case Some("true") =>
-            val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-            val collectionName = s"snapshot_indexing_compat_${UUID.randomUUID().toString.replace('-', '_')}"
-            val collectionPath = s"/collections/$collectionName"
-            val vectorSearchSpec = VectorSearchSpec(
-              collectionName = collectionName,
-              vectorName = "compat-vector",
-              topK = 10,
-              scoreThreshold = None,
-            )
-            val embeddingSpec = EmbeddingSpec[Any](
-              vectorName = vectorSearchSpec.vectorName,
-              modelName = "compat-model",
-              dimension = 3,
-              distance = VectorDistance.Cosine,
-              sourceTextFieldPaths = Nil,
-            )
-            val expectation = QdrantCollectionIdentity
-              .compatibilityExpectation(embeddingSpec, vectorSearchSpec)
-              .copy(expectedDimension = embeddingSpec.dimension + 1)
-            val guard = new QdrantCollectionCompatibilityGuard(
-              new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
-            )
+        val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
+        val collectionName = s"snapshot_indexing_compat_${UUID.randomUUID().toString.replace('-', '_')}"
+        val collectionPath = s"/collections/$collectionName"
+        val vectorSearchSpec = VectorSearchSpec(
+          collectionName = collectionName,
+          vectorName = "compat-vector",
+          topK = 10,
+          scoreThreshold = None,
+        )
+        val embeddingSpec = EmbeddingSpec[Any](
+          vectorName = vectorSearchSpec.vectorName,
+          modelName = "compat-model",
+          dimension = 3,
+          distance = VectorDistance.Cosine,
+          sourceTextFieldPaths = Nil,
+        )
+        val expectation = QdrantCollectionIdentity
+          .compatibilityExpectation(embeddingSpec, vectorSearchSpec)
+          .copy(expectedDimension = embeddingSpec.dimension + 1)
+        val guard = new QdrantCollectionCompatibilityGuard(
+          new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
+        )
 
-            (for {
-              snapshotLoadsRef <- Ref.make(0)
-              upsertCallsRef <- Ref.make(List.empty[(String, MasterServiceOfferVariantId)])
-              indexer = new QdrantVariantDocumentSnapshotIndexer(
-                new FakeSnapshotProvider(List(variantDocument(1)), snapshotLoadsRef),
-                new RecordingDocumentUpsert(upsertCallsRef),
-              )
-              _ <- qdrantClient.createCollection(
-                collectionPath,
-                QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, embeddingSpec),
-              )
-              error <- indexer.indexCompatibleSnapshot(QdrantSnapshotIndexingCompatibilityGuard(expectation, guard)).either
-              snapshotLoads <- snapshotLoadsRef.get
-              upsertCalls <- upsertCallsRef.get
-              _ <- ZIO.succeed {
-                error match {
-                  case Left(QueryFailure.OperationFailure("qdrant-collection-compatibility", message)) =>
-                    assert(message.contains("DimensionMismatch(expected=4, observed=3)"))
-                  case other =>
-                    fail(s"Expected qdrant-collection-compatibility failure, got $other")
-                }
-                assert(snapshotLoads == 0)
-                assert(upsertCalls.isEmpty)
-              }
-            } yield ()).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
-          case _ =>
-            cancel(s"Set ${QdrantSnapshotIndexingCompatibilityIntegrationSpec.EnvGate}=true to run the Qdrant snapshot indexing compatibility integration smoke")
-        }
+        (for {
+          snapshotLoadsRef <- Ref.make(0)
+          upsertCallsRef <- Ref.make(List.empty[(String, MasterServiceOfferVariantId)])
+          indexer = new QdrantVariantDocumentSnapshotIndexer(
+            new FakeSnapshotProvider(List(variantDocument(1)), snapshotLoadsRef),
+            new RecordingDocumentUpsert(upsertCallsRef),
+          )
+          _ <- qdrantClient.createCollection(
+            collectionPath,
+            QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, embeddingSpec),
+          )
+          error <- indexer.indexCompatibleSnapshot(QdrantSnapshotIndexingCompatibilityGuard(expectation, guard)).either
+          snapshotLoads <- snapshotLoadsRef.get
+          upsertCalls <- upsertCallsRef.get
+          _ <- ZIO.succeed {
+            error match {
+              case Left(QueryFailure.OperationFailure("qdrant-collection-compatibility", message)) =>
+                assert(message.contains("DimensionMismatch(expected=4, observed=3)"))
+              case other =>
+                fail(s"Expected qdrant-collection-compatibility failure, got $other")
+            }
+            assert(snapshotLoads == 0)
+            assert(upsertCalls.isEmpty)
+          }
+        } yield ()).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
     }
   }
 
@@ -196,8 +186,4 @@ final class QdrantSnapshotIndexingCompatibilityIntegrationSpec extends Leaderboa
 
   private def uuid(index: Int, suffix: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-${index * 100 + suffix}%012d")
-}
-
-private object QdrantSnapshotIndexingCompatibilityIntegrationSpec {
-  val EnvGate = "QDRANT_SNAPSHOT_INDEXING_COMPATIBILITY_INTEGRATION"
 }

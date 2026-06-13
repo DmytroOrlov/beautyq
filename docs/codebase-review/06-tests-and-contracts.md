@@ -142,8 +142,11 @@ Env-gated/manual-local:
 - `QdrantSemanticCandidateEvalSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set; optional quality assertions use `QDRANT_SEMANTIC_QUALITY_ASSERTIONS`.
 - `QdrantLlamaCppRetrievalSmokeSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set.
 - `QdrantExperimentalHybridServiceIntegrationSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set.
-- `QdrantCollectionCompatibilityIntegrationSpec.scala`: env gate `QDRANT_COLLECTION_COMPATIBILITY_INTEGRATION`.
-- `QdrantSnapshotIndexingCompatibilityIntegrationSpec.scala`: env gate `QDRANT_SNAPSHOT_INDEXING_COMPATIBILITY_INTEGRATION`.
+
+Qdrant Docker/resource-backed integration specs:
+
+- `QdrantCollectionCompatibilityIntegrationSpec.scala`: uses the distage-managed Qdrant Docker resource via `QdrantPortCfg`; runs automatically when that resource is available.
+- `QdrantSnapshotIndexingCompatibilityIntegrationSpec.scala`: uses the distage-managed Qdrant Docker resource via `QdrantPortCfg`; runs automatically when that resource is available.
 
 ## Llama Tests
 

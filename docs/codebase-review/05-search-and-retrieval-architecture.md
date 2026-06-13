@@ -180,8 +180,8 @@ Manual/local:
 Integration-test-only / Docker-backed:
 
 - `QdrantDockerSmokeSpec.scala` uses Distage `QdrantPortCfg` and a Docker-backed Qdrant container.
-- `QdrantCollectionCompatibilityIntegrationSpec.scala` is env-gated by `QDRANT_COLLECTION_COMPATIBILITY_INTEGRATION`.
-- `QdrantSnapshotIndexingCompatibilityIntegrationSpec.scala` is env-gated by `QDRANT_SNAPSHOT_INDEXING_COMPATIBILITY_INTEGRATION`.
+- `QdrantCollectionCompatibilityIntegrationSpec.scala` uses the distage-managed Qdrant Docker resource via `QdrantPortCfg` and runs automatically when that resource is available.
+- `QdrantSnapshotIndexingCompatibilityIntegrationSpec.scala` uses the distage-managed Qdrant Docker resource via `QdrantPortCfg` and runs automatically when that resource is available.
 
 Non-production Qdrant/hybrid runner status:
 
