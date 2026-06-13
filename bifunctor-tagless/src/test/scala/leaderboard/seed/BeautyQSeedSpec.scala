@@ -67,23 +67,53 @@ abstract class BeautyQSeedSpec extends LeaderboardTest {
         }
     }
 
+  private def missingSeedVariantIds(
+    seed: BeautyQSeedData,
+    variants: MasterServiceOfferVariants[IO],
+  ): IO[QueryFailure, List[MasterServiceOfferVariantId]] =
+    ZIO
+      .foreach(seed.masterServiceOfferVariants) {
+        expected =>
+          variants.getMasterServiceOfferVariant(expected.id).map {
+            case Some(_) =>
+              None
+            case None =>
+              Some(expected.id)
+          }
+      }
+      .map(_.collect { case Some(id) => id })
+
+  private def failIfSeedVariantsMissing(
+    missingIds: List[MasterServiceOfferVariantId]
+  ): IO[QueryFailure, Unit] =
+    missingIds match {
+      case Nil =>
+        ZIO.unit
+      case ids =>
+        ZIO.fail(
+          QueryFailure.domain(
+            s"Seed did not load all current variants; missing variant id(s): ${ids.map(_.toString).sorted.mkString(", ")}"
+          )
+        )
+    }
+
   private def ensureSeedLoaded(
     seed: BeautyQSeedData,
     inserter: BeautyQSeedInserter[IO],
     variants: MasterServiceOfferVariants[IO],
   ): IO[QueryFailure, Unit] =
-    variants.getMasterServiceOfferVariant(knownVariantId).flatMap {
-      case Some(_) =>
+    missingSeedVariantIds(seed, variants).flatMap {
+      case Nil =>
         ZIO.unit
-      case None =>
+      case _ =>
         inserter.insert(seed).either.flatMap {
           case Right(_) =>
-            ZIO.unit
+            missingSeedVariantIds(seed, variants).flatMap(failIfSeedVariantsMissing)
           case Left(error) =>
-            variants.getMasterServiceOfferVariant(knownVariantId).flatMap {
-              case Some(_) =>
+            missingSeedVariantIds(seed, variants).flatMap {
+              case Nil =>
                 ZIO.unit
-              case None =>
+              case _ =>
                 ZIO.fail(error)
             }
         }
