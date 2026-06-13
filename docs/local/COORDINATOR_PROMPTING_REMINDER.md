@@ -40,6 +40,8 @@ Never write delegated-agent prompts from guesses about APIs, fields, imports, si
 
 After every accepted patch review / closed patch, include the extended commit message before the N+1 delegated prompt or N+1 bundle request.
 
+After every accepted review, provide either the next delegated prompt or the next executable bundle, and list two viable next options with a recommended choice, unless the next action is forced by a failed verification, safety issue, or source-truth blocker.
+
 ## 1.3 Verification labels
 
 * `FOCUSED GREEN`: requested focused suite passed; full repo unknown.
@@ -159,6 +161,7 @@ Script rules:
 * Cap/truncate output when large.
 * After truncation, create `ZIP="$OUT.zip"`, run `zip -9 -j "$ZIP" "$OUT"`, then print `wc -c "$OUT"` and `wc -c "$ZIP"`, then `cpf "$ZIP"`, then `echo "$ZIP"`.
 * Do not include `/tmp`, full `target`, generated build output, screenshots, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
+* Bundle scripts are read-only context capture only. They may use `git`, bounded `rg/sed`, diff generation, untracked-file archiving, truncation, and zip upload. They must not run `sbt`, tests, Docker cleanup/startup, `find target -delete`, network/resource probes, container launches, package managers, or other heavy/mutating commands. Full verification commands belong outside the bundle and must be run explicitly by the user/coordinator.
 
 Patch-review bundle DoD (post-agent / patch-review bundles): include `git diff --binary HEAD --` as `tracked-changes-from-head.patch`, include `git diff --binary --cached` as `staged-tracked-changes.patch` and `git diff --binary` as `unstaged-tracked-changes.patch` when useful, collect untracked nonignored files NUL-safely and archive into `untracked-files.tar.gz` with a readable manifest, then zip the whole bundle directory and upload only the zip.
 
