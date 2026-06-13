@@ -386,7 +386,7 @@ Current blockers:
 - Freshness/staleness bounds are not defined.
 - Observability surface is not designed.
 - Kill-switch behavior is not implemented.
-- Qdrant/hybrid/Elasticsearch are not production backends for this route.
+- Elasticsearch is the current ES seed-route backend for `/beauty-search`; Qdrant and hybrid are not production backends for this route. Elasticsearch production lifecycle, freshness, and readiness remain incomplete.
 
 ## Repository / Persistence Risks
 

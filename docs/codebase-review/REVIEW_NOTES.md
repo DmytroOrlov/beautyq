@@ -164,7 +164,7 @@
 
 - Is `LeaderboardRole` intentionally missing `ProfileRole[F]` as a constructor dependency while logging Profile APIs and while `ProfileRole` exists separately?
 - Should `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` be changed to depend directly on `BeautyQSeedReady` per the seed-backed snapshot rule?
-- Is the intended first production search backend Elasticsearch, in-memory, or something else? Current code has no production binding.
+- **SUPERSEDED**: Is the intended first production search backend Elasticsearch, in-memory, or something else? Current code has no production binding. *(This question is superseded. Current known production route wiring is `POST /beauty-search` through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; the exposed backend is seed-resource catalog snapshot + `ElasticsearchSearchBackend`; `seedCatalogInMemory` / `InMemorySearchBackend` are rollback/non-default; Qdrant/hybrid are not production-wired.)*
 - Should old docs be updated or archived before the next implementation pass?
 - What exact transaction boundary exists around `MasterServiceOfferVariants.Postgres` base-row upsert plus attribute replacement? Pass 2 did not line-audit transaction semantics deeply.
 

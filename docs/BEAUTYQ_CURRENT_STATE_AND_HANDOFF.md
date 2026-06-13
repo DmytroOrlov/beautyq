@@ -66,7 +66,8 @@ Documented as characterized, not as desired final contract:
 ## 5. Current priority: ES seed route stabilization
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
-* ES seed-route checkpoint is reached: latest full verification 956 passed, 0 failed, 1 canceled.
+* ES seed-route checkpoint is reached: previous full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
+* Latest known full run is red due `BeautyQSeedDummySpec` seed-data failure; triage separately before claiming FULL GREEN.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.
@@ -140,7 +141,7 @@ Reached:
 * explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`.
 * demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`.
 * `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route.
-* latest full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
+* previous full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
 
 Business-demo ready:
 
