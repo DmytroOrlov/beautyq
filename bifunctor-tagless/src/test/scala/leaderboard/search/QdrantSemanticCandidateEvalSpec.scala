@@ -66,14 +66,15 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        val testEffect: IO[QueryFailure, Unit] = sys.env.get("LLAMA_CPP_EMBEDDING_URL") match {
-          case None =>
-            ZIO.succeed(cancel("Set LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 to run the Qdrant semantic candidate eval")).unit
-          case Some(url) if url != "http://localhost:8081" =>
-            ZIO.succeed(cancel("Set LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 to run the Qdrant semantic candidate eval")).unit
-          case Some(url) =>
+        val url = sys.env.get("LLAMA_CPP_EMBEDDING_URL").getOrElse("http://localhost:8081")
+        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+        val testEffect: IO[QueryFailure, Unit] = embeddingClient.embed("semantic candidate eval endpoint probe").either.flatMap {
+          case Left(_) =>
+            ZIO.succeed(cancel(s"llama.cpp embedding endpoint $url is unavailable; canceling Qdrant semantic candidate eval"))
+          case Right(vector) if vector.isEmpty =>
+            ZIO.succeed(cancel(s"llama.cpp embedding endpoint $url returned an empty vector; canceling Qdrant semantic candidate eval"))
+          case Right(_) =>
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-            val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
             val semanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient))
             val collectionName = s"semantic_eval_${UUID.randomUUID().toString.replace('-', '_')}"
             val collectionPath = s"/collections/$collectionName"

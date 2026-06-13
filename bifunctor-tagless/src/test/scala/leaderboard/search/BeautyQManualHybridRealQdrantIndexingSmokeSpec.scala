@@ -31,8 +31,7 @@ final class BeautyQManualHybridRealQdrantIndexingSmokeSpec extends LeaderboardTe
       (
         portCfg: QdrantPortCfg,
       ) =>
-        sys.env.get(BeautyQManualHybridRealQdrantIndexingSmokeSpec.EnvGate) match {
-          case Some("true") =>
+        {
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
 
             val embeddingDimension = 3
@@ -141,13 +140,7 @@ final class BeautyQManualHybridRealQdrantIndexingSmokeSpec extends LeaderboardTe
                 assert(result.indexedVariantIds.contains(testVariantId), s"Expected indexed variant id $testVariantId in ${result.indexedVariantIds}")
               }
             } yield ()).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
-          case _ =>
-            cancel(s"Set ${BeautyQManualHybridRealQdrantIndexingSmokeSpec.EnvGate}=true to run the manual hybrid real Qdrant indexing smoke")
         }
     }
   }
-}
-
-private object BeautyQManualHybridRealQdrantIndexingSmokeSpec {
-  val EnvGate = "BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE"
 }

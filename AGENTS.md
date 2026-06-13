@@ -174,6 +174,8 @@ Defaults:
 * `Communication` only for real external processes such as Postgres, Qdrant, Elasticsearch, Llama, Docker, or HTTP.
 * `Whitebox` only when the internal detail is the explicit contract.
 
+Resource-backed test DoD: use distage/default local resources, run when resources are available, and cancel with a useful reason when unavailable. Boolean env gates are allowed only for true manual-artifact, destructive, or explicitly external workflows; such gates must be documented.
+
 Prefer abstract contract suites over duplicated implementation-specific tests:
 
 ```scala

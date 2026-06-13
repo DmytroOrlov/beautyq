@@ -22,14 +22,16 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
       (
         portCfg: QdrantPortCfg,
       ) =>
-        sys.env.get("LLAMA_CPP_EMBEDDING_URL") match {
-          case None =>
-            cancel("Set LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 to run the llama.cpp retrieval smoke test")
-          case Some(url) if url != "http://localhost:8081" =>
-            cancel("Set LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 to run the llama.cpp retrieval smoke test")
-          case Some(url) =>
-            val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-            val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+        val url = sys.env.get("LLAMA_CPP_EMBEDDING_URL").getOrElse("http://localhost:8081")
+        val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
+        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+        val probeResult = try {
+          unsafeRun(embeddingClient.embed("qdrant llama retrieval smoke probe").either)
+        } catch {
+          case _: Exception => Left(leaderboard.model.QueryFailure.operation("llama-probe", "endpoint unavailable"))
+        }
+        probeResult match {
+          case Right(vector) if vector.nonEmpty =>
             val collectionName = s"llama_cpp_retrieval_${UUID.randomUUID().toString.replace('-', '_')}"
             val collectionPath = s"/collections/$collectionName"
             val vectorName = "llama-cpp-embedding"
@@ -76,6 +78,8 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
               } yield ()
               ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
             )
+          case _ =>
+            cancel(s"llama.cpp embedding endpoint $url is unavailable; canceling Qdrant+llama retrieval smoke")
         }
     }
   }

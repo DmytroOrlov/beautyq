@@ -51,36 +51,38 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        if (!envFlag("QDRANT_EMBEDDING_BENCHMARK_SINGLE_ENDPOINT")) {
-          cancel("Set QDRANT_EMBEDDING_BENCHMARK_SINGLE_ENDPOINT=true to run the single-endpoint Qdrant embedding benchmark executor integration")
-        } else {
-          sys.env.get("QDRANT_EMBEDDING_BENCHMARK_ENDPOINT") match {
-            case None =>
-              cancel("Set QDRANT_EMBEDDING_BENCHMARK_ENDPOINT=http://localhost:8081 to run the single-endpoint benchmark executor integration")
-            case Some(endpoint) =>
-              runPlan(
-                portCfg = portCfg,
-                snapshotProvider = snapshotProvider(
-                  categories,
-                  services,
-                  serviceVariantSchemas,
-                  masters,
-                  masterLocations,
-                  masterServiceOffers,
-                  masterServiceOfferVariants,
-                  seedReady,
-                ),
-                plan = QdrantEmbeddingBenchmarkPlan(
-                  runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
-                  candidates = List(candidate("single", endpoint)),
-                  k = 5,
-                ),
-              )
-          }
+        val endpoint = sys.env.get("QDRANT_EMBEDDING_BENCHMARK_ENDPOINT").getOrElse("http://localhost:8081")
+        val probeResult = try {
+          unsafeRun(new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = endpoint)).embed("benchmark single endpoint probe").either)
+        } catch {
+          case _: Exception => Left(leaderboard.model.QueryFailure.operation("benchmark-probe", "endpoint unavailable"))
+        }
+        probeResult match {
+          case Right(vector) if vector.nonEmpty =>
+            runPlan(
+              portCfg = portCfg,
+              snapshotProvider = snapshotProvider(
+                categories,
+                services,
+                serviceVariantSchemas,
+                masters,
+                masterLocations,
+                masterServiceOffers,
+                masterServiceOfferVariants,
+                seedReady,
+              ),
+              plan = QdrantEmbeddingBenchmarkPlan(
+                runMode = QdrantEmbeddingBenchmarkRunMode.SingleEndpointManualRestart,
+                candidates = List(candidate("single", endpoint)),
+                k = 5,
+              ),
+            )
+          case _ =>
+            cancel(s"Embedding endpoint $endpoint is unavailable; canceling single-endpoint benchmark executor integration")
         }
     }
 
-    "run two dual-endpoint candidates through the benchmark runner when both endpoints are explicitly enabled" in {
+    "run two dual-endpoint candidates through the benchmark runner when both endpoints are available" in {
       (
         portCfg: QdrantPortCfg,
         categories: Categories[IO],
@@ -92,32 +94,44 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        if (!envFlag("QDRANT_EMBEDDING_BENCHMARK_DUAL_ENDPOINT")) {
-          cancel("Set QDRANT_EMBEDDING_BENCHMARK_DUAL_ENDPOINT=true to run the dual-endpoint Qdrant embedding benchmark executor integration")
-        } else {
-          (sys.env.get("QDRANT_EMBEDDING_SMALL_URL"), sys.env.get("QDRANT_EMBEDDING_LARGE_URL")) match {
-            case (Some(smallUrl), Some(largeUrl)) =>
-              runPlan(
-                portCfg = portCfg,
-                snapshotProvider = snapshotProvider(
-                  categories,
-                  services,
-                  serviceVariantSchemas,
-                  masters,
-                  masterLocations,
-                  masterServiceOffers,
-                  masterServiceOfferVariants,
-                  seedReady,
-                ),
-                plan = QdrantEmbeddingBenchmarkPlan(
-                  runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
-                  candidates = List(candidate("small", smallUrl), candidate("large", largeUrl)),
-                  k = 5,
-                ),
-              )
-            case _ =>
-              cancel("Set QDRANT_EMBEDDING_SMALL_URL and QDRANT_EMBEDDING_LARGE_URL to run the dual-endpoint benchmark executor integration")
+        val smallUrl = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse("http://localhost:8081")
+        val largeUrl = sys.env.get("QDRANT_EMBEDDING_LARGE_URL").getOrElse("http://localhost:8082")
+        def probeOne(url: String): Either[leaderboard.model.QueryFailure, Vector[Double]] = {
+          try {
+            unsafeRun(new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url)).embed("benchmark dual endpoint probe").either)
+          } catch {
+            case _: Exception => Left(leaderboard.model.QueryFailure.operation("benchmark-probe", s"endpoint $url unavailable"))
           }
+        }
+        val smallProbe = probeOne(smallUrl)
+        val largeProbe = probeOne(largeUrl)
+        val smallOk = smallProbe.exists(_.nonEmpty)
+        val largeOk = largeProbe.exists(_.nonEmpty)
+        if (smallOk && largeOk) {
+          runPlan(
+            portCfg = portCfg,
+            snapshotProvider = snapshotProvider(
+              categories,
+              services,
+              serviceVariantSchemas,
+              masters,
+              masterLocations,
+              masterServiceOffers,
+              masterServiceOfferVariants,
+              seedReady,
+            ),
+            plan = QdrantEmbeddingBenchmarkPlan(
+              runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+              candidates = List(candidate("small", smallUrl), candidate("large", largeUrl)),
+              k = 5,
+            ),
+          )
+        } else {
+          val unavailable = List(
+            if (!smallOk) Some(smallUrl) else None,
+            if (!largeOk) Some(largeUrl) else None,
+          ).flatten.mkString(", ")
+          cancel(s"Embedding endpoint(s) unavailable: $unavailable; canceling dual-endpoint benchmark executor integration")
         }
     }
   }
@@ -234,9 +248,8 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
     } yield documents
   }
 
-  private def envFlag(name: String): Boolean =
-    sys.env.get(name).exists { value =>
-      val normalized = value.trim.toLowerCase
-      normalized == "1" || normalized == "true" || normalized == "yes"
+  private def unsafeRun[A](effect: zio.IO[QueryFailure, A]): A =
+    zio.Unsafe.unsafe { implicit unsafe =>
+      zio.Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }
 }

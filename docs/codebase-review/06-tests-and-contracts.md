@@ -137,11 +137,13 @@ Docker-backed:
 
 - `QdrantDockerSmokeSpec.scala`: uses Distage `QdrantPortCfg`, creates a collection, upserts a vector, searches, and deletes the collection.
 
-Env-gated/manual-local:
+Resource-backed auto-gated:
 
-- `QdrantSemanticCandidateEvalSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set; optional quality assertions use `QDRANT_SEMANTIC_QUALITY_ASSERTIONS`.
-- `QdrantLlamaCppRetrievalSmokeSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set.
-- `QdrantExperimentalHybridServiceIntegrationSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set.
+- `QdrantLlamaCppRetrievalSmokeSpec.scala`: defaults to local endpoint `http://localhost:8081`; cancels when Llama endpoint is unavailable.
+- `QdrantExperimentalHybridServiceIntegrationSpec.scala`: defaults to local endpoint `http://localhost:8081`; cancels when Llama endpoint is unavailable.
+- `QdrantSemanticCandidateEvalSpec.scala`: defaults to local endpoint `http://localhost:8081`; cancels when Llama endpoint is unavailable.
+- `BeautyQManualHybridRealQdrantIndexingSmokeSpec.scala`: uses injected `QdrantPortCfg`; runs directly when Qdrant is available.
+- `BeautyQManualHybridRealQdrantRetrievalSmokeSpec.scala`: uses injected `QdrantPortCfg`; runs directly when Qdrant is available.
 
 Qdrant Docker/resource-backed integration specs:
 
@@ -150,9 +152,9 @@ Qdrant Docker/resource-backed integration specs:
 
 ## Llama Tests
 
-Manual/local:
+Resource-backed auto-gated:
 
-- `LlamaCppEmbeddingSmokeSpec.scala`: cancels unless `LLAMA_CPP_EMBEDDING_URL` is set.
+- `LlamaCppEmbeddingSmokeSpec.scala`: defaults to local endpoint `http://localhost:8081`; cancels when endpoint is unavailable; `LLAMA_CPP_EMBEDDING_URL` is optional override.
 
 Pure/client decode:
 
@@ -170,9 +172,9 @@ Pure benchmark tests:
 - `QdrantEmbeddingBenchmarkRunnerSpec.scala`
 - `QdrantEmbeddingBenchmarkSavedReportComparisonSpec.scala`
 
-Integration/env-gated benchmark tests:
+Resource-backed auto-gated benchmark tests:
 
-- `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala`: gates single-endpoint run by `QDRANT_EMBEDDING_BENCHMARK_SINGLE_ENDPOINT` plus `QDRANT_EMBEDDING_BENCHMARK_ENDPOINT`; gates dual-endpoint run by `QDRANT_EMBEDDING_BENCHMARK_DUAL_ENDPOINT` plus `QDRANT_EMBEDDING_SMALL_URL` and `QDRANT_EMBEDDING_LARGE_URL`.
+- `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala`: single endpoint defaults to `http://localhost:8081`, dual endpoints default to `http://localhost:8081` + `http://localhost:8082`; cancels when endpoints are unavailable; env vars remain as optional overrides.
 - `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala`: gates manual comparison by `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, and `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON`.
 
 Important boundary:

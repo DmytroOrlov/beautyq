@@ -174,7 +174,7 @@ Implemented/current non-production components:
 
 Manual/local:
 
-- `LlamaCppEmbeddingClient` is used by env-gated tests requiring `LLAMA_CPP_EMBEDDING_URL`.
+- `LlamaCppEmbeddingClient` is used by resource-backed specs that default to local endpoint `http://localhost:8081`; `LLAMA_CPP_EMBEDDING_URL` is an optional env override; specs cancel when the endpoint is unavailable.
 - AGENTS instructions include a manual `llama-server` command.
 
 Integration-test-only / Docker-backed:
@@ -196,10 +196,10 @@ Non-production Qdrant/hybrid runner status:
   * Qdrant-client input boundary;
   * real-client input boundary;
   * targeted Distage module-shape proof.
-* Env-gated real Qdrant smokes cover:
+* Env-gated real Qdrant smokes (now resource-backed auto-gated) cover:
 
-  * explicit indexing via `indexSnapshot()` with real Qdrant (`BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_INDEXING_SMOKE=true`);
-  * explicit retrieval via `run(...)` with real Qdrant (`BEAUTYQ_MANUAL_HYBRID_REAL_QDRANT_RETRIEVAL_SMOKE=true`).
+  * explicit indexing via `indexSnapshot()` with real Qdrant (no env gate; auto-runs when Qdrant is available);
+  * explicit retrieval via `run(...)` with real Qdrant (no env gate; auto-runs when Qdrant is available).
 * These smokes use real Qdrant, but not production route wiring.
 * User-verified external-enabled full validation run was reported green.
 
@@ -411,7 +411,7 @@ M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation compariso
 
 * Atomic / Contractual: eval query classification model, engine expected role model, `EngineEvalResult` model (implemented), ES result normalization, Qdrant result normalization, complement/noise/overlap metric calculations (implemented via `EngineEvalComparisonMetrics.from`), simulated hybrid merge.
 * Group / Contractual: fake ES executor → benchmark report, fake Qdrant executor → benchmark report, fake ES + Qdrant results → simulated hybrid report.
-* Communication: ES Docker benchmark smoke, Qdrant Docker/Llama benchmark smoke, env-gated only.
+* Communication: ES Docker benchmark smoke, Qdrant Docker/Llama benchmark smoke, resource-backed auto-gated.
 * Benchmark: ES-alone report, Qdrant-alone report, simulated-hybrid report, saved report comparison.
 
 ## G. Benchmarks / Eval
@@ -427,8 +427,8 @@ Implemented/current:
 
 Manual/local/env-gated:
 
-- `QdrantSemanticCandidateEvalSpec.scala` requires `LLAMA_CPP_EMBEDDING_URL`; optional assertions use `QDRANT_SEMANTIC_QUALITY_ASSERTIONS`.
-- `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala` is gated by `QDRANT_EMBEDDING_BENCHMARK_SINGLE_ENDPOINT`, `QDRANT_EMBEDDING_BENCHMARK_ENDPOINT`, `QDRANT_EMBEDDING_BENCHMARK_DUAL_ENDPOINT`, `QDRANT_EMBEDDING_SMALL_URL`, and `QDRANT_EMBEDDING_LARGE_URL`.
+- `QdrantSemanticCandidateEvalSpec.scala`: resource-backed auto-gated; defaults to local endpoint `http://localhost:8081`; cancels when unavailable; optional quality assertions use `QDRANT_SEMANTIC_QUALITY_ASSERTIONS`.
+- `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala`: resource-backed auto-gated; single endpoint defaults to `http://localhost:8081`, dual endpoints default to `http://localhost:8081` + `http://localhost:8082`; cancels when endpoints are unavailable; env vars remain as optional overrides.
 - `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala` is gated by `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, and `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON`.
 
 Decision policy boundary:
