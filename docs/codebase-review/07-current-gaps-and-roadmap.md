@@ -160,6 +160,98 @@ Status:
 
 Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
 
+### Expanded roadmap lanes and milestone gates
+
+Current production search route is ES-backed seed route. InMemory is rollback/regression/pure/non-default support, not current production. Qdrant and hybrid are not production serving. B-lite / M-ESQ-EVAL remains offline/eval-only. Runtime hybrid expansion and hidden Qdrant/hybrid production expansion remain paused. Benchmark output is decision support, not production automation. No Qdrant auto-supplement, no HybridServe, no fallback, no score fusion/reranking.
+
+#### Production / eval split
+
+Production lane and eval/research lane must stay separate until evidence and production safety gates justify joining them.
+
+* Production lane: stabilize and harden ES seed route.
+* Eval/research lane: continue B-lite / M-ESQ-EVAL offline evidence.
+* Joining requires explicit evidence that ES lifecycle is production-grade, Qdrant shadow is proven, and hybrid policy is validated offline.
+
+#### Lane A: ES-backed production route stabilization
+
+| Step | Checkpoint | Why | Skip risk |
+|------|-----------|-----|-----------|
+| A0 | Route truth/docs sync | Docs and source must agree before patching | Stale docs lead to wrong hardening targets |
+| A1 | ES route characterization | Current behavior is characterized, not validated | Fixing wrong contract wastes cycles |
+| A2 | Demo readiness | Business can evaluate query/result quality | Building hardening without feedback |
+| A3 | Typed validation / error contract | 4xx errors, structured bodies, request bounds | Silent 500s in production |
+| A4 | Observability / kill-switch | Operational safety for first production exposure | Cannot detect or halt degraded serving |
+| A5 | Freshness / index lifecycle design | Seed snapshot alone is not durable production behavior | Serving stale data without bounds |
+| A6 | ES production lifecycle implementation | Index creation, update, alias, readiness | No production-grade ES lifecycle |
+
+#### Lane B: B-lite / M-ESQ-EVAL offline evidence
+
+| Step | Checkpoint | Why | Skip risk |
+|------|-----------|-----|-----------|
+| B0 | Pure EngineEval model | Metric semantics must be deterministic before runtime use | Runtime metrics without contract |
+| B1 | Saved report comparison support | Must compare across runs, not only single-run snapshots | Cannot track eval progress |
+| B2 | Operational/demo-facing run collection | Concrete ES + Qdrant benchmark outputs needed | Eval remains theoretical |
+| B3 | Query inventory / expected-role refinement | Metric meaning depends on correct expected roles | Wrong recall/noise classification |
+| B4 | ES vs Qdrant vs simulated hybrid evidence report | Decision input for Qdrant shadow and hybrid gates | No evidence to justify next lane |
+
+Recent operational support exists for: Qdrant benchmark run-output JSON markers, manual EngineEval saved-report assembly, manual EngineEval saved-report comparison. M-ESQ-EVAL pure/report/assembly layer exists.
+
+#### Lane C: Qdrant shadow readiness
+
+Qdrant remains eval-only until evidence and safety gates.
+
+| Gate | Why | Skip risk |
+|------|-----|-----------|
+| Qdrant candidate quality evidence | Must prove complement over ES misses | Shadowing without measured value |
+| Collection lifecycle design | Versioned names, compatibility, readiness | Silent collection drift |
+| Shadow mode before serving | Must not affect user responses until proven | Degraded serving from unproven backend |
+
+#### Lane D: Hybrid policy and serving
+
+| Gate | Why | Skip risk |
+|------|-----|-----------|
+| Policy design | Serving policy, routing rules, conservative defaults | Uncontrolled hybrid behavior |
+| Offline policy simulation | Simulated hybrid over saved eval results | Deploying unproven policy |
+| Production-hidden control plane | Activation, readiness, kill-switch, diagnostics | No operational surface for hybrid |
+| Controlled serving only after gates | Readiness verified, kill-switch active, fallback policy decided | Hybrid serving without safety net |
+
+#### Lane E: Production-grade search platform
+
+| Gate | Why | Skip risk |
+|------|-----|-----------|
+| Quality dashboard | Continuous eval visibility | Quality regression undetected |
+| Catalog freshness / business lifecycle | Staleness bounds, reindex triggers | Serving stale data indefinitely |
+| Ranking / business policy separated from retrieval eval | Ranking changes must not break retrieval contracts | Coupled changes cause regressions |
+
+#### Milestone summary
+
+| Milestone | Description | Current status |
+|-----------|-------------|----------------|
+| M0 | Current truth locked | Reached |
+| M1 | ES seed route demo-stable | Reached |
+| M2 | ES route contract hardened | Future |
+| M3 | B-lite comparison pipeline usable | In progress (M-ESQ-EVAL) |
+| M4 | ES production lifecycle designed | Future |
+| M5 | ES production lifecycle implemented | Future |
+| M6 | Qdrant shadow readiness | Future |
+| M7 | Hybrid policy proven offline | Future |
+| M8 | Controlled hybrid serving experiment | Future |
+
+#### Movement rules
+
+* Source truth before patch design.
+* Eval evidence before hybrid serving.
+* ES lifecycle before Qdrant/hybrid production.
+* Shadow before serving.
+* Kill-switch before risky serving.
+* Keep retrieval eval separate from product response assembly.
+
+#### Near-term sequence
+
+* Continue M-ESQ-EVAL operational/demo-facing work.
+* Current immediate next steps are saved-output/runbook/evidence workflow, not production hybrid.
+* Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
+
 ## Current nearest search checkpoint
 
 ```text
