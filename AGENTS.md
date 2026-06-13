@@ -225,7 +225,7 @@ Do not use:
 * `assert(true)`;
 * empty success branches in pattern matches;
 * partial matches in expecting fakes;
-* Do not use unsafe extraction such as `.toOption.get`, `Option.get`, `RightProjection.get`, or `LeftProjection.get`. In production code, preserve typed errors with `Either`, `ZIO.fromEither`, or explicit domain failures. In tests, use pattern matching with `fail(...)` so failures keep useful context.
+* Do not use unsafe extraction such as `.toOption.get`, `Option.get`, `RightProjection.get`, or `LeftProjection.get`. In production code, preserve typed errors with `Either`, `ZIO.fromEither`, or explicit domain failures. In tests, use pattern matching with `fail(...)` so failures keep useful context. For decoded `Map`, `List`, `Option`, `Either`, or JSON-derived structures, prefer pattern matching with useful failure messages; do not use `Map.apply`, `.head`, `.tail`, `.last`, `.get`, `.toOption.get`, or right/left projection `.get` unless totality is source-proven and documented.
 * `isInstanceOf` / `asInstanceOf` when pattern matching is practical;
 * `assert(x == null)` / `assert(x != null)`.
 

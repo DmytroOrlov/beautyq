@@ -101,7 +101,7 @@ Do not investigate scalac flags, add `@nowarn`, `@unused`, or `val _ = x` unless
 
 ## 1.7 Unsafe-extraction rule
 
-For decoded `Map`, `List`, `Option`, `Either`, or JSON-derived structures, delegated prompts must require pattern matching with useful `fail(...)`. Do not allow `Map.apply`, `.head`, `.tail`, `.last`, `.get`, `.toOption.get`, right/left projection `.get`, or similar unsafe extraction unless the task explicitly proves the operation is total and documents why.
+Canonical rule is in `AGENTS.md` under "Test doubles and assertions". Delegated prompts must inherit `AGENTS.md` Scala/test-style rules; inline the unsafe-extraction constraint when a task touches decoded collections, options, Either, or JSON-derived structures.
 
 ## 1.8 Metrics semantics
 
