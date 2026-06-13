@@ -66,8 +66,8 @@ Documented as characterized, not as desired final contract:
 ## 5. Current priority: ES seed route stabilization
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
-* ES seed-route checkpoint is reached: previous full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
-* Latest known full run after EngineEval dual-mode saved-artifact specs: 963 succeeded, 0 failed, 1 canceled. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`, which cancels by default when its saved-report env vars are absent. `EngineEvalSavedReportAssemblyManualSpec` and `EngineEvalSavedReportComparisonManualSpec` run deterministic default fixture mode by default (no cancel); real-artifacts mode is available behind existing env gates.
+* ES seed-route checkpoint is reached. Plain `sbt test` is the canonical full verification command.
+* Latest user-verified plain `sbt test` (Jun 13, 2026, 12:19:23 PM): 963 succeeded, 0 failed, 1 canceled. Resource-backed Qdrant/Llama specs auto-run when local resources are available and cancel with reason when unavailable. The remaining expected canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`, which cancels by default when its saved-report env vars are absent. `EngineEvalSavedReportAssemblyManualSpec` and `EngineEvalSavedReportComparisonManualSpec` run deterministic default fixture mode by default (no cancel); real-artifacts mode is available behind existing env gates.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.
@@ -141,7 +141,7 @@ Reached:
 * explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`.
 * demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`.
 * `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route.
-* previous full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
+* previous full verification after ES seed-route/demo-doc updates (historical): 956 passed, 0 failed, 1 canceled.
 
 Business-demo ready:
 
