@@ -67,7 +67,7 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached: previous full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
-* Latest known full run is red due `BeautyQSeedDummySpec` seed-data failure; triage separately before claiming FULL GREEN.
+* Latest known full run after seed helper fix: 961 succeeded, 0 failed, 3 canceled. The 3 canceled specs are expected manual saved-artifact specs (see §6) that cancel when saved JSON env vars are not supplied; they are not failures.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.

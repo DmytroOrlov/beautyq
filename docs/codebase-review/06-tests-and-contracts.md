@@ -176,6 +176,34 @@ Important boundary:
 
 - Benchmark tests validate benchmark machinery and reports. They do not prove production model switching.
 
+## Manual saved-artifact eval specs
+
+Three specs cancel by default because they require saved artifact JSON env vars. They are manual/offline eval tools, not production behavior.
+
+| Spec | Gate(s) |
+|---|---|
+| `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec` | `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` |
+| `EngineEvalSavedReportAssemblyManualSpec` | `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT`, `ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON` |
+| `EngineEvalSavedReportComparisonManualSpec` | `ENGINE_EVAL_COMPARE_SAVED_REPORTS`, `ENGINE_EVAL_LEFT_JSON`, `ENGINE_EVAL_RIGHT_JSON` |
+
+Output markers:
+
+* Qdrant benchmark report JSON: `BEGIN_QDRANT_EMBEDDING_BENCHMARK_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_JSON`
+* Qdrant benchmark run-output JSON: `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`
+* EngineEval aggregate report: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT` / `END_ENGINE_EVAL_AGGREGATE_REPORT`
+* EngineEval aggregate JSON: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
+* EngineEval saved comparison: `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
+
+Run sequence:
+
+1. Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` with endpoint env vars; capture `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` content.
+2. Feed ES eval reports JSON + Qdrant run-output JSON + expected-role JSON to `EngineEvalSavedReportAssemblyManualSpec`; capture `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
+3. Compare two EngineEval aggregate JSON reports with `EngineEvalSavedReportComparisonManualSpec`.
+
+Expected roles JSON example: `{ "query_id_here": "QdrantMayComplement" }`. Allowed role strings: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
+
+Expected full-suite baseline when saved artifact JSON is not supplied: **961 succeeded, 0 failed, 3 canceled**. The 3 canceled specs are exactly the manual saved-artifact specs listed above; they cancel because their required env vars are absent.
+
 ## Ignored / Tagged / Pending Tests
 
 Targeted search result:
