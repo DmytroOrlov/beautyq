@@ -14,8 +14,7 @@ B-lite is the current strategic direction after the B2 hidden control-plane modu
 Production serving stays sequential and safe:
 
 ```text
-current seed/in-memory route
-  -> ES lexical baseline
+current ES seed route (default)
   -> Qdrant shadow only if eval proves complement
   -> controlled hybrid only after readiness/kill-switch/policy
 ```
@@ -29,7 +28,7 @@ ES-native eval and Qdrant-native eval appear early and together
 ```
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is started by the pure `EngineEval` comparison model. M-ESQ-EVAL is not complete. Next work: connect ES and Qdrant eval/executor outputs to normalized `EngineEvalResult`.
+M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is started by the pure `EngineEval` comparison model. M-ESQ-EVAL is not complete. EngineEval pure/report/assembly support exists, Qdrant benchmark run-output JSON markers exist, manual EngineEval saved-report assembly exists, manual EngineEval saved-report comparison exists. Current next step is operational saved-output/runbook/evidence workflow: run/collect concrete ES + selected Qdrant artifacts, assemble EngineEval aggregate reports, compare saved reports, and use evidence for later shadow/hybrid decisions. Still offline/eval only.
 
 Simulated hybrid belongs in benchmark/eval only. It must not imply route wiring, HybridServe, or auto-supplement production responses.
 
