@@ -67,7 +67,7 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached: previous full verification after ES seed-route/demo-doc updates: 956 passed, 0 failed, 1 canceled.
-* Latest known full run after seed helper fix: 961 succeeded, 0 failed, 3 canceled. The 3 canceled specs are expected manual saved-artifact specs (see §6) that cancel when saved JSON env vars are not supplied; they are not failures.
+* Latest known full run after EngineEval dual-mode saved-artifact specs: 963 succeeded, 0 failed, 1 canceled. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`, which cancels by default when its saved-report env vars are absent. `EngineEvalSavedReportAssemblyManualSpec` and `EngineEvalSavedReportComparisonManualSpec` run deterministic default fixture mode by default (no cancel); real-artifacts mode is available behind existing env gates.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.

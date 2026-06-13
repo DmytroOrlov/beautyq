@@ -178,13 +178,22 @@ Important boundary:
 
 ## Manual saved-artifact eval specs
 
-Three specs cancel by default because they require saved artifact JSON env vars. They are manual/offline eval tools, not production behavior.
+Three specs handle saved artifact JSON. Two are dual-mode (default fixture + real-artifacts); one cancels by default.
 
-| Spec | Gate(s) |
-|---|---|
-| `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec` | `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` |
-| `EngineEvalSavedReportAssemblyManualSpec` | `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT`, `ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON` |
-| `EngineEvalSavedReportComparisonManualSpec` | `ENGINE_EVAL_COMPARE_SAVED_REPORTS`, `ENGINE_EVAL_LEFT_JSON`, `ENGINE_EVAL_RIGHT_JSON` |
+| Spec | Gate(s) | Default behavior |
+|---|---|---|
+| `EngineEvalSavedReportAssemblyManualSpec` | `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT`, `ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON` | Dual-mode: runs default fixture assembly when gate is absent; real-artifacts when gate is enabled |
+| `EngineEvalSavedReportComparisonManualSpec` | `ENGINE_EVAL_COMPARE_SAVED_REPORTS`, `ENGINE_EVAL_LEFT_JSON`, `ENGINE_EVAL_RIGHT_JSON` | Dual-mode: runs default fixture comparison when gate is absent; real-artifacts when gate is enabled |
+| `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec` | `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` | Cancels by default when env vars are absent |
+
+Mode labels printed to stdout:
+
+* `ENGINE_EVAL_SAVED_REPORT_ASSEMBLY_MODE=DEFAULT_FIXTURE` — assembly spec ran default fixture path
+* `ENGINE_EVAL_SAVED_REPORT_ASSEMBLY_MODE=REAL_ARTIFACTS` — assembly spec ran real-artifact path
+* `ENGINE_EVAL_SAVED_REPORT_COMPARISON_MODE=DEFAULT_FIXTURE` — comparison spec ran default fixture path
+* `ENGINE_EVAL_SAVED_REPORT_COMPARISON_MODE=REAL_ARTIFACTS` — comparison spec ran real-artifact path
+
+When real-artifacts mode is enabled but required env vars are missing, the dual-mode specs fail clearly instead of canceling.
 
 Output markers:
 
@@ -202,7 +211,7 @@ Run sequence:
 
 Expected roles JSON example: `{ "query_id_here": "QdrantMayComplement" }`. Allowed role strings: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
 
-Expected full-suite baseline when saved artifact JSON is not supplied: **961 succeeded, 0 failed, 3 canceled**. The 3 canceled specs are exactly the manual saved-artifact specs listed above; they cancel because their required env vars are absent.
+Expected full-suite baseline when saved artifact JSON is not supplied: **963 succeeded, 0 failed, 1 canceled**. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`; the two EngineEval dual-mode specs run default fixture mode instead of canceling.
 
 ## Ignored / Tagged / Pending Tests
 
