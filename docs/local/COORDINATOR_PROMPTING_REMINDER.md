@@ -156,10 +156,11 @@ When requesting a bundle from the user, provide an executable shell script, not 
 
 Script rules:
 
-* Write to unique `/tmp/beautyq-<topic>-<timestamp>-$RANDOM.txt`.
+* Create a structured bundle directory: `BASE="/tmp/beautyq-<topic>-<timestamp>-$RANDOM"`, `WORK="$BASE.dir"`, `BUNDLE_ID="$(basename "$BASE")"`.
+* Every artifact inside the bundle zip must include the bundle id in its basename. Do not create generic internal filenames such as `bundle.txt`, `tracked-changes-from-head.patch`, `unstaged-tracked-changes.patch`, or `untracked-files.tar.gz`.
 * Include only task-relevant status, compact diff, signatures, nearby specs, docs anchors, hazard scans.
 * Cap/truncate output when large.
-* After truncation, create `ZIP="$OUT.zip"`, run `zip -9 -j "$ZIP" "$OUT"`, then print `wc -c "$OUT"` and `wc -c "$ZIP"`, then `cpf "$ZIP"`, then `echo "$ZIP"`.
+* After truncation, zip the bundle directory (`ZIP="$BASE.zip"`, `zip -9 -r "$ZIP" .` inside `WORK`), then print `wc -c` for each artifact and the zip, then `cpf "$ZIP"`, then `echo "$ZIP"`.
 * Do not include `/tmp`, full `target`, generated build output, screenshots, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
 * Bundle scripts are read-only context capture only. They may use `git`, bounded `rg/sed`, diff generation, untracked-file archiving, truncation, and zip upload. They must not run `sbt`, tests, Docker cleanup/startup, `find target -delete`, network/resource probes, container launches, package managers, or other heavy/mutating commands. Full verification commands belong outside the bundle and must be run explicitly by the user/coordinator.
 
@@ -170,7 +171,8 @@ Canonical shell shape:
 ```bash
 BASE="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM"
 WORK="$BASE.dir"
-OUT="$WORK/bundle.txt"
+BUNDLE_ID="$(basename "$BASE")"
+OUT="$WORK/${BUNDLE_ID}-bundle.txt"
 
 mkdir -p "$WORK"
 
@@ -191,24 +193,25 @@ mkdir -p "$WORK"
   echo
 } > "$OUT" 2>&1
 
-git --no-pager diff --binary HEAD -- > "$WORK/tracked-changes-from-head.patch" 2>&1 || true
+git --no-pager diff --binary HEAD -- > "$WORK/${BUNDLE_ID}-tracked-changes-from-head.patch" 2>&1 || true
 
-git --no-pager diff --binary --cached > "$WORK/staged-tracked-changes.patch" 2>&1 || true
+git --no-pager diff --binary --cached > "$WORK/${BUNDLE_ID}-staged-tracked-changes.patch" 2>&1 || true
 
-git --no-pager diff --binary > "$WORK/unstaged-tracked-changes.patch" 2>&1 || true
+git --no-pager diff --binary > "$WORK/${BUNDLE_ID}-unstaged-tracked-changes.patch" 2>&1 || true
 
-git ls-files --others --exclude-standard -z > "$WORK/untracked-files.nul"
+git ls-files --others --exclude-standard -z > "$WORK/${BUNDLE_ID}-untracked-files.nul"
 
-python3 - <<'PY' "$WORK"
+python3 - <<'PY' "$WORK" "$BUNDLE_ID"
 import pathlib
 import sys
 import tarfile
 
 work = pathlib.Path(sys.argv[1])
+bundle_id = sys.argv[2]
 repo = pathlib.Path.cwd()
-nul = work / "untracked-files.nul"
-manifest = work / "untracked-files.manifest.txt"
-tar_path = work / "untracked-files.tar.gz"
+nul = work / f"{bundle_id}-untracked-files.nul"
+manifest = work / f"{bundle_id}-untracked-files.manifest.txt"
+tar_path = work / f"{bundle_id}-untracked-files.tar.gz"
 
 items = [p for p in nul.read_bytes().split(b"\0") if p]
 paths = [p.decode("utf-8", errors="replace") for p in items]
@@ -239,11 +242,11 @@ rm -f "$ZIP"
 (cd "$WORK" && zip -9 -r "$ZIP" .) >/dev/null
 
 wc -c "$OUT"
-wc -c "$WORK/tracked-changes-from-head.patch"
-wc -c "$WORK/staged-tracked-changes.patch"
-wc -c "$WORK/unstaged-tracked-changes.patch"
-wc -c "$WORK/untracked-files.manifest.txt"
-wc -c "$WORK/untracked-files.tar.gz"
+wc -c "$WORK/${BUNDLE_ID}-tracked-changes-from-head.patch"
+wc -c "$WORK/${BUNDLE_ID}-staged-tracked-changes.patch"
+wc -c "$WORK/${BUNDLE_ID}-unstaged-tracked-changes.patch"
+wc -c "$WORK/${BUNDLE_ID}-untracked-files.manifest.txt"
+wc -c "$WORK/${BUNDLE_ID}-untracked-files.tar.gz"
 wc -c "$ZIP"
 cpf "$ZIP"
 echo "$ZIP"
