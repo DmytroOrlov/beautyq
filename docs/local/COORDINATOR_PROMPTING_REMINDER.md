@@ -1024,6 +1024,8 @@ Classify each docs patch as adding new truth to the canonical owner, moving trut
 
 The source-truth gate is safety-critical and must not be deduplicated away; keep the canonical rule in this file and only link to it from other docs.
 
+Manual/env-gated/cancel-by-default test DoD: if a patch adds env vars, BEGIN/END markers, saved-artifact flow, or manual local-service flow, close it only with docs/runbook done, queued as immediate N+1, or explicitly blocked with focused executable bundle; report that status.
+
 ---
 
 # 8. Source-truth gate
