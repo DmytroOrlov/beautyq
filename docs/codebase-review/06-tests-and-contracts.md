@@ -175,7 +175,10 @@ Pure benchmark tests:
 Resource-backed auto-gated benchmark tests:
 
 - `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala`: single endpoint defaults to `http://localhost:8081`, dual endpoints default to `http://localhost:8081` + `http://localhost:8082`; cancels when endpoints are unavailable; env vars remain as optional overrides.
-- `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala`: gates manual comparison by `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, and `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON`.
+
+Manual saved-artifact benchmark comparison:
+
+- `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala`: not resource-backed; cancels by default when `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, and `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` are absent.
 
 Important boundary:
 
@@ -210,7 +213,7 @@ Output markers:
 
 Run sequence:
 
-1. Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` with endpoint env vars; capture `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` content.
+1. Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec`; it defaults to local endpoints `http://localhost:8081` (single) and `http://localhost:8081` + `http://localhost:8082` (dual); endpoint env vars are optional overrides. Capture `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` content.
 2. Feed ES eval reports JSON + Qdrant run-output JSON + expected-role JSON to `EngineEvalSavedReportAssemblyManualSpec`; capture `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
 3. Compare two EngineEval aggregate JSON reports with `EngineEvalSavedReportComparisonManualSpec`.
 

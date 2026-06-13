@@ -36,7 +36,7 @@ For the full current BeautyQ search state (route behavior, backend roles, milest
 - Qdrant/hybrid is not production-wired: docs `search-dsl-qdrant-vector-backend.md` and `search-dsl-hybrid-v1-plan.md` call it non-production/manual/local/experimental, and `LeaderboardPlugin.scala` does not bind Qdrant or hybrid search services.
 - `ExperimentalBeautySearchService` is separate from `BeautySearchService` and tests assert that separation in `BeautySearchPureSpec`.
 - Benchmark decision policy is decision support, not production automation, per `docs/search-dsl-qdrant-vector-backend.md`, `docs/search-dsl-hybrid-v1-plan.md`, and `QdrantEmbeddingBenchmarkDecisionPolicy` tests.
-- Real-resource Qdrant/Llama tests are env-gated/manual/local or Docker-backed; they do not prove production lifecycle.
+- Resource-backed Qdrant/Llama tests auto-run when local resources are available and cancel with reason when unavailable; true manual saved-artifact specs (e.g. `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`) cancel by default when their saved-report env vars are absent. None of these prove production lifecycle.
 
 ## Generated Docs
 

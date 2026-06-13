@@ -304,7 +304,7 @@ Current strategic direction after B2:
 
 ```text
 Production serving:
-  current seed/in-memory route
+  current ES seed route (default)
   -> ES lexical baseline
   -> Qdrant shadow only if eval proves complement
   -> controlled hybrid only after readiness/kill-switch/policy
@@ -316,7 +316,7 @@ Eval/benchmark:
 ```
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-The next target is an ES-native + Qdrant-native eval comparison layer.
+M-ESQ-EVAL pure/report/assembly layer is implemented. Remaining work is operational real evidence workflow: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
 
 ### InMemorySearchBackend role
 
