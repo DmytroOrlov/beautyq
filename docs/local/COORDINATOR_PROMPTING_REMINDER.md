@@ -115,7 +115,7 @@ Do not use: `Ref`, `Atomic*`, `var`, `Recording*`, `Counting*`, `assert(true)`, 
 
 ## 1.10 Commit messages
 
-Delegated agents do not commit. Non-trivial commits use extended messages: subject + body stating behavior/result, verification, and explicit non-goals. One-line messages acceptable only for tiny mechanical cleanups. Prepare the full extended message unless user asks for short subject only.
+Delegated agents do not commit. Non-trivial commits use extended messages: subject + body. The body must reconstruct what changed, why it changed, and what boundary/behavior was preserved. Include user-visible effects and non-goals when they matter. Keep verification as a short trailer, not the main content. Avoid generic water such as "compile clean" unless it changes trust status or explains a known failure/fix. Do not claim FULL GREEN from focused checks. One-line messages acceptable only for tiny mechanical cleanups. Prepare the full extended message unless user asks for short subject only.
 
 ## 1.11 What goes where
 
@@ -178,6 +178,14 @@ mkdir -p "$WORK"
 
   echo "## relevant anchors"
   rg -n "PatternA|PatternB" AGENTS.md docs bifunctor-tagless/src/main bifunctor-tagless/src/test || true
+
+  echo "## recent commits (subjects)"
+  git --no-pager log -14 --oneline
+  echo
+
+  echo "## recent commits (full bodies)"
+  git --no-pager log -14 --date=iso-strict --format='commit %H%nAuthor: %an <%ae>%nDate: %ad%n%n%s%n%n%b%n---END COMMIT---'
+  echo
 } > "$OUT" 2>&1
 
 git --no-pager diff --binary HEAD -- > "$WORK/tracked-changes-from-head.patch" 2>&1 || true
@@ -274,7 +282,7 @@ Before adding or changing a documented fact, identify its canonical owner. Prefe
 
 Duplicate only safety-critical guardrails that must be visible at multiple entrypoints; keep those duplicates short and free of implementation detail. Do not copy long API lists, metric semantics, roadmap state, bundle rules, or prompt-writing rules into multiple docs.
 
-Exact volatile verification counts belong in reports or commit messages, not long-lived docs.
+Exact volatile verification counts belong in reports, not long-lived docs nor commit messages.
 
 The source-truth gate is safety-critical and must not be deduplicated away; keep the canonical rule in this file and only link to it from other docs.
 
