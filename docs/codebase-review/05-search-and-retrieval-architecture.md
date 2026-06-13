@@ -172,7 +172,7 @@ Implemented/current non-production components:
 - `QdrantCandidateAssembler` and `QdrantCandidateResponseProjector`: Qdrant candidate assembly/projection.
 - `QdrantNonProductionExperimentActivation`, `QdrantNonProductionExperimentComposition`, `QdrantNonProductionHybridExperiment`: explicit non-production experiment boundaries.
 
-Manual/local:
+Local endpoint / resource-backed:
 
 - `LlamaCppEmbeddingClient` is used by resource-backed specs that default to local endpoint `http://localhost:8081`; `LLAMA_CPP_EMBEDDING_URL` is an optional env override; specs cancel when the endpoint is unavailable.
 - AGENTS instructions include a manual `llama-server` command.
@@ -196,7 +196,7 @@ Non-production Qdrant/hybrid runner status:
   * Qdrant-client input boundary;
   * real-client input boundary;
   * targeted Distage module-shape proof.
-* Env-gated real Qdrant smokes (now resource-backed auto-gated) cover:
+* Resource-backed real Qdrant smokes cover:
 
   * explicit indexing via `indexSnapshot()` with real Qdrant (no env gate; auto-runs when Qdrant is available);
   * explicit retrieval via `run(...)` with real Qdrant (no env gate; auto-runs when Qdrant is available).
@@ -425,10 +425,13 @@ Implemented/current:
 - Qdrant benchmark model/runner/report/decision code: `QdrantEmbeddingBenchmark*.scala`.
 - Saved report comparison: `QdrantEmbeddingBenchmarkSavedReportComparison.scala` and tests.
 
-Manual/local/env-gated:
+Resource-backed auto-gated:
 
-- `QdrantSemanticCandidateEvalSpec.scala`: resource-backed auto-gated; defaults to local endpoint `http://localhost:8081`; cancels when unavailable; optional quality assertions use `QDRANT_SEMANTIC_QUALITY_ASSERTIONS`.
-- `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala`: resource-backed auto-gated; single endpoint defaults to `http://localhost:8081`, dual endpoints default to `http://localhost:8081` + `http://localhost:8082`; cancels when endpoints are unavailable; env vars remain as optional overrides.
+- `QdrantSemanticCandidateEvalSpec.scala`: defaults to local endpoint `http://localhost:8081`; cancels when unavailable; optional quality assertions use `QDRANT_SEMANTIC_QUALITY_ASSERTIONS`.
+- `QdrantEmbeddingBenchmarkExecutorIntegrationSpec.scala`: single endpoint defaults to `http://localhost:8081`, dual endpoints default to `http://localhost:8081` + `http://localhost:8082`; cancels when endpoints are unavailable; env vars remain as optional overrides.
+
+Manual saved-report comparison:
+
 - `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala` is gated by `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, and `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON`.
 
 Decision policy boundary:

@@ -223,8 +223,8 @@ Expected full-suite baseline when saved artifact JSON is not supplied: **963 suc
 Targeted search result:
 
 - Pass 2 did not find prominent `ignore(`, `taggedAs`, `pending`, or `Assume` markers in the searched test output.
-- Several tests use `cancel(...)` when env vars are absent.
-- Manual/local status is therefore represented mostly by explicit env gates and class names containing `Smoke`, `Integration`, or `Manual`.
+- Resource-backed specs cancel when resources are unavailable; true manual artifact specs may cancel when saved artifact env vars are absent.
+- Class names containing `Smoke`, `Integration`, or `Manual` reflect the spec's role.
 
 ## Suggested Future Verification Slices
 
@@ -233,4 +233,4 @@ Documentation-safe future commands, subject to user approval and SBT availabilit
 - Focused pure search: `sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.ElasticsearchSearchResponseInterpreterSpec'`
 - Pure generic retrieval: `sbt 'project bifunctor-tagless' 'testOnly leaderboard.search.GenericHybridDocumentRetrievalSpec'`
 - HTTP contract slice: choose one `*ApiHttpContractSuite`, but it may still initialize Distage resources.
-- Avoid full `sbt test` unless Docker/local resource requirements are accepted.
+- Plain `sbt test` is canonical; resource-backed tests auto-run when local resources are available and cancel with reason when unavailable.
