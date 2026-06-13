@@ -40,7 +40,7 @@ Never write delegated-agent prompts from guesses about APIs, fields, imports, si
 
 After every accepted patch review / closed patch, include the extended commit message before the N+1 delegated prompt or N+1 bundle request.
 
-After every accepted review, provide either the next delegated prompt or the next executable bundle, and list two viable next options with a recommended choice, unless the next action is forced by a failed verification, safety issue, or source-truth blocker.
+After every accepted review, provide two viable next options with a recommended choice, unless the next action is forced by a failed verification, safety issue, or source-truth blocker. Every option must include an artifact: either a delegated prompt or an executable bundle script. If an option includes a delegated patch prompt, also include the post-patch review bundle script for that option immediately. Do not allow "no bundle needed" as a third category.
 
 ## 1.3 Verification labels
 
