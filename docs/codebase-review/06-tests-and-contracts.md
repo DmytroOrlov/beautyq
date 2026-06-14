@@ -352,6 +352,29 @@ Before using manually collected M-ESQ-EVAL artifacts as evidence for later Qdran
 
 This checklist is for operator verification of locally collected artifacts. It does not constitute production approval, routing policy, or hybrid serving authorization.
 
+### Saved comparison interpretation notes
+
+`EngineEvalSavedReportComparisonManualSpec` runs in saved-comparison mode when `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` is set along with `ENGINE_EVAL_LEFT_JSON` and `ENGINE_EVAL_RIGHT_JSON`. Output is delimited by `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
+
+**What comparison output is useful for:**
+
+- Comparing two aggregate evidence snapshots from different runs or candidates.
+- Spotting query-level or aggregate movement between candidates/runs (deltas for `queryCount`, `esRecallCount`, `qdrantRecallCount`, `qdrantComplementCount`, `qdrantNoiseCount`, `overlapCount`, `simulatedHybridGainCount`).
+- Supporting later Qdrant shadow/hybrid decisions with recorded evidence.
+- Recording evidence in `manifest.md` alongside the compared files and left/right labels.
+
+**What comparison output does NOT prove:**
+
+- Not production readiness for any engine or hybrid path.
+- Not a route switch decision for `/beauty-search` or any production endpoint.
+- Not approval for fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+- Not a substitute for readiness/policy/kill-switch/lifecycle work.
+- Not a substitute for manual review of artifact inputs, the sanity checklist, and the manifest.
+
+Left/right labels for the compared files should be recorded in `manifest.md` alongside the file paths. Resource-unavailable cancels and validation actually run must be recorded separately in `manifest.md`; comparison output alone is not the validation record.
+
+Comparison output is evidence support only. All M-ESQ-EVAL work remains offline/eval-only and non-production-routing.
+
 ## Ignored / Tagged / Pending Tests
 
 Targeted search result:
