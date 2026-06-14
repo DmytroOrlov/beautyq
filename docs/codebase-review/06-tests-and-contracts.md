@@ -402,6 +402,51 @@ Left/right labels for the compared files should be recorded in `manifest.md` alo
 
 Comparison output is evidence support only. All M-ESQ-EVAL work remains offline/eval-only and non-production-routing.
 
+### First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)
+
+First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids `q_broad_001`–`q_broad_006`). All numbers below are offline/eval-only, not production readiness or routing approval.
+
+**benchmark-single:**
+
+| Metric | Value |
+|---|---|
+| qdrantRecall | 6 |
+| qdrantComplement | 4 |
+| qdrantNoise | 0 |
+| overlap | 2 |
+| simulatedHybridGain | 4 |
+
+**benchmark-small:**
+
+| Metric | Value |
+|---|---|
+| qdrantRecall | 6 |
+| qdrantComplement | 4 |
+| qdrantNoise | 0 |
+| overlap | 2 |
+| simulatedHybridGain | 4 |
+
+**benchmark-large:**
+
+| Metric | Value |
+|---|---|
+| qdrantRecall | 22 |
+| qdrantComplement | 7 |
+| qdrantNoise | 0 |
+| overlap | 15 |
+| simulatedHybridGain | 7 |
+
+**Deltas between runs:**
+
+| From → To | qdrantRecall | qdrantComplement | qdrantNoise | overlap | simulatedHybridGain |
+|---|---|---|---|---|---|
+| benchmark-single → benchmark-small | 0 | 0 | 0 | 0 | 0 |
+| benchmark-small → benchmark-large | +16 | +3 | +0 | +13 | +3 |
+
+**Offline interpretation:** `benchmark-large` is the strongest in this SemanticBroadSmoke evidence slice. All deltas are zero from `benchmark-single` to `benchmark-small`; the meaningful movement is from `benchmark-small` to `benchmark-large`.
+
+**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+
 ## Ignored / Tagged / Pending Tests
 
 Targeted search result:

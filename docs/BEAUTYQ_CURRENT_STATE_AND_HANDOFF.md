@@ -133,6 +133,22 @@ Documented as characterized, not as desired final contract:
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.
 
+### First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)
+
+First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids `q_broad_001`–`q_broad_006`). All numbers below are offline/eval-only, not production readiness or routing approval.
+
+**benchmark-single:** qdrantRecall=6, qdrantComplement=4, qdrantNoise=0, overlap=2, simulatedHybridGain=4.
+
+**benchmark-small:** qdrantRecall=6, qdrantComplement=4, qdrantNoise=0, overlap=2, simulatedHybridGain=4.
+
+**benchmark-large:** qdrantRecall=22, qdrantComplement=7, qdrantNoise=0, overlap=15, simulatedHybridGain=7.
+
+**Deltas:** `benchmark-single` → `benchmark-small` all deltas zero. `benchmark-small` → `benchmark-large`: qdrantRecall +16, qdrantComplement +3, qdrantNoise +0, overlap +13, simulatedHybridGain +3.
+
+**Offline interpretation:** `benchmark-large` is strongest in this SemanticBroadSmoke evidence slice.
+
+**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement. Full metric tables and delta breakdowns are in `docs/codebase-review/06-tests-and-contracts.md` under "First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)".
+
 ## 6.5. Product search north star
 
 Final direction:
