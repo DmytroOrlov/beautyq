@@ -390,6 +390,16 @@ This checklist is for operator verification of locally collected artifacts. It d
 - First replayed saved evidence confirmed: `benchmark-small` → `benchmark-large` includes `roleDeltas`; `benchmark-single` → `benchmark-small` omits `roleDeltas` because all role deltas are zero.
 - This remains offline/eval-only and does not imply production Qdrant/hybrid readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
 
+**Query-level deltas (queryDeltas):**
+
+- Query-level deltas are derived from `EngineEvalAggregateReport.queryReports`.
+- Saved-report comparison output may include `queryDeltas` when query-level deltas are non-zero.
+- `queryDeltas` is omitted when all query-level deltas are zero.
+- Query ids are compared in stable order: ids from the left report in left order, then ids only present in the right report in right order.
+- Queries missing on either side are compared against zero metrics.
+- Query-level deltas include `expectedVariantCountDelta`, `esRecallDelta`, `qdrantRecallDelta`, `qdrantComplementDelta`, `qdrantNoiseDelta`, `overlapDelta`, and `simulatedHybridGainDelta`.
+- This is offline/eval-only reporting. It is not production readiness, route approval, fallback approval, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+
 **What comparison output does NOT prove:**
 
 - Not production readiness for any engine or hybrid path.
