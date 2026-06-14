@@ -316,6 +316,25 @@ Recommended filenames for extracted artifacts:
 
 This manifest is for local evidence bookkeeping only. It does not indicate production readiness, routing policy, or hybrid serving approval.
 
+### Evidence artifact sanity checklist
+
+Before using manually collected M-ESQ-EVAL artifacts as evidence for later Qdrant shadow/hybrid decisions, verify:
+
+- [ ] Source logs are saved and referenced in `manifest.md` (ES artifact source, Qdrant run-output source).
+- [ ] All expected `BEGIN_*` / `END_*` marker pairs are present in source logs before extraction: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON`/`END_ENGINE_EVAL_ES_REPORTS_JSON`, `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON`/`END_ENGINE_EVAL_EXPECTED_ROLES_JSON`, `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`/`END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`, `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON`/`END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
+- [ ] Extracted files use the documented naming convention: `es-reports.semantic-broad-smoke.json`, `expected-roles.semantic-broad-smoke.json`, `qdrant-run-output.<candidate-id>.json`, `engine-eval-aggregate.<candidate-id>.json`.
+- [ ] ES reports artifact corresponds to `SemanticBroadSmoke` (not another eval subset).
+- [ ] ES report query ids are exactly `q_broad_001` through `q_broad_006` in order.
+- [ ] Expected roles artifact contains the current six-query role map exactly: `q_broad_001` → `EsShouldHandle`, `q_broad_002` → `EsShouldHandle`, `q_broad_003` → `QdrantMayComplement`, `q_broad_004` → `HybridMayImprove`, `q_broad_005` → `EsShouldHandle`, `q_broad_006` → `QdrantMayComplement`.
+- [ ] Qdrant run-output artifact candidate id matches the `manifest.md` Qdrant candidate id field and the `ENGINE_EVAL_QDRANT_CANDIDATE_ID` used for assembly.
+- [ ] EngineEval assembly used matching ES reports, Qdrant run-output, candidate id, and expected roles (all four env vars set to the correct extracted files/artifacts).
+- [ ] Aggregate report JSON is extracted from the `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON` markers.
+- [ ] Optional saved comparison records left/right labels and filenames are recorded in `manifest.md` (if comparison was run).
+- [ ] Validation actually run is recorded in `manifest.md`, including cancels or resource unavailability if applicable.
+- [ ] Notes/non-goals in `manifest.md` explicitly preserve offline/eval-only and non-production-routing status.
+
+This checklist is for operator verification of locally collected artifacts. It does not constitute production approval, routing policy, or hybrid serving authorization.
+
 ## Ignored / Tagged / Pending Tests
 
 Targeted search result:
