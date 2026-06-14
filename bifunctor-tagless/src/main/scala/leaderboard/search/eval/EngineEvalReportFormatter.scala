@@ -18,11 +18,23 @@ object EngineEvalReportFormatter {
 
     if (report.queryReports.nonEmpty) {
       line(builder, "")
+      val presentRoles = EngineEvalRoleBreakdown.from(report.queryReports).byRole.filter(r => r.queryCount > 0)
+      if (presentRoles.nonEmpty) {
+        line(builder, "roleAggregates:")
+        presentRoles.foreach(formatRoleAggregate(builder, _))
+      }
       line(builder, "queries:")
       report.queryReports.foreach(formatQuery(builder, _))
     }
 
     builder.result()
+  }
+
+  private def formatRoleAggregate(builder: StringBuilder, roleMetrics: EngineEvalRoleAggregateMetrics): Unit = {
+    line(
+      builder,
+      s"  ${roleMetrics.role} | queryCount=${roleMetrics.queryCount} | expectedVariantCount=${roleMetrics.expectedVariantCount} | esRecall=${roleMetrics.esRecallCount} | qdrantRecall=${roleMetrics.qdrantRecallCount} | qdrantComplement=${roleMetrics.qdrantComplementCount} | qdrantNoise=${roleMetrics.qdrantNoiseCount} | overlap=${roleMetrics.overlapCount} | simulatedHybridGain=${roleMetrics.simulatedHybridGainCount}"
+    )
   }
 
   private def formatQuery(builder: StringBuilder, queryReport: EngineEvalQueryReport): Unit = {

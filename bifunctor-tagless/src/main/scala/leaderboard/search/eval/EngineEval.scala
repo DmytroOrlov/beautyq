@@ -140,6 +140,53 @@ object EngineEvalAggregateMetrics {
     )
 }
 
+final case class EngineEvalRoleAggregateMetrics(
+  role: EngineExpectedRole,
+  queryCount: Int,
+  expectedVariantCount: Int,
+  esRecallCount: Int,
+  qdrantRecallCount: Int,
+  qdrantComplementCount: Int,
+  qdrantNoiseCount: Int,
+  overlapCount: Int,
+  simulatedHybridGainCount: Int,
+)
+
+object EngineExpectedRole {
+  val stableOrder: List[EngineExpectedRole] = List(
+    EsShouldHandle,
+    QdrantMayComplement,
+    QdrantShouldStaySilent,
+    HybridMayImprove,
+  )
+}
+
+final case class EngineEvalRoleBreakdown(
+  byRole: List[EngineEvalRoleAggregateMetrics],
+)
+
+object EngineEvalRoleBreakdown {
+  def from(queryReports: List[EngineEvalQueryReport]): EngineEvalRoleBreakdown = {
+    val grouped = queryReports.groupBy(_.expectedRole)
+    val sorted = EngineExpectedRole.stableOrder.flatMap { role =>
+      grouped.get(role).map(reports =>
+        EngineEvalRoleAggregateMetrics(
+          role = role,
+          queryCount = reports.size,
+          expectedVariantCount = reports.map(_.expectedVariantIds.size).sum,
+          esRecallCount = reports.map(_.metrics.esRecallCount).sum,
+          qdrantRecallCount = reports.map(_.metrics.qdrantRecallCount).sum,
+          qdrantComplementCount = reports.map(_.metrics.qdrantComplementCount).sum,
+          qdrantNoiseCount = reports.map(_.metrics.qdrantNoiseCount).sum,
+          overlapCount = reports.map(_.metrics.overlapCount).sum,
+          simulatedHybridGainCount = reports.map(_.metrics.simulatedHybridGainCount).sum,
+        )
+      )
+    }
+    EngineEvalRoleBreakdown(sorted)
+  }
+}
+
 final case class EngineEvalAggregateReport(
   queryReports: List[EngineEvalQueryReport],
   aggregate: EngineEvalAggregateMetrics,

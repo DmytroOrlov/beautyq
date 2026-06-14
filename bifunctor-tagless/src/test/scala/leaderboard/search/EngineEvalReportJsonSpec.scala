@@ -55,6 +55,23 @@ final class EngineEvalReportJsonSpec extends AnyWordSpec {
       assert(decoded.aggregate.queryCount == 2)
     }
 
+    "not include roleBreakdown or roleAggregates in encoded JSON" in {
+      val es1 = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_rb_1", List(v1))
+      val qdrant1 = EngineEvalResult(EngineEvalEngine.Qdrant, "q_rb_1", List(v2))
+      val report1 = EngineEvalQueryReport.from(
+        expectedRole = EngineExpectedRole.EsShouldHandle,
+        expectedVariantIds = Set(v1, v2),
+        es = es1,
+        qdrant = qdrant1,
+      )
+
+      val report = EngineEvalAggregateReport.from(List(report1))
+      val encoded = EngineEvalReportJson.encodeReportString(report)
+
+      assert(!encoded.contains("roleBreakdown"))
+      assert(!encoded.contains("roleAggregates"))
+    }
+
     "preserve engine labels, expected roles, UUID variant ids, and duplicate/order in variantIds" in {
       val es = EngineEvalResult(EngineEvalEngine.Elasticsearch, "q_dup", List(v1, v1, v2))
       val qdrant = EngineEvalResult(EngineEvalEngine.Qdrant, "q_dup", List(v3))

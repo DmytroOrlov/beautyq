@@ -152,5 +152,87 @@ final class EngineEvalSavedReportComparisonSpec extends AnyWordSpec {
       assert(formatted.contains("simulatedHybridGainCountDelta:"))
       assert(formatted.contains("-1"))
     }
+
+    "compute role deltas with missing role on one side" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_l_1", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_r_1", EngineExpectedRole.QdrantMayComplement, Set(v2), List(), List(v2)),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+
+      assert(comparison.roleComparisons.size == 2)
+
+      val esRole = comparison.roleComparisons.find(_.role == EngineExpectedRole.EsShouldHandle).get
+      assert(esRole.left.queryCount == 1)
+      assert(esRole.right.queryCount == 0)
+      assert(esRole.queryCountDelta == -1)
+
+      val qdrantRole = comparison.roleComparisons.find(_.role == EngineExpectedRole.QdrantMayComplement).get
+      assert(qdrantRole.left.queryCount == 0)
+      assert(qdrantRole.right.queryCount == 1)
+      assert(qdrantRole.queryCountDelta == 1)
+    }
+
+    "format role deltas in stable role order" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+      val v3 = variantId(3)
+      val v4 = variantId(4)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_l_1", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+        queryReport("q_l_2", EngineExpectedRole.QdrantShouldStaySilent, Set(v2), List(), List(v2)),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_r_1", EngineExpectedRole.QdrantMayComplement, Set(v3), List(), List(v3)),
+        queryReport("q_r_2", EngineExpectedRole.HybridMayImprove, Set(v4), List(v4), List()),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(formatted.contains("roleDeltas:"))
+
+      val rolesInOrder = List(
+        EngineExpectedRole.EsShouldHandle,
+        EngineExpectedRole.QdrantMayComplement,
+        EngineExpectedRole.QdrantShouldStaySilent,
+        EngineExpectedRole.HybridMayImprove,
+      )
+
+      val indices = rolesInOrder.map(r => formatted.indexOf(s"${r} |"))
+      assert(indices(0) >= 0)
+      assert(indices(1) >= 0)
+      assert(indices(2) >= 0)
+      assert(indices(3) >= 0)
+      assert(indices(0) < indices(1))
+      assert(indices(1) < indices(2))
+      assert(indices(2) < indices(3))
+    }
+
+    "omit roleDeltas section when role deltas are zero" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_l_1", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_r_1", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(!formatted.contains("roleDeltas:"))
+    }
   }
 }
