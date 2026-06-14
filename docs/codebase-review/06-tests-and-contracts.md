@@ -222,13 +222,7 @@ This workflow collects concrete ES + Qdrant benchmark artifacts for EngineEval s
 3. **Assembly**: Run `EngineEvalSavedReportAssemblyManualSpec` with `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT=1` and the four saved-artifact env vars (`ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON`). Capture the aggregate report JSON between `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
 4. **Comparison (optional)**: Run `EngineEvalSavedReportComparisonManualSpec` with `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` and two aggregate report JSON blobs via `ENGINE_EVAL_LEFT_JSON` / `ENGINE_EVAL_RIGHT_JSON`. Capture the comparison output between `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
 
-Run sequence:
-
-1. Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec`; it defaults to local endpoints `http://localhost:8081` (single) and `http://localhost:8081` + `http://localhost:8082` (dual); endpoint env vars are optional overrides. Capture `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` content.
-2. Feed ES eval reports JSON + Qdrant run-output JSON + expected-role JSON to `EngineEvalSavedReportAssemblyManualSpec`; capture `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
-3. Compare two EngineEval aggregate JSON reports with `EngineEvalSavedReportComparisonManualSpec`.
-
-Expected roles JSON example: `{ "q_broad_001": "EsShouldHandle", "q_broad_002": "EsShouldHandle", "q_broad_003": "QdrantMayComplement", "q_broad_004": "HybridMayImprove", "q_broad_005": "EsShouldHandle", "q_broad_006": "QdrantMayComplement" }`. Allowed role strings: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
+Expected roles: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
 
 Expected full-suite baseline when saved artifact JSON is not supplied: **963 succeeded, 0 failed, 1 canceled**. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`; the two EngineEval dual-mode specs run default fixture mode instead of canceling.
 
