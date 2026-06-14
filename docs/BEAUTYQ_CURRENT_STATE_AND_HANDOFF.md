@@ -112,7 +112,10 @@ Documented as characterized, not as desired final contract:
 ### Current M-ESQ-EVAL status / remaining work
 
 * M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
-* Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
+* ES artifact emission exists for the `QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke` subset (query ids: `q_broad_001` through `q_broad_006`), gated by `ENGINE_EVAL_PRINT_ES_ARTIFACTS` (truthy: `1`, `true`, `yes`, case-insensitive).
+* When enabled, the ES integration spec prints `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON` markers with `BeautySearchEvalReport` JSON, and `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON` markers with expected roles JSON mapping each selected query id to `QdrantMayComplement`.
+* These ES markers pair with the Qdrant `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` markers for `EngineEvalSavedReportAssemblyManualSpec` real-artifact mode (env vars: `ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON`).
+* Operational/demo-facing evidence workflow is now documented in `docs/codebase-review/06-tests-and-contracts.md` (operational workflow section under manual saved-artifact eval specs).
 * Keep it offline/eval-only.
 
 ## 6.5. Product search north star

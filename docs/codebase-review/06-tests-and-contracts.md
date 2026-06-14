@@ -205,11 +205,22 @@ When real-artifacts mode is enabled but required env vars are missing, the dual-
 
 Output markers:
 
+* ES eval reports JSON: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
+* ES expected roles JSON: `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON`
 * Qdrant benchmark report JSON: `BEGIN_QDRANT_EMBEDDING_BENCHMARK_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_JSON`
 * Qdrant benchmark run-output JSON: `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`
 * EngineEval aggregate report: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT` / `END_ENGINE_EVAL_AGGREGATE_REPORT`
 * EngineEval aggregate JSON: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
 * EngineEval saved comparison: `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
+
+Operational workflow (M-ESQ-EVAL evidence collection):
+
+This workflow collects concrete ES + Qdrant benchmark artifacts for EngineEval saved-report assembly and comparison. It is offline/eval-only and does not affect production serving. Endpoint/env overrides are optional resource controls, not required production gates. JSON payload extraction between markers is intentionally manual/copy-paste at this stage.
+
+1. **ES artifact emission**: Run `BeautySearchElasticsearchIntegrationSpec` with `ENGINE_EVAL_PRINT_ES_ARTIFACTS=1`. This emits the `SemanticBroadSmoke` subset (query ids `q_broad_001`–`q_broad_006`) ES eval reports JSON and expected roles JSON between their respective markers. The expected-role JSON maps each selected query id to `QdrantMayComplement`; this is first-pass evidence metadata for the subset, not a production routing policy.
+2. **Qdrant benchmark run**: Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` (defaults to local endpoints `http://localhost:8081` / `http://localhost:8082`); endpoint env vars are optional overrides. Capture the Qdrant run-output JSON between `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`.
+3. **Assembly**: Run `EngineEvalSavedReportAssemblyManualSpec` with `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT=1` and the four saved-artifact env vars (`ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON`). Capture the aggregate report JSON between `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
+4. **Comparison (optional)**: Run `EngineEvalSavedReportComparisonManualSpec` with `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` and two aggregate report JSON blobs via `ENGINE_EVAL_LEFT_JSON` / `ENGINE_EVAL_RIGHT_JSON`. Capture the comparison output between `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
 
 Run sequence:
 

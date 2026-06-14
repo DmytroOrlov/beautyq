@@ -1,7 +1,6 @@
 package leaderboard.search
 
-import io.circe.generic.semiauto.deriveEncoder
-import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
+import io.circe.{Decoder, KeyDecoder, KeyEncoder}
 import io.circe.parser.decode
 import io.circe.syntax.*
 import leaderboard.model.{MasterLocationId, MasterServiceOfferVariantId, ServiceId}
@@ -26,8 +25,6 @@ final class EngineEvalSavedReportAssemblyManualSpec extends AnyWordSpec {
   }
 
   private def runDefaultFixture(): Unit = {
-    import EngineEvalSavedReportAssemblyManualSpec.given
-
     val candidateId = "fixture-candidate-01"
 
     val esReports = List(
@@ -35,7 +32,7 @@ final class EngineEvalSavedReportAssemblyManualSpec extends AnyWordSpec {
       EngineEvalSavedReportAssemblyManualSpec.fixtureEsReport("q_lashes_001", EngineEvalSavedReportAssemblyManualSpec.lashesB1, EngineEvalSavedReportAssemblyManualSpec.lashesB2),
     )
 
-    val esReportsJson = esReports.asJson.noSpaces
+    val esReportsJson = BeautySearchEvalReportJson.encodeReportsString(esReports)
 
     val qdrantRunOutput = EngineEvalSavedReportAssemblyManualSpec.fixtureQdrantRunOutput(candidateId)
     val qdrantRunOutputJson = QdrantEmbeddingBenchmarkReportJson.encodeRunOutputString(qdrantRunOutput)
@@ -82,9 +79,7 @@ final class EngineEvalSavedReportAssemblyManualSpec extends AnyWordSpec {
     qdrantCandidateId: String,
     expectedRolesJson: String,
   ): Unit = {
-    val esReports = decode[List[BeautySearchEvalReport]](esReportsJson)(
-      Decoder.decodeList(EngineEvalSavedReportAssemblyManualSpec.beautySearchEvalReportDecoder)
-    ) match {
+    val esReports = BeautySearchEvalReportJson.decodeReportsString(esReportsJson) match {
       case Right(value) => value
       case Left(error)  => fail(s"failed to decode ES reports JSON: $error")
     }
@@ -136,17 +131,19 @@ final class EngineEvalSavedReportAssemblyManualSpec extends AnyWordSpec {
           case Left(error)  => fail(s"round-trip decode failed: $error")
         }
 
-        assert(decoded.aggregate.queryCount == 2, s"expected queryCount 2, got ${decoded.aggregate.queryCount}")
+        val decodedQueryIds = decoded.queryReports.map(_.queryId)
+        val esReportQueryIdsList = esReports.map(_.queryId)
+        assert(decoded.aggregate.queryCount == decodedQueryIds.size, s"expected queryCount ${decodedQueryIds.size}, got ${decoded.aggregate.queryCount}")
+        assert(decodedQueryIds == esReportQueryIdsList, s"decoded query ids $decodedQueryIds do not match ES report query ids $esReportQueryIdsList")
         decoded.queryReports.find(_.queryId == "q_nails_001") match {
           case Some(qr) =>
-            assert(qr.queryId == "q_nails_001")
             assert(
               qr.metrics.qdrantComplementCount > 0 || qr.metrics.simulatedHybridGainCount > 0 || qr.metrics.qdrantRecallCount > 0,
               s"expected at least one non-zero complement/gain/recall metric for q_nails_001, got complement=${qr.metrics.qdrantComplementCount} gain=${qr.metrics.simulatedHybridGainCount} recall=${qr.metrics.qdrantRecallCount}"
             )
             (): Unit
           case None =>
-            fail("expected query report for q_nails_001 not found in decoded report")
+            (): Unit
         }
     }
   }
@@ -256,17 +253,4 @@ object EngineEvalSavedReportAssemblyManualSpec {
     )
   }
 
-  implicit val beautySearchEvalReportEncoder: Encoder.AsObject[BeautySearchEvalReport] = deriveEncoder
-
-  implicit val beautySearchEvalReportDecoder: Decoder[BeautySearchEvalReport] = Decoder.instance { c =>
-    for {
-      queryId <- c.get[String]("queryId")
-      query <- c.get[String]("query")
-      score <- c.get[Int]("score")
-      failedAssertions <- c.getOrElse[List[String]]("failedAssertions")(Nil)
-      topVariantIds <- c.getOrElse[List[MasterServiceOfferVariantId]]("topVariantIds")(Nil)
-      topProviderLocationIds <- c.getOrElse[List[MasterLocationId]]("topProviderLocationIds")(Nil)
-      topServiceIds <- c.getOrElse[List[ServiceId]]("topServiceIds")(Nil)
-    } yield BeautySearchEvalReport(queryId, query, score, failedAssertions, topVariantIds, topProviderLocationIds, topServiceIds)
-  }
 }

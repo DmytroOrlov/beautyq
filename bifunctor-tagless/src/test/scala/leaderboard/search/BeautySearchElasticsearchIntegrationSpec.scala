@@ -10,9 +10,10 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSe
 import leaderboard.search.BeautySearchEvalInventory
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
-import leaderboard.search.eval.{BeautySearchEvalScorer, EngineEvalReportAssembly, EngineExpectedRole}
+import io.circe.syntax.*
+import leaderboard.search.eval.{BeautySearchEvalReportJson, BeautySearchEvalScorer, EngineEvalReportAssembly, EngineExpectedRole, EngineEvalReportJson}
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
+import leaderboard.search.qdrant.{QdrantEmbeddingBenchmarkQueryResult, QdrantEmbeddingBenchmarkQuerySubset}
 import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, ZIO}
 
@@ -460,6 +461,54 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
               _ <- assertIO(report.queryReports.map(_.queryId) == queries.map(_.id))
               _ <- assertIO(report.aggregate.queryCount == queries.size)
               _ <- assertIO(report.queryReports.map(_.es.queryId) == queries.map(_.id))
+            } yield ()
+        }
+    }
+
+    "produce ES eval reports for semantic broad smoke subset" in {
+      (
+        portCfg: ElasticsearchPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
+      ) =>
+        withPreparedIndex(portCfg) {
+          (client, testSpec) =>
+            for {
+              _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
+              selectedQueries <- ZIO.fromEither(
+                QdrantEmbeddingBenchmarkQuerySubset.select(
+                  QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke,
+                  evalSuite.queries,
+                )
+              )
+              _ <- ZIO.succeed(assert(selectedQueries.nonEmpty))
+              esReports <- executeEvalReports(testSpec, client, selectedQueries)
+              selectedQueryIds = selectedQueries.map(_.id)
+              _ <- ZIO.succeed(assert(esReports.map(_.queryId) == selectedQueryIds))
+              expectedRoles = selectedQueries.map(query => query.id -> EngineExpectedRole.QdrantMayComplement).toMap
+              _ <- ZIO.succeed(assert(expectedRoles.keySet == selectedQueryIds.toSet))
+              printArtifacts = sys.env.get("ENGINE_EVAL_PRINT_ES_ARTIFACTS").exists { value =>
+                val normalized = value.trim.toLowerCase
+                normalized == "1" || normalized == "true" || normalized == "yes"
+              }
+              _ <- ZIO.when(printArtifacts) {
+                ZIO.succeed {
+                  println("BEGIN_ENGINE_EVAL_ES_REPORTS_JSON")
+                  println(BeautySearchEvalReportJson.encodeReportsString(esReports))
+                  println("END_ENGINE_EVAL_ES_REPORTS_JSON")
+                  println("BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON")
+                  println(expectedRoles.asJson(
+                    io.circe.Encoder.encodeMap[String, EngineExpectedRole](io.circe.KeyEncoder.encodeKeyString, EngineEvalReportJson.expectedRoleEncoder)
+                  ).noSpaces)
+                  println("END_ENGINE_EVAL_EXPECTED_ROLES_JSON")
+                }
+              }
             } yield ()
         }
     }
