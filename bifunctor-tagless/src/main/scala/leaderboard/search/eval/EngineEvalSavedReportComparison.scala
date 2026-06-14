@@ -16,6 +16,29 @@ final case class EngineEvalRoleComparison(
   simulatedHybridGainCountDelta: Int,
 )
 
+final case class EngineEvalQueryComparison(
+  queryId: String,
+  left: EngineEvalQueryComparisonMetrics,
+  right: EngineEvalQueryComparisonMetrics,
+  expectedVariantCountDelta: Int,
+  esRecallCountDelta: Int,
+  qdrantRecallCountDelta: Int,
+  qdrantComplementCountDelta: Int,
+  qdrantNoiseCountDelta: Int,
+  overlapCountDelta: Int,
+  simulatedHybridGainCountDelta: Int,
+)
+
+final case class EngineEvalQueryComparisonMetrics(
+  expectedVariantCount: Int,
+  esRecallCount: Int,
+  qdrantRecallCount: Int,
+  qdrantComplementCount: Int,
+  qdrantNoiseCount: Int,
+  overlapCount: Int,
+  simulatedHybridGainCount: Int,
+)
+
 final case class EngineEvalAggregateComparison(
   left: EngineEvalAggregateMetrics,
   right: EngineEvalAggregateMetrics,
@@ -28,6 +51,7 @@ final case class EngineEvalAggregateComparison(
   overlapCountDelta: Int,
   simulatedHybridGainCountDelta: Int,
   roleComparisons: List[EngineEvalRoleComparison],
+  queryComparisons: List[EngineEvalQueryComparison],
 )
 
 object EngineEvalSavedReportComparison {
@@ -40,7 +64,8 @@ object EngineEvalSavedReportComparison {
       EngineEvalRoleBreakdown.from(left.queryReports),
       EngineEvalRoleBreakdown.from(right.queryReports),
     )
-    aggregateComparison.copy(roleComparisons = roleComparisons)
+    val queryComparisons = compareQueries(left.queryReports, right.queryReports)
+    aggregateComparison.copy(roleComparisons = roleComparisons, queryComparisons = queryComparisons)
   }
 
   def compareReportJsonStrings(
@@ -72,6 +97,13 @@ object EngineEvalSavedReportComparison {
       presentRoleDeltas.foreach(formatRoleDelta(builder, _))
     }
 
+    val presentQueryDeltas = comparison.queryComparisons.filterNot(q => isZeroQuery(q))
+    if (presentQueryDeltas.nonEmpty) {
+      line(builder, "")
+      line(builder, "queryDeltas:")
+      presentQueryDeltas.foreach(formatQueryDelta(builder, _))
+    }
+
     builder.result()
   }
 
@@ -91,6 +123,7 @@ object EngineEvalSavedReportComparison {
       overlapCountDelta = right.overlapCount - left.overlapCount,
       simulatedHybridGainCountDelta = right.simulatedHybridGainCount - left.simulatedHybridGainCount,
       roleComparisons = Nil,
+      queryComparisons = Nil,
     )
 
   private def compareRoles(
@@ -119,6 +152,54 @@ object EngineEvalSavedReportComparison {
     }
   }
 
+  private def compareQueries(
+    leftReports: List[EngineEvalQueryReport],
+    rightReports: List[EngineEvalQueryReport],
+  ): List[EngineEvalQueryComparison] = {
+    val leftMap = leftReports.map(r => r.queryId -> queryMetrics(r)).toMap
+    val rightMap = rightReports.map(r => r.queryId -> queryMetrics(r)).toMap
+    val leftIds = leftReports.map(_.queryId).distinct
+    val rightOnlyIds = rightReports.map(_.queryId).distinct.filterNot(id => leftMap.contains(id))
+    (leftIds ++ rightOnlyIds).map { queryId =>
+      val left = leftMap.getOrElse(queryId, zeroQueryMetrics)
+      val right = rightMap.getOrElse(queryId, zeroQueryMetrics)
+      EngineEvalQueryComparison(
+        queryId = queryId,
+        left = left,
+        right = right,
+        expectedVariantCountDelta = right.expectedVariantCount - left.expectedVariantCount,
+        esRecallCountDelta = right.esRecallCount - left.esRecallCount,
+        qdrantRecallCountDelta = right.qdrantRecallCount - left.qdrantRecallCount,
+        qdrantComplementCountDelta = right.qdrantComplementCount - left.qdrantComplementCount,
+        qdrantNoiseCountDelta = right.qdrantNoiseCount - left.qdrantNoiseCount,
+        overlapCountDelta = right.overlapCount - left.overlapCount,
+        simulatedHybridGainCountDelta = right.simulatedHybridGainCount - left.simulatedHybridGainCount,
+      )
+    }
+  }
+
+  private def queryMetrics(report: EngineEvalQueryReport): EngineEvalQueryComparisonMetrics =
+    EngineEvalQueryComparisonMetrics(
+      expectedVariantCount = report.expectedVariantIds.size,
+      esRecallCount = report.metrics.esRecallCount,
+      qdrantRecallCount = report.metrics.qdrantRecallCount,
+      qdrantComplementCount = report.metrics.qdrantComplementCount,
+      qdrantNoiseCount = report.metrics.qdrantNoiseCount,
+      overlapCount = report.metrics.overlapCount,
+      simulatedHybridGainCount = report.metrics.simulatedHybridGainCount,
+    )
+
+  private val zeroQueryMetrics: EngineEvalQueryComparisonMetrics =
+    EngineEvalQueryComparisonMetrics(
+      expectedVariantCount = 0,
+      esRecallCount = 0,
+      qdrantRecallCount = 0,
+      qdrantComplementCount = 0,
+      qdrantNoiseCount = 0,
+      overlapCount = 0,
+      simulatedHybridGainCount = 0,
+    )
+
   private def zeroRoleMetrics(role: EngineExpectedRole): EngineEvalRoleAggregateMetrics =
     EngineEvalRoleAggregateMetrics(
       role = role,
@@ -142,6 +223,15 @@ object EngineEvalSavedReportComparison {
     comparison.overlapCountDelta == 0 &&
     comparison.simulatedHybridGainCountDelta == 0
 
+  private def isZeroQuery(comparison: EngineEvalQueryComparison): Boolean =
+    comparison.expectedVariantCountDelta == 0 &&
+    comparison.esRecallCountDelta == 0 &&
+    comparison.qdrantRecallCountDelta == 0 &&
+    comparison.qdrantComplementCountDelta == 0 &&
+    comparison.qdrantNoiseCountDelta == 0 &&
+    comparison.overlapCountDelta == 0 &&
+    comparison.simulatedHybridGainCountDelta == 0
+
   private def formatDelta(value: Int): String =
     if (value >= 0) s"+$value" else value.toString
 
@@ -149,6 +239,13 @@ object EngineEvalSavedReportComparison {
     line(
       builder,
       s"  ${roleComparison.role} | queryCountDelta=${formatDelta(roleComparison.queryCountDelta)} | expectedVariantCountDelta=${formatDelta(roleComparison.expectedVariantCountDelta)} | esRecallDelta=${formatDelta(roleComparison.esRecallCountDelta)} | qdrantRecallDelta=${formatDelta(roleComparison.qdrantRecallCountDelta)} | qdrantComplementDelta=${formatDelta(roleComparison.qdrantComplementCountDelta)} | qdrantNoiseDelta=${formatDelta(roleComparison.qdrantNoiseCountDelta)} | overlapDelta=${formatDelta(roleComparison.overlapCountDelta)} | simulatedHybridGainDelta=${formatDelta(roleComparison.simulatedHybridGainCountDelta)}"
+    )
+  }
+
+  private def formatQueryDelta(builder: StringBuilder, queryComparison: EngineEvalQueryComparison): Unit = {
+    line(
+      builder,
+      s"  ${queryComparison.queryId} | expectedVariantCountDelta=${formatDelta(queryComparison.expectedVariantCountDelta)} | esRecallDelta=${formatDelta(queryComparison.esRecallCountDelta)} | qdrantRecallDelta=${formatDelta(queryComparison.qdrantRecallCountDelta)} | qdrantComplementDelta=${formatDelta(queryComparison.qdrantComplementCountDelta)} | qdrantNoiseDelta=${formatDelta(queryComparison.qdrantNoiseCountDelta)} | overlapDelta=${formatDelta(queryComparison.overlapCountDelta)} | simulatedHybridGainDelta=${formatDelta(queryComparison.simulatedHybridGainCountDelta)}"
     )
   }
 

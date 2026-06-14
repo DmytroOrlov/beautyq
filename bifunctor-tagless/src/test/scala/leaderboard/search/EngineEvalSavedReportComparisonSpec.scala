@@ -218,6 +218,101 @@ final class EngineEvalSavedReportComparisonSpec extends AnyWordSpec {
       assert(indices(2) < indices(3))
     }
 
+    "format queryDeltas for changed per-query metrics" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_broad_004", EngineExpectedRole.HybridMayImprove, Set(v1, v2), List(v1), List(v2)),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_broad_004", EngineExpectedRole.HybridMayImprove, Set(v1, v2), List(), List(v1, v2)),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(formatted.contains("queryDeltas:"))
+      assert(formatted.contains(
+        "  q_broad_004 | expectedVariantCountDelta=+0 | esRecallDelta=-1 | qdrantRecallDelta=+1 | qdrantComplementDelta=+1 | qdrantNoiseDelta=+0 | overlapDelta=+0 | simulatedHybridGainDelta=+1"
+      ))
+    }
+
+    "treat missing query on the left as zero and place it after left-side query ids" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_left", EngineExpectedRole.EsShouldHandle, Set(v1), List(), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_left", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+        queryReport("q_right_only", EngineExpectedRole.QdrantMayComplement, Set(v2), List(), List(v2)),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(comparison.queryComparisons.map(_.queryId) == List("q_left", "q_right_only"))
+      assert(formatted.contains(
+        "  q_right_only | expectedVariantCountDelta=+1 | esRecallDelta=+0 | qdrantRecallDelta=+1 | qdrantComplementDelta=+1 | qdrantNoiseDelta=+0 | overlapDelta=+0 | simulatedHybridGainDelta=+1"
+      ))
+
+      val leftIndex = formatted.indexOf("q_left |")
+      val rightOnlyIndex = formatted.indexOf("q_right_only |")
+      assert(leftIndex >= 0)
+      assert(rightOnlyIndex >= 0)
+      assert(leftIndex < rightOnlyIndex)
+    }
+
+    "treat missing query on the right as zero and preserve left order" in {
+      val v1 = variantId(1)
+      val v2 = variantId(2)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_left_first", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+        queryReport("q_left_second", EngineExpectedRole.QdrantMayComplement, Set(v2), List(), List(v2)),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List())
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(comparison.queryComparisons.map(_.queryId) == List("q_left_first", "q_left_second"))
+      assert(formatted.contains(
+        "  q_left_first | expectedVariantCountDelta=-1 | esRecallDelta=-1 | qdrantRecallDelta=+0 | qdrantComplementDelta=+0 | qdrantNoiseDelta=+0 | overlapDelta=+0 | simulatedHybridGainDelta=+0"
+      ))
+      assert(formatted.contains(
+        "  q_left_second | expectedVariantCountDelta=-1 | esRecallDelta=+0 | qdrantRecallDelta=-1 | qdrantComplementDelta=-1 | qdrantNoiseDelta=+0 | overlapDelta=+0 | simulatedHybridGainDelta=-1"
+      ))
+
+      val firstIndex = formatted.indexOf("q_left_first |")
+      val secondIndex = formatted.indexOf("q_left_second |")
+      assert(firstIndex >= 0)
+      assert(secondIndex >= 0)
+      assert(firstIndex < secondIndex)
+    }
+
+    "omit queryDeltas section when query deltas are zero" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_same", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_same", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(!formatted.contains("queryDeltas:"))
+    }
+
     "omit roleDeltas section when role deltas are zero" in {
       val v1 = variantId(1)
 
