@@ -218,6 +218,8 @@ Compact navigation for the sections below:
 
 All sections are offline/eval-only and operator-controlled.
 
+For a copyable local operator template (workspace setup, commands, multi-payload splitting, first-run example), see `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
+
 Output markers:
 
 * ES eval reports JSON: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
