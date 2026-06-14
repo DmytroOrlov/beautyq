@@ -226,6 +226,29 @@ Expected roles: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent
 
 Expected full-suite baseline when saved artifact JSON is not supplied: **963 succeeded, 0 failed, 1 canceled**. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`; the two EngineEval dual-mode specs run default fixture mode instead of canceling.
 
+### Evidence collection dry-run checklist
+
+Before running any resource-backed or env-gated M-ESQ-EVAL specs, complete this preflight checklist. This is preparation only; it does not claim artifacts have been collected.
+
+- [ ] **Run label and directory**: chosen a short run label (e.g. `sem-broad-001`) and local artifact directory under `tmp/m-esq-eval/<YYYYMMDD-HHMMSS>-<label>/`.
+- [ ] **Log destination**: decided where saved test logs will be written (file path for each spec run).
+- [ ] **Marker pairs confirmed**: confirmed the exact `BEGIN_*` / `END_*` marker pairs needed:
+  - ES eval reports JSON: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
+  - ES expected roles JSON: `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON`
+  - Qdrant run-output JSON: `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`
+  - Aggregate report JSON: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
+  - Optional comparison text: `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
+- [ ] **Qdrant candidate id**: chosen or recorded the Qdrant candidate id to use for `qdrant-run-output.<candidate-id>.json` and `engine-eval-aggregate.<candidate-id>.json` naming, and for `ENGINE_EVAL_QDRANT_CANDIDATE_ID`.
+- [ ] **manifest.md prepared**: prepared `manifest.md` in the target directory (use the template in "Saved artifact naming and manifest") with at minimum date/time, operator, and notes/non-goals fields filled before extraction.
+- [ ] **Assembly env vars conceptually prepared**: reviewed the four assembly env values and their targets:
+  - `ENGINE_EVAL_ES_REPORTS_JSON` → `es-reports.semantic-broad-smoke.json`
+  - `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON` → `qdrant-run-output.<candidate-id>.json`
+  - `ENGINE_EVAL_QDRANT_CANDIDATE_ID` → the chosen candidate id string
+  - `ENGINE_EVAL_EXPECTED_ROLES_JSON` → `expected-roles.semantic-broad-smoke.json`
+- [ ] **Resource availability assessed**: noted whether ES and Qdrant resources are expected to be available or may cancel (Docker-backed ES via `BeautySearchElasticsearchIntegrationSpec`; Qdrant benchmark executor defaults to local endpoints and cancels when unavailable).
+- [ ] **Validation and cancels recorded**: planned what validation will actually be run and whether any resource-unavailable cancels are expected; will record both in `manifest.md`.
+- [ ] **Offline/eval-only confirmed**: confirmed this session is offline/eval-only — no production `/beauty-search` route changes, no hybrid serving, no routing decisions from benchmark output, and no production automation signals.
+
 ### Marker payload extraction
 
 Saved test output logs contain JSON or text payloads delimited by `BEGIN_*` / `END_*` marker comments. Extract them with a read-only, one-shot shell helper that uses `awk` (available on macOS and Linux). The helper accepts exact begin and end marker strings so it works for both JSON and non-JSON markers without internal suffix mangling:
