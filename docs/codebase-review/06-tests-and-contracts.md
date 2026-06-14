@@ -215,7 +215,7 @@ Output markers:
 
 Operational workflow (M-ESQ-EVAL evidence collection):
 
-This workflow collects concrete ES + Qdrant benchmark artifacts for EngineEval saved-report assembly and comparison. It is offline/eval-only and does not affect production serving. Endpoint/env overrides are optional resource controls, not required production gates. JSON payload extraction between markers is intentionally manual/copy-paste at this stage.
+This workflow collects concrete ES + Qdrant benchmark artifacts for EngineEval saved-report assembly and comparison. It is offline/eval-only and does not affect production serving. Endpoint/env overrides are optional resource controls, not required production gates. JSON payload extraction between markers is operator-controlled; use the marker extraction helper below to avoid copy-paste errors.
 
 1. **ES artifact emission**: Run `BeautySearchElasticsearchIntegrationSpec` with `ENGINE_EVAL_PRINT_ES_ARTIFACTS=1`. This emits the `SemanticBroadSmoke` subset (query ids `q_broad_001`–`q_broad_006`) ES eval reports JSON and expected roles JSON between their respective markers. The expected-role JSON is first-pass offline evidence metadata for `SemanticBroadSmoke`, not a production routing policy. Current role map: `q_broad_001` → `EsShouldHandle` (nail-service nearby), `q_broad_002` → `EsShouldHandle` (lashes/brows nearby), `q_broad_003` → `QdrantMayComplement` (vague/conversational facial), `q_broad_004` → `HybridMayImprove` (broad self-care), `q_broad_005` → `EsShouldHandle` (affordable nails), `q_broad_006` → `QdrantMayComplement` (generic broad nearby).
 2. **Qdrant benchmark run**: Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` (defaults to local endpoints `http://localhost:8081` / `http://localhost:8082`); endpoint env vars are optional overrides. Capture the Qdrant run-output JSON between `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`.
@@ -231,6 +231,49 @@ Run sequence:
 Expected roles JSON example: `{ "q_broad_001": "EsShouldHandle", "q_broad_002": "EsShouldHandle", "q_broad_003": "QdrantMayComplement", "q_broad_004": "HybridMayImprove", "q_broad_005": "EsShouldHandle", "q_broad_006": "QdrantMayComplement" }`. Allowed role strings: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
 
 Expected full-suite baseline when saved artifact JSON is not supplied: **963 succeeded, 0 failed, 1 canceled**. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`; the two EngineEval dual-mode specs run default fixture mode instead of canceling.
+
+### Marker payload extraction
+
+Saved test output logs contain JSON or text payloads delimited by `BEGIN_*` / `END_*` marker comments. Extract them with a read-only, one-shot shell helper that uses `awk` (available on macOS and Linux). The helper accepts exact begin and end marker strings so it works for both JSON and non-JSON markers without internal suffix mangling:
+
+```bash
+extract_marker() {
+  local log_file="$1" begin="$2" end="$3"
+  awk -v begin="$begin" -v end="$end" '
+    $0 == begin { found=1; next }
+    $0 == end { found=0; next }
+    found { print }
+  ' "$log_file"
+}
+```
+
+Usage examples (replace `log.txt` with your saved test output file):
+
+```bash
+# ES eval reports JSON
+extract_marker log.txt "BEGIN_ENGINE_EVAL_ES_REPORTS_JSON" "END_ENGINE_EVAL_ES_REPORTS_JSON" > es_reports.json
+
+# ES expected roles JSON
+extract_marker log.txt "BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON" "END_ENGINE_EVAL_EXPECTED_ROLES_JSON" > expected_roles.json
+
+# Qdrant benchmark run-output JSON
+extract_marker log.txt "BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON" "END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON" > qdrant_run_output.json
+
+# EngineEval aggregate report JSON
+extract_marker log.txt "BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON" "END_ENGINE_EVAL_AGGREGATE_REPORT_JSON" > aggregate_report.json
+```
+
+Non-JSON markers use the same pattern with their exact begin/end markers:
+
+```bash
+# EngineEval aggregate report text (non-JSON)
+extract_marker log.txt "BEGIN_ENGINE_EVAL_AGGREGATE_REPORT" "END_ENGINE_EVAL_AGGREGATE_REPORT" > aggregate_report.txt
+
+# EngineEval saved comparison text
+extract_marker log.txt "BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON" "END_ENGINE_EVAL_SAVED_REPORT_COMPARISON" > comparison.txt
+```
+
+This helper is read-only: it does not run `sbt`, Docker, or mutate any repo files. It works on any saved log file with standard shell tools. Operator-controlled extraction reduces copy-paste errors while keeping payload selection explicit.
 
 ## Ignored / Tagged / Pending Tests
 
