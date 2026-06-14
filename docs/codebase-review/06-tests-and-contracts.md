@@ -387,7 +387,7 @@ This checklist is for operator verification of locally collected artifacts. It d
 - Saved aggregate JSON schema remains unchanged.
 - Text aggregate reports may include `roleAggregates`.
 - Saved-report comparison output may include `roleDeltas` when role-level deltas are non-zero.
-- First replayed saved evidence confirmed: `benchmark-small` → `benchmark-large` includes `roleDeltas`; `benchmark-single` → `benchmark-small` omits `roleDeltas` because all role deltas are zero.
+- Replayed saved comparisons confirmed: `benchmark-small` → `benchmark-large` includes `queryDeltas` and preserves `roleDeltas`; `benchmark-single` → `benchmark-small` omits both `queryDeltas` and `roleDeltas` because that comparison is zero-delta at query and role levels.
 - This remains offline/eval-only and does not imply production Qdrant/hybrid readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
 
 **Query-level deltas (queryDeltas):**
@@ -395,6 +395,7 @@ This checklist is for operator verification of locally collected artifacts. It d
 - Query-level deltas are derived from `EngineEvalAggregateReport.queryReports`.
 - Saved-report comparison output may include `queryDeltas` when query-level deltas are non-zero.
 - `queryDeltas` is omitted when all query-level deltas are zero.
+- Replayed saved comparisons confirmed the omission behavior for all-zero query deltas and the presence behavior for non-zero query deltas: `benchmark-small` → `benchmark-large` includes `queryDeltas`, while `benchmark-single` → `benchmark-small` omits `queryDeltas`.
 - Query ids are compared in stable order: ids from the left report in left order, then ids only present in the right report in right order.
 - Queries missing on either side are compared against zero metrics.
 - Query-level deltas include `expectedVariantCountDelta`, `esRecallDelta`, `qdrantRecallDelta`, `qdrantComplementDelta`, `qdrantNoiseDelta`, `overlapDelta`, and `simulatedHybridGainDelta`.
