@@ -42,6 +42,16 @@ After every accepted patch review / closed patch, include the extended commit me
 
 After every accepted review, provide two viable next options with a recommended choice, unless the next action is forced by a failed verification, safety issue, or source-truth blocker. Every option must include an artifact: either a delegated prompt or an executable bundle script. If an option includes a delegated patch prompt, also include the post-patch review bundle script for that option immediately. Do not allow "no bundle needed" as a third category.
 
+Accepted-review output:
+
+* If accepted: provide an extended commit message summarizing intent, key behavior/doc changes, boundaries/non-goals when relevant, and validation actually reported.
+* If blocked: do not provide a commit message; provide blocker(s) and a fix prompt or focused bundle request.
+
+Continuation rule:
+
+* If the user has already chosen the next task, continue that task after review acceptance. Do not re-offer the previously rejected alternative as an equal patch option.
+* Continue only unless blocked by source-truth or validation/safety issues.
+
 ## 1.3 Verification labels
 
 * `FOCUSED GREEN`: requested focused suite passed; full repo unknown.
@@ -151,6 +161,8 @@ Source-truth gate always wins for all models. No model may infer missing APIs.
 # 3. Bundle script rules
 
 Bundles are for the coordinator, not delegated agents. After reading a bundle, the coordinator must inline important facts into the delegated prompt.
+
+Combined post-patch bundle: when providing a delegated patch prompt, also provide one post-patch bundle script covering: review of the patch just requested, source truth for next option A, source truth for next option B. This combined bundle must remain read-only, task-relevant, structured, and use the existing `cpf "$ZIP"` workflow. It does not bypass the source-truth gate; if chosen-task anchors are still missing after review, request a focused supplemental bundle.
 
 When requesting a bundle from the user, provide an executable shell script, not a prose include-list.
 
@@ -279,6 +291,11 @@ This note is not part of the delegated prompt unless the user asks. Keep delegat
 Use exact model/tier names: `MiMo-V2.5`, `MiMo-V2.5-Pro`, `MiniMax-M3`, `GPT-5.5-medium`, `GPT-5.5-high`. Do not write vague `Qwen`, `MiMo`, or `GPT`.
 
 If source truth is missing, recommend requesting a focused bundle first; do not recommend a stronger model to infer missing APIs.
+
+Model-sizing reminder:
+
+* The model recommendation block must name the minimal sufficient model, not a comfortable/heavier default.
+* Docs-only or narrow review-fix tasks should prefer cheaper/local models unless the policy/doc ownership complexity justifies a stronger model.
 
 ---
 
