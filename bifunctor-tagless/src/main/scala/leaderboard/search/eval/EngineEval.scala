@@ -1,6 +1,7 @@
 package leaderboard.search.eval
 
 import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.QueryFailure
 import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 
 enum EngineEvalEngine {
@@ -19,6 +20,61 @@ enum EngineEvalQueryClass {
   case BroadIntent
   case HardNegative
   case Mixed
+}
+
+object EngineEvalQueryClass {
+  val stableOrder: List[EngineEvalQueryClass] = List(
+    ExactService,
+    Category,
+    StructuredFilter,
+    PriceDuration,
+    GeoLocal,
+    SemanticVague,
+    BroadIntent,
+    HardNegative,
+    Mixed,
+  )
+
+  private val ignoredQueryTypes: Set[String] = Set(
+    "english",
+    "german",
+  )
+
+  private val classByQueryType: Map[String, EngineEvalQueryClass] = Map(
+    "direct"             -> ExactService,
+    "synonym"            -> Category,
+    "attribute"          -> StructuredFilter,
+    "attribute_heavy"    -> StructuredFilter,
+    "price"              -> PriceDuration,
+    "numeric"            -> PriceDuration,
+    "location"           -> GeoLocal,
+    "home_visit"         -> GeoLocal,
+    "conversational"     -> SemanticVague,
+    "ambiguous"          -> SemanticVague,
+    "typo"               -> SemanticVague,
+    "broad"              -> BroadIntent,
+    "multi_intent"       -> BroadIntent,
+    "hard_negative"      -> HardNegative,
+    "negative_attribute" -> HardNegative,
+    "mixed_language"     -> Mixed,
+    "technical_token"    -> Mixed,
+  )
+
+  def fromQueryTypes(queryTypes: List[String]): Either[QueryFailure, List[EngineEvalQueryClass]] = {
+    val unknown = queryTypes.distinct.filterNot(queryType => ignoredQueryTypes.contains(queryType) || classByQueryType.contains(queryType))
+
+    if (unknown.nonEmpty) {
+      Left(
+        QueryFailure.operation(
+          "engine-eval-query-class",
+          s"Unknown EngineEval query type tags: ${unknown.mkString(", ")}",
+        )
+      )
+    } else {
+      val classes = queryTypes.flatMap(classByQueryType.get).toSet
+      Right(stableOrder.filter(classes.contains))
+    }
+  }
 }
 
 enum EngineExpectedRole {
