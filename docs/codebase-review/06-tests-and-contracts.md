@@ -203,6 +203,21 @@ Mode labels printed to stdout:
 
 When real-artifacts mode is enabled but required env vars are missing, the dual-mode specs fail clearly instead of canceling.
 
+### M-ESQ-EVAL operator quick index
+
+Compact navigation for the sections below:
+
+* **Env gates & mode labels** — spec table and `ENGINE_EVAL_*_MODE` / `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS` gates (above).
+* **Output markers** — `BEGIN_*` / `END_*` marker names for ES, Qdrant, aggregate, and comparison payloads (above).
+* **Operational workflow** — 4-step evidence collection sequence: ES artifact emission → Qdrant benchmark run → assembly → optional comparison (step 4).
+* **Evidence collection dry-run checklist** — preflight checklist before running any resource-backed or env-gated M-ESQ-EVAL specs.
+* **Marker payload extraction** — read-only `extract_marker()` helper and usage examples for JSON and non-JSON markers.
+* **Saved artifact naming and manifest** — recommended directory shape, filenames, and `manifest.md` template.
+* **Evidence artifact sanity checklist** — verification checklist before using collected artifacts as evidence.
+* **Saved comparison interpretation notes** — what `EngineEvalSavedReportComparisonManualSpec` output is useful for and what it does not prove.
+
+All sections are offline/eval-only and operator-controlled.
+
 Output markers:
 
 * ES eval reports JSON: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
