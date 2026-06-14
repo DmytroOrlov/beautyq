@@ -139,6 +139,42 @@ Specific prompt: task-local facts (package paths, class names, imports, helpers,
 
 If a patch adds env vars, BEGIN/END markers, saved-artifact flow, or manual local-service flow, close it only with docs/runbook done, queued as immediate N+1, or explicitly blocked with focused executable bundle; report that status.
 
+## 1.13 No terminal-closing copy-paste commands
+
+PRIORITY: User-facing copy-paste terminal commands must never close, replace, or kill the user's interactive shell/session.
+
+Forbidden commands and patterns:
+
+* `exit` or `exit 1` — terminates the shell.
+* `exec` — replaces the shell process.
+* `kill $$` — kills the current shell.
+* Terminating `trap` handlers that call `exit`.
+* `set -e`, `set -u`, `set -o pipefail` — change shell behavior globally and may cause unexpected termination.
+
+Required guidance:
+
+* Validation guards must be non-terminating. On failure, print `BLOCKED` or `MISSING`, set a local flag, skip dependent steps with `if`, and still print diagnostics.
+* Do not use `exit 1` in copy-paste commands. Use local flags and conditional branching instead.
+
+Bad example:
+
+```bash
+if [ ! -s "$f" ]; then echo "MISSING"; exit 1; fi
+```
+
+Good example:
+
+```bash
+MISSING=0
+if [ ! -s "$f" ]; then echo "MISSING"; MISSING=1; fi
+if [ "$MISSING" = "0" ]; then
+  # proceed with dependent steps
+  echo "OK"
+else
+  echo "BLOCKED: required file missing"
+fi
+```
+
 ---
 
 # 2. Model prompt deltas
