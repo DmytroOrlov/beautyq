@@ -275,6 +275,47 @@ extract_marker log.txt "BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON" "END_ENGINE_E
 
 This helper is read-only: it does not run `sbt`, Docker, or mutate any repo files. It works on any saved log file with standard shell tools. Operator-controlled extraction reduces copy-paste errors while keeping payload selection explicit.
 
+### Saved artifact naming and manifest
+
+Recommended directory shape for a single M-ESQ-EVAL run:
+
+```
+tmp/m-esq-eval/<YYYYMMDD-HHMMSS>-<short-label>/
+```
+
+Example: `tmp/m-esq-eval/20260614-143000-sem-broad-001/`
+
+Recommended filenames for extracted artifacts:
+
+* `es-reports.semantic-broad-smoke.json` — ES eval reports JSON from `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
+* `expected-roles.semantic-broad-smoke.json` — ES expected roles JSON from `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON`
+* `qdrant-run-output.<candidate-id>.json` — Qdrant run-output JSON from `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`
+* `engine-eval-aggregate.<candidate-id>.json` — EngineEval aggregate report JSON from `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
+* `engine-eval-comparison.<left-label>--<right-label>.txt` — optional saved comparison text from `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
+* `manifest.md` — optional bookkeeping manifest (template below)
+
+`manifest.md` template:
+
+```markdown
+# M-ESQ-EVAL Artifact Manifest
+
+| Field | Value |
+|---|---|
+| date/time | |
+| operator | |
+| repo commit / branch / status note | |
+| ES artifact source (marker / log file) | |
+| Qdrant candidate id | |
+| Qdrant run-output source (marker / log file) | |
+| expected roles file | |
+| aggregate report file | |
+| optional comparison inputs / output | |
+| validation actually run | |
+| notes / non-goals | |
+```
+
+This manifest is for local evidence bookkeeping only. It does not indicate production readiness, routing policy, or hybrid serving approval.
+
 ## Ignored / Tagged / Pending Tests
 
 Targeted search result:
