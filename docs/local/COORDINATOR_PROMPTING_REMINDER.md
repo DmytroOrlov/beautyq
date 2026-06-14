@@ -179,7 +179,7 @@ fi
 
 PRIORITY: `/tmp` may be used only for disposable bundles or short-lived scratch output.
 
-Multi-iteration evidence workspaces must not live in `/tmp`. Persisted evidence workspaces should use a stable user-owned path, e.g. `$HOME/.beautyq-evidence-runs/<run-id>/`, or another explicit project-external workspace chosen by the user.
+Multi-iteration evidence workspaces must not live in `/tmp`. Persisted evidence workspaces should default to project-local `./.beautyq-evidence-runs/<run-id>/`, and that path must be gitignored or added to `.git/info/exclude` before use. `$HOME` or another external path may be used only when the user explicitly asks for an external workspace.
 
 User-facing commands must print the final workspace path and zip path. User-facing artifact commands must use `cpf "$ZIP"` and then `echo "$ZIP"`.
 

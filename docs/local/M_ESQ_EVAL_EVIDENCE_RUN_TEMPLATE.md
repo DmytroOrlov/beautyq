@@ -17,23 +17,26 @@ This template does **not** represent:
 
 ## Workspace
 
-Create an explicitly non-repo workspace:
+Create a project-local workspace by default:
 
 ```bash
 STAMP="$(date +%Y%m%d-%H%M%S)"
 LABEL="sem-broad-001"
-WORK="$HOME/.beautyq-evidence-runs/${STAMP}-${LABEL}"
+WORK="./.beautyq-evidence-runs/${STAMP}-${LABEL}"
 mkdir -p "$WORK"/{logs,artifacts,notes}
 echo "$WORK"
 ```
 
+Make sure `./.beautyq-evidence-runs/` is ignored before use, either by adding it to `.gitignore` or by adding the path to `.git/info/exclude`.
+
 **Do not use repo-local `tmp/`** unless intentionally accepting an untracked workspace that will appear in `git status` and can confuse review/commit status.
 `/tmp` is reserved here for disposable review bundles or short-lived scratch output.
+Use `$HOME` or another external path only when the user explicitly asks for an external workspace.
 
 Recommended workspace shape:
 
 ```
-$HOME/.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<label>/
+./.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<label>/
 ├── logs/
 ├── artifacts/
 ├── notes/
@@ -45,10 +48,9 @@ $HOME/.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<label>/
 Bundle the workspace only after a run is complete:
 
 ```bash
-ZIP="$HOME/.beautyq-evidence-runs/${STAMP}-${LABEL}.zip"
+ZIP="./.beautyq-evidence-runs/${STAMP}-${LABEL}.zip"
 rm -f "$ZIP"
 (cd "$WORK/.." && zip -9 -r "$ZIP" "$(basename "$WORK")") >/dev/null
-wc -c "$ZIP"
 cpf "$ZIP"
 echo "$ZIP"
 ```
@@ -251,5 +253,5 @@ Saved comparisons from that run:
 
 ## Lessons learned
 
-1. **Workspace location**: Use `$HOME/.beautyq-evidence-runs/...` for the persisted run workspace, not repo-local `tmp/`. Repo-local `tmp/` appears as untracked and can confuse review/commit status.
+1. **Workspace location**: Use `./.beautyq-evidence-runs/...` for the persisted run workspace by default, and keep it gitignored or listed in `.git/info/exclude`. Repo-local `tmp/` appears as untracked and can confuse review/commit status. Use `$HOME` only when the user explicitly asks for an external workspace.
 2. **Multi-payload Qdrant extraction**: Raw Qdrant extraction may contain multiple adjacent JSON payloads. Split/select into a valid single JSON payload before feeding into `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`. Do not concatenate raw payloads.
