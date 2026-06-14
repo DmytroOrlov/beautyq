@@ -22,22 +22,35 @@ Create an explicitly non-repo workspace:
 ```bash
 STAMP="$(date +%Y%m%d-%H%M%S)"
 LABEL="sem-broad-001"
-WORK="/tmp/m-esq-eval/${STAMP}-${LABEL}"
+WORK="$HOME/.beautyq-evidence-runs/${STAMP}-${LABEL}"
 mkdir -p "$WORK"/{logs,artifacts,notes}
+echo "$WORK"
 ```
 
 **Do not use repo-local `tmp/`** unless intentionally accepting an untracked workspace that will appear in `git status` and can confuse review/commit status.
+`/tmp` is reserved here for disposable review bundles or short-lived scratch output.
 
 Recommended workspace shape:
 
 ```
-/tmp/m-esq-eval/<YYYYMMDD-HHMMSS>-<label>/
+$HOME/.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<label>/
 ├── logs/
 ├── artifacts/
 ├── notes/
 ├── manifest.md
 ├── commands.md
 └── extract.sh
+```
+
+Bundle the workspace only after a run is complete:
+
+```bash
+ZIP="$HOME/.beautyq-evidence-runs/${STAMP}-${LABEL}.zip"
+rm -f "$ZIP"
+(cd "$WORK/.." && zip -9 -r "$ZIP" "$(basename "$WORK")") >/dev/null
+wc -c "$ZIP"
+cpf "$ZIP"
+echo "$ZIP"
 ```
 
 ## `extract.sh`
@@ -150,11 +163,10 @@ for obj, text in payloads:
         break
 
 if selected_text is None:
-    print("ERROR: no matching payload found", file=sys.stderr)
-    sys.exit(1)
-
-(out_dir / "qdrant-run-output.selected.json").write_text(selected_text)
-print("Selected payload written")
+    print("BLOCKED: no matching payload found", file=sys.stderr)
+else:
+    (out_dir / "qdrant-run-output.selected.json").write_text(selected_text)
+    print("Selected payload written")
 PY
 ```
 
@@ -239,5 +251,5 @@ Saved comparisons from that run:
 
 ## Lessons learned
 
-1. **Workspace location**: Use `/tmp/m-esq-eval/...`, not repo-local `tmp/`. Repo-local `tmp/` appears as untracked and can confuse review/commit status.
+1. **Workspace location**: Use `$HOME/.beautyq-evidence-runs/...` for the persisted run workspace, not repo-local `tmp/`. Repo-local `tmp/` appears as untracked and can confuse review/commit status.
 2. **Multi-payload Qdrant extraction**: Raw Qdrant extraction may contain multiple adjacent JSON payloads. Split/select into a valid single JSON payload before feeding into `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`. Do not concatenate raw payloads.
