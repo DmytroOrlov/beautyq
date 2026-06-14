@@ -111,12 +111,26 @@ Documented as characterized, not as desired final contract:
 
 ### Current M-ESQ-EVAL status / remaining work
 
-* M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
-* ES artifact emission exists for the `QdrantEmbeddingBenchmarkQuerySubset.SemanticBroadSmoke` subset (query ids: `q_broad_001` through `q_broad_006`), gated by `ENGINE_EVAL_PRINT_ES_ARTIFACTS` (truthy: `1`, `true`, `yes`, case-insensitive).
-* When enabled, the ES integration spec prints `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON` markers with `BeautySearchEvalReport` JSON, and `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON` markers with expected roles JSON. The ES expected-role marker now emits the first-pass `SemanticBroadSmoke` role map: `q_broad_001` → `EsShouldHandle`, `q_broad_002` → `EsShouldHandle`, `q_broad_003` → `QdrantMayComplement`, `q_broad_004` → `HybridMayImprove`, `q_broad_005` → `EsShouldHandle`, `q_broad_006` → `QdrantMayComplement`. This is offline/eval-only evidence metadata, not production routing policy.
-* These ES markers pair with the Qdrant `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` markers for `EngineEvalSavedReportAssemblyManualSpec` real-artifact mode (env vars: `ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON`).
-* Operational/demo-facing evidence workflow is now documented in `docs/codebase-review/06-tests-and-contracts.md` (operational workflow section under manual saved-artifact eval specs), including marker payload extraction guidance for extracting `BEGIN_*` / `END_*` delimited JSON/text from saved test logs, saved artifact naming/manifest conventions for storing and reviewing manually extracted outputs, and an evidence artifact sanity checklist for verifying manually collected artifacts before use as evidence for Qdrant shadow/hybrid decisions.
-* Keep it offline/eval-only.
+**What exists now**
+
+* Pure/report/assembly layer: `EngineEvalEngine`, `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof.
+* ES artifact emission for `SemanticBroadSmoke` (query ids `q_broad_001`–`q_broad_006`), gated by `ENGINE_EVAL_PRINT_ES_ARTIFACTS`. Emits `BeautySearchEvalReport` JSON and expected roles JSON between `BEGIN_*` / `END_*` markers.
+* ES markers pair with Qdrant `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` markers for `EngineEvalSavedReportAssemblyManualSpec` real-artifact mode (4 env vars).
+
+**What operators can now collect**
+
+* Concrete ES eval reports + expected roles from the ES integration spec.
+* Qdrant benchmark run-output JSON via the benchmark executor.
+* EngineEval aggregate report via saved-report assembly spec.
+* Optional saved comparison between two aggregate reports.
+* Full operational workflow (marker extraction, artifact naming/manifest, sanity checklist) is in `docs/codebase-review/06-tests-and-contracts.md` under "Operational workflow (M-ESQ-EVAL evidence collection)". The six-query role map and extraction helpers are kept there to avoid handoff bloat.
+
+**What remains explicitly non-production / not implied**
+
+* This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
+* No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
+* Benchmark output is decision support, not production automation.
+* Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.
 
 ## 6.5. Product search north star
 
