@@ -477,7 +477,31 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        withPreparedIndex(portCfg) {
+      val semanticBroadSmokeRoles = Map(
+           "q_broad_001" -> EngineExpectedRole.EsShouldHandle,
+           "q_broad_002" -> EngineExpectedRole.EsShouldHandle,
+           "q_broad_003" -> EngineExpectedRole.QdrantMayComplement,
+           "q_broad_004" -> EngineExpectedRole.HybridMayImprove,
+           "q_broad_005" -> EngineExpectedRole.EsShouldHandle,
+           "q_broad_006" -> EngineExpectedRole.QdrantMayComplement,
+         )
+         val expectedQueryIds = List(
+           "q_broad_001",
+           "q_broad_002",
+           "q_broad_003",
+           "q_broad_004",
+           "q_broad_005",
+           "q_broad_006",
+         )
+         val expectedRoleSequence = List(
+           EngineExpectedRole.EsShouldHandle,
+           EngineExpectedRole.EsShouldHandle,
+           EngineExpectedRole.QdrantMayComplement,
+           EngineExpectedRole.HybridMayImprove,
+           EngineExpectedRole.EsShouldHandle,
+           EngineExpectedRole.QdrantMayComplement,
+         )
+         withPreparedIndex(portCfg) {
           (client, testSpec) =>
             for {
               _ <- loadAndIndexDocuments(testSpec, client, categories, services, serviceVariantSchemas, masters, masterLocations, masterServiceOffers, masterServiceOfferVariants, seedReady)
@@ -487,12 +511,30 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
                   evalSuite.queries,
                 )
               )
-              _ <- ZIO.succeed(assert(selectedQueries.nonEmpty))
+              _ <- assertCond(selectedQueries.nonEmpty, "Expected non-empty selected queries")
               esReports <- executeEvalReports(testSpec, client, selectedQueries)
               selectedQueryIds = selectedQueries.map(_.id)
-              _ <- ZIO.succeed(assert(esReports.map(_.queryId) == selectedQueryIds))
-              expectedRoles = selectedQueries.map(query => query.id -> EngineExpectedRole.QdrantMayComplement).toMap
-              _ <- ZIO.succeed(assert(expectedRoles.keySet == selectedQueryIds.toSet))
+              _ <- assertCond(esReports.map(_.queryId) == selectedQueryIds, "ES report query ids mismatch")
+              safeLookup = { (queryId: String) =>
+                semanticBroadSmokeRoles.get(queryId).toRight(QueryFailure.operation("assert", s"Missing expected role for query id: $queryId"))
+              }
+              expectedRolePairs <- ZIO.foreach(selectedQueries) { query =>
+                ZIO.fromEither(safeLookup(query.id)).map(role => query.id -> role)
+              }
+              expectedRoles = expectedRolePairs.toMap
+              expectedRolesList = expectedRolePairs.map(_._2)
+              _ <- assertCond(
+                selectedQueryIds == expectedQueryIds,
+                "Selected query ids do not match expected sequence",
+              )
+              _ <- assertCond(
+                expectedRolesList == expectedRoleSequence,
+                "Expected role sequence mismatch",
+              )
+              _ <- assertCond(
+                expectedRoles.keySet == selectedQueryIds.toSet,
+                "Expected roles key set mismatch",
+              )
               printArtifacts = sys.env.get("ENGINE_EVAL_PRINT_ES_ARTIFACTS").exists { value =>
                 val normalized = value.trim.toLowerCase
                 normalized == "1" || normalized == "true" || normalized == "yes"
@@ -611,5 +653,9 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     queries: List[leaderboard.search.eval.BeautySearchEvalQuery],
   ): IO[QueryFailure, List[leaderboard.search.eval.BeautySearchEvalReport]] =
     ZIO.foreach(queries)(query => executeEvalReport(spec, client, query))
+
+  private def assertCond(condition: Boolean, msg: => String): IO[QueryFailure, Unit] =
+    if (condition) ZIO.unit
+    else ZIO.fail(QueryFailure.operation("assert", msg))
 
 }
