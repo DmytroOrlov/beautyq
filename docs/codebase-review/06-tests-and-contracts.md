@@ -377,8 +377,18 @@ This checklist is for operator verification of locally collected artifacts. It d
 
 - Comparing two aggregate evidence snapshots from different runs or candidates.
 - Spotting query-level or aggregate movement between candidates/runs (deltas for `queryCount`, `esRecallCount`, `qdrantRecallCount`, `qdrantComplementCount`, `qdrantNoiseCount`, `overlapCount`, `simulatedHybridGainCount`).
+- Spotting role-level movement between candidates/runs when role deltas are non-zero (see roleDeltas below).
 - Supporting later Qdrant shadow/hybrid decisions with recorded evidence.
 - Recording evidence in `manifest.md` alongside the compared files and left/right labels.
+
+**Role-level deltas (roleDeltas):**
+
+- Role breakdowns are derived from query reports, not persisted in saved aggregate JSON.
+- Saved aggregate JSON schema remains unchanged.
+- Text aggregate reports may include `roleAggregates`.
+- Saved-report comparison output may include `roleDeltas` when role-level deltas are non-zero.
+- First replayed saved evidence confirmed: `benchmark-small` → `benchmark-large` includes `roleDeltas`; `benchmark-single` → `benchmark-small` omits `roleDeltas` because all role deltas are zero.
+- This remains offline/eval-only and does not imply production Qdrant/hybrid readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
 
 **What comparison output does NOT prove:**
 

@@ -116,6 +116,7 @@ Documented as characterized, not as desired final contract:
 * Pure/report/assembly layer: `EngineEvalEngine`, `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof.
 * ES artifact emission for `SemanticBroadSmoke` (query ids `q_broad_001`–`q_broad_006`), gated by `ENGINE_EVAL_PRINT_ES_ARTIFACTS`. Emits `BeautySearchEvalReport` JSON and expected roles JSON between `BEGIN_*` / `END_*` markers.
 * ES markers pair with Qdrant `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` markers for `EngineEvalSavedReportAssemblyManualSpec` real-artifact mode (4 env vars).
+* Role breakdowns are derived from query reports, not persisted in saved aggregate JSON. Saved aggregate JSON schema remains unchanged. Text aggregate reports may include `roleAggregates`. Saved-report comparison output may include `roleDeltas` when role-level deltas are non-zero. First replayed saved evidence confirmed: `benchmark-small` → `benchmark-large` includes `roleDeltas`; `benchmark-single` → `benchmark-small` omits `roleDeltas` because all role deltas are zero. This remains offline/eval-only and does not imply production Qdrant/hybrid readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
 
 **What operators can now collect**
 

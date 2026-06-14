@@ -175,6 +175,14 @@ else
 fi
 ```
 
+## 1.14 No `/tmp` for persisted evidence workspaces
+
+PRIORITY: `/tmp` may be used only for disposable bundles or short-lived scratch output.
+
+Multi-iteration evidence workspaces must not live in `/tmp`. Persisted evidence workspaces should use a stable user-owned path, e.g. `$HOME/.beautyq-evidence-runs/<run-id>/`, or another explicit project-external workspace chosen by the user.
+
+User-facing commands must print the final workspace path and zip path. User-facing artifact commands must use `cpf "$ZIP"` and then `echo "$ZIP"`.
+
 ---
 
 # 2. Model prompt deltas
