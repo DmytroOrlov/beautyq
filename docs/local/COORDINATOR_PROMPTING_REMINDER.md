@@ -58,9 +58,25 @@ Mandatory bundle cycle:
 * Non-accepted patches get only a correction prompt and correction review bundle. Strategic next tasks resume only after acceptance.
 * The next user action must be explicit: run the bundle script and upload the zip/report. Do not ask for a bare `1` or `2` if the bundle is missing.
 
+Accepted closeout must include a next-task prompt:
+
+* After an accepted review, the coordinator MUST provide:
+  * verdict;
+  * commit message when a patch was accepted;
+  * exactly two substantive next tasks;
+  * exactly one recommendation;
+  * an executable prompt/brief for the recommended next substantive task;
+  * a three-part bundle with exact sections `current result review`, `next option 1 source truth`, and `next option 2 source truth`.
+* The next-task prompt/brief must be concrete enough that the user can run the next cycle without replying only `1` or `2`.
+* For delegated edit work, the prompt/brief is the exact agent edit prompt.
+* For coordinator-owned read-only, audit, or source-truth work, the prompt/brief is the coordinator analysis contract: what will be checked after the fresh bundle is uploaded, required verdict names, and stop conditions.
+* A bundle script alone is not a next-task prompt.
+* A list of two next tasks alone is not a next-task prompt.
+* If the coordinator cannot provide the prompt/brief and the three-part bundle, it MUST output only `BLOCKED_NEED_CLOSEOUT_SCOPE` and a corrected closeout. No verdict. No commit message. No next-task pair.
+
 Accepted-review output:
 
-* If accepted: provide a verdict and commit message, then two substantive next tasks, then one recommendation, then a bundle script for the next result.
+* If accepted: provide a verdict, commit message when a patch was accepted, exactly two substantive next tasks, exactly one recommendation, an executable prompt/brief for the recommended next substantive task, and the three-part bundle.
 * If not accepted: provide only the correction prompt and the correction review bundle.
 
 Continuation rule:
