@@ -130,6 +130,29 @@ Boundary:
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
 
+### EngineEval query-class breakdown sidecar contract
+
+`EngineEvalQueryClassBreakdown.from` aggregates `EngineEvalQueryReport` metrics by `EngineEvalQueryClass` for offline/eval use only. It requires an explicit `queryId -> List[EngineEvalQueryClass]` sidecar map and does not read `queryTypes` or `queryClasses` from saved `EngineEvalQueryReport` data.
+
+Contract facts:
+
+* A query may contribute to multiple class buckets.
+* Repeated classes for a single query are deduplicated.
+* Empty class lists contribute no bucket.
+* Missing sidecar entries fail with `QueryFailure.operation` naming the missing `queryId`.
+* Output buckets follow `EngineEvalQueryClass.stableOrder`.
+* Saved aggregate JSON schema remains unchanged.
+* `EngineEvalAggregateReport` remains unchanged.
+* `EngineEvalReportJson` remains unchanged.
+* The helper does not wire class breakdowns into saved-report comparison yet.
+
+Boundary:
+
+* This is offline/eval-only helper behavior.
+* It is not production readiness.
+* It is not routing approval.
+* It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+
 ### Current M-ESQ-EVAL status / remaining work
 
 **What exists now**
