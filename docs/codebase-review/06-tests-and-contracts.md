@@ -319,7 +319,8 @@ Expected full-suite baseline when saved artifact JSON is not supplied: **963 suc
 
 Before running any resource-backed or env-gated M-ESQ-EVAL specs, complete this preflight checklist. This is preparation only; it does not claim artifacts have been collected.
 
-- [ ] **Run label and directory**: chosen a short run label (e.g. `sem-broad-001`) and local artifact directory under `tmp/m-esq-eval/<YYYYMMDD-HHMMSS>-<label>/`.
+- [ ] **Run label and directory**: chosen a short run label (e.g. `sem-broad-001`) and local artifact directory under `./.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<label>/`.
+- [ ] **Workspace hygiene**: confirmed `./.beautyq-evidence-runs/` is gitignored or added to `.git/info/exclude` before use; reserved `/tmp` for disposable review bundles or short-lived scratch output only; reserved `$HOME` or another external workspace only when explicitly requested.
 - [ ] **Log destination**: decided where saved test logs will be written (file path for each spec run).
 - [ ] **Marker pairs confirmed**: confirmed the exact `BEGIN_*` / `END_*` marker pairs needed:
   - ES eval reports JSON: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
@@ -386,10 +387,10 @@ This helper is read-only: it does not run `sbt`, Docker, or mutate any repo file
 Recommended directory shape for a single M-ESQ-EVAL run:
 
 ```
-tmp/m-esq-eval/<YYYYMMDD-HHMMSS>-<short-label>/
+./.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<short-label>/
 ```
 
-Example: `tmp/m-esq-eval/20260614-143000-sem-broad-001/`
+Example: `./.beautyq-evidence-runs/20260614-143000-sem-broad-001/`
 
 Recommended filenames for extracted artifacts:
 
@@ -420,7 +421,7 @@ Recommended filenames for extracted artifacts:
 | notes / non-goals | |
 ```
 
-This manifest is for local evidence bookkeeping only. It does not indicate production readiness, routing policy, or hybrid serving approval.
+This manifest is for local evidence bookkeeping only. It does not indicate production readiness, routing policy, or hybrid serving approval. The copyable operator commands and archive flow live in `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
 ### Evidence artifact sanity checklist
 
