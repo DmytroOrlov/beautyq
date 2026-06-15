@@ -2,6 +2,18 @@
 
 Stable repo-specific guardrails for BeautyQ work. Prompts should not repeat this file. Prompts should add only task-specific deltas: exact files, signatures, snippets, tests, and commands.
 
+## Scope
+
+This file defines repository and delegated-agent guardrails for BeautyQ work.
+It is source truth for bounded edits, focused checks, repo safety, and agent reports.
+
+It does not define coordinator closeout structure, next-task packaging, bundle
+requirements, or ChatGPT response format. Those coordinator rules live in
+`docs/local/COORDINATOR_PROMPTING_REMINDER.md`.
+
+Coordinator prompts may quote or summarize task-specific excerpts from this file,
+but must not paste the whole file or treat it as the coordinator closeout policy.
+
 ## Operating rules
 
 * One patch = one purpose. Do not mix unrelated risk layers.

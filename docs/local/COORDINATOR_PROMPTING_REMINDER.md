@@ -4,6 +4,16 @@ Purpose: Remind the coordinator how to write cheap, precise prompts. Use this fi
 
 ---
 
+AGENTS scope boundary:
+
+* `AGENTS.md` is repo/delegated-agent guardrails, not coordinator closeout policy.
+* Coordinator closeout structure is governed by this reminder.
+* The coordinator may use task-specific AGENTS excerpts as source truth when building delegated prompts or high-effort audit evidence packs.
+* Do not cite AGENTS as the reason for coordinator-only response structure.
+* Do not paste all of AGENTS into prompts; include only task-specific excerpts.
+* If AGENTS and this reminder appear to conflict on coordinator closeout format, this reminder controls the coordinator closeout format.
+* If AGENTS and this reminder appear to conflict on repository safety, tests, or bounded edit behavior, stop and ask for a docs clarification patch.
+
 # 1. Universal rules
 
 ## 1.1 Role split
