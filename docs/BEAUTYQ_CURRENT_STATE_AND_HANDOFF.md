@@ -83,7 +83,7 @@ Documented as characterized, not as desired final contract:
 
 * The production route does eager seed index preparation during route composition, but that is still not a production-grade ES lifecycle policy.
 * The next strategic gate is M4 ES lifecycle design.
-* M4 is design-only for now; M5 ES lifecycle implementation is not reached.
+* M4 design gate documented / active; M5 has started only as a first non-serving metadata/readiness seam, and production lifecycle remains incomplete.
 * Qdrant shadow stays a future M6 readiness/design step after ES lifecycle/baseline/observability/kill-switch, not the current implementation step. See [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md) for milestone detail.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
@@ -101,7 +101,6 @@ Documented as characterized, not as desired final contract:
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
-* M4/M5 ES production lifecycle, M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
 * Detailed contracts and evidence stay in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
 * Roadmap and milestone positioning stay in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 
@@ -109,7 +108,7 @@ Documented as characterized, not as desired final contract:
 
 * This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
 * The route already performs eager seed index preparation during route composition, but that is not a production-grade ES lifecycle policy.
-* The next strategic gate remains M4 ES lifecycle design; M5 implementation is not reached; Qdrant shadow remains a future M6 readiness/design step after ES lifecycle/baseline/observability/kill-switch.
+* The next strategic gate remains M4 ES lifecycle design; detailed M4/M5 milestone status stays in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md). Qdrant shadow remains a future M6 readiness/design step after ES lifecycle/baseline/observability/kill-switch.
 * No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.

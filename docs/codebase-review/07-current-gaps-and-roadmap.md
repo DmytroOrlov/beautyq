@@ -158,7 +158,7 @@ Status:
 * Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle design and any future Qdrant shadow design.
 * Still offline/eval only. Production route wiring remains ES-backed seed route.
 * The next strategic gate is ES lifecycle design before any Qdrant shadow implementation. Qdrant shadow is a future M6 readiness/design step, not the current implementation step, because shadowing should follow a stable serving baseline, explicit observability, and an operational kill-switch. The current B-lite / M-ESQ-EVAL lane already covers offline ES vs Qdrant vs simulated hybrid comparison; without a production-grade ES lifecycle baseline, shadow metrics would only compare against a seed-backed, lifecycle-incomplete route.
-* M4/M5 ES production lifecycle, M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
+* M4/M5 lifecycle work is active but still below production lifecycle readiness. M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
 
 Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
 
@@ -235,8 +235,8 @@ Qdrant remains eval-only until evidence and safety gates.
 | M1 | ES seed route demo-stable | Reached |
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
-| M4 | ES production lifecycle designed | Future |
-| M5 | ES production lifecycle implemented | Future |
+| M4 | ES production lifecycle designed | Design gate documented / active |
+| M5 | ES production lifecycle implemented | Started: non-serving lifecycle metadata seam; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
