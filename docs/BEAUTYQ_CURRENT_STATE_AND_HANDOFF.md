@@ -151,6 +151,7 @@ Compact status:
 * `compareReportJsonStrings(leftJson, rightJson)` remains backward compatible and produces no class comparisons.
 * Manual env sidecars are `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` and `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON`; they are optional and paired.
 * Existing aggregate deltas plus `roleDeltas:` and `queryDeltas:` behavior are preserved.
+* Validated offline replay evidence exists for `benchmark-small -> benchmark-large` using saved aggregate JSON artifacts plus generated query-class sidecars in `.beautyq-evidence-runs/20260615T120500-saved-report-replay-sidecars/`; the replay confirmed `classDeltas:`, `roleDeltas:`, and `queryDeltas:` and kept saved aggregate JSON schema unchanged.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.

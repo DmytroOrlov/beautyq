@@ -220,6 +220,19 @@ Compact navigation for the sections below:
 
 All sections are offline/eval-only and operator-controlled.
 
+Validated replay note:
+
+- A real offline class-sidecar saved-comparison replay was validated for `benchmark-small -> benchmark-large` using existing saved aggregate JSON artifacts copied into `.beautyq-evidence-runs/20260615T120500-saved-report-replay-sidecars/`.
+- The replay generated `query-classes.benchmark-small.json` and `query-classes.benchmark-large.json` sidecars from current `beautyq_search_eval_queries_v1.json` plus current `EngineEvalQueryClass.fromQueryTypes`.
+- `q_broad_005` classified to `PriceDuration` and `BroadIntent`.
+- Every aggregate `queryReports` id was present in current `beautyq_search_eval_queries_v1.json`.
+- `sbt "bifunctor-tagless / Test / testOnly leaderboard.search.EngineEvalSavedReportComparisonManualSpec"` passed.
+- Replay output confirmed `classDeltas:`, `roleDeltas:`, and `queryDeltas:` appeared.
+- The copied small/large aggregate JSON files were byte-identical to the source artifacts by `shasum`.
+- Saved aggregate JSON schema remains unchanged.
+- `EngineEvalAggregateReport` remains unchanged.
+- `EngineEvalReportJson` remains unchanged.
+
 ### EngineEval query-class classification contract
 
 `EngineEvalQueryClass.fromQueryTypes` maps BeautySearch eval `queryTypes` strings to `EngineEvalQueryClass` values for offline/eval metadata only. This contract is locked by `EngineEvalQueryClassSpec`.
