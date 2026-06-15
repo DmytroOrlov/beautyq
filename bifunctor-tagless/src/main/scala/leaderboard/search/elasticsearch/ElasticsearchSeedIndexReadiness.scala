@@ -9,7 +9,36 @@ final case class ElasticsearchSeedIndexReadiness(
   indexName: String,
   source: String,
   documentCount: Int,
+) {
+  def lifecycleMetadata: ElasticsearchSeedLifecycleMetadata =
+    ElasticsearchSeedLifecycleMetadata(
+      indexName = indexName,
+      source = source,
+      documentCount = documentCount,
+      preparationMode = ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation,
+      lifecycleStatus = ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle,
+    )
+}
+
+final case class ElasticsearchSeedLifecycleMetadata(
+  indexName: String,
+  source: String,
+  documentCount: Int,
+  preparationMode: ElasticsearchSeedPreparationMode,
+  lifecycleStatus: ElasticsearchSeedLifecycleStatus,
 )
+
+sealed trait ElasticsearchSeedPreparationMode
+
+object ElasticsearchSeedPreparationMode {
+  case object EagerSeedIndexPreparation extends ElasticsearchSeedPreparationMode
+}
+
+sealed trait ElasticsearchSeedLifecycleStatus
+
+object ElasticsearchSeedLifecycleStatus {
+  case object SeedOnlyNotProductionLifecycle extends ElasticsearchSeedLifecycleStatus
+}
 
 final class ElasticsearchSeedIndexInitializer(
   spec: BeautySearchSpec,

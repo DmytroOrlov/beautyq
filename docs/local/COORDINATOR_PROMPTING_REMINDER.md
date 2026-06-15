@@ -60,7 +60,7 @@ Mandatory bundle cycle:
 Prompted closeout cycle:
 
 * Any coordinator response that contains an executable prompt/brief MUST also include exactly two substantive downstream tasks, exactly one recommendation, and a three-part bundle.
-* This applies to edit prompts, correction prompts, read-only briefs, audit briefs, and source-truth briefs.
+* This applies only to delegated edit prompts and correction prompts that are meant to be executed by an agent.
 * The prompted task is the work to run now. It must not be repeated as option `1` or option `2`.
 * Option `1` and option `2` must be downstream follow-up work after the prompted task completes.
 * Mandatory review is not a next-task option.
@@ -74,6 +74,21 @@ Prompted closeout cycle:
 * A bundle script alone is not a next-task prompt.
 * A list of two next tasks alone is not a next-task prompt.
 * If the coordinator cannot provide a prompt/brief, two downstream tasks, one recommendation, and all three bundle sections, it MUST output only `BLOCKED_NEED_CLOSEOUT_SCOPE` and a corrected closeout.
+
+Coordinator-owned read-only work is not an agent task:
+
+* Read-only, audit, and source-truth work is coordinator-owned.
+* Do not format coordinator-owned work as `Task: ... Do not edit files`.
+* Do not present coordinator-owned work as a delegated agent prompt.
+* Use the heading `Coordinator analysis contract:` for coordinator-owned read-only, audit, or source-truth work.
+* A coordinator analysis contract must say:
+  * use the fresh uploaded bundle only;
+  * do not use memory, prior summaries, or stale bundles;
+  * verdict names;
+  * exact questions to answer;
+  * stop conditions.
+* Model recommendation for coordinator-owned read-only work is forbidden. Model recommendations are only for delegated edit prompts.
+* Delegated prompts are only for edit work.
 
 Continuation rule:
 
@@ -347,7 +362,7 @@ echo "$ZIP"
 
 # 4. Model recommendation block
 
-For non-trivial delegated prompts, provide a separate coordinator note before the prompt:
+For non-trivial delegated edit prompts, provide a separate coordinator note before the prompt:
 
 ```text
 Task classification:
@@ -365,7 +380,7 @@ Run recommendation:
 - If source truth is missing:
 ```
 
-This note is not part of the delegated prompt unless the user asks. Keep delegated prompts model-agnostic: no `Model: ...`, no `thinking-budget=...`, no `Use AGENTS.md` boilerplate.
+This note is not part of the delegated prompt unless the user asks. Do not use it for coordinator-owned read-only, audit, or source-truth work. Keep delegated prompts model-agnostic: no `Model: ...`, no `thinking-budget=...`, no `Use AGENTS.md` boilerplate.
 
 Use exact model/tier names: `MiMo-V2.5`, `MiMo-V2.5-Pro`, `MiniMax-M3`, `GPT-5.5-medium`, `GPT-5.5-high`. Do not write vague `Qwen`, `MiMo`, or `GPT`.
 
@@ -374,7 +389,7 @@ If source truth is missing, recommend requesting a focused bundle first; do not 
 Model-sizing reminder:
 
 * The model recommendation block must name the minimal sufficient model, not a comfortable/heavier default.
-* Docs-only or narrow review-fix tasks should prefer cheaper/local models unless the policy/doc ownership complexity justifies a stronger model.
+* Docs-only or narrow review-fix delegated edit tasks should prefer cheaper/local models unless the policy/doc ownership complexity justifies a stronger model.
 
 ---
 
@@ -401,7 +416,8 @@ The source-truth gate is safety-critical and must not be deduplicated away; keep
 □ Did I tell it not to run full sbt test?
 □ Did I keep report short?
 □ Did I avoid model/thinking boilerplate?
-□ Did I provide a model recommendation block for non-trivial prompts?
+□ Did I provide a model recommendation block only for non-trivial delegated edit prompts?
+□ Did I avoid model recommendations for coordinator-owned read-only work?
 □ If I need a bundle, did I give an executable shell script?
 ```
 

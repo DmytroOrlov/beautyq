@@ -4,7 +4,15 @@ import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.BeautySearchSpecV1
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchJsonClient, ElasticsearchMappingInterpreter, ElasticsearchSeedIndexInitializer}
+import leaderboard.search.elasticsearch.{
+  ElasticsearchIngestionInterpreter,
+  ElasticsearchJsonClient,
+  ElasticsearchMappingInterpreter,
+  ElasticsearchSeedIndexInitializer,
+  ElasticsearchSeedIndexReadiness,
+  ElasticsearchSeedLifecycleStatus,
+  ElasticsearchSeedPreparationMode,
+}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
@@ -25,6 +33,35 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
   private val expectedMapping: Json = ElasticsearchMappingInterpreter.mapping(spec)
   private val expectedBulkPayload: String = ElasticsearchIngestionInterpreter.bulkPayload(spec, ready.documents)
   private val expectedIndexName: String = spec.variantDocument.indexName
+
+  "ElasticsearchSeedIndexReadiness" should {
+    "derive lifecycle metadata from the simple readiness value" in {
+      val readiness = ElasticsearchSeedIndexReadiness(
+        indexName = "beauty_variant_v1",
+        source = "seed-resource-loader",
+        documentCount = 2,
+      )
+      val metadata = readiness.lifecycleMetadata
+
+      assert(metadata.indexName == readiness.indexName)
+      assert(metadata.source == readiness.source)
+      assert(metadata.documentCount == readiness.documentCount)
+      assert(metadata.preparationMode == ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation)
+      assert(metadata.lifecycleStatus == ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle)
+    }
+
+    "keep existing construction simple and pure" in {
+      val readiness = ElasticsearchSeedIndexReadiness(
+        indexName = "beauty_variant_v1",
+        source = "seed-resource-loader",
+        documentCount = 2,
+      )
+
+      assert(readiness.indexName == "beauty_variant_v1")
+      assert(readiness.source == "seed-resource-loader")
+      assert(readiness.documentCount == 2)
+    }
+  }
 
   private def run[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe { implicit unsafe =>
