@@ -182,6 +182,7 @@ PRIORITY: `/tmp` may be used only for disposable bundles or short-lived scratch 
 Multi-iteration evidence workspaces must not live in `/tmp`. Persisted evidence workspaces should default to project-local `./.beautyq-evidence-runs/<run-id>/`, and that path must be gitignored or added to `.git/info/exclude` before use. `$HOME` or another external path may be used only when the user explicitly asks for an external workspace.
 
 User-facing commands must print the final workspace path and zip path. User-facing artifact commands must use `cpf "$ZIP"` and then `echo "$ZIP"`.
+That final archive handoff remains the user-terminal flow even if an agent shell does not have `cpf` installed. In agent/non-interactive shells, `cpf "$ZIP"` may fail with `command not found`; the correct response is to still create the zip, print `echo "$ZIP"`, and report the deviation honestly. Do not replace `cpf "$ZIP"` with `pbcopy`, and do not remove it from user-facing terminal snippets because an agent shell lacks it.
 
 ---
 

@@ -62,6 +62,8 @@ cpf "$ZIP"
 echo "$ZIP"
 ```
 
+Note: `cpf "$ZIP"` is the intended user-terminal handoff step. It can be absent in agent/non-interactive shells; if that happens during an artifact run, still create the zip, print `echo "$ZIP"`, and report the `command not found` deviation without replacing `cpf "$ZIP"` with `pbcopy`.
+
 ## `extract.sh`
 
 Single-quoted heredoc (`<<'EOF'`) prevents shell expansion inside the awk script. This avoids nested markdown-fence hazards. POSIX sh, no `set` flags.
