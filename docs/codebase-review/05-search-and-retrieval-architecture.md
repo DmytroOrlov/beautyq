@@ -150,7 +150,9 @@ Production-wired/current:
 Architecture note:
 
 - The current route performs eager seed index preparation during route composition. That is an implementation fact of the current ES-backed seed route, not an approved production lifecycle policy.
-- The current ready-document path (`BeautyQSeedLoader` / `BeautySearchReadyCatalogDocuments`), ES readiness/init path (`ElasticsearchSeedIndexInitializer`), ES client operations, and route composition boundary are all design surfaces for future lifecycle policy, but the policy itself is not decided yet.
+- Lifecycle design surfaces currently visible in the architecture are: seed loader / ready-document path, `BeautySearchReadyCatalogDocuments`, `ElasticsearchSeedIndexReadiness`, `ElasticsearchSeedSearchComposition`, `ElasticsearchHttpJsonClient`, and the route composition boundary that currently wires eager seed preparation into the exposed route.
+- Those surfaces define where future production lifecycle decisions may land: catalog source of truth, lifecycle manager boundaries, alias/replacement policy, rollback, freshness/staleness metadata, runtime replacement triggers, and observability.
+- The current ready-document path and ES readiness/init path are useful boundaries, but they do not by themselves define a production policy for refresh, replacement, stale-catalog handling, or route enable-disable behavior.
 - Future lifecycle design may introduce explicit boundaries for lifecycle management, alias/replacement, rollback, and freshness/observability, but this document does not prescribe code changes yet.
 
 Classification:

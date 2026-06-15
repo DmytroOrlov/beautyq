@@ -245,24 +245,38 @@ Qdrant remains eval-only until evidence and safety gates.
 
 M4 is a design gate, not an implementation patch. It exists to prevent production lifecycle work from being implied by the current eager seed index preparation path.
 
+Roadmap position:
+
+* Expanded M3 / B-lite / M-ESQ-EVAL evidence remains the current in-progress checkpoint.
+* M4 is the next strategic gate after that evidence checkpoint is expanded enough to support lifecycle decisions.
+* M5 implementation must not start until M4 decisions are explicit.
+* Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
+
 Decisions to make at M4:
 
-* source of truth for production read models: keep seed resource, move to repository snapshot, or plan for future repository-backed production indexing;
+* production catalog source of truth for read models: keep seed resource, move to repository snapshot, or define the path to future repository-backed production indexing;
 * index naming/versioning policy;
-* alias / blue-green or replacement strategy;
-* startup behavior and readiness expectations;
-* runtime refresh/replacement trigger;
-* rollback behavior;
-* freshness/staleness metadata;
-* observability events/metrics;
+* alias / blue-green, direct replacement, or another explicit replacement strategy;
+* startup behavior and readiness expectations for the currently exposed route;
+* runtime refresh/replacement trigger and operator surface;
+* rollback behavior and rollback trigger semantics;
+* freshness/staleness metadata and the meaning of stale catalog state;
+* observability events/metrics for readiness, replacement, freshness, and stale-catalog detection;
 * production kill-switch or route enable-disable behavior.
 
 Validation taxonomy for later M5 implementation:
 
-* pure document-builder tests;
-* module/DI wiring tests;
-* ES integration/manual smoke only when source-confirmed;
+* pure document-builder tests for catalog snapshot to search-document construction;
+* pure lifecycle policy/model tests if explicit lifecycle policy types are introduced;
+* module/DI wiring tests for lifecycle boundaries and route composition;
+* focused ES integration/manual smoke only when source-confirmed;
 * no plain `sbt test` by agents.
+
+Strategic gate intent:
+
+* M4 should close design ambiguity first, not blur into partial implementation.
+* M5 should only implement an approved lifecycle shape, not discover it while coding.
+* Qdrant shadow should remain after M4/M5 because shadow metrics are only operationally meaningful once the ES baseline has explicit lifecycle, observability, and kill-switch behavior.
 
 Risks if M4 is skipped:
 
