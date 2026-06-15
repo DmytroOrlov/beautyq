@@ -45,6 +45,13 @@ Recommended workspace shape:
 └── extract.sh
 ```
 
+Suggested local artifact filenames for saved-report comparisons:
+
+* `left-query-classes.json`
+* `right-query-classes.json`
+* candidate-specific variants such as `query-classes.benchmark-small.json`
+* candidate-specific variants such as `query-classes.benchmark-large.json`
+
 Bundle the workspace only after a run is complete:
 
 ```bash
@@ -208,6 +215,61 @@ sbt "bifunctor-tagless / Test / testOnly leaderboard.search.EngineEvalSavedRepor
   > "$WORK/logs/comparison-log.txt" 2>&1
 ```
 
+Optional paired query-class sidecars are also supported for manual saved-report comparison:
+
+* Required saved-comparison env vars remain:
+  * `ENGINE_EVAL_COMPARE_SAVED_REPORTS`
+  * `ENGINE_EVAL_LEFT_JSON`
+  * `ENGINE_EVAL_RIGHT_JSON`
+* Optional paired class sidecar env vars:
+  * `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON`
+  * `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON`
+* If neither class sidecar env var is present, saved comparison keeps the previous aggregate/role/query behavior and emits no `classDeltas:`.
+* If both class sidecar env vars are present, comparison may emit `classDeltas:`.
+* If exactly one class sidecar env var is present, comparison fails clearly and names the missing counterpart.
+
+Example with class sidecars:
+
+```bash
+LEFT_CLASSES="$WORK/artifacts/query-classes.benchmark-small.json"
+RIGHT_CLASSES="$WORK/artifacts/query-classes.benchmark-large.json"
+
+export ENGINE_EVAL_COMPARE_SAVED_REPORTS=1
+export ENGINE_EVAL_LEFT_JSON="$(cat "$WORK/artifacts/engine-eval-aggregate.benchmark-small.json")"
+export ENGINE_EVAL_RIGHT_JSON="$(cat "$WORK/artifacts/engine-eval-aggregate.benchmark-large.json")"
+export ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON="$(cat "$LEFT_CLASSES")"
+export ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON="$(cat "$RIGHT_CLASSES")"
+
+sbt "bifunctor-tagless / Test / testOnly leaderboard.search.EngineEvalSavedReportComparisonManualSpec" \
+  > "$WORK/logs/comparison-log.with-classes.txt" 2>&1
+```
+
+Query-class sidecar JSON shape:
+
+```json
+{ "q_broad_005": ["PriceDuration", "BroadIntent"] }
+```
+
+Class names must be exact `EngineEvalQueryClass` names:
+
+* `ExactService`
+* `Category`
+* `StructuredFilter`
+* `PriceDuration`
+* `GeoLocal`
+* `SemanticVague`
+* `BroadIntent`
+* `HardNegative`
+* `Mixed`
+
+Failure behavior:
+
+* Invalid class names fail with `QueryFailure.operation` and name the invalid value.
+* Missing sidecar query ids fail through `EngineEvalQueryClassBreakdown` and name the missing query id.
+* Saved aggregate JSON schema remains unchanged.
+* `EngineEvalAggregateReport` remains unchanged.
+* `EngineEvalReportJson` remains unchanged.
+
 Extract comparison:
 
 ```bash
@@ -246,7 +308,11 @@ Saved comparisons from that run:
 | Qdrant run-output source (marker / log file) | |
 | expected roles file | |
 | aggregate report file | |
+| left class sidecar path | |
+| right class sidecar path | |
+| sidecar source / derivation note | |
 | optional comparison inputs / output | |
+| class-delta comparison output path | |
 | validation actually run | |
 | notes / non-goals | |
 ```
