@@ -4,6 +4,7 @@ import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.eval.{
   EngineEvalAggregateReport,
   EngineEvalEngine,
+  EngineEvalQueryClass,
   EngineEvalQueryReport,
   EngineEvalReportJson,
   EngineEvalSavedReportComparison,
@@ -328,6 +329,147 @@ final class EngineEvalSavedReportComparisonSpec extends AnyWordSpec {
       val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
 
       assert(!formatted.contains("roleDeltas:"))
+    }
+
+    "compareReports without sidecars keeps class comparisons empty and omits classDeltas" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_same", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_same", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val comparison = EngineEvalSavedReportComparison.compareReports(left, right)
+      val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+      assert(comparison.classComparisons == Nil)
+      assert(!formatted.contains("classDeltas:"))
+    }
+
+    "compareReportsWithQueryClasses formats classDeltas for non-zero class movement" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_class_move", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_class_move", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val result = EngineEvalSavedReportComparison.compareReportsWithQueryClasses(
+        left = left,
+        right = right,
+        leftClassesByQueryId = Map("q_class_move" -> List(EngineEvalQueryClass.ExactService)),
+        rightClassesByQueryId = Map("q_class_move" -> List(EngineEvalQueryClass.BroadIntent)),
+      )
+
+      result match {
+        case Right(comparison) =>
+          val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+          assert(formatted.contains("classDeltas:"))
+          assert(formatted.contains(
+            "  ExactService | queryCountDelta=-1 | expectedVariantCountDelta=-1 | esRecallDelta=-1 | qdrantRecallDelta=+0 | qdrantComplementDelta=+0 | qdrantNoiseDelta=+0 | overlapDelta=+0 | simulatedHybridGainDelta=+0"
+          ))
+          assert(formatted.contains(
+            "  BroadIntent | queryCountDelta=+1 | expectedVariantCountDelta=+1 | esRecallDelta=+1 | qdrantRecallDelta=+0 | qdrantComplementDelta=+0 | qdrantNoiseDelta=+0 | overlapDelta=+0 | simulatedHybridGainDelta=+0"
+          ))
+        case Left(failure) =>
+          fail(s"unexpected failure: $failure")
+      }
+    }
+
+    "compareReportsWithQueryClasses returns Left when a sidecar query id is missing and names the id" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_missing_class_sidecar", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_missing_class_sidecar", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val result = EngineEvalSavedReportComparison.compareReportsWithQueryClasses(
+        left = left,
+        right = right,
+        leftClassesByQueryId = Map.empty,
+        rightClassesByQueryId = Map("q_missing_class_sidecar" -> List(EngineEvalQueryClass.ExactService)),
+      )
+
+      result match {
+        case Left(QueryFailure.OperationFailure(operationName, message)) =>
+          assert(operationName == "engine-eval-query-class-breakdown")
+          assert(message.contains("q_missing_class_sidecar"))
+        case other =>
+          fail(s"expected missing sidecar failure naming q_missing_class_sidecar, got $other")
+      }
+    }
+
+    "compareReportsWithQueryClasses treats missing class bucket on one side as zero" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_category_left", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_category_left", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val result = EngineEvalSavedReportComparison.compareReportsWithQueryClasses(
+        left = left,
+        right = right,
+        leftClassesByQueryId = Map("q_category_left" -> List(EngineEvalQueryClass.Category)),
+        rightClassesByQueryId = Map("q_category_left" -> Nil),
+      )
+
+      result match {
+        case Right(comparison) =>
+          comparison.classComparisons.find(_.queryClass == EngineEvalQueryClass.Category) match {
+            case Some(categoryComparison) =>
+              assert(categoryComparison.left.queryCount == 1)
+              assert(categoryComparison.right.queryCount == 0)
+              assert(categoryComparison.queryCountDelta == -1)
+            case None =>
+              fail(s"expected Category class comparison, got ${comparison.classComparisons}")
+          }
+        case Left(failure) =>
+          fail(s"unexpected failure: $failure")
+      }
+    }
+
+    "omit classDeltas section when class-level deltas are zero" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_class_same", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_class_same", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val result = EngineEvalSavedReportComparison.compareReportsWithQueryClasses(
+        left = left,
+        right = right,
+        leftClassesByQueryId = Map("q_class_same" -> List(EngineEvalQueryClass.StructuredFilter)),
+        rightClassesByQueryId = Map("q_class_same" -> List(EngineEvalQueryClass.StructuredFilter)),
+      )
+
+      result match {
+        case Right(comparison) =>
+          val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+          assert(comparison.classComparisons.nonEmpty)
+          assert(!formatted.contains("classDeltas:"))
+        case Left(failure) =>
+          fail(s"unexpected failure: $failure")
+      }
     }
   }
 }
