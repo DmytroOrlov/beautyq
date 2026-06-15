@@ -5,7 +5,12 @@ import izumi.functional.bio.Error2
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
-import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedIndexReadiness, ElasticsearchSeedSearchComposition}
+import leaderboard.search.elasticsearch.{
+  ElasticsearchJsonClient,
+  ElasticsearchSeedIndexReadiness,
+  ElasticsearchSeedLifecycleMetadata,
+  ElasticsearchSeedSearchComposition,
+}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.{BeautySearchBackend, BeautySearchService}
@@ -57,6 +62,10 @@ object BeautySearchCatalogBackendModules {
 
     make[ElasticsearchSeedIndexReadiness].from {
       (composition: ElasticsearchSeedSearchComposition) => composition.readiness
+    }
+
+    make[ElasticsearchSeedLifecycleMetadata].from {
+      (composition: ElasticsearchSeedSearchComposition) => composition.lifecycleMetadata
     }
 
     make[BeautySearchBackend[IO]].from {

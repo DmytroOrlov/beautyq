@@ -7,7 +7,14 @@ import izumi.distage.model.plan.Roots
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchCatalogBackendModules
 import leaderboard.search.document.BeautySearchReadyCatalogDocuments
-import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSearchBackend, ElasticsearchSeedIndexReadiness}
+import leaderboard.search.elasticsearch.{
+  ElasticsearchJsonClient,
+  ElasticsearchSearchBackend,
+  ElasticsearchSeedIndexReadiness,
+  ElasticsearchSeedLifecycleMetadata,
+  ElasticsearchSeedLifecycleStatus,
+  ElasticsearchSeedPreparationMode,
+}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
@@ -47,6 +54,11 @@ final class BeautySearchCatalogBackendModuleSpec extends AnyWordSpec {
       assert(probe.ready.documents.nonEmpty)
       assert(probe.readiness.indexName.nonEmpty)
       assert(probe.readiness.documentCount == probe.ready.documents.size)
+      assert(probe.metadata.indexName == probe.readiness.indexName)
+      assert(probe.metadata.source == probe.readiness.source)
+      assert(probe.metadata.documentCount == probe.readiness.documentCount)
+      assert(probe.metadata.preparationMode == ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation)
+      assert(probe.metadata.lifecycleStatus == ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle)
       assert(probe.backend.isInstanceOf[ElasticsearchSearchBackend])
       assert(probe.service.isInstanceOf[BeautySearchService.Impl[IO]])
 
@@ -111,10 +123,11 @@ final class BeautySearchCatalogBackendModuleSpec extends AnyWordSpec {
         (
           ready: BeautySearchReadyCatalogDocuments,
           readiness: ElasticsearchSeedIndexReadiness,
+          metadata: ElasticsearchSeedLifecycleMetadata,
           backend: BeautySearchBackend[IO],
           service: BeautySearchService[IO],
         ) =>
-          EsProbe(ready, readiness, backend, service)
+          EsProbe(ready, readiness, metadata, backend, service)
       }
     }
 
@@ -137,6 +150,7 @@ final class BeautySearchCatalogBackendModuleSpec extends AnyWordSpec {
   private final case class EsProbe(
     ready: BeautySearchReadyCatalogDocuments,
     readiness: ElasticsearchSeedIndexReadiness,
+    metadata: ElasticsearchSeedLifecycleMetadata,
     backend: BeautySearchBackend[IO],
     service: BeautySearchService[IO],
   )
