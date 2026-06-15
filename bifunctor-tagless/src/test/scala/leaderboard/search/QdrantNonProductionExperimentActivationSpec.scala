@@ -75,12 +75,14 @@ final class QdrantNonProductionExperimentActivationSpec extends AnyWordSpec {
       assert(createConfig("explicit-metadata").metadataSource == QdrantNonProductionExperimentMetadataSource.ExplicitMetadataOnly)
     }
 
-    "not model startup indexing trigger" in {
+    "not model startup, production, or automatic indexing triggers" in {
+      val triggerNames = QdrantNonProductionExperimentIndexingTrigger.all.map(_.productPrefix)
+
       assert(QdrantNonProductionExperimentIndexingTrigger.all == List(
         QdrantNonProductionExperimentIndexingTrigger.ManualTask,
         QdrantNonProductionExperimentIndexingTrigger.TestSetup,
       ))
-      assert(!QdrantNonProductionExperimentIndexingTrigger.all.exists(_.productPrefix == "Startup"))
+      assert(!triggerNames.exists(name => name.contains("Startup") || name.contains("Production") || name.contains("Auto")))
     }
 
     "not provide production or default enabled activation" in {
@@ -101,13 +103,6 @@ final class QdrantNonProductionExperimentActivationSpec extends AnyWordSpec {
     "Disabled is the only default activation value" in {
       assert(QdrantNonProductionExperimentActivation.default == QdrantNonProductionExperimentActivation.Disabled)
       assert(QdrantNonProductionExperimentActivation.default.productPrefix == "Disabled")
-      assert(QdrantNonProductionExperimentActivation.default.isInstanceOf[QdrantNonProductionExperimentActivation.Disabled.type])
-    }
-
-    "Disabled activation is a case object, not a case class" in {
-      val disabled: QdrantNonProductionExperimentActivation = QdrantNonProductionExperimentActivation.Disabled
-      assert(disabled.isInstanceOf[QdrantNonProductionExperimentActivation])
-      assert(!disabled.isInstanceOf[QdrantNonProductionExperimentActivation.Enabled])
     }
 
     "Enabled activation wraps a config but does not build Qdrant dependencies" in {
@@ -120,24 +115,8 @@ final class QdrantNonProductionExperimentActivationSpec extends AnyWordSpec {
 
       val activation = QdrantNonProductionExperimentActivation.Enabled(config)
 
-      assert(activation.isInstanceOf[QdrantNonProductionExperimentActivation.Enabled])
-      assert(!activation.isInstanceOf[QdrantNonProductionExperimentActivation.Disabled.type])
+      assert(activation.config == config)
       assert(activation.config.experimentId == "no-dep-build")
-    }
-
-    "Disabled activation does not wrap any config" in {
-      val disabled = QdrantNonProductionExperimentActivation.Disabled
-      assert(disabled.isInstanceOf[QdrantNonProductionExperimentActivation.Disabled.type])
-      assert(!disabled.isInstanceOf[QdrantNonProductionExperimentActivation.Enabled])
-    }
-
-    "Activation sealed trait has exactly two subtypes" in {
-      val disabledIsCaseObject = QdrantNonProductionExperimentActivation.Disabled.isInstanceOf[QdrantNonProductionExperimentActivation.Disabled.type]
-      val enabledConfig = createConfig("subtype-count")
-      val enabledIsCaseClass = QdrantNonProductionExperimentActivation.Enabled(enabledConfig).isInstanceOf[QdrantNonProductionExperimentActivation.Enabled]
-
-      assert(disabledIsCaseObject)
-      assert(enabledIsCaseClass)
     }
 
     "Enabled activation preserves all config fields" in {
@@ -148,10 +127,6 @@ final class QdrantNonProductionExperimentActivationSpec extends AnyWordSpec {
       assert(activation.config.indexingTrigger == QdrantNonProductionExperimentIndexingTrigger.TestSetup)
       assert(activation.config.metadataSource == QdrantNonProductionExperimentMetadataSource.ExplicitMetadataOnly)
       assert(activation.config.readinessConfig == readinessConfig)
-    }
-
-    "activation has no production route dependency" in {
-      assert(true)
     }
   }
 

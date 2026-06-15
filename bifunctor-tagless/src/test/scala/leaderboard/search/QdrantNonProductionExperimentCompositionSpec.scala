@@ -134,13 +134,6 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
       assert(result.head.score == 0.87)
     }
 
-    // Production route dependency check: this spec must not import
-    // LeaderboardPlugin, BeautySearchApi, HttpApi, or HttpServer.
-    // No imports of those types exist in this file.
-    "composition has no production route dependency" in {
-      assert(true)
-    }
-
     "build and fake paths do not require real Qdrant or llama calls" in {
       val document = variantDocument(1)
       val expectedHitId = UUID.fromString("00000000-0000-0000-0000-000000000303")
