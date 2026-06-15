@@ -226,6 +226,14 @@ Optional paired query-class sidecars are also supported for manual saved-report 
 * Optional paired class sidecar env vars:
   * `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON`
   * `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON`
+* Class-sidecar replay for `benchmark-small -> benchmark-large` requires existing saved aggregate JSON artifacts for both sides before comparison can run:
+  * `engine-eval-aggregate.benchmark-small.json`
+  * `engine-eval-aggregate.benchmark-large.json`
+* Restore/import those aggregate artifacts from a prior evidence archive or prior project-local evidence workspace into the current workspace, for example:
+  * `./.beautyq-evidence-runs/<run-id>/artifacts/engine-eval-aggregate.benchmark-small.json`
+  * `./.beautyq-evidence-runs/<run-id>/artifacts/engine-eval-aggregate.benchmark-large.json`
+* If the saved aggregate JSON artifacts are missing, replay is blocked. Do not rerun the full evidence collection pipeline unless explicitly requested.
+* Once the aggregate JSON artifacts are present, the sidecar files can be derived and manual saved comparison can run with the class-sidecar env vars above.
 * If neither class sidecar env var is present, saved comparison keeps the previous aggregate/role/query behavior and emits no `classDeltas:`.
 * If both class sidecar env vars are present, comparison may emit `classDeltas:`.
 * If exactly one class sidecar env var is present, comparison fails clearly and names the missing counterpart.
@@ -310,6 +318,8 @@ Saved comparisons from that run:
 | Qdrant run-output source (marker / log file) | |
 | expected roles file | |
 | aggregate report file | |
+| restored benchmark-small aggregate source / import path | |
+| restored benchmark-large aggregate source / import path | |
 | left class sidecar path | |
 | right class sidecar path | |
 | sidecar source / derivation note | |
