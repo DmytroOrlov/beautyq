@@ -205,6 +205,8 @@ When real-artifacts mode is enabled but required env vars are missing, the dual-
 
 ### M-ESQ-EVAL operator quick index
 
+This document is the canonical detailed contract and evidence reference for M-ESQ-EVAL. Keep handoff docs compact and point here for operator workflow, sidecar/class-delta contracts, saved-schema boundaries, and evidence tables.
+
 Compact navigation for the sections below:
 
 * **Env gates & mode labels** — spec table and `ENGINE_EVAL_*_MODE` / `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS` gates (above).

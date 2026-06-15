@@ -111,40 +111,30 @@ Documented as characterized, not as desired final contract:
 
 ### Query-class classification contract
 
-`EngineEvalQueryClass.fromQueryTypes` maps BeautySearch eval `queryTypes` strings to `EngineEvalQueryClass` values for offline/eval metadata only. `EngineEvalQueryClassSpec` locks the current inventory coverage.
+Compact status:
 
-Contract facts:
-
-* Output class order is stable: `ExactService`, `Category`, `StructuredFilter`, `PriceDuration`, `GeoLocal`, `SemanticVague`, `BroadIntent`, `HardNegative`, `Mixed`.
-* `english` and `german` are language modifier tags and are ignored.
-* Unknown non-language query type tags fail with `QueryFailure.operation`; they are not silently ignored.
-* Empty `queryTypes` returns no classes for existing fixture compatibility.
-* Current observed query type tags are `ambiguous`, `attribute`, `attribute_heavy`, `broad`, `conversational`, `direct`, `english`, `german`, `hard_negative`, `home_visit`, `location`, `mixed_language`, `multi_intent`, `negative_attribute`, `numeric`, `price`, `synonym`, `technical_token`, and `typo`.
-* Real `SemanticBroadSmoke` example: `q_broad_005` classifies to `PriceDuration` then `BroadIntent`.
+* `EngineEvalQueryClass.fromQueryTypes` exists and is offline/eval-only metadata classification.
+* `EngineEvalQueryClassSpec` locks current inventory coverage.
+* Saved aggregate JSON schema remains unchanged.
+* `EngineEvalReportJson` remains unchanged.
+* Detailed query-class classification contract, stable class order, tag handling, failure behavior, and the `SemanticBroadSmoke` example live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
 
 Boundary:
 
-* This is offline/eval-only metadata classification.
+* This is offline/eval-only.
 * It is not production readiness.
 * It is not routing approval.
-* Saved aggregate JSON schema remains unchanged.
-* `EngineEvalReportJson` remains unchanged.
 
 ### EngineEval query-class breakdown sidecar contract
 
-`EngineEvalQueryClassBreakdown.from` aggregates `EngineEvalQueryReport` metrics by `EngineEvalQueryClass` for offline/eval use only. It requires an explicit `queryId -> List[EngineEvalQueryClass]` sidecar map and does not read `queryTypes` or `queryClasses` from saved `EngineEvalQueryReport` data.
+Compact status:
 
-Contract facts:
-
-* A query may contribute to multiple class buckets.
-* Repeated classes for a single query are deduplicated.
-* Empty class lists contribute no bucket.
-* Missing sidecar entries fail with `QueryFailure.operation` naming the missing `queryId`.
-* Output buckets follow `EngineEvalQueryClass.stableOrder`.
+* `EngineEvalQueryClassBreakdown` requires explicit `queryId -> List[EngineEvalQueryClass]` sidecars.
+* Saved aggregate reports still do not contain query classes, and class breakdowns are not derivable from saved JSON alone.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
-* The breakdown helper is consumed only by explicit sidecar comparison paths; saved aggregate reports still do not contain query classes and class breakdowns are not derivable from saved JSON alone.
+* Detailed sidecar contract, bucket behavior, ordering, and failure modes live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
 
 Boundary:
 
@@ -155,24 +145,16 @@ Boundary:
 
 ### EngineEval class-delta comparison contract
 
-`EngineEvalSavedReportComparison.compareReportJsonStrings(leftJson, rightJson)` remains backward compatible with the existing aggregate/role/query comparison behavior and produces no class comparisons. `EngineEvalSavedReportComparison.compareReportJsonStringsWithQueryClasses(...)` decodes saved aggregate JSON strings and uses explicit left/right `queryId -> List[EngineEvalQueryClass]` sidecar maps for offline/eval class-delta reporting.
+Compact status:
 
-Contract facts:
-
-* `EngineEvalSavedReportComparisonManualSpec` accepts optional paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` env vars for manual real-artifact comparison.
-* If neither class sidecar env var is present, manual real-artifact comparison keeps the previous aggregate/role/query behavior and emits no `classDeltas:`.
-* If both class sidecar env vars are present, they are decoded and may produce `classDeltas:`.
-* If exactly one class sidecar env var is present, the run fails clearly and names the missing counterpart.
-* Sidecar JSON shape is `{ "q_broad_005": ["PriceDuration", "BroadIntent"] }`.
-* Class names must be exact `EngineEvalQueryClass` names: `ExactService`, `Category`, `StructuredFilter`, `PriceDuration`, `GeoLocal`, `SemanticVague`, `BroadIntent`, `HardNegative`, `Mixed`.
-* Invalid class names fail with `QueryFailure.operation` and name the invalid value.
-* Missing sidecar query ids fail through `EngineEvalQueryClassBreakdown` and name the missing query id.
-* A missing class bucket on one side is compared against zero metrics.
-* `classDeltas:` is omitted when class comparisons are empty or when all class-level deltas are zero.
-* Existing aggregate deltas, `roleDeltas:`, and `queryDeltas:` behavior is preserved.
+* `compareReportJsonStringsWithQueryClasses(...)` and optional paired manual env sidecars can produce `classDeltas:`.
+* `compareReportJsonStrings(leftJson, rightJson)` remains backward compatible and produces no class comparisons.
+* Manual env sidecars are `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` and `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON`; they are optional and paired.
+* Existing aggregate deltas plus `roleDeltas:` and `queryDeltas:` behavior are preserved.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
+* Detailed comparison contract, sidecar JSON shape, pairing/failure rules, and `classDeltas:` omission behavior live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
 
 Boundary:
 
@@ -207,19 +189,14 @@ Boundary:
 
 ### First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)
 
-First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids `q_broad_001`–`q_broad_006`). All numbers below are offline/eval-only, not production readiness or routing approval.
+Compact summary:
 
-**benchmark-single:** qdrantRecall=6, qdrantComplement=4, qdrantNoise=0, overlap=2, simulatedHybridGain=4.
+* First real offline evidence exists for `SemanticBroadSmoke` (`q_broad_001`–`q_broad_006`).
+* `benchmark-single` and `benchmark-small` are zero-delta against each other on this slice.
+* `benchmark-large` is the strongest result in this first evidence slice.
+* Full metric tables, exact deltas, and detailed interpretation live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md) under "First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)".
 
-**benchmark-small:** qdrantRecall=6, qdrantComplement=4, qdrantNoise=0, overlap=2, simulatedHybridGain=4.
-
-**benchmark-large:** qdrantRecall=22, qdrantComplement=7, qdrantNoise=0, overlap=15, simulatedHybridGain=7.
-
-**Deltas:** `benchmark-single` → `benchmark-small` all deltas zero. `benchmark-small` → `benchmark-large`: qdrantRecall +16, qdrantComplement +3, qdrantNoise +0, overlap +13, simulatedHybridGain +3.
-
-**Offline interpretation:** `benchmark-large` is strongest in this SemanticBroadSmoke evidence slice.
-
-**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement. Full metric tables and delta breakdowns are in `docs/codebase-review/06-tests-and-contracts.md` under "First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)".
+**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
 ## 6.5. Product search north star
 
