@@ -40,25 +40,28 @@ Never write delegated-agent prompts from guesses about APIs, fields, imports, si
 
 After every accepted patch review / closed patch, include the extended commit message before the N+1 delegated prompt or N+1 bundle request.
 
-After every accepted review, provide two viable next options with a recommended choice, unless the next action is forced by a failed verification, safety issue, or source-truth blocker. Every option must include an artifact: either a delegated prompt or an executable bundle script. If an option includes a delegated patch prompt, also include the post-patch review bundle script for that option immediately. Do not allow "no bundle needed" as a third category.
+Mandatory bundle cycle:
 
-Mandatory bundle cycle: no review as option:
-
-* Mandatory review is not a next-task option. Do not spend option `1` or option `2` on reviewing the current patch or result.
-* Every closeout that offers next work MUST include exactly two substantive next tasks, exactly one recommendation, and a runnable bundle script. The bundle script may review the current result, but it is not one of the two options.
-* A user reply of only `1` or `2` is only a task selection. It is never evidence, never a review result, and never source truth.
-* For an edit task, give the delegated edit prompt and include the next review/source-truth bundle script.
-* For a read-only, audit, or source-truth task, do not answer from memory, prior summaries, or stale bundles. First request a fresh bundle with an executable script, wait for the uploaded bundle/report, and only then perform the read-only/source-truth analysis.
-* Prior bundles may be reused only if the user explicitly says to reuse that exact bundle.
-* If the selected task needs a bundle and no fresh bundle is present, the only valid coordinator output is `BLOCKED_NEED_BUNDLE`, the exact bundle script, no source-truth verdict, no commit message, and no next task pair.
-* If review or correction is mandatory and you cannot provide two substantive next tasks, say so explicitly and do not fake a next-task pair.
-* Make the next user action explicit: run the bundle script, upload the zip or paste the report, and do not reply with only `1` or `2`.
-* This applies even when the coordinator, not an agent, performs the read-only, audit, or source-truth work.
+* Mandatory review is not a next-task option. Option `1` and option `2` must be substantive follow-up work.
+* Accepted closeout without a three-part bundle is invalid.
+* Every accepted-closeout bundle MUST contain these exact labeled sections:
+  * `current result review`
+  * `next option 1 source truth`
+  * `next option 2 source truth`
+* The bundle must copy source files needed for all three sections.
+* `current result review` is mandatory plumbing. It does not count as option `1` or option `2`.
+* `next option 1 source truth` and `next option 2 source truth` must be task-specific. No placeholders. No current-diff-only sections. No coverage for only one next option.
+* If both next-option source-truth sections cannot be provided, the coordinator MUST output only `BLOCKED_NEED_BUNDLE_SCOPE` and a corrected bundle script. No verdict. No commit message. No next-task pair.
+* A user reply of only `1` or `2` is only a task selection. It is never evidence, never review, and never source truth.
+* For read-only, audit, or source-truth work, the coordinator MUST wait for a fresh user bundle/report unless the user explicitly says to reuse an exact prior bundle.
+* If a bundle is missing, the coordinator MUST output only `BLOCKED_NEED_BUNDLE` and the exact bundle script. No source-truth verdict. No commit message. No next-task pair.
+* Non-accepted patches get only a correction prompt and correction review bundle. Strategic next tasks resume only after acceptance.
+* The next user action must be explicit: run the bundle script and upload the zip/report. Do not ask for a bare `1` or `2` if the bundle is missing.
 
 Accepted-review output:
 
 * If accepted: provide a verdict and commit message, then two substantive next tasks, then one recommendation, then a bundle script for the next result.
-* If not accepted: provide only the correction prompt and the correction review bundle. Do not offer strategic next tasks.
+* If not accepted: provide only the correction prompt and the correction review bundle.
 
 Continuation rule:
 
@@ -220,7 +223,13 @@ Source-truth gate always wins for all models. No model may infer missing APIs.
 
 Bundles are for the coordinator, not delegated agents. After reading a bundle, the coordinator must inline important facts into the delegated prompt.
 
-Combined post-patch bundle: when providing a delegated patch prompt, also provide one post-patch bundle script covering: review of the patch just requested, source truth for next option A, source truth for next option B. This combined bundle must remain read-only, task-relevant, structured, and use the existing `cpf "$ZIP"` workflow. It does not bypass the source-truth gate; if chosen-task anchors are still missing after review, request a focused supplemental bundle.
+Combined post-patch bundle: when providing a delegated patch prompt, also provide one post-patch bundle script covering:
+
+* `current result review`
+* `next option 1 source truth`
+* `next option 2 source truth`
+
+This combined bundle must remain read-only, task-relevant, structured, and use the existing `cpf "$ZIP"` workflow. It does not bypass the source-truth gate; if chosen-task anchors are still missing after review, request a focused supplemental bundle.
 
 When requesting a bundle from the user, provide an executable shell script, not a prose include-list.
 
