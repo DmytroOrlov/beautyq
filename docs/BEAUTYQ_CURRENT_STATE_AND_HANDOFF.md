@@ -81,6 +81,8 @@ Documented as characterized, not as desired final contract:
   → controlled hybrid only after readiness/kill-switch/policy
   ```
 
+* The production route does eager seed index preparation during route composition, but that is still not a production-grade ES lifecycle policy.
+* The next strategic gate is ES lifecycle design; Qdrant shadow stays a future readiness/design step, not the current implementation step. See [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md) for milestone detail.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 
@@ -104,6 +106,7 @@ Documented as characterized, not as desired final contract:
 ### Boundaries
 
 * This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
+* The route already performs eager seed index preparation during route composition, but that is not a production-grade ES lifecycle policy.
 * No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.
