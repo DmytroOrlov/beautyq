@@ -218,6 +218,27 @@ Compact navigation for the sections below:
 
 All sections are offline/eval-only and operator-controlled.
 
+### EngineEval query-class classification contract
+
+`EngineEvalQueryClass.fromQueryTypes` maps BeautySearch eval `queryTypes` strings to `EngineEvalQueryClass` values for offline/eval metadata only. This contract is locked by `EngineEvalQueryClassSpec`.
+
+Contract facts:
+
+- Output class order is stable: `ExactService`, `Category`, `StructuredFilter`, `PriceDuration`, `GeoLocal`, `SemanticVague`, `BroadIntent`, `HardNegative`, `Mixed`.
+- `english` and `german` are language modifier tags and are ignored.
+- Unknown non-language query type tags fail with `QueryFailure.operation`; they are not silently ignored.
+- Empty `queryTypes` returns no classes for existing fixture compatibility.
+- Current observed query type tags are `ambiguous`, `attribute`, `attribute_heavy`, `broad`, `conversational`, `direct`, `english`, `german`, `hard_negative`, `home_visit`, `location`, `mixed_language`, `multi_intent`, `negative_attribute`, `numeric`, `price`, `synonym`, `technical_token`, and `typo`.
+- Real `SemanticBroadSmoke` example: `q_broad_005` classifies to `PriceDuration` then `BroadIntent`.
+
+Boundary:
+
+- This is offline/eval-only metadata classification.
+- It is not production readiness.
+- It is not routing approval.
+- Saved aggregate JSON schema remains unchanged.
+- `EngineEvalReportJson` remains unchanged.
+
 For a copyable local operator template (workspace setup, commands, multi-payload splitting, first-run example), see `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
 Output markers:

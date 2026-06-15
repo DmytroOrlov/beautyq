@@ -109,6 +109,27 @@ Documented as characterized, not as desired final contract:
 * Duplicate ids should be a separate validation failure or separate duplicate-count metric if needed later.
 * `qdrantNoiseCount` counts distinct Qdrant ids only when expected role is `QdrantShouldStaySilent`; otherwise it is 0.
 
+### Query-class classification contract
+
+`EngineEvalQueryClass.fromQueryTypes` maps BeautySearch eval `queryTypes` strings to `EngineEvalQueryClass` values for offline/eval metadata only. `EngineEvalQueryClassSpec` locks the current inventory coverage.
+
+Contract facts:
+
+* Output class order is stable: `ExactService`, `Category`, `StructuredFilter`, `PriceDuration`, `GeoLocal`, `SemanticVague`, `BroadIntent`, `HardNegative`, `Mixed`.
+* `english` and `german` are language modifier tags and are ignored.
+* Unknown non-language query type tags fail with `QueryFailure.operation`; they are not silently ignored.
+* Empty `queryTypes` returns no classes for existing fixture compatibility.
+* Current observed query type tags are `ambiguous`, `attribute`, `attribute_heavy`, `broad`, `conversational`, `direct`, `english`, `german`, `hard_negative`, `home_visit`, `location`, `mixed_language`, `multi_intent`, `negative_attribute`, `numeric`, `price`, `synonym`, `technical_token`, and `typo`.
+* Real `SemanticBroadSmoke` example: `q_broad_005` classifies to `PriceDuration` then `BroadIntent`.
+
+Boundary:
+
+* This is offline/eval-only metadata classification.
+* It is not production readiness.
+* It is not routing approval.
+* Saved aggregate JSON schema remains unchanged.
+* `EngineEvalReportJson` remains unchanged.
+
 ### Current M-ESQ-EVAL status / remaining work
 
 **What exists now**
