@@ -147,6 +147,12 @@ Production-wired/current:
 - `_refresh` is bodyless: `ElasticsearchSeedIndexInitializer` calls `ElasticsearchJsonClient.post(path)` (no body), because real Elasticsearch rejects `_refresh` with a JSON body.
 - No production indexing lifecycle (repository-backed/live), startup reindex, aliases/blue-green, or production collection manager was found.
 
+Architecture note:
+
+- The current route performs eager seed index preparation during route composition. That is an implementation fact of the current ES-backed seed route, not an approved production lifecycle policy.
+- The current ready-document path (`BeautyQSeedLoader` / `BeautySearchReadyCatalogDocuments`), ES readiness/init path (`ElasticsearchSeedIndexInitializer`), ES client operations, and route composition boundary are all design surfaces for future lifecycle policy, but the policy itself is not decided yet.
+- Future lifecycle design may introduce explicit boundaries for lifecycle management, alias/replacement, rollback, and freshness/observability, but this document does not prescribe code changes yet.
+
 Classification:
 
 - Interpreters: implemented/current pure code.

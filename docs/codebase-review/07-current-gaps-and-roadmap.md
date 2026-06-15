@@ -16,10 +16,10 @@ Current status:
 - `seedCatalogInMemory` remains available as rollback/non-default.
 - This closes the ES seed-route exposure gap. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
 
-Future implementation:
+Strategic gap:
 
-- The next code patch should design or implement observability, freshness/staleness reporting, runtime refresh/replacement, and kill-switch behavior for the ES seed route.
-- Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, and kill-switch.
+- The next strategic gate is ES production lifecycle design, not Qdrant shadow implementation.
+- Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, kill-switch, and lifecycle/source-of-truth policy.
 
 ### BeautySearchService Wiring
 
@@ -55,6 +55,7 @@ Evidence:
 
 Remaining gaps:
 
+- No approved production lifecycle policy for source of truth, freshness/staleness, startup behavior, runtime refresh/replacement, rollback, or stale-catalog observability.
 - No repository-backed indexing or live catalog freshness.
 - No startup reindex policy, aliases/blue-green, Qdrant shadowing, hybrid serving, fallback, score fusion, reranking, or production lifecycle.
 
@@ -240,6 +241,35 @@ Qdrant remains eval-only until evidence and safety gates.
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
 
+#### M4 ES lifecycle design gate
+
+M4 is a design gate, not an implementation patch. It exists to prevent production lifecycle work from being implied by the current eager seed index preparation path.
+
+Decisions to make at M4:
+
+* source of truth for production read models: keep seed resource, move to repository snapshot, or plan for future repository-backed production indexing;
+* index naming/versioning policy;
+* alias / blue-green or replacement strategy;
+* startup behavior and readiness expectations;
+* runtime refresh/replacement trigger;
+* rollback behavior;
+* freshness/staleness metadata;
+* observability events/metrics;
+* production kill-switch or route enable-disable behavior.
+
+Validation taxonomy for later M5 implementation:
+
+* pure document-builder tests;
+* module/DI wiring tests;
+* ES integration/manual smoke only when source-confirmed;
+* no plain `sbt test` by agents.
+
+Risks if M4 is skipped:
+
+* eager seed index preparation gets mistaken for approved production lifecycle policy;
+* shadow/hybrid work gets compared against a lifecycle-incomplete ES baseline;
+* refresh, rollback, and stale-catalog behavior remain undefined at the route boundary.
+
 #### Movement rules
 
 * Source truth before patch design.
@@ -253,7 +283,7 @@ Qdrant remains eval-only until evidence and safety gates.
 #### Near-term sequence
 
 * Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
-* Next safe decisions are still: docs/evidence consolidation, ES lifecycle design, or future Qdrant shadow design only after source-confirmed evidence bundles.
+* Next safe decisions are still: docs/evidence consolidation and ES lifecycle design; Qdrant shadow design remains a later M6 step only after source-confirmed evidence bundles and an approved ES lifecycle baseline.
 * Current immediate next steps are not Qdrant shadow readiness and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
 
