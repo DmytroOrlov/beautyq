@@ -113,14 +113,10 @@ Rationale for pausing runtime hybrid:
 * Continuing resource-backed hybrid before ES-native + Qdrant-native comparison would optimize the wrong layer.
 * The pure `EngineEval` comparison/report/assembly layer is implemented. Remaining work is operational/demo-facing: collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use the results to guide later Qdrant shadow/hybrid design.
 
-The codebase contains pure control-plane value/decision types in
-`leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`
-(`BeautySearchHybridSnapshotIdentity`, `BeautySearchHybridCollectionIdentity`,
-`BeautySearchHybridFreshnessPolicy`, `BeautySearchHybridRuntimeMode`,
-`BeautySearchHybridServingPolicy`, `BeautySearchHybridReadinessStatus`,
-`BeautySearchHybridServingDecision`, `BeautySearchHybridReadiness[F]`,
-`BeautySearchHybridDiagnosticsSink[F]`, `BeautySearchHybridDiagnosticsEvent.DecisionEvaluated`,
-`BeautySearchHybridDecisionEvaluator[F]`), covered by
+The codebase contains a hidden/disabled control-plane foundation in
+`leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`; the
+detailed architecture and type inventory are documented in
+`docs/codebase-review/05-search-and-retrieval-architecture.md` and covered by
 `BeautySearchHybridControlPlaneSpec.scala`.
 
 This control-plane layer is intentional preparation for B, not production route
@@ -129,9 +125,10 @@ explicit activation mode, readiness gate, collection identity/version surface,
 freshness/staleness policy, kill-switch integration point, observability/readiness
 surface, and conservative default behavior.
 
-B has not started as production module wiring. The control-plane types are not
-wired into the production route (`modules.apiBase[IO]` + `apiElasticsearch`), not used by the production
-`/beauty-search` route, and do not construct Qdrant/Llama resources.
+B has not started as production module wiring. Production route composition
+excludes these control-plane types; they remain outside serving behavior, are
+not used by the production `/beauty-search` route, and do not construct
+Qdrant/Llama resources.
 
 Preserved boundary:
 
