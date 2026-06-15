@@ -67,9 +67,9 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached. Plain `sbt test` is the canonical full verification command.
-* Latest user-verified plain `sbt test` (Jun 13, 2026, 12:19:23 PM): 963 succeeded, 0 failed, 1 canceled. Resource-backed Qdrant/Llama specs auto-run when local resources are available and cancel with reason when unavailable. The remaining expected canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`, which cancels by default when its saved-report env vars are absent. `EngineEvalSavedReportAssemblyManualSpec` and `EngineEvalSavedReportComparisonManualSpec` run deterministic default fixture mode by default (no cancel); real-artifacts mode is available behind existing env gates, and comparison can optionally take paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` sidecars for `classDeltas:` output.
+* Latest user-verified plain `sbt test` (Jun 13, 2026): 963 succeeded, 0 failed, 1 canceled.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
-* B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
+* Current checkpoint is expanded M3 / B-lite evidence: ES-native + Qdrant-native benchmark/eval comparison remains offline/eval-only.
 * Runtime hybrid expansion is paused.
 * Resource-backed hidden Qdrant/hybrid module expansion is paused.
 * ES and Qdrant may advance together only in eval/benchmark.
@@ -90,103 +90,28 @@ Documented as characterized, not as desired final contract:
 
 ### Status
 
-* Started by pure `EngineEval` comparison model.
-* Not complete.
+* Current checkpoint is expanded M3 / B-lite evidence, not a completed milestone.
+* Validated class-sidecar replay evidence exists for saved-report comparison.
+* Detailed contracts and evidence stay in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
+* Roadmap and milestone positioning stay in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 
-### Implemented
+### Compact checkpoint summary
 
-* `EngineEvalEngine` (Elasticsearch, Qdrant, SimulatedHybrid)
-* `EngineEvalQueryClass` (taxonomy metadata for future eval inventory classification)
-* `EngineExpectedRole` (drives first-pass metrics)
-* `EngineEvalResult`
-* `EngineEvalComparisonMetrics`
-* `EngineEvalComparisonMetrics.from(...)`
-
-### Semantics
-
-* Metrics count distinct variant ids by default.
-* Duplicate ids must not inflate recall/complement/overlap/gain/noise metrics.
-* Duplicate ids should be a separate validation failure or separate duplicate-count metric if needed later.
-* `qdrantNoiseCount` counts distinct Qdrant ids only when expected role is `QdrantShouldStaySilent`; otherwise it is 0.
-
-### Query-class classification contract
-
-Compact status:
-
-* `EngineEvalQueryClass.fromQueryTypes` exists and is offline/eval-only metadata classification.
-* `EngineEvalQueryClassSpec` locks current inventory coverage.
-* Saved aggregate JSON schema remains unchanged.
-* `EngineEvalReportJson` remains unchanged.
-* Detailed query-class classification contract, stable class order, tag handling, failure behavior, and the `SemanticBroadSmoke` example live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
-
-Boundary:
-
-* This is offline/eval-only.
-* It is not production readiness.
-* It is not routing approval.
-
-### EngineEval query-class breakdown sidecar contract
-
-Compact status:
-
-* `EngineEvalQueryClassBreakdown` requires explicit `queryId -> List[EngineEvalQueryClass]` sidecars.
-* Saved aggregate reports still do not contain query classes, and class breakdowns are not derivable from saved JSON alone.
+* Query inventory / expected-role refinement is part of the active M3 evidence lane.
+* `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, and `classDeltas:` are now part of the current interpretability checkpoint.
+* Saved-report replay for `benchmark-small -> benchmark-large` is validated at the checkpoint level.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
-* Detailed sidecar contract, bucket behavior, ordering, and failure modes live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
+* Detailed contracts, evidence shape, sidecar behavior, replay evidence, and operator workflow remain in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
 
-Boundary:
-
-* This is offline/eval-only helper behavior.
-* It is not production readiness.
-* It is not routing approval.
-* It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
-
-### EngineEval class-delta comparison contract
-
-Compact status:
-
-* `compareReportJsonStringsWithQueryClasses(...)` and optional paired manual env sidecars can produce `classDeltas:`.
-* `compareReportJsonStrings(leftJson, rightJson)` remains backward compatible and produces no class comparisons.
-* Manual env sidecars are `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` and `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON`; they are optional and paired.
-* Existing aggregate deltas plus `roleDeltas:` and `queryDeltas:` behavior are preserved.
-* Validated offline replay evidence exists for `benchmark-small -> benchmark-large` using saved aggregate JSON artifacts plus generated query-class sidecars in `.beautyq-evidence-runs/20260615T120500-saved-report-replay-sidecars/`; the replay confirmed `classDeltas:`, `roleDeltas:`, and `queryDeltas:` and kept saved aggregate JSON schema unchanged.
-* Saved aggregate JSON schema remains unchanged.
-* `EngineEvalAggregateReport` remains unchanged.
-* `EngineEvalReportJson` remains unchanged.
-* Detailed comparison contract, sidecar JSON shape, pairing/failure rules, and `classDeltas:` omission behavior live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
-
-Boundary:
-
-* This is offline/eval-only reporting behavior.
-* It is not production readiness.
-* It is not routing approval.
-* It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
-
-### Current M-ESQ-EVAL status / remaining work
-
-**What exists now**
-
-* Pure/report/assembly layer: `EngineEvalEngine`, `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof.
-* ES artifact emission for `SemanticBroadSmoke` (query ids `q_broad_001`–`q_broad_006`), gated by `ENGINE_EVAL_PRINT_ES_ARTIFACTS`. Emits `BeautySearchEvalReport` JSON and expected roles JSON between `BEGIN_*` / `END_*` markers.
-* ES markers pair with Qdrant `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` markers for `EngineEvalSavedReportAssemblyManualSpec` real-artifact mode (4 env vars).
-* Role breakdowns are derived from query reports, not persisted in saved aggregate JSON. Saved aggregate JSON schema remains unchanged. Text aggregate reports may include `roleAggregates`. Saved-report comparison output may include `roleDeltas` when role-level deltas are non-zero. Query-level deltas are derived from `EngineEvalAggregateReport.queryReports`; saved-report comparison output may include `queryDeltas` when query-level deltas are non-zero and omits `queryDeltas` when all query-level deltas are zero. Query ids are compared in stable order: ids from the left report in left order, then ids only present in the right report in right order. Missing queries are compared against zero metrics. Query-level deltas include `expectedVariantCountDelta`, `esRecallDelta`, `qdrantRecallDelta`, `qdrantComplementDelta`, `qdrantNoiseDelta`, `overlapDelta`, and `simulatedHybridGainDelta`. Replayed saved comparisons confirmed: `benchmark-small` → `benchmark-large` includes `queryDeltas` and preserves `roleDeltas`; `benchmark-single` → `benchmark-small` omits both `queryDeltas` and `roleDeltas` because that comparison is zero-delta at query and role levels. This remains offline/eval-only and does not imply production Qdrant/hybrid readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
-
-**What operators can now collect**
-
-* Concrete ES eval reports + expected roles from the ES integration spec.
-* Qdrant benchmark run-output JSON via the benchmark executor.
-* EngineEval aggregate report via saved-report assembly spec.
-* Optional saved comparison between two aggregate reports.
-* Full operational workflow (marker extraction, artifact naming/manifest, sanity checklist) is in `docs/codebase-review/06-tests-and-contracts.md` under "Operational workflow (M-ESQ-EVAL evidence collection)". The six-query role map and extraction helpers are kept there to avoid handoff bloat.
-
-**What remains explicitly non-production / not implied**
+### Boundaries
 
 * This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
 * No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.
+* This is not production readiness and not routing approval.
 
 ### First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)
 

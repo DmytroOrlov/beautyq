@@ -155,8 +155,12 @@ Target milestone: `M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison`
 Status:
 
 * M-ESQ-EVAL pure/report/assembly layer is implemented.
-* Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
+* M3 / B-lite is still in progress and has expanded within the same milestone to improve interpretability of offline evidence.
+* Expanded M3 checkpoints now include: expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
+* This is not a roadmap deviation. It is the current form of answering the existing B4 question: which query classes benefit from Qdrant complement and where Qdrant should stay silent.
+* Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle design and any future Qdrant shadow design.
 * Still offline/eval only. Production route wiring is now ES-backed seed route.
+* M4/M5 ES production lifecycle, M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
 
 Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
 
@@ -193,8 +197,10 @@ Production lane and eval/research lane must stay separate until evidence and pro
 | B2 | Operational/demo-facing run collection | Concrete ES + Qdrant benchmark outputs needed | Eval remains theoretical |
 | B3 | Query inventory / expected-role refinement | Metric meaning depends on correct expected roles | Wrong recall/noise classification |
 | B4 | ES vs Qdrant vs simulated hybrid evidence report | Decision input for Qdrant shadow and hybrid gates | No evidence to justify next lane |
+| B4a | Role and query delta interpretability | Need `roleDeltas:` and `queryDeltas:` to explain changes between reports | Aggregate-only deltas hide where behavior moved |
+| B4b | Query-class interpretability and replay | Need query-class classification, sidecars, `classDeltas:`, and validated replay on saved reports | No grounded answer for which classes benefit or should stay silent |
 
-Recent operational support exists for: Qdrant benchmark run-output JSON markers, manual EngineEval saved-report assembly, manual EngineEval saved-report comparison. M-ESQ-EVAL pure/report/assembly layer exists.
+M3/B-lite remains an offline evidence lane. The current expanded checkpoint is usable for interpretability, but it is not closure of the lane and not a readiness signal for Qdrant shadow or hybrid serving.
 
 #### Lane C: Qdrant shadow readiness
 
@@ -230,7 +236,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M0 | Current truth locked | Reached |
 | M1 | ES seed route demo-stable | Reached |
 | M2 | ES route contract hardened | Future |
-| M3 | B-lite comparison pipeline usable | In progress (M-ESQ-EVAL) |
+| M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Future |
 | M5 | ES production lifecycle implemented | Future |
 | M6 | Qdrant shadow readiness | Future |
@@ -245,11 +251,13 @@ Qdrant remains eval-only until evidence and safety gates.
 * Shadow before serving.
 * Kill-switch before risky serving.
 * Keep retrieval eval separate from product response assembly.
+* Do not jump from validated class-sidecar replay directly to Qdrant shadow or hybrid serving.
 
 #### Near-term sequence
 
-* Continue M-ESQ-EVAL operational/demo-facing work.
-* Current immediate next steps are saved-output/runbook/evidence workflow, not production hybrid.
+* Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
+* Next safe decisions are still: docs/evidence consolidation, ES lifecycle design, or future Qdrant shadow design only after source-confirmed evidence bundles.
+* Current immediate next steps are not Qdrant shadow readiness and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
 
 ## Current nearest search checkpoint
