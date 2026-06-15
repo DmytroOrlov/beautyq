@@ -55,29 +55,25 @@ Mandatory bundle cycle:
 * A user reply of only `1` or `2` is only a task selection. It is never evidence, never review, and never source truth.
 * For read-only, audit, or source-truth work, the coordinator MUST wait for a fresh user bundle/report unless the user explicitly says to reuse an exact prior bundle.
 * If a bundle is missing, the coordinator MUST output only `BLOCKED_NEED_BUNDLE` and the exact bundle script. No source-truth verdict. No commit message. No next-task pair.
-* Non-accepted patches get only a correction prompt and correction review bundle. Strategic next tasks resume only after acceptance.
 * The next user action must be explicit: run the bundle script and upload the zip/report. Do not ask for a bare `1` or `2` if the bundle is missing.
 
-Accepted closeout must include a next-task prompt:
+Prompted closeout cycle:
 
-* After an accepted review, the coordinator MUST provide:
-  * verdict;
-  * commit message when a patch was accepted;
-  * exactly two substantive next tasks;
-  * exactly one recommendation;
-  * an executable prompt/brief for the recommended next substantive task;
-  * a three-part bundle with exact sections `current result review`, `next option 1 source truth`, and `next option 2 source truth`.
-* The next-task prompt/brief must be concrete enough that the user can run the next cycle without replying only `1` or `2`.
-* For delegated edit work, the prompt/brief is the exact agent edit prompt.
-* For coordinator-owned read-only, audit, or source-truth work, the prompt/brief is the coordinator analysis contract: what will be checked after the fresh bundle is uploaded, required verdict names, and stop conditions.
+* Any coordinator response that contains an executable prompt/brief MUST also include exactly two substantive downstream tasks, exactly one recommendation, and a three-part bundle.
+* This applies to edit prompts, correction prompts, read-only briefs, audit briefs, and source-truth briefs.
+* The prompted task is the work to run now. It must not be repeated as option `1` or option `2`.
+* Option `1` and option `2` must be downstream follow-up work after the prompted task completes.
+* Mandatory review is not a next-task option.
+* The three-part bundle MUST contain these exact labeled sections:
+  * `current result review`
+  * `next option 1 source truth`
+  * `next option 2 source truth`
+* `current result review` reviews the result produced by the prompted task.
+* `next option 1 source truth` and `next option 2 source truth` must prepare the two downstream options, not the prompted task.
+* No placeholders. No current-diff-only next-option sections. No source-truth for only one downstream option.
 * A bundle script alone is not a next-task prompt.
 * A list of two next tasks alone is not a next-task prompt.
-* If the coordinator cannot provide the prompt/brief and the three-part bundle, it MUST output only `BLOCKED_NEED_CLOSEOUT_SCOPE` and a corrected closeout. No verdict. No commit message. No next-task pair.
-
-Accepted-review output:
-
-* If accepted: provide a verdict, commit message when a patch was accepted, exactly two substantive next tasks, exactly one recommendation, an executable prompt/brief for the recommended next substantive task, and the three-part bundle.
-* If not accepted: provide only the correction prompt and the correction review bundle.
+* If the coordinator cannot provide a prompt/brief, two downstream tasks, one recommendation, and all three bundle sections, it MUST output only `BLOCKED_NEED_CLOSEOUT_SCOPE` and a corrected closeout.
 
 Continuation rule:
 
