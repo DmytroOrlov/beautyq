@@ -106,8 +106,66 @@ final class EngineEvalSavedReportComparisonSpec extends AnyWordSpec {
         case Right(comparison) =>
           assert(comparison.queryCountDelta == 0)
           assert(comparison.esRecallCountDelta == 1)
+          assert(comparison.classComparisons == Nil)
         case Left(failure) =>
           fail(s"unexpected failure: $failure")
+      }
+    }
+
+    "compare encoded aggregate reports with query classes and format classDeltas" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_class_json", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_class_json", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val result = EngineEvalSavedReportComparison.compareReportJsonStringsWithQueryClasses(
+        leftJson = EngineEvalReportJson.encodeReportString(left),
+        rightJson = EngineEvalReportJson.encodeReportString(right),
+        leftClassesByQueryId = Map("q_class_json" -> List(EngineEvalQueryClass.ExactService)),
+        rightClassesByQueryId = Map("q_class_json" -> List(EngineEvalQueryClass.BroadIntent)),
+      )
+
+      result match {
+        case Right(comparison) =>
+          val formatted = EngineEvalSavedReportComparison.formatComparison(comparison)
+
+          assert(formatted.contains("classDeltas:"))
+          assert(formatted.contains("ExactService | queryCountDelta=-1"))
+          assert(formatted.contains("BroadIntent | queryCountDelta=+1"))
+        case Left(failure) =>
+          fail(s"unexpected failure: $failure")
+      }
+    }
+
+    "compare encoded aggregate reports with query classes returns Left when a sidecar query id is missing and names the id" in {
+      val v1 = variantId(1)
+
+      val left = EngineEvalAggregateReport.from(List(
+        queryReport("q_missing_json_class_sidecar", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val right = EngineEvalAggregateReport.from(List(
+        queryReport("q_missing_json_class_sidecar", EngineExpectedRole.EsShouldHandle, Set(v1), List(v1), List()),
+      ))
+
+      val result = EngineEvalSavedReportComparison.compareReportJsonStringsWithQueryClasses(
+        leftJson = EngineEvalReportJson.encodeReportString(left),
+        rightJson = EngineEvalReportJson.encodeReportString(right),
+        leftClassesByQueryId = Map.empty,
+        rightClassesByQueryId = Map("q_missing_json_class_sidecar" -> List(EngineEvalQueryClass.ExactService)),
+      )
+
+      result match {
+        case Left(QueryFailure.OperationFailure(operationName, message)) =>
+          assert(operationName == "engine-eval-query-class-breakdown")
+          assert(message.contains("q_missing_json_class_sidecar"))
+        case other =>
+          fail(s"expected missing sidecar failure naming q_missing_json_class_sidecar, got $other")
       }
     }
 

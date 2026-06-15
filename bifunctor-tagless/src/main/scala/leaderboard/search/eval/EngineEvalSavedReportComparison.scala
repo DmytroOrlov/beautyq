@@ -106,6 +106,23 @@ object EngineEvalSavedReportComparison {
       rightReport <- EngineEvalReportJson.decodeReportString(rightJson)
     } yield compareReports(leftReport, rightReport)
 
+  def compareReportJsonStringsWithQueryClasses(
+    leftJson: String,
+    rightJson: String,
+    leftClassesByQueryId: Map[String, List[EngineEvalQueryClass]],
+    rightClassesByQueryId: Map[String, List[EngineEvalQueryClass]],
+  ): Either[QueryFailure, EngineEvalAggregateComparison] =
+    for {
+      leftReport <- EngineEvalReportJson.decodeReportString(leftJson)
+      rightReport <- EngineEvalReportJson.decodeReportString(rightJson)
+      comparison <- compareReportsWithQueryClasses(
+        left = leftReport,
+        right = rightReport,
+        leftClassesByQueryId = leftClassesByQueryId,
+        rightClassesByQueryId = rightClassesByQueryId,
+      )
+    } yield comparison
+
   def formatComparison(comparison: EngineEvalAggregateComparison): String = {
     val builder = new StringBuilder
 
