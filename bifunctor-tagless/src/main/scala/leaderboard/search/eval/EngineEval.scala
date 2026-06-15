@@ -208,6 +208,18 @@ final case class EngineEvalRoleAggregateMetrics(
   simulatedHybridGainCount: Int,
 )
 
+final case class EngineEvalQueryClassAggregateMetrics(
+  queryClass: EngineEvalQueryClass,
+  queryCount: Int,
+  expectedVariantCount: Int,
+  esRecallCount: Int,
+  qdrantRecallCount: Int,
+  qdrantComplementCount: Int,
+  qdrantNoiseCount: Int,
+  overlapCount: Int,
+  simulatedHybridGainCount: Int,
+)
+
 object EngineExpectedRole {
   val stableOrder: List[EngineExpectedRole] = List(
     EsShouldHandle,
@@ -240,6 +252,55 @@ object EngineEvalRoleBreakdown {
       )
     }
     EngineEvalRoleBreakdown(sorted)
+  }
+}
+
+final case class EngineEvalQueryClassBreakdown(
+  byClass: List[EngineEvalQueryClassAggregateMetrics],
+)
+
+object EngineEvalQueryClassBreakdown {
+  def from(
+    queryReports: List[EngineEvalQueryReport],
+    classesByQueryId: Map[String, List[EngineEvalQueryClass]],
+  ): Either[QueryFailure, EngineEvalQueryClassBreakdown] = {
+    val missingQueryId = queryReports.map(_.queryId).find(queryId => classesByQueryId.get(queryId).isEmpty)
+
+    missingQueryId match {
+      case Some(queryId) =>
+        Left(
+          QueryFailure.operation(
+            "engine-eval-query-class-breakdown",
+            s"Missing EngineEval query-class sidecar entry for queryId: $queryId",
+          )
+        )
+      case None =>
+        val reportsByClass = queryReports
+          .flatMap { report =>
+            val classes = classesByQueryId.get(report.queryId).toList.flatten.toSet
+            classes.toList.map(queryClass => queryClass -> report)
+          }
+          .groupBy { case (queryClass, _) => queryClass }
+
+        val sorted = EngineEvalQueryClass.stableOrder.flatMap { queryClass =>
+          reportsByClass.get(queryClass).map { reportPairs =>
+            val reports = reportPairs.map { case (_, report) => report }
+            EngineEvalQueryClassAggregateMetrics(
+              queryClass = queryClass,
+              queryCount = reports.size,
+              expectedVariantCount = reports.map(_.expectedVariantIds.size).sum,
+              esRecallCount = reports.map(_.metrics.esRecallCount).sum,
+              qdrantRecallCount = reports.map(_.metrics.qdrantRecallCount).sum,
+              qdrantComplementCount = reports.map(_.metrics.qdrantComplementCount).sum,
+              qdrantNoiseCount = reports.map(_.metrics.qdrantNoiseCount).sum,
+              overlapCount = reports.map(_.metrics.overlapCount).sum,
+              simulatedHybridGainCount = reports.map(_.metrics.simulatedHybridGainCount).sum,
+            )
+          }
+        }
+
+        Right(EngineEvalQueryClassBreakdown(sorted))
+    }
   }
 }
 
