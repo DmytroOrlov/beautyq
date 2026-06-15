@@ -4,6 +4,9 @@ import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 
+/** Hidden control-plane types for future hybrid production readiness.
+  * Not currently enabled for user-serving hybrid behavior.
+  */
 final case class BeautySearchHybridSnapshotIdentity(
   sourceId: String,
   snapshotVersion: String,

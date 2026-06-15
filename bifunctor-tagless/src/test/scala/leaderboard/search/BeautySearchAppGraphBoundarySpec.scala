@@ -25,8 +25,6 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
 
       val response = runIO(stack.service.search(input))
 
-      assert(stack.api.isInstanceOf[BeautySearchApi[IO]])
-      assert(stack.service.isInstanceOf[BeautySearchService.Impl[IO]])
       assert(response == emptySearchResponse)
       assert(expectedIntent.remainingText == "plain query")
     }

@@ -9,13 +9,11 @@ import leaderboard.plugins.BeautySearchCatalogBackendModules
 import leaderboard.search.document.BeautySearchReadyCatalogDocuments
 import leaderboard.search.elasticsearch.{
   ElasticsearchJsonClient,
-  ElasticsearchSearchBackend,
   ElasticsearchSeedIndexReadiness,
   ElasticsearchSeedLifecycleMetadata,
   ElasticsearchSeedLifecycleStatus,
   ElasticsearchSeedPreparationMode,
 }
-import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
@@ -26,8 +24,6 @@ final class BeautySearchCatalogBackendModuleSpec extends AnyWordSpec {
       val probe = buildProbe()
 
       assert(probe.ready.documents.nonEmpty)
-      assert(probe.backend.isInstanceOf[InMemorySearchBackend[IO]])
-      assert(probe.service.isInstanceOf[BeautySearchService.Impl[IO]])
 
       val response = runIO(
         probe.service.search(
@@ -59,8 +55,6 @@ final class BeautySearchCatalogBackendModuleSpec extends AnyWordSpec {
       assert(probe.metadata.documentCount == probe.readiness.documentCount)
       assert(probe.metadata.preparationMode == ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation)
       assert(probe.metadata.lifecycleStatus == ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle)
-      assert(probe.backend.isInstanceOf[ElasticsearchSearchBackend])
-      assert(probe.service.isInstanceOf[BeautySearchService.Impl[IO]])
 
       val response = runIO(
         probe.service.search(

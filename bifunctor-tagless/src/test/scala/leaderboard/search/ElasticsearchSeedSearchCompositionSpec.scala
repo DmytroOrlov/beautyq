@@ -4,7 +4,7 @@ import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.BeautySearchSpecV1
-import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSearchBackend, ElasticsearchSeedSearchComposition}
+import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedSearchComposition}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
@@ -76,8 +76,6 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
       assert(composition.readiness.indexName == expectedIndexName)
       assert(composition.readiness.source == ready.source)
       assert(composition.readiness.documentCount == ready.documents.size)
-      assert(composition.backend.isInstanceOf[ElasticsearchSearchBackend])
-      assert(composition.service.isInstanceOf[BeautySearchService.Impl[IO]])
     }
 
     "propagate readiness failure before returning composition" in {

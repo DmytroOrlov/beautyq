@@ -149,7 +149,7 @@ product results by combining:
 * Pure model/metric logic: `Contractual + Blackbox + Atomic`.
 * In-process service/module seams: `Contractual + Blackbox + Group`.
 * Real ES/Qdrant/Llama/Docker/HTTP: `Communication`, resource-backed auto-gated/cancelable (Qdrant uses distage-managed `QdrantPortCfg`; Llama defaults to local endpoints with optional env overrides; unavailable resources cancel with reason).
-* Full `sbt test` is user/coordinator responsibility unless explicitly delegated.
+* Full `sbt test` is user responsibility unless explicitly delegated.
 
 ## 9. Where to read next
 

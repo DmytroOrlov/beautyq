@@ -1,82 +1,41 @@
 # AGENTS.md
 
-Stable repo-specific guardrails for BeautyQ work. Prompts should not repeat this file. Prompts should add only task-specific deltas: exact files, signatures, snippets, tests, and commands.
-
-## Scope
-
-This file defines repository and delegated-agent guardrails for BeautyQ work.
-It is source truth for bounded edits, focused checks, repo safety, and agent reports.
-
-It does not define coordinator closeout structure, next-task packaging, bundle
-requirements, or ChatGPT response format. Those coordinator rules live in
-`docs/local/COORDINATOR_PROMPTING_REMINDER.md`.
-
-Coordinator prompts may quote or summarize task-specific excerpts from this file,
-but must not paste the whole file or treat it as the coordinator closeout policy.
-
 ## Operating rules
 
-* One patch = one purpose. Do not mix unrelated risk layers.
+* Keep patches atomic: one purpose, no unrelated refactors or mixed risk layers. If broader changes are required, stop and report the smallest safe next step.
 * Inspect nearby repo code before using framework APIs from memory.
-* Do not make broad refactors while fixing one failing test.
-* Existing focused tests and route-level HTTP contract tests are source of truth.
-* Do not commit logs, build artifacts, copied dependency sources, temporary `println`, or debug output.
-* Do not create `izumi/` or copy Distage/source dependency files into the repo.
-* If the requested change needs wider scope, stop and report the smallest safe next step.
+* Existing focused tests and route-level HTTP contract tests are the primary source of truth for intended behavior; if they conflict with docs or implementation, flag the mismatch instead of guessing.
 
-## Prompt / delegated-agent discipline
+## Agent discipline
 
 * Do not perform broad architecture/audit/design unless explicitly asked.
 * Make bounded edits and focused checks only.
 * If the requested change needs wider scope, stop and report the smallest safe next step.
 * Reports should be short: focused result, deviations/compile fixes, blocked verification.
-
-Docs cadence:
-
-* Do not update docs after every tiny characterization test.
-* Batch related characterization results.
 * Update docs immediately for production exposure, runtime behavior, architecture policy, or roadmap status changes.
-* Docs should record current state, not scratchpad every micro-step.
+* Docs should record current state briefly and without fluff.
 
 ## Verification
 
 Labels:
 
 * `FOCUSED GREEN`: requested focused suite passed; full repo unknown.
-* `FULL GREEN`: full requested project test passed.
-* `FULL RED`: full test failed.
 * `VERIFICATION BLOCKED`: sbt/docker/local permissions blocked verification.
-* `USER-VERIFIED FULL GREEN`: user ran the exact command and reported green.
 
-Do not call work commit-ready unless full verification passed, user verified it, or the user explicitly accepts focused-only.
-
-Default repo rule: `src/main` changes need focused checks plus full test. Exception: when a coordinator prompt explicitly says not to run full `sbt test`, delegated agents run only requested focused checks and report that full verification is left to the coordinator/user. Focused-only checks are never `FULL GREEN`.
-
-If full test fails, stop. Report suite/test, exact error, whether it reproduces alone, and whether it appears related. Then fix only that failure with the smallest safe change. If an external env is missing, report canceled/blocked, not product behavior failure.
+Default repo rule: `bifunctor-tagless/src/main` changes need focused checks. Agent runs only requested focused checks, not full sbt test.
 
 ## sbt rules
 
-* Do not run sbt commands in parallel.
-* Prefer one chained, project-scoped sbt command.
-* Do not use `-no-server` unless explicitly asked.
-* `sbt --shutdown` is not valid for this repo launcher.
+* Do not run sbt commands in parallel, instead run one chained sbt command.
 * If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
 * If escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
 * Do not edit source to work around sbt locks.
-* If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup: remove generated `target` directories or run `sbt clean`, then rerun the same command. Report it as cleanup, not source change.
+* If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup: all `target` directories, then rerun the same command. Report it as cleanup, not source change.
 
 Preferred focused shape:
 
 ```bash
-sbt 'project bifunctor-tagless' Test/compile 'testOnly leaderboard.search.SomeSpec'
-```
-
-Cold reset only when explicitly needed:
-
-```bash
-docker rm -f $(docker ps -a -q -f "label=distage.type") || true
-find . -type d -name target -print0 | xargs -0 rm -rf
-sbt 'project bifunctor-tagless' test
+sbt Test/compile 'testOnly leaderboard.search.SomeSpec'
 ```
 
 ## Current BeautyQ production search
@@ -99,13 +58,10 @@ POST /beauty-search
 
 Facts to preserve:
 
-* Production `/beauty-search` is ES-backed over seed-resource catalog snapshot.
-* It is lexical/simple/catalog-first.
-* `BeautySearchService.Impl` is the verified implementation name; do not use stale `BeautySearchService.Live`.
+* Production `/beauty-search` is ES-backed over seed-resource catalog snapshot, it is lexical/simple/catalog-first.
 * `BeautySearchProductionInclusion*` exists as staging/helper boundary, not the active gate for the current route.
 * Real route kill switch / enable-disable gate remains future work.
-* `Salon` is not a first-class inspected model; current domain uses `Master` and `MasterLocation`.
-* `MasterServiceOfferVariant` is the central purchasable/search-result unit. Do not call it bookable unless implementing real booking/scheduling support.
+* `MasterServiceOfferVariant` is the central search-result unit.
 * Benchmark output is decision support, not production automation.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 
@@ -114,7 +70,6 @@ Current route characterization:
 * Positive limit returns `200 OK` capped by requested limit.
 * Zero/negative limit returns `200 OK` with empty variant carousel.
 * Huge limit is capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
-* Malformed JSON, empty body, wrong limit type, and missing required fields currently return `500` with empty body. This is current behavior, not desired final contract.
 * Coordinates are not range-validated.
 * Query text is not length-validated.
 * `BeautySearchReadyCatalogDocuments` rejects blank source / empty documents and preserves non-empty source/documents.
@@ -472,8 +427,6 @@ For B-lite, compare by role, not “which engine wins overall”:
 ## Dictionary rules
 
 Keep dictionary fixes narrow. Prefer exact phrases, contextual `requires`, conflict-preventing `excludes`, and safe no-op residual cleanup.
-
-Do not add broad unconditional triggers such as `gel`, `face`, `beauty`, `рядом`, `недорого`, `коррекция`, `снятие`.
 
 Do not implement generic NLP/negation for one failing query. Do not fix a query by changing ranking unless explicitly requested.
 

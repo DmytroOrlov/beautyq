@@ -2,6 +2,9 @@ package leaderboard.search.hybrid.production
 
 import leaderboard.search.hybrid.control.{BeautySearchHybridDecisionEvaluator, BeautySearchHybridServingPolicy}
 
+/** Hidden control-plane activation model for future hybrid production readiness.
+  * Not currently enabled for user-serving hybrid behavior.
+  */
 sealed trait BeautySearchHybridProductionActivation
 
 object BeautySearchHybridProductionActivation {
