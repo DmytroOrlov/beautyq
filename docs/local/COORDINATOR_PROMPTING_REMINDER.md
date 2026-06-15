@@ -9,6 +9,35 @@ AGENTS scope boundary:
 * `AGENTS.md` is repo/delegated-agent guardrails, not coordinator closeout policy.
 * Coordinator closeout structure is governed by this reminder.
 * The coordinator may use task-specific AGENTS excerpts as source truth when building delegated prompts or high-effort audit evidence packs.
+* External high-effort prompts must be self-contained:
+
+  * A prompt intended for an external high-effort model MUST be useful without hidden chat memory and without reading the coordinator’s previous messages.
+  * "Injected evidence pack" means inline facts in the prompt, not only a bundle script/report.
+  * A final prompt intended for an external high-effort model MUST NOT contain bundle filenames, report filenames, attachment names, upload names, or phrases such as `attached bundle`, `attached report`, `uploaded bundle`, `raw evidence appendix`, `see the report`, or `use the bundle`.
+  * The final prompt itself must contain all concrete source facts needed for the audit.
+  * External high-effort prompts may mention that facts were extracted from a fresh bundle, but must not require the external model to open or know that bundle.
+  * Bundle/report filenames belong only in coordinator review bundles and local handoff scripts, not in the pasted external prompt.
+  * Bundle/report filenames may also appear in generated report files.
+  * An inline fact pack is valid only when removing every attachment/file reference still leaves a usable prompt.
+  * A prompt with inline facts plus attachment references is still invalid.
+  * "Raw evidence appendix" wording is forbidden inside final external prompts.
+  * The inline fact pack must include concrete facts, not just category names.
+  * A category list is not an evidence pack.
+  * A bundle filename alone is not an evidence pack.
+  * A prompt that requires hidden chat context to know what matters is invalid.
+  * Minimum inline fact pack for cleanup/self-documentation audits:
+    * current git status and diff summary;
+    * exact files included or a narrowed manifest;
+    * concrete source facts extracted from the fresh evidence bundle, without naming the bundle/report;
+    * milestone/status facts relevant to the audit;
+    * relevant repo/coordinator guardrails, only task-specific excerpts;
+    * size hotspots with line counts;
+    * naming/self-documentation anchors with concrete symbols;
+    * duplication/boilerplate/stale-test anchors with concrete symbols or patterns;
+    * do-not-touch boundaries;
+    * required output format and stop conditions.
+  * A final external prompt with inline facts plus bundle/report filenames is invalid.
+  * If the coordinator cannot produce a self-contained external prompt, it MUST output `BLOCKED_NEED_CLOSEOUT_SCOPE` and a corrected closeout.
 * Do not cite AGENTS as the reason for coordinator-only response structure.
 * Do not paste all of AGENTS into prompts; include only task-specific excerpts.
 * If AGENTS and this reminder appear to conflict on coordinator closeout format, this reminder controls the coordinator closeout format.
