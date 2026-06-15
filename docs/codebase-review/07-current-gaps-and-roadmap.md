@@ -236,7 +236,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Design gate documented / active |
-| M5 | ES production lifecycle implemented | Started: non-serving lifecycle metadata seam; production lifecycle incomplete |
+| M5 | ES production lifecycle implemented | Started: non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
@@ -249,7 +249,7 @@ Roadmap position:
 
 * Expanded M3 / B-lite / M-ESQ-EVAL evidence remains the current in-progress checkpoint.
 * M4 is the next strategic gate after that evidence checkpoint is expanded enough to support lifecycle decisions.
-* M5 implementation must not start until M4 decisions are explicit.
+* M5 implementation now includes a non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle, but production lifecycle remains incomplete.
 * Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
 
 Decisions to make at M4:
