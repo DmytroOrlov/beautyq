@@ -42,10 +42,23 @@ After every accepted patch review / closed patch, include the extended commit me
 
 After every accepted review, provide two viable next options with a recommended choice, unless the next action is forced by a failed verification, safety issue, or source-truth blocker. Every option must include an artifact: either a delegated prompt or an executable bundle script. If an option includes a delegated patch prompt, also include the post-patch review bundle script for that option immediately. Do not allow "no bundle needed" as a third category.
 
+Mandatory bundle cycle: no review as option:
+
+* Mandatory review is not a next-task option. Do not spend option `1` or option `2` on reviewing the current patch or result.
+* Every closeout that offers next work MUST include exactly two substantive next tasks, exactly one recommendation, and a runnable bundle script. The bundle script may review the current result, but it is not one of the two options.
+* A user reply of only `1` or `2` is only a task selection. It is never evidence, never a review result, and never source truth.
+* For an edit task, give the delegated edit prompt and include the next review/source-truth bundle script.
+* For a read-only, audit, or source-truth task, do not answer from memory, prior summaries, or stale bundles. First request a fresh bundle with an executable script, wait for the uploaded bundle/report, and only then perform the read-only/source-truth analysis.
+* Prior bundles may be reused only if the user explicitly says to reuse that exact bundle.
+* If the selected task needs a bundle and no fresh bundle is present, the only valid coordinator output is `BLOCKED_NEED_BUNDLE`, the exact bundle script, no source-truth verdict, no commit message, and no next task pair.
+* If review or correction is mandatory and you cannot provide two substantive next tasks, say so explicitly and do not fake a next-task pair.
+* Make the next user action explicit: run the bundle script, upload the zip or paste the report, and do not reply with only `1` or `2`.
+* This applies even when the coordinator, not an agent, performs the read-only, audit, or source-truth work.
+
 Accepted-review output:
 
-* If accepted: provide an extended commit message summarizing intent, key behavior/doc changes, boundaries/non-goals when relevant, and validation actually reported.
-* If blocked: do not provide a commit message; provide blocker(s) and a fix prompt or focused bundle request.
+* If accepted: provide a verdict and commit message, then two substantive next tasks, then one recommendation, then a bundle script for the next result.
+* If not accepted: provide only the correction prompt and the correction review bundle. Do not offer strategic next tasks.
 
 Continuation rule:
 
