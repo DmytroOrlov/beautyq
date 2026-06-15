@@ -191,7 +191,7 @@ Three specs handle saved artifact JSON. Two are dual-mode (default fixture + rea
 | Spec | Gate(s) | Default behavior |
 |---|---|---|
 | `EngineEvalSavedReportAssemblyManualSpec` | `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT`, `ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON` | Dual-mode: runs default fixture assembly when gate is absent; real-artifacts when gate is enabled |
-| `EngineEvalSavedReportComparisonManualSpec` | `ENGINE_EVAL_COMPARE_SAVED_REPORTS`, `ENGINE_EVAL_LEFT_JSON`, `ENGINE_EVAL_RIGHT_JSON` | Dual-mode: runs default fixture comparison when gate is absent; real-artifacts when gate is enabled |
+| `EngineEvalSavedReportComparisonManualSpec` | `ENGINE_EVAL_COMPARE_SAVED_REPORTS`, `ENGINE_EVAL_LEFT_JSON`, `ENGINE_EVAL_RIGHT_JSON`, optional paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` | Dual-mode: runs default fixture comparison when gate is absent; real-artifacts when gate is enabled |
 | `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec` | `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS`, `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON`, `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` | Cancels by default when env vars are absent |
 
 Mode labels printed to stdout:
@@ -253,7 +253,7 @@ Contract facts:
 - Saved aggregate JSON schema remains unchanged.
 - `EngineEvalAggregateReport` remains unchanged.
 - `EngineEvalReportJson` remains unchanged.
-- The helper does not wire class breakdowns into saved-report comparison yet.
+- The breakdown helper is consumed only by explicit sidecar comparison paths; saved aggregate reports still do not contain query classes and class breakdowns are not derivable from saved JSON alone.
 
 Boundary:
 
@@ -264,19 +264,24 @@ Boundary:
 
 ### EngineEval class-delta comparison contract
 
-`EngineEvalSavedReportComparison.compareReports(left, right)` remains compatible with the existing aggregate/role/query comparison behavior and does not use class sidecars. `EngineEvalSavedReportComparison.compareReportsWithQueryClasses(...)` adds explicit left/right `queryId -> List[EngineEvalQueryClass]` sidecar maps for class-level reporting.
+`EngineEvalSavedReportComparison.compareReportJsonStrings(leftJson, rightJson)` remains backward compatible with the existing aggregate/role/query comparison behavior and produces no class comparisons. `EngineEvalSavedReportComparison.compareReportJsonStringsWithQueryClasses(...)` decodes saved aggregate JSON strings and uses explicit left/right `queryId -> List[EngineEvalQueryClass]` sidecar maps for class-level reporting.
 
 Contract facts:
 
-- Sidecars are validated through `EngineEvalQueryClassBreakdown`.
-- Missing sidecar query ids fail with `QueryFailure.operation` naming the missing `queryId`.
+- `EngineEvalSavedReportComparisonManualSpec` accepts optional paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` env vars for manual real-artifact comparison.
+- If neither class sidecar env var is present, manual real-artifact comparison keeps the previous aggregate/role/query behavior and emits no `classDeltas:`.
+- If both class sidecar env vars are present, they are decoded and may produce `classDeltas:`.
+- If exactly one class sidecar env var is present, the run fails clearly and names the missing counterpart.
+- Sidecar JSON shape is `{ "q_broad_005": ["PriceDuration", "BroadIntent"] }`.
+- Class names must be exact `EngineEvalQueryClass` names: `ExactService`, `Category`, `StructuredFilter`, `PriceDuration`, `GeoLocal`, `SemanticVague`, `BroadIntent`, `HardNegative`, `Mixed`.
+- Invalid class names fail with `QueryFailure.operation` and name the invalid value.
+- Missing sidecar query ids fail through `EngineEvalQueryClassBreakdown` and name the missing query id.
 - A missing class bucket on one side is compared against zero metrics.
 - `classDeltas:` is omitted when class comparisons are empty or when all class-level deltas are zero.
 - Existing aggregate deltas, `roleDeltas:`, and `queryDeltas:` behavior is preserved.
 - Saved aggregate JSON schema remains unchanged.
 - `EngineEvalAggregateReport` remains unchanged.
 - `EngineEvalReportJson` remains unchanged.
-- Env/manual real-artifact sidecar wiring is not added yet.
 
 Boundary:
 
@@ -304,7 +309,7 @@ This workflow collects concrete ES + Qdrant benchmark artifacts for EngineEval s
 1. **ES artifact emission**: Run `BeautySearchElasticsearchIntegrationSpec` with `ENGINE_EVAL_PRINT_ES_ARTIFACTS=1`. This emits the `SemanticBroadSmoke` subset (query ids `q_broad_001`–`q_broad_006`) ES eval reports JSON and expected roles JSON between their respective markers. The expected-role JSON is first-pass offline evidence metadata for `SemanticBroadSmoke`, not a production routing policy. Current role map: `q_broad_001` → `EsShouldHandle` (nail-service nearby), `q_broad_002` → `EsShouldHandle` (lashes/brows nearby), `q_broad_003` → `QdrantMayComplement` (vague/conversational facial), `q_broad_004` → `HybridMayImprove` (broad self-care), `q_broad_005` → `EsShouldHandle` (affordable nails), `q_broad_006` → `QdrantMayComplement` (generic broad nearby).
 2. **Qdrant benchmark run**: Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` (defaults to local endpoints `http://localhost:8081` / `http://localhost:8082`); endpoint env vars are optional overrides. Capture the Qdrant run-output JSON between `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`.
 3. **Assembly**: Run `EngineEvalSavedReportAssemblyManualSpec` with `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT=1` and the four saved-artifact env vars (`ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON`). Capture the aggregate report JSON between `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
-4. **Comparison (optional)**: Run `EngineEvalSavedReportComparisonManualSpec` with `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` and two aggregate report JSON blobs via `ENGINE_EVAL_LEFT_JSON` / `ENGINE_EVAL_RIGHT_JSON`. Capture the comparison output between `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
+4. **Comparison (optional)**: Run `EngineEvalSavedReportComparisonManualSpec` with `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` and two aggregate report JSON blobs via `ENGINE_EVAL_LEFT_JSON` / `ENGINE_EVAL_RIGHT_JSON`. Optionally add paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` sidecars to enable `classDeltas:` output. Capture the comparison output between `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
 
 Expected roles: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
 
@@ -438,7 +443,7 @@ This checklist is for operator verification of locally collected artifacts. It d
 
 ### Saved comparison interpretation notes
 
-`EngineEvalSavedReportComparisonManualSpec` runs in saved-comparison mode when `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` is set along with `ENGINE_EVAL_LEFT_JSON` and `ENGINE_EVAL_RIGHT_JSON`. Output is delimited by `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
+`EngineEvalSavedReportComparisonManualSpec` runs in saved-comparison mode when `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` is set along with `ENGINE_EVAL_LEFT_JSON` and `ENGINE_EVAL_RIGHT_JSON`. Optional paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` sidecars enable `classDeltas:` output for manual real-artifact comparison. Output is delimited by `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
 
 **What comparison output is useful for:**
 

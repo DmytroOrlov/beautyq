@@ -67,7 +67,7 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached. Plain `sbt test` is the canonical full verification command.
-* Latest user-verified plain `sbt test` (Jun 13, 2026, 12:19:23 PM): 963 succeeded, 0 failed, 1 canceled. Resource-backed Qdrant/Llama specs auto-run when local resources are available and cancel with reason when unavailable. The remaining expected canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`, which cancels by default when its saved-report env vars are absent. `EngineEvalSavedReportAssemblyManualSpec` and `EngineEvalSavedReportComparisonManualSpec` run deterministic default fixture mode by default (no cancel); real-artifacts mode is available behind existing env gates.
+* Latest user-verified plain `sbt test` (Jun 13, 2026, 12:19:23 PM): 963 succeeded, 0 failed, 1 canceled. Resource-backed Qdrant/Llama specs auto-run when local resources are available and cancel with reason when unavailable. The remaining expected canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`, which cancels by default when its saved-report env vars are absent. `EngineEvalSavedReportAssemblyManualSpec` and `EngineEvalSavedReportComparisonManualSpec` run deterministic default fixture mode by default (no cancel); real-artifacts mode is available behind existing env gates, and comparison can optionally take paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` sidecars for `classDeltas:` output.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * B-lite = ES-native + Qdrant-native benchmark/eval comparison continues as eval-only work.
 * Runtime hybrid expansion is paused.
@@ -144,7 +144,7 @@ Contract facts:
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
-* The helper does not wire class breakdowns into saved-report comparison yet.
+* The breakdown helper is consumed only by explicit sidecar comparison paths; saved aggregate reports still do not contain query classes and class breakdowns are not derivable from saved JSON alone.
 
 Boundary:
 
@@ -155,19 +155,24 @@ Boundary:
 
 ### EngineEval class-delta comparison contract
 
-`EngineEvalSavedReportComparison.compareReports(left, right)` remains compatible with the existing aggregate/role/query comparison behavior and no class sidecars. `EngineEvalSavedReportComparison.compareReportsWithQueryClasses(...)` adds explicit left/right `queryId -> List[EngineEvalQueryClass]` sidecar maps for offline/eval class-delta reporting.
+`EngineEvalSavedReportComparison.compareReportJsonStrings(leftJson, rightJson)` remains backward compatible with the existing aggregate/role/query comparison behavior and produces no class comparisons. `EngineEvalSavedReportComparison.compareReportJsonStringsWithQueryClasses(...)` decodes saved aggregate JSON strings and uses explicit left/right `queryId -> List[EngineEvalQueryClass]` sidecar maps for offline/eval class-delta reporting.
 
 Contract facts:
 
-* Sidecars are validated through `EngineEvalQueryClassBreakdown`.
-* Missing sidecar query ids fail with `QueryFailure.operation` naming the missing `queryId`.
+* `EngineEvalSavedReportComparisonManualSpec` accepts optional paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` env vars for manual real-artifact comparison.
+* If neither class sidecar env var is present, manual real-artifact comparison keeps the previous aggregate/role/query behavior and emits no `classDeltas:`.
+* If both class sidecar env vars are present, they are decoded and may produce `classDeltas:`.
+* If exactly one class sidecar env var is present, the run fails clearly and names the missing counterpart.
+* Sidecar JSON shape is `{ "q_broad_005": ["PriceDuration", "BroadIntent"] }`.
+* Class names must be exact `EngineEvalQueryClass` names: `ExactService`, `Category`, `StructuredFilter`, `PriceDuration`, `GeoLocal`, `SemanticVague`, `BroadIntent`, `HardNegative`, `Mixed`.
+* Invalid class names fail with `QueryFailure.operation` and name the invalid value.
+* Missing sidecar query ids fail through `EngineEvalQueryClassBreakdown` and name the missing query id.
 * A missing class bucket on one side is compared against zero metrics.
 * `classDeltas:` is omitted when class comparisons are empty or when all class-level deltas are zero.
 * Existing aggregate deltas, `roleDeltas:`, and `queryDeltas:` behavior is preserved.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
-* Env/manual real-artifact sidecar wiring is not added yet.
 
 Boundary:
 
