@@ -11,7 +11,9 @@ final case class ElasticsearchSeedSearchComposition(
   readiness: ElasticsearchSeedIndexReadiness,
   backend: BeautySearchBackend[IO],
   service: BeautySearchService[IO],
-)
+) {
+  def lifecycleMetadata: ElasticsearchSeedLifecycleMetadata = readiness.lifecycleMetadata
+}
 
 object ElasticsearchSeedSearchComposition {
   def build(

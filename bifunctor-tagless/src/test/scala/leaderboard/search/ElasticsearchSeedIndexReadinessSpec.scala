@@ -10,6 +10,7 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchMappingInterpreter,
   ElasticsearchSeedIndexInitializer,
   ElasticsearchSeedIndexReadiness,
+  ElasticsearchSeedSearchComposition,
   ElasticsearchSeedLifecycleStatus,
   ElasticsearchSeedPreparationMode,
 }
@@ -93,6 +94,33 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
   }
 
   "ElasticsearchSeedIndexInitializer.prepare" should {
+    "expose seed lifecycle metadata through the search composition boundary" in {
+      val client = new ScriptedElasticsearchJsonClient(
+        putJsonFn = (path, json) => {
+          assert(path == s"/$expectedIndexName", s"putJson path mismatch: $path")
+          assert(json == expectedMapping, "putJson mapping mismatch")
+          ZIO.succeed(Json.obj())
+        },
+        postFn = (path) => {
+          assert(path == s"/$expectedIndexName/_refresh", s"post path mismatch: $path")
+          ZIO.succeed(Json.obj())
+        },
+        postNdjsonFn = (path, payload) => {
+          assert(path == s"/$expectedIndexName/_bulk", s"postNdjson path mismatch: $path")
+          assert(payload == expectedBulkPayload, "postNdjson payload mismatch")
+          ZIO.succeed(Json.obj())
+        },
+      )
+      val composition = run(ElasticsearchSeedSearchComposition.build(spec, client, ready))
+      val metadata = composition.lifecycleMetadata
+
+      assert(metadata.indexName == expectedIndexName)
+      assert(metadata.source == ready.source)
+      assert(metadata.documentCount == ready.documents.size)
+      assert(metadata.preparationMode == ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation)
+      assert(metadata.lifecycleStatus == ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle)
+    }
+
     "prepare seed index mapping, bulk payload, refresh, and return readiness handle" in {
       val client = new ScriptedElasticsearchJsonClient(
         putJsonFn = (path, json) => {
