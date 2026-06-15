@@ -294,7 +294,7 @@ Evaluator contract:
 
 Not production wiring:
 
-- Control-plane types are not wired into the production route (`modules.apiBase[IO]` + `apiElasticsearch`).
+- Control-plane types remain outside the production route (`modules.apiBase[IO]` + `apiElasticsearch`).
 - Not route wiring.
 - No Qdrant/Llama construction.
 
@@ -395,7 +395,7 @@ Simulated hybrid computes:
 
 ### Design concepts (implemented)
 
-Implemented pure EngineEval model (full API and metric semantics in handoff doc):
+Implemented pure EngineEval model (full API and metric semantics in `docs/codebase-review/06-tests-and-contracts.md`):
 
 * `EngineEval.scala`: `EngineEvalEngine` (Elasticsearch, Qdrant, SimulatedHybrid), `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, `EngineEvalComparisonMetrics.from(...)`.
 * `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.

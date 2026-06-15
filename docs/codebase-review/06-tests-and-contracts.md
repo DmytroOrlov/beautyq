@@ -203,22 +203,19 @@ Mode labels printed to stdout:
 
 When real-artifacts mode is enabled but required env vars are missing, the dual-mode specs fail clearly instead of canceling.
 
-### M-ESQ-EVAL operator quick index
+### M-ESQ-EVAL contract and evidence scope
 
-This document is the canonical detailed contract and evidence reference for M-ESQ-EVAL. Keep handoff docs compact and point here for operator workflow, sidecar/class-delta contracts, saved-schema boundaries, and evidence tables.
+This document is the canonical detailed contract and evidence reference for M-ESQ-EVAL. Keep the handoff compact and keep local operator mechanics in `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
-Compact navigation for the sections below:
+Use this file for:
 
-* **Env gates & mode labels** — spec table and `ENGINE_EVAL_*_MODE` / `QDRANT_EMBEDDING_BENCHMARK_COMPARE_SAVED_REPORTS` gates (above).
-* **Output markers** — `BEGIN_*` / `END_*` marker names for ES, Qdrant, aggregate, and comparison payloads (above).
-* **Operational workflow** — 4-step evidence collection sequence: ES artifact emission → Qdrant benchmark run → assembly → optional comparison (step 4).
-* **Evidence collection dry-run checklist** — preflight checklist before running any resource-backed or env-gated M-ESQ-EVAL specs.
-* **Marker payload extraction** — read-only `extract_marker()` helper and usage examples for JSON and non-JSON markers.
-* **Saved artifact naming and manifest** — recommended directory shape, filenames, and `manifest.md` template.
-* **Evidence artifact sanity checklist** — verification checklist before using collected artifacts as evidence.
-* **Saved comparison interpretation notes** — what `EngineEvalSavedReportComparisonManualSpec` output is useful for and what it does not prove.
+* saved-schema boundaries;
+* query-class and sidecar contracts;
+* `roleDeltas:`, `queryDeltas:`, and `classDeltas:` behavior;
+* validated replay evidence summary;
+* detailed evidence tables and interpretation.
 
-All sections are offline/eval-only and operator-controlled.
+For operator commands, extraction mechanics, artifact naming, manifest shape, and workspace procedure, use `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
 Validated replay note:
 
@@ -251,8 +248,18 @@ Boundary:
 - This is offline/eval-only metadata classification.
 - It is not production readiness.
 - It is not routing approval.
+
+### Saved aggregate schema boundary
+
+Saved aggregate report schema remains unchanged throughout the current expanded M3 / B-lite checkpoint:
+
 - Saved aggregate JSON schema remains unchanged.
+- `EngineEvalAggregateReport` remains unchanged.
 - `EngineEvalReportJson` remains unchanged.
+- `EngineEvalSavedReportComparison.compareReportJsonStrings(leftJson, rightJson)` remains backward compatible with aggregate/role/query comparison and produces no class comparisons by itself.
+- Query-class comparison remains explicit and optional via paired sidecars:
+  - `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON`
+  - `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON`
 
 ### EngineEval query-class breakdown sidecar contract
 
@@ -305,7 +312,7 @@ Boundary:
 - It is not routing approval.
 - It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
-For a copyable local operator template (workspace setup, commands, multi-payload splitting, first-run example), see `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
+For local operator procedure, workspace setup, extraction mechanics, artifact naming, manifest details, and first-run command examples, see `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
 Output markers:
 
@@ -317,146 +324,6 @@ Output markers:
 * EngineEval aggregate JSON: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
 * EngineEval saved comparison: `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
 
-Operational workflow (M-ESQ-EVAL evidence collection):
-
-This workflow collects concrete ES + Qdrant benchmark artifacts for EngineEval saved-report assembly and comparison. It is offline/eval-only and does not affect production serving. Endpoint/env overrides are optional resource controls, not required production gates. JSON payload extraction between markers is operator-controlled; use the marker extraction helper below to avoid copy-paste errors.
-
-1. **ES artifact emission**: Run `BeautySearchElasticsearchIntegrationSpec` with `ENGINE_EVAL_PRINT_ES_ARTIFACTS=1`. This emits the `SemanticBroadSmoke` subset (query ids `q_broad_001`–`q_broad_006`) ES eval reports JSON and expected roles JSON between their respective markers. The expected-role JSON is first-pass offline evidence metadata for `SemanticBroadSmoke`, not a production routing policy. Current role map: `q_broad_001` → `EsShouldHandle` (nail-service nearby), `q_broad_002` → `EsShouldHandle` (lashes/brows nearby), `q_broad_003` → `QdrantMayComplement` (vague/conversational facial), `q_broad_004` → `HybridMayImprove` (broad self-care), `q_broad_005` → `EsShouldHandle` (affordable nails), `q_broad_006` → `QdrantMayComplement` (generic broad nearby).
-2. **Qdrant benchmark run**: Run `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` (defaults to local endpoints `http://localhost:8081` / `http://localhost:8082`); endpoint env vars are optional overrides. Capture the Qdrant run-output JSON between `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`.
-3. **Assembly**: Run `EngineEvalSavedReportAssemblyManualSpec` with `ENGINE_EVAL_ASSEMBLE_SAVED_REPORT=1` and the four saved-artifact env vars (`ENGINE_EVAL_ES_REPORTS_JSON`, `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON`, `ENGINE_EVAL_QDRANT_CANDIDATE_ID`, `ENGINE_EVAL_EXPECTED_ROLES_JSON`). Capture the aggregate report JSON between `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
-4. **Comparison (optional)**: Run `EngineEvalSavedReportComparisonManualSpec` with `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` and two aggregate report JSON blobs via `ENGINE_EVAL_LEFT_JSON` / `ENGINE_EVAL_RIGHT_JSON`. Optionally add paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` sidecars to enable `classDeltas:` output. Capture the comparison output between `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
-
-Expected roles: `EsShouldHandle`, `QdrantMayComplement`, `QdrantShouldStaySilent`, `HybridMayImprove`.
-
-Expected full-suite baseline when saved artifact JSON is not supplied: **963 succeeded, 0 failed, 1 canceled**. The 1 canceled spec is `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec`; the two EngineEval dual-mode specs run default fixture mode instead of canceling.
-
-### Evidence collection dry-run checklist
-
-Before running any resource-backed or env-gated M-ESQ-EVAL specs, complete this preflight checklist. This is preparation only; it does not claim artifacts have been collected.
-
-- [ ] **Run label and directory**: chosen a short run label (e.g. `sem-broad-001`) and local artifact directory under `./.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<label>/`.
-- [ ] **Workspace hygiene**: confirmed `./.beautyq-evidence-runs/` is gitignored or added to `.git/info/exclude` before use; reserved `/tmp` for disposable review bundles or short-lived scratch output only; reserved `$HOME` or another external workspace only when explicitly requested.
-- [ ] **Log destination**: decided where saved test logs will be written (file path for each spec run).
-- [ ] **Marker pairs confirmed**: confirmed the exact `BEGIN_*` / `END_*` marker pairs needed:
-  - ES eval reports JSON: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
-  - ES expected roles JSON: `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON`
-  - Qdrant run-output JSON: `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`
-  - Aggregate report JSON: `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
-  - Optional comparison text: `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
-- [ ] **Qdrant candidate id**: chosen or recorded the Qdrant candidate id to use for `qdrant-run-output.<candidate-id>.json` and `engine-eval-aggregate.<candidate-id>.json` naming, and for `ENGINE_EVAL_QDRANT_CANDIDATE_ID`.
-- [ ] **manifest.md prepared**: prepared `manifest.md` in the target directory (use the template in "Saved artifact naming and manifest") with at minimum date/time, operator, and notes/non-goals fields filled before extraction.
-- [ ] **Assembly env vars conceptually prepared**: reviewed the four assembly env values and their targets:
-  - `ENGINE_EVAL_ES_REPORTS_JSON` → `es-reports.semantic-broad-smoke.json`
-  - `ENGINE_EVAL_QDRANT_RUN_OUTPUT_JSON` → `qdrant-run-output.<candidate-id>.json`
-  - `ENGINE_EVAL_QDRANT_CANDIDATE_ID` → the chosen candidate id string
-  - `ENGINE_EVAL_EXPECTED_ROLES_JSON` → `expected-roles.semantic-broad-smoke.json`
-- [ ] **Resource availability assessed**: noted whether ES and Qdrant resources are expected to be available or may cancel (Docker-backed ES via `BeautySearchElasticsearchIntegrationSpec`; Qdrant benchmark executor defaults to local endpoints and cancels when unavailable).
-- [ ] **Validation and cancels recorded**: planned what validation will actually be run and whether any resource-unavailable cancels are expected; will record both in `manifest.md`.
-- [ ] **Offline/eval-only confirmed**: confirmed this session is offline/eval-only — no production `/beauty-search` route changes, no hybrid serving, no routing decisions from benchmark output, and no production automation signals.
-
-### Marker payload extraction
-
-Saved test output logs contain JSON or text payloads delimited by `BEGIN_*` / `END_*` marker comments. Extract them with a read-only, one-shot shell helper that uses `awk` (available on macOS and Linux). The helper accepts exact begin and end marker strings so it works for both JSON and non-JSON markers without internal suffix mangling:
-
-```bash
-extract_marker() {
-  local log_file="$1" begin="$2" end="$3"
-  awk -v begin="$begin" -v end="$end" '
-    $0 == begin { found=1; next }
-    $0 == end { found=0; next }
-    found { print }
-  ' "$log_file"
-}
-```
-
-Usage examples (replace `log.txt` with your saved test output file):
-
-```bash
-# ES eval reports JSON
-extract_marker log.txt "BEGIN_ENGINE_EVAL_ES_REPORTS_JSON" "END_ENGINE_EVAL_ES_REPORTS_JSON" > es_reports.json
-
-# ES expected roles JSON
-extract_marker log.txt "BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON" "END_ENGINE_EVAL_EXPECTED_ROLES_JSON" > expected_roles.json
-
-# Qdrant benchmark run-output JSON
-extract_marker log.txt "BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON" "END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON" > qdrant_run_output.json
-
-# EngineEval aggregate report JSON
-extract_marker log.txt "BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON" "END_ENGINE_EVAL_AGGREGATE_REPORT_JSON" > aggregate_report.json
-```
-
-Non-JSON markers use the same pattern with their exact begin/end markers:
-
-```bash
-# EngineEval aggregate report text (non-JSON)
-extract_marker log.txt "BEGIN_ENGINE_EVAL_AGGREGATE_REPORT" "END_ENGINE_EVAL_AGGREGATE_REPORT" > aggregate_report.txt
-
-# EngineEval saved comparison text
-extract_marker log.txt "BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON" "END_ENGINE_EVAL_SAVED_REPORT_COMPARISON" > comparison.txt
-```
-
-This helper is read-only: it does not run `sbt`, Docker, or mutate any repo files. It works on any saved log file with standard shell tools. Operator-controlled extraction reduces copy-paste errors while keeping payload selection explicit.
-
-### Saved artifact naming and manifest
-
-Recommended directory shape for a single M-ESQ-EVAL run:
-
-```
-./.beautyq-evidence-runs/<YYYYMMDD-HHMMSS>-<short-label>/
-```
-
-Example: `./.beautyq-evidence-runs/20260614-143000-sem-broad-001/`
-
-Recommended filenames for extracted artifacts:
-
-* `es-reports.semantic-broad-smoke.json` — ES eval reports JSON from `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON` / `END_ENGINE_EVAL_ES_REPORTS_JSON`
-* `expected-roles.semantic-broad-smoke.json` — ES expected roles JSON from `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON` / `END_ENGINE_EVAL_EXPECTED_ROLES_JSON`
-* `qdrant-run-output.<candidate-id>.json` — Qdrant run-output JSON from `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON` / `END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`
-* `engine-eval-aggregate.<candidate-id>.json` — EngineEval aggregate report JSON from `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`
-* `engine-eval-comparison.<left-label>--<right-label>.txt` — optional saved comparison text from `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`
-* `manifest.md` — optional bookkeeping manifest (template below)
-
-`manifest.md` template:
-
-```markdown
-# M-ESQ-EVAL Artifact Manifest
-
-| Field | Value |
-|---|---|
-| date/time | |
-| operator | |
-| repo commit / branch / status note | |
-| ES artifact source (marker / log file) | |
-| Qdrant candidate id | |
-| Qdrant run-output source (marker / log file) | |
-| expected roles file | |
-| aggregate report file | |
-| optional comparison inputs / output | |
-| validation actually run | |
-| notes / non-goals | |
-```
-
-This manifest is for local evidence bookkeeping only. It does not indicate production readiness, routing policy, or hybrid serving approval. The copyable operator commands and archive flow live in `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
-
-### Evidence artifact sanity checklist
-
-Before using manually collected M-ESQ-EVAL artifacts as evidence for later Qdrant shadow/hybrid decisions, verify:
-
-- [ ] Source logs are saved and referenced in `manifest.md` (ES artifact source, Qdrant run-output source).
-- [ ] All expected `BEGIN_*` / `END_*` marker pairs are present in source logs before extraction: `BEGIN_ENGINE_EVAL_ES_REPORTS_JSON`/`END_ENGINE_EVAL_ES_REPORTS_JSON`, `BEGIN_ENGINE_EVAL_EXPECTED_ROLES_JSON`/`END_ENGINE_EVAL_EXPECTED_ROLES_JSON`, `BEGIN_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`/`END_QDRANT_EMBEDDING_BENCHMARK_RUN_OUTPUT_JSON`, `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON`/`END_ENGINE_EVAL_AGGREGATE_REPORT_JSON`.
-- [ ] Extracted files use the documented naming convention: `es-reports.semantic-broad-smoke.json`, `expected-roles.semantic-broad-smoke.json`, `qdrant-run-output.<candidate-id>.json`, `engine-eval-aggregate.<candidate-id>.json`.
-- [ ] ES reports artifact corresponds to `SemanticBroadSmoke` (not another eval subset).
-- [ ] ES report query ids are exactly `q_broad_001` through `q_broad_006` in order.
-- [ ] Expected roles artifact contains the current six-query role map exactly: `q_broad_001` → `EsShouldHandle`, `q_broad_002` → `EsShouldHandle`, `q_broad_003` → `QdrantMayComplement`, `q_broad_004` → `HybridMayImprove`, `q_broad_005` → `EsShouldHandle`, `q_broad_006` → `QdrantMayComplement`.
-- [ ] Qdrant run-output artifact candidate id matches the `manifest.md` Qdrant candidate id field and the `ENGINE_EVAL_QDRANT_CANDIDATE_ID` used for assembly.
-- [ ] EngineEval assembly used matching ES reports, Qdrant run-output, candidate id, and expected roles (all four env vars set to the correct extracted files/artifacts).
-- [ ] Aggregate report JSON is extracted from the `BEGIN_ENGINE_EVAL_AGGREGATE_REPORT_JSON` / `END_ENGINE_EVAL_AGGREGATE_REPORT_JSON` markers.
-- [ ] Optional saved comparison records left/right labels and filenames are recorded in `manifest.md` (if comparison was run).
-- [ ] Validation actually run is recorded in `manifest.md`, including cancels or resource unavailability if applicable.
-- [ ] Notes/non-goals in `manifest.md` explicitly preserve offline/eval-only and non-production-routing status.
-
-This checklist is for operator verification of locally collected artifacts. It does not constitute production approval, routing policy, or hybrid serving authorization.
-
 ### Saved comparison interpretation notes
 
 `EngineEvalSavedReportComparisonManualSpec` runs in saved-comparison mode when `ENGINE_EVAL_COMPARE_SAVED_REPORTS=1` is set along with `ENGINE_EVAL_LEFT_JSON` and `ENGINE_EVAL_RIGHT_JSON`. Optional paired `ENGINE_EVAL_LEFT_QUERY_CLASSES_JSON` / `ENGINE_EVAL_RIGHT_QUERY_CLASSES_JSON` sidecars enable `classDeltas:` output for manual real-artifact comparison. Output is delimited by `BEGIN_ENGINE_EVAL_SAVED_REPORT_COMPARISON` / `END_ENGINE_EVAL_SAVED_REPORT_COMPARISON`.
@@ -467,7 +334,6 @@ This checklist is for operator verification of locally collected artifacts. It d
 - Spotting query-level or aggregate movement between candidates/runs (deltas for `queryCount`, `esRecallCount`, `qdrantRecallCount`, `qdrantComplementCount`, `qdrantNoiseCount`, `overlapCount`, `simulatedHybridGainCount`).
 - Spotting role-level movement between candidates/runs when role deltas are non-zero (see roleDeltas below).
 - Supporting later Qdrant shadow/hybrid decisions with recorded evidence.
-- Recording evidence in `manifest.md` alongside the compared files and left/right labels.
 
 **Role-level deltas (roleDeltas):**
 
@@ -495,9 +361,7 @@ This checklist is for operator verification of locally collected artifacts. It d
 - Not a route switch decision for `/beauty-search` or any production endpoint.
 - Not approval for fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 - Not a substitute for readiness/policy/kill-switch/lifecycle work.
-- Not a substitute for manual review of artifact inputs, the sanity checklist, and the manifest.
-
-Left/right labels for the compared files should be recorded in `manifest.md` alongside the file paths. Resource-unavailable cancels and validation actually run must be recorded separately in `manifest.md`; comparison output alone is not the validation record.
+- Not a substitute for manual review of the local evidence procedure and artifact inputs described in `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
 Comparison output is evidence support only. All M-ESQ-EVAL work remains offline/eval-only and non-production-routing.
 

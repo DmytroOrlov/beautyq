@@ -91,19 +91,15 @@ Documented as characterized, not as desired final contract:
 ### Status
 
 * Current checkpoint is expanded M3 / B-lite evidence, not a completed milestone.
-* Validated class-sidecar replay evidence exists for saved-report comparison.
-* Detailed contracts and evidence stay in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
-* Roadmap and milestone positioning stay in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
-
-### Compact checkpoint summary
-
-* Query inventory / expected-role refinement is part of the active M3 evidence lane.
-* `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, and `classDeltas:` are now part of the current interpretability checkpoint.
-* Saved-report replay for `benchmark-small -> benchmark-large` is validated at the checkpoint level.
+* Query inventory / expected-role refinement and the current interpretability checkpoint remain part of the active M3 evidence lane.
+* `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, and `classDeltas:` are part of the current expanded checkpoint.
+* Validated class-sidecar replay exists for `benchmark-small -> benchmark-large`.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
-* Detailed contracts, evidence shape, sidecar behavior, replay evidence, and operator workflow remain in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
+* M4/M5 ES production lifecycle, M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
+* Detailed contracts and evidence stay in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
+* Roadmap and milestone positioning stay in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 
 ### Boundaries
 
@@ -112,17 +108,6 @@ Documented as characterized, not as desired final contract:
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.
 * This is not production readiness and not routing approval.
-
-### First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)
-
-Compact summary:
-
-* First real offline evidence exists for `SemanticBroadSmoke` (`q_broad_001`–`q_broad_006`).
-* `benchmark-single` and `benchmark-small` are zero-delta against each other on this slice.
-* `benchmark-large` is the strongest result in this first evidence slice.
-* Full metric tables, exact deltas, and detailed interpretation live in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md) under "First M-ESQ-EVAL evidence summary (SemanticBroadSmoke)".
-
-**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
 ## 6.5. Product search north star
 
@@ -138,36 +123,7 @@ product results by combining:
 * explicit eval/benchmark reporting before any production hybrid or routing
   decision.
 
-## 6.6. ES seed-route checkpoint status (reached)
-
-Reached:
-* `LeaderboardPlugin` top-level includes `modules.apiBase[IO]` + `BeautySearchRouteModules.apiElasticsearch` (ES-backed Beauty route, default).
-* `BeautySearchRouteModules.apiElasticsearch` includes `seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
-* `BeautySearchCatalogBackendModules.seedResourceElasticsearch` is the catalog backend module reached via `seedCatalogElasticsearch`.
-* `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`.
-* `ElasticsearchSeedIndexInitializer` uses bodyless `POST /<index>/_refresh` via `ElasticsearchJsonClient.post(path)`, because real Elasticsearch rejects `_refresh` with a JSON body.
-* default production `/beauty-search` switched from `seedCatalogInMemory` to ES-backed seed route.
-* explicit ES route module proof for `POST /beauty-search` with scripted `ElasticsearchJsonClient`.
-* demo query inventory exists in `docs/demo/beauty-search-es-seed-demo-queries.md`.
-* `BeautySearchElasticsearchBusinessDemoSpec` covers the selected 12 demo queries through the ES-backed default route.
-* previous full verification after ES seed-route/demo-doc updates (historical): 956 passed, 0 failed, 1 canceled.
-
-Business-demo ready:
-
-* Default route is ES-backed; demo runbook at `docs/demo/beauty-search-es-seed-demo.md`.
-* Demo query inventory at `docs/demo/beauty-search-es-seed-demo-queries.md`.
-* Business demo smoke spec: `BeautySearchElasticsearchBusinessDemoSpec` — 12 selected demo queries passed focused verification.
-
-Important observed route behavior:
-When Elasticsearch returns zero hits, the ES-backed route can still return
-non-empty facets and inferred filters because those are derived from catalog,
-spec, and parsed intent metadata rather than only from hit lists.
-
-Full lifecycle gaps remain: repository freshness, live/repository indexing,
-aliases/blue-green, Qdrant shadowing, hybrid serving, fallback, score fusion,
-reranking, and production lifecycle management.
-
-## 6.7. Forbidden paths
+## 6.6. Forbidden paths
 
 * No production hybrid.
 * No route switch from benchmark alone.

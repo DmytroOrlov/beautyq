@@ -104,7 +104,7 @@ ES-native eval and Qdrant-native eval appear early and together
 ```
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-The next target is M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison): ES-native + Qdrant-native benchmark comparison.
+The active eval checkpoint is expanded M3 / B-lite / M-ESQ-EVAL evidence consolidation: ES-native + Qdrant-native benchmark comparison remains in progress, with evidence interpretation expanded inside the same milestone.
 
 Rationale for pausing runtime hybrid:
 
@@ -148,18 +148,17 @@ Preserved boundary:
 
 ### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
-Full API, status, and metric semantics in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
+Detailed contracts and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The handoff stays compact and carries only current status and boundaries.
 
 Target milestone: `M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison`
 
 Status:
 
 * M-ESQ-EVAL pure/report/assembly layer is implemented.
-* M3 / B-lite is still in progress and has expanded within the same milestone to improve interpretability of offline evidence.
-* Expanded M3 checkpoints now include: expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
-* This is not a roadmap deviation. It is the current form of answering the existing B4 question: which query classes benefit from Qdrant complement and where Qdrant should stay silent.
+* M3 / B-lite remains the current expanded in-progress checkpoint.
+* Current expanded M3 interpretability includes expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
 * Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle design and any future Qdrant shadow design.
-* Still offline/eval only. Production route wiring is now ES-backed seed route.
+* Still offline/eval only. Production route wiring remains ES-backed seed route.
 * M4/M5 ES production lifecycle, M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
 
 Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
