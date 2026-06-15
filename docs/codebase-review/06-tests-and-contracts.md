@@ -262,6 +262,29 @@ Boundary:
 - It is not routing approval.
 - It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
+### EngineEval class-delta comparison contract
+
+`EngineEvalSavedReportComparison.compareReports(left, right)` remains compatible with the existing aggregate/role/query comparison behavior and does not use class sidecars. `EngineEvalSavedReportComparison.compareReportsWithQueryClasses(...)` adds explicit left/right `queryId -> List[EngineEvalQueryClass]` sidecar maps for class-level reporting.
+
+Contract facts:
+
+- Sidecars are validated through `EngineEvalQueryClassBreakdown`.
+- Missing sidecar query ids fail with `QueryFailure.operation` naming the missing `queryId`.
+- A missing class bucket on one side is compared against zero metrics.
+- `classDeltas:` is omitted when class comparisons are empty or when all class-level deltas are zero.
+- Existing aggregate deltas, `roleDeltas:`, and `queryDeltas:` behavior is preserved.
+- Saved aggregate JSON schema remains unchanged.
+- `EngineEvalAggregateReport` remains unchanged.
+- `EngineEvalReportJson` remains unchanged.
+- Env/manual real-artifact sidecar wiring is not added yet.
+
+Boundary:
+
+- This is offline/eval-only reporting behavior.
+- It is not production readiness.
+- It is not routing approval.
+- It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+
 For a copyable local operator template (workspace setup, commands, multi-payload splitting, first-run example), see `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
 Output markers:
