@@ -1,13 +1,13 @@
-# COORDINATOR_PROMPTING_REMINDER.md
+# COORDINATOR_WORKFLOW_AND_PROMPTING.md
 
-Purpose: Remind the coordinator how to write cheap, precise prompts. Use this file when prompts become broad, expensive, or ambiguous.
+Purpose: Canonical coordinator-only guide for workflow, source-truth gating, prompt packaging, closeout, bundle scripts, docs ownership, and model recommendation guidance.
 
 ---
 
 AGENTS scope boundary:
 
 * `AGENTS.md` is repo/delegated-agent guardrails, not coordinator closeout policy.
-* Coordinator closeout structure is governed by this reminder.
+* Coordinator closeout structure is governed by this guide.
 * The coordinator may use task-specific AGENTS excerpts as source truth when building delegated prompts or high-effort audit evidence packs.
 * Allowed prompt forms only:
 
@@ -22,8 +22,8 @@ AGENTS scope boundary:
     * After an accepted actionable audit/result, the next reusable prompt must be a delegated edit `Task:`.
 * Do not cite AGENTS as the reason for coordinator-only response structure.
 * Do not paste all of AGENTS into prompts; include only task-specific excerpts.
-* If AGENTS and this reminder appear to conflict on coordinator closeout format, this reminder controls the coordinator closeout format.
-* If AGENTS and this reminder appear to conflict on repository safety, tests, or bounded edit behavior, stop and ask for a docs clarification patch.
+* If AGENTS and this guide appear to conflict on coordinator closeout format, this guide controls the coordinator closeout format.
+* If AGENTS and this guide appear to conflict on repository safety, tests, or bounded edit behavior, stop and ask for a docs clarification patch.
 
 # 1. Universal rules
 
@@ -244,20 +244,46 @@ That final archive handoff remains the user-terminal flow even if an agent shell
 
 ---
 
-# 2. Model prompt deltas
+# 2. Model recommendation guidance
 
-Source-truth gate always wins for all models. No model may infer missing APIs.
+Model recommendation blocks are only for non-trivial delegated edit prompts.
 
-| Aspect | GPT | MiniMax / Qwen / MiMo |
-|--------|-----|------------------------|
-| Scope | Can handle wider context, rationale, design cross-check. Still needs bounded scope, non-goals, files, validation command. | Mechanical recipe only: read/edit files, exact facts, exact validation, short report. |
-| Rationale | May include rationale; keep action surface small. | No rationale needed. Recipe-like: "Read these 2 files. Edit this 1 file. Copy this pattern. Run this command." |
-| Audit | Acceptable for architecture review / cross-checking design / finding contradictions. Do not mix audit + code edits + docs + full verification in one prompt. | Do not give broad audits/designs. Coordinator does design from bundles, then provides edit recipe. |
-| Optionality | — | Avoid "if useful", "consider", "choose best place". Use exact: "Do not add scores." or "Add exactly this field." |
-| Reports | Can be slightly more detailed. | Tiny: focused result + deviations/compile fixes only. |
-| Full tests | May run full tests if explicitly requested. Still distinguish FOCUSED GREEN / FULL GREEN / USER-VERIFIED FULL GREEN. | Do not run full sbt test. Focused only. |
-| Docs strategy | Can do docs review. | Only exact wording replace/add/remove. Not "read all docs and integrate strategy". |
-| Compile-fix policy | — | Include: "If a suggested param is unused, remove it or use it in real behavior. Do not inspect scalac flags. Do not add @nowarn, @unused, or val _ = x." |
+Do not include model recommendations for coordinator-owned read-only, audit, review, or source-truth work.
+
+Decision order:
+
+1. Source truth.
+2. Task type and risk.
+3. User preference.
+4. Model choice.
+
+Rules:
+
+* Source-truth gate wins before model choice.
+* If required source facts are missing, request a focused bundle and stop.
+* Do not use a stronger model to invent APIs, signatures, fields, imports, tests, or docs facts.
+* Use exact names when the recommendation is actionable.
+* Keep delegated prompts themselves model-agnostic unless the user explicitly asks otherwise.
+
+Exact model names:
+
+* `Qwen 256/512`
+* `Qwen 1024/2048`
+* `Qwen 4096`
+* `MiMo-V2.5`
+* `MiMo-V2.5-Pro`
+* `MiniMax-M3`
+* `GPT-5.5-medium`
+* `GPT-5.5-high`
+
+Compact mapping:
+
+* Tiny mechanical docs/code edits: `Qwen 256/512` or `MiMo-V2.5`.
+* Bounded pure code/docs patches from exact recipe: `Qwen 1024/2048` or `MiMo-V2.5-Pro`.
+* Larger source-confirmed local work: `Qwen 4096`.
+* Source-confirmed repo inventory or stronger non-GPT agentic work: `MiniMax-M3`.
+* Complex code writing when cheaper/local models are likely to waste iterations: `GPT-5.5-medium`.
+* Very high-risk production lifecycle/runtime/backend migration code: `GPT-5.5-high`.
 
 ---
 

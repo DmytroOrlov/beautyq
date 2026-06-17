@@ -159,7 +159,6 @@ product results by combining:
 * `docs/codebase-review/07-current-gaps-and-roadmap.md` — current gaps and roadmap
 * `docs/search-dsl-hybrid-v1-plan.md` — hybrid V1 plan and B-lite strategy
 * `docs/beautyq-search-dsl-v1.md` — search DSL V1 and eval coverage
-* `docs/local/COORDINATOR_PROMPTING_REMINDER.md` — coordinator prompt-writing guidance
-* `docs/LOCAL_LLM_MODEL_SELECTION_POLICY.md` — model selection policy
+* `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow, prompt packaging, source-truth gating, closeout, docs ownership, and model recommendation guidance
 
-Coordinator workflow rules, including source-truth gating and documentation ownership, live in `docs/local/COORDINATOR_PROMPTING_REMINDER.md`.
+Coordinator workflow rules, including source-truth gating, prompt packaging, closeout, documentation ownership, and model recommendation guidance, live in `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`.

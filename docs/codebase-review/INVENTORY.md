@@ -6,7 +6,7 @@
 - `project/plugins.sbt`: SBT plugin configuration.
 - `README.md`: upstream `distage-example` README. It describes `bifunctor-tagless` as the main example, `sbt test`, launcher usage, Docker/Postgres requirements, and GraalVM native-image commands.
 - `beautyq_search_eval_plan_v1.md`: BeautyQ search eval plan. It states the primary buyable unit is `MasterServiceOfferVariant` and describes three expected carousels: `variantCarousel`, `providerCarousel`, and `serviceIntentCarousel`.
-- `docs/`: architecture/reference/task docs. Files include search DSL, Qdrant vector backend, hybrid plan, Tapir migration reference, HTTP legacy contract notes, and local LLM references.
+- `docs/`: architecture/reference/task docs. Files include search DSL, Qdrant vector backend, hybrid plan, Tapir migration reference, HTTP legacy contract notes, and local coordinator/local-LLM references.
 - `docs/codebase-review/`: created by this pass for review notes and inventory.
 - `bifunctor-tagless/src/main/scala/leaderboard`: main Scala source for roles, APIs, model, repositories, seed loading, SQL, HTTP, plugins, and search.
 - `bifunctor-tagless/src/main/resources/common-reference.conf`: Postgres and logger configuration. It defines `postgres.jdbcDriver`, `url`, `user`, `password`, `host`, and `port`.
@@ -34,7 +34,7 @@ Build/module observations:
 - `docs/LOCAL_LLM_DISTAGE_APP_MODEL.md`: local reference for Distage app model and schema-order rules. Evidence: documents that repo DDL runs in resource constructors and FK-backed tables should express parent-table dependencies through constructor dependencies.
 - `docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md`: local reference for Izumi/BIO/Distage style. Evidence: focuses on `F[+_, +_]`, `Applicative2`, `Error2`, `Lifecycle`, `ModuleDef`, etc.
 - `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`: local reference for Tapir HTTP migration pattern. Evidence: says pure endpoint contracts are in `*TapirEndpoints.scala`, adapters in `leaderboard.api.*Api`, and `TapirHttpSupport` centralizes route interpreter policy.
-- `docs/LOCAL_LLM_MODEL_SELECTION_POLICY.md`: local operational guidance for choosing an LLM model during local development and review loops. Evidence: includes model capability table, derived value formulas, GPT-saving and No-GPT mode selection logic, decision matrix, and cost-aware guidance.
+- `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`: canonical coordinator-only workflow guide. Evidence: owns coordinator workflow, source-truth gate, prompt packaging, closeout, bundle scripts, docs ownership, and model recommendation guidance; the old standalone model-selection policy was merged here and removed.
 
 Documentation drift noted:
 
