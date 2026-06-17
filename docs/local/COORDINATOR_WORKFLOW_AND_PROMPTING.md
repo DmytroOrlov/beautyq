@@ -246,9 +246,11 @@ That final archive handoff remains the user-terminal flow even if an agent shell
 
 # 2. Model recommendation guidance
 
-Model recommendation blocks are only for non-trivial delegated edit prompts.
+Purpose and policy:
 
-Do not include model recommendations for coordinator-owned read-only, audit, review, or source-truth work.
+* Model recommendation blocks are only for non-trivial delegated edit prompts.
+* Do not include model recommendations for coordinator-owned read-only, audit, review, or source-truth work.
+* Keep delegated prompts themselves model-agnostic unless the user explicitly asks otherwise.
 
 Decision order:
 
@@ -263,7 +265,6 @@ Rules:
 * If required source facts are missing, request a focused bundle and stop.
 * Do not use a stronger model to invent APIs, signatures, fields, imports, tests, or docs facts.
 * Use exact names when the recommendation is actionable.
-* Keep delegated prompts themselves model-agnostic unless the user explicitly asks otherwise.
 
 Exact model names:
 
@@ -284,6 +285,36 @@ Compact mapping:
 * Source-confirmed repo inventory or stronger non-GPT agentic work: `MiniMax-M3`.
 * Complex code writing when cheaper/local models are likely to waste iterations: `GPT-5.5-medium`.
 * Very high-risk production lifecycle/runtime/backend migration code: `GPT-5.5-high`.
+
+## 2.1 Model recommendation block template
+
+For non-trivial delegated edit prompts, provide a separate coordinator note before the prompt:
+
+```text
+Task classification:
+- Type:
+- Source truth:
+- Risk:
+- Preference:
+- Availability:
+
+Run recommendation:
+- Cheapest likely to work:
+- Faster cloud option:
+- Stronger non-GPT option:
+- GPT option, only if justified:
+- If source truth is missing:
+```
+
+Constraints:
+
+* This note is not part of the delegated prompt unless the user asks.
+* Do not use it for coordinator-owned read-only, audit, review, or source-truth work.
+* Keep delegated prompts model-agnostic: no `Model: ...`, no `thinking-budget=...`, no `Use AGENTS.md` boilerplate.
+* Use exact model/tier names.
+* Recommend the minimal sufficient model, not a comfortable/heavier default.
+* If source truth is missing, recommend requesting a focused bundle first; do not recommend a stronger model to infer missing APIs.
+* Docs-only or narrow review-fix delegated edit tasks should prefer cheaper/local models unless the policy/doc ownership complexity justifies a stronger model.
 
 ---
 
@@ -401,40 +432,7 @@ echo "$ZIP"
 
 ---
 
-# 4. Model recommendation block
-
-For non-trivial delegated edit prompts, provide a separate coordinator note before the prompt:
-
-```text
-Task classification:
-- Type:
-- Source truth:
-- Risk:
-- Preference:
-- Availability:
-
-Run recommendation:
-- Cheapest likely to work:
-- Faster cloud option:
-- Stronger non-GPT option:
-- GPT option, only if justified:
-- If source truth is missing:
-```
-
-This note is not part of the delegated prompt unless the user asks. Do not use it for coordinator-owned read-only, audit, or source-truth work. Keep delegated prompts model-agnostic: no `Model: ...`, no `thinking-budget=...`, no `Use AGENTS.md` boilerplate.
-
-Use exact model/tier names: `MiMo-V2.5`, `MiMo-V2.5-Pro`, `MiniMax-M3`, `GPT-5.5-medium`, `GPT-5.5-high`. Do not write vague `Qwen`, `MiMo`, or `GPT`.
-
-If source truth is missing, recommend requesting a focused bundle first; do not recommend a stronger model to infer missing APIs.
-
-Model-sizing reminder:
-
-* The model recommendation block must name the minimal sufficient model, not a comfortable/heavier default.
-* Docs-only or narrow review-fix delegated edit tasks should prefer cheaper/local models unless the policy/doc ownership complexity justifies a stronger model.
-
----
-
-# 5. Documentation ownership
+# 4. Documentation ownership
 
 Before adding or changing a documented fact, identify its canonical owner. Prefer one canonical owner per fact; other docs should use short summaries and pointers.
 
@@ -446,7 +444,7 @@ The source-truth gate is safety-critical and must not be deduplicated away; keep
 
 ---
 
-# 6. Before sending any delegated prompt, check
+# 5. Before sending any delegated prompt, check
 
 ```text
 □ Did I ask the agent to audit/design when I can do it?
@@ -466,7 +464,7 @@ If any answer is bad, rewrite the prompt before sending.
 
 ---
 
-# 7. Source-truth gate
+# 6. Source-truth gate
 
 This section is a protected coordinator invariant. Do not remove, shorten, soften, or move it into `AGENTS.md`. It may only be replaced by wording that is at least as strict: missing source truth must stop patch planning, delegated-agent prompts, adjacent "safe" patches, and invented helpers/APIs.
 
