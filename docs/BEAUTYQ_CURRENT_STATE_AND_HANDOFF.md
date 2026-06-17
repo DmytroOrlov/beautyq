@@ -69,10 +69,8 @@ Documented as characterized, not as desired final contract:
 * ES seed-route checkpoint is reached. Plain `sbt test` is the canonical full verification command.
 * Latest user-verified plain `sbt test` (Jun 13, 2026): 963 succeeded, 0 failed, 1 canceled.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
-* Current checkpoint is expanded M3 / B-lite evidence: ES-native + Qdrant-native benchmark/eval comparison remains offline/eval-only.
-* Runtime hybrid expansion is paused.
-* Resource-backed hidden Qdrant/hybrid module expansion is paused.
-* ES and Qdrant may advance together only in eval/benchmark.
+* ES-native + Qdrant-native benchmark/eval comparison remains offline/eval-only.
+* ES and Qdrant may advance together only in eval/benchmark, not serving.
 * Production serving remains:
 
   ```text
@@ -82,8 +80,9 @@ Documented as characterized, not as desired final contract:
   ```
 
 * The production route does eager seed index preparation during route composition, but that is still not a production-grade ES lifecycle policy.
-* The next strategic gate is M4 ES lifecycle design; M4 is active, M5 has the non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle via `ElasticsearchSeedIndexReadiness.lifecycleMetadata` and `ElasticsearchSeedSearchComposition.lifecycleMetadata`, and detailed milestone status lives in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
-* Qdrant shadow stays a future M6 readiness/design step after ES lifecycle/baseline/observability/kill-switch, not the current implementation step.
+* `ElasticsearchSeedLifecycleMetadata` is a non-serving DI/readiness metadata seam exposed via `ElasticsearchSeedIndexReadiness.lifecycleMetadata` and `ElasticsearchSeedSearchComposition.lifecycleMetadata`; it is not a production lifecycle implementation.
+* Detailed milestone status and priority order for lifecycle/eval/shadow/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
+* M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 
@@ -93,21 +92,21 @@ Documented as characterized, not as desired final contract:
 
 ### Status
 
-* Current checkpoint is expanded M3 / B-lite evidence, not a completed milestone.
-* Query inventory / expected-role refinement and the current interpretability checkpoint remain part of the active M3 evidence lane.
+* This remains offline/eval-only.
 * `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, and `classDeltas:` are part of the current expanded checkpoint.
 * Validated class-sidecar replay exists for `benchmark-small -> benchmark-large`.
 * Saved aggregate JSON schema remains unchanged.
 * `EngineEvalAggregateReport` remains unchanged.
 * `EngineEvalReportJson` remains unchanged.
 * Detailed contracts and evidence stay in [docs/codebase-review/06-tests-and-contracts.md](codebase-review/06-tests-and-contracts.md).
-* Roadmap and milestone positioning stay in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
+* Detailed milestone positioning stays in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 
 ### Boundaries
 
 * This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
 * The route already performs eager seed index preparation during route composition, but that is not a production-grade ES lifecycle policy.
-* The next strategic gate remains M4 ES lifecycle design; Qdrant shadow remains a future M6 readiness/design step after ES lifecycle/baseline/observability/kill-switch.
+* `ElasticsearchSeedLifecycleMetadata` remains a non-serving metadata seam, not lifecycle completion.
+* M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.

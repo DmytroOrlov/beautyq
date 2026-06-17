@@ -311,7 +311,7 @@ Not production wiring:
 
 ## F3. B-lite: ES-native + Qdrant-native Eval Architecture
 
-Current strategic direction after B2:
+Current architecture split:
 
 ```text
 Production serving:
@@ -327,7 +327,7 @@ Eval/benchmark:
 ```
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-M-ESQ-EVAL pure/report/assembly layer is implemented. Remaining work is operational real evidence workflow: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
+M-ESQ-EVAL remains offline/eval-only. Detailed milestone status and sequencing live in `docs/codebase-review/07-current-gaps-and-roadmap.md`.
 
 ### InMemorySearchBackend role
 
@@ -359,7 +359,7 @@ Current ES eval pieces include:
 * `BeautySearchElasticsearchIntegrationSpec` — Docker-backed integration eval subsets.
 * `ElasticsearchSearchResponseInterpreterSpec` — response interpreter unit tests.
 
-The `EngineEval` comparison model and report/assembly layer are implemented. Remaining work is operational/demo-facing use.
+The `EngineEval` comparison model and report/assembly layer are implemented. Detailed status and next-step sequencing belong to the roadmap.
 
 ES-native eval measures:
 
@@ -411,12 +411,7 @@ Implemented pure EngineEval model (full API and metric semantics in `docs/codeba
 * `EngineEval.scala`: `EngineEvalEngine` (Elasticsearch, Qdrant, SimulatedHybrid), `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, `EngineEvalComparisonMetrics.from(...)`.
 * `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.
 
-M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) status:
-
-* M-ESQ-EVAL pure/report/assembly layer is implemented (normalizers, simulated hybrid, query/aggregate report, JSON/formatter/comparison, assembly from ES reports + Qdrant benchmark outputs, selected Qdrant candidate helper, ES integration proof).
-* Remaining work is operational/demo-facing use: run/collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use results to guide later Qdrant shadow/hybrid design.
-* Still offline/eval only.
-* Production route wiring is now ES-backed seed route; Qdrant and hybrid remain eval-only.
+M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) remains offline/eval-only. The production route stays ES-backed seed route; Qdrant and hybrid remain non-serving. For milestone status and sequencing, use `docs/codebase-review/07-current-gaps-and-roadmap.md`.
 
 ### Test taxonomy for B-lite
 

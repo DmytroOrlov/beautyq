@@ -206,6 +206,7 @@ When real-artifacts mode is enabled but required env vars are missing, the dual-
 ### M-ESQ-EVAL contract and evidence scope
 
 This document is the canonical detailed contract and evidence reference for M-ESQ-EVAL. Keep the handoff compact and keep local operator mechanics in `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
+For milestone status and sequencing, use `docs/codebase-review/07-current-gaps-and-roadmap.md`.
 
 Use this file for:
 
@@ -251,7 +252,7 @@ Boundary:
 
 ### Saved aggregate schema boundary
 
-Saved aggregate report schema remains unchanged throughout the current expanded M3 / B-lite checkpoint:
+Saved aggregate report schema remains unchanged in the current offline/eval evidence path:
 
 - Saved aggregate JSON schema remains unchanged.
 - `EngineEvalAggregateReport` remains unchanged.
