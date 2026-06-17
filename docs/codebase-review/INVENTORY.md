@@ -509,7 +509,7 @@ Qdrant/vector tests:
 - `QdrantNonProductionHybridExperimentSpec.scala`
 - `QdrantSearchDocumentIndexerSpec.scala`
 - `QdrantSemanticCandidateBackendSpec.scala`
-- `QdrantSemanticCandidateEvalSpec.scala`: AGENTS lists env-gated run with `LLAMA_CPP_EMBEDDING_URL` and optional `QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true`.
+- `QdrantSemanticCandidateEvalSpec.scala`: resource/manual semantic eval coverage uses `LLAMA_CPP_EMBEDDING_URL`; quality assertions are gated by `QDRANT_SEMANTIC_QUALITY_ASSERTIONS=true`.
 - `QdrantSemanticCandidateSearchSpec.scala`
 - `QdrantSnapshotIndexingCompatibilityIntegrationSpec.scala`
 - `QdrantTestClient.scala`

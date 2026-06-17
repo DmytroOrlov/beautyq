@@ -376,7 +376,7 @@ B-lite guardrails:
 * No Qdrant auto-supplement or `HybridServe` from benchmark alone.
 * Resource-backed hidden Qdrant/hybrid module work is paused until ES/Qdrant eval comparison is improved.
 
-M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison): started by pure `EngineEval` model, not complete. Full status, API, and metric semantics in handoff doc.
+M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is offline/eval-only and not complete. `EngineEval` pure/report/assembly and saved-report comparison support exist, but benchmark/eval output remains decision support, not production automation.
 
 Not target yet:
 
