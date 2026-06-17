@@ -94,7 +94,7 @@ Evidence:
 
 - `*ApiHttpContractSuite.scala` files exist for Beauty entities, ladder, and profile.
 - `TapirHttpSupportContractSuite.scala` pins shared Tapir behavior.
-- AGENTS instructions state existing focused tests and route-level HTTP contract tests are source of truth.
+- Existing focused tests and route-level HTTP contract tests are the strongest evidence for current observed API behavior.
 
 Consequences:
 

@@ -283,7 +283,7 @@ Search document/snapshot code in `leaderboard.search.document`:
 - `VariantSearchDocumentBuilder.build(snapshot)`: builds documents and fails broken joins with `QueryFailure` according to docs and symbol names `missingJoin`, `validateAgainstSchema`.
 - `BeautySearchCatalogSnapshotLoader[F]`: trait with `load()`.
 - `BeautySearchCatalogSnapshotLoader.FromSeed`: inferred from source symbol locations around `load()` and `BeautySearchCatalogSnapshot.fromSeedData`; exact class name should be rechecked in pass 2.
-- `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories`: mentioned in AGENTS instructions and source symbol search around repository loader methods. This path should depend directly on `BeautyQSeedReady` before repository reads.
+- `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories`: source symbol search around repository loader methods. This path should depend directly on `BeautyQSeedReady` before repository reads.
 - `VariantSearchDocumentSnapshotProvider[F]`: trait with `loadSnapshot()`.
 - `InMemoryVariantSearchDocumentSnapshotProvider`: fake/test/in-memory provider backed by a list.
 
@@ -369,7 +369,7 @@ Routing code:
 - `SearchRoutingReason`: `ExplicitConstraints`, `LexicalIntent`, `HardNegativeOrNoiseGuard`, `BroadSemanticCandidate`, `FallbackNotEnabled`.
 - `SearchRoutingSignal`: `BroadSemanticCandidate`, `HardNegativeOrNoiseGuard`.
 - `SearchRoutingMetadata` and `SearchRoutingDecision`.
-- `SearchBackendRouter.decide`: routing decision implementation. AGENTS rules say residual text alone must never route to Qdrant and hard negatives/noise must not route to Qdrant because of residual text; pass 2 should verify implementation against tests.
+- `SearchBackendRouter.decide`: routing decision implementation. Residual text alone should not route to Qdrant, and hard negatives/noise should not route to Qdrant because of residual text; pass 2 should verify implementation against tests.
 
 Qdrant/vector code in `leaderboard.search.qdrant`:
 
@@ -401,7 +401,7 @@ Embedding code:
 
 - Category: manual/local/non-production unless separately proven.
 - `EmbeddingClient`: trait with `embed(text): IO[QueryFailure, Vector[Double]]`.
-- `LlamaCppEmbeddingClient`: HTTP embedding client with `LlamaCppEmbeddingClientConfig`; docs/AGENTS include manual `llama-server` command and env var `LLAMA_CPP_EMBEDDING_URL`.
+- `LlamaCppEmbeddingClient`: HTTP embedding client with `LlamaCppEmbeddingClientConfig`; local docs describe manual `llama-server` operation and env var `LLAMA_CPP_EMBEDDING_URL`.
 
 Benchmark/eval code:
 
@@ -410,7 +410,7 @@ Benchmark/eval code:
 - `QdrantEmbeddingBenchmark`: candidate/run-mode/plan/expected/query-result/metrics/aggregate/candidate-report/comparison/report models and metrics helpers.
 - `QdrantEmbeddingBenchmarkRunner`: validates and runs benchmark plans. Validation methods found for candidate count, distinct candidate ids, candidate results, expected query ids, distinct result query ids, and result coverage.
 - `QdrantEmbeddingBenchmarkCandidateExecutor`: real-resource benchmark executor abstractions and Qdrant-backed executor. It includes collection create/delete client, composition factory, executor config, `runCandidate`, and cleanup.
-- `QdrantEmbeddingBenchmarkDecisionPolicy`: produces benchmark decision verdicts such as `KeepBaseline`, `CandidateWorthFurtherEvaluation`, `CandidateWorthSwitching`, and `CandidateRejected`; docs and AGENTS say benchmark output is decision support, not production automation.
+- `QdrantEmbeddingBenchmarkDecisionPolicy`: produces benchmark decision verdicts such as `KeepBaseline`, `CandidateWorthFurtherEvaluation`, `CandidateWorthSwitching`, and `CandidateRejected`; benchmark output is decision support, not production automation.
 - `QdrantEmbeddingBenchmarkQuerySubset`: selects explicit query subsets.
 - `QdrantEmbeddingBenchmarkReportFormatter`, `QdrantEmbeddingBenchmarkReportJson`, `QdrantEmbeddingBenchmarkSavedReportComparison`: formatting, JSON, and saved report comparison.
 
@@ -689,7 +689,7 @@ Uncertain boundaries:
 - Is availability/scheduling absent, deferred, or represented under different names? Search for appointment/calendar/schedule/time-slot terms.
 - Which Qdrant/Llama/benchmark tests are ignored, tagged, env-gated, or manually run only? Inspect ScalaTest annotations and environment checks.
 - Does any production wiring construct Qdrant or heavy semantic dependencies when experiments are disabled? Inspect `BeautyQNonProductionHybridExperimentModuleGatingSpec` and module bindings.
-- Does `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` have a direct `BeautyQSeedReady` dependency as required by AGENTS instructions? Inspect constructor signature and tests.
+- Does `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` have a direct `BeautyQSeedReady` dependency before repository reads? Inspect constructor signature and tests.
 - Are `matched_queries` diagnostics implemented, tested, or only planned? Search exact ES request/response fields and test assertions.
 - What transaction boundaries exist around multi-table variant writes and attribute replacement? Inspect Doobie `ConnectionIO` composition in `MasterServiceOfferVariants.Postgres` and attribute repository.
 - Are repository FK constructor dependencies complete and intentional in all Postgres repositories? Compare source constructors against `docs/LOCAL_LLM_DISTAGE_APP_MODEL.md` graph.

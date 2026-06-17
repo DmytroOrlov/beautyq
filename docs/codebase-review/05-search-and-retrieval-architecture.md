@@ -186,7 +186,7 @@ Implemented/current non-production components:
 Local endpoint / resource-backed:
 
 - `LlamaCppEmbeddingClient` is used by resource-backed specs that default to local endpoint `http://localhost:8081`; `LLAMA_CPP_EMBEDDING_URL` is an optional env override; specs cancel when the endpoint is unavailable.
-- AGENTS instructions include a manual `llama-server` command.
+- Manual local llama.cpp operation is documented with a `llama-server` command.
 
 Integration-test-only / Docker-backed:
 
@@ -448,7 +448,7 @@ Manual saved-report comparison:
 Decision policy boundary:
 
 - `QdrantEmbeddingBenchmarkDecisionPolicy` outputs verdicts such as keep baseline, worth further evaluation, worth switching, or rejected.
-- Docs and AGENTS instructions say benchmark output is decision support, not production automation.
+- Benchmark output is decision support, not production automation.
 - No production code was found that consumes benchmark verdicts to switch models or routing.
 
 ## Current Production Search Status Summary

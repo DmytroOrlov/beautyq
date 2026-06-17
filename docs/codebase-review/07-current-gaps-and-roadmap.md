@@ -340,7 +340,7 @@ Resolved mismatch:
 Evidence:
 
 - Constructor in `search/document/VariantSearchDocument.scala` now takes `BeautyQSeedReady`, seed data, and repository collaborators.
-- AGENTS instructions require seed-json plus shared-Postgres snapshot paths to depend directly on `BeautyQSeedReady` before repository reads.
+- Seed-json plus shared-Postgres snapshot paths should depend directly on `BeautyQSeedReady` before repository reads.
 
 Boundary:
 

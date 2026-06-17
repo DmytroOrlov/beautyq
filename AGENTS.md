@@ -75,12 +75,6 @@ Current route characterization:
 * `BeautySearchReadyCatalogDocuments` rejects blank source / empty documents and preserves non-empty source/documents.
 * Freshness, refresh/replacement, typed 4xx validation, observability, and kill-switch remain future hardening.
 
-## Architecture docs
-
-Use `docs/codebase-review/README.md` as architecture entrypoint. `docs/codebase-review/INVENTORY.md` is the factual index. Do not treat roadmap docs or experiments as production behavior; check current code/tests when production wiring matters.
-
-For the current BeautyQ search state (route wiring, backend roles, milestones, B-lite status, forbidden paths), see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. It is the canonical handoff for new chats.
-
 ## Distage and seed rules
 
 * Distage startup follows dependency edges, not binding order.
