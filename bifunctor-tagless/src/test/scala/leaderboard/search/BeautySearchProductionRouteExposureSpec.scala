@@ -10,8 +10,7 @@ import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
-import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
-import leaderboard.plugins.BeautySearchRouteModules
+import leaderboard.plugins.{BeautySearchRouteModules, LeaderboardPlugin}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -24,7 +23,7 @@ import scala.io.Source
 import scala.util.Using
 
 final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with HttpContractTestSupport {
-  "BeautySearchRouteModules.apiElasticsearch" should {
+  "LeaderboardPlugin apiBase plus BeautySearchRouteModules.apiElasticsearch" should {
     "expose BeautySearchApi in the HttpApi set and serve the seed-catalog ES route" in {
       withEsServer { port =>
         val probe = buildProbe(port)
@@ -77,10 +76,9 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Htt
 
   private def buildProbe(port: Int): BeautySearchProductionRouteExposureProbe = {
     val module = new distage.ModuleDef {
+      include(LeaderboardPlugin.modules.apiBase[IO])
       include(BeautySearchRouteModules.apiElasticsearch)
       make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
-      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
-      make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchProductionRouteExposureProbe].from {
         (
