@@ -102,23 +102,23 @@ Contract skeleton/current:
 - `BeautySearchRouteModules.seedCatalogInMemory[F]` is a src/main explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies `BeautyQSeedLoader.ResourceLoader`.
 - `BeautySearchOptInRouteModuleSpec.scala` proves that this composed module contributes exactly one `BeautySearchApi[IO]` to the same real `Set[HttpApi[IO]]` shape and can answer one `POST /beauty-search` smoke request from seed-resource catalog data without starting `HttpServer`.
 - `LeaderboardPlugin` top-level now includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, so `POST /beauty-search` is production-exposed in the default API graph via the ES-backed seed route.
-- `BeautySearchProductionRouteExposureSpec.scala` proves the default plugin API graph contributes `BeautySearchApi[IO]` through the same `Set[HttpApi[IO]]` shape consumed by `HttpServer.Impl` and can answer one non-empty `POST /beauty-search` response without starting `HttpServer`.
-- `BeautySearchProductionRouteLimitSpec.scala` characterizes `POST /beauty-search` limit parameter behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`):
-  - `limit` 3 → `200 OK`, non-empty `variantCarousel`, size <= 3.
+- `BeautySearchProductionRouteExposureSpec.scala` proves the production API graph fragment (`LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`) contributes `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape consumed by `HttpServer.Impl` and can answer one `POST /beauty-search` response through that assembled route set. It is not a full plugin-discovery proof.
+- `BeautySearchProductionRouteLimitSpec.scala` is a targeted ES-backed route-module characterization through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub:
+  - `limit` 3 → `200 OK`, empty `variantCarousel`.
   - `limit` 0 → `200 OK`, empty `variantCarousel`.
   - `limit` -5 → `200 OK`, empty `variantCarousel`.
-  - `limit` 100000 → `200 OK`, `variantCarousel` size <= `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
-- This is current production route behavior, not a full validation or error policy. Zero and negative limits return `200 OK` with empty `variantCarousel`. Huge limits are capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
+  - `limit` 100000 → `200 OK`, empty `variantCarousel` in the zero-hit stub.
+- This is current route characterization, not a full validation or error policy. Zero and negative limits return `200 OK` with empty `variantCarousel`. The broader current route still caps huge limits by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 ## Beauty Search Production Route Coordinate Behavior
 
-Historical/rollback characterization:
+Current targeted ES-backed characterization:
 
-- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`).
-- Normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, non-empty `variantCarousel`.
-- Latitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3).
-- Longitude 999.0 → `200 OK`, bounded `variantCarousel` (size <= 3).
-- Huge finite coordinates (lat 1e9, lon -1e9) → `200 OK`, bounded `variantCarousel` (size <= 3).
+- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub.
+- Normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, empty `variantCarousel`.
+- Latitude 999.0 → `200 OK`, empty `variantCarousel`.
+- Longitude 999.0 → `200 OK`, empty `variantCarousel`.
+- Huge finite coordinates (lat 1e9, lon -1e9) → `200 OK`, empty `variantCarousel`.
 - The current route does not validate coordinate ranges; all finite numeric values are accepted.
 
 This is current behavior, not the desired final validation contract. The route currently lacks:
@@ -129,13 +129,13 @@ This is current behavior, not the desired final validation contract. The route c
 
 ## Beauty Search Production Route Query Behavior
 
-Historical/rollback characterization:
+Current targeted ES-backed characterization:
 
-- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`).
-- Empty query string → `200 OK`, non-empty `variantCarousel`.
-- Whitespace-only query string → `200 OK`, bounded `variantCarousel` (size <= 3).
-- Normal query text ("nails") → `200 OK`, bounded `variantCarousel` (size <= 3).
-- Very long query string (e.g., "nails " repeated 1000 times) → `200 OK`, bounded `variantCarousel` (size <= 3).
+- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub.
+- Empty query string → `200 OK`, empty `variantCarousel`.
+- Whitespace-only query string → `200 OK`, empty `variantCarousel`.
+- Normal query text ("nails") → `200 OK`, empty `variantCarousel`.
+- Very long query string (e.g., "nails " repeated 1000 times) → `200 OK`, empty `variantCarousel`.
 - The current route does not enforce query length validation.
 
 This is current behavior, not the desired final validation contract. The route currently lacks:
@@ -153,6 +153,7 @@ Production-wired/current:
 - This production exposure is lexical/simple/catalog-first over Elasticsearch. It is not Qdrant and not hybrid.
 - `modules.api[F]` / `seedCatalogInMemory[F]` / `InMemorySearchBackend` are retained as rollback/legacy/non-default composition.
 - No repository-backed production snapshot wiring, Qdrant lifecycle, hybrid routing, fallback, reranking, score fusion, startup indexing, or benchmark-driven routing policy is added.
+- No production route switch, no `HybridServe`, and no Qdrant auto-supplement are added.
 - Startup seed-resource snapshot readiness is the only readiness behavior in this include.
 - Production freshness, refresh, staleness bounds, runtime catalog replacement, source-of-truth reconciliation, stale-catalog observability, and kill-switch behavior remain unresolved.
 - There is no runtime refresh or replacement policy yet.
@@ -176,9 +177,9 @@ Future implementation boundary:
 
 ## Beauty Search Route Error Behavior
 
-Historical/rollback characterization:
+Current targeted ES-backed characterization:
 
-- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior (historical/rollback characterization through `LeaderboardPlugin.modules.api` with seed-resource catalog snapshot + `InMemorySearchBackend`).
+- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP stub that is not used for body decode failures.
 - Malformed JSON body → `500 InternalServerError`, empty body.
 - Empty body → `500 InternalServerError`, empty body.
 - Wrong `limit` type (string instead of integer) → `500 InternalServerError`, empty body.
@@ -192,6 +193,7 @@ This is current behavior, not the desired final validation contract. The route c
 - Freshness/staleness reporting at the route boundary.
 - Observability surface (logging, metrics, tracing for bad requests).
 - Kill-switch behavior that would short-circuit the route with a structured response.
+- Qdrant/hybrid serving behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
 ## Contract Tests
 
