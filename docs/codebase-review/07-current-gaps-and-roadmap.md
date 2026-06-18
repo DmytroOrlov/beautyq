@@ -236,7 +236,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M1 | ES seed route demo-stable | Reached |
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
-| M4 | ES production lifecycle designed | Design gate documented / active |
+| M4 | ES production lifecycle designed | Design gate documented / active; operator-facing lifecycle status shape documented only in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md` |
 | M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata plus explicit readiness-gap state and route-graph coverage; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
@@ -253,6 +253,7 @@ Roadmap position:
 * M5 progress now includes a non-serving `ElasticsearchSeedLifecycleMetadata` handle and `ElasticsearchProductionReadinessState` derived from it, but production lifecycle remains incomplete.
 * Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
 * Current progress is internal state and graph coverage only: seed index metadata is available through DI, eager seed preparation is wired, lifecycle status is `SeedOnlyNotProductionLifecycle`, production lifecycle gaps are explicit, and serving behavior is unchanged.
+* Option 30 progress is design-only: the planned operator-facing lifecycle status shape is documented, while endpoint exposure remains separate future work.
 
 Decisions to make at M4:
 
@@ -298,6 +299,8 @@ M5 remains incomplete. Remaining work is the production lifecycle contract plus 
 - operator-visible status: explicit status fields/surface that distinguish seed-only, preparing, ready, failed, stale, rollback, or disabled states.
 
 The current `ElasticsearchProductionReadinessState` does not implement these items. It records that readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is limited to eager seed preparation, and operator visibility is not exposed.
+
+The status-shape design now exists as documentation only in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. That is not endpoint exposure, not HTTP policy approval, and not lifecycle completion.
 
 Non-goals remain unchanged here: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
 

@@ -106,6 +106,11 @@ Future/unimplemented unless matching source-backed tests are added:
 - operator-visible lifecycle status:
   - status surface and fields once introduced;
   - distinction among seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+- operator-facing lifecycle status design:
+  - pure status model/encoder tests for the planned response fields in `ES_LIFECYCLE_STATUS_DESIGN.md` once a source model exists;
+  - route/status endpoint contract tests only if an endpoint/path is separately approved;
+  - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
+  - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
 
 Current focused pure/composition/route-module specs cover only the seed-only metadata and explicit non-serving state seams. They are not substitutes for production lifecycle tests.
 

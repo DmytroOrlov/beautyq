@@ -160,6 +160,7 @@ Architecture note:
 - `ElasticsearchSeedSearchComposition.productionReadinessState` exposes that derived value, and `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds it through the same ES seed route graphs.
 - Focused route/module specs prove that both values are materialized through the targeted ES seed route, explicit ES seed route module, real HTTP-client ES route, port-configured default route, and production API graph.
 - This state is seed-only, internal, and non-serving; it documents absent production lifecycle capabilities without completing or enforcing them.
+- The planned operator-facing status response shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. That document is design-only: no endpoint is implemented, no route path is approved, and no serving behavior changes.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
 
 ### Remaining production ES lifecycle contract

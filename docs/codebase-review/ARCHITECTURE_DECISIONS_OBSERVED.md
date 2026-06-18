@@ -211,6 +211,7 @@ Evidence:
 Consequences:
 
 - Current state coverage proves DI availability and makes the missing capabilities explicit; it does not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
+- Any operator-facing lifecycle exposure must remain design-only until an endpoint path and operator policy are separately approved.
 - M5 cannot be treated as complete from state coverage alone.
 
 What not to infer:

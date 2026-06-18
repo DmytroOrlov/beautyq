@@ -88,6 +88,7 @@ Documented as characterized, not as desired final contract:
 * `ElasticsearchProductionReadinessState` is an internal non-serving state derived from that metadata. It records serving readiness `NotEnforced`, replacement `NotConfigured`, freshness `NotTracked`, refresh `EagerSeedPreparationOnly`, rollback `NotConfigured`, and operator visibility `NotExposed`.
 * Focused ES-backed route/module graph specs prove that lifecycle metadata and the derived readiness state are materialized through the current route graphs; production lifecycle remains incomplete.
 * Current route-module state coverage documents the seed-only gaps; it does not enforce readiness or change serving behavior.
+* The operator-facing lifecycle status shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`, but no endpoint, route path, or operator policy is implemented.
 * Detailed milestone status and priority order for lifecycle/eval/shadow/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 * M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * `seedCatalogInMemory` remains available as rollback/non-default.
