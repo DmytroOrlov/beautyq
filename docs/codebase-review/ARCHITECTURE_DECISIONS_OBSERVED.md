@@ -263,6 +263,7 @@ Design A endpoint policy drafted (see `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md
 - Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) as response shape.
 - All draft recommendations remain unapproved.
 - Draft endpoint expectations are now captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests).
+- Implementation slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`.
 
 Consequences:
 

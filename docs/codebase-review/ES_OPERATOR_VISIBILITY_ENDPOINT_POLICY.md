@@ -1,6 +1,6 @@
 # ES Operator Visibility Endpoint Policy — Design A
 
-Status: **draft only**. No endpoint is implemented. No route path is approved. No auth/operator policy is implemented. No status policy is implemented. No `/beauty-search` behavior change.
+Status: **draft only; implementation-slice source-confirmed**. No endpoint is implemented. No route path is approved. No auth/operator policy is implemented. No status policy is implemented. No `/beauty-search` behavior change. The smallest safe implementation slice is source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
 
 ## Purpose
 
@@ -425,8 +425,19 @@ This policy draft does not:
 - claim operator visibility is implemented;
 - imply Design B or Design C scope.
 
+## Implementation-slice source confirmation
+
+The smallest safe implementation slice for Design A is source-confirmed in `docs/codebase-review/ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`. Key findings:
+
+- **Can be implemented without new ES calls:** Yes. The endpoint reads from DI-bound `ElasticsearchStartupReadinessTransition` and projects via pure function.
+- **Can be implemented without changing `/beauty-search`:** Yes. The endpoint is additive (different method and path).
+- **Smallest future files:** new `EsLifecycleStatusTapirEndpoints.scala`, new `EsLifecycleStatusApi.scala`, modification to existing DI wiring module.
+- **Unresolved decisions:** endpoint path, auth/exposure mode, response shape, HTTP status code, route graph rooting, pending spec activation, enabled/disabled flag semantics.
+- **Pending specs:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has 28 pending tests encoding Design A expectations.
+
 ## References
 
+- Implementation-slice source confirmation: `docs/codebase-review/ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`
 - Operator visibility source confirmation: `docs/codebase-review/ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`
 - Lifecycle status design: `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`
 - Serving-gate design: `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`

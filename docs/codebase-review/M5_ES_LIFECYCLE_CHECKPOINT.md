@@ -71,7 +71,7 @@ Remaining ES production lifecycle work moves to named future tracks. These track
 
 | Track | Scope | Dependencies | Current status |
 |-------|-------|-------------|----------------|
-| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; endpoint/path/auth policy approval | Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Design A endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Draft recommends `GET /ops/beauty-search/lifecycle`, disabled-by-default auth, `200 OK` status, `ElasticsearchStartupReadinessStatusResponse` response shape. All draft recommendations remain unapproved. Pending/spec-only expectations captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests). Requires explicit approval before implementation. |
+| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; endpoint/path/auth policy approval | Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Design A endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Draft recommends `GET /ops/beauty-search/lifecycle`, disabled-by-default auth, `200 OK` status, `ElasticsearchStartupReadinessStatusResponse` response shape. All draft recommendations remain unapproved. Pending/spec-only expectations captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests). Implementation-slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`. Requires explicit approval before implementation. |
 | ES runtime serving-gate track | Runtime route-gate policy/implementation: route returns approved HTTP error (e.g., 503) on non-prepared state; requires new source seam because current DI-bound transition is always `Prepared` | M5 closeout; serving-gate policy approval (Choice 1 or 2 from `ES_STARTUP_SERVING_GATE_DESIGN.md`); new source seam design | Not started; source-confirmed as requiring different seam in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` |
 | ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
 
@@ -100,6 +100,7 @@ This closeout does not imply or implement:
 
 ## References
 
+- Implementation-slice source confirmation: `docs/codebase-review/ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`
 - Operator visibility source confirmation: `docs/codebase-review/ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`
 - Serving-gate design: `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`
 - Lifecycle status design: `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`

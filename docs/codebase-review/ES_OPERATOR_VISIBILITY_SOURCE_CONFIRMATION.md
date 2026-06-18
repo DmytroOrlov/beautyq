@@ -230,9 +230,18 @@ Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs
 - Future tests required before implementation
 - Future implementation seams (source-confirmed, not approved)
 
-Draft endpoint expectations are now captured in pending specs: `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations and not implementation proof.
+Draft endpoint expectations are now captured in pending specs: `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations and not implementation proof. No endpoint is implemented; no route path is approved.
 
 All draft recommendations remain unapproved. No endpoint is implemented. No route path is approved.
+
+## Implementation-slice source confirmation
+
+The smallest safe implementation slice for Design A is source-confirmed in `docs/codebase-review/ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`. Key findings:
+
+- Design A can be implemented without new ES calls. The endpoint reads from DI-bound `ElasticsearchStartupReadinessTransition` and projects via `ElasticsearchStartupReadinessStatusResponse.from(transition)`.
+- Design A can be implemented without changing `/beauty-search`. The endpoint is additive (different method and path).
+- Smallest future implementation files: new `EsLifecycleStatusTapirEndpoints.scala`, new `EsLifecycleStatusApi.scala`, modification to existing DI wiring module (`BeautySearchCatalogBackendModules` or `BeautySearchRouteModules`).
+- Unresolved decisions before implementation: endpoint path, auth/exposure mode, response shape, HTTP status code, route graph rooting, pending spec activation, enabled/disabled flag semantics.
 
 ## Non-goals
 
@@ -248,6 +257,7 @@ This source confirmation does not:
 
 ## References
 
+- Implementation-slice source confirmation: `docs/codebase-review/ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`
 - Lifecycle status design: `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`
 - Serving-gate design: `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`
 - Serving-gate source confirmation: `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`

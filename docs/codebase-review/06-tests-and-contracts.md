@@ -122,9 +122,9 @@ Future/unimplemented unless matching source-backed tests are added. These belong
 
 ### Future operator visibility tests required before endpoint implementation
 
-Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
+Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Implementation slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
 
-**Pending/spec-only coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations, not implementation proof. No endpoint is implemented; no route path is approved.
+**Pending/spec-only coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations, not implementation proof. No endpoint is implemented; no route path is approved. Pending specs should be activated or replaced by active endpoint contract tests when implementation starts.
 
 1. **Endpoint returns expected prepared/seed-only status shape.**
    - `GET` to approved path returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
