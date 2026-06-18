@@ -247,3 +247,28 @@ What not to infer:
 
 - Do not infer that the serving-gate design constitutes enforcement or that any policy choice is approved.
 - Do not infer production lifecycle completion from the existence of the serving-gate design document.
+
+## Decision 12: M5 checkpoint confirms non-serving lifecycle seams are implemented but production lifecycle is incomplete
+
+Statement:
+
+- The M5 checkpoint summary confirms that non-serving lifecycle seams (metadata, readiness state, status response model/encoder, startup transition, startup status projection, DI integration, and cross-model consistency coverage) are implemented, but production lifecycle enforcement, endpoint, operator visibility, replacement, freshness, refresh, rollback, and serving-gate enforcement are not.
+
+Evidence:
+
+- `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` documents the implemented non-serving seams, remaining production lifecycle gaps, and enforcement prerequisites.
+- `ElasticsearchProductionReadinessState.seedOnly` records `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, `NotExposed`.
+- `ElasticsearchStartupReadinessTransition` records `NotEnforced` serving decision for both prepared and failed transitions.
+- `ElasticsearchLifecycleStatusResponse` has `productionLifecycleComplete = false`.
+- `ES_STARTUP_SERVING_GATE_DESIGN.md` documents five policy choices that must be approved before enforcement.
+
+Consequences:
+
+- M5 cannot be treated as complete from state coverage alone.
+- Serving-gate enforcement, endpoint, and production lifecycle completion remain future work pending explicit approval.
+- The checkpoint is a docs-only record; no source, test, or serving behavior was changed.
+
+What not to infer:
+
+- Do not infer production lifecycle completion from the existence of the checkpoint document.
+- Do not infer serving-gate enforcement, endpoint approval, or production readiness from the checkpoint.

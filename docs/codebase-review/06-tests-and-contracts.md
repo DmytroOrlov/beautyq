@@ -131,7 +131,7 @@ These tests are unimplemented and documented in `docs/codebase-review/ES_STARTUP
 - no extra Elasticsearch calls beyond approved lifecycle behavior;
 - rollback/freshness behavior only after those policies exist.
 
-Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests.
+Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for the full non-serving seam list and remaining production lifecycle gaps.
 
 ## Repository Tests
 

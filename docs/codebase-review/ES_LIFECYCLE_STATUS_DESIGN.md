@@ -7,6 +7,7 @@ Status: response model/encoder implemented; exposure design remains incomplete.
 - No serving behavior is changed.
 - No production lifecycle completion is claimed.
 - M5 remains incomplete.
+- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for checkpoint summary.
 
 ## Purpose
 

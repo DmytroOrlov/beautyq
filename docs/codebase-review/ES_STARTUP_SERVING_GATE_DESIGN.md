@@ -7,6 +7,7 @@ Status: design-only. M5 remains incomplete.
 - No serving gate implemented.
 - No startup readiness enforcement.
 - No production lifecycle completion.
+- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for checkpoint summary.
 
 ## Purpose
 
