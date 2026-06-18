@@ -29,6 +29,7 @@ Implemented/current:
 - `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return structured `invalid_query` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong limit type, and missing query return Tapir default `400 BadRequest`.
 - `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity. Decode-invalid inputs retain Tapir default `400 BadRequest`; semantic-invalid inputs return exact `code` / `message` JSON `400 BadRequest`.
+- BeautySearch request-boundary tests use `BeautySearchRequestContract` for public limits and semantic error descriptors. A focused mirror assertion keeps `BeautySearchRequestContract.MaxLimit` source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 They protect:
 
@@ -38,6 +39,7 @@ They protect:
 - Error/exception behavior.
 - Tapir/http4s default decode behavior: malformed JSON, empty bodies, missing required fields, invalid field types, and malformed path captures return `400 BadRequest` before repository/service logic.
 - BeautySearch semantic validation behavior: blank query, invalid limit bounds, and out-of-range optional coordinates return structured JSON `400 BadRequest` before service/Elasticsearch logic.
+- The named public request contract requires non-blank query text; limit range `1..BeautySearchRequestContract.MaxLimit` (`MinLimit` is `1`); latitude range `BeautySearchRequestContract.MinLatitude..BeautySearchRequestContract.MaxLatitude`; and longitude range `BeautySearchRequestContract.MinLongitude..BeautySearchRequestContract.MaxLongitude`. Coordinates are independently optional, and there is no maximum query-length rule.
 - Default uncaught server exception behavior: `500 InternalServerError` with `Internal server error` body.
 - Literal route precedence: `/category/root` remains a successful category-root route.
 - Malformed UUID captures return `400 BadRequest`.

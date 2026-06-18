@@ -39,8 +39,7 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
 
         assertStructuredBadRequest(
           response,
-          code = "invalid_limit",
-          message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+          BeautySearchRequestContract.InvalidLimit,
         )
       }
     }
@@ -59,8 +58,7 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
 
         assertStructuredBadRequest(
           response,
-          code = "invalid_limit",
-          message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+          BeautySearchRequestContract.InvalidLimit,
         )
       }
     }
@@ -79,10 +77,13 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
 
         assertStructuredBadRequest(
           response,
-          code = "invalid_limit",
-          message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+          BeautySearchRequestContract.InvalidLimit,
         )
       }
+    }
+
+    "expose the source-backed carousel maximum through the request contract" in {
+      assert(BeautySearchRequestContract.MaxLimit == BeautySearchSpecV1.spec.carouselSpec.variantSize)
     }
   }
 

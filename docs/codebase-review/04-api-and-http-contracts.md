@@ -75,7 +75,9 @@ Contract skeleton/current:
 - Contract path/method: `POST /beauty-search`.
 - Request body: `UserSearchInput` JSON with `query`, `userLat`, `userLon`, and `limit`.
 - Tapir decodes a plain `jsonBody[UserSearchInput]`; semantic validation runs in `BeautySearchApi` before `BeautySearchService.search`.
-- Semantic validation requires a non-blank query; a limit from `1` through `BeautySearchSpecV1.spec.carouselSpec.variantSize`; optional latitude within `[-90, 90]`; and optional longitude within `[-180, 180]`.
+- Semantic validation follows `BeautySearchRequestContract`: a non-blank query; a limit within `1..BeautySearchRequestContract.MaxLimit` (`MinLimit` is `1`); optional latitude from `BeautySearchRequestContract.MinLatitude` through `BeautySearchRequestContract.MaxLatitude`; and optional longitude from `BeautySearchRequestContract.MinLongitude` through `BeautySearchRequestContract.MaxLongitude`.
+- Coordinates remain independently optional, and no maximum query length is enforced.
+- `BeautySearchRequestContract.MaxLimit` is source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`; API code, tests, and docs use the request-contract name as the public surface.
 - The first semantic failure returns structured JSON `400 BadRequest` through `HttpApiFailure.BadRequest` and does not call `BeautySearchService` or Elasticsearch.
 - Response body: `BeautySearchResponse` JSON preserving the existing variant carousel, provider carousel, service intent carousel, facets, and inferred filters model.
 - Error output supports structured `HttpApiFailure.BadRequest` as `400` and preserves backend/query failure as `500` with an empty body.
@@ -110,7 +112,7 @@ Contract skeleton/current:
   - `limit` 3 → `200 OK`, empty `variantCarousel`.
   - `limit` 0 → structured `invalid_limit` JSON `400 BadRequest`.
   - `limit` -5 → structured `invalid_limit` JSON `400 BadRequest`.
-  - `limit` above `BeautySearchSpecV1.spec.carouselSpec.variantSize` → structured `invalid_limit` JSON `400 BadRequest`.
+  - `limit` above `BeautySearchRequestContract.MaxLimit` → structured `invalid_limit` JSON `400 BadRequest`.
 - Limit validation occurs in the API adapter before service/backend execution.
 
 ## Beauty Search Production Route Coordinate Behavior
@@ -191,10 +193,10 @@ Malformed UUID captures return `400 BadRequest`.
 Current state, confirmed from source and route tests:
 
 - `HttpApiFailure.BadRequest(code, message)` is the scoped structured error model.
-- Blank query returns `invalid_query` / `query must not be blank`.
-- Limit outside `1..BeautySearchSpecV1.spec.carouselSpec.variantSize` returns `invalid_limit` / `limit must be between 1 and <maxLimit>`.
-- Latitude outside `[-90, 90]` returns `invalid_latitude` / `userLat must be between -90 and 90`.
-- Longitude outside `[-180, 180]` returns `invalid_longitude` / `userLon must be between -180 and 180`.
+- Blank query returns `BeautySearchRequestContract.InvalidQuery` (`invalid_query` / `query must not be blank`).
+- Limit outside `1..BeautySearchRequestContract.MaxLimit` returns `BeautySearchRequestContract.InvalidLimit` (`invalid_limit` / `limit must be between 1 and <maxLimit>`).
+- Latitude outside the named contract bounds returns `BeautySearchRequestContract.InvalidLatitude` (`invalid_latitude` / `userLat must be between -90 and 90`).
+- Longitude outside the named contract bounds returns `BeautySearchRequestContract.InvalidLongitude` (`invalid_longitude` / `userLon must be between -180 and 180`).
 - Validation returns the first failure in query, limit, latitude, longitude order.
 - Malformed JSON, empty body, invalid field types, and missing required fields remain Tapir default `400 BadRequest`.
 - Global structured decode handling is not implemented.

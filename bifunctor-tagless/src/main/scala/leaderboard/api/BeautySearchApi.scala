@@ -4,8 +4,7 @@ import cats.effect.Async
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
-import leaderboard.search.{BeautySearchService, UserSearchInput}
-import leaderboard.search.dsl.BeautySearchSpecV1
+import leaderboard.search.{BeautySearchRequestContract, BeautySearchService, UserSearchInput}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 
@@ -31,18 +30,23 @@ class BeautySearchApi[F[+_, +_]: Error2](
       )
     }
 
-  private val maxLimit = BeautySearchSpecV1.spec.carouselSpec.variantSize
-
   private def validate(input: UserSearchInput): Either[HttpApiFailure.BadRequest, UserSearchInput] =
     if (input.query.trim.isEmpty) {
-      Left(HttpApiFailure.BadRequest("invalid_query", "query must not be blank"))
-    } else if (input.limit < 1 || input.limit > maxLimit) {
-      Left(HttpApiFailure.BadRequest("invalid_limit", s"limit must be between 1 and $maxLimit"))
-    } else if (input.userLat.exists(latitude => latitude < BigDecimal(-90) || latitude > BigDecimal(90))) {
-      Left(HttpApiFailure.BadRequest("invalid_latitude", "userLat must be between -90 and 90"))
-    } else if (input.userLon.exists(longitude => longitude < BigDecimal(-180) || longitude > BigDecimal(180))) {
-      Left(HttpApiFailure.BadRequest("invalid_longitude", "userLon must be between -180 and 180"))
+      Left(badRequest(BeautySearchRequestContract.InvalidQuery))
+    } else if (input.limit < BeautySearchRequestContract.MinLimit || input.limit > BeautySearchRequestContract.MaxLimit) {
+      Left(badRequest(BeautySearchRequestContract.InvalidLimit))
+    } else if (input.userLat.exists(latitude =>
+        latitude < BeautySearchRequestContract.MinLatitude || latitude > BeautySearchRequestContract.MaxLatitude
+      )) {
+      Left(badRequest(BeautySearchRequestContract.InvalidLatitude))
+    } else if (input.userLon.exists(longitude =>
+        longitude < BeautySearchRequestContract.MinLongitude || longitude > BeautySearchRequestContract.MaxLongitude
+      )) {
+      Left(badRequest(BeautySearchRequestContract.InvalidLongitude))
     } else {
       Right(input)
     }
+
+  private def badRequest(error: BeautySearchRequestContract.SemanticError): HttpApiFailure.BadRequest =
+    HttpApiFailure.BadRequest(error.code, error.message)
 }

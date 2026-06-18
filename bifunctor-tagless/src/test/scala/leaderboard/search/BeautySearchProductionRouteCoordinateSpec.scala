@@ -36,7 +36,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assertStructuredBadRequest(response, "invalid_latitude", "userLat must be between -90 and 90")
+        assertStructuredBadRequest(response, BeautySearchRequestContract.InvalidLatitude)
       }
     }
 
@@ -52,7 +52,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assertStructuredBadRequest(response, "invalid_longitude", "userLon must be between -180 and 180")
+        assertStructuredBadRequest(response, BeautySearchRequestContract.InvalidLongitude)
       }
     }
 
@@ -68,7 +68,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assertStructuredBadRequest(response, "invalid_latitude", "userLat must be between -90 and 90")
+        assertStructuredBadRequest(response, BeautySearchRequestContract.InvalidLatitude)
       }
     }
   }

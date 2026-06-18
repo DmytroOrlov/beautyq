@@ -155,8 +155,7 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
 
   protected final def assertStructuredBadRequest(
     response: ObservedResponse,
-    code: String,
-    message: String,
+    error: BeautySearchRequestContract.SemanticError,
   ): Unit = {
     assert(
       response.status == Status.BadRequest,
@@ -164,8 +163,8 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     )
     assert(
       parseResponseJson(response) == Json.obj(
-        "code" -> Json.fromString(code),
-        "message" -> Json.fromString(message),
+        "code" -> Json.fromString(error.code),
+        "message" -> Json.fromString(error.message),
       ),
       s"Unexpected structured bad-request body: ${response.body}",
     )

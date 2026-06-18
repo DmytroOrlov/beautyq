@@ -6,7 +6,6 @@ import leaderboard.api.BeautySearchApi
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
-import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.dsl.SearchConstraint
 import org.http4s.{Request, Status}
 import zio.interop.catz.*
@@ -113,58 +112,51 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
     "return structured invalid_query and do not call the fake service for an empty query" in {
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
-        code = "invalid_query",
-        message = "query must not be blank",
+        BeautySearchRequestContract.InvalidQuery,
       )
     }
 
     "return structured invalid_query and do not call the fake service for a whitespace-only query" in {
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", """{"query":"   ","userLat":53.58,"userLon":10.08,"limit":3}"""),
-        code = "invalid_query",
-        message = "query must not be blank",
+        BeautySearchRequestContract.InvalidQuery,
       )
     }
 
     "return structured invalid_limit and do not call the fake service for zero limit" in {
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}"""),
-        code = "invalid_limit",
-        message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+        BeautySearchRequestContract.InvalidLimit,
       )
     }
 
     "return structured invalid_limit and do not call the fake service for negative limit" in {
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}"""),
-        code = "invalid_limit",
-        message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+        BeautySearchRequestContract.InvalidLimit,
       )
     }
 
     "return structured invalid_limit and do not call the fake service for limit above the carousel maximum" in {
-      val invalidLimit = BeautySearchSpecV1.spec.carouselSpec.variantSize + 1
+      val invalidLimit = BeautySearchRequestContract.MaxLimit + 1
 
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", s"""{"query":"nails","userLat":53.58,"userLon":10.08,"limit":$invalidLimit}"""),
-        code = "invalid_limit",
-        message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+        BeautySearchRequestContract.InvalidLimit,
       )
     }
 
     "return structured invalid_latitude and do not call the fake service for out-of-range latitude" in {
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", """{"query":"nails","userLat":90.1,"userLon":10.08,"limit":3}"""),
-        code = "invalid_latitude",
-        message = "userLat must be between -90 and 90",
+        BeautySearchRequestContract.InvalidLatitude,
       )
     }
 
     "return structured invalid_longitude and do not call the fake service for out-of-range longitude" in {
       assertStructuredBadRequestWithoutServiceCall(
         postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":180.1,"limit":3}"""),
-        code = "invalid_longitude",
-        message = "userLon must be between -180 and 180",
+        BeautySearchRequestContract.InvalidLongitude,
       )
     }
   }
@@ -185,15 +177,14 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
 
   private def assertStructuredBadRequestWithoutServiceCall(
     request: Request[Task],
-    code: String,
-    message: String,
+    error: BeautySearchRequestContract.SemanticError,
   ): Task[Unit] =
     for {
       state    <- BeautySearchApiContractState.make(Right(emptySearchResponse))
       response <- observe(app(state), request)
       inputs   <- state.inputs
       _        <- assertIO(response.status === Status.BadRequest)
-      _        <- assertIO(response.body === s"""{"code":"$code","message":"$message"}""")
+      _        <- assertIO(response.body === s"""{"code":"${error.code}","message":"${error.message}"}""")
       _        <- assertIO(inputs.isEmpty)
     } yield ()
 

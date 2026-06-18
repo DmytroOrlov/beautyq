@@ -20,7 +20,7 @@ final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertStructuredBadRequest(response, "invalid_query", "query must not be blank")
+        assertStructuredBadRequest(response, BeautySearchRequestContract.InvalidQuery)
       }
     }
 
@@ -36,7 +36,7 @@ final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertStructuredBadRequest(response, "invalid_query", "query must not be blank")
+        assertStructuredBadRequest(response, BeautySearchRequestContract.InvalidQuery)
       }
     }
 
