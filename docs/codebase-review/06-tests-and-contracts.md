@@ -124,6 +124,8 @@ Future/unimplemented unless matching source-backed tests are added. These belong
 
 Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
 
+**Pending/spec-only coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations, not implementation proof. No endpoint is implemented; no route path is approved.
+
 1. **Endpoint returns expected prepared/seed-only status shape.**
    - `GET` to approved path returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
    - The `Prepared` variant includes nested `ElasticsearchLifecycleStatusResponse` with all current seed-only values.
@@ -616,7 +618,7 @@ First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids 
 
 Targeted search result:
 
-- Pass 2 did not find prominent `ignore(`, `taggedAs`, `pending`, or `Assume` markers in the searched test output.
+- `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` uses ScalaTest `pending` mechanism for 28 pending Design A operator visibility endpoint policy expectations. These encode draft endpoint behavior expectations without implementing the endpoint. Pending tests report as `pending` (not `failed`) in ScalaTest output.
 - Resource-backed specs cancel when resources are unavailable; true manual artifact specs may cancel when saved artifact env vars are absent.
 - Class names containing `Smoke`, `Integration`, or `Manual` reflect the spec's role.
 

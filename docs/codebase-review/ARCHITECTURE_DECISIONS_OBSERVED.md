@@ -262,6 +262,7 @@ Design A endpoint policy drafted (see `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md
 - Draft recommends `200 OK` for successful retrieval with lifecycle status in body.
 - Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) as response shape.
 - All draft recommendations remain unapproved.
+- Draft endpoint expectations are now captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests).
 
 Consequences:
 

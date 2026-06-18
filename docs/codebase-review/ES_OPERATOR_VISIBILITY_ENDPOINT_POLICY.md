@@ -347,6 +347,8 @@ The following decisions must be explicitly approved before any operator visibili
 
 The following tests must be added alongside any operator visibility endpoint code. Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`:
 
+**Pending/spec-only coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations and not implementation proof. No endpoint is implemented; no route path is approved.
+
 1. **Endpoint returns expected prepared/seed-only status shape.**
    - `GET` to approved path returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
    - The `Prepared` variant includes nested `ElasticsearchLifecycleStatusResponse` with all current seed-only values.

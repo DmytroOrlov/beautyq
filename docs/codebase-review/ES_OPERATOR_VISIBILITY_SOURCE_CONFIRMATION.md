@@ -230,6 +230,8 @@ Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs
 - Future tests required before implementation
 - Future implementation seams (source-confirmed, not approved)
 
+Draft endpoint expectations are now captured in pending specs: `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations and not implementation proof.
+
 All draft recommendations remain unapproved. No endpoint is implemented. No route path is approved.
 
 ## Non-goals

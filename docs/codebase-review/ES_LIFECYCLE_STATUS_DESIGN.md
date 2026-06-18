@@ -320,4 +320,4 @@ Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs
 - HTTP status: always `200 OK` for successful retrieval
 - Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`
 
-All draft recommendations remain unapproved. Endpoint exposure and operator policy remain unimplemented.
+All draft recommendations remain unapproved. Endpoint exposure and operator policy remain unimplemented. Draft endpoint expectations are now captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests).
