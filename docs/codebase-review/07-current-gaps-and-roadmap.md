@@ -47,7 +47,7 @@ Reached checkpoint (ES seed route, default):
 - `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
 - Focused ES route/module graph specs prove the bound `ElasticsearchSeedLifecycleMetadata` and derived `ElasticsearchProductionReadinessState` are available. The state explicitly records `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
 - `ElasticsearchLifecycleStatusResponse` now provides a pure non-serving projection and Circe encoder for those current values. It is not bound into DI or exposed through a route.
-- `ElasticsearchStartupReadinessTransition` now represents pure startup preparation success and source-backed `OperationFailure` failure shape. Both outcomes record serving decision `NotEnforced`; the model is not wired into composition and does not enforce readiness.
+- `ElasticsearchStartupReadinessTransition` now represents pure startup preparation success and source-backed `OperationFailure` failure shape. Prepared transitions derive the current non-serving status response; failed transitions expose no lifecycle metadata or status response. Both outcomes record serving decision `NotEnforced`; the model is not wired into composition and does not enforce readiness.
 - Full verification after default switch.
 
 Evidence:

@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import io.circe.syntax.*
 import leaderboard.model.QueryFailure
 import leaderboard.search.elasticsearch.{
   ElasticsearchLifecycleStatusResponse,
@@ -16,19 +17,54 @@ final class ElasticsearchStartupReadinessTransitionSpec extends AnyWordSpec {
     "preserve the readiness state and derive its lifecycle status response" in {
       val state = seedOnlyState()
       val transition = ElasticsearchStartupReadinessTransition.prepared(state)
+      val expectedResponse = ElasticsearchLifecycleStatusResponse.from(state)
 
       assert(transition.state == state)
       assert(transition.lifecycleMetadata.contains(state.lifecycleMetadata))
-      assert(
-        transition.lifecycleStatusResponse.contains(
-          ElasticsearchLifecycleStatusResponse.from(state)
-        )
-      )
-      assert(
-        transition.lifecycleStatusResponse.exists(
-          _.productionLifecycleComplete == false
-        )
-      )
+      assert(transition.lifecycleStatusResponse.contains(expectedResponse))
+
+      transition.lifecycleStatusResponse match {
+        case Some(response) =>
+          assert(response.indexName == "beautyq_variant_v1")
+          assert(response.source == "seed-resource-loader")
+          assert(response.documentCount == 37)
+          assert(response.preparationMode == "eager_seed_index_preparation")
+          assert(response.lifecycleStatus == "seed_only_not_production_lifecycle")
+          assert(response.servingReadiness == "not_enforced")
+          assert(response.replacement == "not_configured")
+          assert(response.freshness == "not_tracked")
+          assert(response.refresh == "eager_seed_preparation_only")
+          assert(response.rollback == "not_configured")
+          assert(response.operatorVisibility == "not_exposed")
+          assert(response.productionLifecycleComplete == false)
+        case None =>
+          fail("Expected prepared transition lifecycle status response")
+      }
+    }
+
+    "encode the same current status values as direct readiness-state projection" in {
+      val state = seedOnlyState()
+      val transition = ElasticsearchStartupReadinessTransition.prepared(state)
+
+      transition.lifecycleStatusResponse match {
+        case Some(response) =>
+          val transitionJson = response.asJson
+          val directJson = ElasticsearchLifecycleStatusResponse.from(state).asJson
+          val cursor = transitionJson.hcursor
+
+          assert(transitionJson == directJson)
+          assert(cursor.get[String]("servingReadiness") == Right("not_enforced"))
+          assert(cursor.get[String]("replacement") == Right("not_configured"))
+          assert(cursor.get[String]("freshness") == Right("not_tracked"))
+          assert(cursor.get[String]("refresh") == Right("eager_seed_preparation_only"))
+          assert(cursor.get[String]("rollback") == Right("not_configured"))
+          assert(cursor.get[String]("operatorVisibility") == Right("not_exposed"))
+          assert(cursor.get[String]("lifecycleStatus") == Right("seed_only_not_production_lifecycle"))
+          assert(cursor.get[String]("preparationMode") == Right("eager_seed_index_preparation"))
+          assert(cursor.get[Boolean]("productionLifecycleComplete") == Right(false))
+        case None =>
+          fail("Expected prepared transition lifecycle status response")
+      }
     }
 
     "record that startup serving readiness is not enforced" in {
@@ -52,6 +88,7 @@ final class ElasticsearchStartupReadinessTransitionSpec extends AnyWordSpec {
           assert(transition.servingDecision == ElasticsearchStartupServingDecision.NotEnforced)
           assert(transition.lifecycleMetadata.isEmpty)
           assert(transition.lifecycleStatusResponse.isEmpty)
+          assert(transition.lifecycleStatusResponse.map(_.asJson).isEmpty)
         case Left(unsupported) =>
           fail(s"Expected supported OperationFailure, got $unsupported")
       }
