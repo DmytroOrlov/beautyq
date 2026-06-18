@@ -24,7 +24,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
       }
     }
 
-    "return Tapir default bad-input response for latitude too high (999.0)" in {
+    "return structured invalid_latitude for latitude too high (999.0)" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -36,11 +36,11 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assertDefaultBadRequest(response)
+        assertStructuredBadRequest(response, "invalid_latitude", "userLat must be between -90 and 90")
       }
     }
 
-    "return Tapir default bad-input response for longitude too high (999.0)" in {
+    "return structured invalid_longitude for longitude too high (999.0)" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -52,11 +52,11 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assertDefaultBadRequest(response)
+        assertStructuredBadRequest(response, "invalid_longitude", "userLon must be between -180 and 180")
       }
     }
 
-    "return Tapir default bad-input response for very large finite coordinates (1e9, -1e9)" in {
+    "return the first structured coordinate failure for very large finite coordinates (1e9, -1e9)" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -68,7 +68,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assertDefaultBadRequest(response)
+        assertStructuredBadRequest(response, "invalid_latitude", "userLat must be between -90 and 90")
       }
     }
   }

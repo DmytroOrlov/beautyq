@@ -110,47 +110,61 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for an empty query" in {
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}""")
+    "return structured invalid_query and do not call the fake service for an empty query" in {
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
+        code = "invalid_query",
+        message = "query must not be blank",
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for a whitespace-only query" in {
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", """{"query":"   ","userLat":53.58,"userLon":10.08,"limit":3}""")
+    "return structured invalid_query and do not call the fake service for a whitespace-only query" in {
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"   ","userLat":53.58,"userLon":10.08,"limit":3}"""),
+        code = "invalid_query",
+        message = "query must not be blank",
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for zero limit" in {
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}""")
+    "return structured invalid_limit and do not call the fake service for zero limit" in {
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}"""),
+        code = "invalid_limit",
+        message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for negative limit" in {
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}""")
+    "return structured invalid_limit and do not call the fake service for negative limit" in {
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}"""),
+        code = "invalid_limit",
+        message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for limit above the carousel maximum" in {
+    "return structured invalid_limit and do not call the fake service for limit above the carousel maximum" in {
       val invalidLimit = BeautySearchSpecV1.spec.carouselSpec.variantSize + 1
 
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", s"""{"query":"nails","userLat":53.58,"userLon":10.08,"limit":$invalidLimit}""")
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", s"""{"query":"nails","userLat":53.58,"userLon":10.08,"limit":$invalidLimit}"""),
+        code = "invalid_limit",
+        message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for out-of-range latitude" in {
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", """{"query":"nails","userLat":90.1,"userLon":10.08,"limit":3}""")
+    "return structured invalid_latitude and do not call the fake service for out-of-range latitude" in {
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":90.1,"userLon":10.08,"limit":3}"""),
+        code = "invalid_latitude",
+        message = "userLat must be between -90 and 90",
       )
     }
 
-    "return Tapir default bad-input response and do not call the fake service for out-of-range longitude" in {
-      assertDefaultBadRequestWithoutServiceCall(
-        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":180.1,"limit":3}""")
+    "return structured invalid_longitude and do not call the fake service for out-of-range longitude" in {
+      assertStructuredBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":180.1,"limit":3}"""),
+        code = "invalid_longitude",
+        message = "userLon must be between -180 and 180",
       )
     }
   }
@@ -166,6 +180,20 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
       response <- observe(app(state), request)
       inputs   <- state.inputs
       _        <- assertIO(response.status === Status.BadRequest)
+      _        <- assertIO(inputs.isEmpty)
+    } yield ()
+
+  private def assertStructuredBadRequestWithoutServiceCall(
+    request: Request[Task],
+    code: String,
+    message: String,
+  ): Task[Unit] =
+    for {
+      state    <- BeautySearchApiContractState.make(Right(emptySearchResponse))
+      response <- observe(app(state), request)
+      inputs   <- state.inputs
+      _        <- assertIO(response.status === Status.BadRequest)
+      _        <- assertIO(response.body === s"""{"code":"$code","message":"$message"}""")
       _        <- assertIO(inputs.isEmpty)
     } yield ()
 

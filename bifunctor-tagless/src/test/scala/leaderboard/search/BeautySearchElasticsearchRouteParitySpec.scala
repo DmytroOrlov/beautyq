@@ -49,24 +49,29 @@ final class BeautySearchElasticsearchRouteParitySpec extends AnyWordSpec with Ht
       }
     }
 
-    "return Tapir default bad-input responses for semantic-invalid requests" in {
+    "return structured bad-input responses for semantic-invalid requests" in {
       val probe = buildProbe()
       val apis  = probe.allHttpApis
 
+      val maxLimit = leaderboard.search.dsl.BeautySearchSpecV1.spec.carouselSpec.variantSize
       val cases = List(
-        ("empty query", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
-        ("whitespace query", """{"query":"     ","userLat":53.58,"userLon":10.08,"limit":3}"""),
-        ("zero limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}"""),
-        ("negative limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}"""),
-        ("huge limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":100000}"""),
-        ("latitude 999.0", """{"query":"nails","userLat":999.0,"userLon":10.08,"limit":3}"""),
-        ("longitude 999.0", """{"query":"nails","userLat":53.58,"userLon":999.0,"limit":3}"""),
-        ("huge finite coords", """{"query":"nails","userLat":1.0e9,"userLon":-1.0e9,"limit":3}"""),
+        ("empty query", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}""", "invalid_query", "query must not be blank"),
+        ("whitespace query", """{"query":"     ","userLat":53.58,"userLon":10.08,"limit":3}""", "invalid_query", "query must not be blank"),
+        ("zero limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}""", "invalid_limit", s"limit must be between 1 and $maxLimit"),
+        ("negative limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}""", "invalid_limit", s"limit must be between 1 and $maxLimit"),
+        ("huge limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":100000}""", "invalid_limit", s"limit must be between 1 and $maxLimit"),
+        ("latitude 999.0", """{"query":"nails","userLat":999.0,"userLon":10.08,"limit":3}""", "invalid_latitude", "userLat must be between -90 and 90"),
+        ("longitude 999.0", """{"query":"nails","userLat":53.58,"userLon":999.0,"limit":3}""", "invalid_longitude", "userLon must be between -180 and 180"),
+        ("huge finite coords", """{"query":"nails","userLat":1.0e9,"userLon":-1.0e9,"limit":3}""", "invalid_latitude", "userLat must be between -90 and 90"),
       )
 
-      cases.foreach { case (label, body) =>
+      cases.foreach { case (label, body, code, message) =>
         val response = runIO(observeRoute(apis, postJson("/beauty-search", body)))
         assert(response.status == Status.BadRequest, s"$label: expected 400 Bad Request, got ${response.status}")
+        assert(
+          parse(response.body) == Right(Json.obj("code" -> Json.fromString(code), "message" -> Json.fromString(message))),
+          s"$label: unexpected structured bad-request body: ${response.body}",
+        )
       }
     }
 

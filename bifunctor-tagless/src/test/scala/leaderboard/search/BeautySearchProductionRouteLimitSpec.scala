@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import leaderboard.api.BeautySearchApi
+import leaderboard.search.dsl.BeautySearchSpecV1
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 
@@ -24,7 +25,7 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
       }
     }
 
-    "return Tapir default bad-input response for zero limit" in {
+    "return structured invalid_limit for zero limit" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -36,11 +37,15 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultBadRequest(response)
+        assertStructuredBadRequest(
+          response,
+          code = "invalid_limit",
+          message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+        )
       }
     }
 
-    "return Tapir default bad-input response for negative limit" in {
+    "return structured invalid_limit for negative limit" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -52,11 +57,15 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultBadRequest(response)
+        assertStructuredBadRequest(
+          response,
+          code = "invalid_limit",
+          message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+        )
       }
     }
 
-    "return Tapir default bad-input response for limit above the carousel maximum" in {
+    "return structured invalid_limit for limit above the carousel maximum" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -68,7 +77,11 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultBadRequest(response)
+        assertStructuredBadRequest(
+          response,
+          code = "invalid_limit",
+          message = s"limit must be between 1 and ${BeautySearchSpecV1.spec.carouselSpec.variantSize}",
+        )
       }
     }
   }

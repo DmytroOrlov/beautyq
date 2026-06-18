@@ -23,12 +23,12 @@ Implemented/current:
 - `LadderApiHttpContractSuite.scala`
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
-- `BeautySearchApiHttpContractSuite.scala`: valid request/response pass-through, backend failure mapping, malformed-body defaults, and semantic-invalid query/limit/coordinate bodies returning `400 BadRequest` without calling the fake service.
-- `BeautySearchProductionRouteLimitSpec.scala`: valid positive limit remains `200 OK`; non-positive and above-carousel-maximum limits return Tapir default `400 BadRequest`.
-- `BeautySearchProductionRouteCoordinateSpec.scala`: in-range coordinates remain `200 OK`; out-of-range latitude/longitude return Tapir default `400 BadRequest`.
-- `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return Tapir default `400 BadRequest`.
+- `BeautySearchApiHttpContractSuite.scala`: valid request/response pass-through, backend failure mapping, default decode failures, and exact structured semantic-invalid query/limit/coordinate `400 BadRequest` bodies without calling the fake service.
+- `BeautySearchProductionRouteLimitSpec.scala`: valid positive limit remains `200 OK`; non-positive and above-carousel-maximum limits return structured `invalid_limit` JSON `400 BadRequest`.
+- `BeautySearchProductionRouteCoordinateSpec.scala`: in-range coordinates remain `200 OK`; out-of-range latitude/longitude return structured `invalid_latitude` / `invalid_longitude` JSON `400 BadRequest`.
+- `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return structured `invalid_query` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong limit type, and missing query return Tapir default `400 BadRequest`.
-- `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity; decode-invalid and semantic-invalid inputs return `400 BadRequest`.
+- `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity. Decode-invalid inputs retain Tapir default `400 BadRequest`; semantic-invalid inputs return exact `code` / `message` JSON `400 BadRequest`.
 
 They protect:
 
@@ -37,17 +37,16 @@ They protect:
 - Missing-entity behavior.
 - Error/exception behavior.
 - Tapir/http4s default decode behavior: malformed JSON, empty bodies, missing required fields, invalid field types, and malformed path captures return `400 BadRequest` before repository/service logic.
-- BeautySearch endpoint validation behavior: blank query, invalid limit bounds, and out-of-range optional coordinates return default `400 BadRequest` before service/Elasticsearch logic.
+- BeautySearch semantic validation behavior: blank query, invalid limit bounds, and out-of-range optional coordinates return structured JSON `400 BadRequest` before service/Elasticsearch logic.
 - Default uncaught server exception behavior: `500 InternalServerError` with `Internal server error` body.
 - Literal route precedence: `/category/root` remains a successful category-root route.
 - Malformed UUID captures return `400 BadRequest`.
 
-Structured bad-request test-planning note:
+Structured bad-request boundary:
 
-- Current contract tests pin `400 BadRequest` status for decode failures and BeautySearch semantic validation failures, and they pin that those requests do not call the fake service or Elasticsearch-backed route logic.
-- Any future structured-error implementation must update or add tests for the exact error body shape, not just status.
-- Global structured decode handler path must add/update generic Tapir support coverage and non-Beauty API contract suites, because malformed input handling would become a shared interpreter concern.
-- BeautySearch semantic-only structured path must update `BeautySearchApiHttpContractSuite` and the production route semantic characterization specs (`BeautySearchProductionRouteErrorSpec`, `BeautySearchProductionRouteLimitSpec`, `BeautySearchProductionRouteCoordinateSpec`, `BeautySearchProductionRouteQuerySpec`).
+- BeautySearch semantic failures have exact structured `code` / `message` coverage and do not call the fake service or Elasticsearch-backed route logic.
+- Malformed JSON, empty body, missing required fields, and invalid field types remain Tapir default `400 BadRequest`; tests do not treat the generated decode body as a domain schema.
+- Global structured decode handling is not implemented.
 - Non-goals remain explicit here as well: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
 
 ## Repository Tests

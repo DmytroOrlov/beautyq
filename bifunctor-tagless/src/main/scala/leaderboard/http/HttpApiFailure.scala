@@ -9,6 +9,7 @@ sealed trait HttpApiFailure extends Product with Serializable
 
 object HttpApiFailure {
   case object InternalServerError extends HttpApiFailure
+  final case class BadRequest(code: String, message: String) extends HttpApiFailure
   final case class NotFound(code: String, message: String) extends HttpApiFailure
 
   object NotFound {
@@ -31,6 +32,7 @@ object HttpApiFailure {
       NotFound(code = "not_found", message = s"Master service offer variant '$id' was not found")
   }
 
+  implicit val badRequestCodec: Codec.AsObject[BadRequest] = semiauto.deriveCodec
   implicit val notFoundCodec: Codec.AsObject[NotFound] = semiauto.deriveCodec
 
   def fromQueryFailure(error: QueryFailure): HttpApiFailure =

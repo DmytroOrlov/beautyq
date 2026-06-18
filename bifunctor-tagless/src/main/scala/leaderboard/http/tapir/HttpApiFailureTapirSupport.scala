@@ -8,7 +8,21 @@ import sttp.tapir.json.circe.*
 
 object HttpApiFailureTapirSupport {
   val errorOutput: EndpointOutput[HttpApiFailure] =
-    statusCode.map[HttpApiFailure]((_: StatusCode) => HttpApiFailure.InternalServerError)(_ => StatusCode.InternalServerError)
+    oneOf[HttpApiFailure](
+      oneOfVariantValueMatcher(
+        statusCode(StatusCode.BadRequest)
+          .and(jsonBody[HttpApiFailure.BadRequest])
+      ) {
+        case _: HttpApiFailure.BadRequest => true
+        case _                            => false
+      },
+      oneOfVariantValueMatcher(
+        statusCode.map[HttpApiFailure]((_: StatusCode) => HttpApiFailure.InternalServerError)(_ => StatusCode.InternalServerError)
+      ) {
+        case HttpApiFailure.InternalServerError => true
+        case _                                  => false
+      },
+    )
 
   val singleEntityGetErrorOutput: EndpointOutput[HttpApiFailure] =
     oneOf[HttpApiFailure](

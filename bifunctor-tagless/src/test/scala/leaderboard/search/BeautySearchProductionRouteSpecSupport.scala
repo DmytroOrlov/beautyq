@@ -153,6 +153,25 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     (): Unit
   }
 
+  protected final def assertStructuredBadRequest(
+    response: ObservedResponse,
+    code: String,
+    message: String,
+  ): Unit = {
+    assert(
+      response.status == Status.BadRequest,
+      s"Expected 400 Bad Request, got ${response.status}",
+    )
+    assert(
+      parseResponseJson(response) == Json.obj(
+        "code" -> Json.fromString(code),
+        "message" -> Json.fromString(message),
+      ),
+      s"Unexpected structured bad-request body: ${response.body}",
+    )
+    (): Unit
+  }
+
   private def assertEmptyArrayField(json: Json, fieldName: String): Unit =
     json.hcursor.downField(fieldName).focus match {
       case Some(value) =>
