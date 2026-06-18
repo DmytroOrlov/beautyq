@@ -227,6 +227,7 @@ This source confirmation completed the bounded M5 closeout decision. M5 is close
 ## References
 
 - Serving-gate design: `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`
+- Operator visibility source confirmation: `docs/codebase-review/ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`
 - M5 checkpoint: `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md`
 - Lifecycle status design: `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`
 - Tests and contracts: `docs/codebase-review/06-tests-and-contracts.md`

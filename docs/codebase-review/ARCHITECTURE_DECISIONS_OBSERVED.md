@@ -236,6 +236,7 @@ Evidence:
 - No endpoint, route path, HTTP status policy, or operator policy is implemented.
 - No serving-readiness enforcement exists.
 - M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
+- The ES operator visibility track is now source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Design A (expose current prepared/seed-only status from constructed route graph) is the recommended next step. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
 
 Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
 
@@ -244,18 +245,30 @@ Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION
 - App-start fail-closed behavior is implicitly implemented by the eager composition pattern. Runtime route gate requires a different source seam.
 - Spec-only route-level tests are the recommended next step before any enforcement code.
 
+Operator visibility source-confirmed facts (see `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`):
+
+- `ElasticsearchLifecycleStatusResponse` and `ElasticsearchStartupReadinessStatusResponse` are implemented as pure non-serving models with Circe encoders. They can be exposed later without new ES calls.
+- The `Prepared` variant is always reachable from the DI-bound transition.
+- Cross-model consistency is proven by `ElasticsearchReadinessConsistencySpec`.
+- Failed transition projection shape is available from pure tests but unreachable from the DI-bound transition.
+- Replacement, freshness, refresh, rollback, and operator override data are not available from current source models.
+- The likely future endpoint seam follows existing Tapir/http4s patterns.
+- Policy decisions required: endpoint path, auth/operator access model, response status code policy.
+
 Consequences:
 
 - The serving-gate design is documented but not enforced.
 - Any enforcement implementation requires explicit approval of a serving-gate policy choice.
 - The recommended default is `fail closed until prepared`, but it is not implemented.
 - App-start fail-closed is implicitly implemented by eager composition; it is now test-covered by `ElasticsearchAppStartServingGateSpec` (composition-level and DI-graph-level). Runtime route gate requires a new source seam.
+- Operator visibility is source-confirmed and ready for design-only policy work (endpoint path, auth, HTTP status).
 
 What not to infer:
 
 - Do not infer that the serving-gate design constitutes enforcement or that any policy choice is approved.
 - Do not infer production lifecycle completion from the existence of the serving-gate design document.
 - Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
+- Do not infer that operator visibility is implemented from the source confirmation; it remains a future track requiring policy approval.
 
 ## Decision 12: M5 closed as bounded startup-readiness lifecycle checkpoint
 

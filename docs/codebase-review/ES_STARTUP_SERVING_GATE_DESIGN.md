@@ -279,6 +279,8 @@ These tests are unimplemented and must be added alongside any enforcement code:
 
 Source confirmation is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`. Key findings below.
 
+The operator visibility track is separately source-confirmed in `docs/codebase-review/ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Design A (expose current prepared/seed-only status from constructed route graph) is the recommended next step for the operator visibility track and requires endpoint path, auth, and HTTP status policy approval before implementation.
+
 ### Production route construction path
 
 ```text

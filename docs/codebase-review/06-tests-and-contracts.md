@@ -120,6 +120,39 @@ Future/unimplemented unless matching source-backed tests are added. These belong
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
 
+### Future operator visibility tests required before endpoint implementation
+
+Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
+
+1. **Operator status endpoint contract.**
+   - If an endpoint path is approved, the endpoint returns `200 OK` with the `ElasticsearchStartupReadinessStatusResponse` JSON body.
+   - The `Prepared` variant includes nested `ElasticsearchLifecycleStatusResponse` with all current seed-only values.
+   - The endpoint does not change `/beauty-search` serving behavior.
+   - Classification: `Contractual + Blackbox + Group` (in-process route seam, requires endpoint approval).
+
+2. **Operator status fields distinguish current state.**
+   - Status fields correctly distinguish seed-only, `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, and `NotExposed` values.
+   - `productionLifecycleComplete` is `false`.
+   - Classification: `Contractual + Blackbox + Atomic` (pure field assertion).
+
+3. **Prepared-serving tests remain green.**
+   - `/beauty-search` serving tests and behavior remain unaffected by the separate status surface.
+   - Classification: `Contractual + Blackbox + Group` (existing route seam).
+
+4. **Startup failure visibility (Design B, if approved).**
+   - If Design B is approved, startup failure state is captured at bootstrap and exposed through the endpoint.
+   - The `PreparationFailed` variant includes `operationName` and `message`.
+   - No lifecycle metadata or nested `lifecycleStatus` field in failed projections.
+   - Classification: `Contractual + Effectual + Group` (bootstrap seam, requires Design B approval).
+
+5. **No accidental Qdrant/hybrid fallback from status endpoint.**
+   - The status endpoint does not trigger Qdrant, hybrid, or fallback behavior.
+   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
+
+6. **No extra Elasticsearch calls from status endpoint.**
+   - The status endpoint does not introduce new ES calls.
+   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
+
 ### Serving-gate tests (app-start fail-closed and prepared-serving)
 
 Implemented in `ElasticsearchAppStartServingGateSpec.scala`. These are not runtime HTTP 503 gate tests; they prove current implicit app-start fail-closed behavior and prepared-serving behavior only.

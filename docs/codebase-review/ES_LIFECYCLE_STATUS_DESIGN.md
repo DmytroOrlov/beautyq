@@ -285,3 +285,28 @@ Until that later task is approved and implemented:
 - no auth/operator policy exists;
 - no serving behavior changes;
 - no production lifecycle completion claim is valid.
+
+## Operator visibility source-confirmation boundary
+
+The operator visibility track is now source-confirmed. See `docs/codebase-review/ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md` for the full analysis.
+
+Source-confirmed facts:
+
+- `ElasticsearchLifecycleStatusResponse` and `ElasticsearchStartupReadinessStatusResponse` are implemented as pure non-serving models with Circe encoders. They can be exposed later without new ES calls.
+- The `Prepared` variant of `ElasticsearchStartupReadinessStatusResponse` (with nested `ElasticsearchLifecycleStatusResponse`) is always reachable from the DI-bound transition.
+- Cross-model consistency is proven by `ElasticsearchReadinessConsistencySpec`.
+- Failed transition projection shape is available from pure tests but unreachable from the DI-bound transition (always `Prepared`).
+- Replacement, freshness, refresh, rollback, and operator override data are not available from current source models.
+- The likely future endpoint seam follows existing Tapir/http4s patterns: new `*TapirEndpoints.scala` + new `*Api.scala` + DI wiring.
+- Design A (expose current prepared/seed-only status) is the recommended next step. Design B (startup failure visibility) and Design C (richer status) remain future.
+
+Policy decisions required before endpoint implementation:
+
+- Endpoint path
+- Public/private/internal exposure
+- Auth/operator access model
+- Response status code policy
+- Prepared versus failed response shape
+- Whether startup failure is visible when graph construction fails
+- Whether status should be served from app-start captured state, runtime state, or static DI-bound prepared state
+- Whether failed startup status requires a separate application bootstrap state outside successful route construction
