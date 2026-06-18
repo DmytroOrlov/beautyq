@@ -158,9 +158,10 @@ Architecture note:
 - `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds `ElasticsearchSeedLifecycleMetadata` from the composition so the metadata handle is available through DI without changing serving behavior.
 - `ElasticsearchProductionReadinessState.seedOnly` derives a pure internal non-serving state from the lifecycle metadata. Its current values explicitly say serving readiness is `NotEnforced`, replacement is `NotConfigured`, freshness is `NotTracked`, refresh is `EagerSeedPreparationOnly`, rollback is `NotConfigured`, and operator visibility is `NotExposed`.
 - `ElasticsearchSeedSearchComposition.productionReadinessState` exposes that derived value, and `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds it through the same ES seed route graphs.
+- `ElasticsearchLifecycleStatusResponse.from` projects that state into the planned pure response fields, with local Circe encoding and `productionLifecycleComplete = false`. The response model is not DI-bound or HTTP-exposed.
 - Focused route/module specs prove that both values are materialized through the targeted ES seed route, explicit ES seed route module, real HTTP-client ES route, port-configured default route, and production API graph.
 - This state is seed-only, internal, and non-serving; it documents absent production lifecycle capabilities without completing or enforcing them.
-- The planned operator-facing status response shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. That document is design-only: no endpoint is implemented, no route path is approved, and no serving behavior changes.
+- The lifecycle status response shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. Only its non-serving model/encoder is implemented: no endpoint is implemented, no route path is approved, and no serving behavior changes.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
 
 ### Remaining production ES lifecycle contract
@@ -169,6 +170,7 @@ Current route/module metadata coverage proves only:
 
 - seed index metadata is available through DI via `ElasticsearchSeedLifecycleMetadata`;
 - current production-readiness gaps are available through DI via `ElasticsearchProductionReadinessState`;
+- the pure non-serving response can be derived from that state without DI or HTTP wiring;
 - eager seed preparation is wired through `ElasticsearchSeedIndexReadiness` / `ElasticsearchSeedSearchComposition`;
 - lifecycle status is explicitly `SeedOnlyNotProductionLifecycle`;
 - serving readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is eager seed preparation only, and operator visibility is not exposed;

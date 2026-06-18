@@ -46,6 +46,7 @@ Reached checkpoint (ES seed route, default):
 - `BeautySearchRouteModules.seedCatalogElasticsearch` → `BeautySearchCatalogBackendModules.seedResourceElasticsearch` → seed catalog → ES index → ES retrieval.
 - `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
 - Focused ES route/module graph specs prove the bound `ElasticsearchSeedLifecycleMetadata` and derived `ElasticsearchProductionReadinessState` are available. The state explicitly records `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
+- `ElasticsearchLifecycleStatusResponse` now provides a pure non-serving projection and Circe encoder for those current values. It is not bound into DI or exposed through a route.
 - Full verification after default switch.
 
 Evidence:
@@ -236,8 +237,8 @@ Qdrant remains eval-only until evidence and safety gates.
 | M1 | ES seed route demo-stable | Reached |
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
-| M4 | ES production lifecycle designed | Design gate documented / active; operator-facing lifecycle status shape documented only in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md` |
-| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata plus explicit readiness-gap state and route-graph coverage; production lifecycle incomplete |
+| M4 | ES production lifecycle designed | Design gate documented / active; lifecycle status shape plus non-serving model/encoder exist, while exposure policy remains undesigned |
+| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, and route-graph state coverage; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
@@ -250,10 +251,10 @@ Roadmap position:
 
 * Expanded M3 / B-lite / M-ESQ-EVAL evidence remains the current in-progress checkpoint.
 * M4 is the next strategic gate after that evidence checkpoint is expanded enough to support lifecycle decisions.
-* M5 progress now includes a non-serving `ElasticsearchSeedLifecycleMetadata` handle and `ElasticsearchProductionReadinessState` derived from it, but production lifecycle remains incomplete.
+* M5 progress now includes a non-serving `ElasticsearchSeedLifecycleMetadata` handle, `ElasticsearchProductionReadinessState` derived from it, and a pure `ElasticsearchLifecycleStatusResponse` model/encoder, but production lifecycle remains incomplete.
 * Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
-* Current progress is internal state and graph coverage only: seed index metadata is available through DI, eager seed preparation is wired, lifecycle status is `SeedOnlyNotProductionLifecycle`, production lifecycle gaps are explicit, and serving behavior is unchanged.
-* Option 30 progress is design-only: the planned operator-facing lifecycle status shape is documented, while endpoint exposure remains separate future work.
+* Current progress is internal state, a non-serving response projection/encoder, and graph coverage only: seed index metadata is available through DI, eager seed preparation is wired, lifecycle status is `SeedOnlyNotProductionLifecycle`, production lifecycle gaps are explicit, and serving behavior is unchanged.
+* Option 30 progress includes the pure response model/encoder for the documented field shape; endpoint exposure, path, status policy, and operator policy remain separate future work.
 
 Decisions to make at M4:
 
@@ -300,7 +301,7 @@ M5 remains incomplete. Remaining work is the production lifecycle contract plus 
 
 The current `ElasticsearchProductionReadinessState` does not implement these items. It records that readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is limited to eager seed preparation, and operator visibility is not exposed.
 
-The status-shape design now exists as documentation only in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. That is not endpoint exposure, not HTTP policy approval, and not lifecycle completion.
+The documented status shape now has a pure non-serving model/encoder. That is not endpoint exposure, not HTTP policy approval, and not lifecycle completion.
 
 Non-goals remain unchanged here: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
 

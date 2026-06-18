@@ -31,6 +31,7 @@ Implemented/current:
 - `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity. Decode-invalid inputs retain Tapir default `400 BadRequest`; semantic-invalid inputs return exact `code` / `message` JSON `400 BadRequest`.
 - `ElasticsearchSeedIndexReadinessSpec.scala`: pins pure `ElasticsearchProductionReadinessState.seedOnly` derivation, including lifecycle metadata and all current non-serving values.
 - `ElasticsearchSeedSearchCompositionSpec.scala`: pins `productionReadinessState` derivation from composition lifecycle metadata.
+- `ElasticsearchLifecycleStatusResponseSpec.scala`: pins exact state-to-response mapping, metadata-sourced document counts, exact Circe field names/current string values, and `productionLifecycleComplete = false`.
 - `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; production and targeted ES route probes root the readiness state while preserving `POST /beauty-search`.
 - `BeautySearchElasticsearchRouteModuleSpec.scala`: the explicit ES seed route module exposes seed-only lifecycle metadata and the non-serving readiness state while preserving its zero-hit route response contract.
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes the state while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
@@ -107,7 +108,7 @@ Future/unimplemented unless matching source-backed tests are added:
   - status surface and fields once introduced;
   - distinction among seed-only, preparing, ready, failed, stale, rollback, or disabled states.
 - operator-facing lifecycle status design:
-  - pure status model/encoder tests for the planned response fields in `ES_LIFECYCLE_STATUS_DESIGN.md` once a source model exists;
+  - pure status model/encoder coverage now exists in `ElasticsearchLifecycleStatusResponseSpec.scala`;
   - route/status endpoint contract tests only if an endpoint/path is separately approved;
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.

@@ -1,6 +1,6 @@
 # ES Lifecycle Status Design
 
-Status: design-only.
+Status: response model/encoder implemented; exposure design remains incomplete.
 
 - No endpoint is implemented.
 - No route path is approved.
@@ -53,9 +53,11 @@ Current lifecycle meaning:
 - the lifecycle state is still seed-only and non-serving;
 - startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and operator-visible status are not implemented.
 
-## Planned future JSON response shape
+## Implemented non-serving JSON response shape
 
-The planned operator-facing response shape is:
+`ElasticsearchLifecycleStatusResponse` implements the planned field shape as a
+pure, non-serving model derived from `ElasticsearchProductionReadinessState`.
+Its companion provides the Circe encoder. The implemented shape is:
 
 ```json
 {
@@ -78,7 +80,7 @@ Notes:
 
 - `documentCount` above is an example placeholder only, not an approved hardcoded production value.
 - `productionLifecycleComplete` must be `false` for the current state.
-- The shape is defined here before any endpoint or encoder implementation.
+- The model and encoder do not expose or approve an endpoint.
 
 ## Field semantics
 
@@ -179,6 +181,24 @@ Current values to preserve in any future operator-facing status implementation:
 - `operatorVisibility: "not_exposed"`
 - `productionLifecycleComplete: false`
 
+## Implemented boundary
+
+Implemented:
+
+- pure `ElasticsearchLifecycleStatusResponse` data model;
+- `ElasticsearchLifecycleStatusResponse.from(state)` derivation;
+- local Circe JSON encoding;
+- focused pure mapping and exact-JSON tests.
+
+Not implemented:
+
+- DI binding;
+- HTTP route or endpoint;
+- route path;
+- HTTP status policy;
+- auth/operator policy;
+- dashboard integration.
+
 ## Non-approved items
 
 The following items are explicitly not approved by this design document:
@@ -215,7 +235,7 @@ Until that later task is approved and implemented:
 
 - no endpoint exists;
 - no route path is approved;
-- no status encoder/model exists in source;
+- the source model/encoder remains non-serving and unbound from route graphs;
 - no auth/operator policy exists;
 - no serving behavior changes;
 - no production lifecycle completion claim is valid.
