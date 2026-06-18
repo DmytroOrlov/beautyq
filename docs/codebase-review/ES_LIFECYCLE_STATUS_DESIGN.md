@@ -218,7 +218,8 @@ Implemented:
 - local Circe JSON encoding;
 - focused pure mapping and exact-JSON tests;
 - pure `ElasticsearchStartupReadinessTransition` success/failure classification, with prepared transition-to-status mapping and JSON alignment, no failure metadata/status response, and no serving enforcement;
-- pure `ElasticsearchStartupReadinessStatusResponse` non-serving startup status projection from prepared and failed transitions, with local Circe JSON encoding and focused pure tests.
+- pure `ElasticsearchStartupReadinessStatusResponse` non-serving startup status projection from prepared and failed transitions, with local Circe JSON encoding and focused pure tests;
+- cross-model consistency coverage (`ElasticsearchReadinessConsistencySpec`) proving field-level agreement across readiness state, lifecycle response, startup transition, startup status projection, and composition-derived projections.
 
 Not implemented:
 

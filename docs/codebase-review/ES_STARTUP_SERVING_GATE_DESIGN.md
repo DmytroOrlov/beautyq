@@ -65,6 +65,7 @@ Source-backed evidence:
 
 - `ElasticsearchStartupReadinessStatusResponse.scala` implements the pure projection and Circe encoder.
 - `ElasticsearchStartupReadinessStatusResponseSpec.scala` pins prepared/failed projection shapes, JSON equality, and values.
+- `ElasticsearchReadinessConsistencySpec.scala` proves cross-model field-level consistency across readiness state, lifecycle response, transition, status projection, and composition-derived projections. These are non-serving consistency tests, not serving-gate tests.
 
 ### `/beauty-search` serving behavior is unchanged
 

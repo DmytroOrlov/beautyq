@@ -239,7 +239,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Closed. HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Full verification is separate from focused validation. |
-| M5 | ES production lifecycle implemented | Incomplete. Non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, non-serving startup status projection, route-graph state coverage, and non-serving startup transition DI integration through ES seed route graphs exist. Startup serving-gate design is documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Production lifecycle remains incomplete. |
+| M5 | ES production lifecycle implemented | Incomplete. Non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, non-serving startup status projection, route-graph state coverage, non-serving startup transition DI integration through ES seed route graphs, and cross-model consistency coverage exist. Startup serving-gate design is documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Production lifecycle remains incomplete. |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
