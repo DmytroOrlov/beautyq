@@ -239,6 +239,20 @@ The following items are explicitly not approved by this design document:
 - polling/caching policy;
 - operator dashboard integration.
 
+## Startup serving-gate design status
+
+The startup serving-gate design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. Key facts:
+
+- The serving-gate design is design-only; no enforcement code is implemented.
+- No endpoint is implemented; no route path is approved.
+- No serving-readiness enforcement exists.
+- No preparation failure policy is implemented.
+- No production lifecycle completion is claimed.
+- M5 remains incomplete.
+- The serving-gate design defines five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any enforcement implementation.
+- The recommended default is `fail closed until prepared`, but it is not implemented.
+- Required future tests before any serving-gate implementation are documented in the design doc.
+
 ## Non-goals
 
 This design does not imply or approve:

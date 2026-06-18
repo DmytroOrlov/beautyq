@@ -238,62 +238,32 @@ Qdrant remains eval-only until evidence and safety gates.
 | M1 | ES seed route demo-stable | Reached |
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
-| M4 | ES production lifecycle designed | Design gate documented / active; lifecycle status shape plus non-serving model/encoder exist, while exposure policy remains undesigned |
-| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, non-serving startup status projection, route-graph state coverage, and non-serving startup transition DI integration through ES seed route graphs; production lifecycle incomplete |
+| M4 | ES production lifecycle designed | Closed. HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Full verification is separate from focused validation. |
+| M5 | ES production lifecycle implemented | Incomplete. Non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, non-serving startup status projection, route-graph state coverage, and non-serving startup transition DI integration through ES seed route graphs exist. Startup serving-gate design is documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Production lifecycle remains incomplete. |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
 
-#### M4 ES lifecycle design gate
+#### M4 ES lifecycle design gate — closed
 
-M4 is a design gate, not an implementation patch. It exists to prevent production lifecycle work from being implied by the current eager seed index preparation path.
+M4 is closed. Its remaining documented scope is source-backed by current docs and tests:
 
-Roadmap position:
+- HTTP/BeautySearch contract stabilized and frozen (`04-api-and-http-contracts.md`).
+- Production route exposure documented/tested (`BeautySearchProductionRouteExposureSpec`).
+- Bad-input/default decode/semantic structured errors documented/tested (`BeautySearchProductionRouteLimitSpec`, `BeautySearchProductionRouteQuerySpec`, `BeautySearchProductionRouteCoordinateSpec`, `BeautySearchProductionRouteErrorSpec`).
+- Typed-GET/legacy JSON docs pruned or canonicalized (`04-api-and-http-contracts.md`, `06-tests-and-contracts.md`).
+- Public examples/freeze/checklist recorded (`04-api-and-http-contracts.md`).
+- Non-serving lifecycle status shape, startup transition shape, and startup status projection exist with pure model/encoder and focused tests.
+- Route-graph state coverage proves lifecycle metadata and readiness state are materialized through ES-backed route graphs.
+- Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`.
 
-* Expanded M3 / B-lite / M-ESQ-EVAL evidence remains the current in-progress checkpoint.
-* M4 is the next strategic gate after that evidence checkpoint is expanded enough to support lifecycle decisions.
-* M5 progress now includes a non-serving `ElasticsearchSeedLifecycleMetadata` handle, `ElasticsearchProductionReadinessState` derived from it, a pure `ElasticsearchLifecycleStatusResponse` model/encoder, pure startup preparation transition modeling, and a pure non-serving startup status projection for prepared and failed transitions, but production lifecycle remains incomplete.
-* Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
-* Current progress is internal state, a non-serving response projection/encoder, and graph coverage only: seed index metadata is available through DI, eager seed preparation is wired, lifecycle status is `SeedOnlyNotProductionLifecycle`, production lifecycle gaps are explicit, and serving behavior is unchanged.
-* Option 30 progress includes the pure response model/encoder for the documented field shape; endpoint exposure, path, status policy, and operator policy remain separate future work.
-
-Decisions to make at M4:
-
-* production catalog source of truth for read models: keep seed resource, move to repository snapshot, or define the path to future repository-backed production indexing;
-* index naming/versioning policy;
-* alias / blue-green, direct replacement, or another explicit replacement strategy;
-* startup behavior and readiness expectations for the currently exposed route;
-* runtime refresh/replacement trigger and operator surface;
-* rollback behavior and rollback trigger semantics;
-* freshness/staleness metadata and the meaning of stale catalog state;
-* observability events/metrics for readiness, replacement, freshness, and stale-catalog detection;
-* production kill-switch or route enable-disable behavior.
-
-Validation taxonomy for later M5 implementation:
-
-* pure document-builder tests for catalog snapshot to search-document construction;
-* pure lifecycle policy/model tests if explicit lifecycle policy types are introduced;
-* module/DI wiring tests for lifecycle boundaries and route composition;
-* focused ES integration/manual smoke only when source-confirmed;
-* no plain `sbt test` by agents.
-
-Strategic gate intent:
-
-* M4 should close design ambiguity first, not blur into partial implementation.
-* M5 should only implement an approved lifecycle shape, not discover it while coding.
-* Qdrant shadow should remain after M4/M5 because shadow metrics are only operationally meaningful once the ES baseline has explicit lifecycle, observability, and kill-switch behavior.
-
-Risks if M4 is skipped:
-
-* eager seed index preparation gets mistaken for approved production lifecycle policy;
-* shadow/hybrid work gets compared against a lifecycle-incomplete ES baseline;
-* refresh, rollback, and stale-catalog behavior remain undefined at the route boundary.
+Full verification is separate from focused validation. M4 was not verified by a full `sbt test` run from this docs pass.
 
 #### M5 remaining work checklist
 
 M5 remains incomplete. Remaining work is the production lifecycle contract plus implementation for:
 
-- startup readiness: readiness decision before serving, preparation failure behavior, and whether serving blocks, degrades, or fails fast;
+- startup readiness: readiness decision before serving, preparation failure behavior, and whether serving blocks, degrades, or fails fast; startup serving-gate design is documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`;
 - replacement: explicit old/new index replacement policy, atomicity expectations, and alias or versioned-index policy if required;
 - freshness: running-service version/freshness source of truth, operator-visible timestamp/version/count, and stale-data detection;
 - refresh: approved trigger semantics such as manual, startup-only, scheduled, or external trigger;

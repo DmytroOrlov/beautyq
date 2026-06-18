@@ -93,6 +93,9 @@ Documented as characterized, not as desired final contract:
 * Current route-module state coverage documents the seed-only gaps; it does not enforce readiness or change serving behavior.
 * The lifecycle status field shape and encoder are implemented as non-serving code and documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`, but no endpoint, route path, HTTP status policy, or operator policy is implemented.
 * Detailed milestone status and priority order for lifecycle/eval/shadow/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
+* **M4 is closed.** HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`.
+* **M5 remains incomplete.** Non-serving lifecycle metadata, readiness state, status response model/encoder, startup transition shape, startup status projection, route-graph state coverage, and DI integration exist. Startup serving-gate design is documented. Production lifecycle (startup readiness enforcement, replacement, freshness, refresh, rollback, operator-visible status) remains incomplete.
+* Full verification is separate from focused validation; full `sbt test` was not run from this docs pass.
 * M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.

@@ -215,6 +215,8 @@ Stable current contract:
 - Semantic invalid response model: structured `HttpApiFailure.BadRequest` JSON with `code` and `message`.
 - Decode-invalid response: Tapir default `400 BadRequest`; no structured domain JSON is documented or guaranteed for malformed body decode failures.
 
+M4 closeout: this contract is stabilized and frozen. The M4 lifecycle design gate is closed. Startup serving-gate design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`.
+
 Stable current request rules:
 
 - `query` must be non-blank.

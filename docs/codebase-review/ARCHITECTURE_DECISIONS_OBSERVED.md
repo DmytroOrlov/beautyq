@@ -220,3 +220,30 @@ Consequences:
 What not to infer:
 
 - Do not infer production readiness enforcement, refresh/replacement/rollback policy, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these internal seams.
+
+## Decision 11: ES lifecycle visibility remains non-serving until serving-gate policy is approved
+
+Statement:
+
+- Current ES lifecycle metadata, startup readiness transition, and startup status projection remain non-serving visibility seams until an explicit serving-gate policy is approved and implemented.
+
+Evidence:
+
+- `ElasticsearchProductionReadinessState.seedOnly` records `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
+- `ElasticsearchStartupReadinessTransition` records `NotEnforced` serving decision for both prepared and failed transitions.
+- `ElasticsearchStartupReadinessStatusResponse` provides a pure non-serving startup status projection that is not DI-bound or HTTP-exposed.
+- `ES_STARTUP_SERVING_GATE_DESIGN.md` documents the serving-gate policy design with five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before enforcement.
+- No endpoint, route path, HTTP status policy, or operator policy is implemented.
+- No serving-readiness enforcement exists.
+- M4 is closed; M5 remains incomplete.
+
+Consequences:
+
+- The serving-gate design is documented but not enforced.
+- Any enforcement implementation requires explicit approval of a serving-gate policy choice.
+- The recommended default is `fail closed until prepared`, but it is not implemented.
+
+What not to infer:
+
+- Do not infer that the serving-gate design constitutes enforcement or that any policy choice is approved.
+- Do not infer production lifecycle completion from the existence of the serving-gate design document.

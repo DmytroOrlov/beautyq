@@ -1,0 +1,289 @@
+# ES Startup Serving Gate Design
+
+Status: design-only. M5 remains incomplete.
+
+- No endpoint implemented.
+- No route path approved.
+- No serving gate implemented.
+- No startup readiness enforcement.
+- No production lifecycle completion.
+
+## Purpose
+
+This document defines the startup serving-gate policy design for the ES-backed `/beauty-search` route. It is a prerequisite for any enforcement implementation. It does not implement any code, change any route behavior, or approve any endpoint or path.
+
+## Current state
+
+### Successful composition exposes `Prepared`
+
+When `ElasticsearchSeedSearchComposition.build` succeeds:
+
+- `ElasticsearchSeedSearchComposition.startupReadinessTransition` returns `ElasticsearchStartupReadinessTransition.Prepared(state)`.
+- The prepared state preserves `ElasticsearchProductionReadinessState` with current seed-only values.
+- `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds the prepared transition through DI.
+- The bound transition is non-serving: its `servingDecision` is `NotEnforced`.
+- The route continues to serve `/beauty-search` without gating.
+
+Source-backed evidence:
+
+- `ElasticsearchSeedSearchComposition.startupReadinessTransition` in `ElasticsearchSeedSearchComposition.scala:20-21`.
+- `ElasticsearchStartupReadinessTransition.prepared(state)` preserves state and sets `NotEnforced` in `ElasticsearchStartupReadinessTransition.scala:34-38`.
+- DI binding in `BeautySearchCatalogBackendModules.seedResourceElasticsearch` at `BeautySearchCatalogBackendModules.scala:77-79`.
+- Focused route/module specs root and assert the prepared transition through the ES seed route, explicit ES seed route module, real HTTP-client ES route, port-configured default route, and production API graph.
+
+### Failures can be classified as `PreparationFailed`
+
+Source-backed initializer failure paths (blank source, empty documents, ES client failure) are classifiable into `PreparationFailed` through `ElasticsearchStartupReadinessTransition.preparationFailed(failure)`:
+
+- `QueryFailure.OperationFailure` failures produce `PreparationFailed` with operation name and message.
+- Non-`OperationFailure` failures produce `UnsupportedFailure` and are not classified.
+- Both prepared and failed transitions record `ElasticsearchStartupServingDecision.NotEnforced`.
+
+Source-backed evidence:
+
+- `ElasticsearchStartupReadinessTransition.preparationFailed` in `ElasticsearchStartupReadinessTransition.scala:40-54`.
+- `ElasticsearchStartupReadinessTransitionSpec.scala` pins prepared/failure classification, `NotEnforced`, and unsupported failure handling.
+
+### Prepared and failed transitions both use `NotEnforced`
+
+Both `Prepared` and `PreparationFailed` transitions record `servingDecision = ElasticsearchStartupServingDecision.NotEnforced`. Neither outcome gates or changes serving behavior.
+
+Source-backed evidence:
+
+- `ElasticsearchStartupReadinessTransition.scala:37` (prepared) and `ElasticsearchStartupReadinessTransition.scala:49` (failure).
+
+### Startup status projection exists but is non-serving
+
+`ElasticsearchStartupReadinessStatusResponse` is a pure, non-serving startup status projection from `ElasticsearchStartupReadinessTransition`:
+
+- Prepared projections include the nested `ElasticsearchLifecycleStatusResponse`.
+- Failed projections expose operation/message only, without lifecycle metadata or status response fields.
+- Local Circe encoding is provided.
+- The projection is not DI-bound or HTTP-exposed.
+
+Source-backed evidence:
+
+- `ElasticsearchStartupReadinessStatusResponse.scala` implements the pure projection and Circe encoder.
+- `ElasticsearchStartupReadinessStatusResponseSpec.scala` pins prepared/failed projection shapes, JSON equality, and values.
+
+### `/beauty-search` serving behavior is unchanged
+
+The ES-backed `/beauty-search` route continues to serve without any startup readiness gate:
+
+- Production route is exposed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- Route behavior, response shape, and error behavior are unchanged.
+- No startup readiness enforcement exists.
+- No endpoint, path, HTTP status policy, or operator policy is implemented.
+
+## Policy choices that must be approved before enforcement
+
+Each choice below must be explicitly approved before any implementation. None are implemented today.
+
+### Choice 1: Fail closed until prepared
+
+**Definition:** If the startup transition is not `Prepared`, the route returns an error response (e.g., `503 Service Unavailable`) instead of serving search results.
+
+**Current implementation status:** Not implemented. The current route serves regardless of startup transition state.
+
+**Required source changes before implementation:**
+
+- Route composition must read `ElasticsearchStartupReadinessTransition` from DI and check its state before serving.
+- A new failure response model for the "not ready" case must be defined.
+- The route must short-circuit with the failure response when the transition is not `Prepared`.
+
+**Required tests before implementation:**
+
+- `Prepared` transition allows serving.
+- `PreparationFailed` transition blocks serving with approved error response.
+- `UnsupportedFailure` transition behavior (fail closed or ignore).
+- No accidental Qdrant/hybrid fallback during startup failure.
+- No extra Elasticsearch calls beyond approved lifecycle behavior.
+- Serving behavior is unchanged for `Prepared` transitions.
+
+**Operator-visible status impact:**
+
+- Operators see `503 Service Unavailable` (or approved alternative) when startup preparation has not succeeded.
+- Operators can distinguish "not yet ready" from "prepared and serving."
+
+**Rollback/freshness implications:**
+
+- Rollback to seed-only/in-memory backend would bypass this gate.
+- Freshness behavior is orthogonal; this gate only checks prepared/not-prepared state.
+
+### Choice 2: Fail fast on preparation failure
+
+**Definition:** If the startup transition is `PreparationFailed`, the route returns an error response and remains in a failed state until restarted or manually recovered.
+
+**Current implementation status:** Not implemented. Preparation failures are classifiable in pure tests but do not change route behavior.
+
+**Required source changes before implementation:**
+
+- Route composition must read the transition and check for `PreparationFailed`.
+- A distinct failure response for preparation failure must be defined (separate from "not yet prepared").
+- The route must persist the failed state and refuse serving.
+
+**Required tests before implementation:**
+
+- `PreparationFailed` transition blocks serving with the approved failure response.
+- Failure response is operator-visible if an endpoint is approved.
+- No accidental Qdrant/hybrid fallback during preparation failure.
+- Recovery path (restart, manual recovery) is documented.
+
+**Operator-visible status impact:**
+
+- Operators see a distinct error for preparation failure versus "not yet prepared."
+- The failure is persistent until manual or restart recovery.
+
+**Rollback/freshness implications:**
+
+- Rollback to seed-only/in-memory backend would bypass this gate.
+- Preparation failure does not imply stale data; it implies the index could not be prepared.
+
+### Choice 3: Continue serving with seed-only/not-enforced status
+
+**Definition:** The route continues to serve search results regardless of startup transition state. The startup status is exposed for operator visibility only, not for serving enforcement.
+
+**Current implementation status:** This is the current behavior. The route serves regardless of transition state, and the transition is bound but non-serving (`NotEnforced`).
+
+**Required source changes before implementation:**
+
+- Minimal: expose the startup status through an operator-visible endpoint (if approved).
+- No route behavior changes.
+
+**Required tests before implementation:**
+
+- Route continues to serve with `Prepared` and `PreparationFailed` transitions.
+- Startup status projection is operator-visible if an endpoint is approved.
+- Serving behavior is unchanged.
+
+**Operator-visible status impact:**
+
+- Operators can see the startup status for monitoring.
+- No serving behavior change.
+
+**Rollback/freshness implications:**
+
+- No rollback behavior change.
+- Freshness behavior is orthogonal.
+
+### Choice 4: Serve stale/previous index if replacement exists
+
+**Definition:** If a new index is being prepared and the old index is still valid, the route continues to serve from the old index until the new index is ready.
+
+**Current implementation status:** Not implemented. No replacement strategy exists. `ElasticsearchProductionReadinessState.replacement` is `NotConfigured`.
+
+**Required source changes before implementation:**
+
+- Index replacement strategy must be designed (alias, versioned index, or direct replacement).
+- The route must track which index is currently serving.
+- The startup gate must check whether a replacement is in progress and whether the old index is still valid.
+
+**Required tests before implementation:**
+
+- Old index continues to serve during replacement.
+- New index takes over when preparation completes.
+- Rollback to old index if new index preparation fails.
+- No accidental dual-serving or index drift.
+
+**Operator-visible status impact:**
+
+- Operators see which index is currently serving.
+- Operators see replacement progress.
+
+**Rollback/freshness implications:**
+
+- Rollback is part of this choice: return to previous index if replacement fails.
+- Freshness tracking is required to know if the serving index is stale.
+
+### Choice 5: Operator override/disable mode
+
+**Definition:** An operator can manually override the startup gate to force serving or force non-serving, regardless of startup transition state.
+
+**Current implementation status:** Not implemented. No operator override surface exists.
+
+**Required source changes before implementation:**
+
+- An operator-visible control surface (endpoint, config, or flag) must be defined.
+- The startup gate must check the override before enforcing the gate.
+- Override state must be persisted or documented as restart-time configuration.
+
+**Required tests before implementation:**
+
+- Override to "force serving" bypasses the startup gate.
+- Override to "force non-serving" blocks serving regardless of transition.
+- Override state is operator-visible.
+- Override does not affect lifecycle metadata or freshness.
+
+**Operator-visible status impact:**
+
+- Operators can control serving behavior without code changes.
+- Override state is visible in status responses.
+
+**Rollback/freshness implications:**
+
+- Override does not change freshness or replacement behavior.
+- Override can be used to roll back to serving if a gate blocks incorrectly.
+
+## Recommended future policy
+
+**Recommended default:** Fail closed until prepared.
+
+Rationale:
+
+- The current ES-backed seed route performs eager seed index preparation during composition.
+- If composition succeeds, the route serves with a prepared transition.
+- If composition fails, the route should not serve with an unknown/unprepared index state.
+- Fail closed provides the safest default: serve only when explicitly prepared.
+
+**Status:** Not implemented. This recommendation is based on the current source-backed state of seed-only lifecycle, non-serving readiness, and unchanged route behavior. It must be explicitly approved before enforcement.
+
+If enough source truth does not yet exist to recommend one policy, the policy remains unresolved. In the current state, the recommendation above is source-backed but not enforced.
+
+## Required future tests before any serving-gate implementation
+
+These tests are unimplemented and must be added alongside any enforcement code:
+
+1. **Prepared startup allows serving.**
+   - A `Prepared` transition allows the route to serve `/beauty-search` normally.
+   - The prepared transition preserves the readiness state and derives the lifecycle status response.
+   - Serving behavior is unchanged for prepared transitions.
+
+2. **Failed startup blocks or fails according to approved policy.**
+   - A `PreparationFailed` transition blocks or fails serving according to the approved policy.
+   - The failure response is distinct from the current `500 InternalServerError` empty-body behavior.
+   - The failure response is operator-visible if an endpoint is approved.
+
+3. **Failed startup status projection is operator-visible if endpoint is approved.**
+   - If an endpoint is approved, `ElasticsearchStartupReadinessStatusResponse` for `PreparationFailed` transitions is accessible.
+   - Prepared projections include nested `ElasticsearchLifecycleStatusResponse`.
+   - Failed projections expose operation/message only.
+
+4. **No accidental Qdrant/hybrid fallback.**
+   - During startup failure, no Qdrant or hybrid serving occurs.
+   - The route does not fall back to Qdrant or hybrid when ES preparation fails.
+
+5. **No extra Elasticsearch calls beyond approved lifecycle behavior.**
+   - Startup gate enforcement does not introduce new ES calls.
+   - Existing ES calls (PUT mapping, bulk ingest, refresh, search) remain unchanged.
+
+6. **Rollback/freshness behavior only after those policies exist.**
+   - Rollback behavior is tested only after an explicit rollback policy is approved.
+   - Freshness behavior is tested only after an explicit freshness policy is approved.
+
+## Implementation boundary
+
+This design document does not implement:
+
+- an endpoint;
+- a route path;
+- HTTP status policy;
+- serving-readiness enforcement;
+- preparation failure policy;
+- replacement implementation;
+- alias/versioned-index behavior;
+- freshness timestamp implementation;
+- refresh trigger implementation;
+- rollback implementation;
+- production lifecycle completion.
+
+All of these remain future work pending explicit approval.

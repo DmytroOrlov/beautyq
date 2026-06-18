@@ -119,6 +119,17 @@ Future/unimplemented unless matching source-backed tests are added:
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
 
+### Future tests required before serving-gate implementation
+
+These tests are unimplemented and documented in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`:
+
+- prepared startup allows serving;
+- failed startup blocks or fails according to approved policy;
+- failed startup status projection is operator-visible if endpoint is approved;
+- no accidental Qdrant/hybrid fallback during startup failure;
+- no extra Elasticsearch calls beyond approved lifecycle behavior;
+- rollback/freshness behavior only after those policies exist.
+
 Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests.
 
 ## Repository Tests
