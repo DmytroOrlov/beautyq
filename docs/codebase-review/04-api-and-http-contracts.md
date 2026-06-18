@@ -185,6 +185,21 @@ Current targeted ES-backed characterization:
 - Wrong `limit` type (string instead of integer) → `500 InternalServerError`, empty body.
 - Missing required field (`query`) → `500 InternalServerError`, empty body.
 
+### Bad-input hardening design gate
+
+Body decode failures occur at Tapir `.in(jsonBody[UserSearchInput])`, before `BeautySearchApi` server logic can call `BeautySearchService`; they do not originate in the service or Elasticsearch. `TapirHttpSupport.currentContractDecodeFailureHandler` currently maps body decode failures to `500 InternalServerError` with an empty body. This compatibility policy is pinned by the generic `TapirHttpSupportContractSuite` and by `BeautySearchApiHttpContractSuite` plus the ES-backed `BeautySearchProductionRouteErrorSpec`. Hardening is not implemented or approved yet, and must first decide whether the behavior change is BeautySearch-only or global to Tapir support.
+
+Minimum decisions before implementation:
+
+- Desired status for malformed JSON, empty body, missing required fields, and wrong JSON types; `400 BadRequest` is a likely target, not current behavior.
+- Empty error body versus structured JSON.
+- Whether `HttpApiFailure` needs a `BadRequest` case or another typed error representation.
+- Whether the change belongs in `TapirHttpSupport`, `BeautySearchTapirEndpoints`, route-specific support, or another explicit adapter.
+- How existing path-decode `404` behavior remains unchanged.
+- Coordinated updates to `TapirHttpSupportContractSuite`, `BeautySearchApiHttpContractSuite`, and `BeautySearchProductionRouteErrorSpec`.
+
+Non-goals for this gate: no Elasticsearch backend change, Qdrant/hybrid serving, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+
 This is current behavior, not the desired final validation contract. The route currently lacks:
 
 - Typed `4xx` error responses (e.g., `400 BadRequest` for malformed JSON, missing fields, type mismatches).
