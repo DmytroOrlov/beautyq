@@ -14,10 +14,10 @@ trait CategoryTapirEndpoints {
   def getRootChildren: PublicEndpoint[Unit, HttpApiFailure, List[Category], Any]
 
   final def all: List[AnyEndpoint] = List(
+    getRootChildren,
     getCategory,
     upsertCategory,
     getChildren,
-    getRootChildren,
   )
 }
 

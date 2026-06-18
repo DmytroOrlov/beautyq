@@ -63,75 +63,69 @@ class ProfileApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         } yield ()
     }
 
-    "return current 404 semantics for GET with malformed UUID path" in {
+    "return Tapir default bad-input response for GET with malformed UUID path" in {
       (profileApi: ProfileApi[IO]) =>
         for {
           response <- observe(combineApis(profileApi), get("/profile/not-a-uuid"))
-          _        <- assertIO(response.status === Status.NotFound)
-          _        <- assertIO(response.body === "Not found")
+          _        <- assertIO(response.status === Status.BadRequest)
         } yield ()
     }
 
-    "return current 404 semantics for POST with malformed UUID path" in {
+    "return Tapir default bad-input response for POST with malformed UUID path" in {
       (profileApi: ProfileApi[IO]) =>
         for {
           response <- observe(
             combineApis(profileApi),
             postJson("/profile/not-a-uuid", """{"name":"Kai","description":"x"}"""),
           )
-          _ <- assertIO(response.status === Status.NotFound)
-          _ <- assertIO(response.body === "Not found")
+          _ <- assertIO(response.status === Status.BadRequest)
         } yield ()
     }
 
-    "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
+    "return Tapir default bad-input response and do not hit the repo on malformed JSON body" in {
       (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
         val userId = UUID.fromString("44444444-4444-4444-4444-444444444444")
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", """{"name":"Kai""""))
           saved    <- state.savedProfiles
-          _        <- assertIO(response.status === Status.InternalServerError)
-          _        <- assertIO(response.body === "")
+          _        <- assertIO(response.status === Status.BadRequest)
           _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
-    "return current missing-field semantics and do not hit the repo when a required field is absent" in {
+    "return Tapir default bad-input response and do not hit the repo when a required field is absent" in {
       (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
         val userId = UUID.fromString("55555555-5555-5555-5555-555555555555")
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", """{"name":"Kai"}"""))
           saved    <- state.savedProfiles
-          _        <- assertIO(response.status === Status.InternalServerError)
-          _        <- assertIO(response.body === "")
+          _        <- assertIO(response.status === Status.BadRequest)
           _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
-    "return current invalid-field-type semantics and do not hit the repo on wrong json field types" in {
+    "return Tapir default bad-input response and do not hit the repo on wrong json field types" in {
       (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
         val userId = UUID.fromString("66666666-6666-6666-6666-666666666666")
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", """{"name":123,"description":"typed"}"""))
           saved    <- state.savedProfiles
-          _        <- assertIO(response.status === Status.InternalServerError)
-          _        <- assertIO(response.body === "")
+          _        <- assertIO(response.status === Status.BadRequest)
           _        <- assertIO(saved.isEmpty)
         } yield ()
     }
 
-    "return current empty-body semantics and do not hit the repo on empty request bodies" in {
+    "return Tapir default bad-input response and do not hit the repo on empty request bodies" in {
       (profileApi: ProfileApi[IO], state: ProfileApiContractState) =>
         val userId = UUID.fromString("77777777-7777-7777-7777-777777777777")
 
         for {
           response <- observe(combineApis(profileApi), postJson(s"/profile/$userId", ""))
           saved    <- state.savedProfiles
-          _        <- assertIO(response.status === Status.InternalServerError)
-          _        <- assertIO(response.body === "")
+          _        <- assertIO(response.status === Status.BadRequest)
           _        <- assertIO(saved.isEmpty)
         } yield ()
     }

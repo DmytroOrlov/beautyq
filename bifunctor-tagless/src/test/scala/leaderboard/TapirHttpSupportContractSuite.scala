@@ -41,31 +41,28 @@ class TapirHttpSupportContractSuite extends SpecZIO with AssertZIO with HttpCont
       )
     ).orNotFound
 
-  "TapirHttpSupport current compatibility policy" should {
-    "treat malformed path capture decode as route mismatch and end with 404 Not found even across multiple methods on the same path" in {
+  "TapirHttpSupport defaults" should {
+    "return Tapir default bad-input responses for malformed path captures across multiple methods on the same path" in {
       for {
         getResponse  <- observe(app, get("/tapir-support/path/not-a-uuid"))
         postResponse <- observe(app, postJson("/tapir-support/path/not-a-uuid", """{"ignored":true}"""))
-        _            <- assertIO(getResponse.status === Status.NotFound)
-        _            <- assertIO(getResponse.body === "Not found")
-        _            <- assertIO(postResponse.status === Status.NotFound)
-        _            <- assertIO(postResponse.body === "Not found")
+        _            <- assertIO(getResponse.status === Status.BadRequest)
+        _            <- assertIO(postResponse.status === Status.BadRequest)
       } yield ()
     }
 
-    "return 500 with empty body for malformed json body decode" in {
+    "return Tapir default bad-input response for malformed json body decode" in {
       for {
         response <- observe(app, postJson("/tapir-support/body", """{"name":"Kai""""))
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 
-    "return 500 with empty body for uncaught server logic exceptions" in {
+    "return the Tapir default response for uncaught server logic exceptions" in {
       for {
         response <- observe(app, get("/tapir-support/exception"))
         _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.body === "Internal server error")
       } yield ()
     }
   }

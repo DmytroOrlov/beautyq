@@ -19,6 +19,7 @@ class CategoryApi[F[+_, +_]: Error2](
     tapirHttpSupport.toRoutes {
       import tapirEndpoints.*
       List(
+        getRootChildren.serverLogic[F[Throwable, _]](_ => HttpApiFailure.fromQueryEffect(categories.getChildren(rootCategoryId))),
         getCategory.serverLogic[F[Throwable, _]](
           categoryId => async.map(HttpApiFailure.fromQueryEffect(categories.getCategory(categoryId))) {
             _.flatMap(_.toRight(HttpApiFailure.NotFound.category(categoryId)))
@@ -26,7 +27,6 @@ class CategoryApi[F[+_, +_]: Error2](
         ),
         upsertCategory.serverLogic[F[Throwable, _]](category => HttpApiFailure.fromQueryEffect(categories.upsertCategory(category))),
         getChildren.serverLogic[F[Throwable, _]](parentId => HttpApiFailure.fromQueryEffect(categories.getChildren(parentId))),
-        getRootChildren.serverLogic[F[Throwable, _]](_ => HttpApiFailure.fromQueryEffect(categories.getChildren(rootCategoryId))),
       )
     }
 }

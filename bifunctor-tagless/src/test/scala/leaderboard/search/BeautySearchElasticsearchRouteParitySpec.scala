@@ -81,15 +81,14 @@ final class BeautySearchElasticsearchRouteParitySpec extends AnyWordSpec with Ht
       assert(negJson.hcursor.downField("serviceIntentCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "negative limit: serviceIntentCarousel should be empty")
     }
 
-    "return current invalid request behavior for ES route module" in {
+    "return Tapir default bad-input responses for invalid requests" in {
       val probe = buildProbe()
       val apis  = probe.allHttpApis
 
       val malformed = runIO(
         observeRoute(apis, postJson("/beauty-search", """{"query":"broken""""))
       )
-      assert(malformed.status == Status.InternalServerError)
-      assert(malformed.body == "")
+      assert(malformed.status == Status.BadRequest)
 
       val emptyBody = runIO(
         observeRoute(
@@ -97,20 +96,17 @@ final class BeautySearchElasticsearchRouteParitySpec extends AnyWordSpec with Ht
           Request[Task](method = org.http4s.Method.POST, uri = org.http4s.Uri.unsafeFromString("/beauty-search")).putHeaders(org.http4s.headers.`Content-Type`(org.http4s.MediaType.application.json)),
         )
       )
-      assert(emptyBody.status == Status.InternalServerError)
-      assert(emptyBody.body == "")
+      assert(emptyBody.status == Status.BadRequest)
 
       val wrongLimitType = runIO(
         observeRoute(apis, postJson("/beauty-search", """{"query":"маникюр","limit":"bad"}"""))
       )
-      assert(wrongLimitType.status == Status.InternalServerError)
-      assert(wrongLimitType.body == "")
+      assert(wrongLimitType.status == Status.BadRequest)
 
       val missingQuery = runIO(
         observeRoute(apis, postJson("/beauty-search", """{"userLat":53.58,"userLon":10.08,"limit":3}"""))
       )
-      assert(missingQuery.status == Status.InternalServerError)
-      assert(missingQuery.body == "")
+      assert(missingQuery.status == Status.BadRequest)
     }
   }
 

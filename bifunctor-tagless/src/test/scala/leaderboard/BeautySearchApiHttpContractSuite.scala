@@ -87,13 +87,12 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
       } yield ()
     }
 
-    "return current malformed-json semantics and do not call the fake service" in {
+    "return Tapir default bad-input response and do not call the fake service for malformed JSON" in {
       for {
         state    <- BeautySearchApiContractState.make(Right(emptySearchResponse))
         response <- observe(app(state), postJson("/beauty-search", """{"query":"broken""""))
         inputs   <- state.inputs
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(inputs.isEmpty)
       } yield ()
     }

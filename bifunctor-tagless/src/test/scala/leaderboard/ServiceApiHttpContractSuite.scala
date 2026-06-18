@@ -75,22 +75,20 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
       } yield ()
     }
 
-    "return current 404 semantics for malformed UUID path params" in {
+    "return Tapir default bad-input response for malformed UUID path params" in {
       for {
         state    <- ServiceApiContractState.make
         response <- observe(combineApis(serviceApi(state)), get("/service/not-a-uuid"))
-        _        <- assertIO(response.status === Status.NotFound)
-        _        <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 
-    "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
+    "return Tapir default bad-input response and do not hit the repo on malformed JSON body" in {
       for {
         state    <- ServiceApiContractState.make
         response <- observe(combineApis(serviceApi(state)), postJson("/service", """{"id":"abc""""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }

@@ -52,7 +52,7 @@ Implemented/current:
 - `HttpApiFailure.scala` defines typed HTTP failures used by Beauty single-entity GET adapters.
 - `HttpApiFailureTapirSupport.scala` provides Tapir failure output support.
 - `LegacyJsonResponse.scala` centralizes optional-as-JSON compatibility behavior.
-- `TapirHttpSupport.scala` centralizes Tapir/http4s route interpretation and preserves project-specific malformed path/body/exception behavior according to `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`.
+- `TapirHttpSupport.scala` centralizes Tapir/http4s route interpretation using the default `Http4sServerInterpreter` options.
 
 ## Single-Entity GET Contracts
 
@@ -180,29 +180,31 @@ Future implementation boundary:
 Current targeted ES-backed characterization:
 
 - `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP stub that is not used for body decode failures.
-- Malformed JSON body → `500 InternalServerError`, empty body.
-- Empty body → `500 InternalServerError`, empty body.
-- Wrong `limit` type (string instead of integer) → `500 InternalServerError`, empty body.
-- Missing required field (`query`) → `500 InternalServerError`, empty body.
+- Malformed JSON body → Tapir default `400 BadRequest`.
+- Empty body → Tapir default `400 BadRequest`.
+- Wrong `limit` type (string instead of integer) → Tapir default `400 BadRequest`.
+- Missing required field (`query`) → Tapir default `400 BadRequest`.
+- Body decode failures occur before `BeautySearchApi` server logic and do not call `BeautySearchService` or Elasticsearch.
 
-### Bad-input hardening design gate
+### Default bad-input boundary
 
-Body decode failures occur at Tapir `.in(jsonBody[UserSearchInput])`, before `BeautySearchApi` server logic can call `BeautySearchService`; they do not originate in the service or Elasticsearch. `TapirHttpSupport.currentContractDecodeFailureHandler` currently maps body decode failures to `500 InternalServerError` with an empty body. This compatibility policy is pinned by the generic `TapirHttpSupportContractSuite` and by `BeautySearchApiHttpContractSuite` plus the ES-backed `BeautySearchProductionRouteErrorSpec`. Hardening is not implemented or approved yet, and must first decide whether the behavior change is BeautySearch-only or global to Tapir support.
+`TapirHttpSupport` uses the default `Http4sServerInterpreter` options. There is no application-specific decode, reject, or exception handler. Malformed body and path inputs therefore use Tapir/http4s default bad-input behavior globally; route tests pin stable status and delegation facts without treating generated decode text as an application error schema. Uncaught server logic exceptions use the default `500 InternalServerError` response with `Internal server error` body.
 
-Minimum decisions before implementation:
+Literal category routes are ordered before UUID captures, so `GET /category/root` remains a successful business route.
 
-- Desired status for malformed JSON, empty body, missing required fields, and wrong JSON types; `400 BadRequest` is a likely target, not current behavior.
-- Empty error body versus structured JSON.
+Malformed UUID captures return `400 BadRequest`.
+
+Future structured validation work would still need explicit decisions for:
+
+- Structured error JSON and stable error codes/messages.
 - Whether `HttpApiFailure` needs a `BadRequest` case or another typed error representation.
-- Whether the change belongs in `TapirHttpSupport`, `BeautySearchTapirEndpoints`, route-specific support, or another explicit adapter.
-- How existing path-decode `404` behavior remains unchanged.
-- Coordinated updates to `TapirHttpSupportContractSuite`, `BeautySearchApiHttpContractSuite`, and `BeautySearchProductionRouteErrorSpec`.
+- Request validation beyond JSON decoding, including query length and coordinate ranges.
+- Logging, metrics, and tracing for rejected requests.
 
-Non-goals for this gate: no Elasticsearch backend change, Qdrant/hybrid serving, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+This default-behavior change does not add an `HttpApiFailure.BadRequest`, a custom decode handler, or a structured error body.
 
-This is current behavior, not the desired final validation contract. The route currently lacks:
+The route still lacks:
 
-- Typed `4xx` error responses (e.g., `400 BadRequest` for malformed JSON, missing fields, type mismatches).
 - Structured error bodies with error codes and messages.
 - Request validation (query length limits, lat/lon range validation).
 - Freshness/staleness reporting at the route boundary.

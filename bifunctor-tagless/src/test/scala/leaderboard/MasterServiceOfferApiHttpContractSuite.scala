@@ -92,22 +92,20 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
       } yield ()
     }
 
-    "return current 404 semantics for malformed UUID path params" in {
+    "return Tapir default bad-input response for malformed UUID path params" in {
       for {
         state    <- MasterServiceOfferApiContractState.make
         response <- observe(combineApis(masterServiceOfferApi(state)), get("/master-service-offer/not-a-uuid"))
-        _        <- assertIO(response.status === Status.NotFound)
-        _        <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 
-    "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
+    "return Tapir default bad-input response and do not hit the repo on malformed JSON body" in {
       for {
         state    <- MasterServiceOfferApiContractState.make
         response <- observe(combineApis(masterServiceOfferApi(state)), postJson("/master-service-offer", """{"id":"abc""""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }

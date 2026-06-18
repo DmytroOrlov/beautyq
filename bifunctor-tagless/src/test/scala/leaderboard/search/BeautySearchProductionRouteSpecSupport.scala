@@ -146,12 +146,11 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     (): Unit
   }
 
-  protected final def assertInternalServerErrorWithEmptyBody(response: ObservedResponse): Unit = {
+  protected final def assertDefaultDecodeFailureResponse(response: ObservedResponse): Unit = {
     assert(
-      response.status == Status.InternalServerError,
-      s"Expected 500 Internal Server Error, got ${response.status}",
+      response.status == Status.BadRequest,
+      s"Expected 400 Bad Request, got ${response.status}",
     )
-    assert(response.body == "", s"Expected empty response body, got: ${response.body}")
     (): Unit
   }
 

@@ -71,55 +71,50 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
       } yield ()
     }
 
-    "return current 404 semantics for malformed UUID path params" in {
+    "return Tapir default bad-input response for malformed UUID path params" in {
       for {
         state    <- MasterApiContractState.make
         response <- observe(combineApis(masterApi(state)), get("/master/not-a-uuid"))
-        _        <- assertIO(response.status === Status.NotFound)
-        _        <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 
-    "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
+    "return Tapir default bad-input response and do not hit the repo on malformed JSON body" in {
       for {
         state    <- MasterApiContractState.make
         response <- observe(combineApis(masterApi(state)), postJson("/master", """{"id":"abc""""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
-    "return current missing-field semantics and do not hit the repo when a required field is absent" in {
+    "return Tapir default bad-input response and do not hit the repo when a required field is absent" in {
       for {
         state    <- MasterApiContractState.make
         response <- observe(combineApis(masterApi(state)), postJson("/master", """{"id":"11111111-1111-1111-1111-111111111111"}"""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
-    "return current invalid-field-type semantics and do not hit the repo on wrong json field types" in {
+    "return Tapir default bad-input response and do not hit the repo on wrong json field types" in {
       for {
         state    <- MasterApiContractState.make
         response <- observe(combineApis(masterApi(state)), postJson("/master", """{"id":"11111111-1111-1111-1111-111111111111","name":123}"""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
-    "return current empty-body semantics and do not hit the repo on empty request bodies" in {
+    "return Tapir default bad-input response and do not hit the repo on empty request bodies" in {
       for {
         state    <- MasterApiContractState.make
         response <- observe(combineApis(masterApi(state)), postJson("/master", ""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }

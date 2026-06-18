@@ -47,23 +47,21 @@ class LadderApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
       } yield ()
     }
 
-    "return current 404 semantics for malformed UUID path params" in {
+    "return Tapir default bad-input response for malformed UUID path params" in {
       for {
         state    <- LadderApiContractState.make
         response <- observe(combineApis(ladderApi(state)), postJson("/ladder/not-a-uuid/15", ""))
-        _        <- assertIO(response.status === Status.NotFound)
-        _        <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 
-    "return current 404 semantics for malformed Long path params" in {
+    "return Tapir default bad-input response for malformed Long path params" in {
       val userId = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")
 
       for {
         state    <- LadderApiContractState.make
         response <- observe(combineApis(ladderApi(state)), postJson(s"/ladder/$userId/not-a-long", ""))
-        _        <- assertIO(response.status === Status.NotFound)
-        _        <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 

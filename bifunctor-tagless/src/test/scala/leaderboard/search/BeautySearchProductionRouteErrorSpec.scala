@@ -7,7 +7,7 @@ import zio.{IO, Task}
 
 final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with BeautySearchProductionRouteSpecSupport {
   "POST /beauty-search invalid request behavior" should {
-    "return 500 with empty body for malformed JSON body" in {
+    "return Tapir default bad-input response for malformed JSON body" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -21,11 +21,11 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertInternalServerErrorWithEmptyBody(response)
+        assertDefaultDecodeFailureResponse(response)
       }
     }
 
-    "return 500 with empty body for empty body" in {
+    "return Tapir default bad-input response for empty body" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -37,11 +37,11 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertInternalServerErrorWithEmptyBody(response)
+        assertDefaultDecodeFailureResponse(response)
       }
     }
 
-    "return 500 with empty body for wrong limit type" in {
+    "return Tapir default bad-input response for wrong limit type" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -53,11 +53,11 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertInternalServerErrorWithEmptyBody(response)
+        assertDefaultDecodeFailureResponse(response)
       }
     }
 
-    "return 500 with empty body for missing required field" in {
+    "return Tapir default bad-input response for missing required field" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -69,7 +69,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertInternalServerErrorWithEmptyBody(response)
+        assertDefaultDecodeFailureResponse(response)
       }
     }
   }

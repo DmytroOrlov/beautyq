@@ -41,7 +41,8 @@ Documented as characterized, not as desired final contract:
 * Positive limit returns `200 OK` capped by requested limit.
 * Zero/negative limit returns `200 OK` with empty variant carousel.
 * Huge limit is capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
-* Malformed JSON / empty body / wrong limit type / missing required fields currently return `500` with empty body.
+* Malformed JSON / empty body / wrong limit type / missing required fields use Tapir defaults and return `400 BadRequest` before BeautySearch service or Elasticsearch calls.
+* Backend/query failures remain separate endpoint-domain failures and return `500 InternalServerError` with an empty body.
 * Coordinates are not range-validated.
 * Query text is not length-validated.
 * `BeautySearchReadyCatalogDocuments` rejects blank source / empty document list.

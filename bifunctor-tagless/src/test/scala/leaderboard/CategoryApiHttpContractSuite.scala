@@ -90,22 +90,20 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
       } yield ()
     }
 
-    "return current 404 semantics for malformed UUID path params" in {
+    "return Tapir default bad-input response for malformed UUID path params" in {
       for {
         state    <- CategoryApiContractState.make
         response <- observe(combineApis(categoryApi(state)), get("/category/not-a-uuid"))
-        _        <- assertIO(response.status === Status.NotFound)
-        _        <- assertIO(response.body === "Not found")
+        _        <- assertIO(response.status === Status.BadRequest)
       } yield ()
     }
 
-    "return current malformed-json semantics and do not hit the repo on malformed JSON body" in {
+    "return Tapir default bad-input response and do not hit the repo on malformed JSON body" in {
       for {
         state    <- CategoryApiContractState.make
         response <- observe(combineApis(categoryApi(state)), postJson("/category", """{"id":"abc""""))
         upserts  <- state.upserts
-        _        <- assertIO(response.status === Status.InternalServerError)
-        _        <- assertIO(response.body === "")
+        _        <- assertIO(response.status === Status.BadRequest)
         _        <- assertIO(upserts.isEmpty)
       } yield ()
     }

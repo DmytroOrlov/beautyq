@@ -31,7 +31,10 @@ They protect:
 - Success response JSON.
 - Missing-entity behavior.
 - Error/exception behavior.
-- Tapir compatibility behavior.
+- Tapir/http4s default decode behavior: malformed JSON, empty bodies, missing required fields, invalid field types, and malformed path captures return `400 BadRequest` before repository/service logic.
+- Default uncaught server exception behavior: `500 InternalServerError` with `Internal server error` body.
+- Literal route precedence: `/category/root` remains a successful category-root route.
+- Malformed UUID captures return `400 BadRequest`.
 
 ## Repository Tests
 
