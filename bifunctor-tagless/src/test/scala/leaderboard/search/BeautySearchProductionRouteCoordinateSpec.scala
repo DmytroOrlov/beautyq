@@ -1,8 +1,6 @@
 package leaderboard.search
 
-import io.circe.parser.parse
 import leaderboard.api.BeautySearchApi
-import org.http4s.Status
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 
@@ -22,11 +20,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assert(response.status == Status.Ok)
-
-        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
-        assert(carousel.asArray.exists(_.isEmpty), "ES zero-hit: carousel should be empty"): Unit
+        assertOkWithEmptyVariantCarousel(response)
       }
     }
 
@@ -42,11 +36,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assert(response.status == Status.Ok)
-
-        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
-        assert(carousel.asArray.exists(_.isEmpty)): Unit
+        assertOkWithEmptyVariantCarousel(response)
       }
     }
 
@@ -62,11 +52,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assert(response.status == Status.Ok)
-
-        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
-        assert(carousel.asArray.exists(_.isEmpty)): Unit
+        assertOkWithEmptyVariantCarousel(response)
       }
     }
 
@@ -82,11 +68,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
           )
         )
 
-        assert(response.status == Status.Ok)
-
-        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-        val carousel = json.hcursor.downField("variantCarousel").focus.getOrElse(fail("missing variantCarousel"))
-        assert(carousel.asArray.exists(_.isEmpty)): Unit
+        assertOkWithEmptyVariantCarousel(response)
       }
     }
   }

@@ -5,6 +5,8 @@ import cats.syntax.all.*
 import com.sun.net.httpserver.{HttpExchange, HttpServer}
 import distage.Injector
 import fs2.text
+import io.circe.Json
+import io.circe.parser.parse
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
@@ -12,7 +14,8 @@ import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
 import leaderboard.plugins.{BeautySearchRouteModules, LeaderboardPlugin}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
-import org.http4s.{HttpApp, Request}
+import org.http4s.{HttpApp, Request, Status}
+import org.scalatest.Assertions.fail
 import zio.interop.catz.*
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
 
@@ -116,6 +119,63 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
           .map(body => ObservedResponse(response.status, body))
     }
   }
+
+  protected final def parseResponseJson(response: ObservedResponse): Json =
+    parse(response.body) match {
+      case Right(json) =>
+        json
+      case Left(error) =>
+        fail(s"Invalid Beauty search response JSON: ${error.getMessage}; body: ${response.body}")
+    }
+
+  protected final def assertOkWithEmptyVariantCarousel(response: ObservedResponse): Unit = {
+    assert(response.status == Status.Ok, s"Expected 200 OK, got ${response.status}")
+    val json = parseResponseJson(response)
+    assertEmptyArrayField(json, "variantCarousel")
+    (): Unit
+  }
+
+  protected final def assertOkWithEmptyBeautySearchResponseShape(response: ObservedResponse): Unit = {
+    assert(response.status == Status.Ok, s"Expected 200 OK, got ${response.status}")
+    val json = parseResponseJson(response)
+    assertEmptyArrayField(json, "variantCarousel")
+    assertEmptyArrayField(json, "providerCarousel")
+    assertEmptyArrayField(json, "serviceIntentCarousel")
+    assertFieldPresent(json, "facets")
+    assertFieldPresent(json, "inferredFilters")
+    (): Unit
+  }
+
+  protected final def assertInternalServerErrorWithEmptyBody(response: ObservedResponse): Unit = {
+    assert(
+      response.status == Status.InternalServerError,
+      s"Expected 500 Internal Server Error, got ${response.status}",
+    )
+    assert(response.body == "", s"Expected empty response body, got: ${response.body}")
+    (): Unit
+  }
+
+  private def assertEmptyArrayField(json: Json, fieldName: String): Unit =
+    json.hcursor.downField(fieldName).focus match {
+      case Some(value) =>
+        value.asArray match {
+          case Some(values) =>
+            assert(values.isEmpty, s"Expected $fieldName to be empty, got: $value")
+            (): Unit
+          case None =>
+            fail(s"Expected $fieldName to be an array, got: $value")
+        }
+      case None =>
+        fail(s"Missing $fieldName in Beauty search response: $json")
+    }
+
+  private def assertFieldPresent(json: Json, fieldName: String): Unit =
+    json.hcursor.downField(fieldName).focus match {
+      case Some(_) =>
+        (): Unit
+      case None =>
+        fail(s"Missing $fieldName in Beauty search response: $json")
+    }
 
   protected final def runIO[E, A](effect: ZIO[Any, E, A]): A =
     Unsafe.unsafe { implicit unsafe =>

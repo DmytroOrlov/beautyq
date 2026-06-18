@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.api.BeautySearchApi
-import org.http4s.{Request, Status}
+import org.http4s.Request
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Task}
 
@@ -21,8 +21,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assert(response.status == Status.InternalServerError)
-        assert(response.body == ""): Unit
+        assertInternalServerErrorWithEmptyBody(response)
       }
     }
 
@@ -38,8 +37,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assert(response.status == Status.InternalServerError)
-        assert(response.body == ""): Unit
+        assertInternalServerErrorWithEmptyBody(response)
       }
     }
 
@@ -55,8 +53,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assert(response.status == Status.InternalServerError)
-        assert(response.body == ""): Unit
+        assertInternalServerErrorWithEmptyBody(response)
       }
     }
 
@@ -72,8 +69,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assert(response.status == Status.InternalServerError)
-        assert(response.body == ""): Unit
+        assertInternalServerErrorWithEmptyBody(response)
       }
     }
   }

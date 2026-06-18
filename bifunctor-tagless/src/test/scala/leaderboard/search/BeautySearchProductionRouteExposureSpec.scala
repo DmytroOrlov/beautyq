@@ -1,8 +1,6 @@
 package leaderboard.search
 
-import io.circe.parser.parse
 import leaderboard.api.BeautySearchApi
-import org.http4s.Status
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 
@@ -22,14 +20,7 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
           )
         )
 
-        assert(response.status == Status.Ok)
-
-        val json = parse(response.body).getOrElse(fail(s"invalid Beauty search response JSON: ${response.body}"))
-        assert(json.hcursor.downField("variantCarousel").focus.exists(_.asArray.exists(_.isEmpty)))
-        assert(json.hcursor.downField("providerCarousel").focus.exists(_.asArray.exists(_.isEmpty)))
-        assert(json.hcursor.downField("serviceIntentCarousel").focus.exists(_.asArray.exists(_.isEmpty)))
-        assert(json.hcursor.downField("facets").focus.isDefined)
-        assert(json.hcursor.downField("inferredFilters").focus.isDefined): Unit
+        assertOkWithEmptyBeautySearchResponseShape(response)
       }
     }
   }
