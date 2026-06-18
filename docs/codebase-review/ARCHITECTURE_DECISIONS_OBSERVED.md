@@ -195,23 +195,24 @@ What not to infer:
 
 - Generic retrieval seams are not production adapters by themselves.
 
-## Decision 10: Current ES lifecycle metadata is seed-only, not a production lifecycle
+## Decision 10: Current ES lifecycle state is seed-only and non-serving
 
 Statement:
 
-- Current Elasticsearch lifecycle metadata remains a seed-only readiness seam until a production lifecycle contract is implemented.
+- Current Elasticsearch lifecycle metadata and production-readiness state remain seed-only internal seams until a production lifecycle contract is implemented.
 
 Evidence:
 
 - `ElasticsearchSeedIndexReadiness.lifecycleMetadata` sets `EagerSeedIndexPreparation` plus `SeedOnlyNotProductionLifecycle`.
 - `ElasticsearchSeedSearchComposition.lifecycleMetadata` forwards that metadata.
-- Focused route/module specs prove the metadata is materialized through the ES-backed route graphs without changing route behavior.
+- `ElasticsearchProductionReadinessState.seedOnly` derives explicit current values: `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, and `NotExposed`.
+- `ElasticsearchSeedSearchComposition.productionReadinessState` forwards the derived state, and focused route/module specs prove it is materialized through the ES-backed route graphs without changing route behavior.
 
 Consequences:
 
-- Current metadata coverage proves DI availability for the seed seam, not startup readiness, replacement, freshness, refresh, rollback, or operator-visible production lifecycle status.
-- M5 cannot be treated as complete from metadata coverage alone.
+- Current state coverage proves DI availability and makes the missing capabilities explicit; it does not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
+- M5 cannot be treated as complete from state coverage alone.
 
 What not to infer:
 
-- Do not infer production readiness enforcement, refresh/replacement/rollback policy, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from this metadata seam.
+- Do not infer production readiness enforcement, refresh/replacement/rollback policy, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these internal seams.

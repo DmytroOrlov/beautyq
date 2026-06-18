@@ -13,7 +13,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.plugins.BeautySearchRouteModules
-import leaderboard.search.elasticsearch.ElasticsearchSeedLifecycleMetadata
+import leaderboard.search.elasticsearch.{ElasticsearchProductionReadinessState, ElasticsearchSeedLifecycleMetadata}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -59,6 +59,7 @@ final class BeautySearchElasticsearchDefaultReadyRouteSpec extends AnyWordSpec w
 
         assert(apis.collect { case _: BeautySearchApi[IO] => () }.size == 1)
         BeautySearchProductionRouteSpecSupport.assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
+        BeautySearchProductionRouteSpecSupport.assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
 
         val response = runIO(
           observeRoute(apis, postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":3}"""))
@@ -95,8 +96,9 @@ final class BeautySearchElasticsearchDefaultReadyRouteSpec extends AnyWordSpec w
           beautySearchApi: BeautySearchApi[IO],
           allHttpApis: Set[HttpApi[IO]],
           lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
+          productionReadinessState: ElasticsearchProductionReadinessState,
         ) =>
-          DefaultReadyProbe(beautySearchApi, allHttpApis, lifecycleMetadata)
+          DefaultReadyProbe(beautySearchApi, allHttpApis, lifecycleMetadata, productionReadinessState)
       }
     }
 
@@ -130,6 +132,7 @@ final class BeautySearchElasticsearchDefaultReadyRouteSpec extends AnyWordSpec w
     beautySearchApi: BeautySearchApi[IO],
     allHttpApis: Set[HttpApi[IO]],
     lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
+    productionReadinessState: ElasticsearchProductionReadinessState,
   )
 
   private final case class RecordedEsRequest(

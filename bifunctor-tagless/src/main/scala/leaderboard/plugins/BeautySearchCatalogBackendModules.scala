@@ -7,6 +7,7 @@ import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchRea
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.elasticsearch.{
   ElasticsearchJsonClient,
+  ElasticsearchProductionReadinessState,
   ElasticsearchSeedIndexReadiness,
   ElasticsearchSeedLifecycleMetadata,
   ElasticsearchSeedSearchComposition,
@@ -66,6 +67,10 @@ object BeautySearchCatalogBackendModules {
 
     make[ElasticsearchSeedLifecycleMetadata].from {
       (composition: ElasticsearchSeedSearchComposition) => composition.lifecycleMetadata
+    }
+
+    make[ElasticsearchProductionReadinessState].from {
+      (composition: ElasticsearchSeedSearchComposition) => composition.productionReadinessState
     }
 
     make[BeautySearchBackend[IO]].from {

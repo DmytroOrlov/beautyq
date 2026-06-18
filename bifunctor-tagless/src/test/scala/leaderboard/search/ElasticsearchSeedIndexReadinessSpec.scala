@@ -8,6 +8,13 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchIngestionInterpreter,
   ElasticsearchJsonClient,
   ElasticsearchMappingInterpreter,
+  ElasticsearchFreshnessReadiness,
+  ElasticsearchOperatorVisibility,
+  ElasticsearchProductionReadinessState,
+  ElasticsearchRefreshReadiness,
+  ElasticsearchReplacementReadiness,
+  ElasticsearchRollbackReadiness,
+  ElasticsearchServingReadiness,
   ElasticsearchSeedIndexInitializer,
   ElasticsearchSeedIndexReadiness,
   ElasticsearchSeedSearchComposition,
@@ -61,6 +68,28 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
       assert(readiness.indexName == "beauty_variant_v1")
       assert(readiness.source == "seed-resource-loader")
       assert(readiness.documentCount == 2)
+    }
+
+    "derive the current non-serving production readiness state" in {
+      val readiness = ElasticsearchSeedIndexReadiness(
+        indexName = "beauty_variant_v1",
+        source = "seed-resource-loader",
+        documentCount = 2,
+      )
+      val state = ElasticsearchProductionReadinessState.seedOnly(readiness.lifecycleMetadata)
+
+      assert(state.lifecycleMetadata == readiness.lifecycleMetadata)
+      assert(state.lifecycleMetadata.indexName == readiness.indexName)
+      assert(state.lifecycleMetadata.source == readiness.source)
+      assert(state.lifecycleMetadata.documentCount == readiness.documentCount)
+      assert(state.lifecycleMetadata.preparationMode == ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation)
+      assert(state.lifecycleMetadata.lifecycleStatus == ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle)
+      assert(state.servingReadiness == ElasticsearchServingReadiness.NotEnforced)
+      assert(state.replacement == ElasticsearchReplacementReadiness.NotConfigured)
+      assert(state.freshness == ElasticsearchFreshnessReadiness.NotTracked)
+      assert(state.refresh == ElasticsearchRefreshReadiness.EagerSeedPreparationOnly)
+      assert(state.rollback == ElasticsearchRollbackReadiness.NotConfigured)
+      assert(state.operatorVisibility == ElasticsearchOperatorVisibility.NotExposed)
     }
   }
 

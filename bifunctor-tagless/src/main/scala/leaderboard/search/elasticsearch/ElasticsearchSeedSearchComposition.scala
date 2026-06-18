@@ -13,6 +13,9 @@ final case class ElasticsearchSeedSearchComposition(
   service: BeautySearchService[IO],
 ) {
   def lifecycleMetadata: ElasticsearchSeedLifecycleMetadata = readiness.lifecycleMetadata
+
+  def productionReadinessState: ElasticsearchProductionReadinessState =
+    ElasticsearchProductionReadinessState.seedOnly(lifecycleMetadata)
 }
 
 object ElasticsearchSeedSearchComposition {

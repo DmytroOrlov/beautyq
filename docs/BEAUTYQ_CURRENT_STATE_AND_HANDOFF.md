@@ -85,8 +85,9 @@ Documented as characterized, not as desired final contract:
 
 * The production route does eager seed index preparation during route composition, but that is still not a production-grade ES lifecycle policy.
 * `ElasticsearchSeedLifecycleMetadata` is a non-serving DI/readiness metadata seam exposed via `ElasticsearchSeedIndexReadiness.lifecycleMetadata` and `ElasticsearchSeedSearchComposition.lifecycleMetadata`; it is not a production lifecycle implementation.
-* Focused ES-backed route/module graph specs now prove that metadata is materialized with lifecycle status `SeedOnlyNotProductionLifecycle`; production lifecycle remains incomplete.
-* Current route-module metadata coverage is complete for this seed-only seam; the remaining production ES lifecycle contract is now documented as M5 work, and no serving behavior changed.
+* `ElasticsearchProductionReadinessState` is an internal non-serving state derived from that metadata. It records serving readiness `NotEnforced`, replacement `NotConfigured`, freshness `NotTracked`, refresh `EagerSeedPreparationOnly`, rollback `NotConfigured`, and operator visibility `NotExposed`.
+* Focused ES-backed route/module graph specs prove that lifecycle metadata and the derived readiness state are materialized through the current route graphs; production lifecycle remains incomplete.
+* Current route-module state coverage documents the seed-only gaps; it does not enforce readiness or change serving behavior.
 * Detailed milestone status and priority order for lifecycle/eval/shadow/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 * M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * `seedCatalogInMemory` remains available as rollback/non-default.
@@ -111,7 +112,7 @@ Documented as characterized, not as desired final contract:
 
 * This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
 * The route already performs eager seed index preparation during route composition, but that is not a production-grade ES lifecycle policy.
-* `ElasticsearchSeedLifecycleMetadata` remains a non-serving metadata seam, not lifecycle completion.
+* `ElasticsearchSeedLifecycleMetadata` and `ElasticsearchProductionReadinessState` remain non-serving internal seams, not lifecycle completion.
 * M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
 * Benchmark output is decision support, not production automation.

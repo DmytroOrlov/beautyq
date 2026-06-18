@@ -4,7 +4,16 @@ import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.BeautySearchSpecV1
-import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedSearchComposition}
+import leaderboard.search.elasticsearch.{
+  ElasticsearchFreshnessReadiness,
+  ElasticsearchJsonClient,
+  ElasticsearchOperatorVisibility,
+  ElasticsearchRefreshReadiness,
+  ElasticsearchReplacementReadiness,
+  ElasticsearchRollbackReadiness,
+  ElasticsearchSeedSearchComposition,
+  ElasticsearchServingReadiness,
+}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
@@ -76,6 +85,19 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
       assert(composition.readiness.indexName == expectedIndexName)
       assert(composition.readiness.source == ready.source)
       assert(composition.readiness.documentCount == ready.documents.size)
+    }
+
+    "derive the non-serving production readiness state from composition metadata" in {
+      val composition = run(ElasticsearchSeedSearchComposition.build(spec, succeedingClient, ready))
+      val state = composition.productionReadinessState
+
+      assert(state.lifecycleMetadata == composition.lifecycleMetadata)
+      assert(state.servingReadiness == ElasticsearchServingReadiness.NotEnforced)
+      assert(state.replacement == ElasticsearchReplacementReadiness.NotConfigured)
+      assert(state.freshness == ElasticsearchFreshnessReadiness.NotTracked)
+      assert(state.refresh == ElasticsearchRefreshReadiness.EagerSeedPreparationOnly)
+      assert(state.rollback == ElasticsearchRollbackReadiness.NotConfigured)
+      assert(state.operatorVisibility == ElasticsearchOperatorVisibility.NotExposed)
     }
 
     "propagate readiness failure before returning composition" in {

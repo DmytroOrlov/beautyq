@@ -29,10 +29,12 @@ Implemented/current:
 - `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return structured `invalid_query` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong limit type, and missing query return Tapir default `400 BadRequest`.
 - `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity. Decode-invalid inputs retain Tapir default `400 BadRequest`; semantic-invalid inputs return exact `code` / `message` JSON `400 BadRequest`.
-- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, the assembled route answers `POST /beauty-search`, and the graph exposes seed-only `ElasticsearchSeedLifecycleMetadata`.
-- `BeautySearchElasticsearchRouteModuleSpec.scala`: the targeted ES seed route module exposes seed-only lifecycle metadata while preserving its zero-hit route response contract.
-- `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes seed-only lifecycle metadata while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
-- `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: the port-configured default ES route exposes seed-only lifecycle metadata while preserving route behavior and ES preparation/search calls.
+- `ElasticsearchSeedIndexReadinessSpec.scala`: pins pure `ElasticsearchProductionReadinessState.seedOnly` derivation, including lifecycle metadata and all current non-serving values.
+- `ElasticsearchSeedSearchCompositionSpec.scala`: pins `productionReadinessState` derivation from composition lifecycle metadata.
+- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; production and targeted ES route probes root the readiness state while preserving `POST /beauty-search`.
+- `BeautySearchElasticsearchRouteModuleSpec.scala`: the explicit ES seed route module exposes seed-only lifecycle metadata and the non-serving readiness state while preserving its zero-hit route response contract.
+- `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes the state while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
+- `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: the port-configured default ES route exposes the state while preserving route behavior and ES preparation/search calls.
 - BeautySearch request-boundary tests use `BeautySearchRequestContract` for public limits and semantic error descriptors. A focused mirror assertion keeps `BeautySearchRequestContract.MaxLimit` source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 They protect:
@@ -75,7 +77,8 @@ Checklist for future edits:
 - Keep `MaxLimit` references on the public contract surface via `BeautySearchRequestContract.MaxLimit`, except for the explicit mirror assertion.
 - Keep route/module graph proof for production ES-backed exposure.
 - Keep route-module metadata assertions pinned to the BeautyQ index name, `seed-resource-loader`, a positive document count, `EagerSeedIndexPreparation`, and `SeedOnlyNotProductionLifecycle`.
-- Treat this metadata as a non-serving seed readiness seam, not production lifecycle completion.
+- Keep readiness-state assertions pinned to `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, and `NotExposed`.
+- Treat this metadata and state as non-serving seed readiness seams, not production lifecycle completion.
 - Do not imply route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these tests or docs.
 
 ### Future tests required before ES production lifecycle completion
@@ -104,7 +107,7 @@ Future/unimplemented unless matching source-backed tests are added:
   - status surface and fields once introduced;
   - distinction among seed-only, preparing, ready, failed, stale, rollback, or disabled states.
 
-Current focused route/module specs cover only the seed-only metadata seam. They are not substitutes for production lifecycle tests.
+Current focused pure/composition/route-module specs cover only the seed-only metadata and explicit non-serving state seams. They are not substitutes for production lifecycle tests.
 
 ## Repository Tests
 
