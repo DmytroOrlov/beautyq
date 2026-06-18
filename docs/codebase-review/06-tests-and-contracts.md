@@ -29,7 +29,10 @@ Implemented/current:
 - `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return structured `invalid_query` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong limit type, and missing query return Tapir default `400 BadRequest`.
 - `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity. Decode-invalid inputs retain Tapir default `400 BadRequest`; semantic-invalid inputs return exact `code` / `message` JSON `400 BadRequest`.
-- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, and the assembled route answers `POST /beauty-search`.
+- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, the assembled route answers `POST /beauty-search`, and the graph exposes seed-only `ElasticsearchSeedLifecycleMetadata`.
+- `BeautySearchElasticsearchRouteModuleSpec.scala`: the targeted ES seed route module exposes seed-only lifecycle metadata while preserving its zero-hit route response contract.
+- `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes seed-only lifecycle metadata while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
+- `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: the port-configured default ES route exposes seed-only lifecycle metadata while preserving route behavior and ES preparation/search calls.
 - BeautySearch request-boundary tests use `BeautySearchRequestContract` for public limits and semantic error descriptors. A focused mirror assertion keeps `BeautySearchRequestContract.MaxLimit` source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 They protect:
@@ -71,6 +74,8 @@ Checklist for future edits:
 - Keep malformed decode failures undocumented as structured domain JSON unless a global decode handler is intentionally added.
 - Keep `MaxLimit` references on the public contract surface via `BeautySearchRequestContract.MaxLimit`, except for the explicit mirror assertion.
 - Keep route/module graph proof for production ES-backed exposure.
+- Keep route-module metadata assertions pinned to the BeautyQ index name, `seed-resource-loader`, a positive document count, `EagerSeedIndexPreparation`, and `SeedOnlyNotProductionLifecycle`.
+- Treat this metadata as a non-serving seed readiness seam, not production lifecycle completion.
 - Do not imply route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these tests or docs.
 
 ## Repository Tests

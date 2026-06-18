@@ -13,6 +13,12 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.plugins.{BeautySearchRouteModules, LeaderboardPlugin}
+import leaderboard.search.dsl.BeautySearchSpecV1
+import leaderboard.search.elasticsearch.{
+  ElasticsearchSeedLifecycleMetadata,
+  ElasticsearchSeedLifecycleStatus,
+  ElasticsearchSeedPreparationMode,
+}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.Assertions.fail
@@ -28,6 +34,7 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
   protected final case class BeautySearchProductionRouteProbe(
     beautySearchApi: BeautySearchApi[IO],
     allHttpApis: Set[HttpApi[IO]],
+    lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
   )
 
   protected final def withZeroHitEsServer(f: Int => Unit): Unit = {
@@ -63,8 +70,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
         (
           beautySearchApi: BeautySearchApi[IO],
           allHttpApis: Set[HttpApi[IO]],
+          lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
         ) =>
-          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis)
+          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata)
       }
     }
 
@@ -88,8 +96,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
         (
           beautySearchApi: BeautySearchApi[IO],
           allHttpApis: Set[HttpApi[IO]],
+          lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
         ) =>
-          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis)
+          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata)
       }
     }
 
@@ -145,6 +154,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     (): Unit
   }
 
+  protected final def assertSeedOnlyLifecycleMetadata(metadata: ElasticsearchSeedLifecycleMetadata): Unit =
+    BeautySearchProductionRouteSpecSupport.assertSeedOnlyLifecycleMetadata(metadata)
+
   protected final def assertDefaultBadRequest(response: ObservedResponse): Unit = {
     assert(
       response.status == Status.BadRequest,
@@ -197,4 +209,15 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     Unsafe.unsafe { implicit unsafe =>
       Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
     }
+}
+
+private[search] object BeautySearchProductionRouteSpecSupport {
+  def assertSeedOnlyLifecycleMetadata(metadata: ElasticsearchSeedLifecycleMetadata): Unit = {
+    assert(metadata.indexName == BeautySearchSpecV1.spec.variantDocument.indexName)
+    assert(metadata.source == "seed-resource-loader")
+    assert(metadata.documentCount > 0)
+    assert(metadata.preparationMode == ElasticsearchSeedPreparationMode.EagerSeedIndexPreparation)
+    assert(metadata.lifecycleStatus == ElasticsearchSeedLifecycleStatus.SeedOnlyNotProductionLifecycle)
+    (): Unit
+  }
 }

@@ -13,6 +13,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.plugins.{BeautySearchRouteModules, ElasticsearchClientModules}
+import leaderboard.search.elasticsearch.ElasticsearchSeedLifecycleMetadata
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -57,6 +58,7 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
         val apis  = probe.allHttpApis
 
         assert(apis.collect { case _: BeautySearchApi[IO] => () }.size == 1)
+        BeautySearchProductionRouteSpecSupport.assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
 
         val response = runIO(
           observeRoute(apis, postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":3}"""))
@@ -93,8 +95,9 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
         (
           beautySearchApi: BeautySearchApi[IO],
           allHttpApis: Set[HttpApi[IO]],
+          lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
         ) =>
-          BeautySearchElasticsearchHttpRouteProbe(beautySearchApi, allHttpApis)
+          BeautySearchElasticsearchHttpRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata)
       }
     }
 
@@ -127,6 +130,7 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
   private final case class BeautySearchElasticsearchHttpRouteProbe(
     beautySearchApi: BeautySearchApi[IO],
     allHttpApis: Set[HttpApi[IO]],
+    lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
   )
 
   private final case class RecordedEsRequest(

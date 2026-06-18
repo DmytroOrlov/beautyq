@@ -11,7 +11,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchRouteModules
-import leaderboard.search.elasticsearch.ElasticsearchJsonClient
+import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedLifecycleMetadata}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -26,6 +26,7 @@ final class BeautySearchElasticsearchRouteModuleSpec extends AnyWordSpec with Ht
 
       assert(apis.size == 1)
       assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
+      BeautySearchProductionRouteSpecSupport.assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
 
       val response = runIO(
         observeRoute(
@@ -66,9 +67,10 @@ final class BeautySearchElasticsearchRouteModuleSpec extends AnyWordSpec with Ht
         (
           beautySearchApi: BeautySearchApi[IO],
           allHttpApis: Set[HttpApi[IO]],
+          lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
         ) =>
           val _ = beautySearchApi
-          BeautySearchElasticsearchRouteModuleProbe(allHttpApis)
+          BeautySearchElasticsearchRouteModuleProbe(allHttpApis, lifecycleMetadata)
       }
     }
 
@@ -99,7 +101,8 @@ final class BeautySearchElasticsearchRouteModuleSpec extends AnyWordSpec with Ht
   }
 
   private final case class BeautySearchElasticsearchRouteModuleProbe(
-    allHttpApis: Set[HttpApi[IO]]
+    allHttpApis: Set[HttpApi[IO]],
+    lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
   )
 
   private def runIO[E, A](effect: ZIO[Any, E, A]): A =

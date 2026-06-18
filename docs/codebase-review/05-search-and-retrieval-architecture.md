@@ -156,6 +156,8 @@ Architecture note:
 - `ElasticsearchSeedIndexReadiness.lifecycleMetadata` exposes the non-serving metadata surface for index name, source, document count, `EagerSeedIndexPreparation`, and `SeedOnlyNotProductionLifecycle`.
 - `ElasticsearchSeedSearchComposition.lifecycleMetadata` forwards that readiness metadata through the composition boundary.
 - `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds `ElasticsearchSeedLifecycleMetadata` from the composition so the metadata handle is available through DI without changing serving behavior.
+- Focused route/module specs prove that `ElasticsearchSeedLifecycleMetadata` is materialized through the targeted ES seed route, real HTTP-client ES route, port-configured default route, and production API graph.
+- This route-module metadata is seed-only and non-serving; it does not complete or define a production Elasticsearch lifecycle.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
 
 Classification:

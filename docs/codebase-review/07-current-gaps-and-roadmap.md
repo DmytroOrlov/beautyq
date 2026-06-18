@@ -45,6 +45,7 @@ Reached checkpoint (ES seed route, default):
 - `ElasticsearchClientModules.portConfigured` binds `ElasticsearchJsonClient` from `ElasticsearchPortCfg`.
 - `BeautySearchRouteModules.seedCatalogElasticsearch` → `BeautySearchCatalogBackendModules.seedResourceElasticsearch` → seed catalog → ES index → ES retrieval.
 - `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
+- Focused ES route/module graph specs now prove the bound `ElasticsearchSeedLifecycleMetadata` is available with eager seed preparation and `SeedOnlyNotProductionLifecycle`.
 - Full verification after default switch.
 
 Evidence:
@@ -236,7 +237,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Design gate documented / active |
-| M5 | ES production lifecycle implemented | Started: non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle; production lifecycle incomplete |
+| M5 | ES production lifecycle implemented | Progress: non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle plus route-module metadata coverage; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
