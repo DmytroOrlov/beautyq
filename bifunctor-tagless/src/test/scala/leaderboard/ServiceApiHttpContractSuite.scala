@@ -2,7 +2,7 @@ package leaderboard
 
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.ServiceApi
-import leaderboard.http.tapir.{ServiceTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.ServiceTapirEndpoints
 import leaderboard.model.Category.CategoryId
 import leaderboard.model.{QueryFailure, Service}
 import leaderboard.repo.Services
@@ -14,7 +14,7 @@ import java.util.UUID
 
 class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def serviceApi(state: ServiceApiContractState): ServiceApi[IO] =
-    new ServiceApi[IO](state.services, ServiceTapirEndpoints, new TapirHttpSupport[IO])
+    new ServiceApi[IO](state.services, ServiceTapirEndpoints)
 
   "ServiceApi current http4s contracts" should {
     "return 200 and exact service json for an existing entity" in {

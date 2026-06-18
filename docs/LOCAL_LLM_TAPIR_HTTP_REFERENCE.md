@@ -5,142 +5,86 @@ Read this file before migrating additional `bifunctor-tagless` HTTP slices to Ta
 
 # LOCAL LLM REFERENCE: Tapir in `bifunctor-tagless`
 
-This file documents the current Tapir migration pattern introduced for `MasterApi` and then reused for `ProfileApi` and `LadderApi`.
+The current HTTP adapter pattern is:
 
-Goal:
+- pure endpoint contracts in `leaderboard/http/tapir/*TapirEndpoints.scala`
+- thin `HttpApi[F]` adapters in `leaderboard.api.*Api`
+- direct route construction with the default `Http4sServerInterpreter`
+- endpoint singleton bindings and API bindings in Distage modules
+- route aggregation through `Set[HttpApi[F]]` and `HttpServer`
 
-- use Tapir inside the HTTP adapter layer
-- keep `HttpApi[F]`, `HttpServer`, distage plugin style, and BIO/domain layers unchanged
-- preserve existing runtime HTTP contracts during incremental migration
-- create a small reusable pattern for the next slices
-
-## Current Structure
-
-Current migrated slices:
-
-- `LadderApi`
-- `MasterApi`
-- `ProfileApi`
-
-Current file split:
-
-- `src/main/scala/leaderboard/http/tapir/MasterTapirEndpoints.scala`
-  pure Tapir endpoint definitions
-- `src/main/scala/leaderboard/http/tapir/ProfileTapirEndpoints.scala`
-  pure Tapir endpoint definitions
-- `src/main/scala/leaderboard/http/tapir/LadderTapirEndpoints.scala`
-  pure Tapir endpoint definitions
-- `src/main/scala/leaderboard/http/tapir/TapirHttpSupport.scala`
-  small shared http4s/Tapir interpreter support with current-contract-preserving handlers
-- `src/main/scala/leaderboard/api/LadderApi.scala`
-  inbound HTTP adapter; assembles Tapir server logic and delegates route construction to Tapir
-- `src/main/scala/leaderboard/api/MasterApi.scala`
-  inbound HTTP adapter; assembles Tapir server logic and delegates route construction to Tapir
-- `src/main/scala/leaderboard/api/ProfileApi.scala`
-  inbound HTTP adapter; assembles Tapir server logic and delegates route construction to Tapir
-
-There is currently no OpenAPI/Swagger route in `distage-example`.
-If one is added later, it should consume the canonical `all` lists from `*TapirEndpoints`, not reassemble endpoint sets by hand.
-
-This is intentional:
-
-- Tapir contracts stay pure
-- server-endpoint assembly stays inside the HTTP adapter when a separate class would only be a thin wrapper
-- BIO/repo calls stay in the adapter layer
-- `HttpServer` still just combines `Set[HttpApi[F]]`
-- distage wiring still binds one `HttpApi[F]` implementation per slice
-
-## Preferred Pattern
-
-Use the following split for migrated slices:
-
-- pure endpoint contracts in `*TapirEndpoints.scala`
-- thin `HttpApi[F]` adapter in `leaderboard.api.*Api`
-- central shared route interpreter policy in `TapirHttpSupport`
-- keep a small named endpoint interface per slice when canonical reuse matters
-- expose a canonical `all` collection on `*TapirEndpoints`
-- expose a canonical `serverEndpoints` collection on `*Api`
-
-Preferred shape:
+All current API adapters follow this shape:
 
 ```scala
-final class SliceApi[F[+_, +_]](
-  dep1: Dep1[F],
-  dep2: Dep2[F],
-  sliceTapirEndpoints: SliceTapirEndpoints,
-  tapirHttpSupport: TapirHttpSupport[F],
-)(implicit async: Async[F[Throwable, _]]) {
-  def serverEndpoints: List[ServerEndpoint[...]] = ...
-  def http = tapirHttpSupport.toRoutes(serverEndpoints)
+final class SliceApi[F[+_, +_]: Error2](
+  dependency: SliceDependency[F],
+  tapirEndpoints: SliceTapirEndpoints,
+)(implicit
+  async: Async[F[Throwable, _]]
+) extends HttpApi[F] {
+  def http: HttpRoutes[F[Throwable, _]] =
+    Http4sServerInterpreter[F[Throwable, _]]().toRoutes {
+      import tapirEndpoints.*
+      List(
+        endpoint.serverLogic[F[Throwable, _]](...)
+      )
+    }
 }
 ```
 
-Rationale:
+The API adapter owns server-logic assembly and calls the interpreter directly. There is no separate route-interpreter binding in the application graph.
 
-- important HTTP assembly is visible in DI
-- IDE navigation stays short: contract object plus one adapter class
-- `*Api` stays obviously thin and transport-only
-- endpoint contracts stay pure and reusable
-- the named `*TapirEndpoints` interface gives one stable reuse surface for future docs/OpenAPI assembly
-- `*TapirEndpoints.all` becomes the canonical source for docs/OpenAPI later
-- `*Api.serverEndpoints` becomes the canonical source for runtime route assembly
-- `*Api` should depend on the `*TapirEndpoints` interface, not reach into the singleton object directly
-- route docs and runtime wiring stop depending on humans manually repeating endpoint lists
+## Current slices
 
-## Contract Preservation Rules
+The direct-interpreter pattern is used by:
 
-For the current migration phase, Tapir defaults are not the project source of truth.
-Existing route-level contract tests are.
+- `LadderApi`
+- `CategoryApi`
+- `ServiceApi`
+- `MasterApi`
+- `MasterLocationApi`
+- `MasterServiceOfferApi`
+- `MasterServiceOfferVariantApi`
+- `ProfileApi`
+- `BeautySearchApi`
 
-`TapirHttpSupport` therefore overrides default Tapir behavior:
+There is currently no OpenAPI/Swagger route in `distage-example`. If one is added later, it should consume the canonical endpoint collections from `*TapirEndpoints` rather than manually reconstructing endpoint sets.
 
-- malformed path capture decode falls through as route mismatch
-  result: server-level `404 Not found`
-- malformed body decode returns `500` with empty body
-- uncaught exceptions from server logic return `500` with empty body
+## Contract preservation
 
-This matches the current pre-Tapir baseline used in contract suites.
+Route-level HTTP contract tests are the source of truth.
 
-## Important `MasterApi` Detail
+The adapters use default Tapir/http4s interpreter behavior:
 
-Do not model missing entity output as `jsonBody[Option[Master]]` during this migration phase.
+- path, query, and body decode failures return Tapir's default `400 BadRequest`
+- Tapir validator failures return the same default `400 BadRequest`
+- endpoint-domain failures continue through each endpoint's declared error output
+- uncaught server-logic failures retain the default interpreter behavior
 
-Tapir does not preserve the current `200 + null` contract for that case reliably enough for this project baseline.
+Do not add custom decode-failure, exception, or reject handlers without an explicit contract task.
 
-Instead:
+Important preserved route details include:
 
-- keep the endpoint output as JSON
-- map `Option[Master]` explicitly in server logic
-- use `Json.Null` for missing entity
+- `/category/root` is a literal successful route
+- malformed UUID path captures return `400 BadRequest`
+- Beauty search backend/query failures remain endpoint-domain failures
+- Beauty search semantic validators use default Tapir validation responses
 
-That preserves the exact existing contract:
+## Migration checklist
 
-- existing entity -> `200` + JSON object
-- missing entity -> `200` + `null`
+1. Add or confirm route-level contract tests.
+2. Define pure contracts in `leaderboard/http/tapir/*TapirEndpoints.scala`.
+3. Keep the public adapter as `leaderboard.api.<Slice>Api` implementing `HttpApi[F]`.
+4. Assemble server logic in the adapter.
+5. Construct routes with `Http4sServerInterpreter[F[Throwable, _]]().toRoutes(...)`.
+6. Bind the endpoint singleton and API implementation in the relevant Distage module.
+7. Preserve weak `many[HttpApi[F]]` membership.
+8. Run the focused API contract suites.
 
-## How To Migrate The Next Slice
+## Boundaries
 
-1. Add route-level contract tests first if they do not already exist.
-2. Create pure Tapir endpoints in `leaderboard/http/tapir/...Endpoints.scala`, expose named endpoint defs plus canonical `all`.
-3. Keep the public slice entrypoint as `leaderboard.api.<Slice>Api` implementing `HttpApi[F]`.
-4. Assemble Tapir server logic inside that adapter and expose `serverEndpoints` when a separate `*TapirServerEndpoints` class would only be wrapper boilerplate.
-5. Reuse `TapirHttpSupport` for route interpretation.
-6. Wire the `*TapirEndpoints` singleton into its interface in `LeaderboardPlugin`, alongside `TapirHttpSupport` and the `HttpApi[F]` implementation.
-7. Run existing contract suites before and after the migration.
-
-## What Not To Do
-
-- do not migrate multiple slices at once
-- do not replace `HttpServer`
-- do not move business logic into Tapir endpoint definitions
-- do not introduce a cross-project error ADT just for Tapir
-- do not silently accept Tapir defaults for path/body decode behavior
-- do not switch `200 + null` missing-entity responses to `404` without an explicit product decision
-
-## Current Baseline
-
-The current migrated slices already cover:
-
-- JSON body + list/read/write pattern: `MasterApi`
-- UUID path + `200 + null` + logging/service composition: `ProfileApi`
-- numeric path capture + list/read/write without body: `LadderApi`
+- Do not replace `HttpServer`.
+- Do not move business logic into endpoint definitions.
+- Do not introduce a cross-project error ADT for transport migration.
+- Do not add custom interpreter handlers without explicit contract requirements.
+- Do not change endpoint paths, JSON models, validation, or error semantics as incidental cleanup.

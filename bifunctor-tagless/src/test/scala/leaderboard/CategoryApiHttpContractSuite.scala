@@ -2,7 +2,7 @@ package leaderboard
 
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.CategoryApi
-import leaderboard.http.tapir.{CategoryTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.CategoryTapirEndpoints
 import leaderboard.model.Category
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.QueryFailure
@@ -15,7 +15,7 @@ import java.util.UUID
 
 class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def categoryApi(state: CategoryApiContractState): CategoryApi[IO] =
-    new CategoryApi[IO](state.categories, CategoryTapirEndpoints, new TapirHttpSupport[IO])
+    new CategoryApi[IO](state.categories, CategoryTapirEndpoints)
 
   "CategoryApi current http4s contracts" should {
     "return 200 and exact category json for an existing entity" in {

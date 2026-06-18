@@ -8,7 +8,7 @@ import io.circe.Json
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
-import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -48,7 +48,6 @@ final class BeautySearchElasticsearchRouteModuleSpec extends AnyWordSpec with Ht
   private def buildProbe(): BeautySearchElasticsearchRouteModuleProbe = {
     val module = new distage.ModuleDef {
       include(BeautySearchRouteModules.seedCatalogElasticsearch)
-      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
       make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[Async[Task]].fromValue(Async[Task])
       make[ElasticsearchJsonClient].from {

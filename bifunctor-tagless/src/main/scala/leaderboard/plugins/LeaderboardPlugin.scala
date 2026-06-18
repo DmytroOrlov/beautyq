@@ -13,7 +13,7 @@ import izumi.fundamentals.platform.versions.Version
 import leaderboard.api.{BeautySearchProductionIncludedApis, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle, CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
-import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import leaderboard.seed.{BeautyQSeedInserter, BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.services.Ranks
@@ -72,7 +72,6 @@ object LeaderboardPlugin extends PluginDef {
     def apiBase[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
       // The `ladder` API
       make[LadderTapirEndpoints].fromValue(LadderTapirEndpoints)
-      make[TapirHttpSupport[F]]
       make[LadderApi[F]]
       // The `category` API
       make[CategoryTapirEndpoints].fromValue(CategoryTapirEndpoints)

@@ -34,7 +34,7 @@ Build/module observations:
 - `docs/codebase-review/07-current-gaps-and-roadmap.md`: roadmap status owner for current gaps, milestone progression, and priority order. Evidence: includes lane/gate breakdowns and milestone summary for ES lifecycle, eval, Qdrant shadow, and hybrid serving.
 - `docs/LOCAL_LLM_DISTAGE_APP_MODEL.md`: local reference for Distage app model and schema-order rules. Evidence: documents that repo DDL runs in resource constructors and FK-backed tables should express parent-table dependencies through constructor dependencies.
 - `docs/LOCAL_LLM_IZUMI_DISTAGE_BIO_REFERENCE.md`: local reference for Izumi/BIO/Distage style. Evidence: focuses on `F[+_, +_]`, `Applicative2`, `Error2`, `Lifecycle`, `ModuleDef`, etc.
-- `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`: local reference for Tapir HTTP migration pattern. Evidence: says pure endpoint contracts are in `*TapirEndpoints.scala`, adapters in `leaderboard.api.*Api`, and `TapirHttpSupport` centralizes route interpreter policy.
+- `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`: local reference for the direct Tapir/http4s adapter pattern. Evidence: says pure endpoint contracts are in `*TapirEndpoints.scala`, adapters are in `leaderboard.api.*Api`, and each adapter uses the default `Http4sServerInterpreter` directly.
 - `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`: canonical coordinator-only workflow guide. Evidence: owns coordinator workflow, source-truth gate, prompt packaging, closeout, bundle scripts, docs ownership, and model recommendation guidance; the old standalone model-selection policy was merged here and removed.
 
 Documentation drift noted:
@@ -71,7 +71,7 @@ DI/plugin wiring in `bifunctor-tagless/src/main/scala/leaderboard/plugins/Leader
 
 - Includes modules: `roles`, `api`, `repoDummy`, `repoProd`, `seed`, `seedProd`, `seedTest`, `configs`, `prodConfigs`.
 - `modules.roles`: binds role descriptors with `makeRole[...]` for ladder, category, service, master, master-location, master-service-offer, master-service-offer-variant, profile, and composite leaderboard; includes bundled `help` and `configwriter` roles.
-- `modules.api`: binds Tapir endpoint singleton values, API adapters, `TapirHttpSupport[F]`, `HttpServer.Impl[F]`, and `Ranks.Impl[F]`. It also creates `many[HttpApi[F]]` weak set with the API adapters.
+- `modules.api`: binds Tapir endpoint singleton values, API adapters, `HttpServer.Impl[F]`, and `Ranks.Impl[F]`. API adapters use the default `Http4sServerInterpreter` directly. The module also creates the `many[HttpApi[F]]` weak set with the API adapters.
 - `modules.repoDummy`: tagged `Repo.Dummy`; binds dummy resources for `Ladder`, `Categories`, `Masters`, `MasterLocations`, `MasterServiceOffers`, `ServiceVariantSchemas`, `MasterServiceOfferVariants`, `Services`, and `Profiles`.
 - `modules.repoProd`: tagged `Repo.Prod`; binds Postgres resources for the same repositories; binds `SQL.Impl[F]`, `TransactorResource`, and `PortCheck`.
 - `modules.seed`: binds `BeautyQSeedLoader.ResourceLoader` and `BeautyQSeedInserter.Impl[F]`.
@@ -194,7 +194,6 @@ Tapir endpoint definitions under `bifunctor-tagless/src/main/scala/leaderboard/h
 - `MasterServiceOfferVariantTapirEndpoints.scala`: pure MasterServiceOfferVariant Tapir contracts.
 - `ProfileTapirEndpoints.scala`: pure Profile Tapir contracts.
 - `ServiceTapirEndpoints.scala`: pure Service Tapir contracts.
-- `TapirHttpSupport.scala`: shared Tapir/http4s interpreter support.
 - `HttpApiFailureTapirSupport.scala`: support for typed failure outputs.
 - `LegacyJsonResponse.scala`: central legacy optional JSON response helper; `docs/http-legacy-json-contracts.md` says it encodes `Option[A]` as `Json.Null` or entity JSON.
 
@@ -209,7 +208,6 @@ HTTP contract tests under `bifunctor-tagless/src/test/scala/leaderboard`:
 - `LadderApiHttpContractSuite.scala`
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
-- `TapirHttpSupportContractSuite.scala`
 - `HttpContractTestSupport.scala`: shared contract-test support.
 
 Observed route/data examples from tests/docs:
@@ -453,7 +451,6 @@ HTTP/API contract tests:
 - `LadderApiHttpContractSuite.scala`: ladder route contract tests.
 - `ProfileApiHttpContractSuite.scala`: profile route contract tests.
 - `LegacySingleEntityGetHttpContractSuite.scala`: legacy single-entity GET contract tests.
-- `TapirHttpSupportContractSuite.scala`: shared Tapir support contract tests.
 - `HttpContractTestSupport.scala`: shared support.
 
 Wiring/testkit:
@@ -590,7 +587,7 @@ Package `leaderboard.api` and `leaderboard.http.tapir`:
 - `HttpApi`: `api/HttpApi.scala`; category: API; responsibility: common HTTP API abstraction.
 - `CategoryApi`, `ServiceApi`, `MasterApi`, `MasterLocationApi`, `MasterServiceOfferApi`, `MasterServiceOfferVariantApi`, `LadderApi`, `ProfileApi`: `api/*.scala`; category: API; responsibility: thin HTTP adapters over repos/services and Tapir endpoints.
 - `*TapirEndpoints`: `http/tapir/*.scala`; category: API/DTO/transport; responsibility: pure endpoint contracts.
-- `TapirHttpSupport`: `http/tapir/TapirHttpSupport.scala`; category: API utility; responsibility: route interpretation/support.
+- API adapters call the default `Http4sServerInterpreter` directly; no separate interpreter utility is present.
 - `HttpApiFailure`: `http/HttpApiFailure.scala`; category: API DTO/error; responsibility: typed HTTP failures.
 - `LegacyJsonResponse`: `http/tapir/LegacyJsonResponse.scala`; category: API compatibility utility; responsibility: optional raw JSON compatibility helper.
 

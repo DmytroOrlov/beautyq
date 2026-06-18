@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import cats.effect.Async
 import cats.syntax.all.*
 import distage.{Injector, ModuleDef}
 import fs2.text
@@ -7,7 +8,6 @@ import io.circe.parser.parse
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
-import leaderboard.http.tapir.TapirHttpSupport
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
@@ -27,7 +27,7 @@ final class BeautySearchOptInRouteModuleSpec extends AnyWordSpec with HttpContra
       val response = runIO(
         observeRoute(
           apis,
-          postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
+          postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":3}"""),
         )
       )
 
@@ -41,7 +41,7 @@ final class BeautySearchOptInRouteModuleSpec extends AnyWordSpec with HttpContra
   private def buildProbe(): BeautySearchOptInRouteModuleProbe = {
     val module = new ModuleDef {
       include(BeautySearchRouteModules.seedCatalogInMemory[IO])
-      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
+      make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchOptInRouteModuleProbe].from {
         (
           beautySearchApi: BeautySearchApi[IO],

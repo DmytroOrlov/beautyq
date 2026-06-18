@@ -2,7 +2,7 @@ package leaderboard
 
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.MasterLocationApi
-import leaderboard.http.tapir.{MasterLocationTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.MasterLocationTapirEndpoints
 import leaderboard.model.{MasterLocation, MasterLocationId, QueryFailure}
 import leaderboard.repo.MasterLocations
 import org.http4s.Status
@@ -13,7 +13,7 @@ import java.util.UUID
 
 class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterLocationApi(state: MasterLocationApiContractState): MasterLocationApi[IO] =
-    new MasterLocationApi[IO](state.masterLocations, MasterLocationTapirEndpoints, new TapirHttpSupport[IO])
+    new MasterLocationApi[IO](state.masterLocations, MasterLocationTapirEndpoints)
 
   "MasterLocationApi current http4s contracts" should {
     "return 200 and exact location json for an existing entity" in {

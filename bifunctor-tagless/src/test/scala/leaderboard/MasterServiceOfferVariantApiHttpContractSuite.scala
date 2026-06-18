@@ -2,7 +2,7 @@ package leaderboard
 
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.MasterServiceOfferVariantApi
-import leaderboard.http.tapir.{MasterServiceOfferVariantTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints
 import leaderboard.model.*
 import leaderboard.repo.MasterServiceOfferVariants
 import org.http4s.Status
@@ -22,7 +22,6 @@ class MasterServiceOfferVariantApiHttpContractSuite
     new MasterServiceOfferVariantApi[IO](
       state.masterServiceOfferVariants,
       MasterServiceOfferVariantTapirEndpoints,
-      new TapirHttpSupport[IO],
     )
 
   "MasterServiceOfferVariantApi legacy compatibility contracts" should {

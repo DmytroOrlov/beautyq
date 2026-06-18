@@ -23,7 +23,6 @@ Implemented/current:
 - `LadderApiHttpContractSuite.scala`
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
-- `TapirHttpSupportContractSuite.scala`
 - `BeautySearchApiHttpContractSuite.scala`: valid request/response pass-through, backend failure mapping, malformed-body defaults, and semantic-invalid query/limit/coordinate bodies returning `400 BadRequest` without calling the fake service.
 - `BeautySearchProductionRouteLimitSpec.scala`: valid positive limit remains `200 OK`; non-positive and above-carousel-maximum limits return Tapir default `400 BadRequest`.
 - `BeautySearchProductionRouteCoordinateSpec.scala`: in-range coordinates remain `200 OK`; out-of-range latitude/longitude return Tapir default `400 BadRequest`.

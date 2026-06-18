@@ -5,7 +5,7 @@ import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.HttpContractTestSupport
 import leaderboard.api.BeautySearchApi
-import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -53,7 +53,6 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
   private def buildStack(backend: ExpectingBeautySearchBackend): BeautySearchTestAppStack = {
     val module = new ModuleDef {
       make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
-      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
       make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
       make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
       make[BeautySearchBackend[IO]].fromValue(backend)
@@ -65,9 +64,8 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
         (
           service: BeautySearchService[IO],
           endpoints: BeautySearchTapirEndpoints,
-          tapirHttpSupport: TapirHttpSupport[IO],
         ) =>
-          new BeautySearchApi[IO](service, endpoints, tapirHttpSupport)
+          new BeautySearchApi[IO](service, endpoints)
       }
       make[BeautySearchTestAppStack].from {
         (
@@ -76,9 +74,8 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
           backend: BeautySearchBackend[IO],
           parser: BeautySearchIntentParser,
           endpoints: BeautySearchTapirEndpoints,
-          tapirHttpSupport: TapirHttpSupport[IO],
         ) =>
-          BeautySearchTestAppStack(api, service, backend, parser, endpoints, tapirHttpSupport)
+          BeautySearchTestAppStack(api, service, backend, parser, endpoints)
       }
     }
 
@@ -98,7 +95,6 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
     backend: BeautySearchBackend[IO],
     parser: BeautySearchIntentParser,
     endpoints: BeautySearchTapirEndpoints,
-    tapirHttpSupport: TapirHttpSupport[IO],
   )
 
   private final class ExpectingBeautySearchBackend(

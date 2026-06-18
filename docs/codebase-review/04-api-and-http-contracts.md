@@ -9,7 +9,7 @@ Role class
   -> *Api adapter
     -> *TapirEndpoints pure contract
     -> repositories/services
-    -> TapirHttpSupport -> HttpApi -> HttpServer
+    -> Http4sServerInterpreter -> HttpApi -> HttpServer
 ```
 
 Evidence:
@@ -52,7 +52,7 @@ Implemented/current:
 - `HttpApiFailure.scala` defines typed HTTP failures used by Beauty single-entity GET adapters.
 - `HttpApiFailureTapirSupport.scala` provides Tapir failure output support.
 - `LegacyJsonResponse.scala` centralizes optional-as-JSON compatibility behavior.
-- `TapirHttpSupport.scala` centralizes Tapir/http4s route interpretation using the default `Http4sServerInterpreter` options.
+- API adapters interpret their server endpoints directly with the default `Http4sServerInterpreter` options.
 
 ## Single-Entity GET Contracts
 
@@ -75,7 +75,7 @@ Contract skeleton/current:
 - Contract path/method: `POST /beauty-search`.
 - Request body: `UserSearchInput` JSON with `query`, `userLat`, `userLon`, and `limit`.
 - The JSON body has endpoint-local Tapir validation: query must be non-blank; limit must be positive and no greater than `BeautySearchSpecV1.spec.carouselSpec.variantSize`; optional latitude must be within `[-90, 90]`; optional longitude must be within `[-180, 180]`.
-- Semantic validation failures use Tapir's default bad-input response (`400 BadRequest`) before `BeautySearchApi` server logic, `BeautySearchService`, or Elasticsearch. They are not represented as `HttpApiFailure.BadRequest`.
+- Semantic validation failures use Tapir's default bad-input response (`400 BadRequest`) before `BeautySearchApi` server logic, `BeautySearchService`, or Elasticsearch. They are not represented as endpoint-domain failures.
 - Response body: `BeautySearchResponse` JSON preserving the existing variant carousel, provider carousel, service intent carousel, facets, and inferred filters model.
 - Error output uses the existing `HttpApiFailureTapirSupport.endpointBase` non-single-entity behavior; route contract tests currently pin backend/query failure as `500` with an empty body through existing support.
 - Empty search responses are explicit arrays for all carousel/facet/filter fields, not `null`.
@@ -92,7 +92,7 @@ Contract skeleton/current:
 - The catalog backend readiness proof rejects empty ready documents before backend construction and uses the explicit source label `seed-resource-loader`.
 - The readiness proof does not use `BeautySearchApi`, `LeaderboardPlugin`, HTTP routes, production DI modules, Qdrant, hybrid search, Elasticsearch, repository snapshots, Docker, startup indexing, or production backend bindings.
 - `BeautySearchAppGraphBoundarySpec.scala` proves the complete Beauty search API/service/backend stack can be assembled only through a test-local explicit Distage module/composition.
-- That test-local module binds `BeautySearchTapirEndpoints`, `TapirHttpSupport[IO]`, `BeautySearchApi[IO]`, `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, `BeautySearchService.Impl[IO]`, and a recording fake `BeautySearchBackend[IO]`; it targets a test-local stack root and issues one request through the assembled API.
+- That test-local module binds `BeautySearchTapirEndpoints`, `BeautySearchApi[IO]`, `BeautySearchSpecV1.spec`, `BeautySearchIntentParser`, `BeautySearchService.Impl[IO]`, and a recording fake `BeautySearchBackend[IO]`; it targets a test-local stack root and issues one request through the assembled API.
 - The app-graph boundary proof does not use `LeaderboardPlugin`, production app graph wiring, production DI modules, Qdrant, hybrid search, Elasticsearch, repository snapshots, seed loaders, Docker, startup indexing, or production backend bindings.
 - `BeautySearchProductionInclusionActivation` and `BeautySearchProductionInclusionHandle` provide a disabled-by-default production inclusion boundary. This is a staging/helper boundary that still exists in src/main, but it is NOT the active production gate for the currently exposed `/beauty-search` route.
 - `BeautySearchProductionInclusionBoundarySpec.scala` proves default Disabled, Disabled by-name API thunk safety, Disabled module exclusion of API/service/backend construction, and Enabled explicit test-local assembly with a fake backend.
@@ -105,7 +105,7 @@ Contract skeleton/current:
 - `BeautySearchOptInRouteModuleSpec.scala` proves that this composed module contributes exactly one `BeautySearchApi[IO]` to the same real `Set[HttpApi[IO]]` shape and can answer one `POST /beauty-search` smoke request from seed-resource catalog data without starting `HttpServer`.
 - `LeaderboardPlugin` top-level now includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, so `POST /beauty-search` is production-exposed in the default API graph via the ES-backed seed route.
 - `BeautySearchProductionRouteExposureSpec.scala` proves the production API graph fragment (`LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`) contributes `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape consumed by `HttpServer.Impl` and can answer one `POST /beauty-search` response through that assembled route set. It is not a full plugin-discovery proof.
-- `BeautySearchProductionRouteLimitSpec.scala` is a targeted ES-backed route-module characterization through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub:
+- `BeautySearchProductionRouteLimitSpec.scala` is a targeted ES-backed route-module characterization through `BeautySearchRouteModules.apiElasticsearch` with local `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub:
   - `limit` 3 → `200 OK`, empty `variantCarousel`.
   - `limit` 0 → Tapir default `400 BadRequest`.
   - `limit` -5 → Tapir default `400 BadRequest`.
@@ -116,7 +116,7 @@ Contract skeleton/current:
 
 Current targeted ES-backed characterization:
 
-- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub.
+- `BeautySearchProductionRouteCoordinateSpec.scala` characterizes `POST /beauty-search` coordinate parameter behavior through `BeautySearchRouteModules.apiElasticsearch` with local `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub.
 - Normal Hamburg coordinates (lat 53.57532, lon 10.07672) → `200 OK`, empty `variantCarousel`.
 - Latitude outside `[-90, 90]` → Tapir default `400 BadRequest`.
 - Longitude outside `[-180, 180]` → Tapir default `400 BadRequest`.
@@ -127,7 +127,7 @@ Current targeted ES-backed characterization:
 
 Current targeted ES-backed characterization:
 
-- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub.
+- `BeautySearchProductionRouteQuerySpec.scala` characterizes `POST /beauty-search` query text parameter behavior through `BeautySearchRouteModules.apiElasticsearch` with local `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP zero-hit stub.
 - Empty query string → Tapir default `400 BadRequest`.
 - Whitespace-only query string → Tapir default `400 BadRequest`.
 - Normal query text ("nails") → `200 OK`, empty `variantCarousel`.
@@ -169,7 +169,7 @@ Future implementation boundary:
 
 Current targeted ES-backed characterization:
 
-- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior through `BeautySearchRouteModules.apiElasticsearch` with local `TapirHttpSupport[IO]`, `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP stub that is not used for body decode failures.
+- `BeautySearchProductionRouteErrorSpec.scala` characterizes invalid `POST /beauty-search` behavior through `BeautySearchRouteModules.apiElasticsearch` with local `BeautySearchTapirEndpoints`, `Async[Task]`, and a local Elasticsearch HTTP stub that is not used for body decode failures.
 - Malformed JSON body → Tapir default `400 BadRequest`.
 - Empty body → Tapir default `400 BadRequest`.
 - Wrong `limit` type (string instead of integer) → Tapir default `400 BadRequest`.
@@ -179,7 +179,7 @@ Current targeted ES-backed characterization:
 
 ### Default bad-input boundary
 
-`TapirHttpSupport` uses the default `Http4sServerInterpreter` options. There is no application-specific decode, reject, or exception handler. Malformed body/path inputs and BeautySearch endpoint validation failures therefore use Tapir/http4s default bad-input behavior; route tests pin stable status and delegation facts without treating generated text as an application error schema. Uncaught server logic exceptions use the default `500 InternalServerError` response with `Internal server error` body.
+API adapters call `Http4sServerInterpreter` directly with its default options. There is no application-specific decode, reject, or exception handler. Malformed body/path inputs and BeautySearch endpoint validation failures therefore use Tapir/http4s default bad-input behavior; route tests pin stable status and delegation facts without treating generated text as an application error schema. Uncaught server logic exceptions use the default `500 InternalServerError` response with `Internal server error` body.
 
 Literal category routes are ordered before UUID captures, so `GET /category/root` remains a successful business route.
 
@@ -200,10 +200,10 @@ Two implementation paths exist if structured bad-request responses are later app
 - Global/interpreter path:
   - Add custom Tapir decode-failure and validation-failure handling at the interpreter boundary.
   - This can affect all endpoints, including malformed JSON/body decode failures that happen before `BeautySearchApi` server logic.
-  - Cost/risk: broad cross-endpoint impact, broader contract updates, and likely reintroduction of Tapir boilerplate that was just removed from `TapirHttpSupport`.
+  - Cost/risk: broad cross-endpoint impact, broader contract updates, and new shared Tapir interpreter boilerplate.
 
 - Route/domain path:
-  - Add typed `HttpApiFailure.BadRequest` or a dedicated validation-failure model.
+  - Add a dedicated typed validation-failure model.
   - Move BeautySearch semantic validation out of the current Tapir validator and into server logic or an explicit adapter boundary.
   - This can produce structured JSON for semantic validation failures.
   - Limit: malformed JSON/body decode failures would still remain Tapir defaults unless the interpreter path is also added, because decode fails before server logic runs.
@@ -248,7 +248,6 @@ Architectural source of truth:
 - `LadderApiHttpContractSuite.scala`
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
-- `TapirHttpSupportContractSuite.scala`
 - `BeautySearchApiHttpContractSuite.scala`
 
 What they protect:
@@ -256,7 +255,7 @@ What they protect:
 - Exact path behavior.
 - JSON body shape.
 - Missing-entity status/body behavior.
-- Malformed path/body behavior where pinned by Tapir support tests.
+- Malformed path/body behavior where pinned by API and route contract tests.
 - Adapter delegation behavior through controlled contract state objects.
 
 Rule for future docs/edits:

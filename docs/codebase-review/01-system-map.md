@@ -40,7 +40,7 @@ Unclear:
 Implemented/current in `bifunctor-tagless/src/main/scala/leaderboard/plugins/LeaderboardPlugin.scala`:
 
 - `modules.roles`: binds role services and bundled `help`/`configwriter`.
-- `modules.api`: binds Tapir endpoint singletons, `TapirHttpSupport[F]`, all role-backed `*Api` adapters, weak `many[HttpApi[F]]`, `HttpServer.Impl[F]`, and `Ranks.Impl[F]`.
+- `modules.api`: binds Tapir endpoint singletons, all role-backed `*Api` adapters, weak `many[HttpApi[F]]`, `HttpServer.Impl[F]`, and `Ranks.Impl[F]`; each API adapter uses the default `Http4sServerInterpreter` directly.
 - `modules.repoDummy`: tagged `Repo.Dummy`; binds in-memory/dummy repositories.
 - `modules.repoProd`: tagged `Repo.Prod`; binds Postgres repositories, `SQL.Impl[F]`, `TransactorResource`, and `PortCheck`.
 - `modules.seed`: binds `BeautyQSeedLoader.ResourceLoader` and `BeautyQSeedInserter.Impl[F]`.

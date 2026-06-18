@@ -93,7 +93,7 @@ Statement:
 Evidence:
 
 - `*ApiHttpContractSuite.scala` files exist for Beauty entities, ladder, and profile.
-- `TapirHttpSupportContractSuite.scala` pins shared Tapir behavior.
+- The focused `*ApiHttpContractSuite.scala` suites pin default Tapir/http4s route behavior for each adapter.
 - Existing focused tests and route-level HTTP contract tests are the strongest evidence for current observed API behavior.
 
 Consequences:

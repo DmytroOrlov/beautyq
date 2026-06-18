@@ -3,23 +3,23 @@ package leaderboard.api
 import cats.effect.Async
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.{LegacyJsonResponse, ProfileTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.{LegacyJsonResponse, ProfileTapirEndpoints}
 import leaderboard.repo.Profiles
 import leaderboard.services.Ranks
 import logstage.LogIO2
 import org.http4s.HttpRoutes
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 class ProfileApi[F[+_, +_]: Error2](
   profiles: Profiles[F],
   ranks: Ranks[F],
   log: LogIO2[F],
   tapirEndpoints: ProfileTapirEndpoints,
-  tapirHttpSupport: TapirHttpSupport[F],
 )(implicit
   async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
   def http: HttpRoutes[F[Throwable, _]] =
-    tapirHttpSupport.toRoutes {
+    Http4sServerInterpreter[F[Throwable, _]]().toRoutes {
       import tapirEndpoints.*
       List(
         getProfile.serverLogic[F[Throwable, _]](userId => async.map(HttpApiFailure.fromQueryEffect(ranks.getRank(userId)))(_.map(LegacyJsonResponse.optionalAsJson))),

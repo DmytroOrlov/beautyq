@@ -11,7 +11,7 @@ import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
-import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
@@ -86,7 +86,6 @@ final class BeautySearchElasticsearchDefaultReadyRouteSpec extends AnyWordSpec w
     val module = new distage.ModuleDef {
       include(BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured)
       make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
-      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
       make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
       make[Async[Task]].fromValue(Async[Task])
       make[DefaultReadyProbe].from {

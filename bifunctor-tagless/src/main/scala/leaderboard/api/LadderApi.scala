@@ -1,18 +1,21 @@
 package leaderboard.api
 
+import cats.effect.Async
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.{LadderTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.LadderTapirEndpoints
 import leaderboard.repo.Ladder
 import org.http4s.HttpRoutes
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 class LadderApi[F[+_, +_]: Error2](
   ladder: Ladder[F],
   tapirEndpoints: LadderTapirEndpoints,
-  tapirHttpSupport: TapirHttpSupport[F],
+)(implicit
+  async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
   def http: HttpRoutes[F[Throwable, _]] =
-    tapirHttpSupport.toRoutes {
+    Http4sServerInterpreter[F[Throwable, _]]().toRoutes {
       import tapirEndpoints.*
       List(
         getScores.serverLogic[F[Throwable, _]](_ => HttpApiFailure.fromQueryEffect(ladder.getScores)),

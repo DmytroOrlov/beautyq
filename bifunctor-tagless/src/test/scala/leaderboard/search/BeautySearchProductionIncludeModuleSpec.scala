@@ -4,7 +4,7 @@ import distage.{Injector, ModuleDef}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, BeautySearchProductionIncludedApis, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle}
-import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -95,7 +95,6 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
 
   private def enabledStackModule: ModuleDef = new ModuleDef {
     make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
-    make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
     make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
     make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
     make[BeautySearchBackend[IO]].from {
@@ -109,9 +108,8 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
       (
         service: BeautySearchService[IO],
         endpoints: BeautySearchTapirEndpoints,
-        tapirHttpSupport: TapirHttpSupport[IO],
       ) =>
-        new BeautySearchApi[IO](service, endpoints, tapirHttpSupport)
+        new BeautySearchApi[IO](service, endpoints)
     }
     make[BeautySearchProductionInclusionHandle[IO]].from {
       (api: BeautySearchApi[IO]) =>
@@ -139,7 +137,7 @@ final class BeautySearchProductionIncludeModuleSpec extends AnyWordSpec {
       new BeautySearchIntentParser(BeautySearchSpecV1.spec),
       backend,
     )
-    new BeautySearchApi[IO](service, BeautySearchTapirEndpoints, new TapirHttpSupport[IO])
+    new BeautySearchApi[IO](service, BeautySearchTapirEndpoints)
   }
 
   private final class FailIfCalledBeautySearchBackend extends BeautySearchBackend[IO] {

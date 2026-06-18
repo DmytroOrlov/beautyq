@@ -2,7 +2,7 @@ package leaderboard
 
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.MasterServiceOfferApi
-import leaderboard.http.tapir.{MasterServiceOfferTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.MasterServiceOfferTapirEndpoints
 import leaderboard.model.{MasterServiceOffer, MasterServiceOfferId, QueryFailure}
 import leaderboard.repo.MasterServiceOffers
 import org.http4s.Status
@@ -13,7 +13,7 @@ import java.util.UUID
 
 class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterServiceOfferApi(state: MasterServiceOfferApiContractState): MasterServiceOfferApi[IO] =
-    new MasterServiceOfferApi[IO](state.masterServiceOffers, MasterServiceOfferTapirEndpoints, new TapirHttpSupport[IO])
+    new MasterServiceOfferApi[IO](state.masterServiceOffers, MasterServiceOfferTapirEndpoints)
 
   "MasterServiceOfferApi current http4s contracts" should {
     "return 200 and exact offer json for an existing entity" in {

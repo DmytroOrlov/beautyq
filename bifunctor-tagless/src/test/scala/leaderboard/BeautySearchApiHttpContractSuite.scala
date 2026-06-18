@@ -3,7 +3,7 @@ package leaderboard
 import io.circe.parser.parse
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.BeautySearchApi
-import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
 import leaderboard.search.dsl.BeautySearchSpecV1
@@ -15,8 +15,7 @@ import zio.{IO, Ref, Task, UIO, ZIO}
 import java.util.UUID
 
 class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
-  private val tapirEndpoints  = BeautySearchTapirEndpoints
-  private val tapirHttpSupport = new TapirHttpSupport[IO]
+  private val tapirEndpoints = BeautySearchTapirEndpoints
 
   "Beauty search route contract skeleton" should {
     "accept a valid POST request body and pass the UserSearchInput contract to the fake service" in {
@@ -159,7 +158,7 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
   private def app(
     state: BeautySearchApiContractState
   ) =
-    new BeautySearchApi[IO](state.service, tapirEndpoints, tapirHttpSupport).http.orNotFound
+    new BeautySearchApi[IO](state.service, tapirEndpoints).http.orNotFound
 
   private def assertDefaultBadRequestWithoutServiceCall(request: Request[Task]): Task[Unit] =
     for {

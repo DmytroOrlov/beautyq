@@ -16,7 +16,7 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
+            postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""),
           )
         )
 

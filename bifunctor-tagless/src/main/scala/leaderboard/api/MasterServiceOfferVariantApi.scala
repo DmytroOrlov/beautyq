@@ -4,20 +4,20 @@ import cats.effect.Async
 import io.circe.syntax.*
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.{MasterServiceOfferVariantTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.MasterServiceOfferVariantTapirEndpoints
 import leaderboard.model.MasterServiceOfferVariant
 import leaderboard.repo.MasterServiceOfferVariants
 import org.http4s.HttpRoutes
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 class MasterServiceOfferVariantApi[F[+_, +_]: Error2](
   masterServiceOfferVariants: MasterServiceOfferVariants[F],
   tapirEndpoints: MasterServiceOfferVariantTapirEndpoints,
-  tapirHttpSupport: TapirHttpSupport[F],
 )(implicit
   async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
   def http: HttpRoutes[F[Throwable, _]] =
-    tapirHttpSupport.toRoutes {
+    Http4sServerInterpreter[F[Throwable, _]]().toRoutes {
       import tapirEndpoints.*
       List(
         getMasterServiceOfferVariant.serverLogic[F[Throwable, _]](

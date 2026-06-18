@@ -1,15 +1,15 @@
 package leaderboard.search
 
+import cats.effect.Async
 import distage.{Injector, ModuleDef}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
-import leaderboard.http.tapir.TapirHttpSupport
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchPluginModules
 import org.scalatest.wordspec.AnyWordSpec
 import zio.interop.catz.*
-import zio.{IO, ZIO}
+import zio.{IO, Task, ZIO}
 
 final class BeautySearchOptInHttpApiModuleSpec extends AnyWordSpec {
   "BeautySearchPluginModules.api" should {
@@ -26,7 +26,7 @@ final class BeautySearchOptInHttpApiModuleSpec extends AnyWordSpec {
   private def buildProbe(service: FailIfCalledBeautySearchService): HttpApiSetProbe = {
     val module = new ModuleDef {
       include(BeautySearchPluginModules.api[IO])
-      make[TapirHttpSupport[IO]].from(new TapirHttpSupport[IO])
+      make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchService[IO]].fromValue(service)
       make[HttpApiSetProbe].from {
         (

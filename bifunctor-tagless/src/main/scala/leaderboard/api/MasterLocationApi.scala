@@ -3,19 +3,19 @@ package leaderboard.api
 import cats.effect.Async
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.{MasterLocationTapirEndpoints, TapirHttpSupport}
+import leaderboard.http.tapir.MasterLocationTapirEndpoints
 import leaderboard.repo.MasterLocations
 import org.http4s.HttpRoutes
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 class MasterLocationApi[F[+_, +_]: Error2](
   masterLocations: MasterLocations[F],
   tapirEndpoints: MasterLocationTapirEndpoints,
-  tapirHttpSupport: TapirHttpSupport[F],
 )(implicit
   async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
   def http: HttpRoutes[F[Throwable, _]] =
-    tapirHttpSupport.toRoutes {
+    Http4sServerInterpreter[F[Throwable, _]]().toRoutes {
       import tapirEndpoints.*
       List(
         getMasterLocation.serverLogic[F[Throwable, _]](
