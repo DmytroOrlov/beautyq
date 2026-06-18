@@ -115,6 +115,93 @@ Contract skeleton/current:
   - `limit` above `BeautySearchRequestContract.MaxLimit` → structured `invalid_limit` JSON `400 BadRequest`.
 - Limit validation occurs in the API adapter before service/backend execution.
 
+### Beauty Search public examples
+
+Valid request example:
+
+```http
+POST /beauty-search
+Content-Type: application/json
+
+{
+  "query": "nails",
+  "userLat": 53.57532,
+  "userLon": 10.07672,
+  "limit": 3
+}
+```
+
+Current source-backed zero-hit success example:
+
+```http
+200 OK
+Content-Type: application/json
+
+{
+  "variantCarousel": [],
+  "providerCarousel": [],
+  "serviceIntentCarousel": [],
+  "facets": [],
+  "inferredFilters": []
+}
+```
+
+Structured semantic `400 BadRequest` examples from `BeautySearchRequestContract`:
+
+Blank query:
+
+```http
+400 BadRequest
+Content-Type: application/json
+
+{
+  "code": "invalid_query",
+  "message": "query must not be blank"
+}
+```
+
+Invalid limit:
+
+```http
+400 BadRequest
+Content-Type: application/json
+
+{
+  "code": "invalid_limit",
+  "message": "limit must be between 1 and 10"
+}
+```
+
+Invalid latitude:
+
+```http
+400 BadRequest
+Content-Type: application/json
+
+{
+  "code": "invalid_latitude",
+  "message": "userLat must be between -90 and 90"
+}
+```
+
+Invalid longitude:
+
+```http
+400 BadRequest
+Content-Type: application/json
+
+{
+  "code": "invalid_longitude",
+  "message": "userLon must be between -180 and 180"
+}
+```
+
+Tapir-default decode failure note:
+
+- Malformed JSON, empty body, missing required JSON field, and wrong JSON field type return Tapir default `400 BadRequest`.
+- These decode failures are not the structured domain `HttpApiFailure.BadRequest` JSON shown above.
+- The current docs intentionally do not pin a generated decode-response body example.
+
 ## Beauty Search Production Route Coordinate Behavior
 
 Current targeted ES-backed characterization:

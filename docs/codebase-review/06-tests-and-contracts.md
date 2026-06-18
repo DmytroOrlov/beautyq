@@ -23,7 +23,7 @@ Implemented/current:
 - `LadderApiHttpContractSuite.scala`
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
-- `BeautySearchApiHttpContractSuite.scala`: valid request/response pass-through, backend failure mapping, default decode failures, and exact structured semantic-invalid query/limit/coordinate `400 BadRequest` bodies without calling the fake service.
+- `BeautySearchApiHttpContractSuite.scala`: valid request/response pass-through, exact empty-response JSON shape, backend failure mapping, default decode failures, and exact structured semantic-invalid query/limit/coordinate `400 BadRequest` bodies without calling the fake service.
 - `BeautySearchProductionRouteLimitSpec.scala`: valid positive limit remains `200 OK`; non-positive and above-carousel-maximum limits return structured `invalid_limit` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteCoordinateSpec.scala`: in-range coordinates remain `200 OK`; out-of-range latitude/longitude return structured `invalid_latitude` / `invalid_longitude` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return structured `invalid_query` JSON `400 BadRequest`.

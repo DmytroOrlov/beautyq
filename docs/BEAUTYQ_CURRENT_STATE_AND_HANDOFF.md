@@ -43,6 +43,7 @@ Documented as characterized, not as desired final contract:
 * Empty/whitespace-only queries, non-positive limits, limits above the carousel maximum, and out-of-range coordinates return structured JSON `400 BadRequest` failures with stable `code` and `message` fields before BeautySearch service or Elasticsearch calls.
 * Malformed JSON / empty body / wrong limit type / missing required fields also use Tapir defaults and return `400 BadRequest` before BeautySearch service or Elasticsearch calls.
 * Backend/query failures remain separate endpoint-domain failures and return `500 InternalServerError` with an empty body.
+* Public `POST /beauty-search` request/response examples now live in [docs/codebase-review/04-api-and-http-contracts.md](codebase-review/04-api-and-http-contracts.md); the request contract is `BeautySearchRequestContract`, semantic failures are structured JSON, and decode failures remain Tapir defaults.
 * No maximum query length is enforced in this slice.
 * Coordinates remain independently optional; the endpoint does not require a latitude/longitude pair.
 * `BeautySearchReadyCatalogDocuments` rejects blank source / empty document list.
