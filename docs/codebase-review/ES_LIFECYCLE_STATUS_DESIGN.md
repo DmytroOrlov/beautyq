@@ -28,6 +28,7 @@ Current internal inputs:
 
 - `ElasticsearchSeedLifecycleMetadata`
 - `ElasticsearchProductionReadinessState`
+- prepared `ElasticsearchStartupReadinessTransition` values
 - `BeautySearchSpecV1.spec.variantDocument.indexName`
 - `seed-resource-loader`
 - `EagerSeedIndexPreparation`
@@ -51,6 +52,7 @@ Current lifecycle meaning:
 - the route performs eager seed index preparation during composition;
 - the route is serving today;
 - the lifecycle state is still seed-only and non-serving;
+- `ElasticsearchStartupReadinessTransition` can classify pure preparation success or source-backed `QueryFailure.OperationFailure` failure data, but it is not wired into composition and its serving decision remains `NotEnforced`;
 - startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and operator-visible status are not implemented.
 
 ## Implemented non-serving JSON response shape
@@ -189,6 +191,7 @@ Implemented:
 - `ElasticsearchLifecycleStatusResponse.from(state)` derivation;
 - local Circe JSON encoding;
 - focused pure mapping and exact-JSON tests.
+- pure `ElasticsearchStartupReadinessTransition` success/failure classification, with status projection only for prepared state and no serving enforcement.
 
 Not implemented:
 

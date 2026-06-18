@@ -32,6 +32,7 @@ Implemented/current:
 - `ElasticsearchSeedIndexReadinessSpec.scala`: pins pure `ElasticsearchProductionReadinessState.seedOnly` derivation, including lifecycle metadata and all current non-serving values.
 - `ElasticsearchSeedSearchCompositionSpec.scala`: pins `productionReadinessState` derivation from composition lifecycle metadata.
 - `ElasticsearchLifecycleStatusResponseSpec.scala`: pins exact state-to-response mapping, metadata-sourced document counts, exact Circe field names/current string values, and `productionLifecycleComplete = false`.
+- `ElasticsearchStartupReadinessTransitionSpec.scala`: pins prepared-state preservation and status derivation, source-backed `OperationFailure` operation/message classification, explicit unsupported failure handling, absent failure metadata/status response, and `ElasticsearchStartupServingDecision.NotEnforced` for both outcomes.
 - `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; production and targeted ES route probes root the readiness state while preserving `POST /beauty-search`.
 - `BeautySearchElasticsearchRouteModuleSpec.scala`: the explicit ES seed route module exposes seed-only lifecycle metadata and the non-serving readiness state while preserving its zero-hit route response contract.
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes the state while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
@@ -87,6 +88,7 @@ Checklist for future edits:
 Future/unimplemented unless matching source-backed tests are added:
 
 - startup readiness success/failure:
+  - pure success/failure transition-shape coverage now exists in `ElasticsearchStartupReadinessTransitionSpec.scala`;
   - serving path when ES preparation/readiness succeeds;
   - failure path when preparation fails;
   - explicit proof of whether serving blocks, degrades, or fails fast.
@@ -113,7 +115,7 @@ Future/unimplemented unless matching source-backed tests are added:
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
 
-Current focused pure/composition/route-module specs cover only the seed-only metadata and explicit non-serving state seams. They are not substitutes for production lifecycle tests.
+Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests.
 
 ## Repository Tests
 

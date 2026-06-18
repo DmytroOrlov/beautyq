@@ -208,10 +208,11 @@ Evidence:
 - `ElasticsearchProductionReadinessState.seedOnly` derives explicit current values: `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, and `NotExposed`.
 - `ElasticsearchSeedSearchComposition.productionReadinessState` forwards the derived state, and focused route/module specs prove it is materialized through the ES-backed route graphs without changing route behavior.
 - `ElasticsearchLifecycleStatusResponse.from` provides a pure non-serving projection with local Circe encoding; it is not bound into route graphs.
+- `ElasticsearchStartupReadinessTransition` provides a pure prepared/operation-failure shape with `ElasticsearchStartupServingDecision.NotEnforced`; it is not bound into route graphs or composition.
 
 Consequences:
 
-- Current state coverage proves DI availability and makes the missing capabilities explicit; it does not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
+- Current state and transition coverage prove DI availability plus pure preparation-result classification and make the missing capabilities explicit; they do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
 - Any operator-facing lifecycle exposure remains unimplemented until an endpoint path and operator policy are separately approved.
 - M5 cannot be treated as complete from state coverage alone.
 
