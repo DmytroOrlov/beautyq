@@ -1,6 +1,6 @@
 # M5 ES Lifecycle Checkpoint
 
-Status: M5 is active/incomplete. This is a docs-only checkpoint. No production source, test, endpoint, or serving behavior was changed.
+Status: M5 is active/incomplete. This is a checkpoint update. No production source, endpoint, or serving behavior was changed.
 
 ## Current status
 
@@ -21,6 +21,7 @@ The following non-serving seams exist in source and are covered by focused tests
 - **Prepared transition bound through ES route graphs**: `ElasticsearchSeedSearchComposition.startupReadinessTransition` exposes a prepared transition derived from composition readiness state. `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds it through DI from the composition. The binding is non-serving and does not gate startup or route behavior.
 - **Source-backed preparation failure classification**: `ElasticsearchStartupReadinessTransition.preparationFailed(...)` classifies `QueryFailure.OperationFailure` failures into `PreparationFailed` with operation name/message. Non-`OperationFailure` failures produce `UnsupportedFailure`. Classification is pure and does not change initializer behavior.
 - **Cross-model consistency coverage**: `ElasticsearchReadinessConsistencySpec` proves field-level agreement across `ElasticsearchProductionReadinessState`, `ElasticsearchLifecycleStatusResponse`, `ElasticsearchStartupReadinessTransition`, `ElasticsearchStartupReadinessStatusResponse`, and `ElasticsearchSeedSearchComposition.startupReadinessTransition`. This is non-serving test coverage, not serving-gate enforcement.
+- **App-start fail-closed test coverage**: `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior at composition level (blank source, empty documents, ES client failure all prevent composition) and DI-graph level (ES client failure prevents `BeautySearchApi` construction; no route instance is produced). Also proves prepared-serving: successful composition produces `Prepared` transition and `POST /beauty-search` returns `200 OK`. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
 
 ## Current route/behavior status
 
@@ -63,9 +64,10 @@ The first implementation slice is source-confirmed. Full analysis is in `docs/co
 Key findings:
 
 - App-start fail-closed behavior is implicitly implemented by the eager composition pattern in `BeautySearchCatalogBackendModules.seedResourceElasticsearch`. If ES preparation fails, `unsafe.run` throws, DI graph construction fails, and no route is constructed.
+- App-start fail-closed behavior is now test-covered by `ElasticsearchAppStartServingGateSpec` (composition-level and DI-graph-level). These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
 - A runtime route gate (HTTP 503 on non-prepared state) requires a different source seam. The current DI-bound `ElasticsearchStartupReadinessTransition` is always `Prepared`; `PreparationFailed` is unreachable from the bound value.
 - The smallest candidate enforcement seam is `BeautySearchApi.serverLogic`, but enforcement is currently impossible because the transition is always `Prepared`.
-- The recommended next step is spec-only route-level tests proving app-start fail-closed and prepared-serving behavior before any enforcement code.
+- The recommended next step was spec-only route-level tests proving app-start fail-closed and prepared-serving behavior before any enforcement code. This step is now done.
 
 Policy gap: "fail closed until prepared" is recommended but not formally approved. App-start fail-closed is implicitly implemented; runtime route gate requires new source seam. Endpoint/path/auth/operator status policy remains unresolved.
 
@@ -74,7 +76,7 @@ Policy gap: "fail closed until prepared" is recommended but not formally approve
 Ordered and conservative:
 
 1. **Source-confirm serving-gate implementation slice**: done. See `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
-2. **Add spec-only route-level tests**: write route-level tests proving app-start fail-closed behavior (composition failure prevents route construction) and prepared-serving behavior. Do not implement enforcement yet.
+2. **Add spec-only route-level tests**: done. `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior (composition-level and DI-graph-level) and prepared-serving behavior. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
 3. **Implement serving gate only after tests/policy are approved**: add the serving gate to route composition only after tests prove the expected behavior and policy is formally approved.
 4. **Add operator endpoint only after path/auth/status policy is approved**: implement an operator-visible status endpoint only after endpoint path, auth, and status policy are explicitly approved.
 5. **Defer replacement/freshness/rollback until their policies are designed**: these are separate design decisions that must be made independently before implementation.

@@ -249,7 +249,7 @@ Consequences:
 - The serving-gate design is documented but not enforced.
 - Any enforcement implementation requires explicit approval of a serving-gate policy choice.
 - The recommended default is `fail closed until prepared`, but it is not implemented.
-- App-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a new source seam.
+- App-start fail-closed is implicitly implemented by eager composition; it is now test-covered by `ElasticsearchAppStartServingGateSpec` (composition-level and DI-graph-level). Runtime route gate requires a new source seam.
 
 What not to infer:
 

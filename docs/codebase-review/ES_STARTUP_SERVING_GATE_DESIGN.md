@@ -7,6 +7,9 @@ Status: design-only. M5 remains incomplete.
 - No serving gate implemented.
 - No startup readiness enforcement.
 - No production lifecycle completion.
+- App-start fail-closed behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
+- Prepared-serving behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. These tests document that successful composition allows serving; serving behavior is unchanged.
+- Runtime route gate (HTTP 503 on non-prepared state) remains not implemented and requires a new source seam.
 - See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for checkpoint summary.
 
 ## Purpose
@@ -85,7 +88,7 @@ Each choice below must be explicitly approved before any implementation. None ar
 
 **Definition:** If the startup transition is not `Prepared`, the route returns an error response (e.g., `503 Service Unavailable`) instead of serving search results.
 
-**Current implementation status:** Not implemented. The current route serves regardless of startup transition state.
+**Current implementation status:** Not implemented as enforced policy. The current route serves regardless of startup transition state. However, app-start fail-closed behavior is implicitly implemented by eager composition: if ES preparation fails, no route is constructed. This implicit behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. Runtime route gate (route returns HTTP 503 on non-prepared state) requires a new source seam.
 
 **Required source changes before implementation:**
 
@@ -309,6 +312,14 @@ The smallest candidate seam is `BeautySearchApi` (`BeautySearchApi.scala:21-29`)
 
 The current architecture already exhibits app-start fail-closed behavior: if ES preparation fails during eager composition, the `unsafe.run` throws, Distage graph construction fails, and no route is constructed. The app cannot serve. This is an implementation fact of the eager composition pattern, not an approved production lifecycle policy.
 
+This behavior is now test-covered by `ElasticsearchAppStartServingGateSpec`:
+
+- Composition-level: blank source, empty documents, and ES client failures all prevent `ElasticsearchSeedSearchComposition.build` from producing a usable composition.
+- DI-graph-level: ES client failure during eager composition prevents Distage graph construction; `BeautySearchApi` cannot be obtained; no route instance is constructed.
+- Prepared-serving: successful composition produces `Prepared` transition and allows `POST /beauty-search` to serve `200 OK`.
+
+These tests document current implicit behavior. They are not runtime HTTP 503 gate tests. Runtime route gate requires a different source seam where the route instance can be constructed even when preparation has not succeeded.
+
 ### Runtime route gate requires a different seam
 
 A runtime route gate (route returns HTTP 503 on non-prepared state) requires a source seam where:
@@ -329,7 +340,7 @@ The current eager composition pattern does not support this. To create a "route 
 
 ### Recommended next step
 
-Add spec-only route-level tests proving app-start fail-closed behavior (composition failure prevents route construction) and prepared-serving behavior (composition success allows serving). These tests can be written before any enforcement code.
+Add spec-only route-level tests proving app-start fail-closed behavior (composition failure prevents route construction) and prepared-serving behavior (composition success allows serving). These tests can be written before any enforcement code. — **Done.** `ElasticsearchAppStartServingGateSpec` covers composition-level fail-closed (blank source, empty documents, ES client failure), DI-graph-level fail-closed (ES client failure prevents `BeautySearchApi` construction), and prepared-serving (successful composition allows `POST /beauty-search` serving with `Prepared` transition). These are not runtime HTTP 503 gate tests; they document current implicit behavior only.
 
 See `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` for full analysis.
 

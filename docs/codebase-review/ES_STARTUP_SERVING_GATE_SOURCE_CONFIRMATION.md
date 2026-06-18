@@ -1,6 +1,6 @@
 # ES Startup Serving Gate Source Confirmation
 
-Status: source-confirmed, docs-only. M5 remains incomplete. No production source, test, endpoint, or serving behavior was changed.
+Status: source-confirmed; app-start fail-closed and prepared-serving are now test-covered. M5 remains incomplete. No production source, endpoint, or serving behavior was changed.
 
 ## Purpose
 
@@ -104,7 +104,7 @@ However, this enforcement is **currently impossible at runtime** because:
 
 | Policy | Meaning | Current status |
 |--------|---------|----------------|
-| App-start fail-closed | If composition fails, no route exists; app fails to start | Implicitly implemented by eager composition, but not tested or documented as policy |
+| App-start fail-closed | If composition fails, no route exists; app fails to start | Implicitly implemented by eager composition; test-covered by `ElasticsearchAppStartServingGateSpec` (composition-level and DI-graph-level); not formally approved as policy |
 | Runtime route gate | Route exists but returns HTTP error (e.g., 503) on non-prepared state | Not implemented; requires new source seam |
 | Operator status visibility | Endpoint exposes startup/health status to operators | Not implemented; requires endpoint/path/auth policy |
 
@@ -184,9 +184,9 @@ Rationale:
 
 **Recommended exact next step:** Add spec-only route-level tests that prove:
 
-1. **App-start fail-closed:** Composition failure from ES preparation failure prevents `BeautySearchApi` from being constructed. This proves the existing implicit behavior.
-2. **Prepared startup allows serving:** When composition succeeds, `POST /beauty-search` returns 200 OK. This is already proven by `BeautySearchProductionRouteExposureSpec` but should be restated in serving-gate context.
-3. **No Qdrant/hybrid fallback:** During startup failure, no Qdrant or hybrid serving occurs.
+1. **App-start fail-closed:** Composition failure from ES preparation failure prevents `BeautySearchApi` from being constructed. This proves the existing implicit behavior. — **Done.** `ElasticsearchAppStartServingGateSpec` covers composition-level and DI-graph-level fail-closed behavior.
+2. **Prepared startup allows serving:** When composition succeeds, `POST /beauty-search` returns 200 OK. This is already proven by `BeautySearchProductionRouteExposureSpec` but should be restated in serving-gate context. — **Done.** `ElasticsearchAppStartServingGateSpec` includes a prepared-serving test.
+3. **No Qdrant/hybrid fallback:** During startup failure, no Qdrant or hybrid serving occurs. — **Not yet covered by dedicated test.** Fail-closed proves no route is constructed; by implication no fallback occurs.
 
 These tests can be written as spec-only (expected behavior) before any enforcement code.
 
@@ -208,6 +208,9 @@ These tests can be written as spec-only (expected behavior) before any enforceme
 - `BeautySearchPluginModules.api` does not inject `ElasticsearchStartupReadinessTransition` (`BeautySearchPluginModules.scala:14-21`).
 - The current `ElasticsearchStartupReadinessTransition` DI binding is always `Prepared`; `PreparationFailed` is unreachable from the bound value.
 - No endpoint, route path, HTTP status policy, auth/operator policy, or serving-gate enforcement exists.
+- `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior at both composition level (blank source, empty documents, ES client failure all prevent composition) and DI-graph level (ES client failure prevents `BeautySearchApi` construction).
+- `ElasticsearchAppStartServingGateSpec` proves prepared-serving behavior: successful composition produces `Prepared` transition, `BeautySearchApi` is constructible, and `POST /beauty-search` returns `200 OK`.
+- These tests are not runtime HTTP 503 gate tests. They document current implicit behavior only.
 
 ## Non-goals
 
