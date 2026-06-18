@@ -220,7 +220,7 @@ Remaining production lifecycle contract areas before M5 can be considered implem
 
 Until those areas are defined and implemented, the current ES-backed route remains a seed-only readiness seam with eager preparation, not a production lifecycle.
 
-The startup serving-gate policy design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. It defines the policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any serving-gate enforcement is implemented. The serving-gate design is design-only; no enforcement code, endpoint, route path, or production lifecycle completion exists.
+The startup serving-gate policy design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. It defines the policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any serving-gate enforcement is implemented. The serving-gate design is design-only; no enforcement code, endpoint, route path, or production lifecycle completion exists. Source-confirmed implementation slice analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`: app-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a different source seam; `BeautySearchApi.serverLogic` is the smallest candidate enforcement seam but enforcement is currently impossible because the DI-bound transition is always `Prepared`.
 
 Classification:
 

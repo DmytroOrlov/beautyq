@@ -272,9 +272,70 @@ These tests are unimplemented and must be added alongside any enforcement code:
    - Rollback behavior is tested only after an explicit rollback policy is approved.
    - Freshness behavior is tested only after an explicit freshness policy is approved.
 
+## Source-confirmed implementation slice analysis
+
+Source confirmation is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`. Key findings below.
+
+### Production route construction path
+
+```text
+LeaderboardPlugin
+  include(modules.apiBase[IO])
+  include(BeautySearchRouteModules.apiElasticsearch)
+    include(seedCatalogElasticsearchPortConfigured)
+      include(ElasticsearchClientModules.portConfigured)
+      include(seedCatalogElasticsearch)
+        include(BeautySearchCatalogBackendModules.seedResourceElasticsearch)
+          make[ElasticsearchSeedSearchComposition].from { ... eager build ... }
+        include(BeautySearchPluginModules.api[IO])
+          make[BeautySearchApi[F]]
+          many[HttpApi[F]].weak[BeautySearchApi[F]]
+```
+
+### Source-confirmed enforcement facts
+
+- `BeautySearchCatalogBackendModules.seedResourceElasticsearch` eagerly runs `ElasticsearchSeedSearchComposition.build` via `Runtime.default.unsafe.run(...).getOrThrowFiberFailure()` (`BeautySearchCatalogBackendModules.scala:60-62`).
+- If `build` fails, the `unsafe.run` throws and Distage graph construction fails. No route instance is created.
+- If `build` succeeds, the composition is constructed and `startupReadinessTransition` returns `Prepared(state)` (`ElasticsearchSeedSearchComposition.scala:20-21`).
+- `PreparationFailed` transitions are classifiable in pure tests only (`ElasticsearchStartupReadinessTransition.preparationFailed`), not from the composition path.
+- `BeautySearchApi` has no access to `ElasticsearchStartupReadinessTransition` and performs no readiness check (`BeautySearchApi.scala:21-29`).
+- The DI-bound `ElasticsearchStartupReadinessTransition` is always `Prepared`; `PreparationFailed` is unreachable from the bound value.
+
+### Smallest candidate enforcement seam
+
+The smallest candidate seam is `BeautySearchApi` (`BeautySearchApi.scala:21-29`), where `searchBeauty.serverLogic` could check transition state before delegating to the service. However, this enforcement is currently impossible at runtime because the DI-bound transition is always `Prepared`.
+
+### App-start fail-closed is implicitly implemented
+
+The current architecture already exhibits app-start fail-closed behavior: if ES preparation fails during eager composition, the `unsafe.run` throws, Distage graph construction fails, and no route is constructed. The app cannot serve. This is an implementation fact of the eager composition pattern, not an approved production lifecycle policy.
+
+### Runtime route gate requires a different seam
+
+A runtime route gate (route returns HTTP 503 on non-prepared state) requires a source seam where:
+
+1. The route instance can be constructed even when preparation has not succeeded.
+2. The route handler can check transition state at request time.
+3. A non-prepared transition is reachable from the DI-bound value.
+
+The current eager composition pattern does not support this. To create a "route exists but transition is not prepared" state, composition would need to change from eager (`unsafe.run` in DI) to effectful (deferred into the route handler or wrapped in a resource).
+
+### Candidate implementation slices
+
+| Slice | Description | Requires new source seam | Requires endpoint/path policy | Behavior change risk |
+|-------|-------------|-------------------------|------------------------------|---------------------|
+| A | App-start fail-closed tests/docs only | no | no | none |
+| B | Route-level gate (HTTP 503 on non-prepared) | yes | yes (HTTP status) | medium |
+| C | Operator status visibility endpoint | yes | yes (endpoint, path, auth) | low (additive) |
+
+### Recommended next step
+
+Add spec-only route-level tests proving app-start fail-closed behavior (composition failure prevents route construction) and prepared-serving behavior (composition success allows serving). These tests can be written before any enforcement code.
+
+See `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` for full analysis.
+
 ## Implementation boundary
 
-This design document does not implement:
+This document does not implement:
 
 - an endpoint;
 - a route path;

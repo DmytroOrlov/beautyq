@@ -237,16 +237,25 @@ Evidence:
 - No serving-readiness enforcement exists.
 - M4 is closed; M5 remains incomplete.
 
+Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
+
+- `BeautySearchCatalogBackendModules.seedResourceElasticsearch` eagerly runs `ElasticsearchSeedSearchComposition.build` via `unsafe.run`. If `build` fails, DI graph construction fails and no route is constructed. If `build` succeeds, the DI-bound transition is always `Prepared`.
+- The smallest candidate enforcement seam is `BeautySearchApi.serverLogic` (`BeautySearchApi.scala:21-29`), but enforcement is currently impossible because the DI-bound transition is always `Prepared`.
+- App-start fail-closed behavior is implicitly implemented by the eager composition pattern. Runtime route gate requires a different source seam.
+- Spec-only route-level tests are the recommended next step before any enforcement code.
+
 Consequences:
 
 - The serving-gate design is documented but not enforced.
 - Any enforcement implementation requires explicit approval of a serving-gate policy choice.
 - The recommended default is `fail closed until prepared`, but it is not implemented.
+- App-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a new source seam.
 
 What not to infer:
 
 - Do not infer that the serving-gate design constitutes enforcement or that any policy choice is approved.
 - Do not infer production lifecycle completion from the existence of the serving-gate design document.
+- Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
 
 ## Decision 12: M5 checkpoint confirms non-serving lifecycle seams are implemented but production lifecycle is incomplete
 
@@ -261,6 +270,7 @@ Evidence:
 - `ElasticsearchStartupReadinessTransition` records `NotEnforced` serving decision for both prepared and failed transitions.
 - `ElasticsearchLifecycleStatusResponse` has `productionLifecycleComplete = false`.
 - `ES_STARTUP_SERVING_GATE_DESIGN.md` documents five policy choices that must be approved before enforcement.
+- `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` source-confirms the first implementation slice: app-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a different source seam; spec-only route-level tests are the recommended next step.
 
 Consequences:
 
@@ -272,3 +282,4 @@ What not to infer:
 
 - Do not infer production lifecycle completion from the existence of the checkpoint document.
 - Do not infer serving-gate enforcement, endpoint approval, or production readiness from the checkpoint.
+- Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.

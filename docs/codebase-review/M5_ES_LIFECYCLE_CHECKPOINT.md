@@ -56,13 +56,26 @@ Before any serving-gate or lifecycle enforcement can be implemented:
 5. **Add tests before enforcement**. Required tests are documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`: prepared startup allows serving, failed startup blocks/fails per policy, no accidental Qdrant/hybrid fallback, no extra ES calls.
 6. **Preserve no Qdrant/hybrid fallback**. Serving-gate enforcement must not introduce Qdrant or hybrid serving behavior.
 
-## Next safe implementation slices
+## Source-confirmed next step
+
+The first implementation slice is source-confirmed. Full analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
+
+Key findings:
+
+- App-start fail-closed behavior is implicitly implemented by the eager composition pattern in `BeautySearchCatalogBackendModules.seedResourceElasticsearch`. If ES preparation fails, `unsafe.run` throws, DI graph construction fails, and no route is constructed.
+- A runtime route gate (HTTP 503 on non-prepared state) requires a different source seam. The current DI-bound `ElasticsearchStartupReadinessTransition` is always `Prepared`; `PreparationFailed` is unreachable from the bound value.
+- The smallest candidate enforcement seam is `BeautySearchApi.serverLogic`, but enforcement is currently impossible because the transition is always `Prepared`.
+- The recommended next step is spec-only route-level tests proving app-start fail-closed and prepared-serving behavior before any enforcement code.
+
+Policy gap: "fail closed until prepared" is recommended but not formally approved. App-start fail-closed is implicitly implemented; runtime route gate requires new source seam. Endpoint/path/auth/operator status policy remains unresolved.
+
+## Safe implementation slices
 
 Ordered and conservative:
 
-1. **Source-confirm serving-gate implementation slice**: confirm the approved serving-gate policy choice and its concrete route-level behavior.
-2. **Add route-level tests for approved policy**: write route-level contract tests for the approved serving-gate behavior before implementing it.
-3. **Implement serving gate only after tests/policy are approved**: add the serving gate to route composition only after tests prove the expected behavior.
+1. **Source-confirm serving-gate implementation slice**: done. See `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
+2. **Add spec-only route-level tests**: write route-level tests proving app-start fail-closed behavior (composition failure prevents route construction) and prepared-serving behavior. Do not implement enforcement yet.
+3. **Implement serving gate only after tests/policy are approved**: add the serving gate to route composition only after tests prove the expected behavior and policy is formally approved.
 4. **Add operator endpoint only after path/auth/status policy is approved**: implement an operator-visible status endpoint only after endpoint path, auth, and status policy are explicitly approved.
 5. **Defer replacement/freshness/rollback until their policies are designed**: these are separate design decisions that must be made independently before implementation.
 

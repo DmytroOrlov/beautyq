@@ -122,14 +122,49 @@ Future/unimplemented unless matching source-backed tests are added:
 
 ### Future tests required before serving-gate implementation
 
-These tests are unimplemented and documented in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`:
+These tests are unimplemented and documented in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. Source-confirmed analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
 
-- prepared startup allows serving;
-- failed startup blocks or fails according to approved policy;
-- failed startup status projection is operator-visible if endpoint is approved;
-- no accidental Qdrant/hybrid fallback during startup failure;
-- no extra Elasticsearch calls beyond approved lifecycle behavior;
-- rollback/freshness behavior only after those policies exist.
+Spec-only tests required before any enforcement code:
+
+1. **App-start fail-closed: composition failure prevents route construction.**
+   - Source seam: `BeautySearchCatalogBackendModules.seedResourceElasticsearch` eagerly runs `ElasticsearchSeedSearchComposition.build` via `unsafe.run`. If `build` fails, DI graph construction fails and `BeautySearchApi` is not available.
+   - Test shape: prove that when ES preparation fails (e.g., blank source, empty documents, ES client failure), the Distage graph cannot construct `BeautySearchApi`. This is a DI-boundary test, not an HTTP test.
+   - Classification: `Contractual + Effectual + Group` (in-process DI seam).
+
+2. **Prepared startup allows serving.**
+   - A `Prepared` transition allows the route to serve `/beauty-search` normally.
+   - Already proven by `BeautySearchProductionRouteExposureSpec` but should be restated in serving-gate context.
+   - Serving behavior is unchanged for prepared transitions.
+   - Classification: `Contractual + Blackbox + Group` (in-process route seam).
+
+3. **Failed startup blocks or fails according to approved policy.**
+   - A `PreparationFailed` transition blocks or fails serving according to the approved policy.
+   - Currently unreachable from DI-bound transition (always `Prepared`). Test is spec-only until new source seam exists.
+   - The failure response must be distinct from the current `500 InternalServerError` empty-body behavior.
+   - Classification: `Contractual + Blackbox + Group` (in-process route seam, spec-only until seam exists).
+
+4. **No accidental Qdrant/hybrid fallback.**
+   - During startup failure, no Qdrant or hybrid serving occurs.
+   - The route does not fall back to Qdrant or hybrid when ES preparation fails.
+   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
+
+5. **No extra Elasticsearch calls beyond approved lifecycle behavior.**
+   - Startup gate enforcement does not introduce new ES calls.
+   - Existing ES calls (PUT mapping, bulk ingest, refresh, search) remain unchanged.
+   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
+
+6. **Failed startup status projection is operator-visible if endpoint is approved.**
+   - If an endpoint is approved, `ElasticsearchStartupReadinessStatusResponse` for `PreparationFailed` transitions is accessible.
+   - Prepared projections include nested `ElasticsearchLifecycleStatusResponse`.
+   - Failed projections expose operation/message only.
+   - Classification: `Contractual + Blackbox + Group` (in-process route seam, spec-only until endpoint exists).
+
+7. **Rollback/freshness behavior only after those policies exist.**
+   - Rollback behavior is tested only after an explicit rollback policy is approved.
+   - Freshness behavior is tested only after an explicit freshness policy is approved.
+   - Classification: deferred.
+
+Source-confirmed enforcement seam: `BeautySearchApi.serverLogic` (`BeautySearchApi.scala:21-29`). Enforcement is currently impossible because the DI-bound transition is always `Prepared`. Spec-only tests can prove expected behavior before enforcement code.
 
 Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for the full non-serving seam list and remaining production lifecycle gaps.
 
