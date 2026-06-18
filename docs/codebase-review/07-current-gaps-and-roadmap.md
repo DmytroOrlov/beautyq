@@ -18,7 +18,7 @@ Current status:
 
 Strategic gap:
 
-- The next strategic gate is ES production lifecycle design, not Qdrant shadow implementation.
+- The next strategic gate is ES production lifecycle design, not Qdrant shadow implementation. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks.
 - Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, kill-switch, and lifecycle/source-of-truth policy.
 
 ### BeautySearchService Wiring
@@ -48,6 +48,7 @@ Reached checkpoint (ES seed route, default):
 - Focused ES route/module graph specs prove the bound `ElasticsearchSeedLifecycleMetadata` and derived `ElasticsearchProductionReadinessState` are available. The state explicitly records `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
 - `ElasticsearchLifecycleStatusResponse` now provides a pure non-serving projection and Circe encoder for those current values. It is not bound into DI or exposed through a route.
 - `ElasticsearchStartupReadinessTransition` now represents pure startup preparation success and source-backed `OperationFailure` failure shape. Prepared transitions derive the current non-serving status response; failed transitions expose no lifecycle metadata or status response. Both outcomes record serving decision `NotEnforced`; the model is now bound through DI from composition but remains non-serving and does not enforce readiness.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
 - Full verification after default switch.
 
 Evidence:
@@ -89,7 +90,7 @@ The current phase is between:
 - resource-backed hidden Qdrant/hybrid module expansion — paused.
 - C: production `/beauty-search` hybrid backend — future.
 
-ES seed route default is the current nearest checkpoint. B-lite eval comparison continues as eval-only work.
+ES seed route default is the current nearest checkpoint. B-lite eval comparison continues as eval-only work. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle remains incomplete and moves to named future tracks.
 
 Production serving:
 
@@ -161,7 +162,7 @@ Status:
 * Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle design and any future Qdrant shadow design.
 * Still offline/eval only. Production route wiring remains ES-backed seed route.
 * The next strategic gate is ES lifecycle design before any Qdrant shadow implementation. Qdrant shadow is a future M6 readiness/design step, not the current implementation step, because shadowing should follow a stable serving baseline, explicit observability, and an operational kill-switch. The current B-lite / M-ESQ-EVAL lane already covers offline ES vs Qdrant vs simulated hybrid comparison; without a production-grade ES lifecycle baseline, shadow metrics would only compare against a seed-backed, lifecycle-incomplete route.
-* M4/M5 lifecycle work is active but still below production lifecycle readiness. M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving are not reached.
+* M4/M5 lifecycle work is closed. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete and moves to named future tracks. M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 
 Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
 
@@ -239,7 +240,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Closed. HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Full verification is separate from focused validation. |
-| M5 | ES production lifecycle implemented | Incomplete. Non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, non-serving startup status projection, route-graph state coverage, non-serving startup transition DI integration through ES seed route graphs, cross-model consistency coverage, and app-start fail-closed/prepared-serving test coverage exist. Startup serving-gate design is documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Source-confirmed implementation slice analysis is in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`. `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior (composition-level and DI-graph-level) and prepared-serving behavior; these tests document current implicit behavior only and are not runtime HTTP 503 gate tests. Production lifecycle remains incomplete. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for checkpoint summary. |
+| M5 | Startup-readiness lifecycle checkpoint | Closed. Bounded startup-readiness lifecycle checkpoint: app-start fail-closed, prepared-serving, non-serving lifecycle metadata/readiness/status/transition/projection seams, DI/rooting, failure classification, and consistency coverage. M5 does not include runtime HTTP gate, operator endpoint, replacement, freshness, refresh, rollback, dashboard, or full production lifecycle completion. Full ES production lifecycle remains incomplete and moves to named future tracks. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for closeout checkpoint. |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
@@ -259,24 +260,63 @@ M4 is closed. Its remaining documented scope is source-backed by current docs an
 
 Full verification is separate from focused validation. M4 was not verified by a full `sbt test` run from this docs pass.
 
-#### M5 remaining work checklist
+#### M5 startup-readiness lifecycle checkpoint — closed
 
-M5 remains incomplete. The full checkpoint summary is in `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md`. Source-confirmed implementation slice analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`. Remaining work is the production lifecycle contract plus implementation for:
+M5 is closed as a bounded startup-readiness lifecycle checkpoint. The closeout checkpoint is in `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md`. Full ES production lifecycle remains incomplete and moves to named future tracks. Full verification is separate from focused validation.
 
-- startup readiness: readiness decision before serving, preparation failure behavior, and whether serving blocks, degrades, or fails fast; startup serving-gate design is documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`;
-- replacement: explicit old/new index replacement policy, atomicity expectations, and alias or versioned-index policy if required;
-- freshness: running-service version/freshness source of truth, operator-visible timestamp/version/count, and stale-data detection;
-- refresh: approved trigger semantics such as manual, startup-only, scheduled, or external trigger;
-- rollback: previous known-good index/version recovery path and retained rollback-supporting state;
-- operator-visible status: explicit status fields/surface that distinguish seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+#### M5 closeout — bounded startup-readiness lifecycle checkpoint
 
-The current `ElasticsearchProductionReadinessState` does not implement these items. It records that readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is limited to eager seed preparation, and operator visibility is not exposed.
+M5 is closed as a bounded startup-readiness lifecycle checkpoint. The full closeout checkpoint is in `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md`. Source-confirmed implementation slice analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
+
+M5 covers:
+
+- app-start fail-closed behavior (implicit from eager composition, test-covered by `ElasticsearchAppStartServingGateSpec`);
+- prepared-serving behavior (successful composition allows `POST /beauty-search`, test-covered by `ElasticsearchAppStartServingGateSpec`);
+- non-serving lifecycle metadata (`ElasticsearchSeedLifecycleMetadata`);
+- non-serving readiness state (`ElasticsearchProductionReadinessState`);
+- non-serving lifecycle status response model/encoder (`ElasticsearchLifecycleStatusResponse`);
+- non-serving startup transition shape (`ElasticsearchStartupReadinessTransition`);
+- non-serving startup status projection (`ElasticsearchStartupReadinessStatusResponse`);
+- DI/rooting of prepared transition through ES seed route graphs;
+- source-backed failure classification (`preparationFailed`);
+- cross-model consistency coverage (`ElasticsearchReadinessConsistencySpec`);
+- startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`;
+- source-confirmed implementation slice analysis in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
+
+M5 does not include:
+
+- runtime HTTP gate (route returns HTTP 503 on non-prepared state);
+- operator-visible endpoint/path/auth policy;
+- replacement/versioned-index/alias policy;
+- freshness tracking;
+- refresh trigger semantics;
+- rollback policy;
+- dashboard/operator integration;
+- full production lifecycle verification.
+
+The current `ElasticsearchProductionReadinessState` does not implement these remaining items. It records that readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is limited to eager seed preparation, and operator visibility is not exposed.
 
 `ElasticsearchStartupReadinessTransition` records current preparation success/failure shape and `NotEnforced` serving decision only. It does not decide whether serving blocks, degrades, or fails fast. Successful compositions now expose a prepared transition through `ElasticsearchSeedSearchComposition.startupReadinessTransition` and it is bound through DI via `BeautySearchCatalogBackendModules.seedResourceElasticsearch`, but the binding remains non-serving and does not gate startup or route behavior.
 
 The documented status shape now has a pure non-serving model/encoder. That is not endpoint exposure, not HTTP policy approval, and not lifecycle completion.
 
 Non-goals remain unchanged here: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
+
+Full ES production lifecycle remains incomplete and moves to named future tracks below.
+
+#### Future ES lifecycle tracks
+
+Remaining ES production lifecycle work is split into named tracks. These tracks are independent of the Qdrant/hybrid roadmap milestones (M6/M7/M8) and do not overwrite those milestone meanings.
+
+| Track | Scope | Dependencies | Current status |
+|-------|-------|-------------|----------------|
+| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; endpoint/path/auth policy approval | Not started; design-only prerequisite documented in `ES_STARTUP_SERVING_GATE_DESIGN.md` Choice 3 and `ES_LIFECYCLE_STATUS_DESIGN.md` |
+| ES runtime serving-gate track | Runtime route-gate policy/implementation: route returns approved HTTP error (e.g., 503) on non-prepared state; requires new source seam because current DI-bound transition is always `Prepared` | M5 closeout; serving-gate policy approval (Choice 1 or 2 from `ES_STARTUP_SERVING_GATE_DESIGN.md`); new source seam design | Not started; source-confirmed as requiring different seam in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` |
+| ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
+
+These tracks can proceed independently. The ES operator visibility track and ES runtime serving-gate track both require policy approval before implementation. The ES replacement/freshness/rollback track requires individual policy designs.
+
+Dashboard/operator integration and full production lifecycle verification remain downstream of these tracks.
 
 #### Movement rules
 
@@ -291,7 +331,7 @@ Non-goals remain unchanged here: no route switch, no fallback, no score fusion, 
 #### Near-term sequence
 
 * Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
-* Next safe decisions are still: docs/evidence consolidation and ES lifecycle design; Qdrant shadow design remains a later M6 step only after source-confirmed evidence bundles and an approved ES lifecycle baseline.
+* Next safe decisions are still: docs/evidence consolidation and ES lifecycle design; Qdrant shadow design remains a later M6 step only after source-confirmed evidence bundles and an approved ES lifecycle baseline. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks (ES operator visibility, ES runtime serving-gate, ES replacement/freshness/rollback).
 * Current immediate next steps are not Qdrant shadow readiness and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
 
@@ -412,7 +452,7 @@ Current blockers:
 - No stale-catalog observability or kill switch.
 - No production Elasticsearch client/indexing lifecycle.
 - No explicit search index creation/update lifecycle.
-- Route-module state coverage plus pure transition tests now prove seed-only metadata, the non-serving readiness model, and startup preparation result shape only; they do not implement startup readiness, replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
+- Route-module state coverage plus pure transition tests now prove seed-only metadata, the non-serving readiness model, and startup preparation result shape only; they do not implement startup readiness, replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle remains incomplete.
 - No production collection manager for Qdrant.
 - No kill switch or production activation axis for hybrid/Qdrant.
 - No production-safe freshness model between Postgres, Elasticsearch, and Qdrant.

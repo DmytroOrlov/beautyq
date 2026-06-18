@@ -194,7 +194,7 @@ What this does not prove:
 - replacement, freshness, refresh, rollback, or operator-visible production lifecycle status exists;
 - any route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement behavior exists.
 
-Remaining production lifecycle contract areas before M5 can be considered implemented:
+Remaining production lifecycle contract areas before full ES production lifecycle can be considered implemented (these belong to named future ES lifecycle tracks, not the closed M5 checkpoint):
 
 - Startup readiness:
   - how the service decides the ES index is ready before serving;
@@ -221,7 +221,7 @@ Remaining production lifecycle contract areas before M5 can be considered implem
 
 Until those areas are defined and implemented, the current ES-backed route remains a seed-only readiness seam with eager preparation, not a production lifecycle.
 
-The startup serving-gate policy design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. It defines the policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any serving-gate enforcement is implemented. The serving-gate design is design-only; no enforcement code, endpoint, route path, or production lifecycle completion exists. Source-confirmed implementation slice analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`: app-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a different source seam; `BeautySearchApi.serverLogic` is the smallest candidate enforcement seam but enforcement is currently impossible because the DI-bound transition is always `Prepared`.
+The startup serving-gate policy design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. It defines the policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any serving-gate enforcement is implemented. The serving-gate design is design-only; no enforcement code, endpoint, route path, or production lifecycle completion exists. Source-confirmed implementation slice analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`: app-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a different source seam; `BeautySearchApi.serverLogic` is the smallest candidate enforcement seam but enforcement is currently impossible because the DI-bound transition is always `Prepared`. Runtime route-gate work moves to the ES runtime serving-gate future track. M5 is closed as a bounded startup-readiness lifecycle checkpoint.
 
 Classification:
 

@@ -1,13 +1,13 @@
 # ES Lifecycle Status Design
 
-Status: response model/encoder implemented; exposure design remains incomplete.
+Status: response model/encoder implemented; exposure design remains incomplete. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Endpoint exposure and operator policy remain future work (ES operator visibility track).
 
 - No endpoint is implemented.
 - No route path is approved.
 - No serving behavior is changed.
 - No production lifecycle completion is claimed.
-- M5 remains incomplete.
-- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for checkpoint summary.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
+- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for closeout checkpoint.
 
 ## Purpose
 
@@ -250,7 +250,7 @@ The startup serving-gate design is documented separately in `docs/codebase-revie
 - No serving-readiness enforcement exists.
 - No preparation failure policy is implemented.
 - No production lifecycle completion is claimed.
-- M5 remains incomplete.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
 - The serving-gate design defines five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any enforcement implementation.
 - The recommended default is `fail closed until prepared`, but it is not implemented.
 - Required future tests before any serving-gate implementation are documented in the design doc.
@@ -275,7 +275,7 @@ This design does not imply or approve:
 
 ## Implementation boundary
 
-If a future endpoint is approved, it should report the current seed-only state accurately before introducing any claim of production lifecycle completion.
+If a future endpoint is approved, it should report the current seed-only state accurately before introducing any claim of production lifecycle completion. Endpoint exposure and operator policy remain future work in the ES operator visibility track.
 
 Until that later task is approved and implemented:
 

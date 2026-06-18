@@ -1,6 +1,6 @@
 # ES Startup Serving Gate Design
 
-Status: design-only. M5 remains incomplete.
+Status: design-only. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate work moves to ES runtime serving-gate future track.
 
 - No endpoint implemented.
 - No route path approved.
@@ -9,8 +9,8 @@ Status: design-only. M5 remains incomplete.
 - No production lifecycle completion.
 - App-start fail-closed behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
 - Prepared-serving behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. These tests document that successful composition allows serving; serving behavior is unchanged.
-- Runtime route gate (HTTP 503 on non-prepared state) remains not implemented and requires a new source seam.
-- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for checkpoint summary.
+- Runtime route gate (HTTP 503 on non-prepared state) remains not implemented and requires a new source seam. This work moves to the ES runtime serving-gate future track.
+- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for closeout checkpoint.
 
 ## Purpose
 

@@ -215,7 +215,7 @@ Consequences:
 
 - Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
 - Any operator-facing lifecycle exposure remains unimplemented until an endpoint path and operator policy are separately approved.
-- M5 cannot be treated as complete from state coverage alone.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
 
 What not to infer:
 
@@ -235,7 +235,7 @@ Evidence:
 - `ES_STARTUP_SERVING_GATE_DESIGN.md` documents the serving-gate policy design with five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before enforcement.
 - No endpoint, route path, HTTP status policy, or operator policy is implemented.
 - No serving-readiness enforcement exists.
-- M4 is closed; M5 remains incomplete.
+- M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
 
 Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
 
@@ -257,29 +257,30 @@ What not to infer:
 - Do not infer production lifecycle completion from the existence of the serving-gate design document.
 - Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
 
-## Decision 12: M5 checkpoint confirms non-serving lifecycle seams are implemented but production lifecycle is incomplete
+## Decision 12: M5 closed as bounded startup-readiness lifecycle checkpoint
 
 Statement:
 
-- The M5 checkpoint summary confirms that non-serving lifecycle seams (metadata, readiness state, status response model/encoder, startup transition, startup status projection, DI integration, and cross-model consistency coverage) are implemented, but production lifecycle enforcement, endpoint, operator visibility, replacement, freshness, refresh, rollback, and serving-gate enforcement are not.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint covering app-start fail-closed, prepared-serving, non-serving lifecycle seams, DI/rooting, failure classification, and consistency coverage. Full ES production lifecycle remains incomplete and moves to named future tracks.
 
 Evidence:
 
-- `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` documents the implemented non-serving seams, remaining production lifecycle gaps, and enforcement prerequisites.
+- `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` documents the closeout checkpoint, bounded M5 definition, source/test evidence, and future ES lifecycle tracks.
+- `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior (composition-level and DI-graph-level) and prepared-serving behavior.
+- `ElasticsearchReadinessConsistencySpec` proves cross-model field-level consistency.
 - `ElasticsearchProductionReadinessState.seedOnly` records `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, `NotExposed`.
-- `ElasticsearchStartupReadinessTransition` records `NotEnforced` serving decision for both prepared and failed transitions.
 - `ElasticsearchLifecycleStatusResponse` has `productionLifecycleComplete = false`.
 - `ES_STARTUP_SERVING_GATE_DESIGN.md` documents five policy choices that must be approved before enforcement.
-- `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` source-confirms the first implementation slice: app-start fail-closed is implicitly implemented by eager composition; runtime route gate requires a different source seam; spec-only route-level tests are the recommended next step.
+- `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` source-confirms the implementation slice analysis and completes the bounded M5 decision.
 
 Consequences:
 
-- M5 cannot be treated as complete from state coverage alone.
-- Serving-gate enforcement, endpoint, and production lifecycle completion remain future work pending explicit approval.
-- The checkpoint is a docs-only record; no source, test, or serving behavior was changed.
+- M5 is closed with a precise bounded definition that does not claim full production lifecycle completion.
+- Runtime route gate, operator endpoint, replacement, freshness, refresh, rollback, dashboard, and full production lifecycle verification move to named future tracks.
+- The ES operator visibility track, ES runtime serving-gate track, and ES replacement/freshness/rollback track are independent of Qdrant/hybrid roadmap milestones (M6/M7/M8).
 
 What not to infer:
 
-- Do not infer production lifecycle completion from the existence of the checkpoint document.
-- Do not infer serving-gate enforcement, endpoint approval, or production readiness from the checkpoint.
+- Do not infer production lifecycle completion from M5 closure.
+- Do not infer that runtime serving-gate enforcement, operator-visible endpoint, replacement, freshness, refresh, or rollback are implemented.
 - Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.

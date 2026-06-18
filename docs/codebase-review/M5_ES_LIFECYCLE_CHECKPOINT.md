@@ -1,27 +1,38 @@
-# M5 ES Lifecycle Checkpoint
+# M5 Startup-Readiness Lifecycle Checkpoint — Closeout
 
-Status: M5 is active/incomplete. This is a checkpoint update. No production source, endpoint, or serving behavior was changed.
+Status: M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete and moves to named future tracks. No production source, endpoint, or serving behavior was changed.
 
-## Current status
+## Closeout decision
 
-- M4 is closed.
-- M5 is active/incomplete.
-- ES lifecycle/readiness work is currently non-serving only.
-- Full verification remains separate from focused validation.
+M5 is closed as a bounded startup-readiness lifecycle checkpoint. Source truth supports closure: all non-serving lifecycle seams are implemented and test-covered, app-start fail-closed and prepared-serving behavior are proven, and the remaining production lifecycle work is clearly bounded and unstarted.
 
-## Implemented non-serving seams
+## Bounded M5 definition
 
-The following non-serving seams exist in source and are covered by focused tests:
+M5 covers:
 
-- **Lifecycle metadata**: `ElasticsearchSeedLifecycleMetadata` exposes seed-only index name, source, document count, preparation mode, and lifecycle status through `ElasticsearchSeedIndexReadiness.lifecycleMetadata` and `ElasticsearchSeedSearchComposition.lifecycleMetadata`.
-- **Readiness state**: `ElasticsearchProductionReadinessState.seedOnly` derives a pure internal state recording `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
-- **Lifecycle status response**: `ElasticsearchLifecycleStatusResponse.from(state)` projects the state into a pure response model with local Circe encoding and `productionLifecycleComplete = false`. Not DI-bound or HTTP-exposed.
-- **Startup transition**: `ElasticsearchStartupReadinessTransition` provides a pure prepared/operation-failure classification. Prepared values preserve readiness state and derive lifecycle status response; failures retain source-backed `QueryFailure.OperationFailure` data without lifecycle metadata or status response. Both record `NotEnforced` serving decision.
-- **Startup status projection**: `ElasticsearchStartupReadinessStatusResponse` provides a pure non-serving startup status projection from transitions. Prepared projections include nested `ElasticsearchLifecycleStatusResponse`; failed projections expose operation/message only. Not DI-bound or HTTP-exposed.
-- **Prepared transition bound through ES route graphs**: `ElasticsearchSeedSearchComposition.startupReadinessTransition` exposes a prepared transition derived from composition readiness state. `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds it through DI from the composition. The binding is non-serving and does not gate startup or route behavior.
-- **Source-backed preparation failure classification**: `ElasticsearchStartupReadinessTransition.preparationFailed(...)` classifies `QueryFailure.OperationFailure` failures into `PreparationFailed` with operation name/message. Non-`OperationFailure` failures produce `UnsupportedFailure`. Classification is pure and does not change initializer behavior.
-- **Cross-model consistency coverage**: `ElasticsearchReadinessConsistencySpec` proves field-level agreement across `ElasticsearchProductionReadinessState`, `ElasticsearchLifecycleStatusResponse`, `ElasticsearchStartupReadinessTransition`, `ElasticsearchStartupReadinessStatusResponse`, and `ElasticsearchSeedSearchComposition.startupReadinessTransition`. This is non-serving test coverage, not serving-gate enforcement.
-- **App-start fail-closed test coverage**: `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior at composition level (blank source, empty documents, ES client failure all prevent composition) and DI-graph level (ES client failure prevents `BeautySearchApi` construction; no route instance is produced). Also proves prepared-serving: successful composition produces `Prepared` transition and `POST /beauty-search` returns `200 OK`. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
+- App-start fail-closed behavior (implicit from eager composition, test-covered by `ElasticsearchAppStartServingGateSpec`).
+- Prepared-serving behavior (successful composition allows `POST /beauty-search`, test-covered by `ElasticsearchAppStartServingGateSpec`).
+- Non-serving lifecycle metadata: `ElasticsearchSeedLifecycleMetadata` exposes seed-only index name, source, document count, preparation mode, and lifecycle status through `ElasticsearchSeedIndexReadiness.lifecycleMetadata` and `ElasticsearchSeedSearchComposition.lifecycleMetadata`.
+- Non-serving readiness state: `ElasticsearchProductionReadinessState.seedOnly` derives a pure internal state recording `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
+- Non-serving lifecycle status response model/encoder: `ElasticsearchLifecycleStatusResponse.from(state)` projects the state into a pure response model with local Circe encoding and `productionLifecycleComplete = false`. Not DI-bound or HTTP-exposed.
+- Non-serving startup transition shape: `ElasticsearchStartupReadinessTransition` provides a pure prepared/operation-failure classification. Prepared values preserve readiness state and derive lifecycle status response; failures retain source-backed `QueryFailure.OperationFailure` details without lifecycle metadata or a status response. Both record `NotEnforced` serving decision.
+- Non-serving startup status projection: `ElasticsearchStartupReadinessStatusResponse` provides a pure non-serving startup status projection from transitions. Prepared projections include the nested `ElasticsearchLifecycleStatusResponse`; failed projections expose operation/message only. Not DI-bound or HTTP-exposed.
+- DI/rooting of prepared transition through ES seed route graphs: `ElasticsearchSeedSearchComposition.startupReadinessTransition` exposes a prepared transition derived from composition readiness state. `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds it through DI. The binding is non-serving and does not gate startup or route behavior.
+- Source-backed failure classification: `ElasticsearchStartupReadinessTransition.preparationFailed(...)` classifies `QueryFailure.OperationFailure` failures into `PreparationFailed` with operation name/message. Non-`OperationFailure` failures produce `UnsupportedFailure`. Classification is pure and does not change initializer behavior.
+- Cross-model consistency coverage: `ElasticsearchReadinessConsistencySpec` proves field-level agreement across readiness state, lifecycle response, startup transition, startup status projection, and composition-derived projections. This is non-serving test coverage, not serving-gate enforcement.
+- Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`.
+- Source-confirmed implementation slice analysis in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
+
+M5 does not include:
+
+- Runtime HTTP gate (route returns HTTP 503 on non-prepared state).
+- Operator-visible endpoint/path/auth policy.
+- Replacement/versioned-index/alias policy.
+- Freshness tracking.
+- Refresh trigger semantics.
+- Rollback policy.
+- Dashboard/operator integration.
+- Full production lifecycle verification.
 
 ## Current route/behavior status
 
@@ -32,62 +43,49 @@ The following non-serving seams exist in source and are covered by focused tests
 - Production route is exposed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - The route performs eager seed index preparation during composition; this is an implementation fact, not an approved production lifecycle policy.
 
-## Remaining production lifecycle gaps
+## Source/test evidence justifying closure
 
-The following production lifecycle capabilities are not implemented:
+The following tests justify the M5 closeout decision:
 
-- **Serving-gate enforcement**: no startup readiness gate blocks or allows serving.
-- **Startup failure HTTP/status policy**: no defined behavior for how startup failure is exposed to callers or operators.
-- **Operator-visible endpoint/path/auth policy**: no endpoint exists, no route path is approved, no auth/operator visibility policy is defined.
-- **Replacement/versioned-index or alias policy**: no index replacement strategy exists. `ElasticsearchProductionReadinessState.replacement` is `NotConfigured`.
-- **Freshness tracking**: no freshness timestamp, version, or staleness detection exists. `ElasticsearchProductionReadinessState.freshness` is `NotTracked`.
-- **Refresh trigger semantics**: no approved refresh trigger exists. `ElasticsearchProductionReadinessState.refresh` is `EagerSeedPreparationOnly`.
-- **Rollback policy**: no rollback mechanism or retained rollback-supporting state exists. `ElasticsearchProductionReadinessState.rollback` is `NotConfigured`.
-- **Dashboard/operator integration**: no operator-visible status surface is exposed. `ElasticsearchProductionReadinessState.operatorVisibility` is `NotExposed`.
-- **Full production lifecycle verification**: no production lifecycle tests exist. Current focused tests cover seed-only metadata, non-serving state, status projection, and pure startup transition shape only.
+1. **`ElasticsearchAppStartServingGateSpec`** — proves app-start fail-closed behavior at composition level (blank source, empty documents, ES client failure all prevent composition) and DI-graph level (ES client failure prevents `BeautySearchApi` construction; no route instance is produced). Also proves prepared-serving: successful composition produces `Prepared` transition and `POST /beauty-search` returns `200 OK`. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
 
-## Enforcement prerequisites
+2. **`ElasticsearchReadinessConsistencySpec`** — proves cross-model field-level agreement across `ElasticsearchProductionReadinessState`, `ElasticsearchLifecycleStatusResponse`, `ElasticsearchStartupReadinessTransition`, `ElasticsearchStartupReadinessStatusResponse`, and `ElasticsearchSeedSearchComposition.startupReadinessTransition`.
 
-Before any serving-gate or lifecycle enforcement can be implemented:
+3. **`ElasticsearchSeedIndexReadinessSpec`** — pins pure `ElasticsearchProductionReadinessState.seedOnly` derivation and source-backed failure classification.
 
-1. **Approve serving-gate policy** from `ES_STARTUP_SERVING_GATE_DESIGN.md`. Five choices are documented (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override). The recommended default is fail closed until prepared.
-2. **Approve endpoint/path/auth/operator visibility policy** or explicitly defer endpoint work. No endpoint exists; no route path is approved.
-3. **Define prepared/failure route behavior** before code changes. What happens when startup succeeds vs fails must be decided before implementation.
-4. **Define rollback/freshness/replacement boundaries** before claiming production lifecycle. These are separate design decisions, not implementation details.
-5. **Add tests before enforcement**. Required tests are documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`: prepared startup allows serving, failed startup blocks/fails per policy, no accidental Qdrant/hybrid fallback, no extra ES calls.
-6. **Preserve no Qdrant/hybrid fallback**. Serving-gate enforcement must not introduce Qdrant or hybrid serving behavior.
+4. **`ElasticsearchSeedSearchCompositionSpec`** — pins `productionReadinessState` derivation from composition lifecycle metadata and exposes a prepared startup transition.
 
-## Source-confirmed next step
+5. **`ElasticsearchLifecycleStatusResponseSpec`** — pins exact state-to-response mapping, metadata-sourced document counts, exact Circe field names/current string values, and `productionLifecycleComplete = false`.
 
-The first implementation slice is source-confirmed. Full analysis is in `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
+6. **`ElasticsearchStartupReadinessTransitionSpec`** — pins prepared-state preservation, transition-to-status mapping, JSON equality, failure classification, and `NotEnforced` serving decision.
 
-Key findings:
+7. **`ElasticsearchStartupReadinessStatusResponseSpec`** — pins prepared and failed projection derivation, JSON shapes, and `transitionStatus`/`servingDecision`/`productionLifecycleComplete` values.
 
-- App-start fail-closed behavior is implicitly implemented by the eager composition pattern in `BeautySearchCatalogBackendModules.seedResourceElasticsearch`. If ES preparation fails, `unsafe.run` throws, DI graph construction fails, and no route is constructed.
-- App-start fail-closed behavior is now test-covered by `ElasticsearchAppStartServingGateSpec` (composition-level and DI-graph-level). These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
-- A runtime route gate (HTTP 503 on non-prepared state) requires a different source seam. The current DI-bound `ElasticsearchStartupReadinessTransition` is always `Prepared`; `PreparationFailed` is unreachable from the bound value.
-- The smallest candidate enforcement seam is `BeautySearchApi.serverLogic`, but enforcement is currently impossible because the transition is always `Prepared`.
-- The recommended next step was spec-only route-level tests proving app-start fail-closed and prepared-serving behavior before any enforcement code. This step is now done.
+8. **`BeautySearchProductionRouteExposureSpec`** — proves production API graph exposes the ES-backed route and roots the prepared transition.
 
-Policy gap: "fail closed until prepared" is recommended but not formally approved. App-start fail-closed is implicitly implemented; runtime route gate requires new source seam. Endpoint/path/auth/operator status policy remains unresolved.
+9. **`BeautySearchElasticsearchRouteModuleSpec`**, **`BeautySearchElasticsearchHttpRouteModuleSpec`**, **`BeautySearchElasticsearchDefaultReadyRouteSpec`** — prove lifecycle metadata, readiness state, and prepared transition are materialized through ES route graphs.
 
-## Safe implementation slices
+## Future ES lifecycle tracks
 
-Ordered and conservative:
+Remaining ES production lifecycle work moves to named future tracks. These tracks are independent of the Qdrant/hybrid roadmap milestones (M6/M7/M8) and do not overwrite those milestone meanings.
 
-1. **Source-confirm serving-gate implementation slice**: done. See `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`.
-2. **Add spec-only route-level tests**: done. `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior (composition-level and DI-graph-level) and prepared-serving behavior. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
-3. **Implement serving gate only after tests/policy are approved**: add the serving gate to route composition only after tests prove the expected behavior and policy is formally approved.
-4. **Add operator endpoint only after path/auth/status policy is approved**: implement an operator-visible status endpoint only after endpoint path, auth, and status policy are explicitly approved.
-5. **Defer replacement/freshness/rollback until their policies are designed**: these are separate design decisions that must be made independently before implementation.
+| Track | Scope | Dependencies | Current status |
+|-------|-------|-------------|----------------|
+| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; endpoint/path/auth policy approval | Not started; design-only prerequisite documented in `ES_STARTUP_SERVING_GATE_DESIGN.md` Choice 3 and `ES_LIFECYCLE_STATUS_DESIGN.md` |
+| ES runtime serving-gate track | Runtime route-gate policy/implementation: route returns approved HTTP error (e.g., 503) on non-prepared state; requires new source seam because current DI-bound transition is always `Prepared` | M5 closeout; serving-gate policy approval (Choice 1 or 2 from `ES_STARTUP_SERVING_GATE_DESIGN.md`); new source seam design | Not started; source-confirmed as requiring different seam in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` |
+| ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
+
+These tracks can proceed independently. The ES operator visibility track and ES runtime serving-gate track both require policy approval before implementation. The ES replacement/freshness/rollback track requires individual policy designs.
+
+Dashboard/operator integration and full production lifecycle verification remain downstream of these tracks.
 
 ## Non-goals
 
-This checkpoint does not imply or implement:
+This closeout does not imply or implement:
 
 - No endpoint implementation.
 - No route path approval.
-- No serving enforcement in this docs task.
+- No serving enforcement.
 - No production lifecycle completion claim.
 - No Qdrant/hybrid serving fallback.
 - No route switch.
@@ -96,11 +94,15 @@ This checkpoint does not imply or implement:
 - No reranking.
 - No `HybridServe`.
 - No Qdrant auto-supplement.
+- No runtime HTTP gate implementation.
+- No operator-visible endpoint implementation.
+- No replacement/freshness/rollback implementation.
 
 ## References
 
 - Serving-gate design: `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`
 - Lifecycle status design: `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`
+- Source confirmation: `docs/codebase-review/ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`
 - Current gaps and roadmap: `docs/codebase-review/07-current-gaps-and-roadmap.md`
 - Architecture decisions: `docs/codebase-review/ARCHITECTURE_DECISIONS_OBSERVED.md`
 - Tests and contracts: `docs/codebase-review/06-tests-and-contracts.md`

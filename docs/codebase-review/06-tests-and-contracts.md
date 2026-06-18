@@ -90,7 +90,7 @@ Checklist for future edits:
 
 ### Future tests required before ES production lifecycle completion
 
-Future/unimplemented unless matching source-backed tests are added:
+Future/unimplemented unless matching source-backed tests are added. These belong to named future ES lifecycle tracks, not to the closed M5 checkpoint:
 
 - startup readiness success/failure:
   - pure success/failure transition-shape coverage now exists in `ElasticsearchStartupReadinessTransitionSpec.scala`;
@@ -143,6 +143,24 @@ Implemented tests:
    - Lifecycle metadata and production readiness state are as expected.
    - `POST /beauty-search` returns `200 OK` with expected response shape.
    - Classification: `Contractual + Blackbox + Group` (in-process route seam).
+
+### M5 closeout justification tests
+
+The following tests justify the M5 closeout decision as a bounded startup-readiness lifecycle checkpoint:
+
+- `ElasticsearchAppStartServingGateSpec.scala`: app-start fail-closed (composition-level and DI-graph-level) and prepared-serving behavior.
+- `ElasticsearchReadinessConsistencySpec.scala`: cross-model field-level consistency across readiness state, lifecycle response, startup transition, startup status projection, and composition-derived projections.
+- `ElasticsearchSeedIndexReadinessSpec.scala`: pure `ElasticsearchProductionReadinessState.seedOnly` derivation and source-backed failure classification.
+- `ElasticsearchSeedSearchCompositionSpec.scala`: `productionReadinessState` derivation from composition lifecycle metadata and prepared startup transition exposure.
+- `ElasticsearchLifecycleStatusResponseSpec.scala`: exact state-to-response mapping, metadata-sourced document counts, exact Circe field names/current string values, and `productionLifecycleComplete = false`.
+- `ElasticsearchStartupReadinessTransitionSpec.scala`: prepared-state preservation, transition-to-status mapping, JSON equality, failure classification, and `NotEnforced` serving decision.
+- `ElasticsearchStartupReadinessStatusResponseSpec.scala`: prepared and failed projection derivation, JSON shapes, and `transitionStatus`/`servingDecision`/`productionLifecycleComplete` values.
+- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure and prepared transition rooting.
+- `BeautySearchElasticsearchRouteModuleSpec.scala`: lifecycle metadata, readiness state, and prepared transition materialization through ES route module.
+- `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: lifecycle metadata and prepared transition with real HTTP client module.
+- `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: lifecycle metadata and prepared transition through port-configured default route.
+
+These tests cover non-serving lifecycle seams only. They do not prove runtime serving-gate enforcement, operator-visible endpoint, replacement, freshness, refresh, rollback, or full production lifecycle completion.
 
 Remaining unimplemented tests (not covered by this task):
 
