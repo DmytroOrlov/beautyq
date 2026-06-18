@@ -43,6 +43,14 @@ They protect:
 - Literal route precedence: `/category/root` remains a successful category-root route.
 - Malformed UUID captures return `400 BadRequest`.
 
+Structured bad-request test-planning note:
+
+- Current contract tests pin `400 BadRequest` status for decode failures and BeautySearch semantic validation failures, and they pin that those requests do not call the fake service or Elasticsearch-backed route logic.
+- Any future structured-error implementation must update or add tests for the exact error body shape, not just status.
+- Global structured decode handler path must add/update generic Tapir support coverage and non-Beauty API contract suites, because malformed input handling would become a shared interpreter concern.
+- BeautySearch semantic-only structured path must update `BeautySearchApiHttpContractSuite` and the production route semantic characterization specs (`BeautySearchProductionRouteErrorSpec`, `BeautySearchProductionRouteLimitSpec`, `BeautySearchProductionRouteCoordinateSpec`, `BeautySearchProductionRouteQuerySpec`).
+- Non-goals remain explicit here as well: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
+
 ## Repository Tests
 
 Implemented/current:

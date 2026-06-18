@@ -185,6 +185,37 @@ Literal category routes are ordered before UUID captures, so `GET /category/root
 
 Malformed UUID captures return `400 BadRequest`.
 
+### Structured bad-request design boundary
+
+Current state, confirmed from source and route tests:
+
+- Decode failures and BeautySearch endpoint validator failures both use Tapir default `400 BadRequest`.
+- Those `400` responses are not structured domain JSON.
+- `HttpApiFailure` currently has `InternalServerError` and `NotFound`; it has no `BadRequest`.
+- `HttpApiFailureTapirSupport.errorOutput` still maps non-single-entity endpoint errors to status-only `500 InternalServerError`.
+- Structured bad-request implementation is not approved in this task. Current Tapir default behavior remains the active contract.
+
+Two implementation paths exist if structured bad-request responses are later approved:
+
+- Global/interpreter path:
+  - Add custom Tapir decode-failure and validation-failure handling at the interpreter boundary.
+  - This can affect all endpoints, including malformed JSON/body decode failures that happen before `BeautySearchApi` server logic.
+  - Cost/risk: broad cross-endpoint impact, broader contract updates, and likely reintroduction of Tapir boilerplate that was just removed from `TapirHttpSupport`.
+
+- Route/domain path:
+  - Add typed `HttpApiFailure.BadRequest` or a dedicated validation-failure model.
+  - Move BeautySearch semantic validation out of the current Tapir validator and into server logic or an explicit adapter boundary.
+  - This can produce structured JSON for semantic validation failures.
+  - Limit: malformed JSON/body decode failures would still remain Tapir defaults unless the interpreter path is also added, because decode fails before server logic runs.
+
+Decision matrix:
+
+| Option | Benefit | Cost / limit |
+|---|---|---|
+| Keep Tapir defaults | Lowest boilerplate; current source/tests already match it | No structured JSON error schema |
+| BeautySearch semantic-only structured errors | Scoped change; typed BeautySearch validation responses possible | Decode failures remain Tapir defaults |
+| Global structured decode errors | Broadest and most consistent bad-request contract | Highest boilerplate, widest risk, needs broad cross-endpoint tests |
+
 Future structured validation work would still need explicit decisions for:
 
 - Structured error JSON and stable error codes/messages.
@@ -202,6 +233,7 @@ The route still lacks:
 - Observability surface (logging, metrics, tracing for bad requests).
 - Kill-switch behavior that would short-circuit the route with a structured response.
 - Qdrant/hybrid serving behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+- No route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement are part of this bad-request design boundary.
 
 ## Contract Tests
 
