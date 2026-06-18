@@ -218,6 +218,20 @@ Rationale:
 
 **Recommended exact next step:** Resolve endpoint path, auth/operator access model, and response status code policy for Design A. Then implement the endpoint with the current `Prepared`-only status. Startup failure visibility (Design B) and richer lifecycle status (Design C) remain separate future work.
 
+## Design A endpoint policy draft
+
+Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs/codebase-review/ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. The policy draft covers:
+
+- Endpoint path candidates (4 candidates) with draft recommendation (`GET /ops/beauty-search/lifecycle`)
+- Auth/exposure policy options (4 options) with draft recommendation (disabled unless explicitly enabled)
+- HTTP status code policy options (3 options) with draft recommendation (always `200 OK`)
+- Response shape candidates (3 candidates) with draft recommendation (`ElasticsearchStartupReadinessStatusResponse`)
+- Implementation prerequisites
+- Future tests required before implementation
+- Future implementation seams (source-confirmed, not approved)
+
+All draft recommendations remain unapproved. No endpoint is implemented. No route path is approved.
+
 ## Non-goals
 
 This source confirmation does not:

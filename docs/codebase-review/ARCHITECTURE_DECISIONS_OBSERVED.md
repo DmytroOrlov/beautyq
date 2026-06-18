@@ -255,6 +255,14 @@ Operator visibility source-confirmed facts (see `ES_OPERATOR_VISIBILITY_SOURCE_C
 - The likely future endpoint seam follows existing Tapir/http4s patterns.
 - Policy decisions required: endpoint path, auth/operator access model, response status code policy.
 
+Design A endpoint policy drafted (see `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`):
+
+- Draft recommends `GET /ops/beauty-search/lifecycle` as endpoint path.
+- Draft recommends disabled-by-default auth policy.
+- Draft recommends `200 OK` for successful retrieval with lifecycle status in body.
+- Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) as response shape.
+- All draft recommendations remain unapproved.
+
 Consequences:
 
 - The serving-gate design is documented but not enforced.

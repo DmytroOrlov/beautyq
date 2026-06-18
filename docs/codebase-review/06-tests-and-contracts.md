@@ -122,35 +122,41 @@ Future/unimplemented unless matching source-backed tests are added. These belong
 
 ### Future operator visibility tests required before endpoint implementation
 
-Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
+Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
 
-1. **Operator status endpoint contract.**
-   - If an endpoint path is approved, the endpoint returns `200 OK` with the `ElasticsearchStartupReadinessStatusResponse` JSON body.
+1. **Endpoint returns expected prepared/seed-only status shape.**
+   - `GET` to approved path returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
    - The `Prepared` variant includes nested `ElasticsearchLifecycleStatusResponse` with all current seed-only values.
-   - The endpoint does not change `/beauty-search` serving behavior.
-   - Classification: `Contractual + Blackbox + Group` (in-process route seam, requires endpoint approval).
+   - `transitionStatus` is `"prepared"`, `servingDecision` is `"not_enforced"`, `productionLifecycleComplete` is `false`.
+   - Classification: `Contractual + Blackbox + Group` (in-process route seam).
 
-2. **Operator status fields distinguish current state.**
-   - Status fields correctly distinguish seed-only, `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, and `NotExposed` values.
-   - `productionLifecycleComplete` is `false`.
-   - Classification: `Contractual + Blackbox + Atomic` (pure field assertion).
+2. **Endpoint is rooted only in intended ES route graph/module.**
+   - The endpoint is materialized through the ES seed route graph, not through `seedCatalogInMemory` or other unrelated modules.
+   - Classification: `Contractual + Blackbox + Group` (in-process DI seam).
 
-3. **Prepared-serving tests remain green.**
-   - `/beauty-search` serving tests and behavior remain unaffected by the separate status surface.
+3. **Endpoint does not alter `POST /beauty-search`.**
+   - Existing `POST /beauty-search` behavior is unchanged.
+   - The operator endpoint is additive and does not affect product serving.
    - Classification: `Contractual + Blackbox + Group` (existing route seam).
 
-4. **Startup failure visibility (Design B, if approved).**
-   - If Design B is approved, startup failure state is captured at bootstrap and exposed through the endpoint.
-   - The `PreparationFailed` variant includes `operationName` and `message`.
-   - No lifecycle metadata or nested `lifecycleStatus` field in failed projections.
-   - Classification: `Contractual + Effectual + Group` (bootstrap seam, requires Design B approval).
-
-5. **No accidental Qdrant/hybrid fallback from status endpoint.**
-   - The status endpoint does not trigger Qdrant, hybrid, or fallback behavior.
+4. **Endpoint introduces no extra Elasticsearch calls.**
+   - The endpoint reads from DI-bound models only.
+   - No new ES calls are triggered by the endpoint.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
 
-6. **No extra Elasticsearch calls from status endpoint.**
-   - The status endpoint does not introduce new ES calls.
+5. **Endpoint is internal/operator-only according to policy.**
+   - The endpoint respects the approved auth/exposure policy.
+   - If disabled-by-default, the endpoint is not served when not enabled.
+   - Classification: `Contractual + Blackbox + Atomic` (policy assertion).
+
+6. **No startup failure status is exposed in Design A.**
+   - The endpoint always returns `Prepared` variant.
+   - No `PreparationFailed` variant is reachable from the DI-bound transition.
+   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
+
+7. **No replacement/freshness/rollback fields claim implemented behavior.**
+   - All gap fields (`replacement`, `freshness`, `refresh`, `rollback`, `operatorVisibility`) return their current seed-only values.
+   - `productionLifecycleComplete` is `false`.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
 
 ### Serving-gate tests (app-start fail-closed and prepared-serving)

@@ -310,3 +310,14 @@ Policy decisions required before endpoint implementation:
 - Whether startup failure is visible when graph construction fails
 - Whether status should be served from app-start captured state, runtime state, or static DI-bound prepared state
 - Whether failed startup status requires a separate application bootstrap state outside successful route construction
+
+## Design A endpoint policy draft
+
+Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs/codebase-review/ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Draft recommendations:
+
+- Endpoint path: `GET /ops/beauty-search/lifecycle`
+- Auth: disabled unless explicitly enabled
+- HTTP status: always `200 OK` for successful retrieval
+- Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`
+
+All draft recommendations remain unapproved. Endpoint exposure and operator policy remain unimplemented.
