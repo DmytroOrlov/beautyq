@@ -75,12 +75,12 @@
 - The docs state some current search coverage numbers and user-verified green statuses; this pass did not rerun those tests, so those claims are recorded as existing documentation, not independently verified.
 - The term `Salon` was requested, but inspected model files show `MasterLocation` and provider/location-oriented search projections rather than a first-class `Salon` model. Pass 2 should confirm whether salon is represented implicitly by `MasterLocation`, `Master`, or another concept.
 - Availability/scheduling was requested, but no obvious availability/schedule domain model was found in the inspected paths. Pass 2 should run deeper searches for appointment/calendar/time-slot terms if this matters.
-- Some docs such as `http-master-service-offer-variant-typed-get-plan.md` describe a historical/current state that may have been superseded by code and `http-legacy-json-contracts.md`; pass 2 should reconcile doc drift.
+- Some older docs described historical HTTP migration states that were later superseded by code and canonical codebase-review docs; pass 2 should reconcile doc drift.
 
 ## Possible inconsistencies discovered
 
 - `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md` says the currently migrated slices are `LadderApi`, `MasterApi`, and `ProfileApi`, but inspected source contains Tapir endpoint files for `Category`, `Service`, `MasterLocation`, `MasterServiceOffer`, and `MasterServiceOfferVariant` as well under `bifunctor-tagless/src/main/scala/leaderboard/http/tapir`.
-- `docs/http-master-service-offer-variant-typed-get-plan.md` says `MasterServiceOfferVariantApi` is the last remaining Beauty legacy single-entity GET endpoint, while `docs/http-legacy-json-contracts.md` says no Beauty single-entity GET endpoints remain on the legacy path and names `MasterServiceOfferVariantApi` as migrated on June 4, 2026.
+- Historical HTTP migration notes conflicted with current code: `MasterServiceOfferVariantApi` is on the typed single-entity GET path, while `ProfileApi` remains the intentional legacy `200 + null` exception outside the Beauty migration inventory.
 - `README.md` still describes this as the generic `distage-example`; BeautyQ-specific source/docs are present under `bifunctor-tagless` and `docs`.
 
 ## Next-pass recommendations
@@ -102,7 +102,7 @@
 ## Pass 2 commands run
 
 - `sed -n '1,220p' docs/codebase-review/INVENTORY.md && sed -n '1,180p' docs/codebase-review/REVIEW_NOTES.md`
-- `for f in beautyq_search_eval_plan_v1.md docs/beautyq-search-dsl-v1.md docs/search-dsl-domain-onboarding.md docs/search-dsl-qdrant-vector-backend.md docs/search-dsl-hybrid-v1-plan.md docs/http-legacy-json-contracts.md docs/http-master-service-offer-variant-typed-get-plan.md docs/LOCAL_LLM_DISTAGE_APP_MODEL.md docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md; do echo '###' $f; sed -n '1,140p' $f; done`
+- `for f in beautyq_search_eval_plan_v1.md docs/beautyq-search-dsl-v1.md docs/search-dsl-domain-onboarding.md docs/search-dsl-qdrant-vector-backend.md docs/search-dsl-hybrid-v1-plan.md docs/LOCAL_LLM_DISTAGE_APP_MODEL.md docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md; do echo '###' $f; sed -n '1,140p' $f; done`
 - `rg -n "BeautySearchService|BeautySearchBackend|UserSearchInput|BeautySearchResponse" bifunctor-tagless/src/main/scala bifunctor-tagless/src/test/scala`
 - `rg -n "search\(|BeautySearch|SearchApi|SearchRoute|Tapir.*Search|/search" bifunctor-tagless/src/main/scala bifunctor-tagless/src/test/scala`
 - `rg -n "make\[.*BeautySearch|BeautySearchService\.Impl|BeautySearchBackend|Elasticsearch|Qdrant|ExperimentalBeautySearchService|NonProductionHybrid|NonProductionExperiment" bifunctor-tagless/src/main/scala/leaderboard/plugins bifunctor-tagless/src/main/scala/leaderboard/LeaderboardRole.scala bifunctor-tagless/src/main/resources -S`
@@ -125,7 +125,7 @@
 ## Files inspected in pass 2
 
 - Pass-1 docs: `docs/codebase-review/INVENTORY.md`, `docs/codebase-review/REVIEW_NOTES.md`.
-- Existing docs: `beautyq_search_eval_plan_v1.md`, `docs/beautyq-search-dsl-v1.md`, `docs/search-dsl-domain-onboarding.md`, `docs/search-dsl-qdrant-vector-backend.md`, `docs/search-dsl-hybrid-v1-plan.md`, `docs/http-legacy-json-contracts.md`, `docs/http-master-service-offer-variant-typed-get-plan.md`, `docs/LOCAL_LLM_DISTAGE_APP_MODEL.md`, `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`.
+- Existing docs at that time included `beautyq_search_eval_plan_v1.md`, `docs/beautyq-search-dsl-v1.md`, `docs/search-dsl-domain-onboarding.md`, `docs/search-dsl-qdrant-vector-backend.md`, `docs/search-dsl-hybrid-v1-plan.md`, `docs/LOCAL_LLM_DISTAGE_APP_MODEL.md`, and `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`, along with since-removed HTTP migration notes.
 - Search source: `BeautySearchModels.scala`, `ExperimentalBeautySearchService.scala`, `ExperimentalHybridSearchBackend.scala`, `QdrantNonProductionHybridExperiment.scala`, `ElasticsearchSearchResponseInterpreter.scala`, `LexicalDocumentBackend.scala`, `VariantSearchDocument.scala`.
 - Search tests: `BeautySearchPureSpec.scala` by targeted search, `ElasticsearchSearchResponseInterpreterSpec.scala`, `BeautySearchElasticsearchIntegrationSpec.scala`, `QdrantDockerSmokeSpec.scala`, and env-gated Qdrant/Llama/benchmark specs by targeted search.
 - Wiring source: `LeaderboardPlugin.scala`, `LeaderboardRole.scala`, `ElasticsearchDockerPlugin.scala`, `QdrantDockerPlugin.scala` by targeted search.
@@ -171,7 +171,7 @@
 ## Suspected stale docs
 
 - `docs/LOCAL_LLM_TAPIR_HTTP_REFERENCE.md`: stale current migrated slice list; source has more Tapir endpoint slices.
-- `docs/http-master-service-offer-variant-typed-get-plan.md`: appears historical/stale relative to `docs/http-legacy-json-contracts.md` and current source/tests.
+- Historical HTTP migration notes appeared stale relative to current source/tests and were later removed after canonical docs absorbed the remaining current truth.
 - `README.md`: still describes the generic upstream distage-example rather than BeautyQ-specific architecture.
 
 ## Unsupported claims removed or qualified

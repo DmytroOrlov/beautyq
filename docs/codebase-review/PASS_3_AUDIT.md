@@ -83,7 +83,7 @@ Source/test areas inspected:
 ## Remaining uncertainties
 
 - Production search exposure remains best stated as “not found in inspected source” rather than “impossible,” because this audit did not prove absence outside the inspected source/docs/test paths.
-- Documentation around old Tapir migration plans remains stale relative to current source and `docs/http-legacy-json-contracts.md`; the docs now flag this drift, but a dedicated cleanup pass could retire or rewrite stale plans.
+- Documentation around old Tapir migration plans has been retired or absorbed into canonical docs; the remaining legacy JSON boundary (`LegacyJsonResponse.optionalAsJson`, `ProfileApi` as the intentional non-Beauty exception) and the route-level proof (`LegacySingleEntityGetHttpContractSuite`) are now carried in `docs/codebase-review/04-api-and-http-contracts.md` and `docs/codebase-review/06-tests-and-contracts.md`.
 - The exact complete set of expensive Docker-backed tests was not exhaustively executed; test-gate classification is based on source inspection.
 - The absence of first-class availability/scheduling is based on targeted searches and source inspection, not an exhaustive semantic model proof.
 - `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` seed readiness mismatch was documented in pass 3 as a rule mismatch, not a proven runtime failure. The code now resolves that mismatch by adding a direct `BeautyQSeedReady` constructor edge for the seed-scoped repository snapshot loader.

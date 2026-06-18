@@ -53,19 +53,21 @@ Implemented/current:
 - `HttpApiFailureTapirSupport.scala` provides Tapir failure output support.
 - `LegacyJsonResponse.scala` centralizes optional-as-JSON compatibility behavior.
 - API adapters interpret their server endpoints directly with the default `Http4sServerInterpreter` options.
+- `leaderboard.http.tapir.LegacyJsonResponse.optionalAsJson` is still used by `ProfileApi` to encode `Option[RankedProfile]` as entity JSON or `Json.Null`.
 
 ## Single-Entity GET Contracts
 
 Implemented/current based on docs and source searches:
 
-- `docs/http-legacy-json-contracts.md` says no Beauty single-entity GET endpoints remain on the legacy `200 OK` plus JSON `null` path.
 - It lists `MasterApi`, `CategoryApi`, `ServiceApi`, `MasterLocationApi`, `MasterServiceOfferApi`, and `MasterServiceOfferVariantApi` as migrated to typed entity JSON with `404` typed error JSON for missing entity.
 - Source searches found `HttpApiFailure.NotFound.*` usage in Beauty API adapters.
 
-Stale-doc warning:
+Current canonical rule:
 
-- `docs/http-master-service-offer-variant-typed-get-plan.md` says `MasterServiceOfferVariantApi` is the last remaining Beauty legacy single-entity GET endpoint and still uses raw `Json` with `200 + null` missing-entity behavior.
-- That appears stale relative to `docs/http-legacy-json-contracts.md` and current source/tests. Treat it as historical migration plan, not current architecture, unless a future line-level audit proves otherwise.
+- Beauty typed single-entity GET migration is complete for `CategoryApi`, `ServiceApi`, `MasterApi`, `MasterLocationApi`, `MasterServiceOfferApi`, and `MasterServiceOfferVariantApi`.
+- Current contract truth lives in the route-level HTTP contract suites plus this document.
+- `ProfileApi` is the remaining intentional exception: it is a rank/read-model endpoint, not a Beauty domain typed single-entity migration candidate, and it still returns legacy `200 OK` plus JSON `null` for a missing profile.
+- The current legacy boundary is narrow and source-backed: `ProfileApi` uses `LegacyJsonResponse.optionalAsJson`, while Beauty single-entity GET endpoints use typed Tapir success outputs plus typed `404` error outputs.
 
 ## Beauty Search HTTP Route
 

@@ -405,23 +405,14 @@ Recommendation:
 
 - Update the Tapir reference in a later docs-maintenance pass after confirming all current endpoint contracts.
 
-### MasterServiceOfferVariant Typed GET Plan
-
-Drift:
-
-- `docs/http-master-service-offer-variant-typed-get-plan.md` describes `MasterServiceOfferVariantApi` as still legacy.
-- `docs/http-legacy-json-contracts.md` says no Beauty single-entity GET endpoints remain legacy and identifies `MasterServiceOfferVariantApi` as migrated.
-
-Recommendation:
-
-- Mark `http-master-service-offer-variant-typed-get-plan.md` as historical or replace it with a migration-completed note in a later docs-maintenance pass.
-
 ### Incremental docs pruning
 
 Status:
 
 - Docs pruning is now tracked incrementally in `docs/codebase-review/INVENTORY.md` under `Docs pruning candidates`.
 - No broad deletion is approved from this roadmap note alone.
+- First limited pruning action is complete: the historical MasterServiceOfferVariant typed-GET plan file was removed after canonical references were replaced and current typed-GET truth was confirmed in contract suites plus `04-api-and-http-contracts.md`.
+- Second limited cleanup step is complete: the former legacy JSON single-entity GET note was absorbed into canonical HTTP/test docs and then removed after the remaining `ProfileApi` / `LegacyJsonResponse` boundary was documented there.
 
 Current rule:
 

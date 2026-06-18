@@ -45,6 +45,8 @@ They protect:
 - Success response JSON.
 - Missing-entity behavior.
 - Error/exception behavior.
+- Beauty typed single-entity GET completion: `CategoryApi`, `ServiceApi`, `MasterApi`, `MasterLocationApi`, `MasterServiceOfferApi`, and `MasterServiceOfferVariantApi` return typed entity JSON for present entities and typed `404` JSON for missing entities, while `LegacySingleEntityGetHttpContractSuite.scala` separately pins the remaining legacy `ProfileApi` `200 + null` path.
+- The remaining legacy helper boundary: `ProfileApiHttpContractSuite.scala` plus `LegacySingleEntityGetHttpContractSuite.scala` prove that `ProfileApi` still uses `LegacyJsonResponse.optionalAsJson` semantics for existing and missing profile GETs.
 - Tapir/http4s default decode behavior: malformed JSON, empty bodies, missing required fields, invalid field types, and malformed path captures return `400 BadRequest` before repository/service logic.
 - BeautySearch semantic validation behavior: blank query, invalid limit bounds, and out-of-range optional coordinates return structured JSON `400 BadRequest` before service/Elasticsearch logic.
 - The named public request contract requires non-blank query text; limit range `1..BeautySearchRequestContract.MaxLimit` (`MinLimit` is `1`); latitude range `BeautySearchRequestContract.MinLatitude..BeautySearchRequestContract.MaxLatitude`; and longitude range `BeautySearchRequestContract.MinLongitude..BeautySearchRequestContract.MaxLongitude`. Coordinates are independently optional, and there is no maximum query-length rule.
