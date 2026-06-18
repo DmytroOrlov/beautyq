@@ -53,8 +53,10 @@ Current lifecycle meaning:
 - the route is serving today;
 - the lifecycle state is still seed-only and non-serving;
 - prepared `ElasticsearchStartupReadinessTransition` values derive the same non-serving status response as `ElasticsearchLifecycleStatusResponse.from(state)`;
+- successful ES seed compositions now expose a prepared startup transition through `ElasticsearchSeedSearchComposition.startupReadinessTransition`, and it is bound through DI via `BeautySearchCatalogBackendModules.seedResourceElasticsearch`;
+- source-backed preparation failures remain classifiable into `PreparationFailed` in pure tests without changing initializer behavior;
 - failed transitions retain source-backed `QueryFailure.OperationFailure` data but expose no lifecycle metadata or lifecycle status response;
-- the transition is not wired into composition and its serving decision remains `NotEnforced`;
+- the binding remains non-serving and its serving decision stays `NotEnforced`;
 - startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and operator-visible status are not implemented.
 
 ## Implemented non-serving JSON response shape

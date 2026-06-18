@@ -14,6 +14,7 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
         assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
         assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
         assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
+        assertPreparedStartupTransition(probe.startupTransition)
 
         val response = runIO(
           observeRoute(
@@ -32,6 +33,7 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
 
         assert(probe.allHttpApis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
         assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
+        assertPreparedStartupTransition(probe.startupTransition)
 
         val response = runIO(
           observeRoute(

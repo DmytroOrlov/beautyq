@@ -16,6 +16,9 @@ final case class ElasticsearchSeedSearchComposition(
 
   def productionReadinessState: ElasticsearchProductionReadinessState =
     ElasticsearchProductionReadinessState.seedOnly(lifecycleMetadata)
+
+  def startupReadinessTransition: ElasticsearchStartupReadinessTransition =
+    ElasticsearchStartupReadinessTransition.prepared(productionReadinessState)
 }
 
 object ElasticsearchSeedSearchComposition {

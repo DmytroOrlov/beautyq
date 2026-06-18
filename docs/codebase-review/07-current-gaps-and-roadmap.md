@@ -47,7 +47,7 @@ Reached checkpoint (ES seed route, default):
 - `BeautySearchElasticsearchRouteModuleSpec` proves the hidden ES route module can serve `POST /beauty-search` with a scripted ES client; zero-hit ES responses can still carry non-empty facets/inferred filters from catalog/spec/intent metadata.
 - Focused ES route/module graph specs prove the bound `ElasticsearchSeedLifecycleMetadata` and derived `ElasticsearchProductionReadinessState` are available. The state explicitly records `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
 - `ElasticsearchLifecycleStatusResponse` now provides a pure non-serving projection and Circe encoder for those current values. It is not bound into DI or exposed through a route.
-- `ElasticsearchStartupReadinessTransition` now represents pure startup preparation success and source-backed `OperationFailure` failure shape. Prepared transitions derive the current non-serving status response; failed transitions expose no lifecycle metadata or status response. Both outcomes record serving decision `NotEnforced`; the model is not wired into composition and does not enforce readiness.
+- `ElasticsearchStartupReadinessTransition` now represents pure startup preparation success and source-backed `OperationFailure` failure shape. Prepared transitions derive the current non-serving status response; failed transitions expose no lifecycle metadata or status response. Both outcomes record serving decision `NotEnforced`; the model is now bound through DI from composition but remains non-serving and does not enforce readiness.
 - Full verification after default switch.
 
 Evidence:
@@ -239,7 +239,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Design gate documented / active; lifecycle status shape plus non-serving model/encoder exist, while exposure policy remains undesigned |
-| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, and route-graph state coverage; production lifecycle incomplete |
+| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, route-graph state coverage, and non-serving startup transition DI integration through ES seed route graphs; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
@@ -302,7 +302,7 @@ M5 remains incomplete. Remaining work is the production lifecycle contract plus 
 
 The current `ElasticsearchProductionReadinessState` does not implement these items. It records that readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is limited to eager seed preparation, and operator visibility is not exposed.
 
-`ElasticsearchStartupReadinessTransition` records current preparation success/failure shape and `NotEnforced` serving decision only. It does not decide whether serving blocks, degrades, or fails fast and is not wired into startup composition.
+`ElasticsearchStartupReadinessTransition` records current preparation success/failure shape and `NotEnforced` serving decision only. It does not decide whether serving blocks, degrades, or fails fast. Successful compositions now expose a prepared transition through `ElasticsearchSeedSearchComposition.startupReadinessTransition` and it is bound through DI via `BeautySearchCatalogBackendModules.seedResourceElasticsearch`, but the binding remains non-serving and does not gate startup or route behavior.
 
 The documented status shape now has a pure non-serving model/encoder. That is not endpoint exposure, not HTTP policy approval, and not lifecycle completion.
 

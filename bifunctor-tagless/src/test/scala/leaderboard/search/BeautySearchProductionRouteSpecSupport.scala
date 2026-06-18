@@ -25,6 +25,8 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchSeedLifecycleMetadata,
   ElasticsearchSeedLifecycleStatus,
   ElasticsearchSeedPreparationMode,
+  ElasticsearchStartupReadinessTransition,
+  ElasticsearchStartupServingDecision,
 }
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
@@ -43,6 +45,7 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     allHttpApis: Set[HttpApi[IO]],
     lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
     productionReadinessState: ElasticsearchProductionReadinessState,
+    startupTransition: ElasticsearchStartupReadinessTransition,
   )
 
   protected final def withZeroHitEsServer(f: Int => Unit): Unit = {
@@ -80,8 +83,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
           allHttpApis: Set[HttpApi[IO]],
           lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
           productionReadinessState: ElasticsearchProductionReadinessState,
+          startupTransition: ElasticsearchStartupReadinessTransition,
         ) =>
-          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata, productionReadinessState)
+          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata, productionReadinessState, startupTransition)
       }
     }
 
@@ -107,8 +111,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
           allHttpApis: Set[HttpApi[IO]],
           lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
           productionReadinessState: ElasticsearchProductionReadinessState,
+          startupTransition: ElasticsearchStartupReadinessTransition,
         ) =>
-          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata, productionReadinessState)
+          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata, productionReadinessState, startupTransition)
       }
     }
 
@@ -169,6 +174,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
 
   protected final def assertSeedOnlyProductionReadinessState(state: ElasticsearchProductionReadinessState): Unit =
     BeautySearchProductionRouteSpecSupport.assertSeedOnlyProductionReadinessState(state)
+
+  protected final def assertPreparedStartupTransition(transition: ElasticsearchStartupReadinessTransition): Unit =
+    BeautySearchProductionRouteSpecSupport.assertPreparedStartupTransition(transition)
 
   protected final def assertDefaultBadRequest(response: ObservedResponse): Unit = {
     assert(
@@ -242,6 +250,21 @@ private[search] object BeautySearchProductionRouteSpecSupport {
     assert(state.refresh == ElasticsearchRefreshReadiness.EagerSeedPreparationOnly)
     assert(state.rollback == ElasticsearchRollbackReadiness.NotConfigured)
     assert(state.operatorVisibility == ElasticsearchOperatorVisibility.NotExposed)
+    (): Unit
+  }
+
+  def assertPreparedStartupTransition(transition: ElasticsearchStartupReadinessTransition): Unit = {
+    transition match {
+      case prepared: ElasticsearchStartupReadinessTransition.Prepared =>
+        assert(prepared.servingDecision == ElasticsearchStartupServingDecision.NotEnforced)
+        assert(prepared.lifecycleMetadata.isDefined)
+        assert(prepared.lifecycleStatusResponse.isDefined)
+        prepared.lifecycleStatusResponse.foreach { response =>
+          assert(response.productionLifecycleComplete == false)
+        }
+      case other =>
+        fail(s"Expected Prepared startup transition, got $other")
+    }
     (): Unit
   }
 }

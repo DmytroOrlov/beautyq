@@ -11,6 +11,7 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchSeedIndexReadiness,
   ElasticsearchSeedLifecycleMetadata,
   ElasticsearchSeedSearchComposition,
+  ElasticsearchStartupReadinessTransition,
 }
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -71,6 +72,10 @@ object BeautySearchCatalogBackendModules {
 
     make[ElasticsearchProductionReadinessState].from {
       (composition: ElasticsearchSeedSearchComposition) => composition.productionReadinessState
+    }
+
+    make[ElasticsearchStartupReadinessTransition].from {
+      (composition: ElasticsearchSeedSearchComposition) => composition.startupReadinessTransition
     }
 
     make[BeautySearchBackend[IO]].from {

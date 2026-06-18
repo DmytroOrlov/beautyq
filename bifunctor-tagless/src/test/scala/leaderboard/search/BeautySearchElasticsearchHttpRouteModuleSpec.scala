@@ -13,7 +13,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.plugins.{BeautySearchRouteModules, ElasticsearchClientModules}
-import leaderboard.search.elasticsearch.{ElasticsearchProductionReadinessState, ElasticsearchSeedLifecycleMetadata}
+import leaderboard.search.elasticsearch.{ElasticsearchProductionReadinessState, ElasticsearchSeedLifecycleMetadata, ElasticsearchStartupReadinessTransition}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -60,6 +60,7 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
         assert(apis.collect { case _: BeautySearchApi[IO] => () }.size == 1)
         BeautySearchProductionRouteSpecSupport.assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
         BeautySearchProductionRouteSpecSupport.assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
+        BeautySearchProductionRouteSpecSupport.assertPreparedStartupTransition(probe.startupTransition)
 
         val response = runIO(
           observeRoute(apis, postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":3}"""))
@@ -98,12 +99,14 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
           allHttpApis: Set[HttpApi[IO]],
           lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
           productionReadinessState: ElasticsearchProductionReadinessState,
+          startupTransition: ElasticsearchStartupReadinessTransition,
         ) =>
           BeautySearchElasticsearchHttpRouteProbe(
             beautySearchApi,
             allHttpApis,
             lifecycleMetadata,
             productionReadinessState,
+            startupTransition,
           )
       }
     }
@@ -139,6 +142,7 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
     allHttpApis: Set[HttpApi[IO]],
     lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
     productionReadinessState: ElasticsearchProductionReadinessState,
+    startupTransition: ElasticsearchStartupReadinessTransition,
   )
 
   private final case class RecordedEsRequest(

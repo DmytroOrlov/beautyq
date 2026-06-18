@@ -20,6 +20,8 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchSeedSearchComposition,
   ElasticsearchSeedLifecycleStatus,
   ElasticsearchSeedPreparationMode,
+  ElasticsearchStartupReadinessTransition,
+  ElasticsearchStartupServingDecision,
 }
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
@@ -229,6 +231,107 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
         case other =>
           fail(s"Expected OperationFailure(elasticsearch-json-client, refresh failed), got $other")
       }
+    }
+  }
+
+  "ElasticsearchStartupReadinessTransition.preparationFailed from initializer failures" should {
+    "classify blank source failure into PreparationFailed" in {
+      val blankSourceReady = BeautySearchReadyCatalogDocuments(source = "   ", documents = subset)
+      val client = new ScriptedElasticsearchJsonClient(
+        putJsonFn = (_, _) => ZIO.dieMessage("unexpected putJson"),
+        postFn = (_) => ZIO.dieMessage("unexpected post"),
+        postNdjsonFn = (_, _) => ZIO.dieMessage("unexpected postNdjson"),
+      )
+      val initializer = new ElasticsearchSeedIndexInitializer(spec, client)
+      val initializerResult = runEither(initializer.prepare(blankSourceReady))
+
+      initializerResult match {
+        case Left(failure: QueryFailure.OperationFailure) =>
+          ElasticsearchStartupReadinessTransition.preparationFailed(failure) match {
+            case Right(transition) =>
+              assert(transition.operationName == "elasticsearch-seed-index-readiness")
+              assert(transition.message.contains("source is empty"))
+              assert(transition.servingDecision == ElasticsearchStartupServingDecision.NotEnforced)
+              assert(transition.lifecycleMetadata.isEmpty)
+              assert(transition.lifecycleStatusResponse.isEmpty)
+            case Left(unsupported) =>
+              fail(s"Expected supported OperationFailure, got $unsupported")
+          }
+        case other =>
+          fail(s"Expected OperationFailure from initializer, got $other")
+      }
+    }
+
+    "classify empty documents failure into PreparationFailed" in {
+      val emptyReady = BeautySearchReadyCatalogDocuments(source = "seed-resource-loader", documents = Nil)
+      val client = new ScriptedElasticsearchJsonClient(
+        putJsonFn = (_, _) => ZIO.dieMessage("unexpected putJson"),
+        postFn = (_) => ZIO.dieMessage("unexpected post"),
+        postNdjsonFn = (_, _) => ZIO.dieMessage("unexpected postNdjson"),
+      )
+      val initializer = new ElasticsearchSeedIndexInitializer(spec, client)
+      val initializerResult = runEither(initializer.prepare(emptyReady))
+
+      initializerResult match {
+        case Left(failure: QueryFailure.OperationFailure) =>
+          ElasticsearchStartupReadinessTransition.preparationFailed(failure) match {
+            case Right(transition) =>
+              assert(transition.operationName == "elasticsearch-seed-index-readiness")
+              assert(transition.message.contains("documents are empty"))
+              assert(transition.servingDecision == ElasticsearchStartupServingDecision.NotEnforced)
+              assert(transition.lifecycleMetadata.isEmpty)
+              assert(transition.lifecycleStatusResponse.isEmpty)
+            case Left(unsupported) =>
+              fail(s"Expected supported OperationFailure, got $unsupported")
+          }
+        case other =>
+          fail(s"Expected OperationFailure from initializer, got $other")
+      }
+    }
+
+    "classify Elasticsearch client failure into PreparationFailed" in {
+      val client = new ScriptedElasticsearchJsonClient(
+        putJsonFn = (_, _) => ZIO.succeed(Json.obj()),
+        postFn = (_) => ZIO.fail(ElasticsearchJsonClient.failure("refresh failed")),
+        postNdjsonFn = (_, _) => ZIO.succeed(Json.obj()),
+      )
+      val initializer = new ElasticsearchSeedIndexInitializer(spec, client)
+      val initializerResult = runEither(initializer.prepare(ready))
+
+      initializerResult match {
+        case Left(failure: QueryFailure.OperationFailure) =>
+          ElasticsearchStartupReadinessTransition.preparationFailed(failure) match {
+            case Right(transition) =>
+              assert(transition.operationName == "elasticsearch-json-client")
+              assert(transition.message == "refresh failed")
+              assert(transition.servingDecision == ElasticsearchStartupServingDecision.NotEnforced)
+              assert(transition.lifecycleMetadata.isEmpty)
+              assert(transition.lifecycleStatusResponse.isEmpty)
+            case Left(unsupported) =>
+              fail(s"Expected supported OperationFailure, got $unsupported")
+          }
+        case other =>
+          fail(s"Expected OperationFailure from initializer, got $other")
+      }
+    }
+
+    "leave non-OperationFailure QueryFailure cases as unsupported" in {
+      val domainFailure = QueryFailure.domain("unsupported readiness failure")
+      val executionFailure = QueryFailure.fromThrowable(
+        queryName = "seed-index-preparation",
+        cause = new RuntimeException("client failed"),
+      )
+
+      assert(
+        ElasticsearchStartupReadinessTransition.preparationFailed(domainFailure) == Left(
+          ElasticsearchStartupReadinessTransition.UnsupportedFailure(domainFailure)
+        )
+      )
+      assert(
+        ElasticsearchStartupReadinessTransition.preparationFailed(executionFailure) == Left(
+          ElasticsearchStartupReadinessTransition.UnsupportedFailure(executionFailure)
+        )
+      )
     }
   }
 }

@@ -160,8 +160,11 @@ Architecture note:
 - `ElasticsearchSeedSearchComposition.productionReadinessState` exposes that derived value, and `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds it through the same ES seed route graphs.
 - `ElasticsearchLifecycleStatusResponse.from` projects that state into the planned pure response fields, with local Circe encoding and `productionLifecycleComplete = false`. The response model is not DI-bound or HTTP-exposed.
 - `ElasticsearchStartupReadinessTransition` is a pure, non-serving model for current startup preparation outcomes. `Prepared` preserves `ElasticsearchProductionReadinessState` and derives its lifecycle status response; `PreparationFailed` preserves source-backed `QueryFailure.OperationFailure` operation/message data without lifecycle metadata or a status response. Both record `ElasticsearchStartupServingDecision.NotEnforced`.
-- The transition model is not wired into `ElasticsearchSeedSearchComposition.build`, does not enforce startup readiness, and does not change initializer, composition, route, or serving behavior.
-- Focused route/module specs prove that both values are materialized through the targeted ES seed route, explicit ES seed route module, real HTTP-client ES route, port-configured default route, and production API graph.
+- `ElasticsearchSeedSearchComposition.startupReadinessTransition` exposes a prepared transition derived from the composition's production readiness state. This does not change how the composition is built and does not catch or change preparation failures.
+- `BeautySearchCatalogBackendModules.seedResourceElasticsearch` binds `ElasticsearchStartupReadinessTransition` from the composition through the ES seed route graphs. The binding is non-serving and does not gate serving.
+- Source-backed initializer failure paths (blank source, empty documents, ES client failure) are classifiable into `PreparationFailed` through pure `ElasticsearchStartupReadinessTransition.preparationFailed(...)` without changing initializer behavior.
+- The transition model is now wired into `ElasticsearchSeedSearchComposition` and bound through DI, but it does not enforce startup readiness and does not change initializer, composition, route, or serving behavior.
+- Focused route/module specs prove that both values are materialized through the targeted ES seed route, explicit ES seed route module, real HTTP-client ES route, port-configured default route, and production API graph. The same specs now also root the prepared `ElasticsearchStartupReadinessTransition` bound through DI.
 - This state is seed-only, internal, and non-serving; it documents absent production lifecycle capabilities without completing or enforcing them.
 - The lifecycle status response shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. Only its non-serving model/encoder is implemented: no endpoint is implemented, no route path is approved, and no serving behavior changes.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
@@ -174,6 +177,9 @@ Current route/module metadata coverage proves only:
 - current production-readiness gaps are available through DI via `ElasticsearchProductionReadinessState`;
 - the pure non-serving response can be derived from that state without DI or HTTP wiring;
 - pure startup preparation success/failure shape can be represented without DI, effects, or serving enforcement;
+- successful ES seed compositions expose a prepared startup transition derived from the readiness state;
+- source-backed preparation failures are classifiable into `PreparationFailed` in pure tests without changing initializer behavior;
+- no serving enforcement exists for startup readiness;
 - eager seed preparation is wired through `ElasticsearchSeedIndexReadiness` / `ElasticsearchSeedSearchComposition`;
 - lifecycle status is explicitly `SeedOnlyNotProductionLifecycle`;
 - serving readiness is not enforced, replacement and rollback are not configured, freshness is not tracked, refresh is eager seed preparation only, and operator visibility is not exposed;

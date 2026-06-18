@@ -7,12 +7,16 @@ import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{
   ElasticsearchFreshnessReadiness,
   ElasticsearchJsonClient,
+  ElasticsearchLifecycleStatusResponse,
   ElasticsearchOperatorVisibility,
+  ElasticsearchProductionReadinessState,
   ElasticsearchRefreshReadiness,
   ElasticsearchReplacementReadiness,
   ElasticsearchRollbackReadiness,
   ElasticsearchSeedSearchComposition,
   ElasticsearchServingReadiness,
+  ElasticsearchStartupReadinessTransition,
+  ElasticsearchStartupServingDecision,
 }
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
@@ -98,6 +102,23 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
       assert(state.refresh == ElasticsearchRefreshReadiness.EagerSeedPreparationOnly)
       assert(state.rollback == ElasticsearchRollbackReadiness.NotConfigured)
       assert(state.operatorVisibility == ElasticsearchOperatorVisibility.NotExposed)
+    }
+
+    "expose a prepared startup transition that preserves the readiness state" in {
+      val composition = run(ElasticsearchSeedSearchComposition.build(spec, succeedingClient, ready))
+      val transition = composition.startupReadinessTransition
+
+      transition match {
+        case prepared: ElasticsearchStartupReadinessTransition.Prepared =>
+          assert(prepared.state == composition.productionReadinessState)
+          assert(prepared.servingDecision == ElasticsearchStartupServingDecision.NotEnforced)
+          assert(prepared.lifecycleMetadata.contains(composition.lifecycleMetadata))
+          val expectedResponse = ElasticsearchLifecycleStatusResponse.from(composition.productionReadinessState)
+          assert(prepared.lifecycleStatusResponse.contains(expectedResponse))
+          assert(expectedResponse.productionLifecycleComplete == false)
+        case other =>
+          fail(s"Expected Prepared transition, got $other")
+      }
     }
 
     "propagate readiness failure before returning composition" in {
