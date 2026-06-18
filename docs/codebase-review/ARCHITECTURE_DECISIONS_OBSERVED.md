@@ -194,3 +194,24 @@ Consequences:
 What not to infer:
 
 - Generic retrieval seams are not production adapters by themselves.
+
+## Decision 10: Current ES lifecycle metadata is seed-only, not a production lifecycle
+
+Statement:
+
+- Current Elasticsearch lifecycle metadata remains a seed-only readiness seam until a production lifecycle contract is implemented.
+
+Evidence:
+
+- `ElasticsearchSeedIndexReadiness.lifecycleMetadata` sets `EagerSeedIndexPreparation` plus `SeedOnlyNotProductionLifecycle`.
+- `ElasticsearchSeedSearchComposition.lifecycleMetadata` forwards that metadata.
+- Focused route/module specs prove the metadata is materialized through the ES-backed route graphs without changing route behavior.
+
+Consequences:
+
+- Current metadata coverage proves DI availability for the seed seam, not startup readiness, replacement, freshness, refresh, rollback, or operator-visible production lifecycle status.
+- M5 cannot be treated as complete from metadata coverage alone.
+
+What not to infer:
+
+- Do not infer production readiness enforcement, refresh/replacement/rollback policy, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from this metadata seam.

@@ -86,6 +86,7 @@ Documented as characterized, not as desired final contract:
 * The production route does eager seed index preparation during route composition, but that is still not a production-grade ES lifecycle policy.
 * `ElasticsearchSeedLifecycleMetadata` is a non-serving DI/readiness metadata seam exposed via `ElasticsearchSeedIndexReadiness.lifecycleMetadata` and `ElasticsearchSeedSearchComposition.lifecycleMetadata`; it is not a production lifecycle implementation.
 * Focused ES-backed route/module graph specs now prove that metadata is materialized with lifecycle status `SeedOnlyNotProductionLifecycle`; production lifecycle remains incomplete.
+* Current route-module metadata coverage is complete for this seed-only seam; the remaining production ES lifecycle contract is now documented as M5 work, and no serving behavior changed.
 * Detailed milestone status and priority order for lifecycle/eval/shadow/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 * M6 Qdrant shadow readiness, M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work.
 * `seedCatalogInMemory` remains available as rollback/non-default.

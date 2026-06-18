@@ -160,6 +160,49 @@ Architecture note:
 - This route-module metadata is seed-only and non-serving; it does not complete or define a production Elasticsearch lifecycle.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
 
+### Remaining production ES lifecycle contract
+
+Current route/module metadata coverage proves only:
+
+- seed index metadata is available through DI via `ElasticsearchSeedLifecycleMetadata`;
+- eager seed preparation is wired through `ElasticsearchSeedIndexReadiness` / `ElasticsearchSeedSearchComposition`;
+- lifecycle status is explicitly `SeedOnlyNotProductionLifecycle`;
+- route behavior is unchanged.
+
+What this does not prove:
+
+- startup readiness is enforced before serving;
+- preparation failure handling is decided;
+- replacement, freshness, refresh, rollback, or operator-visible production lifecycle status exists;
+- any route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement behavior exists.
+
+Remaining production lifecycle contract areas before M5 can be considered implemented:
+
+- Startup readiness:
+  - how the service decides the ES index is ready before serving;
+  - what happens when preparation fails;
+  - whether serving is blocked, degraded, or fails fast.
+- Replacement:
+  - how a new seed index replaces an old one;
+  - whether replacement is atomic;
+  - whether aliases or versioned index names are required.
+- Freshness:
+  - how the running service knows seed data version/freshness;
+  - what timestamp/version/count is operator-visible;
+  - how stale data is detected.
+- Refresh:
+  - when refresh happens;
+  - whether refresh is manual, startup-only, scheduled, or externally triggered.
+- Rollback:
+  - how to return to the previous known-good index/version;
+  - what state is kept to support rollback.
+- Operator-visible status:
+  - which status fields are exposed;
+  - where they are exposed;
+  - how they distinguish seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+
+Until those areas are defined and implemented, the current ES-backed route remains a seed-only readiness seam with eager preparation, not a production lifecycle.
+
 Classification:
 
 - Interpreters: implemented/current pure code.

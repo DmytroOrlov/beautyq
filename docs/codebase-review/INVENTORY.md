@@ -318,7 +318,7 @@ Parser/interpreter code:
 Elasticsearch code in `leaderboard.search.elasticsearch`:
 
 - Category: production/current pure interpreters; runtime client/wiring unclear in this pass.
-- `ElasticsearchSeedLifecycleMetadata`: seed-only, non-serving readiness metadata bound through the ES route graphs; focused route/module specs pin index name, seed source, positive document count, eager preparation mode, and `SeedOnlyNotProductionLifecycle`.
+- `ElasticsearchSeedLifecycleMetadata`: seed-only, non-serving readiness metadata bound through the ES route graphs; focused route/module specs pin index name, seed source, positive document count, eager preparation mode, and `SeedOnlyNotProductionLifecycle`. This is route-module metadata coverage only, not a production lifecycle contract or serving-readiness implementation.
 - `ElasticsearchMappingInterpreter.mapping(spec)`: builds mapping from `BeautySearchSpec` fields.
 - `ElasticsearchIngestionInterpreter.bulkPayload` and `sourceJson`: builds ingestion payload/source JSON from documents/spec fields.
 - `ElasticsearchSearchRequestInterpreter.request(input, intent, spec)`: builds ES request; source contains `textQuery`, `aggregations`, `facetAggregation`, `geoQuery`, `constraintClause`, `softBoostClause`, `termClause`, `termsClause`, `rangeClause`, and `boolQuery`.
@@ -623,7 +623,7 @@ Package `leaderboard.search.elasticsearch`:
 - `ElasticsearchIngestionInterpreter`: `search/elasticsearch/ElasticsearchIngestionInterpreter.scala`; category: search/Elasticsearch; responsibility: documents-to-bulk/source JSON.
 - `ElasticsearchSearchRequestInterpreter`: `search/elasticsearch/ElasticsearchSearchRequestInterpreter.scala`; category: search/Elasticsearch; responsibility: input/intent/spec-to-search-request JSON.
 - `ElasticsearchSearchResponseInterpreter`: `search/elasticsearch/ElasticsearchSearchResponseInterpreter.scala`; category: search/Elasticsearch; responsibility: ES response JSON to `BeautySearchResponse` and lexical hits.
-- `ElasticsearchSeedLifecycleMetadata`: `search/elasticsearch/ElasticsearchSeedIndexReadiness.scala`; category: search/Elasticsearch readiness; responsibility: non-serving seed-only lifecycle metadata exposed through ES-backed route module graphs.
+- `ElasticsearchSeedLifecycleMetadata`: `search/elasticsearch/ElasticsearchSeedIndexReadiness.scala`; category: search/Elasticsearch readiness; responsibility: non-serving seed-only lifecycle metadata exposed through ES-backed route module graphs, distinct from any future production startup readiness, replacement, freshness, refresh, rollback, or operator-visible lifecycle status.
 
 Package `leaderboard.search.qdrant`:
 

@@ -237,7 +237,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Design gate documented / active |
-| M5 | ES production lifecycle implemented | Progress: non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle plus route-module metadata coverage; production lifecycle incomplete |
+| M5 | ES production lifecycle implemented | Progress: non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle plus route-module metadata coverage only; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
@@ -252,6 +252,7 @@ Roadmap position:
 * M4 is the next strategic gate after that evidence checkpoint is expanded enough to support lifecycle decisions.
 * M5 implementation now includes a non-serving `ElasticsearchSeedLifecycleMetadata` DI/readiness handle, but production lifecycle remains incomplete.
 * Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
+* Option 27 progress is route-module metadata coverage only: seed index metadata is available through DI, eager seed preparation is wired, lifecycle status is `SeedOnlyNotProductionLifecycle`, and serving behavior is unchanged.
 
 Decisions to make at M4:
 
@@ -284,6 +285,19 @@ Risks if M4 is skipped:
 * eager seed index preparation gets mistaken for approved production lifecycle policy;
 * shadow/hybrid work gets compared against a lifecycle-incomplete ES baseline;
 * refresh, rollback, and stale-catalog behavior remain undefined at the route boundary.
+
+#### M5 remaining work checklist
+
+M5 remains incomplete. Remaining work is the production lifecycle contract plus implementation for:
+
+- startup readiness: readiness decision before serving, preparation failure behavior, and whether serving blocks, degrades, or fails fast;
+- replacement: explicit old/new index replacement policy, atomicity expectations, and alias or versioned-index policy if required;
+- freshness: running-service version/freshness source of truth, operator-visible timestamp/version/count, and stale-data detection;
+- refresh: approved trigger semantics such as manual, startup-only, scheduled, or external trigger;
+- rollback: previous known-good index/version recovery path and retained rollback-supporting state;
+- operator-visible status: explicit status fields/surface that distinguish seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+
+Non-goals remain unchanged here: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
 
 #### Movement rules
 
@@ -417,6 +431,7 @@ Current blockers:
 - No stale-catalog observability or kill switch.
 - No production Elasticsearch client/indexing lifecycle.
 - No explicit search index creation/update lifecycle.
+- Route-module metadata coverage now proves the seed-only seam only; it does not implement startup readiness, replacement, freshness, refresh, rollback, or operator-visible production lifecycle status.
 - No production collection manager for Qdrant.
 - No kill switch or production activation axis for hybrid/Qdrant.
 - No production-safe freshness model between Postgres, Elasticsearch, and Qdrant.

@@ -78,6 +78,34 @@ Checklist for future edits:
 - Treat this metadata as a non-serving seed readiness seam, not production lifecycle completion.
 - Do not imply route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these tests or docs.
 
+### Future tests required before ES production lifecycle completion
+
+Future/unimplemented unless matching source-backed tests are added:
+
+- startup readiness success/failure:
+  - serving path when ES preparation/readiness succeeds;
+  - failure path when preparation fails;
+  - explicit proof of whether serving blocks, degrades, or fails fast.
+- replacement / alias behavior:
+  - versioned index naming or alias movement if adopted;
+  - atomic versus non-atomic replacement behavior;
+  - proof that old/new index selection is explicit.
+- freshness / version / status reporting:
+  - operator-visible version/timestamp/count fields if introduced;
+  - stale-data detection semantics if introduced;
+  - distinction between seed-only metadata and production freshness state.
+- refresh trigger semantics:
+  - startup-only, manual, scheduled, or external trigger behavior once chosen;
+  - proof that refresh happens only on the approved trigger path.
+- rollback behavior:
+  - return to previous known-good index/version if rollback support is introduced;
+  - retained state required for rollback.
+- operator-visible lifecycle status:
+  - status surface and fields once introduced;
+  - distinction among seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+
+Current focused route/module specs cover only the seed-only metadata seam. They are not substitutes for production lifecycle tests.
+
 ## Repository Tests
 
 Implemented/current:
