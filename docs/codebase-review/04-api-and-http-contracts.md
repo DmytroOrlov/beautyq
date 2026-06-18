@@ -202,6 +202,37 @@ Tapir-default decode failure note:
 - These decode failures are not the structured domain `HttpApiFailure.BadRequest` JSON shown above.
 - The current docs intentionally do not pin a generated decode-response body example.
 
+### Beauty Search public contract freeze
+
+Stable current contract:
+
+- Endpoint: `POST /beauty-search`.
+- Request model: `UserSearchInput`.
+- Public request contract: `BeautySearchRequestContract`.
+- Valid response model: `BeautySearchResponse`.
+- Semantic invalid response model: structured `HttpApiFailure.BadRequest` JSON with `code` and `message`.
+- Decode-invalid response: Tapir default `400 BadRequest`; no structured domain JSON is documented or guaranteed for malformed body decode failures.
+
+Stable current request rules:
+
+- `query` must be non-blank.
+- There is no max query-length rule in the current contract.
+- `limit` must be within `BeautySearchRequestContract.MinLimit..BeautySearchRequestContract.MaxLimit`.
+- `userLat` is optional and must be in range when present.
+- `userLon` is optional and must be in range when present.
+- Coordinates are independently optional; there is no latitude/longitude pair requirement.
+
+Compact regression checklist:
+
+- Success examples must never use a blank query.
+- Semantic-invalid requests must not call `BeautySearchService` or Elasticsearch.
+- Malformed JSON/body decode coverage must remain separate from semantic validation coverage.
+- Malformed decode failures must not be documented as structured domain JSON unless global decode handling is implemented.
+- `MaxLimit` docs and tests must use `BeautySearchRequestContract.MaxLimit`, not raw DSL access, except for the explicit mirror assertion against `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
+- Route/module graph tests must keep proving production ES-backed exposure through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- Docs and tests must not imply Qdrant or hybrid serving.
+- Non-goals remain explicit: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
+
 ## Beauty Search Production Route Coordinate Behavior
 
 Current targeted ES-backed characterization:

@@ -29,6 +29,7 @@ Implemented/current:
 - `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return structured `invalid_query` JSON `400 BadRequest`.
 - `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong limit type, and missing query return Tapir default `400 BadRequest`.
 - `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity. Decode-invalid inputs retain Tapir default `400 BadRequest`; semantic-invalid inputs return exact `code` / `message` JSON `400 BadRequest`.
+- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, and the assembled route answers `POST /beauty-search`.
 - BeautySearch request-boundary tests use `BeautySearchRequestContract` for public limits and semantic error descriptors. A focused mirror assertion keeps `BeautySearchRequestContract.MaxLimit` source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 They protect:
@@ -50,6 +51,27 @@ Structured bad-request boundary:
 - Malformed JSON, empty body, missing required fields, and invalid field types remain Tapir default `400 BadRequest`; tests do not treat the generated decode body as a domain schema.
 - Global structured decode handling is not implemented.
 - Non-goals remain explicit here as well: no route switch, no fallback, no score fusion, no reranking, no `HybridServe`, and no Qdrant auto-supplement.
+
+### BeautySearch public contract freeze: regression checklist
+
+Freeze-pinning suites:
+
+- `BeautySearchApiHttpContractSuite.scala`: request/response contract at the API adapter seam, exact empty success JSON shape, structured semantic-invalid bodies, and proof that semantic-invalid and decode-invalid requests do not call the fake service.
+- `BeautySearchProductionRouteQuerySpec.scala`: non-blank query requirement, accepted normal query, accepted very long query, and no max query-length rule.
+- `BeautySearchProductionRouteLimitSpec.scala`: positive-limit success, structured invalid-limit failures, and the focused mirror assertion that `BeautySearchRequestContract.MaxLimit` stays source-backed.
+- `BeautySearchProductionRouteCoordinateSpec.scala`: independently optional coordinates and structured out-of-range latitude/longitude failures.
+- `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong field type, and missing required field remain Tapir-default decode failures.
+- `BeautySearchElasticsearchRouteParitySpec.scala`: accepted-input route parity plus the decode-invalid versus semantic-invalid split on the ES-backed route.
+- `BeautySearchProductionRouteExposureSpec.scala`: production graph exposure remains ES-backed and serves `POST /beauty-search`.
+
+Checklist for future edits:
+
+- Keep success examples and success assertions on non-blank queries only.
+- Keep semantic-invalid coverage separate from malformed-body decode coverage.
+- Keep malformed decode failures undocumented as structured domain JSON unless a global decode handler is intentionally added.
+- Keep `MaxLimit` references on the public contract surface via `BeautySearchRequestContract.MaxLimit`, except for the explicit mirror assertion.
+- Keep route/module graph proof for production ES-backed exposure.
+- Do not imply route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these tests or docs.
 
 ## Repository Tests
 
