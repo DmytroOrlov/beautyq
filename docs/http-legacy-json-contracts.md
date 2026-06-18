@@ -1,6 +1,9 @@
 # Legacy raw JSON single-entity HTTP contracts
 
-This inventory documents the current compatibility layer for Beauty single-entity GET endpoints that still return raw `io.circe.Json` rather than a typed response.
+This inventory documents the remaining legacy raw-JSON single-entity GET
+compatibility surface. Beauty single-entity GET migration is complete; the
+remaining value here is the repo-wide legacy helper/profile exception that is
+not yet fully folded into the canonical codebase-review docs.
 
 ## Current compatibility rule
 
@@ -8,7 +11,9 @@ No Beauty single-entity GET endpoints remain on the legacy `200 OK` + JSON `null
 
 That behavior was preserved during the migration phase while endpoints were still being converted. The remaining legacy case in this repo is `ProfileApi`, which is intentionally excluded from this Beauty inventory because it is a rank/read-model endpoint, not a Beauty domain typed single-entity migration candidate.
 
-The current adapter-level encoding is centralized in `leaderboard.http.tapir.LegacyJsonResponse.optionalAsJson`, which turns `Option[A]` into `Json.Null` or the encoded entity body.
+The current adapter-level encoding is centralized in
+`leaderboard.http.tapir.LegacyJsonResponse.optionalAsJson`, which turns
+`Option[A]` into `Json.Null` or the encoded entity body.
 
 ## Endpoints using raw `jsonBody[Json]` for single-entity GET responses
 
@@ -86,7 +91,11 @@ This provides an intermediate migration path, but it still needs careful adapter
 
 `ServiceApi`, `CategoryApi`, `MasterApi`, `MasterLocationApi`, `MasterServiceOfferApi`, and `MasterServiceOfferVariantApi` have been migrated. No Beauty single-entity GET endpoints remain on the legacy raw-JSON `200 + null` path.
 
-The migration steps should be:
+Remaining follow-up is documentation pruning, not endpoint migration. This file
+can be merged or reduced once canonical docs explicitly capture the
+`LegacyJsonResponse` helper and the intentional `ProfileApi` exclusion.
+
+The historical migration steps were:
 
 1. add or extend route contract tests so the current compatibility behavior is pinned down,
 2. introduce a typed endpoint with `singleEntityGetErrorOutput` and `jsonBody[Entity]`,

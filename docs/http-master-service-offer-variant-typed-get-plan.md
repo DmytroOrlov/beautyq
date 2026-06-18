@@ -1,16 +1,22 @@
 # MasterServiceOfferVariant typed GET migration plan
 
-This document is the migration plan for the last remaining Beauty legacy single-entity GET endpoint.
+Historical migration note only. Current source, route contract tests, and
+canonical docs show `MasterServiceOfferVariantApi` is already on the typed
+single-entity GET path. Keep this file only until pruning removes or merges the
+remaining historical references.
 
 ## Current state
 
-- `MasterServiceOfferVariantApi` is the only remaining Beauty legacy single-entity GET endpoint.
-- It still uses raw `Json` with the legacy `200 + null` missing-entity behavior.
-- It is high-risk because the response is coupled to variant attribute JSON, enum `stringCode` JSON, and the existing numeric storage path.
+- This file described the former migration target for `MasterServiceOfferVariantApi`.
+- Current source uses typed single-entity GET handling with typed `404` error output.
+- Current contract tests cover typed `MasterServiceOfferVariant` JSON plus typed
+  not-found behavior.
+- The variant JSON surface remains high-sensitivity because it is coupled to
+  attribute JSON, enum `stringCode`, and the existing numeric storage path.
 
 ## Required contract tests before migration
 
-Add or keep focused route-level contract tests that pin down the current behavior before any endpoint migration work starts:
+Historical checklist retained for audit context:
 
 - existing variant returns the exact current JSON object
 - missing variant returns the current legacy `200 + null` behavior before migration
@@ -21,7 +27,7 @@ Add or keep focused route-level contract tests that pin down the current behavio
 
 ## Migration target
 
-The target contract after migration is:
+Migration target that has now been reached:
 
 - existing variant: `200` + typed `MasterServiceOfferVariant` JSON
 - missing variant: `404` + typed `HttpApiFailure.NotFound` JSON
@@ -29,6 +35,8 @@ The target contract after migration is:
 - no codec or storage changes
 
 ## Safe implementation sequence
+
+Historical implementation sequence:
 
 1. First add focused contract tests pinning the current variant JSON.
 2. Then add the `NotFound` constructor/helper if it does not already exist in the typed path needed by this endpoint.

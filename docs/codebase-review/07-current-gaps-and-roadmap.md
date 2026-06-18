@@ -416,6 +416,17 @@ Recommendation:
 
 - Mark `http-master-service-offer-variant-typed-get-plan.md` as historical or replace it with a migration-completed note in a later docs-maintenance pass.
 
+### Incremental docs pruning
+
+Status:
+
+- Docs pruning is now tracked incrementally in `docs/codebase-review/INVENTORY.md` under `Docs pruning candidates`.
+- No broad deletion is approved from this roadmap note alone.
+
+Current rule:
+
+- Clean touched areas gradually, keep unique source truth until canonical docs absorb it, and delete only after source/test/docs references are cleared.
+
 ### README Scope
 
 Drift:

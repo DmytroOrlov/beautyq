@@ -5,8 +5,9 @@
 Default `POST /beauty-search` is now ES-backed over seed data through
 the default ES route composition (`BeautySearchRouteModules.apiElasticsearch`
 → `seedCatalogElasticsearchPortConfigured`). This inventory selects demo
-queries for business-facing smoke and demo over the seed-backed route. It does not make claims about ranking perfection,
-Qdrant, hybrid, fallback, reranking, or lifecycle behavior.
+queries for business-facing smoke and demo over the seed-backed route. It does
+not make claims about ranking perfection, Qdrant, hybrid, fallback,
+reranking, or lifecycle behavior.
 
 All queries and sample variants below come directly from
 `beautyq_search_eval_queries_v1.json`.

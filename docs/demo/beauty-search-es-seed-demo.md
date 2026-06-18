@@ -2,7 +2,7 @@
 
 ## What this demo shows
 
-* Production HTTP endpoint `POST /beauty-search` exposed through `LeaderboardPlugin.modules.api`.
+* Production HTTP endpoint `POST /beauty-search` exposed through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 * Default route uses Elasticsearch over seed catalog (seed resource catalog snapshot indexed into Elasticsearch + `ElasticsearchSearchBackend`).
 * Free-string beauty queries return useful seed-backed results.
 * Selected demo queries are validated by `BeautySearchElasticsearchBusinessDemoSpec`.

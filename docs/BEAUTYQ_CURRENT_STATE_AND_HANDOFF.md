@@ -166,6 +166,7 @@ product results by combining:
 * `docs/codebase-review/README.md` — architecture entrypoint
 * `docs/codebase-review/05-search-and-retrieval-architecture.md` — search DSL, ES, Qdrant, hybrid, eval
 * `docs/codebase-review/07-current-gaps-and-roadmap.md` — current gaps and roadmap
+* `docs/codebase-review/INVENTORY.md` — active inventory, including docs pruning candidates
 * `docs/search-dsl-hybrid-v1-plan.md` — hybrid V1 plan and B-lite strategy
 * `docs/beautyq-search-dsl-v1.md` — search DSL V1 and eval coverage
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow, prompt packaging, source-truth gating, closeout, docs ownership, and model recommendation guidance
