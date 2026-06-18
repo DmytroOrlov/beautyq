@@ -187,6 +187,28 @@ Current values to preserve in any future operator-facing status implementation:
 - `operatorVisibility: "not_exposed"`
 - `productionLifecycleComplete: false`
 
+## Non-serving startup status projection
+
+`ElasticsearchStartupReadinessStatusResponse` is a pure non-serving startup status projection derived from `ElasticsearchStartupReadinessTransition`. It provides a unified JSON shape for both prepared and preparation-failed startup transitions.
+
+Prepared projection:
+
+- `transitionStatus = "prepared"`
+- `servingDecision = "not_enforced"`
+- `lifecycleStatus`: nested `ElasticsearchLifecycleStatusResponse` with the same fields as direct readiness-state projection
+- `productionLifecycleComplete = false`
+
+Failed projection:
+
+- `transitionStatus = "preparation_failed"`
+- `servingDecision = "not_enforced"`
+- `operationName`: source-backed operation name from `QueryFailure.OperationFailure`
+- `message`: source-backed failure message from `QueryFailure.OperationFailure`
+- `productionLifecycleComplete = false`
+- No lifecycle metadata, no `ElasticsearchLifecycleStatusResponse`, no nested `lifecycleStatus` field
+
+JSON encoding is local to the model companion. The projection is not DI-bound, not HTTP-exposed, and does not implement an endpoint, route path, or operator policy.
+
 ## Implemented boundary
 
 Implemented:
@@ -195,7 +217,8 @@ Implemented:
 - `ElasticsearchLifecycleStatusResponse.from(state)` derivation;
 - local Circe JSON encoding;
 - focused pure mapping and exact-JSON tests;
-- pure `ElasticsearchStartupReadinessTransition` success/failure classification, with prepared transition-to-status mapping and JSON alignment, no failure metadata/status response, and no serving enforcement.
+- pure `ElasticsearchStartupReadinessTransition` success/failure classification, with prepared transition-to-status mapping and JSON alignment, no failure metadata/status response, and no serving enforcement;
+- pure `ElasticsearchStartupReadinessStatusResponse` non-serving startup status projection from prepared and failed transitions, with local Circe JSON encoding and focused pure tests.
 
 Not implemented:
 

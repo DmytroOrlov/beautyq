@@ -209,6 +209,7 @@ Evidence:
 - `ElasticsearchSeedSearchComposition.productionReadinessState` forwards the derived state, and focused route/module specs prove it is materialized through the ES-backed route graphs without changing route behavior.
 - `ElasticsearchLifecycleStatusResponse.from` provides a pure non-serving projection with local Circe encoding; it is not bound into route graphs.
 - `ElasticsearchStartupReadinessTransition` provides a pure prepared/operation-failure shape with `ElasticsearchStartupServingDecision.NotEnforced`; prepared values derive the same non-serving response as direct state projection, while failures expose no lifecycle metadata or status response. It is now bound into route graphs through `BeautySearchCatalogBackendModules.seedResourceElasticsearch` from `ElasticsearchSeedSearchComposition.startupReadinessTransition`, but the binding remains non-serving and does not gate startup or route behavior.
+- `ElasticsearchStartupReadinessStatusResponse` provides a pure non-serving startup status projection from prepared and failed transitions. Prepared projections include the nested lifecycle status response; failed projections expose operation/message only without lifecycle metadata or status response. Local Circe encoding is provided. The projection is not DI-bound or HTTP-exposed.
 
 Consequences:
 

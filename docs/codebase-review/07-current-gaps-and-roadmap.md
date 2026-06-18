@@ -239,7 +239,7 @@ Qdrant remains eval-only until evidence and safety gates.
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Design gate documented / active; lifecycle status shape plus non-serving model/encoder exist, while exposure policy remains undesigned |
-| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, route-graph state coverage, and non-serving startup transition DI integration through ES seed route graphs; production lifecycle incomplete |
+| M5 | ES production lifecycle implemented | Progress: non-serving lifecycle metadata, explicit readiness-gap state, pure status response model/encoder, pure startup transition shape, non-serving startup status projection, route-graph state coverage, and non-serving startup transition DI integration through ES seed route graphs; production lifecycle incomplete |
 | M6 | Qdrant shadow readiness | Future |
 | M7 | Hybrid policy proven offline | Future |
 | M8 | Controlled hybrid serving experiment | Future |
@@ -252,7 +252,7 @@ Roadmap position:
 
 * Expanded M3 / B-lite / M-ESQ-EVAL evidence remains the current in-progress checkpoint.
 * M4 is the next strategic gate after that evidence checkpoint is expanded enough to support lifecycle decisions.
-* M5 progress now includes a non-serving `ElasticsearchSeedLifecycleMetadata` handle, `ElasticsearchProductionReadinessState` derived from it, a pure `ElasticsearchLifecycleStatusResponse` model/encoder, and pure startup preparation transition modeling, but production lifecycle remains incomplete.
+* M5 progress now includes a non-serving `ElasticsearchSeedLifecycleMetadata` handle, `ElasticsearchProductionReadinessState` derived from it, a pure `ElasticsearchLifecycleStatusResponse` model/encoder, pure startup preparation transition modeling, and a pure non-serving startup status projection for prepared and failed transitions, but production lifecycle remains incomplete.
 * Qdrant shadow remains a future M6 readiness/design step and should not precede ES lifecycle/baseline/observability/kill-switch decisions.
 * Current progress is internal state, a non-serving response projection/encoder, and graph coverage only: seed index metadata is available through DI, eager seed preparation is wired, lifecycle status is `SeedOnlyNotProductionLifecycle`, production lifecycle gaps are explicit, and serving behavior is unchanged.
 * Option 30 progress includes the pure response model/encoder for the documented field shape; endpoint exposure, path, status policy, and operator policy remain separate future work.
