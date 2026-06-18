@@ -146,7 +146,7 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     (): Unit
   }
 
-  protected final def assertDefaultDecodeFailureResponse(response: ObservedResponse): Unit = {
+  protected final def assertDefaultBadRequest(response: ObservedResponse): Unit = {
     assert(
       response.status == Status.BadRequest,
       s"Expected 400 Bad Request, got ${response.status}",

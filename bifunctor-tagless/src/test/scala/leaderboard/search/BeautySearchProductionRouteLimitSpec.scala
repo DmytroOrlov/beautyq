@@ -16,7 +16,7 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":3}"""),
           )
         )
 
@@ -24,7 +24,7 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
       }
     }
 
-    "return empty variantCarousel for zero limit" in {
+    "return Tapir default bad-input response for zero limit" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -32,15 +32,15 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":0}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}"""),
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
 
-    "return empty variantCarousel for negative limit" in {
+    "return Tapir default bad-input response for negative limit" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -48,15 +48,15 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":-5}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}"""),
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
 
-    "return empty variantCarousel for huge limit (ES zero-hit)" in {
+    "return Tapir default bad-input response for limit above the carousel maximum" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -64,11 +64,11 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":100000}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":100000}"""),
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
   }

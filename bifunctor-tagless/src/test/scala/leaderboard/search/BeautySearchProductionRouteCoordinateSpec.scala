@@ -16,7 +16,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":53.57532,"userLon":10.07672,"limit":3}"""),
           )
         )
 
@@ -24,7 +24,7 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
       }
     }
 
-    "return current behavior for latitude too high (999.0)" in {
+    "return Tapir default bad-input response for latitude too high (999.0)" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -32,15 +32,15 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":999.0,"userLon":10.07672,"limit":3}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":999.0,"userLon":10.07672,"limit":3}"""),
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
 
-    "return current behavior for longitude too high (999.0)" in {
+    "return Tapir default bad-input response for longitude too high (999.0)" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -48,15 +48,15 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":53.57532,"userLon":999.0,"limit":3}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":53.57532,"userLon":999.0,"limit":3}"""),
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
 
-    "return current behavior for very large finite coordinates (1e9, -1e9)" in {
+    "return Tapir default bad-input response for very large finite coordinates (1e9, -1e9)" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -64,11 +64,11 @@ final class BeautySearchProductionRouteCoordinateSpec extends AnyWordSpec with B
         val response = runIO(
           observeRoute(
             apis,
-            postJson("/beauty-search", """{"query":"","userLat":1.0e9,"userLon":-1.0e9,"limit":3}"""),
+            postJson("/beauty-search", """{"query":"nails","userLat":1.0e9,"userLon":-1.0e9,"limit":3}"""),
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
   }

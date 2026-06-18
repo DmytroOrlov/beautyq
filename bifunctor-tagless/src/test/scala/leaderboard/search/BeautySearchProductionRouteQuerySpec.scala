@@ -6,7 +6,7 @@ import zio.IO
 
 final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with BeautySearchProductionRouteSpecSupport {
   "POST /beauty-search query text inputs" should {
-    "return current behavior for empty query string" in {
+    "return Tapir default bad-input response for empty query string" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -20,11 +20,11 @@ final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
 
-    "return current behavior for whitespace-only query string" in {
+    "return Tapir default bad-input response for whitespace-only query string" in {
       withZeroHitEsServer { port =>
         val probe = buildTargetedEsRouteProbe(port)
         val apis  = probe.allHttpApis
@@ -36,7 +36,7 @@ final class BeautySearchProductionRouteQuerySpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertOkWithEmptyVariantCarousel(response)
+        assertDefaultBadRequest(response)
       }
     }
 

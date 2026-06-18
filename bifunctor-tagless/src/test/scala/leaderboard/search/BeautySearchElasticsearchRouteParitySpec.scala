@@ -29,12 +29,7 @@ final class BeautySearchElasticsearchRouteParitySpec extends AnyWordSpec with Ht
 
       val cases: List[(String, String, Int)] = List(
         ("normal query with normal coords and limit 3", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":3}""", 3),
-        ("empty query", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}""", 3),
-        ("whitespace query", """{"query":"     ","userLat":53.58,"userLon":10.08,"limit":3}""", 3),
         ("very long query", s"""{"query":"${"nails " * 1000}","userLat":53.58,"userLon":10.08,"limit":3}""", 3),
-        ("latitude 999.0", """{"query":"nails","userLat":999.0,"userLon":10.08,"limit":3}""", 3),
-        ("longitude 999.0", """{"query":"nails","userLat":53.58,"userLon":999.0,"limit":3}""", 3),
-        ("huge finite coords", """{"query":"nails","userLat":1.0e9,"userLon":-1.0e9,"limit":3}""", 3),
       )
 
       cases.foreach { case (label, body, limit) =>
@@ -54,31 +49,25 @@ final class BeautySearchElasticsearchRouteParitySpec extends AnyWordSpec with Ht
       }
     }
 
-    "return OK with empty carousels for zero and negative limits" in {
+    "return Tapir default bad-input responses for semantic-invalid requests" in {
       val probe = buildProbe()
       val apis  = probe.allHttpApis
 
-      val zeroResponse = runIO(
-        observeRoute(apis, postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}"""))
+      val cases = List(
+        ("empty query", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
+        ("whitespace query", """{"query":"     ","userLat":53.58,"userLon":10.08,"limit":3}"""),
+        ("zero limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}"""),
+        ("negative limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}"""),
+        ("huge limit", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":100000}"""),
+        ("latitude 999.0", """{"query":"nails","userLat":999.0,"userLon":10.08,"limit":3}"""),
+        ("longitude 999.0", """{"query":"nails","userLat":53.58,"userLon":999.0,"limit":3}"""),
+        ("huge finite coords", """{"query":"nails","userLat":1.0e9,"userLon":-1.0e9,"limit":3}"""),
       )
 
-      assert(zeroResponse.status == Status.Ok)
-
-      val zeroJson = parse(zeroResponse.body).getOrElse(fail(s"invalid JSON: ${zeroResponse.body}"))
-      assert(zeroJson.hcursor.downField("variantCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "zero limit: variantCarousel should be empty")
-      assert(zeroJson.hcursor.downField("providerCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "zero limit: providerCarousel should be empty")
-      assert(zeroJson.hcursor.downField("serviceIntentCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "zero limit: serviceIntentCarousel should be empty")
-
-      val negResponse = runIO(
-        observeRoute(apis, postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}"""))
-      )
-
-      assert(negResponse.status == Status.Ok)
-
-      val negJson = parse(negResponse.body).getOrElse(fail(s"invalid JSON: ${negResponse.body}"))
-      assert(negJson.hcursor.downField("variantCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "negative limit: variantCarousel should be empty")
-      assert(negJson.hcursor.downField("providerCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "negative limit: providerCarousel should be empty")
-      assert(negJson.hcursor.downField("serviceIntentCarousel").focus.exists(_.asArray.exists(_.isEmpty)), "negative limit: serviceIntentCarousel should be empty")
+      cases.foreach { case (label, body) =>
+        val response = runIO(observeRoute(apis, postJson("/beauty-search", body)))
+        assert(response.status == Status.BadRequest, s"$label: expected 400 Bad Request, got ${response.status}")
+      }
     }
 
     "return Tapir default bad-input responses for invalid requests" in {

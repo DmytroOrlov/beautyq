@@ -38,13 +38,12 @@ Canonical handoff for new chats. Read this first, then see linked docs for deepe
 
 Documented as characterized, not as desired final contract:
 
-* Positive limit returns `200 OK` capped by requested limit.
-* Zero/negative limit returns `200 OK` with empty variant carousel.
-* Huge limit is capped by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
-* Malformed JSON / empty body / wrong limit type / missing required fields use Tapir defaults and return `400 BadRequest` before BeautySearch service or Elasticsearch calls.
+* Non-blank queries, positive limits up to `BeautySearchSpecV1.spec.carouselSpec.variantSize`, and coordinates within latitude `[-90, 90]` / longitude `[-180, 180]` retain the existing `200 OK` search behavior.
+* Empty/whitespace-only queries, non-positive limits, limits above the carousel maximum, and out-of-range coordinates use Tapir endpoint validation and return default `400 BadRequest` before BeautySearch service or Elasticsearch calls.
+* Malformed JSON / empty body / wrong limit type / missing required fields also use Tapir defaults and return `400 BadRequest` before BeautySearch service or Elasticsearch calls.
 * Backend/query failures remain separate endpoint-domain failures and return `500 InternalServerError` with an empty body.
-* Coordinates are not range-validated.
-* Query text is not length-validated.
+* No maximum query length is enforced in this slice.
+* Coordinates remain independently optional; the endpoint does not require a latitude/longitude pair.
 * `BeautySearchReadyCatalogDocuments` rejects blank source / empty document list.
 
 ## 3. Search backend roles

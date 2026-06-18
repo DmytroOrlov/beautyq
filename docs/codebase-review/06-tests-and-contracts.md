@@ -24,6 +24,12 @@ Implemented/current:
 - `ProfileApiHttpContractSuite.scala`
 - `LegacySingleEntityGetHttpContractSuite.scala`
 - `TapirHttpSupportContractSuite.scala`
+- `BeautySearchApiHttpContractSuite.scala`: valid request/response pass-through, backend failure mapping, malformed-body defaults, and semantic-invalid query/limit/coordinate bodies returning `400 BadRequest` without calling the fake service.
+- `BeautySearchProductionRouteLimitSpec.scala`: valid positive limit remains `200 OK`; non-positive and above-carousel-maximum limits return Tapir default `400 BadRequest`.
+- `BeautySearchProductionRouteCoordinateSpec.scala`: in-range coordinates remain `200 OK`; out-of-range latitude/longitude return Tapir default `400 BadRequest`.
+- `BeautySearchProductionRouteQuerySpec.scala`: non-blank and very-long queries retain current `200 OK` behavior; empty/whitespace-only queries return Tapir default `400 BadRequest`.
+- `BeautySearchProductionRouteErrorSpec.scala`: malformed JSON, empty body, wrong limit type, and missing query return Tapir default `400 BadRequest`.
+- `BeautySearchElasticsearchRouteParitySpec.scala`: accepted inputs retain response-shape parity; decode-invalid and semantic-invalid inputs return `400 BadRequest`.
 
 They protect:
 
@@ -32,6 +38,7 @@ They protect:
 - Missing-entity behavior.
 - Error/exception behavior.
 - Tapir/http4s default decode behavior: malformed JSON, empty bodies, missing required fields, invalid field types, and malformed path captures return `400 BadRequest` before repository/service logic.
+- BeautySearch endpoint validation behavior: blank query, invalid limit bounds, and out-of-range optional coordinates return default `400 BadRequest` before service/Elasticsearch logic.
 - Default uncaught server exception behavior: `500 InternalServerError` with `Internal server error` body.
 - Literal route precedence: `/category/root` remains a successful category-root route.
 - Malformed UUID captures return `400 BadRequest`.

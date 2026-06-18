@@ -21,7 +21,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultDecodeFailureResponse(response)
+        assertDefaultBadRequest(response)
       }
     }
 
@@ -37,7 +37,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultDecodeFailureResponse(response)
+        assertDefaultBadRequest(response)
       }
     }
 
@@ -53,7 +53,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultDecodeFailureResponse(response)
+        assertDefaultBadRequest(response)
       }
     }
 
@@ -69,7 +69,7 @@ final class BeautySearchProductionRouteErrorSpec extends AnyWordSpec with Beauty
           )
         )
 
-        assertDefaultDecodeFailureResponse(response)
+        assertDefaultBadRequest(response)
       }
     }
   }

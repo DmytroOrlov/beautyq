@@ -6,10 +6,11 @@ import leaderboard.api.BeautySearchApi
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, TapirHttpSupport}
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
+import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.dsl.SearchConstraint
-import org.http4s.Status
+import org.http4s.{Request, Status}
 import zio.interop.catz.*
-import zio.{IO, Ref, UIO, ZIO}
+import zio.{IO, Ref, Task, UIO, ZIO}
 
 import java.util.UUID
 
@@ -88,13 +89,70 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
     }
 
     "return Tapir default bad-input response and do not call the fake service for malformed JSON" in {
-      for {
-        state    <- BeautySearchApiContractState.make(Right(emptySearchResponse))
-        response <- observe(app(state), postJson("/beauty-search", """{"query":"broken""""))
-        inputs   <- state.inputs
-        _        <- assertIO(response.status === Status.BadRequest)
-        _        <- assertIO(inputs.isEmpty)
-      } yield ()
+      assertDefaultBadRequestWithoutServiceCall(postJson("/beauty-search", """{"query":"broken""""))
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for an empty body" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        Request[Task](method = org.http4s.Method.POST, uri = org.http4s.Uri.unsafeFromString("/beauty-search"))
+          .putHeaders(org.http4s.headers.`Content-Type`(org.http4s.MediaType.application.json))
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for a wrong limit type" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"маникюр","limit":"bad"}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for a missing query" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"userLat":53.58,"userLon":10.08,"limit":3}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for an empty query" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for a whitespace-only query" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"   ","userLat":53.58,"userLon":10.08,"limit":3}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for zero limit" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":0}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for negative limit" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":10.08,"limit":-5}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for limit above the carousel maximum" in {
+      val invalidLimit = BeautySearchSpecV1.spec.carouselSpec.variantSize + 1
+
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", s"""{"query":"nails","userLat":53.58,"userLon":10.08,"limit":$invalidLimit}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for out-of-range latitude" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":90.1,"userLon":10.08,"limit":3}""")
+      )
+    }
+
+    "return Tapir default bad-input response and do not call the fake service for out-of-range longitude" in {
+      assertDefaultBadRequestWithoutServiceCall(
+        postJson("/beauty-search", """{"query":"nails","userLat":53.58,"userLon":180.1,"limit":3}""")
+      )
     }
   }
 
@@ -102,6 +160,15 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
     state: BeautySearchApiContractState
   ) =
     new BeautySearchApi[IO](state.service, tapirEndpoints, tapirHttpSupport).http.orNotFound
+
+  private def assertDefaultBadRequestWithoutServiceCall(request: Request[Task]): Task[Unit] =
+    for {
+      state    <- BeautySearchApiContractState.make(Right(emptySearchResponse))
+      response <- observe(app(state), request)
+      inputs   <- state.inputs
+      _        <- assertIO(response.status === Status.BadRequest)
+      _        <- assertIO(inputs.isEmpty)
+    } yield ()
 
   private val emptySearchResponse: BeautySearchResponse =
     BeautySearchResponse(
