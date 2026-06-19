@@ -236,7 +236,7 @@ Evidence:
 - No endpoint, route path, HTTP status policy, or operator policy is implemented.
 - No serving-readiness enforcement exists.
 - M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
-- The ES operator visibility track is now source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Design A (expose current prepared/seed-only status from constructed route graph) is the recommended next step. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
+- The ES operator visibility track is source-confirmed and Design A is now implemented as explicit opt-in/internal endpoint exposure. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
 
 Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
 
@@ -262,7 +262,7 @@ Design A endpoint policy drafted (see `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md
 - Draft recommends `200 OK` for successful retrieval with lifecycle status in body.
 - Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) as response shape.
 - All draft recommendations remain unapproved.
-- Draft endpoint expectations are now captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests).
+- The Design A hardening surface is now captured by active `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` assertions, with only future expectations left pending.
 - Implementation slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`.
 
 Consequences:
@@ -278,7 +278,7 @@ What not to infer:
 - Do not infer that the serving-gate design constitutes enforcement or that any policy choice is approved.
 - Do not infer production lifecycle completion from the existence of the serving-gate design document.
 - Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
-- Do not infer that operator visibility is implemented from the source confirmation; it remains a future track requiring policy approval.
+- Do not infer default/public endpoint exposure from the source confirmation or implementation; the current endpoint is explicit opt-in/internal only.
 
 ## Decision 13: Design A operator visibility endpoint implemented as explicit opt-in module
 
@@ -294,7 +294,7 @@ Evidence:
 - `BeautySearchRouteModules.seedCatalogElasticsearch` does NOT include `operatorVisibilityApi[IO]`.
 - `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` includes `seedCatalogElasticsearch` plus `operatorVisibilityApi[IO]`.
 - `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility` includes the port-configured opt-in module.
-- `ElasticsearchOperatorVisibilityEndpointPolicySpec` has 59 active tests covering default absence, opt-in presence, endpoint response shape, seed-only values, route graph rooting, no-new-ES-calls, and limitations.
+- `ElasticsearchOperatorVisibilityEndpointPolicySpec` has active tests covering default absence, opt-in presence, endpoint response shape, seed-only values, route graph rooting, no-new-ES-calls, and current limitations, with only future expectations left pending.
 - `BeautySearchProductionRouteExposureSpec` verifies default graph absence and explicit opt-in presence.
 - `BeautySearchElasticsearchRouteModuleSpec`, `BeautySearchElasticsearchHttpRouteModuleSpec`, and `BeautySearchElasticsearchDefaultReadyRouteSpec` verify the endpoint is absent from default ES route graphs.
 

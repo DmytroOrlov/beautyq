@@ -1,11 +1,8 @@
 package leaderboard.search
 
 import cats.effect.Async
-import cats.syntax.all.*
 import distage.Injector
-import fs2.text
 import io.circe.Json
-import io.circe.parser.parse
 import io.circe.syntax._
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
@@ -22,13 +19,12 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchStartupReadinessStatusResponse,
   ElasticsearchStartupReadinessTransition,
 }
-import leaderboard.{HttpContractTestSupport, ObservedResponse}
-import org.http4s.{HttpApp, Request, Status}
+import org.http4s.Status
 import org.scalatest.wordspec.AnyWordSpec
 import zio.interop.catz.*
-import zio.{IO, Runtime, Task, Unsafe, ZIO}
+import zio.{IO, Task, ZIO}
 
-final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpec with HttpContractTestSupport {
+final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpec with BeautySearchProductionRouteSpecSupport {
 
   private val state: ElasticsearchProductionReadinessState =
     ElasticsearchProductionReadinessState.seedOnly(
@@ -99,12 +95,7 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
         observeRoute(apis, get("/ops/beauty-search/lifecycle"))
       )
 
-      assert(response.status == Status.Ok)
-      val json = parseResponseJson(response)
-      assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
-      assert(json.hcursor.get[String]("servingDecision") == Right("not_enforced"))
-      assert(json.hcursor.get[Boolean]("productionLifecycleComplete") == Right(false))
-      assert(json.hcursor.downField("lifecycleStatus").focus.isDefined)
+      assertPreparedLifecycleStatusResponse(response)
       (): Unit
     }
 
@@ -122,9 +113,7 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
         observeRoute(apis, get("/ops/beauty-search/lifecycle"))
       )
 
-      assert(lifecycleResponse.status == Status.Ok)
-      val json = parseResponseJson(lifecycleResponse)
-      assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
+      assertPreparedLifecycleStatusResponse(lifecycleResponse)
       (): Unit
     }
   }
@@ -219,9 +208,7 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
         observeRoute(apis, get("/ops/beauty-search/lifecycle"))
       )
 
-      assert(response.status == Status.Ok)
-      val json = parseResponseJson(response)
-      assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
+      assertPreparedLifecycleStatusResponse(response)
       (): Unit
     }
 
@@ -246,6 +233,16 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
 
       val probe = locator.get[InMemoryProbe]
       assert(probe.allHttpApis.collect { case _: EsLifecycleStatusApi[IO] => () }.isEmpty)
+
+      val response = runIO(
+        observeRoute(
+          probe.allHttpApis,
+          get("/ops/beauty-search/lifecycle"),
+        )
+      )
+
+      assert(response.status == Status.NotFound)
+      (): Unit
     }
 
     "not root operator endpoint through default seedCatalogElasticsearch" in {
@@ -265,21 +262,39 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
     }
 
     "not call Elasticsearch at request time" in {
-      val probe = buildOptInEsRouteProbe()
-      val apis  = probe.allHttpApis
+      withRecordingZeroHitEsServer { server =>
+        val probe = buildProductionApiGraphWithOperatorVisibilityRouteProbe(server.port)
+        val apis  = probe.allHttpApis
 
-      val response = runIO(
-        observeRoute(apis, get("/ops/beauty-search/lifecycle"))
-      )
+        val requestCountBeforeLifecycleCall = server.requestCount
 
-      assert(response.status == Status.Ok)
-      val json = parseResponseJson(response)
-      assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
-      assert(json.hcursor.downField("lifecycleStatus").get[String]("source") == Right("seed-resource-loader"))
-      (): Unit
+        val response = runIO(
+          observeRoute(apis, get("/ops/beauty-search/lifecycle"))
+        )
+
+        assertPreparedLifecycleStatusResponse(response)
+        assert(server.requestCount == requestCountBeforeLifecycleCall)
+        (): Unit
+      }
     }
 
-    "leave existing POST /beauty-search ES call assertions unchanged" in pending
+    "preserve existing POST /beauty-search request-time Elasticsearch call behavior" in {
+      withRecordingZeroHitEsServer { server =>
+        val probe = buildProductionApiGraphWithOperatorVisibilityRouteProbe(server.port)
+        val apis  = probe.allHttpApis
+
+        val requestCountBeforeSearchCall = server.requestCount
+
+        val response = runIO(
+          observeRoute(apis, postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""))
+        )
+
+        assert(response.status == Status.Ok)
+        assert(server.requestCount == requestCountBeforeSearchCall + 1)
+        assert(server.requestPaths.lastOption.exists(_.contains("_search")))
+        (): Unit
+      }
+    }
   }
 
   "Design A: exposure / auth policy" should {
@@ -294,7 +309,13 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
 
     "allow local / dev-only fallback if chosen later" in pending
 
-    "not expose as public product API" in pending
+    "not expose as public product API" in {
+      withZeroHitEsServer { port =>
+        val probe = buildProductionApiGraphRouteProbe(port)
+        assert(probe.allHttpApis.collect { case _: EsLifecycleStatusApi[IO] => () }.isEmpty)
+        (): Unit
+      }
+    }
   }
 
   "Design A: limitations" should {
@@ -307,7 +328,17 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
       }
     }
 
-    "not expose startup failure status" in pending
+    "not expose startup failure status" in {
+      preparedStatusProjection match {
+        case prepared: ElasticsearchStartupReadinessStatusResponse.Prepared =>
+          val json = (prepared: ElasticsearchStartupReadinessStatusResponse).asJson
+          assert(json.hcursor.downField("operationName").focus.isEmpty)
+          assert(json.hcursor.downField("message").focus.isEmpty)
+          (): Unit
+        case other =>
+          fail(s"Expected Prepared projection, got $other")
+      }
+    }
 
     "not claim replacement / freshness / rollback fields as implemented behavior" in {
       assert(lifecycleResponse.replacement == "not_configured")
@@ -390,33 +421,6 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
     override def getJson(path: String): IO[QueryFailure, Json]                   = ZIO.dieMessage(s"unexpected getJson($path)")
     override def delete(path: String): IO[QueryFailure, Unit]                    = ZIO.dieMessage(s"unexpected delete($path)")
   }
-
-  private def observeRoute(
-    apis: Set[HttpApi[IO]],
-    request: Request[Task],
-  ): Task[ObservedResponse] = {
-    val app: HttpApp[Task] = apis.map(_.http).toList.foldK.orNotFound
-
-    app.run(request).flatMap {
-      response =>
-        response.body
-          .through(text.utf8.decode)
-          .compile
-          .string
-          .map(body => ObservedResponse(response.status, body))
-    }
-  }
-
-  private def parseResponseJson(response: ObservedResponse): Json =
-    parse(response.body) match {
-      case Right(json) => json
-      case Left(error) => fail(s"Invalid JSON: ${error.getMessage}; body: ${response.body}")
-    }
-
-  private def runIO[E, A](effect: ZIO[Any, E, A]): A =
-    Unsafe.unsafe { implicit unsafe =>
-      Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
-    }
 
   private final case class DefaultEsRouteProbe(
     allHttpApis: Set[HttpApi[IO]],

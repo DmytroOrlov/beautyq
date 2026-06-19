@@ -32,6 +32,7 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
         val probe = buildTargetedEsRouteProbe(port)
 
         assert(probe.allHttpApis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
+        assertOperatorVisibilityEndpointAbsent(probe.allHttpApis)
         assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
         assertPreparedStartupTransition(probe.startupTransition)
 
@@ -43,6 +44,16 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
         )
 
         assertOkWithEmptyBeautySearchResponseShape(response)
+
+        val lifecycleResponse = runIO(
+          observeRoute(
+            probe.allHttpApis,
+            get("/ops/beauty-search/lifecycle"),
+          )
+        )
+
+        assert(lifecycleResponse.status == org.http4s.Status.NotFound)
+        (): Unit
       }
     }
 
@@ -99,12 +110,40 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
           )
         )
 
-        assert(lifecycleResponse.status == org.http4s.Status.Ok)
-        val json = parseResponseJson(lifecycleResponse)
-        assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
-        assert(json.hcursor.get[String]("servingDecision") == Right("not_enforced"))
-        assert(json.hcursor.get[Boolean]("productionLifecycleComplete") == Right(false))
-        assert(json.hcursor.downField("lifecycleStatus").focus.isDefined)
+        assertPreparedLifecycleStatusResponse(lifecycleResponse)
+        (): Unit
+      }
+    }
+
+    "serve the operator endpoint without adding request-time Elasticsearch calls" in {
+      withRecordingZeroHitEsServer { server =>
+        val probe = buildProductionApiGraphWithOperatorVisibilityRouteProbe(server.port)
+        val apis  = probe.allHttpApis
+
+        assertOperatorVisibilityEndpointPresent(apis)
+
+        val requestCountBeforeLifecycleCall = server.requestCount
+
+        val lifecycleResponse = runIO(
+          observeRoute(
+            apis,
+            get("/ops/beauty-search/lifecycle"),
+          )
+        )
+
+        assertPreparedLifecycleStatusResponse(lifecycleResponse)
+        assert(server.requestCount == requestCountBeforeLifecycleCall)
+
+        val beautySearchResponse = runIO(
+          observeRoute(
+            apis,
+            postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""),
+          )
+        )
+
+        assertOkWithEmptyBeautySearchResponseShape(beautySearchResponse)
+        assert(server.requestCount == requestCountBeforeLifecycleCall + 1)
+        assert(server.requestPaths.lastOption.exists(_.contains("_search")))
         (): Unit
       }
     }

@@ -98,14 +98,14 @@ final class BeautySearchElasticsearchRouteModuleSpec extends AnyWordSpec with Ht
         )
       )
 
-      assert(lifecycleResponse.status == Status.Ok)
-
-      val json = io.circe.parser.parse(lifecycleResponse.body).getOrElse(fail(s"invalid JSON: ${lifecycleResponse.body}"))
-      assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
-      assert(json.hcursor.get[String]("servingDecision") == Right("not_enforced"))
-      assert(json.hcursor.get[Boolean]("productionLifecycleComplete") == Right(false))
-      assert(json.hcursor.downField("lifecycleStatus").get[String]("lifecycleStatus") == Right("seed_only_not_production_lifecycle"))
-      assert(json.hcursor.downField("lifecycleStatus").get[String]("source") == Right("seed-resource-loader"))
+      BeautySearchProductionRouteSpecSupport.assertPreparedLifecycleStatusResponse(
+        lifecycleResponse,
+        response =>
+          io.circe.parser.parse(response.body) match {
+            case Right(json) => json
+            case Left(error) => fail(s"invalid JSON: ${error.getMessage}; body: ${response.body}")
+          },
+      )
     }
   }
 

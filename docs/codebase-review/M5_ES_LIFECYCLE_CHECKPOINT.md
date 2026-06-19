@@ -1,6 +1,6 @@
 # M5 Startup-Readiness Lifecycle Checkpoint — Closeout
 
-Status: M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete and moves to named future tracks. No production source, endpoint, or serving behavior was changed.
+Status: M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete and moves to named future tracks. M5 itself did not change default production serving behavior; post-M5, Design A operator visibility landed as explicit opt-in/internal endpoint exposure.
 
 ## Closeout decision
 
@@ -71,7 +71,7 @@ Remaining ES production lifecycle work moves to named future tracks. These track
 
 | Track | Scope | Dependencies | Current status |
 |-------|-------|-------------|----------------|
-| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; endpoint/path/auth policy approval | Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Design A endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Draft recommends `GET /ops/beauty-search/lifecycle`, disabled-by-default auth, `200 OK` status, `ElasticsearchStartupReadinessStatusResponse` response shape. All draft recommendations remain unapproved. Pending/spec-only expectations captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests). Implementation-slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`. Requires explicit approval before implementation. |
+| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; only module-level opt-in/internal exposure is implemented | Design A is implemented as explicit opt-in/internal endpoint. `GET /ops/beauty-search/lifecycle` is available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` / `apiElasticsearchWithOperatorVisibility`. Default `seedCatalogElasticsearch`, default `apiElasticsearch`, and `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch` do NOT expose it. Response shape is `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`. `200 OK`, no new ES calls, no `/beauty-search` behavior change. No auth/config seam beyond module-level opt-in. Design B/C remain future. |
 | ES runtime serving-gate track | Runtime route-gate policy/implementation: route returns approved HTTP error (e.g., 503) on non-prepared state; requires new source seam because current DI-bound transition is always `Prepared` | M5 closeout; serving-gate policy approval (Choice 1 or 2 from `ES_STARTUP_SERVING_GATE_DESIGN.md`); new source seam design | Not started; source-confirmed as requiring different seam in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` |
 | ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
 
@@ -83,8 +83,8 @@ Dashboard/operator integration and full production lifecycle verification remain
 
 This closeout does not imply or implement:
 
-- No endpoint implementation.
-- No route path approval.
+- No default/public endpoint exposure.
+- No runtime auth/config policy beyond module-level opt-in.
 - No serving enforcement.
 - No production lifecycle completion claim.
 - No Qdrant/hybrid serving fallback.
@@ -95,7 +95,8 @@ This closeout does not imply or implement:
 - No `HybridServe`.
 - No Qdrant auto-supplement.
 - No runtime HTTP gate implementation.
-- No operator-visible endpoint implementation.
+- No Design B startup-failure endpoint.
+- No Design C replacement/freshness/rollback-rich endpoint.
 - No replacement/freshness/rollback implementation.
 
 ## References

@@ -104,7 +104,7 @@ Rationale:
 - Allows future operator endpoints under the same namespace.
 - Does not tie to a specific technology (ES vs Qdrant) in the path.
 
-This is a **draft recommendation only**. The path is not approved.
+Historical draft recommendation. The current Design A implementation uses this path for the explicit opt-in/internal endpoint only.
 
 ## Auth/exposure policy options
 
@@ -146,7 +146,7 @@ Rationale:
 - Explicit enablement forces operators to acknowledge the endpoint's purpose.
 - For dev/local, a simpler config gate (Option C) may suffice.
 
-This is a **draft recommendation only**. The auth policy is not approved.
+Historical draft recommendation. The only implemented exposure policy today is module-level opt-in/internal routing; broader auth/config policy is still future work.
 
 ## HTTP status code policy options
 
@@ -181,7 +181,7 @@ Rationale:
 - `500 Internal Server Error` is reserved for unexpected handler failures only.
 - Lifecycle status is communicated through response body fields, not HTTP status codes.
 
-This is a **draft recommendation only**. The HTTP status policy is not approved.
+Historical draft recommendation. The current Design A implementation returns `200 OK` for successful opt-in/internal status retrieval.
 
 ## Response shape candidates
 
@@ -328,11 +328,11 @@ Rationale:
 - Does not expose fields that do not exist yet (unlike Candidate 3's `limitations`).
 - Requires no new Elasticsearch calls.
 
-This is a **draft recommendation only**. The response shape is not approved.
+Historical draft recommendation. The current Design A implementation returns `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`.
 
 ## Implementation prerequisites
 
-The following decisions must be explicitly approved before any operator visibility endpoint implementation:
+The following decisions were resolved for Design A implementation at the module boundary; remaining items below describe future policy work beyond the current opt-in/internal endpoint:
 
 1. **Endpoint path decision** — Choose and approve one endpoint path from the candidates above.
 2. **Auth/operator exposure decision** — Choose and approve one auth/exposure policy from the options above.
@@ -345,9 +345,9 @@ The following decisions must be explicitly approved before any operator visibili
 
 ## Future tests required before implementation
 
-The following tests must be added alongside any operator visibility endpoint code. Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`:
+The following tests define the current Design A hardening surface. Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`:
 
-**Pending/spec-only coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations and not implementation proof. No endpoint is implemented; no route path is approved.
+**Current coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now contains active Design A assertions for default-graph absence, explicit opt-in presence, in-memory absence, exact `Prepared` response shape, and no-new-ES-calls behavior. Only future expectations without a current seam remain pending.
 
 1. **Endpoint returns expected prepared/seed-only status shape.**
    - `GET` to approved path returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
@@ -384,7 +384,7 @@ The following tests must be added alongside any operator visibility endpoint cod
    - `productionLifecycleComplete` is `false`.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
 
-## Future implementation seams (source-confirmed, not approved)
+## Future design seams beyond the current Design A implementation
 
 The following implementation seams are source-confirmed as likely future candidates. None are approved.
 
@@ -432,8 +432,8 @@ The smallest safe implementation slice for Design A is source-confirmed in `docs
 - **Can be implemented without new ES calls:** Yes. The endpoint reads from DI-bound `ElasticsearchStartupReadinessTransition` and projects via pure function.
 - **Can be implemented without changing `/beauty-search`:** Yes. The endpoint is additive (different method and path).
 - **Smallest future files:** new `EsLifecycleStatusTapirEndpoints.scala`, new `EsLifecycleStatusApi.scala`, modification to existing DI wiring module.
-- **Unresolved decisions:** endpoint path, auth/exposure mode, response shape, HTTP status code, route graph rooting, pending spec activation, enabled/disabled flag semantics.
-- **Pending specs:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has 28 pending tests encoding Design A expectations.
+- **Resolved for current Design A implementation:** endpoint path, route graph rooting, response shape, HTTP status code, and request-time no-new-ES-calls behavior.
+- **Still future:** auth/config seam beyond module-level opt-in, config-level disabled-by-default behavior, local/dev fallback policy, Design B bootstrap failure status, and Design C replacement/freshness/rollback-rich status.
 
 ## References
 

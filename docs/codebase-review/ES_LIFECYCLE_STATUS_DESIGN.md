@@ -244,8 +244,8 @@ The following items are explicitly not approved by this design document:
 
 The startup serving-gate design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. Key facts:
 
-- The serving-gate design is design-only; no enforcement code is implemented.
-- No endpoint is implemented; no route path is approved.
+- The serving-gate design is design-only; no runtime enforcement code is implemented.
+- Design A endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility only; default ES graphs do not expose it.
 - No serving-readiness enforcement exists.
 - No preparation failure policy is implemented.
 - No production lifecycle completion is claimed.
@@ -274,7 +274,7 @@ This design does not imply or approve:
 
 ## Implementation boundary
 
-If a future endpoint is approved, it should report the current seed-only state accurately before introducing any claim of production lifecycle completion. Endpoint exposure and operator policy remain future work in the ES operator visibility track.
+The implemented opt-in/internal endpoint reports the current seed-only state and does not claim production lifecycle completion. Broader operator policy, auth/config seams, and richer lifecycle states remain future work in the ES operator visibility track.
 
 Until that later task is approved and implemented:
 
@@ -291,7 +291,7 @@ The operator visibility track is now source-confirmed. See `docs/codebase-review
 
 Source-confirmed facts:
 
-- `ElasticsearchLifecycleStatusResponse` and `ElasticsearchStartupReadinessStatusResponse` are implemented as pure non-serving models with Circe encoders. They can be exposed later without new ES calls.
+- `ElasticsearchLifecycleStatusResponse` and `ElasticsearchStartupReadinessStatusResponse` are implemented as pure non-serving models with Circe encoders. They are now exposed through the explicit opt-in/internal Design A endpoint without new ES calls.
 - The `Prepared` variant of `ElasticsearchStartupReadinessStatusResponse` (with nested `ElasticsearchLifecycleStatusResponse`) is always reachable from the DI-bound transition.
 - Cross-model consistency is proven by `ElasticsearchReadinessConsistencySpec`.
 - Failed transition projection shape is available from pure tests but unreachable from the DI-bound transition (always `Prepared`).
@@ -319,4 +319,4 @@ Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs
 - HTTP status: always `200 OK` for successful retrieval
 - Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`
 
-All draft recommendations remain unapproved. Endpoint exposure and operator policy remain unimplemented. Draft endpoint expectations are now captured in `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` (28 pending tests). Implementation slice is source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`.
+Design A is implemented as explicit opt-in/internal operator visibility. Default ES graphs do not expose it. Module-level opt-in is the only implemented exposure policy; broader auth/config policy remains future. `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active default-absence, opt-in-presence, exact response-shape, in-memory-absence, and no-new-ES-calls coverage. Implementation slice remains source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.

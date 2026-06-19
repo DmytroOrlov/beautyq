@@ -126,7 +126,7 @@ Design A operator visibility endpoint is implemented as explicit opt-in module. 
 
 Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Implementation source confirmation in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
 
-**Implemented active coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has active Design A endpoint tests (59 active, 5 pending for future Design B/C/runtime-gate/config-auth expectations).
+**Implemented active coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has active Design A endpoint tests, with only future Design B/C/runtime-gate/config-auth expectations left pending.
 
 Implemented active tests:
 
@@ -159,8 +159,9 @@ Implemented active tests:
 
 4. **Endpoint introduces no extra Elasticsearch calls.**
    - The endpoint reads from DI-bound models only.
-   - No new ES calls are triggered by the endpoint.
-   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
+   - A request-count assertion proves `GET /ops/beauty-search/lifecycle` does not add request-time ES calls.
+   - Existing `POST /beauty-search` request-time ES search behavior remains unchanged.
+   - Classification: `Contractual + Blackbox + Group` (real HTTP-client seam).
 
 5. **No startup failure status is exposed in Design A.**
    - The endpoint always returns `Prepared` variant.
@@ -212,7 +213,7 @@ The following tests justify the M5 closeout decision as a bounded startup-readin
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: lifecycle metadata and prepared transition with real HTTP client module.
 - `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: lifecycle metadata and prepared transition through port-configured default route.
 
-These tests cover non-serving lifecycle seams only. They do not prove runtime serving-gate enforcement, operator-visible endpoint, replacement, freshness, refresh, rollback, or full production lifecycle completion.
+These tests cover bounded startup-readiness seams only. They do not prove runtime serving-gate enforcement, replacement, freshness, refresh, rollback, or full production lifecycle completion.
 
 Remaining unimplemented tests (not covered by this task):
 
@@ -629,7 +630,7 @@ First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids 
 
 Targeted search result:
 
-- `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` uses ScalaTest `pending` mechanism for 28 pending Design A operator visibility endpoint policy expectations. These encode draft endpoint behavior expectations without implementing the endpoint. Pending tests report as `pending` (not `failed`) in ScalaTest output.
+- `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` keeps ScalaTest `pending` only for future expectations without a current seam (for example config-level disabled-by-default, local/dev fallback, and runtime route-gate/HTTP 503 behavior). Active Design A expectations now run as real assertions.
 - Resource-backed specs cancel when resources are unavailable; true manual artifact specs may cancel when saved artifact env vars are absent.
 - Class names containing `Smoke`, `Integration`, or `Manual` reflect the spec's role.
 

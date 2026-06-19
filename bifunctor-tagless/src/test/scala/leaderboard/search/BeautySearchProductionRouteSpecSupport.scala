@@ -57,6 +57,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     startupTransition: ElasticsearchStartupReadinessTransition,
   )
 
+  protected final def withRecordingZeroHitEsServer(f: BeautySearchProductionRouteSpecSupport.RecordedEsServer => Unit): Unit =
+    BeautySearchProductionRouteSpecSupport.withRecordingZeroHitEsServer(f)
+
   protected final def withZeroHitEsServer(f: Int => Unit): Unit = {
     val server = HttpServer.create(new InetSocketAddress(0), 0)
     try {
@@ -222,6 +225,9 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
   protected final def assertOperatorVisibilityEndpointAbsent(apis: Set[HttpApi[IO]]): Unit =
     BeautySearchProductionRouteSpecSupport.assertOperatorVisibilityEndpointAbsent(apis)
 
+  protected final def assertPreparedLifecycleStatusResponse(response: ObservedResponse): Unit =
+    BeautySearchProductionRouteSpecSupport.assertPreparedLifecycleStatusResponse(response, parseResponseJson)
+
   protected final def assertDefaultBadRequest(response: ObservedResponse): Unit = {
     assert(
       response.status == Status.BadRequest,
@@ -277,6 +283,60 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
 }
 
 private[search] object BeautySearchProductionRouteSpecSupport {
+  final case class RecordedEsRequest(
+    method: String,
+    path: String,
+    contentType: Option[String],
+    body: String,
+  )
+
+  final class RecordedEsServer(
+    val port: Int,
+    private val recordedRequests: scala.collection.mutable.ListBuffer[RecordedEsRequest],
+    private val stopServer: () => Unit,
+  ) {
+    def requestCount: Int =
+      recordedRequests.synchronized(recordedRequests.size)
+
+    def requestPaths: List[String] =
+      recordedRequests.synchronized(recordedRequests.map(_.path).toList)
+
+    def stop(): Unit =
+      stopServer()
+  }
+
+  def withRecordingZeroHitEsServer(f: RecordedEsServer => Unit): Unit = {
+    val recordedRequests = scala.collection.mutable.ListBuffer.empty[RecordedEsRequest]
+    val server           = HttpServer.create(new InetSocketAddress(0), 0)
+
+    try {
+      server.createContext(
+        "/",
+        (exchange: HttpExchange) => {
+          val method      = exchange.getRequestMethod
+          val path        = exchange.getRequestURI.getPath
+          val contentType = Option(exchange.getRequestHeaders.getFirst("Content-Type"))
+          val body        = Using.resource(exchange.getRequestBody)(in => Source.fromInputStream(in, "UTF-8").mkString)
+
+          recordedRequests.synchronized {
+            recordedRequests += RecordedEsRequest(method, path, contentType, body)
+          }
+
+          val responseBody =
+            if (path.endsWith("_search")) """{"hits":{"hits":[]}}"""
+            else """{"acknowledged":true}"""
+          val bytes = responseBody.getBytes(StandardCharsets.UTF_8)
+          exchange.sendResponseHeaders(200, bytes.length)
+          Using.resource(exchange.getResponseBody)(_.write(bytes))
+        }: Unit
+      )
+      server.start()
+      f(new RecordedEsServer(server.getAddress.getPort, recordedRequests, () => server.stop(0)))
+    } finally {
+      server.stop(0)
+    }
+  }
+
   def assertSeedOnlyLifecycleMetadata(metadata: ElasticsearchSeedLifecycleMetadata): Unit = {
     assert(metadata.indexName == BeautySearchSpecV1.spec.variantDocument.indexName)
     assert(metadata.source == "seed-resource-loader")
@@ -319,6 +379,35 @@ private[search] object BeautySearchProductionRouteSpecSupport {
 
   def assertOperatorVisibilityEndpointAbsent(apis: Set[HttpApi[IO]]): Unit = {
     assert(apis.collect { case _: EsLifecycleStatusApi[IO] => () }.isEmpty, "Expected no EsLifecycleStatusApi in the default HttpApi set")
+    (): Unit
+  }
+
+  def assertPreparedLifecycleStatusResponse(
+    response: ObservedResponse,
+    parseResponseJson: ObservedResponse => Json,
+  ): Unit = {
+    assert(response.status == Status.Ok, s"Expected 200 OK, got ${response.status}")
+
+    val json            = parseResponseJson(response)
+    val lifecycleCursor = json.hcursor.downField("lifecycleStatus")
+
+    assert(json.hcursor.get[String]("transitionStatus") == Right("prepared"))
+    assert(json.hcursor.get[String]("servingDecision") == Right("not_enforced"))
+    assert(json.hcursor.get[Boolean]("productionLifecycleComplete") == Right(false))
+    assert(lifecycleCursor.get[String]("indexName") == Right(BeautySearchSpecV1.spec.variantDocument.indexName))
+    assert(lifecycleCursor.get[String]("source") == Right("seed-resource-loader"))
+    assert(lifecycleCursor.get[String]("lifecycleStatus") == Right("seed_only_not_production_lifecycle"))
+    assert(lifecycleCursor.get[String]("preparationMode") == Right("eager_seed_index_preparation"))
+    assert(lifecycleCursor.get[String]("servingReadiness") == Right("not_enforced"))
+    assert(lifecycleCursor.get[String]("replacement") == Right("not_configured"))
+    assert(lifecycleCursor.get[String]("freshness") == Right("not_tracked"))
+    assert(lifecycleCursor.get[String]("refresh") == Right("eager_seed_preparation_only"))
+    assert(lifecycleCursor.get[String]("rollback") == Right("not_configured"))
+    assert(lifecycleCursor.get[String]("operatorVisibility") == Right("not_exposed"))
+    assert(lifecycleCursor.get[Boolean]("productionLifecycleComplete") == Right(false))
+    assert(lifecycleCursor.get[Int]("documentCount").exists(_ > 0))
+    assert(json.hcursor.downField("operationName").focus.isEmpty)
+    assert(json.hcursor.downField("message").focus.isEmpty)
     (): Unit
   }
 }

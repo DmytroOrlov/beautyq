@@ -46,7 +46,7 @@ The following files are the smallest safe implementation set for Design A:
 
 5. `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala`
    - Pending specs become active when endpoint is implemented.
-   - 28 pending tests encode Design A draft expectations.
+   - Design A hardening tests are active for default-graph absence, explicit opt-in presence, in-memory absence, exact `Prepared` response shape, and no-new-ES-calls behavior.
 
 ### DI binding source
 
@@ -102,14 +102,14 @@ Source evidence:
 
 ## Unresolved decisions before implementation
 
-The following decisions must be explicitly approved before any operator visibility endpoint implementation:
+The following decisions were resolved for the current Design A implementation at the module boundary; remaining items below describe future policy work beyond the current opt-in/internal endpoint:
 
-1. **Endpoint path** — Draft recommends `GET /ops/beauty-search/lifecycle`. Not approved.
-2. **Auth/exposure mode** — Draft recommends disabled unless explicitly enabled, with local/dev-only fallback. Not approved.
-3. **Response shape** — Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Not approved.
-4. **HTTP status code** — Draft recommends always `200 OK` for successful retrieval. Not approved.
+1. **Endpoint path** — Implemented as `GET /ops/beauty-search/lifecycle` for the explicit opt-in/internal endpoint.
+2. **Auth/exposure mode** — Implemented only as module-level opt-in/internal routing. Config-level disabled-by-default and local/dev fallback remain future.
+3. **Response shape** — Implemented as `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`.
+4. **HTTP status code** — Implemented as `200 OK` for successful retrieval.
 5. **Exact route graph rooting** — Whether the endpoint module is included in `seedCatalogElasticsearch`, `seedCatalogElasticsearchPortConfigured`, or a new dedicated module.
-6. **Whether pending specs become active in same patch or later** — `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has 28 pending tests that encode Design A expectations. They can be activated when the endpoint is implemented, or kept pending as regression guardrails.
+6. **What remains pending after implementation** — `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now keeps pending only for future expectations without a current seam (config-level disabled-by-default, local/dev fallback, runtime route gate/HTTP 503, Design B/C).
 7. **Enabled/disabled flag semantics** — How the disabled-by-default flag is implemented (config flag, environment, activation axis).
 8. **Exact response wrapper versus direct status projection** — Whether to return `ElasticsearchStartupReadinessStatusResponse` directly or wrap it in additional metadata.
 
@@ -130,7 +130,7 @@ The following decisions must be explicitly approved before any operator visibili
 
 ## Pending specs as current expectations
 
-`ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes 28 pending tests for Design A. These are pending expectations, not implementation proof. When implementation starts, these specs should be activated or replaced by active endpoint contract tests.
+`ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active implementation proof for Design A behavior and leaves only genuinely future expectations pending.
 
 Pending test groups:
 - **Response shape** (6 tests): `200 OK` with `Prepared` variant, nested lifecycle status, `transitionStatus`, `servingDecision`, `productionLifecycleComplete`.
@@ -150,7 +150,7 @@ This source confirmation does not:
 - approve an auth/operator policy;
 - change any source or test file;
 - claim production lifecycle completion;
-- claim operator visibility is implemented.
+- claim default/public endpoint exposure, runtime auth/config policy, runtime route gate/HTTP 503 behavior, Design B startup-failure visibility, Design C richer lifecycle status, or production lifecycle completion.
 
 ## References
 
