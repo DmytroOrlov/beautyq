@@ -351,11 +351,23 @@ Implemented pure source:
 - `QdrantProductionCandidateActivationPolicy`;
 - `QdrantProductionCandidateActivationScope`;
 - `QdrantProductionCandidateActivationDecision`;
-- `QdrantProductionCandidateActivationReport`.
+- `QdrantProductionCandidateActivationReport`;
+- `QdrantProductionCandidateIndexingEvidence`;
+- `QdrantProductionCandidateIndexingReport`;
+- `QdrantProductionCandidateIndexingDecision`;
+- `QdrantProductionCandidateIndexingReadiness`;
+- `QdrantProductionCandidateSearchEvidence`;
+- `QdrantProductionCandidateSearchReport`;
+- `QdrantProductionCandidateSearchDecision`;
+- `QdrantProductionCandidateSearchReadiness`.
 
 The state tracks collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy readiness. The conservative default keeps Qdrant active but not production-candidate-ready. The derived report is ready only when Qdrant is active and every required category is explicitly `Ready`.
 
 Collection/identity readiness reuses the existing `QdrantCollectionCompatibilityMismatch` result through a pure adapter. The foundation does not duplicate compatibility checks and does not add DI, HTTP, route, Qdrant serving, hybrid serving, shadow serving, or traffic mirroring.
+
+Indexing readiness adapts source-backed evidence from the existing generic/variant indexers and `QdrantSnapshotIndexingResult`: expected, prepared, and optional indexed document counts; collection-identity readiness; and embedding/vector readiness. Counts must be positive and match, collection identity must be `Ready`, and embedding/vector evidence must be present. Missing reports map to `Unknown`; incomplete reports map to `NotReady` with deterministic reasons.
+
+Search readiness adapts the source-confirmed `QdrantSemanticCandidateBackend`, `QdrantSemanticCandidateSearch`, `QdrantCandidateAssembler`, and `QdrantCandidateResponseProjector` boundaries plus explicit BeautySearch contract-parity evidence. Every component must be present/ready. Missing reports map to `Unknown`; incomplete reports map to `NotReady` with deterministic reasons.
 
 Quality/eval readiness reuses `EngineEvalAggregateReport` through a pure adapter. The parity report preserves baseline/candidate labels and records evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. The explicit rule requires a minimum evaluated-query count, maximum recall deficit, and maximum Qdrant noise count, and produces an explicit parity outcome. Passed evidence maps to `Ready`; failed evidence maps to `NotReady` with stable reasons; no report maps to `NotEvaluated`; structurally incomplete evidence maps to `Unknown`.
 

@@ -71,6 +71,18 @@ object QdrantProductionCandidateReadiness {
   ): QdrantProductionCandidateReadinessState =
     state.copy(qualityEval = QdrantProductionCandidateQualityGate.readinessStatus(report))
 
+  def withIndexingReadiness(
+    state: QdrantProductionCandidateReadinessState,
+    report: Option[QdrantProductionCandidateIndexingReport],
+  ): QdrantProductionCandidateReadinessState =
+    state.copy(indexing = QdrantProductionCandidateIndexingReadiness.readinessStatus(report))
+
+  def withSearchReadiness(
+    state: QdrantProductionCandidateReadinessState,
+    report: Option[QdrantProductionCandidateSearchReport],
+  ): QdrantProductionCandidateReadinessState =
+    state.copy(search = QdrantProductionCandidateSearchReadiness.readinessStatus(report))
+
   def withActivationPolicy(
     state: QdrantProductionCandidateReadinessState,
     policy: Option[QdrantProductionCandidateActivationPolicy],

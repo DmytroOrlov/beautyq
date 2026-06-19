@@ -442,6 +442,8 @@ Benchmark/eval code:
 - `QdrantEmbeddingBenchmarkReportFormatter`, `QdrantEmbeddingBenchmarkReportJson`, `QdrantEmbeddingBenchmarkSavedReportComparison`: formatting, JSON, and saved report comparison.
 - `QdrantProductionCandidateQualityGate`: offline production-candidate quality/parity policy over source-backed `EngineEvalAggregateReport` metrics.
 - `QdrantProductionCandidateActivationPolicy`: pure activation approval/scope/control policy with readiness-status mapping; it does not bind or enable a route.
+- `QdrantProductionCandidateIndexingReadiness`: pure expected/prepared/indexed count, collection-identity, and embedding/vector evidence adapter.
+- `QdrantProductionCandidateSearchReadiness`: pure semantic backend/search, candidate assembly, response projection, and BeautySearch contract-parity evidence adapter.
 
 Search tests strongly shaping contracts:
 
@@ -557,6 +559,7 @@ Qdrant benchmark tests:
 - `QdrantEmbeddingBenchmarkSavedReportComparisonSpec.scala`
 - `QdrantProductionCandidateQualityGateSpec.scala`
 - `QdrantProductionCandidateActivationPolicySpec.scala`
+- `QdrantProductionCandidateIndexingSearchReadinessSpec.scala`
 - `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala`: manual by name.
 
 Manual/local/ignored tests:
@@ -670,6 +673,7 @@ Package `leaderboard.search.qdrant`:
 - `QdrantCollectionIdentity`, `QdrantCollectionReadinessConfig`, `QdrantCollectionCompatibility*`: `search/qdrant/*.scala`; category: search/Qdrant lifecycle; responsibility: collection naming/readiness/compatibility checks.
 - `QdrantNonProductionExperimentActivation`, `QdrantNonProductionExperimentComposition`, `QdrantNonProductionHybridExperiment`: `search/qdrant/*.scala`; category: search/non-production; responsibility: gated experiment composition.
 - `QdrantEmbeddingBenchmark*`: `search/qdrant/*.scala`; category: benchmark; responsibility: embedding benchmark plans, metrics, runners, decisions, reports.
+- `QdrantProductionCandidateReadiness`, `QdrantProductionCandidateIndexingReadiness`, `QdrantProductionCandidateSearchReadiness`, `QdrantProductionCandidateQualityGate`, `QdrantProductionCandidateActivationPolicy`: `search/qdrant/*.scala`; category: search/Qdrant production-candidate readiness; responsibility: pure readiness evidence and status mapping only, without route or serving integration.
 
 Package `leaderboard.search.hybrid`:
 

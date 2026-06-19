@@ -470,7 +470,7 @@ Boundary:
 
 ### Qdrant production-candidate readiness contract
 
-`QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness, quality/eval, and activation-policy foundations.
+`QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness, indexing/search, quality/eval, and activation-policy foundations.
 
 Contract facts:
 
@@ -491,6 +491,10 @@ Contract facts:
 - future explicit opt-in route scope is representable and separately approval-gated, but does not add a route;
 - future production route activation remains blocked by this policy;
 - existing `QdrantCollectionCompatibilityMismatch` results are adapted without reimplementing compatibility checks;
+- missing indexing/search reports map to `Unknown`;
+- indexing requires positive matching expected/prepared/indexed document counts, ready collection identity, and embedding/vector readiness evidence;
+- search requires semantic candidate backend/search contracts, candidate assembly, response projection, and BeautySearch contract-parity evidence;
+- incomplete indexing/search evidence maps to `NotReady` with deterministic ordered reasons;
 - no shadow-serving or production traffic-mirroring field is part of the readiness contract.
 
 Boundary:

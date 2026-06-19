@@ -137,9 +137,11 @@ Evidence:
 
 - `docs/search-dsl-qdrant-vector-backend.md` says production hybrid is not implemented and Qdrant is not production lifecycle/routing/fallback.
 - `QdrantProductionCandidateReadiness.scala` provides a pure M6 readiness state/report/policy with conservative defaults and no route integration.
+- `QdrantProductionCandidateIndexingReadiness.scala` adapts document-count, collection-identity, and embedding/vector evidence into indexing readiness without running Qdrant.
+- `QdrantProductionCandidateSearchReadiness.scala` adapts semantic search, assembly, projection, and BeautySearch contract-parity evidence into search readiness without serving.
 - `QdrantProductionCandidateQualityGate.scala` provides source-backed offline quality/parity evidence from `EngineEvalAggregateReport`, explicit thresholds, stable failure reasons, and readiness-status mapping.
 - `QdrantProductionCandidateActivationPolicy.scala` provides explicit candidate activation approval, scope, control/evidence requirements, blocking reasons, and readiness-status mapping without route integration.
-- `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` prove every readiness category must be explicitly ready and that shadow/traffic-mirroring/serving behavior is not required.
+- `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` prove every readiness category must be explicitly ready and that shadow/traffic-mirroring/serving behavior is not required.
 - `docs/search-dsl-hybrid-v1-plan.md` says Hybrid V1 is a non-production foundation.
 - Class names include `QdrantNonProductionExperiment*`, `BeautyQNonProductionHybrid*`, and `ExperimentalBeautySearchService`.
 - `LeaderboardPlugin.scala` does not bind Qdrant/hybrid search services.
