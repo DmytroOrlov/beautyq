@@ -34,6 +34,7 @@ Build/module observations:
 - `docs/codebase-review/07-current-gaps-and-roadmap.md`: roadmap status owner for current gaps, milestone progression, and priority order. Evidence: includes lane/gate breakdowns and milestone summary for ES lifecycle, eval, Qdrant production-candidate readiness, and hybrid serving.
 - `bifunctor-tagless/src/main/scala/leaderboard/search/qdrant/QdrantProductionCandidateReadiness.scala`: pure production-candidate readiness state/status/report and assembler policy. Evidence: active conservative default, eight required readiness categories, all-ready requirement, collection-compatibility adapter, and quality-report helper; no route or serving integration.
 - `bifunctor-tagless/src/main/scala/leaderboard/search/qdrant/QdrantProductionCandidateQualityGate.scala`: pure quality/parity report, explicit query-count/recall-deficit/noise rule, `EngineEvalAggregateReport` adapter, stable decision reasons, and readiness-status mapping; no Qdrant, HTTP, or serving dependency.
+- `bifunctor-tagless/src/main/scala/leaderboard/search/qdrant/QdrantProductionCandidateActivationPolicy.scala`: pure explicit-approval, scope, control/evidence, blocking-reason, and readiness-status policy; production-route activation is not approved and no route is bound.
 - `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`: Elasticsearch lifecycle status shape and implementation boundary. Evidence: records the implemented non-serving response model/encoder and current values, plus the explicit opt-in/internal Design A endpoint `GET /ops/beauty-search/lifecycle`; default ES graphs and the in-memory graph do not expose it. M5 is closed as a bounded startup-readiness lifecycle checkpoint; runtime route gate and richer lifecycle policy remain future work.
 - `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`: ES startup serving-gate policy design. Evidence: defines five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before any enforcement implementation. Design-only; no enforcement code, endpoint, route path, or production lifecycle completion exists. M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate work is source-confirmed as separate future work and is currently recommended to stay deferred behind a runtime readiness source or replacement/freshness/rollback policy.
 - `docs/codebase-review/ES_RUNTIME_ROUTE_GATE_POLICY.md`: runtime serving-gate policy note. Evidence: compares Candidate A/B/C/D, confirms app-start fail-closed remains the current behavior, documents that successful ES route graphs always bind `Prepared`, and recommends Candidate A (keep app-start fail-closed only until a runtime readiness source or replacement/freshness/rollback policy exists). Docs-only.
@@ -440,6 +441,7 @@ Benchmark/eval code:
 - `QdrantEmbeddingBenchmarkQuerySubset`: selects explicit query subsets.
 - `QdrantEmbeddingBenchmarkReportFormatter`, `QdrantEmbeddingBenchmarkReportJson`, `QdrantEmbeddingBenchmarkSavedReportComparison`: formatting, JSON, and saved report comparison.
 - `QdrantProductionCandidateQualityGate`: offline production-candidate quality/parity policy over source-backed `EngineEvalAggregateReport` metrics.
+- `QdrantProductionCandidateActivationPolicy`: pure activation approval/scope/control policy with readiness-status mapping; it does not bind or enable a route.
 
 Search tests strongly shaping contracts:
 
@@ -554,6 +556,7 @@ Qdrant benchmark tests:
 - `QdrantEmbeddingBenchmarkRunnerSpec.scala`
 - `QdrantEmbeddingBenchmarkSavedReportComparisonSpec.scala`
 - `QdrantProductionCandidateQualityGateSpec.scala`
+- `QdrantProductionCandidateActivationPolicySpec.scala`
 - `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala`: manual by name.
 
 Manual/local/ignored tests:

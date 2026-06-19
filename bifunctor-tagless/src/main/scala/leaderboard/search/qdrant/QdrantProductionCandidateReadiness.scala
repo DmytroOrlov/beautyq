@@ -71,6 +71,12 @@ object QdrantProductionCandidateReadiness {
   ): QdrantProductionCandidateReadinessState =
     state.copy(qualityEval = QdrantProductionCandidateQualityGate.readinessStatus(report))
 
+  def withActivationPolicy(
+    state: QdrantProductionCandidateReadinessState,
+    policy: Option[QdrantProductionCandidateActivationPolicy],
+  ): QdrantProductionCandidateReadinessState =
+    state.copy(activationPolicy = QdrantProductionCandidateActivationPolicy.readinessStatus(policy))
+
   private def requiredStatuses(
     state: QdrantProductionCandidateReadinessState
   ): List[QdrantProductionCandidateReadinessStatus] =

@@ -38,6 +38,16 @@ final class BeautySearchOptInRouteModuleSpec extends AnyWordSpec with HttpContra
     }
   }
 
+  "A future explicit Qdrant opt-in route" should {
+    "remain outside default apiElasticsearch" in {
+      pending
+    }
+
+    "require explicit production-candidate activation-policy approval" in {
+      pending
+    }
+  }
+
   private def buildProbe(): BeautySearchOptInRouteModuleProbe = {
     val module = new ModuleDef {
       include(BeautySearchRouteModules.seedCatalogInMemory[IO])

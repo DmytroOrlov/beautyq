@@ -331,7 +331,9 @@ Collection/identity status can be adapted from the existing compatibility result
 
 Quality/eval status is now backed by `QdrantProductionCandidateQualityGate`. Its pure `EngineEvalAggregateReport` adapter records baseline/candidate labels, evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. An explicit rule sets minimum query count, maximum recall deficit, and maximum noise, and the report records an explicit parity outcome. Passed reports map to `Ready`; failed reports map to `NotReady` with stable reasons; absent reports map to `NotEvaluated`; incomplete evidence maps to `Unknown`.
 
-This foundation requires neither shadow serving nor production traffic mirroring. It does not add a Qdrant serving route, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, or `/beauty-search` behavior change. Broader accepted evidence, configured controls, and activation approval remain future M6 inputs. M7 and M8 remain future-only and conditional.
+Activation-policy status is backed by `QdrantProductionCandidateActivationPolicy`. It records explicit approval; no-activation, candidate-readiness-only, future explicit opt-in route only, and future production route not approved here scopes; route/serving approval status; rollback/disable controls; no-regression evidence; observability; and blocking reasons. Missing policy maps to `NotApproved`. Missing controls map to `NotReady`. A candidate-readiness-only policy can map to `Ready` when explicitly approved with every required control. Production-route activation remains blocked here.
+
+This foundation requires neither shadow serving nor production traffic mirroring. It does not add a Qdrant serving route, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, or `/beauty-search` behavior change. Broader accepted evidence, configured controls, and any serving approval remain future M6 inputs. M7 and M8 remain future-only and conditional.
 
 ## 9. Non-production experiment wiring boundary
 

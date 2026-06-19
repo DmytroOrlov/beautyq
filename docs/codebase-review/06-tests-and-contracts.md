@@ -470,7 +470,7 @@ Boundary:
 
 ### Qdrant production-candidate readiness contract
 
-`QdrantProductionCandidateReadinessSpec` and `QdrantProductionCandidateQualityGateSpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness and quality/eval gate foundation.
+`QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness, quality/eval, and activation-policy foundations.
 
 Contract facts:
 
@@ -486,6 +486,10 @@ Contract facts:
 - `EngineEvalAggregateReport` supplies evaluated query count, ES recall, Qdrant recall, and Qdrant noise without duplicating eval semantics;
 - rollback/disable defaults to `NotConfigured`;
 - activation policy defaults to `NotApproved`;
+- a missing activation policy maps to `NotApproved`;
+- candidate-readiness-only activation maps to `Ready` only with explicit approval, rollback/disable controls, no-regression evidence, and observability;
+- future explicit opt-in route scope is representable and separately approval-gated, but does not add a route;
+- future production route activation remains blocked by this policy;
 - existing `QdrantCollectionCompatibilityMismatch` results are adapted without reimplementing compatibility checks;
 - no shadow-serving or production traffic-mirroring field is part of the readiness contract.
 
@@ -494,6 +498,7 @@ Boundary:
 - This is a pure report/policy contract, not a serving gate.
 - No Qdrant serving route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
 - Existing production route/module specs remain the route behavior source of truth.
+- Pending route expectations record that any future Qdrant opt-in route stays outside default `apiElasticsearch`, requires activation-policy approval, and cannot replace the ES-backed `/beauty-search` route without separate approval.
 
 ### Saved aggregate schema boundary
 

@@ -347,13 +347,19 @@ Implemented pure source:
 - `QdrantProductionCandidateParityReport`;
 - `QdrantProductionCandidateQualityDecision`;
 - `QdrantProductionCandidateQualityReport`;
-- `QdrantProductionCandidateQualityGate`.
+- `QdrantProductionCandidateQualityGate`;
+- `QdrantProductionCandidateActivationPolicy`;
+- `QdrantProductionCandidateActivationScope`;
+- `QdrantProductionCandidateActivationDecision`;
+- `QdrantProductionCandidateActivationReport`.
 
 The state tracks collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy readiness. The conservative default keeps Qdrant active but not production-candidate-ready. The derived report is ready only when Qdrant is active and every required category is explicitly `Ready`.
 
 Collection/identity readiness reuses the existing `QdrantCollectionCompatibilityMismatch` result through a pure adapter. The foundation does not duplicate compatibility checks and does not add DI, HTTP, route, Qdrant serving, hybrid serving, shadow serving, or traffic mirroring.
 
 Quality/eval readiness reuses `EngineEvalAggregateReport` through a pure adapter. The parity report preserves baseline/candidate labels and records evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. The explicit rule requires a minimum evaluated-query count, maximum recall deficit, and maximum Qdrant noise count, and produces an explicit parity outcome. Passed evidence maps to `Ready`; failed evidence maps to `NotReady` with stable reasons; no report maps to `NotEvaluated`; structurally incomplete evidence maps to `Unknown`.
+
+Activation-policy readiness is also pure and route-independent. It records explicit approval, scope, route/serving approval status, rollback/disable controls, no-regression evidence, observability, and blocking reasons. Candidate-readiness-only activation can become `Ready` when every required control is satisfied. Future explicit opt-in route scope is representable but has no route implementation. Future production route scope is explicitly not approved by this policy.
 
 ## F2. Hybrid Control-Plane v0
 

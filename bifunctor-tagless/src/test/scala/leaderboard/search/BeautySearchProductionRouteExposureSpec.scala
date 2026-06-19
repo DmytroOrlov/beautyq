@@ -147,6 +147,10 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
         (): Unit
       }
     }
+
+    "keep POST /beauty-search ES-backed until separate route activation is approved" in {
+      pending
+    }
   }
 
 }
