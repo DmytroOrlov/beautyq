@@ -199,7 +199,7 @@ What not to infer:
 
 Statement:
 
-- Current Elasticsearch lifecycle metadata and production-readiness state remain seed-only internal seams, while Design A operator visibility is exposed through an explicit opt-in/internal endpoint. The full production lifecycle contract remains incomplete.
+- Current Elasticsearch lifecycle metadata and production-readiness state remain seed-only internal seams, while Design A operator visibility is exposed through an explicit opt-in/internal endpoint. The full production lifecycle contract remains incomplete. The runtime serving-gate track is a separate future decision and is currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 
 Evidence:
 
@@ -215,6 +215,7 @@ Consequences:
 
 - Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or broader operator-visible production lifecycle status beyond Design A.
 - Broader operator-facing lifecycle exposure beyond Design A remains unimplemented until additional endpoint path and operator policy approvals are separately granted.
+- Runtime route-gate enforcement is not supported by the current source seam because successful route graphs always bind `Prepared` and there is no stale/previous-index state yet.
 - M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
 
 What not to infer:

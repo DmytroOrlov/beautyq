@@ -1,6 +1,6 @@
 # ES Startup Serving Gate Design
 
-Status: design-only. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate work moves to ES runtime serving-gate future track.
+Status: design-only. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate work is source-confirmed as a separate future track and is currently recommended to stay deferred behind a runtime readiness source or replacement/freshness/rollback policy.
 
 - No endpoint implemented.
 - No route path approved.
@@ -9,7 +9,7 @@ Status: design-only. M5 is closed as a bounded startup-readiness lifecycle check
 - No production lifecycle completion.
 - App-start fail-closed behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. These tests document current implicit behavior only; they are not runtime HTTP 503 gate tests.
 - Prepared-serving behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. These tests document that successful composition allows serving; serving behavior is unchanged.
-- Runtime route gate (HTTP 503 on non-prepared state) remains not implemented and requires a new source seam. This work moves to the ES runtime serving-gate future track.
+- Runtime route gate (HTTP 503 on non-prepared state) remains not implemented and requires a new source seam. Current source truth supports app-start fail-closed only; runtime serving-gate work stays deferred. See `docs/codebase-review/ES_RUNTIME_ROUTE_GATE_POLICY.md`.
 - See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for closeout checkpoint.
 
 ## Purpose
@@ -218,6 +218,16 @@ Each choice below must be explicitly approved before any implementation. None ar
 - Override to "force non-serving" blocks serving regardless of transition.
 - Override state is operator-visible.
 - Override does not affect lifecycle metadata or freshness.
+
+## Source-confirmed runtime route-gate policy
+
+The current source truth distinguishes three separate policies:
+
+- app-start fail-closed: if eager composition fails, no route instance exists;
+- runtime route gate: a constructed route instance would need a non-prepared readiness source to return an approved HTTP error;
+- operator visibility: separate status exposure, already implemented as Design A, without serving enforcement.
+
+The current source does not support a runtime HTTP gate because a successful route graph always binds `ElasticsearchStartupReadinessTransition.Prepared`, and no stale/previous index or replacement/freshness/rollback state exists yet. The recommended policy is Candidate A from `ES_RUNTIME_ROUTE_GATE_POLICY.md`: keep app-start fail-closed only and defer runtime HTTP gate work until a later runtime readiness or replacement/freshness/rollback policy exists.
 
 **Operator-visible status impact:**
 

@@ -97,6 +97,12 @@ Future/unimplemented unless matching source-backed tests are added. These belong
   - serving path when ES preparation/readiness succeeds;
   - failure path when preparation fails;
   - explicit proof of whether serving blocks, degrades, or fails fast.
+- runtime route-gate enforcement, if a later runtime readiness source is approved:
+  - `Prepared` continues to serve unchanged;
+  - non-prepared state returns the approved HTTP error and body;
+  - no runtime fallback to Qdrant/hybrid;
+  - no extra Elasticsearch calls beyond the approved lifecycle path;
+  - proof that the route instance still exists only when the chosen source seam allows it.
 - replacement / alias behavior:
   - versioned index naming or alias movement if adopted;
   - atomic versus non-atomic replacement behavior;
@@ -119,6 +125,8 @@ Future/unimplemented unless matching source-backed tests are added. These belong
   - route/status endpoint contract tests only if an endpoint/path is separately approved;
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
+
+Runtime serving-gate testing is currently deferred by policy. The source-confirmed recommendation is Candidate A: keep app-start fail-closed only until a runtime readiness source or replacement/freshness/rollback policy exists.
 
 ### Operator visibility tests — Design A implemented as explicit opt-in module
 

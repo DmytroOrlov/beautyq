@@ -1,6 +1,6 @@
 # ES Startup Serving Gate Source Confirmation
 
-Status: source-confirmed; app-start fail-closed and prepared-serving are now test-covered. M5 is closed as a bounded startup-readiness lifecycle checkpoint. This source confirmation completed the bounded M5 decision. Runtime route-gate work moves to ES runtime serving-gate future track. No production source, endpoint, or serving behavior was changed.
+Status: source-confirmed; app-start fail-closed and prepared-serving are now test-covered. M5 is closed as a bounded startup-readiness lifecycle checkpoint. This source confirmation completed the bounded M5 decision. Runtime route-gate work is a separate future track and is recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists. No production source, endpoint, or serving behavior was changed.
 
 ## Purpose
 
@@ -117,6 +117,19 @@ However, this enforcement is **currently impossible at runtime** because:
 
 The current architecture supports app-start failure but not runtime route gate.
 
+### Recommended policy decision
+
+**Candidate A: keep app-start fail-closed only.**
+
+That decision is source-backed because:
+
+- a successful ES route graph always binds `ElasticsearchStartupReadinessTransition.Prepared`;
+- `PreparationFailed` is unreachable from the DI-bound transition in a successfully constructed route graph;
+- if preparation fails during eager composition, no route instance exists to gate at runtime;
+- there is no stale/previous index state and no replacement/freshness/rollback policy to anchor a runtime gate.
+
+The runtime serving-gate track should remain deferred until a later runtime readiness source or replacement/freshness/rollback policy is approved.
+
 ## Candidate implementation slices
 
 ### Slice A: app-start fail-closed documentation/tests only
@@ -182,7 +195,7 @@ Rationale:
 - Before implementing Slice A, app-start failure tests must prove the implicit behavior.
 - Slice C is blocked on endpoint/path/auth policy.
 
-**Recommended exact next step:** Add spec-only route-level tests that prove:
+**Recommended exact next step:** keep the current app-start fail-closed tests as the source of truth and defer runtime gate implementation. If the track resumes, add spec-only route-level tests that prove:
 
 1. **App-start fail-closed:** Composition failure from ES preparation failure prevents `BeautySearchApi` from being constructed. This proves the existing implicit behavior. — **Done.** `ElasticsearchAppStartServingGateSpec` covers composition-level and DI-graph-level fail-closed behavior.
 2. **Prepared startup allows serving:** When composition succeeds, `POST /beauty-search` returns 200 OK. This is already proven by `BeautySearchProductionRouteExposureSpec` but should be restated in serving-gate context. — **Done.** `ElasticsearchAppStartServingGateSpec` includes a prepared-serving test.
@@ -193,6 +206,7 @@ These tests can be written as spec-only (expected behavior) before any enforceme
 ## Policy resolution status
 
 - **Fail closed until prepared:** recommended but not formally approved. Source-backed implicit behavior exists (app-start fail-closed). Runtime route gate requires new seam.
+- **Candidate A / app-start fail-closed only:** recommended and source-backed today. Runtime route gate remains deferred until a later runtime readiness source or replacement/freshness/rollback policy exists.
 - **Fail fast on preparation failure:** not approved. Current eager composition already fails fast (throws), but this is an implementation fact, not an approved policy.
 - **Endpoint/path/auth policy:** not resolved. Blocks Slice C.
 - **HTTP status for non-prepared state:** not resolved. Blocks Slice B.
