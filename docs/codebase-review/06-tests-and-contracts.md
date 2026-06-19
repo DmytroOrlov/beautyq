@@ -476,6 +476,8 @@ Boundary:
 
 `QdrantProductionCandidateM7ConfigApprovalSpec` is `Contractual + Blackbox + Atomic` coverage for the disabled-by-default config/no-regression layer. It proves the conservative default is blocked, no-regression evidence requires separate approval, blocker ordering is deterministic, the report composes into M7 planning prerequisites, and production-route planning remains blocked without separate route/serving approval.
 
+`QdrantProductionCandidateOfflineEvalEvidenceSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the post-M7 offline evidence bridge. It assembles fixture ES/Qdrant outputs, round-trips the aggregate through saved-report JSON, applies the Qdrant quality gate, maps the quality result to no-regression evidence, and proves that evidence remains blocked until separately approved. It uses no ES, Qdrant, Llama, Docker, network, or saved real artifact.
+
 `QdrantProductionCandidateM7CloseoutSpec` closes the M7 activation planning/source-confirmation foundation with one pure aggregate. It composes a production-candidate-ready M6 report, a `Ready` activation-policy report, conservative disabled config/no-regression evidence, approved config/no-regression evidence, complete explicit opt-in prerequisites, blocked production-route activation, conditional future hybrid serving, and references to the active/pending route-boundary specs. It does not implement or approve serving.
 
 `BeautySearchOptInRouteModuleSpec` keeps future Qdrant opt-in route expectations pending and compile-safe. The pending contract requires a separate future module outside default `apiElasticsearch`; M6 `productionCandidateReady`; activation-policy readiness; observability/status evidence; rollback/disable control; separate route/serving approval; and the disabled-default config gate plus separately approved no-regression evidence supplied through `QdrantProductionCandidateActivationConfigApproval`. Existing active `BeautySearchProductionRouteExposureSpec` and `BeautySearchElasticsearchRouteModuleSpec` remain the route-boundary proof that `/beauty-search` is ES-backed and the default graph is unchanged.
@@ -492,6 +494,7 @@ Contract facts:
 - a passed explicit quality/parity rule maps quality/eval to `Ready`;
 - structurally incomplete evidence maps to `Unknown`;
 - `EngineEvalAggregateReport` supplies evaluated query count, ES recall, Qdrant recall, and Qdrant noise without duplicating eval semantics;
+- passed quality evidence maps to satisfied no-regression evidence, failed quality maps to missing/unsatisfied evidence, and absent/incomplete/unevaluated quality maps to unknown; evidence approval remains separate;
 - rollback/disable defaults to `NotConfigured`;
 - activation policy defaults to `NotApproved`;
 - a missing activation policy maps to `NotApproved`;

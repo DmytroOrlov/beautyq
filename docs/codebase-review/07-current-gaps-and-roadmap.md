@@ -249,6 +249,7 @@ Closed M7 activation planning/source-confirmation foundation:
 
 - `QdrantProductionCandidateActivationPlanning` evaluates pre-wiring prerequisites only; it cannot bind or enable a route.
 - `QdrantProductionCandidateActivationConfigApproval` models a disabled-by-default gate plus separate no-regression evidence and evidence approval. It maps only complete approved evidence into the existing planning prerequisites and cannot approve route serving.
+- Its pure quality-evidence adapter maps passed `QdrantProductionCandidateQualityReport` evidence to `Satisfied`, failed evidence to `Missing`, and absent/incomplete/unevaluated evidence to `Unknown`; this preserves a distinct approval step.
 - Target scopes are candidate readiness only, explicit opt-in route, production route activation, and hybrid serving.
 - M6 `productionCandidateReady = true` and a `Ready` activation-policy report are mandatory.
 - Any serving scope additionally requires a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval.

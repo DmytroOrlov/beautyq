@@ -39,6 +39,7 @@ object QdrantProductionCandidateActivationConfigApproval {
   import QdrantProductionCandidateActivationConfigApprovalStatus.*
   import QdrantProductionCandidateActivationConfigGate.*
   import QdrantProductionCandidateActivationRequirementStatus.*
+  import QdrantProductionCandidateQualityDecisionStatus.*
 
   val conservativeDefault: QdrantProductionCandidateActivationConfigApproval =
     QdrantProductionCandidateActivationConfigApproval(
@@ -86,6 +87,21 @@ object QdrantProductionCandidateActivationConfigApproval {
       ),
     )
   }
+
+  def noRegressionEvidenceFromQuality(
+    report: Option[QdrantProductionCandidateQualityReport]
+  ): QdrantProductionCandidateActivationRequirementStatus =
+    report match {
+      case None =>
+        Unknown
+      case Some(value) =>
+        value.decision.status match {
+          case Passed      => Satisfied
+          case Failed      => Missing
+          case Unevaluated => Unknown
+          case Incomplete  => Unknown
+        }
+    }
 
   def applyToPlanningPrerequisites(
     report: QdrantProductionCandidateActivationConfigApprovalReport,

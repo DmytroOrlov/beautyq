@@ -15,6 +15,12 @@ This template does **not** represent:
 * HybridServe activation
 * Qdrant auto-supplement approval
 
+## Activation evidence boundary
+
+An assembled or decoded saved `EngineEvalAggregateReport` may be evaluated by `QdrantProductionCandidateQualityGate.fromEngineEval`. Its quality decision may then be mapped to no-regression evidence by `QdrantProductionCandidateActivationConfigApproval.noRegressionEvidenceFromQuality`.
+
+This mapping is evidence-facing only: passed quality supplies satisfied evidence, failed quality supplies missing/unsatisfied evidence, and absent or incomplete quality remains unknown. It does not approve that evidence, enable a config gate, approve route/serving, or change production behavior.
+
 ## Workspace
 
 Create a project-local workspace by default:
