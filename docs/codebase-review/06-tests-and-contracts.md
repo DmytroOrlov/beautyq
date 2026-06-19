@@ -470,7 +470,7 @@ Boundary:
 
 ### Qdrant production-candidate readiness contract
 
-`QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness, indexing/search, quality/eval, activation-policy, observability, and rollback/disable foundations.
+`QdrantProductionCandidateM6CloseoutSpec`, `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` are `Contractual + Blackbox + Atomic` coverage for the closed pure M6 readiness foundation.
 
 Contract facts:
 
@@ -502,6 +502,9 @@ Contract facts:
 - complete observability or rollback/disable evidence maps to `Ready`;
 - rollback/disable readiness does not approve production-route activation;
 - no shadow-serving or production traffic-mirroring field is part of the readiness contract.
+- the closeout spec composes collection compatibility, quality, activation, indexing, search, observability, and rollback/disable adapters into one all-ready state while contract parity remains an explicit required category;
+- all categories `Ready` yields `productionCandidateReady = true` only when `qdrantActive = true`;
+- all categories `Ready` with `qdrantActive = false` remains not production-candidate-ready.
 
 Boundary:
 
@@ -509,6 +512,7 @@ Boundary:
 - No Qdrant serving route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
 - Existing production route/module specs remain the route behavior source of truth.
 - Pending route expectations record that any future Qdrant opt-in route stays outside default `apiElasticsearch`, requires activation-policy approval, and cannot replace the ES-backed `/beauty-search` route without separate approval.
+- M6 is closed as a production-candidate readiness foundation only. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
 
 ### Saved aggregate schema boundary
 

@@ -304,6 +304,8 @@ Compatibility is strict:
 
 ## 8.5. Production-candidate readiness foundation
 
+M6 is closed as the Qdrant production-candidate readiness foundation. Closure means the source-backed pure readiness model and its eight categories, conservative defaults, quality/eval and activation-policy foundations, indexing/search adapters, observability adapter, rollback/disable adapter, and aggregate source-confirmation coverage are complete.
+
 `QdrantProductionCandidateReadinessState` records:
 
 * whether Qdrant remains active;
@@ -341,7 +343,9 @@ Quality/eval status is now backed by `QdrantProductionCandidateQualityGate`. Its
 
 Activation-policy status is backed by `QdrantProductionCandidateActivationPolicy`. It records explicit approval; no-activation, candidate-readiness-only, future explicit opt-in route only, and future production route not approved here scopes; route/serving approval status; rollback/disable controls; no-regression evidence; observability; and blocking reasons. Missing policy maps to `NotApproved`. Missing controls map to `NotReady`. A candidate-readiness-only policy can map to `Ready` when explicitly approved with every required control. Production-route activation remains blocked here.
 
-This foundation requires neither shadow serving nor production traffic mirroring. It does not add a Qdrant serving route, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, or `/beauty-search` behavior change. Broader accepted evidence, configured controls, and any serving approval remain future M6 inputs. M7 and M8 remain future-only and conditional.
+`QdrantProductionCandidateM6CloseoutSpec` proves all eight categories exist, every missing or non-ready category blocks readiness, the seven source adapters compose, all categories `Ready` require active Qdrant, and inactive Qdrant blocks readiness even when every category is `Ready`.
+
+This foundation requires neither shadow serving nor production traffic mirroring. M6 closure is not production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, production-route activation approval, or `/beauty-search` behavior change. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
 
 ## 9. Non-production experiment wiring boundary
 
@@ -886,13 +890,13 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. small explicit manual adapter/handle skeleton
+1. define the bounded M7 activation/source-confirmation and serving-policy decision slice without adding a route or changing production serving
 
 Immediate code target details:
 
-* keep it explicit manual/test/local only
-* prefer a small adapter/handle skeleton before any full Distage/module shape
-* no real Qdrant/Llama implementation yet if avoidable
+* preserve M6 as a readiness foundation rather than serving approval
+* keep any source-confirmation or policy work route-independent
+* no real Qdrant/Llama serving implementation
 * no `LeaderboardPlugin`
 * no `BeautySearchService`
 * no startup indexing

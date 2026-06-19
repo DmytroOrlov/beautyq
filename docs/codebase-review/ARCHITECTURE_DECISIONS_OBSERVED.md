@@ -136,13 +136,13 @@ Statement:
 Evidence:
 
 - `docs/search-dsl-qdrant-vector-backend.md` says production hybrid is not implemented and Qdrant is not production lifecycle/routing/fallback.
-- `QdrantProductionCandidateReadiness.scala` provides a pure M6 readiness state/report/policy with conservative defaults and no route integration.
+- `QdrantProductionCandidateReadiness.scala` provides the closed pure M6 readiness state/report/policy foundation with conservative defaults and no route integration.
 - `QdrantProductionCandidateIndexingReadiness.scala` adapts document-count, collection-identity, and embedding/vector evidence into indexing readiness without running Qdrant.
 - `QdrantProductionCandidateSearchReadiness.scala` adapts semantic search, assembly, projection, and BeautySearch contract-parity evidence into search readiness without serving.
 - `QdrantProductionCandidateQualityGate.scala` provides source-backed offline quality/parity evidence from `EngineEvalAggregateReport`, explicit thresholds, stable failure reasons, and readiness-status mapping.
 - `QdrantProductionCandidateActivationPolicy.scala` provides explicit candidate activation approval, scope, control/evidence requirements, blocking reasons, and readiness-status mapping without route integration.
 - `QdrantProductionCandidateObservabilityReadiness.scala` and `QdrantProductionCandidateRollbackReadiness.scala` provide pure source-backed report evidence, deterministic blocking reasons, and readiness-status mapping without traffic mirroring or serving approval.
-- `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` prove every readiness category must be explicitly ready and that shadow/traffic-mirroring/serving behavior is not required.
+- `QdrantProductionCandidateM6CloseoutSpec` plus the focused readiness, indexing/search, quality, activation, and controls specs prove every readiness category must be explicitly ready, all adapters compose, Qdrant must be active, and shadow/traffic-mirroring/serving behavior is not required.
 - `docs/search-dsl-hybrid-v1-plan.md` says Hybrid V1 is a non-production foundation.
 - Class names include `QdrantNonProductionExperiment*`, `BeautyQNonProductionHybrid*`, and `ExperimentalBeautySearchService`.
 - `LeaderboardPlugin.scala` does not bind Qdrant/hybrid search services.
@@ -154,11 +154,13 @@ Consequences:
 - Candidate-readiness activation approval is distinct from route/serving approval; production-route activation remains outside the implemented policy.
 - Production rollout still needs broader accepted evidence, configured controls, explicit serving approval, routing, and lifecycle policy. The pure observability and rollback/disable reports do not approve serving.
 - Future hybrid work is conditional on direct Qdrant production-candidate readiness and explicit serving policy approval.
+- M6 is closed as the Qdrant production-candidate readiness foundation. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
 
 What not to infer:
 
 - Passing Qdrant tests does not make Qdrant the production backend.
 - Hybrid projection tests do not implement production fallback or score fusion.
+- Candidate-readiness activation does not approve production-route activation.
 
 Related design boundary:
 

@@ -18,7 +18,7 @@ Current status:
 
 Strategic gap:
 
-- The next strategic gate is ES production lifecycle design beyond the implemented operator endpoint, not Qdrant direct-candidate implementation. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks. Runtime serving-gate work is source-confirmed as a separate future track and is currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
+- M6 is closed as the Qdrant production-candidate readiness foundation. M5 remains closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks. Runtime serving-gate work is source-confirmed as a separate future track and is currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 - Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, kill-switch, and lifecycle/source-of-truth policy.
 
 ### BeautySearchService Wiring
@@ -61,7 +61,7 @@ Remaining gaps:
 
 - No approved production lifecycle policy for source of truth, freshness/staleness, startup behavior, runtime refresh/replacement, rollback, or stale-catalog observability.
 - No repository-backed indexing or live catalog freshness.
-- No startup reindex policy, aliases/blue-green, Qdrant production-candidate readiness, hybrid serving, fallback, score fusion, reranking, or production lifecycle.
+- No startup reindex policy, aliases/blue-green, Qdrant production serving, hybrid serving, fallback, score fusion, reranking, or full production lifecycle.
 
 ### Qdrant / Hybrid Production Candidate Boundary
 
@@ -166,10 +166,10 @@ Status:
 * M-ESQ-EVAL pure/report/assembly layer is implemented.
 * M3 / B-lite remains the current expanded in-progress checkpoint.
 * Current expanded M3 interpretability includes expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
-* Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle design and any future Qdrant production-candidate readiness.
+* Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle tracks and future activation/hybrid decisions.
 * Still offline/eval only. Production route wiring remains ES-backed seed route.
-* The next strategic gate is ES lifecycle design before any Qdrant direct-candidate implementation. Qdrant direct-candidate readiness is a future M6 readiness/design step, not the current implementation step, because readiness should follow contract parity, explicit observability, and rollback/disable policy. Direct-candidate readiness is meaningful only against a stable production-serving baseline; until BeautyQ has an approved production baseline with observable traffic/status semantics, M6 means offline/parity/readiness groundwork, not real production shadow traffic. The current B-lite / M-ESQ-EVAL lane already covers offline ES vs Qdrant vs simulated hybrid comparison; without a production-grade ES lifecycle baseline, readiness metrics would only compare against a seed-backed, lifecycle-incomplete route.
-* M4/M5 lifecycle work is closed. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks. M6 Qdrant production-candidate readiness is active; M7 hybrid policy and M8 controlled hybrid serving remain future-only and conditional. Runtime serving-gate work is still deferred behind a runtime readiness source or replacement/freshness/rollback policy.
+* M6 is closed as a source-backed pure Qdrant production-candidate readiness foundation. It is readiness groundwork, not real production shadow traffic, production serving, or route activation approval. The current B-lite / M-ESQ-EVAL lane remains offline ES vs Qdrant vs simulated-hybrid comparison.
+* M4/M5 lifecycle work is closed. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional. Runtime serving-gate work is still deferred behind a runtime readiness source or replacement/freshness/rollback policy.
 
 Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
 
@@ -213,7 +213,7 @@ M3/B-lite remains an offline evidence lane. The current expanded checkpoint is u
 
 #### Lane C: Qdrant production-candidate readiness
 
-Qdrant remains active as a direct production-candidate target. M6 now has pure, route-independent readiness, quality/parity, activation-policy, indexing/search, observability, and rollback/disable adapter foundations. They do not enable production serving. Direct-candidate readiness still requires accepted evidence and configured safety controls; it does not require real production shadow traffic or production traffic mirroring.
+Qdrant remains active as a direct production-candidate target. M6 is closed as a pure, route-independent readiness foundation covering quality/parity, activation policy, indexing/search, observability, and rollback/disable adapters. It does not enable production serving and does not require real production shadow traffic or production traffic mirroring.
 
 | Gate | Why | Skip risk |
 |------|-----|-----------|
@@ -224,7 +224,7 @@ Qdrant remains active as a direct production-candidate target. M6 now has pure, 
 | Observability and rollback/disable readiness | Operation and disable controls must be configured before approval | Candidate cannot be diagnosed or safely disabled |
 | Explicit activation policy | Serving requires a separate approved policy | Readiness state accidentally treated as routing approval |
 
-Implemented foundation:
+Closed M6 foundation:
 
 - `QdrantProductionCandidateReadinessStatus`: `Ready`, `NotReady`, `NotEvaluated`, `NotConfigured`, `NotApproved`, `Unknown`.
 - `QdrantProductionCandidateReadinessState`: Qdrant active state plus collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy categories.
@@ -242,7 +242,9 @@ Implemented foundation:
 - Activation scopes: no activation; candidate readiness only; future explicit opt-in route only; future production route not approved here.
 - Activation status mapping: no policy or approval -> `NotApproved`; missing controls/evidence -> `NotReady(reasons)`; approved candidate-only or separately approved future opt-in scope with every required control -> `Ready`. Production-route activation remains blocked by this policy.
 - Conservative default: active, but not ready. Quality/eval is not evaluated, rollback/disable is not configured, activation is not approved, and unproven categories remain unknown.
-- No shadow-serving, traffic-mirroring, route-switch, Qdrant-serving, hybrid-serving, or production-route behavior was added.
+- `QdrantProductionCandidateM6CloseoutSpec` source-confirms all eight categories, every category blocker, all adapter composition, the all-ready active invariant, and the inactive-Qdrant blocker.
+- M6 closure does not mean production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, production traffic mirroring, or production-route activation approval.
+- No Qdrant serving route, hybrid-serving behavior, or production-route behavior was added.
 
 #### Lane D: Hybrid policy and serving
 
@@ -271,9 +273,9 @@ Implemented foundation:
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Closed. HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Full verification is separate from focused validation. |
 | M5 | Startup-readiness lifecycle checkpoint | Closed as a bounded startup-readiness lifecycle checkpoint: app-start fail-closed, prepared-serving, non-serving lifecycle metadata/readiness/status/transition/projection seams, DI/rooting, failure classification, and consistency coverage. Remaining ES production-lifecycle tracks are intentionally separate: runtime route-gate, replacement/freshness/rollback, and full lifecycle operations. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md`. |
-| M6 | Qdrant production-candidate readiness: contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy. | In progress: five accepted large chunks implemented—readiness foundation, quality/parity gate, activation-policy foundation, indexing/search readiness adapters, and observability plus rollback/disable readiness adapters; roughly 1–2 large commits remain, with no serving approval |
-| M7 | Hybrid policy proven offline, conditional on Qdrant production-candidate readiness | Future |
-| M8 | Controlled hybrid serving experiment, conditional on explicit business/serving policy and activation approval | Future |
+| M6 | Qdrant production-candidate readiness: contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy. | Closed: Qdrant production-candidate readiness foundation. Five accepted chunks plus source-confirmation closeout; no serving approval |
+| M7 | Activation/source-confirmation and policy work before any serving, conditional on separate approval | Future-only and conditional |
+| M8 | Controlled hybrid serving experiment, conditional on explicit business/serving policy and activation approval | Future-only and conditional; not automatic |
 
 #### M4 ES lifecycle design gate — closed
 
@@ -361,7 +363,7 @@ Dashboard/operator integration and full production lifecycle verification remain
 #### Near-term sequence
 
 * Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
-* Continue M6 from the implemented pure readiness, quality/parity, activation-policy, indexing/search, observability, and rollback/disable adapter foundations: connect remaining source-backed contract-parity evidence and configured controls without treating candidate approval as serving approval.
+* M6 is closed. Define the next bounded M7 activation/source-confirmation and serving-policy decision slice without treating candidate readiness as serving approval and without adding a route.
 * M5 remains closed as a bounded startup-readiness lifecycle checkpoint. Remaining ES production-lifecycle tracks are runtime route-gate, replacement/freshness/rollback, and full lifecycle operations. The runtime route-gate remains deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 * Current immediate next steps are not Qdrant shadow-first work and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
@@ -389,10 +391,11 @@ Remaining next steps:
 * Operational readiness / observability.
 * Qdrant direct-candidate/hybrid later (B-lite eval: ES-native + Qdrant-native benchmark comparison).
 
-The goal is not yet full production search lifecycle. The goal is to demonstrate
-the first ES-backed production route over controlled seed data before adding
-freshness, repository-backed indexing, Qdrant production-candidate readiness,
-hybrid serving, score fusion, fallback, or production collection lifecycle.
+The goal is not yet full production search lifecycle. The current production
+route remains the first ES-backed route over controlled seed data. M6 readiness
+foundation closure does not add freshness, repository-backed indexing, Qdrant
+production serving, hybrid serving, score fusion, fallback, or production
+collection lifecycle.
 
 Simulated hybrid belongs in benchmark/eval only: combines ES EngineEvalResult + Qdrant EngineEvalResult offline, must not imply route wiring, HybridServe, or auto-supplement production responses.
 

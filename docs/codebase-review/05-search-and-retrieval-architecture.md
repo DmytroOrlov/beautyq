@@ -337,6 +337,8 @@ Production boundary:
 
 ## F1.5. Qdrant production-candidate readiness foundation
 
+M6 is closed as the Qdrant production-candidate readiness foundation. This is a source-backed pure readiness closeout, not production serving or route activation approval.
+
 Implemented pure source:
 
 - `QdrantProductionCandidateReadinessStatus`;
@@ -382,6 +384,10 @@ Observability readiness requires source-backed readiness/status, quality/eval, a
 Quality/eval readiness reuses `EngineEvalAggregateReport` through a pure adapter. The parity report preserves baseline/candidate labels and records evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. The explicit rule requires a minimum evaluated-query count, maximum recall deficit, and maximum Qdrant noise count, and produces an explicit parity outcome. Passed evidence maps to `Ready`; failed evidence maps to `NotReady` with stable reasons; no report maps to `NotEvaluated`; structurally incomplete evidence maps to `Unknown`.
 
 Activation-policy readiness is also pure and route-independent. It records explicit approval, scope, route/serving approval status, rollback/disable controls, no-regression evidence, observability, and blocking reasons. Candidate-readiness-only activation can become `Ready` when every required control is satisfied. Future explicit opt-in route scope is representable but has no route implementation. Future production route scope is explicitly not approved by this policy.
+
+`QdrantProductionCandidateM6CloseoutSpec` source-confirms the eight-category state shape, conservative default, per-category blockers, all adapter composition, the all-ready active invariant, and the inactive-Qdrant blocker. Existing route specs remain the source of truth that `BeautySearchRouteModules.apiElasticsearch` and `LeaderboardPlugin` keep `/beauty-search` ES-backed, with future Qdrant opt-in activation still pending.
+
+M6 closure does not mean production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, production traffic mirroring, or production-route activation approval. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
 
 ## F2. Hybrid Control-Plane v0
 
@@ -441,7 +447,7 @@ Eval/benchmark:
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
 M-ESQ-EVAL remains offline/eval-only. Detailed milestone status and sequencing live in `docs/codebase-review/07-current-gaps-and-roadmap.md`.
-The Qdrant production-candidate readiness model is a separate pure M6 foundation. Eval output satisfies quality/eval only after explicit quality-rule evaluation; the report does not approve serving.
+The Qdrant production-candidate readiness model is the closed pure M6 foundation. Eval output satisfies quality/eval only after explicit quality-rule evaluation; the report does not approve serving.
 
 ### InMemorySearchBackend role
 
