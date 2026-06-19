@@ -1,6 +1,6 @@
 # ES Runtime Route Gate Policy
 
-Status: docs-only policy note. Runtime route-gate code is not implemented.
+Status: docs-only policy note. Runtime route-gate code is not implemented. This future track is closed for planning only under Candidate A and remains deferred.
 
 This note source-confirms the runtime serving-gate track after the current startup-readiness closeout:
 

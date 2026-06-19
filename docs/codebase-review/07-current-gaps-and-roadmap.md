@@ -4,6 +4,18 @@ This file separates current gaps from future recommendations. Do not read recomm
 
 ## Confirmed Current Gaps
 
+## ES post-M5 planning aggregate
+
+Closed as planning only:
+
+- M5 remains closed as a bounded startup-readiness lifecycle checkpoint.
+- Remaining ES production-lifecycle work is split into three separate future tracks:
+  - runtime route-gate deferred under Candidate A;
+  - replacement/freshness/rollback future;
+  - full lifecycle operations future.
+- This aggregate closeout does not implement runtime gating, HTTP 503 behavior, replacement/freshness/rollback, lifecycle operations, route changes, or serving changes.
+- Qdrant approval-request status remains separate and does not change any ES lifecycle track.
+
 ### Search HTTP Exposure
 
 Full current state is in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
@@ -362,8 +374,9 @@ Remaining ES production lifecycle work is split into named tracks. These tracks 
 | ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; Design A closed/implemented; module-level opt-in is the only realized exposure policy | **Design A implemented as explicit opt-in/internal module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. NOT in default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` / `apiElasticsearchWithOperatorVisibility`. Default `seedCatalogElasticsearch`, default `apiElasticsearch`, `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch`, and the in-memory graph do NOT expose the endpoint. Response shape: `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`. `200 OK` for successful retrieval. No new ES calls. No `/beauty-search` behavior change. No runtime route gate. Design B (bootstrap failure status) and Design C (replacement/freshness/rollback-rich status) remain future. Tests: active default-absence, explicit-opt-in presence, in-memory absence, exact response-shape, and no-new-ES-calls coverage, with only 2 future expectations left pending. |
 | ES runtime serving-gate track | Runtime route-gate policy/implementation: route returns approved HTTP error (e.g., 503) on non-prepared state; requires new source seam because current DI-bound transition is always `Prepared` | M5 closeout; serving-gate policy approval if a runtime readiness source later exists; possible later replacement/freshness/rollback policy | Deferred under Candidate A. Current source truth supports app-start fail-closed only. A successfully constructed ES route graph always binds `Prepared`; `BeautySearchApi` receives no runtime readiness gate; there is no runtime HTTP 503 behavior, stale/previous index state, or replacement/freshness/rollback policy yet. |
 | ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
+| ES full lifecycle operations track | Runtime operator command surface/ownership, auth/config policy, rebuild/refresh semantics, replacement activation, rollback, disable/kill-switch, state transitions, operation progress/failure status | M5 closeout; replacement/freshness/rollback policy and any runtime gate interaction clarified first or alongside | Not started; no runtime lifecycle operation implementation exists today |
 
-These tracks can proceed independently. The ES operator visibility track is closed for Design A; the ES runtime serving-gate track is still recommended to stay deferred behind a runtime readiness source or replacement/freshness/rollback policy; the ES replacement/freshness/rollback track requires individual policy designs. None of these future tracks re-open M5.
+These tracks can proceed independently. The ES operator visibility track is closed for Design A; the ES runtime serving-gate track is still recommended to stay deferred behind a runtime readiness source or replacement/freshness/rollback policy; the ES replacement/freshness/rollback track requires individual policy designs; the ES full lifecycle operations track remains entirely future. None of these future tracks re-open M5.
 
 Dashboard/operator integration and full production lifecycle verification remain downstream of these tracks.
 

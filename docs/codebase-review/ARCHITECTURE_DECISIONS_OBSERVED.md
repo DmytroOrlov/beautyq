@@ -353,6 +353,7 @@ Consequences:
 - M5 is closed with a precise bounded definition that does not claim full production lifecycle completion.
 - Runtime route gate, operator endpoint, replacement, freshness, refresh, rollback, dashboard, and full production lifecycle verification move to named future tracks.
 - The ES operator visibility track, ES runtime serving-gate track, and ES replacement/freshness/rollback track are independent of Qdrant/hybrid roadmap milestones (M6/M7/M8).
+- The ES post-M5 planning aggregate is closed as planning only: Candidate A defers runtime route-gate, replacement/freshness/rollback remains future, and full lifecycle operations remain future.
 
 What not to infer:
 

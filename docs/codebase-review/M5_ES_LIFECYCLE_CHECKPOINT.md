@@ -2,6 +2,8 @@
 
 Status: M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete and moves to named future tracks. Those future tracks are separate post-M5 planning, not an unaccepted M5 remainder. M5 itself did not change default production serving behavior; post-M5, Design A operator visibility landed and was hardened as explicit opt-in/internal endpoint exposure.
 
+Post-M5 planning aggregate status: closed as planning only. The remaining ES future tracks are runtime route-gate deferred under Candidate A, replacement/freshness/rollback future, and full lifecycle operations future.
+
 ## Closeout decision
 
 M5 is closed as a bounded startup-readiness lifecycle checkpoint. Source truth supports closure: all non-serving lifecycle seams are implemented and test-covered, app-start fail-closed and prepared-serving behavior are proven, and the remaining production lifecycle work is clearly bounded and unstarted.

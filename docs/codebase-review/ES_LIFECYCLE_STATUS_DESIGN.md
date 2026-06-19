@@ -296,13 +296,13 @@ This design does not imply or approve:
 
 The implemented opt-in/internal endpoint reports the current seed-only state and does not claim production lifecycle completion. Broader operator policy, auth/config seams, runtime route-gate behavior, and richer lifecycle states remain future work in the ES operator visibility track.
 
-Until that later task is approved and implemented:
+Beyond the implemented Design A endpoint:
 
-- no endpoint exists;
-- no route path is approved;
-- the source model/encoder remains non-serving and unbound from route graphs;
-- no auth/operator policy exists;
-- no serving behavior changes;
+- no default/public endpoint exists;
+- no richer route path set beyond `GET /ops/beauty-search/lifecycle` is approved;
+- the underlying source model/encoder remains a non-serving lifecycle seam;
+- no broader auth/operator policy exists beyond explicit opt-in/internal exposure;
+- no serving behavior changes exist;
 - no production lifecycle completion claim is valid.
 
 ## Operator visibility source-confirmation boundary

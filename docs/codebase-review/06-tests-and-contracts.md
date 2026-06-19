@@ -10,6 +10,17 @@ For current behavior, focused tests are more authoritative than prose docs. In p
 - Search pure/eval specs define parser/DSL/search semantics.
 - Integration/smoke specs prove real-resource paths only under their resource gates.
 
+## ES post-M5 verification boundary
+
+Current active ES lifecycle specs already prove the planning closeout boundary:
+
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint.
+- Runtime route-gate remains deferred under Candidate A and does not exist today as a runtime HTTP 503 gate.
+- Replacement/freshness/rollback does not exist today.
+- Full lifecycle operations do not exist today.
+
+No additional aggregate Scala spec is required for this docs closeout because the active route/module/status specs already cover the present no-implementation boundary.
+
 ## HTTP Contract Tests
 
 Implemented/current:

@@ -31,10 +31,20 @@ Canonical handoff for new chats. Read this first, then see linked docs for deepe
 * `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
 * It is not Qdrant, not hybrid.
 * It is not fresh/repository-backed production catalog lifecycle.
-* Route exposure exists. M5 is closed as a bounded startup-readiness lifecycle checkpoint; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain intentionally separate future tracks, not an unaccepted M5 remainder.
+* Route exposure exists. M5 is closed as a bounded startup-readiness lifecycle checkpoint. The ES post-M5 planning aggregate is also closed: runtime route-gate remains deferred under Candidate A, replacement/freshness/rollback remains future, and full lifecycle operations remain future. Those are separate future tracks, not an unaccepted M5 remainder.
 * Option77 clarified the current ES split: app-start behavior is fail-closed only; successfully constructed ES route graphs are prepared-serving; `BeautySearchApi` has no runtime readiness gate today; there is no runtime HTTP 503 gate, no stale/previous index state, no alias/versioned-index replacement policy, no freshness/staleness policy, no refresh semantics beyond eager seed preparation, no rollback policy, and no runtime lifecycle operations implementation.
 * Full lifecycle operations remain future-only. No runtime rebuild/refresh operation, replacement activation operation, rollback operation, disable/kill-switch operation, stale/current/previous catalog operation state, operator-triggered lifecycle command surface, or auth/config/visibility policy beyond explicit opt-in/internal Design A exists today.
 * `seedCatalogInMemory` remains available as rollback/non-default.
+
+## 1.5. ES post-M5 planning aggregate
+
+Planning closeout only:
+
+* M5 stays closed as the bounded ES startup-readiness lifecycle checkpoint.
+* Runtime route-gate remains deferred under Candidate A. Current behavior is app-start fail-closed only; successfully constructed ES route graphs are prepared-serving; `BeautySearchApi` has no runtime readiness gate; there is no runtime HTTP 503 gate today.
+* Replacement/freshness/rollback remains future. There is no stale/previous index state, alias/versioned-index replacement policy, freshness/staleness policy, runtime refresh trigger semantics beyond eager seed preparation, or rollback policy today.
+* Full lifecycle operations remain future. There is no runtime rebuild/refresh, replacement activation, rollback, disable/kill-switch, stale/current/previous catalog operation state, operator-triggered lifecycle command surface, or broader lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A today.
+* This closeout does not implement route changes, serving changes, or `/beauty-search` behavior changes.
 
 ## 2. Current route behavior characterization
 
