@@ -136,6 +136,8 @@ Statement:
 Evidence:
 
 - `docs/search-dsl-qdrant-vector-backend.md` says production hybrid is not implemented and Qdrant is not production lifecycle/routing/fallback.
+- `QdrantProductionCandidateReadiness.scala` provides a pure M6 readiness state/report/policy with conservative defaults and no route integration.
+- `QdrantProductionCandidateReadinessSpec` proves every readiness category must be explicitly ready and that shadow/traffic-mirroring fields are not required.
 - `docs/search-dsl-hybrid-v1-plan.md` says Hybrid V1 is a non-production foundation.
 - Class names include `QdrantNonProductionExperiment*`, `BeautyQNonProductionHybrid*`, and `ExperimentalBeautySearchService`.
 - `LeaderboardPlugin.scala` does not bind Qdrant/hybrid search services.
@@ -143,7 +145,8 @@ Evidence:
 Consequences:
 
 - Qdrant/hybrid docs must label current status carefully.
-- Production rollout needs separate lifecycle, activation, routing, freshness, rollback/disable, observability, and kill-switch design.
+- The pure production-candidate report is a prerequisite model, not serving approval.
+- Production rollout still needs source-backed quality evidence, configured observability and rollback/disable controls, explicit activation approval, routing, and lifecycle policy.
 - Future hybrid work is conditional on direct Qdrant production-candidate readiness and explicit serving policy approval.
 
 What not to infer:

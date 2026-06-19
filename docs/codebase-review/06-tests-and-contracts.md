@@ -468,6 +468,28 @@ Boundary:
 - It is not production readiness.
 - It is not routing approval.
 
+### Qdrant production-candidate readiness contract
+
+`QdrantProductionCandidateReadinessSpec` is `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness foundation.
+
+Contract facts:
+
+- the conservative default records Qdrant as active but is not production-candidate-ready;
+- collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation policy are all required categories;
+- `productionCandidateReady` is true only when Qdrant is active and every required category is explicitly `Ready`;
+- unknown, missing, not-evaluated, not-configured, not-approved, or not-ready status keeps readiness false;
+- quality/eval defaults to `NotEvaluated`;
+- rollback/disable defaults to `NotConfigured`;
+- activation policy defaults to `NotApproved`;
+- existing `QdrantCollectionCompatibilityMismatch` results are adapted without reimplementing compatibility checks;
+- no shadow-serving or production traffic-mirroring field is part of the readiness contract.
+
+Boundary:
+
+- This is a pure report/policy contract, not a serving gate.
+- No Qdrant serving route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
+- Existing production route/module specs remain the route behavior source of truth.
+
 ### Saved aggregate schema boundary
 
 Saved aggregate report schema remains unchanged in the current offline/eval evidence path:

@@ -68,7 +68,7 @@ Design boundary:
 - The implemented model/service/contract/adapter boundary is now production-exposed only through the ES-backed seed route.
 - Do not infer Qdrant, hybrid, fallback, reranking, score fusion, or benchmark-driven routing from production route availability.
 - The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, an opt-in HttpApi module proof, an explicit opt-in end-to-end route module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
-- The production hardening path should address observability, freshness/staleness, runtime refresh/replacement, and kill-switch design before any Qdrant production-candidate or hybrid work.
+- ES production hardening and Qdrant production-candidate readiness can advance as separate bounded tracks; neither implies hybrid or route-serving approval.
 
 Test-only/fake-only:
 
@@ -282,7 +282,7 @@ Non-production Qdrant/hybrid runner status:
 Production-wired/current:
 
 - No Qdrant production search binding was found in `LeaderboardPlugin.scala`.
-- `docs/search-dsl-qdrant-vector-backend.md` states Qdrant is non-production experimental readiness foundation, not production lifecycle/routing/fallback/hybrid wiring.
+- `docs/search-dsl-qdrant-vector-backend.md` records the pure production-candidate readiness foundation plus non-production runtime experiments; neither is production lifecycle/routing/fallback/hybrid wiring.
 
 What not to infer:
 
@@ -332,8 +332,21 @@ What is not implemented for production:
 
 Production boundary:
 
-- Qdrant and hybrid stay non-production/manual-local/experimental until lifecycle, routing, freshness, observability, kill-switch, and collection-management questions are resolved.
+- Qdrant remains active production-candidate work, while Qdrant and hybrid serving stay outside the production route until lifecycle, routing, freshness, observability, rollback/disable, activation, and collection-management questions are resolved.
 - Elasticsearch/Qdrant/hybrid implemented pieces do not by themselves imply production wiring.
+
+## F1.5. Qdrant production-candidate readiness foundation
+
+Implemented pure source:
+
+- `QdrantProductionCandidateReadinessStatus`;
+- `QdrantProductionCandidateReadinessState`;
+- `QdrantProductionCandidateReadinessReport`;
+- `QdrantProductionCandidateReadiness`.
+
+The state tracks collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy readiness. The conservative default keeps Qdrant active but not production-candidate-ready. The derived report is ready only when Qdrant is active and every required category is explicitly `Ready`.
+
+Collection/identity readiness reuses the existing `QdrantCollectionCompatibilityMismatch` result through a pure adapter. The foundation does not duplicate compatibility checks and does not add DI, HTTP, route, Qdrant serving, hybrid serving, shadow serving, or traffic mirroring.
 
 ## F2. Hybrid Control-Plane v0
 
@@ -393,6 +406,7 @@ Eval/benchmark:
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
 M-ESQ-EVAL remains offline/eval-only. Detailed milestone status and sequencing live in `docs/codebase-review/07-current-gaps-and-roadmap.md`.
+The Qdrant production-candidate readiness model is a separate pure M6 foundation; eval output does not satisfy its quality gate automatically and the report does not approve serving.
 
 ### InMemorySearchBackend role
 

@@ -76,15 +76,19 @@ Current implemented non-production pieces:
 * `QdrantCollectionCompatibilityChecker`
 * `QdrantCollectionCompatibilityGuard`
 * `QdrantCollectionReadinessConfig`
+* `QdrantProductionCandidateReadinessStatus`
+* `QdrantProductionCandidateReadinessState`
+* `QdrantProductionCandidateReadinessReport`
+* `QdrantProductionCandidateReadiness`
 * `QdrantNonProductionExperimentComposition`
 * env-gated Qdrant semantic candidate eval
 * env-gated Qdrant collection compatibility smoke
 * env-gated guarded snapshot indexing smoke
 * env-gated experimental hybrid service smoke
 
-The current path is best described as a non-production experimental readiness foundation.
+The current path includes a source-backed production-candidate readiness foundation plus non-production runtime experiments.
 
-It is not production lifecycle, not production routing, not production fallback, and not production hybrid wiring.
+The readiness foundation is pure and route-independent. It is not production lifecycle completion, production routing, production fallback, or production hybrid wiring.
 
 The real-resource non-production hybrid adapter boundary for future v0 is now recorded at docs level only.
 That adapter is not implemented yet.
@@ -297,6 +301,35 @@ Compatibility is strict:
 * real Qdrant collection-info may omit collection name; in checker context, expected collection name is used because the request is already scoped to `/collections/${expected.collectionName}`
 * if a response explicitly contains a different collection name, `CollectionNameMismatch` must still be reported
 * there must be no silent recreate in production-like paths
+
+## 8.5. Production-candidate readiness foundation
+
+`QdrantProductionCandidateReadinessState` records:
+
+* whether Qdrant remains active;
+* collection/identity readiness;
+* contract parity readiness;
+* indexing readiness;
+* search readiness;
+* quality/eval readiness;
+* observability readiness;
+* rollback/disable readiness;
+* activation-policy readiness.
+
+`QdrantProductionCandidateReadiness.evaluate` derives `QdrantProductionCandidateReadinessReport.productionCandidateReady`. It is true only when Qdrant is active and every required category is explicitly `Ready`.
+
+The conservative default is intentionally incomplete:
+
+* Qdrant is active;
+* quality/eval is `NotEvaluated`;
+* observability and rollback/disable are `NotConfigured`;
+* activation policy is `NotApproved`;
+* other unproven categories are `Unknown`;
+* `productionCandidateReady` is false.
+
+Collection/identity status can be adapted from the existing compatibility result. The adapter preserves the existing mismatch order and meaning; it does not reimplement collection name, vector name, dimension, distance, or embedding-model checks.
+
+This foundation requires neither shadow serving nor production traffic mirroring. It does not add a Qdrant serving route, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, or `/beauty-search` behavior change. Quality/eval evidence and activation approval remain future M6 inputs. M7 and M8 remain future-only and conditional.
 
 ## 9. Non-production experiment wiring boundary
 
