@@ -474,6 +474,8 @@ Boundary:
 
 `QdrantProductionCandidateM7ActivationPlanningSpec` starts M7 with `Contractual + Blackbox + Atomic` coverage for the pure pre-wiring planning model. It proves all four target scopes are represented; M6 readiness and a `Ready` activation policy are mandatory; explicit opt-in planning requires config, no-regression, observability/status, rollback/disable, and separate serving approval; and production/hybrid scopes remain blocked without separate approval.
 
+`QdrantProductionCandidateM7ConfigApprovalSpec` is `Contractual + Blackbox + Atomic` coverage for the disabled-by-default config/no-regression layer. It proves the conservative default is blocked, no-regression evidence requires separate approval, blocker ordering is deterministic, the report composes into M7 planning prerequisites, and production-route planning remains blocked without separate route/serving approval.
+
 `BeautySearchOptInRouteModuleSpec` keeps future Qdrant opt-in route expectations pending and compile-safe. The pending contract requires the future module to stay outside default `apiElasticsearch` and to require M6 readiness, activation-policy approval, a disabled-by-default config gate, no-regression evidence, observability/status evidence, and rollback/disable control. Existing active `BeautySearchProductionRouteExposureSpec` and `BeautySearchElasticsearchRouteModuleSpec` remain the route-boundary proof that `/beauty-search` is ES-backed and the default graph is unchanged.
 
 Contract facts:

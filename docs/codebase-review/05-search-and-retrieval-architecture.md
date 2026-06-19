@@ -395,6 +395,8 @@ M7 has started as activation/source-confirmation and serving-policy planning wit
 
 The explicit opt-in route planning scope requires M6 `productionCandidateReady = true`, a `Ready` activation-policy decision, a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. A complete planning decision means only that a separate implementation decision may be considered; it does not bind or enable a route.
 
+`QdrantProductionCandidateActivationConfigApproval` supplies only the config-gate and no-regression inputs to that planner. The gate is explicitly `Disabled` or `Enabled` and defaults to disabled. No-regression evidence has a separate requirement status and approval status; only `Satisfied` plus `Approved` maps to satisfied planning evidence. The model has no config loader, route binding, or serving approval.
+
 The source-confirmed future seam is outside `BeautySearchRouteModules.apiElasticsearch`: `BeautySearchApi` and `BeautySearchTapirEndpoints` are backend-agnostic, `BeautySearchPluginModules.api` contributes the HTTP API only when included, route modules select the backend composition, and `LeaderboardPlugin` currently includes `apiElasticsearch` directly. No Qdrant route or route switch exists. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
 
 ## F2. Hybrid Control-Plane v0

@@ -248,10 +248,11 @@ Closed M6 foundation:
 Started M7 planning foundation:
 
 - `QdrantProductionCandidateActivationPlanning` evaluates pre-wiring prerequisites only; it cannot bind or enable a route.
+- `QdrantProductionCandidateActivationConfigApproval` models a disabled-by-default gate plus separate no-regression evidence and evidence approval. It maps only complete approved evidence into the existing planning prerequisites and cannot approve route serving.
 - Target scopes are candidate readiness only, explicit opt-in route, production route activation, and hybrid serving.
 - M6 `productionCandidateReady = true` and a `Ready` activation-policy report are mandatory.
 - Any serving scope additionally requires a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval.
-- The next allowed scope is explicit opt-in Qdrant route source-confirmation, pending specifications, or a disabled-by-default config-gate model. Production route activation is not approved.
+- The next allowed scope is explicit opt-in Qdrant route source-confirmation or pending module specifications using the pure config/no-regression report. Production route activation is not approved.
 - Default `apiElasticsearch` and `LeaderboardPlugin` remain ES-backed. No Qdrant serving route, opt-in serving route, route switch, or hybrid serving was added.
 - No Qdrant serving route, hybrid-serving behavior, or production-route behavior was added.
 
@@ -372,7 +373,7 @@ Dashboard/operator integration and full production lifecycle verification remain
 #### Near-term sequence
 
 * Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
-* M6 is closed and M7 planning has started. Next, source-confirm a disabled-by-default Qdrant opt-in config gate and pending module contract without treating candidate readiness as serving approval or adding a route.
+* M6 is closed and M7 planning has started. The disabled-by-default config/no-regression model is source-backed; next, source-confirm the pending opt-in module contract without treating candidate readiness as serving approval or adding a route.
 * M5 remains closed as a bounded startup-readiness lifecycle checkpoint. Remaining ES production-lifecycle tracks are runtime route-gate, replacement/freshness/rollback, and full lifecycle operations. The runtime route-gate remains deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 * Current immediate next steps are not Qdrant shadow-first work and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
