@@ -230,6 +230,7 @@ Evidence:
 Consequences:
 
 - Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or broader operator-visible production lifecycle status beyond Design A.
+- Full lifecycle ES operations remain outside the implemented boundary: there is no runtime rebuild/refresh operation, replacement activation, rollback operation, disable/kill-switch operation, stale/current/previous catalog operation state, operator-triggered command surface, or broader lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A status visibility.
 - Broader operator-facing lifecycle exposure beyond Design A remains unimplemented until additional endpoint path and operator policy approvals are separately granted.
 - Runtime route-gate enforcement is not supported by the current source seam because successful route graphs always bind `Prepared` and there is no stale/previous-index state yet.
 - M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.

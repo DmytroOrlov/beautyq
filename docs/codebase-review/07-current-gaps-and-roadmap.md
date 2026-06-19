@@ -19,6 +19,7 @@ Current status:
 Strategic gap:
 
 - M6 is closed as the Qdrant production-candidate readiness foundation. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M5 remains closed as a bounded startup-readiness lifecycle checkpoint; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are named future tracks, not an unaccepted M5 remainder. Runtime serving-gate work is currently deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
+- The full lifecycle operations track is still unstarted. It separately requires command surface/ownership, authorization policy, runtime rebuild/refresh semantics, replacement activation semantics, rollback semantics, disable/kill-switch semantics, stale/current/previous catalog state modeling, progress/failure status fields, and interaction with any later runtime route-gate.
 - Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, catalog source-of-truth policy, freshness/staleness definition, replacement/index-identity policy, refresh trigger semantics, rollback/disable policy, observability/status requirements, kill-switch behavior, and any interaction with a future runtime route-gate.
 
 ### BeautySearchService Wiring
@@ -60,6 +61,7 @@ Evidence:
 Remaining gaps:
 
 - No approved production lifecycle policy for catalog source of truth, freshness/staleness, startup behavior beyond app-start fail-closed, runtime refresh/replacement, alias/versioned-index management, rollback, or stale/current/previous catalog observability.
+- No runtime lifecycle operations implementation: no operator-triggered rebuild/refresh command, replacement activation command, rollback command, disable/kill-switch command, or broader lifecycle operator policy beyond explicit opt-in/internal Design A status visibility.
 - No repository-backed indexing or live catalog freshness.
 - No startup reindex policy, aliases/blue-green, Qdrant production serving, hybrid serving, fallback, score fusion, reranking, or full production lifecycle.
 
@@ -195,7 +197,8 @@ Production lane and eval/research lane must stay separate until evidence and pro
 | A3 | Typed validation / error contract | 4xx errors, structured bodies, request bounds | Silent 500s in production |
 | A4 | Observability / kill-switch | Operational safety for first production exposure | Cannot detect or halt degraded serving |
 | A5 | Freshness / index lifecycle design | Seed snapshot alone is not durable production behavior | Serving stale data without bounds |
-| A6 | ES production lifecycle implementation | Index creation, update, alias, readiness | No production-grade ES lifecycle |
+| A6 | ES replacement/freshness/rollback implementation | Source of truth, replacement, freshness, rollback, observability | Serving stale or unmanaged index state |
+| A7 | ES full lifecycle operations implementation | Operator command surface, runtime rebuild/refresh, activation, rollback, disable, state transitions | No production-grade operating boundary |
 
 #### Lane B: B-lite / M-ESQ-EVAL offline evidence
 

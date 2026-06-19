@@ -134,7 +134,35 @@ Current source-confirmed ES lifecycle boundary:
 
 - active specs pin only seed-only readiness/projection facts and prepared-serving behavior for successfully constructed graphs;
 - active specs do not prove stale/previous-index serving, alias/versioned-index replacement, freshness tracking, refresh trigger semantics beyond eager seed preparation, rollback behavior, or runtime lifecycle operations;
+- active specs do not prove any operator command surface or ownership for runtime rebuild/refresh, replacement activation, rollback, disable/kill-switch, stale/current/previous catalog state transitions, or lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A status visibility;
 - those areas remain future-track requirements to be specified and then tested.
+
+Future full-lifecycle-operations tests required before claiming that boundary exists:
+
+- operation command surface and ownership:
+  - which route/module/service owns lifecycle commands;
+  - whether commands are internal-only, operator-only, or otherwise gated.
+- authorization and operator policy:
+  - who can trigger lifecycle commands;
+  - whether auth/config/local-dev fallback exists.
+- runtime rebuild/refresh semantics:
+  - whether rebuild creates a replacement candidate, mutates in place, or is otherwise bounded;
+  - how progress and failure are reported.
+- replacement activation semantics:
+  - what becomes current versus previous;
+  - whether activation is atomic and observable.
+- rollback semantics:
+  - what previous-known-good state is retained;
+  - what failures block rollback.
+- disable/kill-switch semantics:
+  - whether disable blocks serving, hides route exposure, or changes status only;
+  - whether disable interacts with a future runtime gate.
+- stale/current/previous catalog lifecycle state:
+  - which lifecycle states exist;
+  - how they are represented in status and operator surfaces.
+- lifecycle status for progress/failure:
+  - operation-in-progress, succeeded, failed, disabled, stale, current, and previous states if adopted;
+  - field-level response expectations once approved.
 
 ### Operator visibility tests — Design A implemented as explicit opt-in module
 
@@ -224,7 +252,7 @@ The following tests justify the M5 closeout decision as a bounded startup-readin
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: lifecycle metadata and prepared transition with real HTTP client module.
 - `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: lifecycle metadata and prepared transition through port-configured default route.
 
-These tests cover bounded startup-readiness seams only. They do not prove runtime serving-gate enforcement, runtime HTTP 503 behavior, stale/previous-index serving, replacement, freshness, refresh, rollback, or full production lifecycle completion.
+These tests cover bounded startup-readiness seams only. They do not prove runtime serving-gate enforcement, runtime HTTP 503 behavior, stale/previous-index serving, replacement, freshness, refresh, rollback, operator-triggered lifecycle commands, disable/kill-switch behavior, or full production lifecycle completion.
 
 Remaining unimplemented tests (not covered by this task):
 

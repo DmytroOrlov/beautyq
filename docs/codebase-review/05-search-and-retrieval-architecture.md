@@ -171,6 +171,7 @@ Architecture note:
 - The lifecycle status response shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. The non-serving model/encoder is implemented and HTTP-exposed only through the explicit opt-in/internal operator endpoint `GET /ops/beauty-search/lifecycle`; no serving behavior changes, runtime route gate, or HTTP 503 behavior are implemented.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
 - Source-confirmed current absence remains explicit: there is no stale/previous index serving state, no alias/versioned-index replacement policy, no freshness/staleness policy, no refresh trigger semantics beyond eager seed preparation, no rollback policy, and no runtime lifecycle operation implementation.
+- Full lifecycle operations are therefore still future-only: no runtime rebuild/refresh command, replacement activation command, rollback command, disable/kill-switch command, stale/current/previous catalog operation state, operator-triggered lifecycle command surface, or broader lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A status exposure.
 
 ### Remaining production ES lifecycle contract
 
@@ -215,6 +216,11 @@ Remaining production lifecycle contract areas before full ES production lifecycl
 - Rollback:
   - how to return to the previous known-good index/version;
   - what state is kept to support rollback.
+- Full lifecycle operations:
+  - which component owns runtime lifecycle commands;
+  - how rebuild/refresh, replacement activation, rollback, and disable operations are triggered;
+  - how current/previous/stale state is represented during and after those operations;
+  - what auth/config/operator policy governs those commands.
 - Operator-visible status:
   - which status fields are exposed;
   - where they are exposed;

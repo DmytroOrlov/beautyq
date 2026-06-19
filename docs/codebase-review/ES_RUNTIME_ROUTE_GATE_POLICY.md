@@ -8,6 +8,7 @@ This note source-confirms the runtime serving-gate track after the current start
 - a successfully constructed ES route graph always binds `ElasticsearchStartupReadinessTransition.Prepared`;
 - `BeautySearchApi` does not receive a runtime readiness gate today;
 - there is no stale/previous index state, no alias/versioned-index replacement policy, no freshness/staleness policy, no refresh trigger semantics beyond eager seed preparation, no rollback policy, no runtime lifecycle operations implementation, and no HTTP 503 serving gate.
+- full lifecycle operations are a separate future track: no runtime rebuild/refresh operation, replacement activation operation, rollback operation, disable/kill-switch operation, stale/current/previous catalog operation state, operator-triggered lifecycle commands, or broader lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A exists today.
 - this is separate future-track planning after closed M5, not an unaccepted M5 remainder.
 
 ## Policy candidates
@@ -35,6 +36,7 @@ Required policy decisions:
 
 - none beyond current app-start fail-closed behavior.
 - future replacement/freshness/rollback policy remains separate and optional under this candidate.
+- future full lifecycle operations policy remains separate and optional under this candidate.
 
 Route instance exists on startup failure:
 
@@ -205,3 +207,4 @@ Keep Candidate A for now: app-start fail-closed only, with no runtime HTTP gate 
 - whether default production routes should ever expose degraded serving state;
 - interaction with operator visibility endpoint;
 - whether replacement/freshness/rollback must come first for a runtime gate.
+- whether full lifecycle operations should remain separate from runtime gating even after replacement/freshness/rollback exists.

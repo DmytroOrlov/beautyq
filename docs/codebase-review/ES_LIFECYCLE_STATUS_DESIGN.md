@@ -59,6 +59,7 @@ Current lifecycle meaning:
 - the binding remains non-serving and its serving decision stays `NotEnforced`;
 - startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and broader operator-visible lifecycle status beyond Design A are not implemented.
 - there is no stale/previous index state, no alias/versioned-index replacement policy, and no runtime lifecycle operation implementation today.
+- there is also no runtime rebuild/refresh command, replacement activation command, rollback command, disable/kill-switch command, stale/current/previous catalog operation state, operator-triggered lifecycle command surface, or broader lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A.
 
 ## Implemented non-serving JSON response shape
 
@@ -195,7 +196,14 @@ Future-track requirements this document leaves open:
 - versioned-index or alias replacement policy;
 - refresh trigger semantics;
 - rollback/disable policy;
+- operation command surface and ownership;
+- operation authorization/operator policy;
+- runtime rebuild/refresh command semantics;
+- replacement activation semantics;
+- rollback command semantics;
+- disable/kill-switch semantics;
 - stale/current/previous catalog observability and status requirements;
+- lifecycle status fields for operation progress and failure;
 - interaction with any future runtime route-gate.
 
 ## Non-serving startup status projection
@@ -240,6 +248,7 @@ Not implemented:
 - HTTP status policy;
 - auth/operator policy;
 - dashboard integration.
+- runtime lifecycle operations or operator-triggered command handlers.
 
 ## Non-approved items
 
