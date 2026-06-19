@@ -113,6 +113,7 @@ Documented as characterized, not as desired final contract:
 * `QdrantProductionCandidateM7CloseoutSpec` aggregates the closed M7 evidence: ready M6 and activation-policy reports, conservative disabled config/no-regression defaults, complete explicit opt-in prerequisites reaching only a separate implementation decision, route-boundary spec evidence, blocked production-route activation, and conditional future hybrid serving.
 * Production route activation is not approved. M8 remains future-only and conditional controlled hybrid serving; it is not automatic. Runtime serving-gate work stays deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 * M7 closeout records the pending explicit opt-in module contract against the pure config/no-regression report without route wiring. A route implementation decision and any production activation still require separate approval.
+* Post-M7 no-serving guardrail evidence is recorded in `QdrantProductionCandidatePostM7NoServingGuardrailSpec`: the accepted Option72 decision bundle is capture-only evidence that supports asking for explicit approval of a future disabled-by-default opt-in Qdrant route implementation, but it does not approve implementation, production activation, a route switch, `/beauty-search` behavior change, hybrid serving, shadow serving, or production traffic mirroring.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 

@@ -359,6 +359,8 @@ The explicit opt-in Qdrant route boundary is now source-confirmed as pending onl
 
 `QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It combines the ready M6 and activation-policy reports, conservative and approved config/no-regression reports, complete explicit opt-in planning prerequisites, blocked production-route activation, conditional future hybrid serving, and the existing route-boundary specs. It adds no route, runtime config, HTTP behavior, plugin wiring, or serving approval.
 
+`QdrantProductionCandidatePostM7NoServingGuardrailSpec` records the post-M7 no-serving boundary. The accepted Option72 decision bundle is capture-only evidence and supports asking for explicit approval of a future disabled-by-default explicit opt-in Qdrant route implementation, but it does not approve that implementation, production route activation, Qdrant serving, an opt-in serving route, route switch, `/beauty-search` behavior change, hybrid serving, shadow serving, or production traffic mirroring.
+
 ## 9. Non-production experiment wiring boundary
 
 The current non-production experiment path must remain separate from production search wiring.

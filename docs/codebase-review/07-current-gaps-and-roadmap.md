@@ -257,6 +257,7 @@ Closed M7 activation planning/source-confirmation foundation:
 - Default `apiElasticsearch` and `LeaderboardPlugin` remain ES-backed. No Qdrant serving route, opt-in serving route, route switch, or hybrid serving was added.
 - No Qdrant serving route, hybrid-serving behavior, or production-route behavior was added.
 - `QdrantProductionCandidateM7CloseoutSpec` aggregates the accepted pure prerequisites and route-boundary spec evidence while keeping production activation blocked and hybrid serving conditional.
+- `QdrantProductionCandidatePostM7NoServingGuardrailSpec` records the post-M7 boundary: M7 closeout, offline eval/no-regression evidence, and the accepted capture-only Option72 decision bundle still do not approve implementation, production route activation, a Qdrant serving route, opt-in Qdrant serving route, route switch, `/beauty-search` behavior change, hybrid serving, shadow serving, or production traffic mirroring.
 
 #### Lane D: Hybrid policy and serving
 
