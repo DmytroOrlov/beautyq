@@ -387,7 +387,15 @@ Activation-policy readiness is also pure and route-independent. It records expli
 
 `QdrantProductionCandidateM6CloseoutSpec` source-confirms the eight-category state shape, conservative default, per-category blockers, all adapter composition, the all-ready active invariant, and the inactive-Qdrant blocker. Existing route specs remain the source of truth that `BeautySearchRouteModules.apiElasticsearch` and `LeaderboardPlugin` keep `/beauty-search` ES-backed, with future Qdrant opt-in activation still pending.
 
-M6 closure does not mean production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, production traffic mirroring, or production-route activation approval. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
+M6 closure does not mean production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, production traffic mirroring, or production-route activation approval.
+
+## F1.6. M7 activation planning boundary
+
+M7 has started as activation/source-confirmation and serving-policy planning without serving implementation. `QdrantProductionCandidateActivationPlanning` is a pure pre-wiring model layered above the closed M6 readiness and activation-policy reports. It represents candidate-readiness-only, explicit opt-in route, production route activation, and hybrid-serving target scopes.
+
+The explicit opt-in route planning scope requires M6 `productionCandidateReady = true`, a `Ready` activation-policy decision, a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. A complete planning decision means only that a separate implementation decision may be considered; it does not bind or enable a route.
+
+The source-confirmed future seam is outside `BeautySearchRouteModules.apiElasticsearch`: `BeautySearchApi` and `BeautySearchTapirEndpoints` are backend-agnostic, `BeautySearchPluginModules.api` contributes the HTTP API only when included, route modules select the backend composition, and `LeaderboardPlugin` currently includes `apiElasticsearch` directly. No Qdrant route or route switch exists. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
 
 ## F2. Hybrid Control-Plane v0
 

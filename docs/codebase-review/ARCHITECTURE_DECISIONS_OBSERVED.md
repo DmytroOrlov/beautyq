@@ -154,7 +154,9 @@ Consequences:
 - Candidate-readiness activation approval is distinct from route/serving approval; production-route activation remains outside the implemented policy.
 - Production rollout still needs broader accepted evidence, configured controls, explicit serving approval, routing, and lifecycle policy. The pure observability and rollback/disable reports do not approve serving.
 - Future hybrid work is conditional on direct Qdrant production-candidate readiness and explicit serving policy approval.
-- M6 is closed as the Qdrant production-candidate readiness foundation. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
+- M6 is closed as the Qdrant production-candidate readiness foundation. M7 activation/source-confirmation and serving-policy planning has started without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
+- `QdrantProductionCandidateActivationPlanning.scala` requires the closed M6 report, a `Ready` activation-policy report, and serving-scope config/no-regression/observability/rollback/approval prerequisites before a separate implementation decision can be considered.
+- The source-confirmed future opt-in seam is a new route module outside default `apiElasticsearch`; `LeaderboardPlugin` continues to include only the ES route module. No Qdrant route or route switch exists.
 
 What not to infer:
 

@@ -472,6 +472,10 @@ Boundary:
 
 `QdrantProductionCandidateM6CloseoutSpec`, `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` are `Contractual + Blackbox + Atomic` coverage for the closed pure M6 readiness foundation.
 
+`QdrantProductionCandidateM7ActivationPlanningSpec` starts M7 with `Contractual + Blackbox + Atomic` coverage for the pure pre-wiring planning model. It proves all four target scopes are represented; M6 readiness and a `Ready` activation policy are mandatory; explicit opt-in planning requires config, no-regression, observability/status, rollback/disable, and separate serving approval; and production/hybrid scopes remain blocked without separate approval.
+
+`BeautySearchOptInRouteModuleSpec` keeps future Qdrant opt-in route expectations pending and compile-safe. The pending contract requires the future module to stay outside default `apiElasticsearch` and to require M6 readiness, activation-policy approval, a disabled-by-default config gate, no-regression evidence, observability/status evidence, and rollback/disable control. Existing active `BeautySearchProductionRouteExposureSpec` and `BeautySearchElasticsearchRouteModuleSpec` remain the route-boundary proof that `/beauty-search` is ES-backed and the default graph is unchanged.
+
 Contract facts:
 
 - the conservative default records Qdrant as active but is not production-candidate-ready;
@@ -512,7 +516,7 @@ Boundary:
 - No Qdrant serving route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
 - Existing production route/module specs remain the route behavior source of truth.
 - Pending route expectations record that any future Qdrant opt-in route stays outside default `apiElasticsearch`, requires activation-policy approval, and cannot replace the ES-backed `/beauty-search` route without separate approval.
-- M6 is closed as a production-candidate readiness foundation only. M7 activation/policy work and M8 controlled hybrid serving remain future-only and conditional.
+- M6 is closed as a production-candidate readiness foundation only. M7 activation/source-confirmation and serving-policy planning has started without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
 
 ### Saved aggregate schema boundary
 

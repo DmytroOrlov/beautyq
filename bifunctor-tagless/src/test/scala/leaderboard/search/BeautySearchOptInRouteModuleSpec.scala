@@ -46,6 +46,26 @@ final class BeautySearchOptInRouteModuleSpec extends AnyWordSpec with HttpContra
     "require explicit production-candidate activation-policy approval" in {
       pending
     }
+
+    "require M6 productionCandidateReady" in {
+      pending
+    }
+
+    "require a disabled-by-default config gate before route wiring" in {
+      pending
+    }
+
+    "require no-regression evidence" in {
+      pending
+    }
+
+    "require observability and status evidence" in {
+      pending
+    }
+
+    "require rollback and disable control" in {
+      pending
+    }
   }
 
   private def buildProbe(): BeautySearchOptInRouteModuleProbe = {
