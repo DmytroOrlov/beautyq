@@ -329,7 +329,9 @@ The conservative default is intentionally incomplete:
 
 Collection/identity status can be adapted from the existing compatibility result. The adapter preserves the existing mismatch order and meaning; it does not reimplement collection name, vector name, dimension, distance, or embedding-model checks.
 
-This foundation requires neither shadow serving nor production traffic mirroring. It does not add a Qdrant serving route, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, or `/beauty-search` behavior change. Quality/eval evidence and activation approval remain future M6 inputs. M7 and M8 remain future-only and conditional.
+Quality/eval status is now backed by `QdrantProductionCandidateQualityGate`. Its pure `EngineEvalAggregateReport` adapter records baseline/candidate labels, evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. An explicit rule sets minimum query count, maximum recall deficit, and maximum noise, and the report records an explicit parity outcome. Passed reports map to `Ready`; failed reports map to `NotReady` with stable reasons; absent reports map to `NotEvaluated`; incomplete evidence maps to `Unknown`.
+
+This foundation requires neither shadow serving nor production traffic mirroring. It does not add a Qdrant serving route, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, or `/beauty-search` behavior change. Broader accepted evidence, configured controls, and activation approval remain future M6 inputs. M7 and M8 remain future-only and conditional.
 
 ## 9. Non-production experiment wiring boundary
 

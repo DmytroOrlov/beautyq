@@ -470,7 +470,7 @@ Boundary:
 
 ### Qdrant production-candidate readiness contract
 
-`QdrantProductionCandidateReadinessSpec` is `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness foundation.
+`QdrantProductionCandidateReadinessSpec` and `QdrantProductionCandidateQualityGateSpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness and quality/eval gate foundation.
 
 Contract facts:
 
@@ -479,6 +479,11 @@ Contract facts:
 - `productionCandidateReady` is true only when Qdrant is active and every required category is explicitly `Ready`;
 - unknown, missing, not-evaluated, not-configured, not-approved, or not-ready status keeps readiness false;
 - quality/eval defaults to `NotEvaluated`;
+- a missing quality report maps to `NotEvaluated`;
+- insufficient evaluated-query coverage, recall below the allowed baseline deficit, or noise above the configured maximum maps to `NotReady` with deterministic reasons;
+- a passed explicit quality/parity rule maps quality/eval to `Ready`;
+- structurally incomplete evidence maps to `Unknown`;
+- `EngineEvalAggregateReport` supplies evaluated query count, ES recall, Qdrant recall, and Qdrant noise without duplicating eval semantics;
 - rollback/disable defaults to `NotConfigured`;
 - activation policy defaults to `NotApproved`;
 - existing `QdrantCollectionCompatibilityMismatch` results are adapted without reimplementing compatibility checks;

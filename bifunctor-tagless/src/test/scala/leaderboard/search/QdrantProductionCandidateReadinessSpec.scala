@@ -52,6 +52,13 @@ final class QdrantProductionCandidateReadinessSpec extends AnyWordSpec {
       assert(!report.productionCandidateReady)
     }
 
+    "keep quality evaluation not evaluated when no quality report is available" in {
+      val state = QdrantProductionCandidateReadiness.withQualityReport(allReadyState, None)
+
+      assert(state.qualityEval == NotEvaluated)
+      assert(!QdrantProductionCandidateReadiness.evaluate(state).productionCandidateReady)
+    }
+
     "stay not ready when activation policy has not been approved" in {
       val report = QdrantProductionCandidateReadiness.evaluate(allReadyState.copy(activationPolicy = NotApproved))
 

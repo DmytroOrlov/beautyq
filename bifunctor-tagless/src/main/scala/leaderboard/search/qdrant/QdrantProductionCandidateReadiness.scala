@@ -65,6 +65,12 @@ object QdrantProductionCandidateReadiness {
       }
     )
 
+  def withQualityReport(
+    state: QdrantProductionCandidateReadinessState,
+    report: Option[QdrantProductionCandidateQualityReport],
+  ): QdrantProductionCandidateReadinessState =
+    state.copy(qualityEval = QdrantProductionCandidateQualityGate.readinessStatus(report))
+
   private def requiredStatuses(
     state: QdrantProductionCandidateReadinessState
   ): List[QdrantProductionCandidateReadinessStatus] =

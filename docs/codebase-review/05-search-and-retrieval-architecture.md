@@ -342,11 +342,18 @@ Implemented pure source:
 - `QdrantProductionCandidateReadinessStatus`;
 - `QdrantProductionCandidateReadinessState`;
 - `QdrantProductionCandidateReadinessReport`;
-- `QdrantProductionCandidateReadiness`.
+- `QdrantProductionCandidateReadiness`;
+- `QdrantProductionCandidateQualityRule`;
+- `QdrantProductionCandidateParityReport`;
+- `QdrantProductionCandidateQualityDecision`;
+- `QdrantProductionCandidateQualityReport`;
+- `QdrantProductionCandidateQualityGate`.
 
 The state tracks collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy readiness. The conservative default keeps Qdrant active but not production-candidate-ready. The derived report is ready only when Qdrant is active and every required category is explicitly `Ready`.
 
 Collection/identity readiness reuses the existing `QdrantCollectionCompatibilityMismatch` result through a pure adapter. The foundation does not duplicate compatibility checks and does not add DI, HTTP, route, Qdrant serving, hybrid serving, shadow serving, or traffic mirroring.
+
+Quality/eval readiness reuses `EngineEvalAggregateReport` through a pure adapter. The parity report preserves baseline/candidate labels and records evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. The explicit rule requires a minimum evaluated-query count, maximum recall deficit, and maximum Qdrant noise count, and produces an explicit parity outcome. Passed evidence maps to `Ready`; failed evidence maps to `NotReady` with stable reasons; no report maps to `NotEvaluated`; structurally incomplete evidence maps to `Unknown`.
 
 ## F2. Hybrid Control-Plane v0
 
@@ -406,7 +413,7 @@ Eval/benchmark:
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
 M-ESQ-EVAL remains offline/eval-only. Detailed milestone status and sequencing live in `docs/codebase-review/07-current-gaps-and-roadmap.md`.
-The Qdrant production-candidate readiness model is a separate pure M6 foundation; eval output does not satisfy its quality gate automatically and the report does not approve serving.
+The Qdrant production-candidate readiness model is a separate pure M6 foundation. Eval output satisfies quality/eval only after explicit quality-rule evaluation; the report does not approve serving.
 
 ### InMemorySearchBackend role
 
