@@ -14,12 +14,12 @@ Current status:
 - `POST /beauty-search` is production-included through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
 - `seedCatalogInMemory` remains available as rollback/non-default.
-- This closes the ES seed-route exposure gap. Production freshness/refresh/staleness, runtime replacement, observability, and kill-switch behavior remain gaps.
+- This closes the ES seed-route exposure gap. Production freshness/refresh/staleness, runtime replacement, alias/versioned-index policy, rollback, observability, and kill-switch behavior remain gaps.
 
 Strategic gap:
 
 - M6 is closed as the Qdrant production-candidate readiness foundation. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M5 remains closed as a bounded startup-readiness lifecycle checkpoint; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are named future tracks, not an unaccepted M5 remainder. Runtime serving-gate work is currently deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
-- Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, kill-switch, and lifecycle/source-of-truth policy.
+- Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, catalog source-of-truth policy, freshness/staleness definition, replacement/index-identity policy, refresh trigger semantics, rollback/disable policy, observability/status requirements, kill-switch behavior, and any interaction with a future runtime route-gate.
 
 ### BeautySearchService Wiring
 
@@ -27,12 +27,12 @@ Current status:
 
 - `BeautySearchService.Impl` is production-bound through `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
 - The bound backend is `ElasticsearchSearchBackend[F]` over seed-resource ready catalog documents.
-- The remaining gap is not service binding; it is freshness, refresh/replacement, observability, kill switch, and production source-of-truth policy.
+- The remaining gap is not service binding; it is catalog source-of-truth, freshness, refresh/replacement, rollback, observability, kill switch, and production lifecycle policy.
 
 Acceptance criteria for future implementation:
 
-- Future production hardening must define freshness/staleness reporting and runtime replacement behavior.
-- It must define stale-catalog observability and kill-switch behavior.
+- Future production hardening must define catalog replacement source-of-truth, freshness/staleness reporting, runtime replacement behavior, and versioned-index or alias policy if adopted.
+- It must define stale/current/previous catalog observability, refresh trigger semantics, rollback/disable behavior, and any interaction with a future runtime route-gate.
 - It must decide whether seed-resource startup snapshot readiness remains acceptable as product behavior.
 - It must define parser/backend failure representation.
 - It must define diagnostics and observability exposure.
@@ -59,7 +59,7 @@ Evidence:
 
 Remaining gaps:
 
-- No approved production lifecycle policy for source of truth, freshness/staleness, startup behavior beyond app-start fail-closed, runtime refresh/replacement, rollback, or stale-catalog observability.
+- No approved production lifecycle policy for catalog source of truth, freshness/staleness, startup behavior beyond app-start fail-closed, runtime refresh/replacement, alias/versioned-index management, rollback, or stale/current/previous catalog observability.
 - No repository-backed indexing or live catalog freshness.
 - No startup reindex policy, aliases/blue-green, Qdrant production serving, hybrid serving, fallback, score fusion, reranking, or full production lifecycle.
 

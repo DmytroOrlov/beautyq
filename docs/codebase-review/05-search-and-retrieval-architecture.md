@@ -170,6 +170,7 @@ Architecture note:
 - This state is seed-only, internal, and non-serving; it documents absent production lifecycle capabilities without completing or enforcing them.
 - The lifecycle status response shape is documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`. The non-serving model/encoder is implemented and HTTP-exposed only through the explicit opt-in/internal operator endpoint `GET /ops/beauty-search/lifecycle`; no serving behavior changes, runtime route gate, or HTTP 503 behavior are implemented.
 - These are architecture surfaces only; this document does not assign milestone status or production lifecycle readiness.
+- Source-confirmed current absence remains explicit: there is no stale/previous index serving state, no alias/versioned-index replacement policy, no freshness/staleness policy, no refresh trigger semantics beyond eager seed preparation, no rollback policy, and no runtime lifecycle operation implementation.
 
 ### Remaining production ES lifecycle contract
 
@@ -218,6 +219,10 @@ Remaining production lifecycle contract areas before full ES production lifecycl
   - which status fields are exposed;
   - where they are exposed;
   - how they distinguish seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+- Catalog replacement source of truth:
+  - whether seed-resource snapshot remains authoritative or a repository/index lifecycle becomes authoritative;
+  - how current, replacement, and any previous catalog/index identities are defined;
+  - which seam owns replacement decisions and observability.
 
 Until those areas are defined and implemented, the current ES-backed route remains a seed-only readiness seam with eager preparation, not a production lifecycle. Current behavior stays split as follows: app-start failures fail closed by preventing route construction; successfully constructed ES route graphs are prepared-serving; runtime route-gate, stale/previous-index serving, replacement/freshness/rollback, and full lifecycle operations remain future tracks.
 

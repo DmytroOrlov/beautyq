@@ -130,6 +130,12 @@ Future/unimplemented unless matching source-backed tests are added. These belong
 
 Runtime serving-gate testing is currently deferred by policy. The source-confirmed recommendation is Candidate A: keep app-start fail-closed only until a runtime readiness source or replacement/freshness/rollback policy exists. Current active specs already cover the present boundary: app-start fail-closed on composition failure, prepared-serving for successfully constructed ES route graphs, and no runtime HTTP 503 gate.
 
+Current source-confirmed ES lifecycle boundary:
+
+- active specs pin only seed-only readiness/projection facts and prepared-serving behavior for successfully constructed graphs;
+- active specs do not prove stale/previous-index serving, alias/versioned-index replacement, freshness tracking, refresh trigger semantics beyond eager seed preparation, rollback behavior, or runtime lifecycle operations;
+- those areas remain future-track requirements to be specified and then tested.
+
 ### Operator visibility tests — Design A implemented as explicit opt-in module
 
 Design A operator visibility endpoint is implemented as explicit opt-in/internal module. Endpoint path: `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. It is also absent from `seedCatalogInMemory`. Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change.

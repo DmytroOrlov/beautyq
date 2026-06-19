@@ -7,7 +7,7 @@ This note source-confirms the runtime serving-gate track after the current start
 - app-start fail-closed is the current behavior when composition fails;
 - a successfully constructed ES route graph always binds `ElasticsearchStartupReadinessTransition.Prepared`;
 - `BeautySearchApi` does not receive a runtime readiness gate today;
-- there is no stale/previous index state, no replacement/freshness/rollback policy, and no HTTP 503 serving gate.
+- there is no stale/previous index state, no alias/versioned-index replacement policy, no freshness/staleness policy, no refresh trigger semantics beyond eager seed preparation, no rollback policy, no runtime lifecycle operations implementation, and no HTTP 503 serving gate.
 - this is separate future-track planning after closed M5, not an unaccepted M5 remainder.
 
 ## Policy candidates
@@ -34,6 +34,7 @@ Test files later:
 Required policy decisions:
 
 - none beyond current app-start fail-closed behavior.
+- future replacement/freshness/rollback policy remains separate and optional under this candidate.
 
 Route instance exists on startup failure:
 
@@ -82,6 +83,7 @@ Required policy decisions:
 - error body shape;
 - where runtime readiness state lives;
 - whether startup failure should still fail app startup or create a degraded route.
+- whether the gate can exist before source-of-truth, freshness/staleness, replacement, and rollback policy are defined.
 
 Route instance exists on startup failure:
 
@@ -153,6 +155,7 @@ Meaning:
 Source seams later:
 
 - replacement/index lifecycle implementation;
+- catalog replacement source-of-truth policy;
 - freshness tracking;
 - rollback implementation;
 - runtime gate wiring in `BeautySearchApi` or a dedicated serving seam.
@@ -167,7 +170,9 @@ Test files later:
 Required policy decisions:
 
 - replacement/index identity policy;
+- catalog source-of-truth policy;
 - freshness bounds;
+- refresh trigger semantics;
 - rollback behavior;
 - whether stale serving is allowed at all.
 

@@ -58,6 +58,7 @@ Current lifecycle meaning:
 - failed transitions retain source-backed `QueryFailure.OperationFailure` data but expose no lifecycle metadata or lifecycle status response;
 - the binding remains non-serving and its serving decision stays `NotEnforced`;
 - startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and broader operator-visible lifecycle status beyond Design A are not implemented.
+- there is no stale/previous index state, no alias/versioned-index replacement policy, and no runtime lifecycle operation implementation today.
 
 ## Implemented non-serving JSON response shape
 
@@ -136,28 +137,28 @@ Notes:
 - Current/source-backed as a gap value; future/reserved for behavior.
 - Source: `ElasticsearchProductionReadinessState.replacement`.
 - Current value: `not_configured`.
-- Meaning: no replacement strategy is implemented today.
+- Meaning: no replacement strategy is implemented today; no alias/versioned-index replacement policy or current/previous index serving state exists yet.
 
 ### `freshness`
 
 - Current/source-backed as a gap value; future/reserved for behavior.
 - Source: `ElasticsearchProductionReadinessState.freshness`.
 - Current value: `not_tracked`.
-- Meaning: no freshness timestamp/version/state is tracked today.
+- Meaning: no freshness timestamp/version/state is tracked today, so there is no stale/current/previous catalog decision model.
 
 ### `refresh`
 
 - Current/source-backed as a gap value; future/reserved for behavior.
 - Source: `ElasticsearchProductionReadinessState.refresh`.
 - Current value: `eager_seed_preparation_only`.
-- Meaning: the current route prepares the seed index eagerly, but no approved runtime refresh trigger exists.
+- Meaning: the current route prepares the seed index eagerly, but no approved runtime refresh trigger semantics or runtime lifecycle operation exists.
 
 ### `rollback`
 
 - Current/source-backed as a gap value; future/reserved for behavior.
 - Source: `ElasticsearchProductionReadinessState.rollback`.
 - Current value: `not_configured`.
-- Meaning: no rollback mechanism is implemented today.
+- Meaning: no rollback mechanism or previous-known-good serving policy is implemented today.
 
 ### `operatorVisibility`
 
@@ -186,6 +187,16 @@ Current values to preserve in any future operator-facing status implementation:
 - `rollback: "not_configured"`
 - `operatorVisibility: "not_exposed"` in the seed-only lifecycle state, even though Design A can expose that state through an explicit opt-in/internal endpoint
 - `productionLifecycleComplete: false`
+
+Future-track requirements this document leaves open:
+
+- catalog replacement source-of-truth policy;
+- freshness/staleness definition;
+- versioned-index or alias replacement policy;
+- refresh trigger semantics;
+- rollback/disable policy;
+- stale/current/previous catalog observability and status requirements;
+- interaction with any future runtime route-gate.
 
 ## Non-serving startup status projection
 
