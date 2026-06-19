@@ -359,7 +359,15 @@ Implemented pure source:
 - `QdrantProductionCandidateSearchEvidence`;
 - `QdrantProductionCandidateSearchReport`;
 - `QdrantProductionCandidateSearchDecision`;
-- `QdrantProductionCandidateSearchReadiness`.
+- `QdrantProductionCandidateSearchReadiness`;
+- `QdrantProductionCandidateObservabilityEvidence`;
+- `QdrantProductionCandidateObservabilityReport`;
+- `QdrantProductionCandidateObservabilityDecision`;
+- `QdrantProductionCandidateObservabilityReadiness`;
+- `QdrantProductionCandidateRollbackEvidence`;
+- `QdrantProductionCandidateRollbackReport`;
+- `QdrantProductionCandidateRollbackDecision`;
+- `QdrantProductionCandidateRollbackReadiness`.
 
 The state tracks collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy readiness. The conservative default keeps Qdrant active but not production-candidate-ready. The derived report is ready only when Qdrant is active and every required category is explicitly `Ready`.
 
@@ -368,6 +376,8 @@ Collection/identity readiness reuses the existing `QdrantCollectionCompatibility
 Indexing readiness adapts source-backed evidence from the existing generic/variant indexers and `QdrantSnapshotIndexingResult`: expected, prepared, and optional indexed document counts; collection-identity readiness; and embedding/vector readiness. Counts must be positive and match, collection identity must be `Ready`, and embedding/vector evidence must be present. Missing reports map to `Unknown`; incomplete reports map to `NotReady` with deterministic reasons.
 
 Search readiness adapts the source-confirmed `QdrantSemanticCandidateBackend`, `QdrantSemanticCandidateSearch`, `QdrantCandidateAssembler`, and `QdrantCandidateResponseProjector` boundaries plus explicit BeautySearch contract-parity evidence. Every component must be present/ready. Missing reports map to `Unknown`; incomplete reports map to `NotReady` with deterministic reasons.
+
+Observability readiness requires source-backed readiness/status, quality/eval, and activation-decision reports. Rollback/disable readiness requires a disable control, rollback path, and no-regression evidence. Missing reports map to `NotConfigured`; incomplete reports map to `NotReady` with deterministic ordered reasons; complete evidence maps to `Ready`. These controls require neither shadow telemetry nor traffic mirroring, and the rollback decision explicitly does not approve production-route activation.
 
 Quality/eval readiness reuses `EngineEvalAggregateReport` through a pure adapter. The parity report preserves baseline/candidate labels and records evaluated query count, ES baseline recall, Qdrant candidate recall, and Qdrant noise. The explicit rule requires a minimum evaluated-query count, maximum recall deficit, and maximum Qdrant noise count, and produces an explicit parity outcome. Passed evidence maps to `Ready`; failed evidence maps to `NotReady` with stable reasons; no report maps to `NotEvaluated`; structurally incomplete evidence maps to `Unknown`.
 

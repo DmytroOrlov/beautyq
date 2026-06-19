@@ -470,7 +470,7 @@ Boundary:
 
 ### Qdrant production-candidate readiness contract
 
-`QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness, indexing/search, quality/eval, and activation-policy foundations.
+`QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` are `Contractual + Blackbox + Atomic` coverage for the pure M6 readiness, indexing/search, quality/eval, activation-policy, observability, and rollback/disable foundations.
 
 Contract facts:
 
@@ -495,6 +495,12 @@ Contract facts:
 - indexing requires positive matching expected/prepared/indexed document counts, ready collection identity, and embedding/vector readiness evidence;
 - search requires semantic candidate backend/search contracts, candidate assembly, response projection, and BeautySearch contract-parity evidence;
 - incomplete indexing/search evidence maps to `NotReady` with deterministic ordered reasons;
+- missing observability or rollback/disable reports map to `NotConfigured`;
+- observability requires readiness/status, quality/eval, and activation-decision reports;
+- rollback/disable requires a disable control, rollback path, and no-regression evidence;
+- incomplete observability or rollback/disable evidence maps to `NotReady` with deterministic ordered reasons;
+- complete observability or rollback/disable evidence maps to `Ready`;
+- rollback/disable readiness does not approve production-route activation;
 - no shadow-serving or production traffic-mirroring field is part of the readiness contract.
 
 Boundary:

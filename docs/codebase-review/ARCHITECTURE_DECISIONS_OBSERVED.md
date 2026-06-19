@@ -141,7 +141,8 @@ Evidence:
 - `QdrantProductionCandidateSearchReadiness.scala` adapts semantic search, assembly, projection, and BeautySearch contract-parity evidence into search readiness without serving.
 - `QdrantProductionCandidateQualityGate.scala` provides source-backed offline quality/parity evidence from `EngineEvalAggregateReport`, explicit thresholds, stable failure reasons, and readiness-status mapping.
 - `QdrantProductionCandidateActivationPolicy.scala` provides explicit candidate activation approval, scope, control/evidence requirements, blocking reasons, and readiness-status mapping without route integration.
-- `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, and `QdrantProductionCandidateActivationPolicySpec` prove every readiness category must be explicitly ready and that shadow/traffic-mirroring/serving behavior is not required.
+- `QdrantProductionCandidateObservabilityReadiness.scala` and `QdrantProductionCandidateRollbackReadiness.scala` provide pure source-backed report evidence, deterministic blocking reasons, and readiness-status mapping without traffic mirroring or serving approval.
+- `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` prove every readiness category must be explicitly ready and that shadow/traffic-mirroring/serving behavior is not required.
 - `docs/search-dsl-hybrid-v1-plan.md` says Hybrid V1 is a non-production foundation.
 - Class names include `QdrantNonProductionExperiment*`, `BeautyQNonProductionHybrid*`, and `ExperimentalBeautySearchService`.
 - `LeaderboardPlugin.scala` does not bind Qdrant/hybrid search services.
@@ -151,7 +152,7 @@ Consequences:
 - Qdrant/hybrid docs must label current status carefully.
 - The pure production-candidate report is a prerequisite model, not serving approval.
 - Candidate-readiness activation approval is distinct from route/serving approval; production-route activation remains outside the implemented policy.
-- Production rollout still needs broader accepted quality evidence, configured observability and rollback/disable controls, explicit activation approval, routing, and lifecycle policy.
+- Production rollout still needs broader accepted evidence, configured controls, explicit serving approval, routing, and lifecycle policy. The pure observability and rollback/disable reports do not approve serving.
 - Future hybrid work is conditional on direct Qdrant production-candidate readiness and explicit serving policy approval.
 
 What not to infer:
@@ -225,7 +226,7 @@ Consequences:
 - Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or broader operator-visible production lifecycle status beyond Design A.
 - Broader operator-facing lifecycle exposure beyond Design A remains unimplemented until additional endpoint path and operator policy approvals are separately granted.
 - Runtime route-gate enforcement is not supported by the current source seam because successful route graphs always bind `Prepared` and there is no stale/previous-index state yet.
-- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
 
 What not to infer:
 
@@ -245,7 +246,7 @@ Evidence:
 - `ES_STARTUP_SERVING_GATE_DESIGN.md` documents the serving-gate policy design with five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before enforcement.
 - No endpoint, route path, HTTP status policy, or operator policy is implemented.
 - No serving-readiness enforcement exists.
-- M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
+- M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
 - The ES operator visibility track is source-confirmed and Design A is implemented as explicit opt-in/internal endpoint exposure. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
 
 Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
@@ -314,7 +315,7 @@ Consequences:
 - The endpoint is not included in `seedCatalogInMemory` (rollback/in-memory backend).
 - The endpoint is not included in the default `apiElasticsearch` or `LeaderboardPlugin` production graph.
 - Design B (bootstrap failure status), Design C (replacement/freshness/rollback-rich status), runtime route gate, and HTTP 503 behavior remain future.
-- Full ES production lifecycle remains incomplete.
+- Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain intentionally separate future tracks.
 
 What not to infer:
 
@@ -328,7 +329,7 @@ What not to infer:
 
 Statement:
 
-- M5 is closed as a bounded startup-readiness lifecycle checkpoint covering app-start fail-closed, prepared-serving, non-serving lifecycle seams, DI/rooting, failure classification, and consistency coverage. Full ES production lifecycle remains incomplete and moves to named future tracks.
+- M5 is closed as a bounded startup-readiness lifecycle checkpoint covering app-start fail-closed, prepared-serving, non-serving lifecycle seams, DI/rooting, failure classification, and consistency coverage. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
 
 Evidence:
 

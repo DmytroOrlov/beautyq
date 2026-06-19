@@ -83,6 +83,18 @@ object QdrantProductionCandidateReadiness {
   ): QdrantProductionCandidateReadinessState =
     state.copy(search = QdrantProductionCandidateSearchReadiness.readinessStatus(report))
 
+  def withObservabilityReadiness(
+    state: QdrantProductionCandidateReadinessState,
+    report: Option[QdrantProductionCandidateObservabilityReport],
+  ): QdrantProductionCandidateReadinessState =
+    state.copy(observability = QdrantProductionCandidateObservabilityReadiness.readinessStatus(report))
+
+  def withRollbackDisableReadiness(
+    state: QdrantProductionCandidateReadinessState,
+    report: Option[QdrantProductionCandidateRollbackReport],
+  ): QdrantProductionCandidateReadinessState =
+    state.copy(rollbackDisable = QdrantProductionCandidateRollbackReadiness.readinessStatus(report))
+
   def withActivationPolicy(
     state: QdrantProductionCandidateReadinessState,
     policy: Option[QdrantProductionCandidateActivationPolicy],
