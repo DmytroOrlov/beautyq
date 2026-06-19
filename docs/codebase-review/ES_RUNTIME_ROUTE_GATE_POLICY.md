@@ -8,6 +8,7 @@ This note source-confirms the runtime serving-gate track after the current start
 - a successfully constructed ES route graph always binds `ElasticsearchStartupReadinessTransition.Prepared`;
 - `BeautySearchApi` does not receive a runtime readiness gate today;
 - there is no stale/previous index state, no replacement/freshness/rollback policy, and no HTTP 503 serving gate.
+- this is separate future-track planning after closed M5, not an unaccepted M5 remainder.
 
 ## Policy candidates
 

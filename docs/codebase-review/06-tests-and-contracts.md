@@ -36,7 +36,7 @@ Implemented/current:
 - `ElasticsearchStartupReadinessTransitionSpec.scala`: pins prepared-state preservation, field-by-field transition-to-status mapping, JSON equality with direct readiness-state projection, source-backed `OperationFailure` operation/message classification, explicit unsupported failure handling, absent failure metadata/status response, and `ElasticsearchStartupServingDecision.NotEnforced` for both outcomes.
 - `ElasticsearchStartupReadinessStatusResponseSpec.scala`: pins prepared and failed projection derivation from transitions, prepared projection lifecycle status alignment with direct state projection, exact prepared JSON shape with nested lifecycle status, exact failed JSON shape without lifecycle metadata/status fields, `transitionStatus`/`servingDecision`/`productionLifecycleComplete` values for both outcomes, and source-backed operation/message preservation for failures.
 - `ElasticsearchReadinessConsistencySpec.scala`: proves cross-model consistency across `ElasticsearchProductionReadinessState`, `ElasticsearchLifecycleStatusResponse`, `ElasticsearchStartupReadinessTransition`, `ElasticsearchStartupReadinessStatusResponse`, and `ElasticsearchSeedSearchComposition.startupReadinessTransition`. Asserts field-level consistency of seed-only readiness values, lifecycle response derivation from transition and direct state projection, prepared/failed startup status projection shapes, JSON encoding equality for nested and direct lifecycle status, composition-derived transition and status projection agreement with direct projections, and unsupported failure coverage.
-- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; production and targeted ES route probes root the readiness state and the prepared startup transition while preserving `POST /beauty-search`.
+- `BeautySearchProductionRouteExposureSpec.scala`: production API graph exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`; production and targeted ES route probes root the readiness state and the prepared startup transition while preserving unchanged `POST /beauty-search` behavior for successfully constructed route graphs.
 - `BeautySearchElasticsearchRouteModuleSpec.scala`: the explicit ES seed route module exposes seed-only lifecycle metadata, the non-serving readiness state, and the prepared startup transition while preserving its zero-hit route response contract.
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes the state and prepared startup transition while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
 - `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: the port-configured default ES route exposes the state and prepared startup transition while preserving route behavior and ES preparation/search calls.
@@ -128,7 +128,7 @@ Future/unimplemented unless matching source-backed tests are added. These belong
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
 
-Runtime serving-gate testing is currently deferred by policy. The source-confirmed recommendation is Candidate A: keep app-start fail-closed only until a runtime readiness source or replacement/freshness/rollback policy exists.
+Runtime serving-gate testing is currently deferred by policy. The source-confirmed recommendation is Candidate A: keep app-start fail-closed only until a runtime readiness source or replacement/freshness/rollback policy exists. Current active specs already cover the present boundary: app-start fail-closed on composition failure, prepared-serving for successfully constructed ES route graphs, and no runtime HTTP 503 gate.
 
 ### Operator visibility tests — Design A implemented as explicit opt-in module
 
@@ -218,7 +218,7 @@ The following tests justify the M5 closeout decision as a bounded startup-readin
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: lifecycle metadata and prepared transition with real HTTP client module.
 - `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: lifecycle metadata and prepared transition through port-configured default route.
 
-These tests cover bounded startup-readiness seams only. They do not prove runtime serving-gate enforcement, replacement, freshness, refresh, rollback, or full production lifecycle completion.
+These tests cover bounded startup-readiness seams only. They do not prove runtime serving-gate enforcement, runtime HTTP 503 behavior, stale/previous-index serving, replacement, freshness, refresh, rollback, or full production lifecycle completion.
 
 Remaining unimplemented tests (not covered by this task):
 

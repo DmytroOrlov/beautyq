@@ -88,7 +88,7 @@ Each choice below must be explicitly approved before any implementation. None ar
 
 **Definition:** If the startup transition is not `Prepared`, the route returns an error response (e.g., `503 Service Unavailable`) instead of serving search results.
 
-**Current implementation status:** Not implemented as enforced policy. The current route serves regardless of startup transition state. However, app-start fail-closed behavior is implicitly implemented by eager composition: if ES preparation fails, no route is constructed. This implicit behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. Runtime route gate (route returns HTTP 503 on non-prepared state) requires a new source seam.
+**Current implementation status:** Not implemented as enforced policy. The current source truth is narrower than "serves regardless of startup transition state": app-start fail-closed behavior is implicitly implemented by eager composition, so if ES preparation fails, no route is constructed; if route construction succeeds, the bound transition is `Prepared` and serving remains unchanged. This implicit behavior is test-covered by `ElasticsearchAppStartServingGateSpec`. Runtime route gate (route returns HTTP 503 on non-prepared state) requires a new source seam.
 
 **Required source changes before implementation:**
 
@@ -146,18 +146,18 @@ Each choice below must be explicitly approved before any implementation. None ar
 
 ### Choice 3: Continue serving with seed-only/not-enforced status
 
-**Definition:** The route continues to serve search results regardless of startup transition state. The startup status is exposed for operator visibility only, not for serving enforcement.
+**Definition:** When a route graph is successfully constructed, it continues to serve search results without runtime startup-readiness enforcement. Startup status is exposed for operator visibility only, not for serving enforcement.
 
-**Current implementation status:** This is the current behavior. The route serves regardless of transition state, and the transition is bound but non-serving (`NotEnforced`).
+**Current implementation status:** This is only partially aligned with current behavior. The bound transition is non-serving (`NotEnforced`), but the constructed-route case is always `Prepared`; composition failure still prevents route construction. Design A adds explicit opt-in/internal operator visibility for the prepared state only and does not create a runtime non-prepared serving state.
 
 **Required source changes before implementation:**
 
 - Minimal: expose the startup status through an operator-visible endpoint (if approved).
 - No route behavior changes.
 
-**Required tests before implementation:**
+**Required tests before implementation if this choice is ever expanded beyond today's prepared-only constructed route:**
 
-- Route continues to serve with `Prepared` and `PreparationFailed` transitions.
+- Route continues to serve with `Prepared` and any newly reachable non-prepared transition.
 - Startup status projection is operator-visible if an endpoint is approved.
 - Serving behavior is unchanged.
 
@@ -228,16 +228,6 @@ The current source truth distinguishes three separate policies:
 - operator visibility: separate status exposure, already implemented as Design A, without serving enforcement.
 
 The current source does not support a runtime HTTP gate because a successful route graph always binds `ElasticsearchStartupReadinessTransition.Prepared`, and no stale/previous index or replacement/freshness/rollback state exists yet. The recommended policy is Candidate A from `ES_RUNTIME_ROUTE_GATE_POLICY.md`: keep app-start fail-closed only and defer runtime HTTP gate work until a later runtime readiness or replacement/freshness/rollback policy exists.
-
-**Operator-visible status impact:**
-
-- Operators can control serving behavior without code changes.
-- Override state is visible in status responses.
-
-**Rollback/freshness implications:**
-
-- Override does not change freshness or replacement behavior.
-- Override can be used to roll back to serving if a gate blocks incorrectly.
 
 ## Recommended future policy
 

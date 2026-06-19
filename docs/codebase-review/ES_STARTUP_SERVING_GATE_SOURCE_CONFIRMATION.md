@@ -1,6 +1,6 @@
 # ES Startup Serving Gate Source Confirmation
 
-Status: source-confirmed; app-start fail-closed and prepared-serving are now test-covered. M5 is closed as a bounded startup-readiness lifecycle checkpoint. This source confirmation completed the bounded M5 decision. Runtime route-gate work is a separate future track and is recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists. No production source, endpoint, or serving behavior was changed.
+Status: source-confirmed; app-start fail-closed and prepared-serving are now test-covered. M5 is closed as a bounded startup-readiness lifecycle checkpoint. This source confirmation completed the bounded M5 decision. Runtime route-gate work is a separate future track, not an unaccepted M5 remainder, and is recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists. No production source, endpoint, or serving behavior was changed.
 
 ## Purpose
 

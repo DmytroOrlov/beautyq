@@ -164,7 +164,7 @@ Notes:
 - Current/source-backed as a gap value; future/reserved for exposure behavior.
 - Source: `ElasticsearchProductionReadinessState.operatorVisibility`.
 - Current value: `not_exposed`.
-- Meaning: the status is not operator-visible today.
+- Meaning: the underlying seed-only readiness state does not claim operator visibility as a lifecycle capability. The current opt-in/internal Design A endpoint exposes this seed-only state without changing the stored value to a production-visible lifecycle capability.
 
 ### `productionLifecycleComplete`
 
@@ -184,7 +184,7 @@ Current values to preserve in any future operator-facing status implementation:
 - `freshness: "not_tracked"`
 - `refresh: "eager_seed_preparation_only"`
 - `rollback: "not_configured"`
-- `operatorVisibility: "not_exposed"`
+- `operatorVisibility: "not_exposed"` in the seed-only lifecycle state, even though Design A can expose that state through an explicit opt-in/internal endpoint
 - `productionLifecycleComplete: false`
 
 ## Non-serving startup status projection
@@ -207,7 +207,7 @@ Failed projection:
 - `productionLifecycleComplete = false`
 - No lifecycle metadata, no `ElasticsearchLifecycleStatusResponse`, no nested `lifecycleStatus` field
 
-JSON encoding is local to the model companion. The projection is not DI-bound, not HTTP-exposed, and does not implement an endpoint, route path, or operator policy.
+JSON encoding is local to the model companion. The pure projection itself does not implement an endpoint, route path, or operator policy. HTTP exposure exists only through the separate explicit opt-in/internal Design A endpoint.
 
 ## Implemented boundary
 
@@ -223,8 +223,8 @@ Implemented:
 
 Not implemented:
 
-- DI binding;
-- HTTP route or endpoint;
+- production/default-graph DI binding;
+- default-graph HTTP route or endpoint;
 - route path;
 - HTTP status policy;
 - auth/operator policy;
