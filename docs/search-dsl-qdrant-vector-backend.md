@@ -349,11 +349,13 @@ Activation-policy status is backed by `QdrantProductionCandidateActivationPolicy
 
 This foundation requires neither shadow serving nor production traffic mirroring. M6 closure is not production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, runtime HTTP gate, production-route activation approval, or `/beauty-search` behavior change.
 
-M7 activation/source-confirmation and serving-policy planning has started. `QdrantProductionCandidateActivationPlanning` is pure and pre-wiring: it requires M6 `productionCandidateReady = true`, a `Ready` activation-policy report, and—for serving scopes—a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. It represents candidate readiness only, explicit opt-in route, production route activation, and hybrid serving as future target scopes. It does not enable any route.
+The M7 activation planning/source-confirmation foundation is closed. `QdrantProductionCandidateActivationPlanning` is pure and pre-wiring: it requires M6 `productionCandidateReady = true`, a `Ready` activation-policy report, and—for serving scopes—a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. It represents candidate readiness only, explicit opt-in route, production route activation, and hybrid serving as future target scopes. It does not enable any route.
 
 `QdrantProductionCandidateActivationConfigApproval` is the pure disabled-by-default config/no-regression input model. Its conservative default is disabled with unknown, unapproved no-regression evidence. An enabled gate maps to a satisfied planning config input; no-regression maps to satisfied only when evidence is satisfied and separately approved. The report composes into `QdrantProductionCandidateActivationPrerequisites` but cannot supply route/serving approval.
 
 The explicit opt-in Qdrant route boundary is now source-confirmed as pending only. Any future module remains outside default `apiElasticsearch` and must consume this report for the disabled-default config gate and separately approved no-regression evidence, together with the remaining M7 prerequisites and separate route/serving approval. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
+
+`QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It combines the ready M6 and activation-policy reports, conservative and approved config/no-regression reports, complete explicit opt-in planning prerequisites, blocked production-route activation, conditional future hybrid serving, and the existing route-boundary specs. It adds no route, runtime config, HTTP behavior, plugin wiring, or serving approval.
 
 ## 9. Non-production experiment wiring boundary
 
@@ -898,7 +900,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. decide whether to authorize a separate explicit opt-in Qdrant route implementation after the source-confirmed M7 prerequisites are satisfied; no implementation is currently approved
+1. decide separately whether to authorize an explicit opt-in Qdrant route implementation; the closed M7 planning foundation does not approve implementation
 
 Immediate code target details:
 

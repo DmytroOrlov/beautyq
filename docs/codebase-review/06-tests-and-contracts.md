@@ -472,9 +472,11 @@ Boundary:
 
 `QdrantProductionCandidateM6CloseoutSpec`, `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` are `Contractual + Blackbox + Atomic` coverage for the closed pure M6 readiness foundation.
 
-`QdrantProductionCandidateM7ActivationPlanningSpec` starts M7 with `Contractual + Blackbox + Atomic` coverage for the pure pre-wiring planning model. It proves all four target scopes are represented; M6 readiness and a `Ready` activation policy are mandatory; explicit opt-in planning requires config, no-regression, observability/status, rollback/disable, and separate serving approval; and production/hybrid scopes remain blocked without separate approval.
+`QdrantProductionCandidateM7ActivationPlanningSpec` provides `Contractual + Blackbox + Atomic` coverage for the pure pre-wiring planning model. It proves all four target scopes are represented; M6 readiness and a `Ready` activation policy are mandatory; explicit opt-in planning requires config, no-regression, observability/status, rollback/disable, and separate serving approval; and production/hybrid scopes remain blocked without separate approval.
 
 `QdrantProductionCandidateM7ConfigApprovalSpec` is `Contractual + Blackbox + Atomic` coverage for the disabled-by-default config/no-regression layer. It proves the conservative default is blocked, no-regression evidence requires separate approval, blocker ordering is deterministic, the report composes into M7 planning prerequisites, and production-route planning remains blocked without separate route/serving approval.
+
+`QdrantProductionCandidateM7CloseoutSpec` closes the M7 activation planning/source-confirmation foundation with one pure aggregate. It composes a production-candidate-ready M6 report, a `Ready` activation-policy report, conservative disabled config/no-regression evidence, approved config/no-regression evidence, complete explicit opt-in prerequisites, blocked production-route activation, conditional future hybrid serving, and references to the active/pending route-boundary specs. It does not implement or approve serving.
 
 `BeautySearchOptInRouteModuleSpec` keeps future Qdrant opt-in route expectations pending and compile-safe. The pending contract requires a separate future module outside default `apiElasticsearch`; M6 `productionCandidateReady`; activation-policy readiness; observability/status evidence; rollback/disable control; separate route/serving approval; and the disabled-default config gate plus separately approved no-regression evidence supplied through `QdrantProductionCandidateActivationConfigApproval`. Existing active `BeautySearchProductionRouteExposureSpec` and `BeautySearchElasticsearchRouteModuleSpec` remain the route-boundary proof that `/beauty-search` is ES-backed and the default graph is unchanged.
 
@@ -518,7 +520,7 @@ Boundary:
 - No Qdrant serving route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
 - Existing production route/module specs remain the route behavior source of truth.
 - Pending route expectations record that any future Qdrant opt-in route stays outside default `apiElasticsearch`, requires activation-policy approval, and cannot replace the ES-backed `/beauty-search` route without separate approval.
-- M6 is closed as a production-candidate readiness foundation only. M7 activation/source-confirmation and serving-policy planning has started without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
+- M6 is closed as a production-candidate readiness foundation only. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
 
 ### Saved aggregate schema boundary
 

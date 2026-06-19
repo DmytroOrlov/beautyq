@@ -154,10 +154,11 @@ Consequences:
 - Candidate-readiness activation approval is distinct from route/serving approval; production-route activation remains outside the implemented policy.
 - Production rollout still needs broader accepted evidence, configured controls, explicit serving approval, routing, and lifecycle policy. The pure observability and rollback/disable reports do not approve serving.
 - Future hybrid work is conditional on direct Qdrant production-candidate readiness and explicit serving policy approval.
-- M6 is closed as the Qdrant production-candidate readiness foundation. M7 activation/source-confirmation and serving-policy planning has started without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
+- M6 is closed as the Qdrant production-candidate readiness foundation. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
 - `QdrantProductionCandidateActivationPlanning.scala` requires the closed M6 report, a `Ready` activation-policy report, and serving-scope config/no-regression/observability/rollback/approval prerequisites before a separate implementation decision can be considered.
 - `QdrantProductionCandidateActivationConfigApproval.scala` keeps the M7 config gate disabled by default, separates no-regression evidence from its approval, and translates only complete approved evidence into the existing planning prerequisites. It does not load runtime config or approve serving.
 - The source-confirmed future opt-in seam is a separate route module outside default `apiElasticsearch`; its pending contract consumes `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, plus the remaining M7 prerequisites and separate route/serving approval. `LeaderboardPlugin` continues to include only the ES route module. No Qdrant route or route switch exists.
+- `QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It does not approve an opt-in route, production activation, or hybrid serving.
 
 What not to infer:
 

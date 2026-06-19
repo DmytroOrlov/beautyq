@@ -391,13 +391,15 @@ M6 closure does not mean production serving, route switch, fallback, score fusio
 
 ## F1.6. M7 activation planning boundary
 
-M7 has started as activation/source-confirmation and serving-policy planning without serving implementation. `QdrantProductionCandidateActivationPlanning` is a pure pre-wiring model layered above the closed M6 readiness and activation-policy reports. It represents candidate-readiness-only, explicit opt-in route, production route activation, and hybrid-serving target scopes.
+The M7 activation planning/source-confirmation foundation is closed without serving implementation. `QdrantProductionCandidateActivationPlanning` is a pure pre-wiring model layered above the closed M6 readiness and activation-policy reports. It represents candidate-readiness-only, explicit opt-in route, production route activation, and hybrid-serving target scopes.
 
 The explicit opt-in route planning scope requires M6 `productionCandidateReady = true`, a `Ready` activation-policy decision, a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. A complete planning decision means only that a separate implementation decision may be considered; it does not bind or enable a route.
 
 `QdrantProductionCandidateActivationConfigApproval` supplies only the config-gate and no-regression inputs to that planner. The gate is explicitly `Disabled` or `Enabled` and defaults to disabled. No-regression evidence has a separate requirement status and approval status; only `Satisfied` plus `Approved` maps to satisfied planning evidence. The model has no config loader, route binding, or serving approval.
 
 The source-confirmed future seam is a separate route module outside `BeautySearchRouteModules.apiElasticsearch`: `BeautySearchApi` and `BeautySearchTapirEndpoints` are backend-agnostic, `BeautySearchPluginModules.api` contributes the HTTP API only when included, route modules select the backend composition, and `LeaderboardPlugin` currently includes `apiElasticsearch` directly. Pending route expectations consume `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, alongside M6 readiness, activation-policy readiness, observability/status, rollback/disable, and separate route/serving approval. No Qdrant route or route switch exists. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
+
+`QdrantProductionCandidateM7CloseoutSpec` aggregates the ready M6 report, ready activation-policy report, conservative and approved config/no-regression reports, explicit opt-in planning decision, blocked production and hybrid decisions, and the existing active/pending route-boundary spec evidence. This closeout is planning evidence only; it does not approve or implement serving.
 
 ## F2. Hybrid Control-Plane v0
 
