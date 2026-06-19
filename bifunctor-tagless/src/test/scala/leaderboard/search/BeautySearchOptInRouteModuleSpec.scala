@@ -9,6 +9,21 @@ import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.plugins.BeautySearchRouteModules
+import leaderboard.search.qdrant.{
+  QdrantProductionCandidateActivationApprovalStatus,
+  QdrantProductionCandidateActivationConfigApproval,
+  QdrantProductionCandidateActivationConfigGate,
+  QdrantProductionCandidateActivationPlanning,
+  QdrantProductionCandidateActivationPlanningStatus,
+  QdrantProductionCandidateActivationPolicy,
+  QdrantProductionCandidateActivationPrerequisites,
+  QdrantProductionCandidateActivationRequirementStatus,
+  QdrantProductionCandidateActivationScope,
+  QdrantProductionCandidateActivationTargetScope,
+  QdrantProductionCandidateReadiness,
+  QdrantProductionCandidateReadinessState,
+  QdrantProductionCandidateReadinessStatus,
+}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.{HttpApp, Request, Status}
 import org.scalatest.wordspec.AnyWordSpec
@@ -39,33 +54,89 @@ final class BeautySearchOptInRouteModuleSpec extends AnyWordSpec with HttpContra
   }
 
   "A future explicit Qdrant opt-in route" should {
-    "remain outside default apiElasticsearch" in {
+    "remain a separate module outside default apiElasticsearch" in {
       pending
     }
 
-    "require explicit production-candidate activation-policy approval" in {
+    "require M6 productionCandidateReady and activation-policy readiness before route wiring" in {
       pending
     }
 
-    "require M6 productionCandidateReady" in {
+    "consume the disabled-by-default config gate and approved no-regression evidence through the M7 config report" in {
+      import QdrantProductionCandidateActivationApprovalStatus.*
+      import QdrantProductionCandidateActivationPlanningStatus.Blocked
+      import QdrantProductionCandidateActivationRequirementStatus.*
+      import QdrantProductionCandidateActivationTargetScope.ExplicitOptInRoute
+
+      val configReport =
+        QdrantProductionCandidateActivationConfigApproval.evaluate(
+          QdrantProductionCandidateActivationConfigApproval.conservativeDefault
+        )
+      val prerequisites =
+        QdrantProductionCandidateActivationConfigApproval.applyToPlanningPrerequisites(
+          configReport,
+          completeOptInPrerequisites,
+        )
+      val decision =
+        QdrantProductionCandidateActivationPlanning.evaluate(ExplicitOptInRoute, prerequisites)
+
+      assert(configReport.config.configGate == QdrantProductionCandidateActivationConfigGate.Disabled)
+      assert(configReport.planningConfigGate == Missing)
+      assert(configReport.planningNoRegressionEvidence == Unknown)
+      assert(configReport.config.noRegression.approval == NotApproved)
+      assert(decision.status == Blocked)
+      assert(decision.blockingReasons == List(
+        "Config gate is missing",
+        "No-regression evidence status is unknown",
+      ))
       pending
     }
 
-    "require a disabled-by-default config gate before route wiring" in {
+    "require observability/status evidence and rollback/disable control" in {
       pending
     }
 
-    "require no-regression evidence" in {
+    "require separate route/serving approval without approving production-route activation" in {
       pending
     }
+  }
 
-    "require observability and status evidence" in {
-      pending
-    }
+  private val completeOptInPrerequisites: QdrantProductionCandidateActivationPrerequisites = {
+    import QdrantProductionCandidateActivationApprovalStatus.Approved
+    import QdrantProductionCandidateActivationRequirementStatus.Satisfied
+    import QdrantProductionCandidateReadinessStatus.Ready
 
-    "require rollback and disable control" in {
-      pending
-    }
+    val activationPolicy =
+      QdrantProductionCandidateActivationPolicy(
+        explicitlyApproved = true,
+        scope = QdrantProductionCandidateActivationScope.FutureExplicitOptInRouteOnly,
+        routeServingApproval = Approved,
+        rollbackDisableControls = Satisfied,
+        noRegressionEvidence = Satisfied,
+        observability = Satisfied,
+      )
+    val readinessState =
+      QdrantProductionCandidateReadinessState(
+        qdrantActive = true,
+        collectionIdentity = Ready,
+        contractParity = Ready,
+        indexing = Ready,
+        search = Ready,
+        qualityEval = Ready,
+        observability = Ready,
+        rollbackDisable = Ready,
+        activationPolicy = Ready,
+      )
+
+    QdrantProductionCandidateActivationPrerequisites(
+      m6ReadinessReport = Some(QdrantProductionCandidateReadiness.evaluate(readinessState)),
+      activationPolicyReport = Some(QdrantProductionCandidateActivationPolicy.evaluate(activationPolicy)),
+      configGate = Satisfied,
+      noRegressionEvidence = Satisfied,
+      observabilityStatus = Satisfied,
+      rollbackDisableControl = Satisfied,
+      servingApproval = Approved,
+    )
   }
 
   private def buildProbe(): BeautySearchOptInRouteModuleProbe = {

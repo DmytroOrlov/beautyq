@@ -476,7 +476,7 @@ Boundary:
 
 `QdrantProductionCandidateM7ConfigApprovalSpec` is `Contractual + Blackbox + Atomic` coverage for the disabled-by-default config/no-regression layer. It proves the conservative default is blocked, no-regression evidence requires separate approval, blocker ordering is deterministic, the report composes into M7 planning prerequisites, and production-route planning remains blocked without separate route/serving approval.
 
-`BeautySearchOptInRouteModuleSpec` keeps future Qdrant opt-in route expectations pending and compile-safe. The pending contract requires the future module to stay outside default `apiElasticsearch` and to require M6 readiness, activation-policy approval, a disabled-by-default config gate, no-regression evidence, observability/status evidence, and rollback/disable control. Existing active `BeautySearchProductionRouteExposureSpec` and `BeautySearchElasticsearchRouteModuleSpec` remain the route-boundary proof that `/beauty-search` is ES-backed and the default graph is unchanged.
+`BeautySearchOptInRouteModuleSpec` keeps future Qdrant opt-in route expectations pending and compile-safe. The pending contract requires a separate future module outside default `apiElasticsearch`; M6 `productionCandidateReady`; activation-policy readiness; observability/status evidence; rollback/disable control; separate route/serving approval; and the disabled-default config gate plus separately approved no-regression evidence supplied through `QdrantProductionCandidateActivationConfigApproval`. Existing active `BeautySearchProductionRouteExposureSpec` and `BeautySearchElasticsearchRouteModuleSpec` remain the route-boundary proof that `/beauty-search` is ES-backed and the default graph is unchanged.
 
 Contract facts:
 

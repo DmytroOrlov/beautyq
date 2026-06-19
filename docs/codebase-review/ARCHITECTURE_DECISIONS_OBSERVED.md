@@ -157,7 +157,7 @@ Consequences:
 - M6 is closed as the Qdrant production-candidate readiness foundation. M7 activation/source-confirmation and serving-policy planning has started without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
 - `QdrantProductionCandidateActivationPlanning.scala` requires the closed M6 report, a `Ready` activation-policy report, and serving-scope config/no-regression/observability/rollback/approval prerequisites before a separate implementation decision can be considered.
 - `QdrantProductionCandidateActivationConfigApproval.scala` keeps the M7 config gate disabled by default, separates no-regression evidence from its approval, and translates only complete approved evidence into the existing planning prerequisites. It does not load runtime config or approve serving.
-- The source-confirmed future opt-in seam is a new route module outside default `apiElasticsearch`; `LeaderboardPlugin` continues to include only the ES route module. No Qdrant route or route switch exists.
+- The source-confirmed future opt-in seam is a separate route module outside default `apiElasticsearch`; its pending contract consumes `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, plus the remaining M7 prerequisites and separate route/serving approval. `LeaderboardPlugin` continues to include only the ES route module. No Qdrant route or route switch exists.
 
 What not to infer:
 

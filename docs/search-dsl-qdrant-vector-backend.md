@@ -353,7 +353,7 @@ M7 activation/source-confirmation and serving-policy planning has started. `Qdra
 
 `QdrantProductionCandidateActivationConfigApproval` is the pure disabled-by-default config/no-regression input model. Its conservative default is disabled with unknown, unapproved no-regression evidence. An enabled gate maps to a satisfied planning config input; no-regression maps to satisfied only when evidence is satisfied and separately approved. The report composes into `QdrantProductionCandidateActivationPrerequisites` but cannot supply route/serving approval.
 
-The next allowed M7 scope is explicit opt-in Qdrant route source-confirmation or pending module specifications using this report. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
+The explicit opt-in Qdrant route boundary is now source-confirmed as pending only. Any future module remains outside default `apiElasticsearch` and must consume this report for the disabled-default config gate and separately approved no-regression evidence, together with the remaining M7 prerequisites and separate route/serving approval. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
 
 ## 9. Non-production experiment wiring boundary
 
@@ -898,7 +898,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. source-confirm the pending Qdrant opt-in module contract against the disabled-by-default config/no-regression report without adding a route or changing production serving
+1. decide whether to authorize a separate explicit opt-in Qdrant route implementation after the source-confirmed M7 prerequisites are satisfied; no implementation is currently approved
 
 Immediate code target details:
 

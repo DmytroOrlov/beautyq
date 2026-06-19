@@ -252,7 +252,7 @@ Started M7 planning foundation:
 - Target scopes are candidate readiness only, explicit opt-in route, production route activation, and hybrid serving.
 - M6 `productionCandidateReady = true` and a `Ready` activation-policy report are mandatory.
 - Any serving scope additionally requires a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval.
-- The next allowed scope is explicit opt-in Qdrant route source-confirmation or pending module specifications using the pure config/no-regression report. Production route activation is not approved.
+- The explicit opt-in Qdrant route boundary is source-confirmed as pending only: it must remain a separate module outside default `apiElasticsearch` and consume the pure config/no-regression report before any route wiring. Production route activation is not approved.
 - Default `apiElasticsearch` and `LeaderboardPlugin` remain ES-backed. No Qdrant serving route, opt-in serving route, route switch, or hybrid serving was added.
 - No Qdrant serving route, hybrid-serving behavior, or production-route behavior was added.
 
@@ -284,7 +284,7 @@ Started M7 planning foundation:
 | M4 | ES production lifecycle designed | Closed. HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`. Full verification is separate from focused validation. |
 | M5 | Startup-readiness lifecycle checkpoint | Closed as a bounded startup-readiness lifecycle checkpoint: app-start fail-closed, prepared-serving, non-serving lifecycle metadata/readiness/status/transition/projection seams, DI/rooting, failure classification, and consistency coverage. Remaining ES production-lifecycle tracks are intentionally separate: runtime route-gate, replacement/freshness/rollback, and full lifecycle operations. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md`. |
 | M6 | Qdrant production-candidate readiness: contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy. | Closed: Qdrant production-candidate readiness foundation. Five accepted chunks plus source-confirmation closeout; no serving approval |
-| M7 | Activation/source-confirmation and serving-policy planning before any serving, conditional on separate approval | Started: pure prerequisite model, route-seam source confirmation, and pending opt-in expectations; no serving implementation |
+| M7 | Activation/source-confirmation and serving-policy planning before any serving, conditional on separate approval | Started: pure prerequisite model, route-seam source confirmation, and config-report-backed pending opt-in expectations; no serving implementation |
 | M8 | Controlled hybrid serving experiment, conditional on explicit business/serving policy and activation approval | Future-only and conditional; not automatic |
 
 #### M4 ES lifecycle design gate — closed
@@ -373,7 +373,7 @@ Dashboard/operator integration and full production lifecycle verification remain
 #### Near-term sequence
 
 * Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
-* M6 is closed and M7 planning has started. The disabled-by-default config/no-regression model is source-backed; next, source-confirm the pending opt-in module contract without treating candidate readiness as serving approval or adding a route.
+* M6 is closed and M7 planning has started. The disabled-by-default config/no-regression model and pending opt-in module contract are source-confirmed without treating candidate readiness as serving approval or adding a route.
 * M5 remains closed as a bounded startup-readiness lifecycle checkpoint. Remaining ES production-lifecycle tracks are runtime route-gate, replacement/freshness/rollback, and full lifecycle operations. The runtime route-gate remains deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 * Current immediate next steps are not Qdrant shadow-first work and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
