@@ -131,7 +131,7 @@ What not to infer:
 
 Statement:
 
-- Qdrant and hybrid paths are implemented as non-production/manual/local/test/experimental boundaries, not production app behavior.
+- Qdrant and hybrid paths are implemented as non-production/manual/local/test/experimental boundaries, not production app behavior. Qdrant remains an active production-candidate target, but shadow-first is not required and real shadow serving / traffic mirroring are not active objectives.
 
 Evidence:
 
@@ -143,7 +143,8 @@ Evidence:
 Consequences:
 
 - Qdrant/hybrid docs must label current status carefully.
-- Production rollout needs separate lifecycle, activation, routing, freshness, and kill-switch design.
+- Production rollout needs separate lifecycle, activation, routing, freshness, rollback/disable, observability, and kill-switch design.
+- Future hybrid work is conditional on direct Qdrant production-candidate readiness and explicit serving policy approval.
 
 What not to infer:
 

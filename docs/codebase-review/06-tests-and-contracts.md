@@ -501,7 +501,7 @@ Boundary:
 - This is offline/eval-only helper behavior.
 - It is not production readiness.
 - It is not routing approval.
-- It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+- It does not imply Qdrant production-candidate readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
 ### EngineEval class-delta comparison contract
 
@@ -529,7 +529,7 @@ Boundary:
 - This is offline/eval-only reporting behavior.
 - It is not production readiness.
 - It is not routing approval.
-- It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+- It does not imply Qdrant production-candidate readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
 For local operator procedure, workspace setup, extraction mechanics, artifact naming, manifest details, and first-run command examples, see `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`.
 
@@ -552,7 +552,7 @@ Output markers:
 - Comparing two aggregate evidence snapshots from different runs or candidates.
 - Spotting query-level or aggregate movement between candidates/runs (deltas for `queryCount`, `esRecallCount`, `qdrantRecallCount`, `qdrantComplementCount`, `qdrantNoiseCount`, `overlapCount`, `simulatedHybridGainCount`).
 - Spotting role-level movement between candidates/runs when role deltas are non-zero (see roleDeltas below).
-- Supporting later Qdrant shadow/hybrid decisions with recorded evidence.
+- Supporting later Qdrant production-candidate/hybrid decisions with recorded evidence.
 
 **Role-level deltas (roleDeltas):**
 
@@ -561,7 +561,7 @@ Output markers:
 - Text aggregate reports may include `roleAggregates`.
 - Saved-report comparison output may include `roleDeltas` when role-level deltas are non-zero.
 - Replayed saved comparisons confirmed: `benchmark-small` → `benchmark-large` includes `queryDeltas` and preserves `roleDeltas`; `benchmark-single` → `benchmark-small` omits both `queryDeltas` and `roleDeltas` because that comparison is zero-delta at query and role levels.
-- This remains offline/eval-only and does not imply production Qdrant/hybrid readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
+- This remains offline/eval-only and does not imply production Qdrant direct-candidate readiness, routing, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement.
 
 **Query-level deltas (queryDeltas):**
 
@@ -627,7 +627,7 @@ First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids 
 
 **Offline interpretation:** `benchmark-large` is the strongest in this SemanticBroadSmoke evidence slice. All deltas are zero from `benchmark-single` to `benchmark-small`; the meaningful movement is from `benchmark-small` to `benchmark-large`.
 
-**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant/hybrid production readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
+**Boundaries:** This is offline/eval-only evidence. It is not production readiness. It is not routing approval. It does not imply Qdrant production-candidate readiness, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement.
 
 ## Ignored / Tagged / Pending Tests
 

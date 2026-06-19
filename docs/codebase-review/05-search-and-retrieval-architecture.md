@@ -68,7 +68,7 @@ Design boundary:
 - The implemented model/service/contract/adapter boundary is now production-exposed only through the ES-backed seed route.
 - Do not infer Qdrant, hybrid, fallback, reranking, score fusion, or benchmark-driven routing from production route availability.
 - The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, an opt-in HttpApi module proof, an explicit opt-in end-to-end route module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
-- The production hardening path should address observability, freshness/staleness, runtime refresh/replacement, and kill-switch design before any Qdrant/hybrid work.
+- The production hardening path should address observability, freshness/staleness, runtime refresh/replacement, and kill-switch design before any Qdrant production-candidate or hybrid work.
 
 Test-only/fake-only:
 
@@ -382,8 +382,8 @@ Current architecture split:
 Production serving:
   current ES seed route (default)
   -> ES lexical baseline
-  -> Qdrant shadow only if eval proves complement
-  -> controlled hybrid only after readiness/kill-switch/policy
+  -> Qdrant production-candidate readiness only if contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy are satisfied
+  -> controlled hybrid only after direct production-candidate readiness and explicit serving policy approval
 
 Eval/benchmark:
   ES-native eval and Qdrant-native eval appear early and together

@@ -79,8 +79,8 @@ Documented as characterized, not as desired final contract:
 
   ```text
   current ES seed route (default)
-  → Qdrant shadow only if eval proves complement
-  → controlled hybrid only after readiness/kill-switch/policy
+  → Qdrant production-candidate readiness only if contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy are satisfied
+  → controlled hybrid only after direct production-candidate readiness and explicit serving policy approval
   ```
 
 * The production route does eager seed index preparation during route composition, but that is still not a production-grade ES lifecycle policy.
@@ -93,11 +93,11 @@ Documented as characterized, not as desired final contract:
 * Focused ES-backed route/module graph specs prove that lifecycle metadata and the derived readiness state are materialized through the current route graphs; production lifecycle remains incomplete.
 * Current route-module state coverage documents the seed-only gaps; it does not enforce readiness or change serving behavior.
 * The lifecycle status field shape and encoder are implemented as non-serving code and documented in `docs/codebase-review/ES_LIFECYCLE_STATUS_DESIGN.md`, but no endpoint, route path, HTTP status policy, or operator policy is implemented.
-* Detailed milestone status and priority order for lifecycle/eval/shadow/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
+* Detailed milestone status and priority order for lifecycle/eval/direct-Qdrant-candidate/hybrid work live in [docs/codebase-review/07-current-gaps-and-roadmap.md](codebase-review/07-current-gaps-and-roadmap.md).
 * **M4 is closed.** HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. Startup serving-gate design documented in `ES_STARTUP_SERVING_GATE_DESIGN.md`.
 * **M5 is closed as a bounded startup-readiness lifecycle checkpoint.** App-start fail-closed, prepared-serving, non-serving lifecycle metadata/readiness/status/transition/projection seams, DI/rooting, failure classification, and consistency coverage. Startup serving-gate design documented. Source-confirmed implementation slice analysis completed. `ElasticsearchAppStartServingGateSpec` covers composition-level and DI-graph-level fail-closed and prepared-serving; these tests document current implicit behavior only and are not runtime HTTP 503 gate tests. M5 itself did not include runtime HTTP gate, replacement, freshness, refresh, rollback, dashboard, or full production lifecycle completion. Full ES production lifecycle remains incomplete and moves to named future tracks (ES operator visibility, ES runtime serving-gate, ES replacement/freshness/rollback). Post-M5, the ES operator visibility track Design A is implemented and hardened as an explicit opt-in/internal module: `GET /ops/beauty-search/lifecycle` is available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` / `apiElasticsearchWithOperatorVisibility`, returns `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`, uses `200 OK`, requires no new ES calls, and does not change `/beauty-search`. Default `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch` does NOT expose the endpoint, and neither does the in-memory graph. Design B (bootstrap failure status) and Design C (replacement/freshness/rollback-rich status) remain future. The current recommendation for the runtime route-gate track is Candidate A: keep app-start fail-closed only and defer runtime HTTP gate until a runtime readiness source or replacement/freshness/rollback policy exists. `ElasticsearchOperatorVisibilityEndpointPolicySpec` now has active Design A hardening coverage with only 2 future expectations pending. See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for closeout checkpoint.
 * Full verification is separate from focused validation; full `sbt test` was not run from this docs pass.
-* M6 Qdrant shadow readiness (gated by a stable production-serving baseline; until then, offline/parity/readiness groundwork, not real production shadow traffic), M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work. Runtime serving-gate work stays deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
+* M6 Qdrant production-candidate readiness: contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy. No shadow-serving machinery unless later re-approved by business need. M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work and are conditional on direct Qdrant-candidate readiness plus explicit serving policy approval. Runtime serving-gate work stays deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 
@@ -121,7 +121,7 @@ Documented as characterized, not as desired final contract:
 * This is offline/eval-only. The production `/beauty-search` route remains ES seed route.
 * The route already performs eager seed index preparation during route composition, but that is not a production-grade ES lifecycle policy.
 * `ElasticsearchSeedLifecycleMetadata` and `ElasticsearchProductionReadinessState` remain non-serving internal seams, not lifecycle completion.
-* M6 Qdrant shadow readiness (gated by a stable production-serving baseline; until then, offline/parity/readiness groundwork, not real production shadow traffic), M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work. Runtime serving-gate work stays deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
+* M6 Qdrant production-candidate readiness: contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy. No shadow-serving machinery unless later re-approved by business need. M7 hybrid policy, and M8 controlled hybrid serving remain future roadmap work and are conditional on direct Qdrant-candidate readiness plus explicit serving policy approval. Runtime serving-gate work stays deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
 * No route switch, fallback, score fusion, reranking, HybridServe, or Qdrant auto-supplement from benchmark results.
 * Benchmark output is decision support, not production automation.
 * Qdrant/hybrid are non-production/manual/local/test boundaries, not production wiring.
@@ -175,5 +175,7 @@ product results by combining:
 * `docs/search-dsl-hybrid-v1-plan.md` — hybrid V1 plan and B-lite strategy
 * `docs/beautyq-search-dsl-v1.md` — search DSL V1 and eval coverage
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow, prompt packaging, source-truth gating, closeout, docs ownership, and model recommendation guidance
+
+Future work should move in larger code/test chunks that unlock downstream behavior; use 5.5-med/Codex for those slices, and update docs inside the same delivery rather than as standalone docs-only cleanup unless the roadmap is inconsistent.
 
 Coordinator workflow rules, including source-truth gating, prompt packaging, closeout, documentation ownership, and model recommendation guidance, live in `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`.
