@@ -57,7 +57,7 @@ Current lifecycle meaning:
 - source-backed preparation failures remain classifiable into `PreparationFailed` in pure tests without changing initializer behavior;
 - failed transitions retain source-backed `QueryFailure.OperationFailure` data but expose no lifecycle metadata or lifecycle status response;
 - the binding remains non-serving and its serving decision stays `NotEnforced`;
-- startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and operator-visible status are not implemented.
+- startup serving gate, replacement, freshness tracking, refresh trigger policy, rollback, and broader operator-visible lifecycle status beyond Design A are not implemented.
 
 ## Implemented non-serving JSON response shape
 
@@ -245,7 +245,7 @@ The following items are explicitly not approved by this design document:
 The startup serving-gate design is documented separately in `docs/codebase-review/ES_STARTUP_SERVING_GATE_DESIGN.md`. Key facts:
 
 - The serving-gate design is design-only; no runtime enforcement code is implemented.
-- Design A endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility only; default ES graphs do not expose it.
+- Design A endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility only; default ES graphs and the in-memory graph do not expose it.
 - No serving-readiness enforcement exists.
 - No preparation failure policy is implemented.
 - No production lifecycle completion is claimed.
@@ -274,7 +274,7 @@ This design does not imply or approve:
 
 ## Implementation boundary
 
-The implemented opt-in/internal endpoint reports the current seed-only state and does not claim production lifecycle completion. Broader operator policy, auth/config seams, and richer lifecycle states remain future work in the ES operator visibility track.
+The implemented opt-in/internal endpoint reports the current seed-only state and does not claim production lifecycle completion. Broader operator policy, auth/config seams, runtime route-gate behavior, and richer lifecycle states remain future work in the ES operator visibility track.
 
 Until that later task is approved and implemented:
 
@@ -310,13 +310,13 @@ Policy decisions required before endpoint implementation:
 - Whether status should be served from app-start captured state, runtime state, or static DI-bound prepared state
 - Whether failed startup status requires a separate application bootstrap state outside successful route construction
 
-## Design A endpoint policy draft
+## Design A endpoint policy
 
-Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs/codebase-review/ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Draft recommendations:
+Design A endpoint/path/auth/status/response-shape policy is now implemented and recorded in `docs/codebase-review/ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Current policy:
 
 - Endpoint path: `GET /ops/beauty-search/lifecycle`
 - Auth: disabled unless explicitly enabled
 - HTTP status: always `200 OK` for successful retrieval
 - Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`
 
-Design A is implemented as explicit opt-in/internal operator visibility. Default ES graphs do not expose it. Module-level opt-in is the only implemented exposure policy; broader auth/config policy remains future. `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active default-absence, opt-in-presence, exact response-shape, in-memory-absence, and no-new-ES-calls coverage. Implementation slice remains source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
+Design A is implemented as explicit opt-in/internal operator visibility. Default ES graphs and the in-memory graph do not expose it. Module-level opt-in is the only implemented exposure policy; broader auth/config policy remains future. `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active default-absence, opt-in-presence, exact response-shape, in-memory-absence, and no-new-ES-calls coverage. Implementation slice remains source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.

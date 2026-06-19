@@ -1,12 +1,12 @@
 # ES Operator Visibility Endpoint Policy — Design A
 
-Status: **Design A endpoint implemented as explicit opt-in/internal operator visibility endpoint.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT included in the default ES route graph (`seedCatalogElasticsearch`, `apiElasticsearch`). Endpoint is available only through the explicit opt-in modules `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Default `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch` does NOT expose the endpoint. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful status retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. No Design B or Design C behavior. Design B/C remain future. Full ES production lifecycle remains incomplete.
+Status: **Design A endpoint implemented as explicit opt-in/internal operator visibility endpoint.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT included in the default ES route graph (`seedCatalogElasticsearch`, `apiElasticsearch`). Endpoint is available only through the explicit opt-in modules `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Default `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch` does NOT expose the endpoint. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful status retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Module-level opt-in/internal routing is the implemented exposure policy. Config-level disabled-by-default, local/dev fallback, Design B, Design C, dashboard integration, and full ES production lifecycle remain future.
 
 ## Purpose
 
 Draft the endpoint path, auth/exposure, HTTP status code, and response shape policy for Design A of the ES operator visibility track. Design A exposes current successful prepared/seed-only status from a constructed route graph using existing DI-bound models, with no new Elasticsearch calls.
 
-This document is a design-only policy draft. It does not implement an endpoint, approve a route path, change any source or test file, or claim production lifecycle completion.
+This document records the implemented Design A policy boundary plus the remaining future gaps. It does not implement an endpoint, approve a route path, change any source or test file, or claim production lifecycle completion.
 
 ## Scope
 
@@ -94,7 +94,7 @@ This document is a design-only policy draft. It does not implement an endpoint, 
 
 **Auth/operator exposure implications:** Path structure signals operator intent.
 
-## Draft path recommendation
+## Path recommendation and current implementation
 
 **Recommend Candidate 2: `GET /ops/beauty-search/lifecycle`**
 
@@ -104,7 +104,7 @@ Rationale:
 - Allows future operator endpoints under the same namespace.
 - Does not tie to a specific technology (ES vs Qdrant) in the path.
 
-Historical draft recommendation. The current Design A implementation uses this path for the explicit opt-in/internal endpoint only.
+Historical recommendation. The current Design A implementation uses this path for the explicit opt-in/internal endpoint only.
 
 ## Auth/exposure policy options
 
@@ -136,7 +136,7 @@ The endpoint is disabled by default and enabled via explicit configuration.
 **Pros:** Safe default; operator must opt in.
 **Cons:** Requires configuration surface; operator must know to enable.
 
-## Draft auth recommendation
+## Auth/exposure policy and current implementation
 
 **Recommend Option D: disabled unless explicitly enabled, with Option C as fallback for dev/local.**
 
@@ -146,7 +146,7 @@ Rationale:
 - Explicit enablement forces operators to acknowledge the endpoint's purpose.
 - For dev/local, a simpler config gate (Option C) may suffice.
 
-Historical draft recommendation. The only implemented exposure policy today is module-level opt-in/internal routing; broader auth/config policy is still future work.
+Historical recommendation. The only implemented exposure policy today is module-level opt-in/internal routing; broader auth/config policy is still future work.
 
 ## HTTP status code policy options
 
@@ -171,7 +171,7 @@ The endpoint returns `200 OK` with a `readiness` field in the body that indicate
 **Pros:** Domain semantics stay in the body; HTTP status is transport-level only.
 **Cons:** Similar to Option 1 but with an explicit readiness field.
 
-## Draft HTTP status recommendation
+## HTTP status policy and current implementation
 
 **Recommend Option 1: always `200 OK` for successful operator status retrieval.**
 
@@ -181,7 +181,7 @@ Rationale:
 - `500 Internal Server Error` is reserved for unexpected handler failures only.
 - Lifecycle status is communicated through response body fields, not HTTP status codes.
 
-Historical draft recommendation. The current Design A implementation returns `200 OK` for successful opt-in/internal status retrieval.
+Historical recommendation. The current Design A implementation returns `200 OK` for successful opt-in/internal status retrieval.
 
 ## Response shape candidates
 

@@ -199,7 +199,7 @@ What not to infer:
 
 Statement:
 
-- Current Elasticsearch lifecycle metadata and production-readiness state remain seed-only internal seams until a production lifecycle contract is implemented.
+- Current Elasticsearch lifecycle metadata and production-readiness state remain seed-only internal seams, while Design A operator visibility is exposed through an explicit opt-in/internal endpoint. The full production lifecycle contract remains incomplete.
 
 Evidence:
 
@@ -213,8 +213,8 @@ Evidence:
 
 Consequences:
 
-- Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status.
-- Any operator-facing lifecycle exposure remains unimplemented until an endpoint path and operator policy are separately approved.
+- Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or broader operator-visible production lifecycle status beyond Design A.
+- Broader operator-facing lifecycle exposure beyond Design A remains unimplemented until additional endpoint path and operator policy approvals are separately granted.
 - M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
 
 What not to infer:
@@ -236,7 +236,7 @@ Evidence:
 - No endpoint, route path, HTTP status policy, or operator policy is implemented.
 - No serving-readiness enforcement exists.
 - M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
-- The ES operator visibility track is source-confirmed and Design A is now implemented as explicit opt-in/internal endpoint exposure. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
+- The ES operator visibility track is source-confirmed and Design A is implemented as explicit opt-in/internal endpoint exposure. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
 
 Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
 
@@ -284,7 +284,7 @@ What not to infer:
 
 Statement:
 
-- Design A operator visibility endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal endpoint. It is NOT included in the default ES route graph (`seedCatalogElasticsearch`, `apiElasticsearch`). It is available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change.
+- Design A operator visibility endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal endpoint. It is NOT included in the default ES route graph (`seedCatalogElasticsearch`, `apiElasticsearch`). It is available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. It is also absent from `seedCatalogInMemory`. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change.
 
 Evidence:
 
@@ -294,7 +294,7 @@ Evidence:
 - `BeautySearchRouteModules.seedCatalogElasticsearch` does NOT include `operatorVisibilityApi[IO]`.
 - `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` includes `seedCatalogElasticsearch` plus `operatorVisibilityApi[IO]`.
 - `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility` includes the port-configured opt-in module.
-- `ElasticsearchOperatorVisibilityEndpointPolicySpec` has active tests covering default absence, opt-in presence, endpoint response shape, seed-only values, route graph rooting, no-new-ES-calls, and current limitations, with only future expectations left pending.
+- `ElasticsearchOperatorVisibilityEndpointPolicySpec` has active tests covering default absence, opt-in presence, in-memory absence, endpoint response shape, seed-only values, route graph rooting, no-new-ES-calls, and current limitations, with only 2 future expectations left pending.
 - `BeautySearchProductionRouteExposureSpec` verifies default graph absence and explicit opt-in presence.
 - `BeautySearchElasticsearchRouteModuleSpec`, `BeautySearchElasticsearchHttpRouteModuleSpec`, and `BeautySearchElasticsearchDefaultReadyRouteSpec` verify the endpoint is absent from default ES route graphs.
 

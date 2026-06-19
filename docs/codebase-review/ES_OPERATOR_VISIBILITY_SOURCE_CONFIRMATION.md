@@ -1,10 +1,10 @@
 # ES Operator Visibility Source Confirmation
 
-Status: **Design A implemented as explicit opt-in/internal operator visibility endpoint.** M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete. Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape is `ElasticsearchStartupReadinessStatusResponse` with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future.
+Status: **Design A implemented as explicit opt-in/internal operator visibility endpoint.** M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete. Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape is `ElasticsearchStartupReadinessStatusResponse` with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C, auth/config seam, local/dev fallback, and dashboard integration remain future.
 
 ## Purpose
 
-Source-confirm the ES operator visibility track before any endpoint implementation. Identify exact current source models that could feed an operator-visible status. Identify exact missing policy decisions before endpoint work.
+Source-confirm the implemented ES operator visibility track and the remaining future policy work. Identify exact current source models that feed an operator-visible status and the exact missing policy decisions beyond Design A.
 
 ## Source-confirmed models available for operator visibility
 
@@ -100,18 +100,18 @@ Based on the existing pattern:
 
 No endpoint, route path, HTTP status policy, or auth/operator policy is approved. The seam analysis above is structural observation only.
 
-## Policy decisions required before endpoint work
+## Policy decisions remaining beyond Design A
 
 The following policy decisions were resolved for the current Design A implementation at the module boundary; the remaining items below describe future policy work beyond the current opt-in/internal endpoint:
 
-1. **Endpoint path** — e.g., `GET /es-lifecycle-status`, `GET /internal/es-status`, or alternative.
-2. **Public/private/internal exposure** — Whether the endpoint is public, private (internal network only), or requires explicit operator access.
-3. **Auth/operator access model** — Whether the endpoint requires authentication, authorization, operator role, or is open.
-4. **Response status code policy** — HTTP 200 with status body, or alternative codes for different states.
-5. **Prepared versus failed response shape** — Whether the endpoint returns the same shape for prepared and failed states, or uses different HTTP status codes.
-6. **Whether startup failure is visible when graph construction fails** — Currently, if composition fails, no route is constructed. Making startup failure visible requires a different seam (Design B below).
-7. **Whether status should be served from app-start captured state, runtime state, or static DI-bound prepared state** — Current DI-bound transition is always `Prepared` from app-start captured state.
-8. **Whether failed startup status requires a separate application bootstrap state outside successful route construction** — To expose startup failure, a bootstrap-level state must exist outside the route graph.
+1. **Endpoint path** — implemented as `GET /ops/beauty-search/lifecycle`.
+2. **Public/private/internal exposure** — implemented as explicit internal/operator-only opt-in routing.
+3. **Auth/operator access model** — module-level opt-in is implemented; config-level disabled-by-default, local/dev fallback, and broader auth policy remain future.
+4. **Response status code policy** — implemented as `200 OK` for successful retrieval.
+5. **Prepared versus failed response shape** — implemented as `Prepared` only for Design A; `PreparationFailed` remains the Design B seam.
+6. **Whether startup failure is visible when graph construction fails** — still future; making startup failure visible requires a different seam (Design B below).
+7. **Whether status should be served from app-start captured state, runtime state, or static DI-bound prepared state** — current DI-bound transition is always `Prepared` from app-start captured state.
+8. **Whether failed startup status requires a separate application bootstrap state outside successful route construction** — still future; to expose startup failure, a bootstrap-level state must exist outside the route graph.
 
 ## Operator visibility designs
 
@@ -232,7 +232,7 @@ Design A endpoint/path/auth/status/response-shape policy is now drafted in `docs
 
 `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active Design A implementation proof for default-graph absence, explicit opt-in presence, in-memory absence, exact `Prepared` response shape, and no-new-ES-calls behavior. Only future expectations without a current seam remain pending.
 
-Design A is implemented as explicit opt-in/internal operator visibility. Default ES graphs do not expose the endpoint. Broader auth/config policy, Design B startup-failure visibility, and Design C richer lifecycle status remain future work.
+Design A is implemented as explicit opt-in/internal operator visibility. Default ES graphs and the in-memory graph do not expose the endpoint. Broader auth/config policy, Design B startup-failure visibility, and Design C richer lifecycle status remain future work.
 
 ## Implementation-slice source confirmation
 

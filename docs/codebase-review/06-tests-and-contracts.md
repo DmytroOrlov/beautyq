@@ -111,9 +111,9 @@ Future/unimplemented unless matching source-backed tests are added. These belong
 - rollback behavior:
   - return to previous known-good index/version if rollback support is introduced;
   - retained state required for rollback.
-- operator-visible lifecycle status:
-  - status surface and fields once introduced;
-  - distinction among seed-only, preparing, ready, failed, stale, rollback, or disabled states.
+- operator-visible lifecycle status beyond Design A:
+  - future Design B/C status surface and fields if introduced;
+  - distinction among seed-only, preparing, ready, failed, stale, rollback, or disabled states if those states are ever added.
 - operator-facing lifecycle status design:
   - pure status model/encoder coverage now exists in `ElasticsearchLifecycleStatusResponseSpec.scala`;
   - route/status endpoint contract tests only if an endpoint/path is separately approved;
@@ -122,11 +122,11 @@ Future/unimplemented unless matching source-backed tests are added. These belong
 
 ### Operator visibility tests — Design A implemented as explicit opt-in module
 
-Design A operator visibility endpoint is implemented as explicit opt-in module. Endpoint path: `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change.
+Design A operator visibility endpoint is implemented as explicit opt-in/internal module. Endpoint path: `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. It is also absent from `seedCatalogInMemory`. Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change.
 
 Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Implementation source confirmation in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
 
-**Implemented active coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has active Design A endpoint tests, with only future Design B/C/runtime-gate/config-auth expectations left pending.
+**Implemented hardening coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` proves default-graph absence, explicit opt-in presence, in-memory absence, exact `Prepared` response shape, and no request-time ES calls. Only 2 future expectations remain pending: config-level disabled-by-default/local-dev fallback, and runtime route-gate/HTTP 503 behavior.
 
 Implemented active tests:
 
@@ -163,12 +163,7 @@ Implemented active tests:
    - Existing `POST /beauty-search` request-time ES search behavior remains unchanged.
    - Classification: `Contractual + Blackbox + Group` (real HTTP-client seam).
 
-5. **No startup failure status is exposed in Design A.**
-   - The endpoint always returns `Prepared` variant.
-   - No `PreparationFailed` variant is reachable from the DI-bound transition.
-   - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
-
-6. **No replacement/freshness/rollback fields claim implemented behavior.**
+5. **No replacement/freshness/rollback fields claim implemented behavior.**
    - All gap fields (`replacement`, `freshness`, `refresh`, `rollback`, `operatorVisibility`) return their current seed-only values.
    - `productionLifecycleComplete` is `false`.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
@@ -630,7 +625,7 @@ First real offline evidence for the `SemanticBroadSmoke` eval subset (query ids 
 
 Targeted search result:
 
-- `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` keeps ScalaTest `pending` only for future expectations without a current seam (for example config-level disabled-by-default, local/dev fallback, and runtime route-gate/HTTP 503 behavior). Active Design A expectations now run as real assertions.
+- `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` keeps ScalaTest `pending` only for the 2 future expectations without a current seam (config-level disabled-by-default/local-dev fallback and runtime route-gate/HTTP 503 behavior). Active Design A expectations now run as real assertions.
 - Resource-backed specs cancel when resources are unavailable; true manual artifact specs may cancel when saved artifact env vars are absent.
 - Class names containing `Smoke`, `Integration`, or `Manual` reflect the spec's role.
 

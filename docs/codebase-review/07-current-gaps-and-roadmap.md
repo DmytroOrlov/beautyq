@@ -18,7 +18,7 @@ Current status:
 
 Strategic gap:
 
-- The next strategic gate is ES production lifecycle design, not Qdrant shadow implementation. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks.
+- The next strategic gate is ES production lifecycle design beyond the implemented operator endpoint, not Qdrant shadow implementation. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks.
 - Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, freshness/staleness, observability, kill-switch, and lifecycle/source-of-truth policy.
 
 ### BeautySearchService Wiring
@@ -311,11 +311,11 @@ Remaining ES production lifecycle work is split into named tracks. These tracks 
 
 | Track | Scope | Dependencies | Current status |
 |-------|-------|-------------|----------------|
-| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; module-level opt-in is the only implemented exposure policy | **Design A implemented as explicit opt-in/internal module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. NOT in default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` / `apiElasticsearchWithOperatorVisibility`. Default `seedCatalogElasticsearch`, default `apiElasticsearch`, and `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch` do NOT expose the endpoint. Response shape: `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`. `200 OK` for successful retrieval. No new ES calls. No `/beauty-search` behavior change. No runtime route gate. Design B (bootstrap failure status) and Design C (replacement/freshness/rollback-rich status) remain future. Tests: active default-absence, explicit-opt-in presence, in-memory absence, exact response-shape, and no-new-ES-calls coverage, with only future expectations left pending. |
+| ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; Design A closed/implemented; module-level opt-in is the only realized exposure policy | **Design A implemented as explicit opt-in/internal module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. NOT in default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` / `apiElasticsearchWithOperatorVisibility`. Default `seedCatalogElasticsearch`, default `apiElasticsearch`, `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch`, and the in-memory graph do NOT expose the endpoint. Response shape: `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`. `200 OK` for successful retrieval. No new ES calls. No `/beauty-search` behavior change. No runtime route gate. Design B (bootstrap failure status) and Design C (replacement/freshness/rollback-rich status) remain future. Tests: active default-absence, explicit-opt-in presence, in-memory absence, exact response-shape, and no-new-ES-calls coverage, with only 2 future expectations left pending. |
 | ES runtime serving-gate track | Runtime route-gate policy/implementation: route returns approved HTTP error (e.g., 503) on non-prepared state; requires new source seam because current DI-bound transition is always `Prepared` | M5 closeout; serving-gate policy approval (Choice 1 or 2 from `ES_STARTUP_SERVING_GATE_DESIGN.md`); new source seam design | Not started; source-confirmed as requiring different seam in `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` |
 | ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
 
-These tracks can proceed independently. The ES operator visibility track and ES runtime serving-gate track both require policy approval before implementation. The ES replacement/freshness/rollback track requires individual policy designs.
+These tracks can proceed independently. The ES operator visibility track is closed for Design A; the ES runtime serving-gate track and the ES replacement/freshness/rollback track still require policy approval before implementation. The ES replacement/freshness/rollback track requires individual policy designs.
 
 Dashboard/operator integration and full production lifecycle verification remain downstream of these tracks.
 
@@ -332,7 +332,7 @@ Dashboard/operator integration and full production lifecycle verification remain
 #### Near-term sequence
 
 * Continue M-ESQ-EVAL evidence consolidation and checkpoint documentation.
-* Next safe decisions are still: docs/evidence consolidation and ES lifecycle design; Qdrant shadow design remains a later M6 step only after source-confirmed evidence bundles and an approved ES lifecycle baseline. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks (ES operator visibility, ES runtime serving-gate, ES replacement/freshness/rollback). The ES operator visibility track is now implementation-slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
+* Next safe decisions are still: docs/evidence consolidation and ES lifecycle design beyond Design A; Qdrant shadow design remains a later M6 step only after source-confirmed evidence bundles and an approved ES lifecycle baseline. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle moves to named future tracks (ES runtime serving-gate, ES replacement/freshness/rollback). The ES operator visibility track is now implementation-slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
 * Current immediate next steps are not Qdrant shadow readiness and not production hybrid.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
 
@@ -453,7 +453,7 @@ Current blockers:
 - No stale-catalog observability or kill switch.
 - No production Elasticsearch client/indexing lifecycle.
 - No explicit search index creation/update lifecycle.
-- Route-module state coverage plus pure transition tests now prove seed-only metadata, the non-serving readiness model, and startup preparation result shape only; they do not implement startup readiness, replacement, freshness, refresh triggers, rollback, or operator-visible production lifecycle status. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle remains incomplete.
+- Route-module state coverage plus pure transition tests now prove seed-only metadata, the non-serving readiness model, and startup preparation result shape only; Design A operator visibility is implemented separately as an explicit opt-in/internal endpoint. These seams still do not implement startup readiness enforcement, replacement, freshness, refresh triggers, rollback, or broader operator-visible production lifecycle status. M5 is closed as a bounded startup-readiness lifecycle checkpoint; full ES production lifecycle remains incomplete.
 - No production collection manager for Qdrant.
 - No kill switch or production activation axis for hybrid/Qdrant.
 - No production-safe freshness model between Postgres, Elasticsearch, and Qdrant.

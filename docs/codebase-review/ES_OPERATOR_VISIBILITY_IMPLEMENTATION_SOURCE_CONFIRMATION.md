@@ -1,24 +1,24 @@
 # ES Operator Visibility — Design A Implementation Slice Source Confirmation
 
-Status: **Design A implemented as explicit opt-in module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility`, `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`). Default `seedCatalogElasticsearch` and `apiElasticsearch` do NOT include the operator visibility endpoint. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful status retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future. Full ES production lifecycle remains incomplete.
+Status: **Design A implemented and hardened as explicit opt-in module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility`, `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`). Default `seedCatalogElasticsearch` and `apiElasticsearch` do NOT include the operator visibility endpoint. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful status retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C, auth/config seam, local/dev fallback, and dashboard integration remain future. Full ES production lifecycle remains incomplete.
 
 ## Purpose
 
-Source-confirm the smallest safe implementation slice for Design A operator visibility. Identify exact production files, route/API/Tapir/DI seams, and unresolved decisions before implementation can begin.
+Source-confirm the smallest safe implementation slice for Design A operator visibility and the remaining future policy gaps. Identify exact production files, route/API/Tapir/DI seams, and unresolved decisions beyond the implemented Design A slice.
 
 This document is a source-confirmation note only. It does not implement an endpoint, approve a route path, change any source or test file, or claim production lifecycle completion.
 
 ## Source-confirmed implementation slice
 
-### Smallest safe implementation files
+### Implemented Design A files and seams
 
-The following files are the smallest safe implementation set for Design A:
+The following files are the implemented Design A slice:
 
-**New files (to be created):**
+**Implemented files:**
 
 1. `leaderboard/http/tapir/EsLifecycleStatusTapirEndpoints.scala`
    - Pure endpoint contract following `BeautySearchTapirEndpoints` pattern.
-   - Defines `GET` endpoint with approved path (draft: `/ops/beauty-search/lifecycle`).
+   - Defines `GET` endpoint with implemented path `/ops/beauty-search/lifecycle`.
    - Output: `ElasticsearchStartupReadinessStatusResponse` JSON.
    - Uses `HttpApiFailureTapirSupport.endpointBase` for consistent error outputs.
 
@@ -29,7 +29,7 @@ The following files are the smallest safe implementation set for Design A:
    - Returns via `Http4sServerInterpreter`.
    - No new ES calls; reads from DI-bound model only.
 
-**Existing files to be modified:**
+**Existing files used by the implemented slice:**
 
 3. `leaderboard/plugins/BeautySearchCatalogBackendModules.scala` or `leaderboard/plugins/BeautySearchRouteModules.scala`
    - Add DI wiring for new `EsLifecycleStatusApi[F]`.
@@ -45,7 +45,6 @@ The following files are the smallest safe implementation set for Design A:
    - No new ES calls.
 
 5. `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala`
-   - Pending specs become active when endpoint is implemented.
    - Design A hardening tests are active for default-graph absence, explicit opt-in presence, in-memory absence, exact `Prepared` response shape, and no-new-ES-calls behavior.
 
 ### DI binding source
@@ -68,10 +67,10 @@ make[BeautySearchApi[F]].from { ... }
 many[HttpApi[F]].weak[BeautySearchApi[F]]
 ```
 
-The new operator visibility API follows the same pattern:
+The implemented operator visibility API follows the same pattern:
 
 ```scala
-// Future pattern (NOT IMPLEMENTED):
+// Implemented pattern:
 make[EsLifecycleStatusApi[F]].from {
   (transition: ElasticsearchStartupReadinessTransition, async: Async[F[Throwable, _]]) =>
     new EsLifecycleStatusApi[F](transition)(implicitly[Error2[F]], async)
@@ -100,27 +99,27 @@ Source evidence:
 - `BeautySearchTapirEndpoints.scala:18-21` — `searchBeauty` is `POST /beauty-search`.
 - The new endpoint uses `GET` on a different path; no conflict.
 
-## Unresolved decisions before implementation
+## Remaining future policy work beyond Design A
 
 The following decisions were resolved for the current Design A implementation at the module boundary; remaining items below describe future policy work beyond the current opt-in/internal endpoint:
 
-1. **Endpoint path** — Implemented as `GET /ops/beauty-search/lifecycle` for the explicit opt-in/internal endpoint.
-2. **Auth/exposure mode** — Implemented only as module-level opt-in/internal routing. Config-level disabled-by-default and local/dev fallback remain future.
-3. **Response shape** — Implemented as `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`.
-4. **HTTP status code** — Implemented as `200 OK` for successful retrieval.
-5. **Exact route graph rooting** — Whether the endpoint module is included in `seedCatalogElasticsearch`, `seedCatalogElasticsearchPortConfigured`, or a new dedicated module.
-6. **What remains pending after implementation** — `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now keeps pending only for future expectations without a current seam (config-level disabled-by-default, local/dev fallback, runtime route gate/HTTP 503, Design B/C).
-7. **Enabled/disabled flag semantics** — How the disabled-by-default flag is implemented (config flag, environment, activation axis).
-8. **Exact response wrapper versus direct status projection** — Whether to return `ElasticsearchStartupReadinessStatusResponse` directly or wrap it in additional metadata.
+1. **Endpoint path** — implemented as `GET /ops/beauty-search/lifecycle` for the explicit opt-in/internal endpoint.
+2. **Auth/exposure mode** — implemented only as module-level opt-in/internal routing. Config-level disabled-by-default and local/dev fallback remain future.
+3. **Response shape** — implemented as `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`.
+4. **HTTP status code** — implemented as `200 OK` for successful retrieval.
+5. **Exact route graph rooting** — implemented in the explicit opt-in ES route graph; default ES and in-memory graphs do not expose the endpoint.
+6. **Remaining pending future expectations** — config-level disabled-by-default/local-dev fallback and runtime route-gate/HTTP 503 remain future.
+7. **Enabled/disabled flag semantics** — how the disabled-by-default flag is implemented (config flag, environment, activation axis) remains future.
+8. **Exact response wrapper versus direct status projection** — the current implementation returns the direct startup status projection; additional metadata wrapping remains future if ever approved.
 
-## Future source files/seams confirmed
+## Implemented source files and future seams
 
 | File | Role | Status |
 |------|------|--------|
 | `leaderboard/http/tapir/EsLifecycleStatusTapirEndpoints.scala` | Pure endpoint contract | Implemented |
 | `leaderboard/api/EsLifecycleStatusApi.scala` | Thin Tapir adapter | Implemented |
-| `leaderboard/plugins/BeautySearchPluginModules.scala` | API module wiring (modification) | Modified: added `operatorVisibilityApi` |
-| `leaderboard/plugins/BeautySearchRouteModules.scala` | Route module inclusion (modification) | Modified: includes `operatorVisibilityApi` in ES route |
+| `leaderboard/plugins/BeautySearchPluginModules.scala` | API module wiring | Implemented: adds `operatorVisibilityApi` |
+| `leaderboard/plugins/BeautySearchRouteModules.scala` | Route module inclusion | Implemented: includes `operatorVisibilityApi` in ES route |
 | `leaderboard/plugins/BeautySearchPluginModules.scala` | API module pattern (reference) | Existing; pattern reference |
 | `leaderboard/http/tapir/BeautySearchTapirEndpoints.scala` | Endpoint pattern (reference) | Existing; pattern reference |
 | `leaderboard/api/BeautySearchApi.scala` | API adapter pattern (reference) | Existing; pattern reference |
@@ -128,17 +127,21 @@ The following decisions were resolved for the current Design A implementation at
 | `leaderboard/search/elasticsearch/ElasticsearchStartupReadinessStatusResponse.scala` | Response projection | Modified: added Decoder for Tapir jsonBody |
 | `leaderboard/search/elasticsearch/ElasticsearchLifecycleStatusResponse.scala` | Nested lifecycle status | Modified: added Decoder for Tapir jsonBody |
 
-## Pending specs as current expectations
+## Hardening coverage and pending future expectations
 
-`ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active implementation proof for Design A behavior and leaves only genuinely future expectations pending.
+`ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` now provides active implementation proof for Design A behavior and leaves only two genuinely future expectations pending.
 
-Pending test groups:
-- **Response shape** (6 tests): `200 OK` with `Prepared` variant, nested lifecycle status, `transitionStatus`, `servingDecision`, `productionLifecycleComplete`.
-- **Seed-only status values** (9 tests): all current seed-only field values and full JSON encoding.
-- **Route graph / rooting** (3 tests): rooted in ES route graph only, not `seedCatalogInMemory`, additive to `POST /beauty-search`.
-- **No-new-ES-calls behavior** (3 tests): reads from DI-bound only, no ES calls at request time.
-- **Exposure / auth policy** (3 tests): disabled unless enabled, local/dev fallback, not public product API.
-- **Limitations** (4 tests): no `PreparationFailed` variant, no startup failure, no replacement/freshness/rollback claims, no runtime route-gate claims.
+Hardening coverage:
+- default graph absence;
+- explicit opt-in presence;
+- in-memory absence;
+- exact `Prepared` response shape;
+- no request-time ES calls;
+- `/beauty-search` unchanged.
+
+Pending future expectations:
+- config-level disabled-by-default / local-dev fallback, if chosen later;
+- runtime route-gate / HTTP 503 behavior.
 
 ## Non-goals
 
