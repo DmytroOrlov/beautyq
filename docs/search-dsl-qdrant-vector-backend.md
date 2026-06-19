@@ -93,7 +93,7 @@ The current path includes a source-backed production-candidate readiness foundat
 
 The readiness foundation is pure and route-independent. It is not production lifecycle completion, production routing, production fallback, or production hybrid wiring.
 
-`QdrantProductionCandidateServingApprovalRequest` is also pure and route-independent. It records whether the current post-M7 evidence package is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route implementation. It does not approve implementation, production activation, a route switch, serving, shadow serving, traffic mirroring, or hybrid serving.
+`QdrantProductionCandidateServingApprovalRequest` is also pure and route-independent. It records whether the current post-M7 evidence package is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route implementation. That is a request-readiness closeout only. It does not approve implementation, production activation, a route switch, serving, shadow serving, traffic mirroring, or hybrid serving.
 
 The real-resource non-production hybrid adapter boundary for future v0 is now recorded at docs level only.
 That adapter is not implemented yet.

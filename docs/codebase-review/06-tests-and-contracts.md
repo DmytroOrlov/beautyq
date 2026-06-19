@@ -40,7 +40,7 @@ Implemented/current:
 - `BeautySearchElasticsearchRouteModuleSpec.scala`: the explicit ES seed route module exposes seed-only lifecycle metadata, the non-serving readiness state, and the prepared startup transition while preserving its zero-hit route response contract.
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes the state and prepared startup transition while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
 - `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: the port-configured default ES route exposes the state and prepared startup transition while preserving route behavior and ES preparation/search calls.
-- `QdrantProductionCandidateServingApprovalRequestSpec.scala`: pins the pure post-M7 approval-request readiness model. It proves the current evidence package is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route only, while implementation approval and production route activation remain absent.
+- `QdrantProductionCandidateServingApprovalRequestSpec.scala`: pins the pure post-M7 approval-request closeout model. It proves the current evidence package is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route only, while implementation approval and production route activation remain absent.
 - BeautySearch request-boundary tests use `BeautySearchRequestContract` for public limits and semantic error descriptors. A focused mirror assertion keeps `BeautySearchRequestContract.MaxLimit` source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 They protect:
@@ -88,7 +88,7 @@ Checklist for future edits:
 - Keep readiness-state assertions pinned to `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, and `NotExposed`.
 - Treat this metadata and state as non-serving seed readiness seams, not production lifecycle completion.
 - Do not imply route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these tests or docs.
-- Do not read `QdrantProductionCandidateServingApprovalRequestSpec.scala` as serving approval. It proves only that the evidence package is ready to ask for explicit approval of a future disabled-by-default explicit opt-in route implementation.
+- Do not read `QdrantProductionCandidateServingApprovalRequestSpec.scala` as serving approval. It proves only that the evidence package is ready to ask for explicit approval of a future disabled-by-default explicit opt-in route implementation; it does not approve implementation.
 
 ### Future tests required before ES production lifecycle completion
 
