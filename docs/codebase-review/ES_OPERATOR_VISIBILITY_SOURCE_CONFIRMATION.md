@@ -1,6 +1,6 @@
 # ES Operator Visibility Source Confirmation
 
-Status: source-confirmed; operator visibility is the next future track after M5 closeout. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete. No production source, endpoint, or serving behavior was changed. No endpoint is implemented; no route path is approved.
+Status: **Design A implemented as explicit opt-in/internal operator visibility endpoint.** M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete. Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape is `ElasticsearchStartupReadinessStatusResponse` with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future.
 
 ## Purpose
 

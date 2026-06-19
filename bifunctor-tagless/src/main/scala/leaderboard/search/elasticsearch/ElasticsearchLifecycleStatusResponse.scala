@@ -1,7 +1,7 @@
 package leaderboard.search.elasticsearch
 
-import io.circe.Encoder
-import io.circe.generic.semiauto.deriveEncoder
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 final case class ElasticsearchLifecycleStatusResponse(
   indexName: String,
@@ -20,6 +20,7 @@ final case class ElasticsearchLifecycleStatusResponse(
 
 object ElasticsearchLifecycleStatusResponse {
   implicit val encoder: Encoder.AsObject[ElasticsearchLifecycleStatusResponse] = deriveEncoder
+  implicit val decoder: Decoder[ElasticsearchLifecycleStatusResponse] = deriveDecoder
 
   def from(state: ElasticsearchProductionReadinessState): ElasticsearchLifecycleStatusResponse =
     ElasticsearchLifecycleStatusResponse(

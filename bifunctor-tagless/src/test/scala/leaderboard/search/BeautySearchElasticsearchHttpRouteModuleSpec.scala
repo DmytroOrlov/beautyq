@@ -58,6 +58,7 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
         val apis  = probe.allHttpApis
 
         assert(apis.collect { case _: BeautySearchApi[IO] => () }.size == 1)
+        BeautySearchProductionRouteSpecSupport.assertOperatorVisibilityEndpointAbsent(apis)
         BeautySearchProductionRouteSpecSupport.assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
         BeautySearchProductionRouteSpecSupport.assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
         BeautySearchProductionRouteSpecSupport.assertPreparedStartupTransition(probe.startupTransition)
@@ -101,6 +102,7 @@ final class BeautySearchElasticsearchHttpRouteModuleSpec extends AnyWordSpec wit
           productionReadinessState: ElasticsearchProductionReadinessState,
           startupTransition: ElasticsearchStartupReadinessTransition,
         ) =>
+          val _ = beautySearchApi
           BeautySearchElasticsearchHttpRouteProbe(
             beautySearchApi,
             allHttpApis,

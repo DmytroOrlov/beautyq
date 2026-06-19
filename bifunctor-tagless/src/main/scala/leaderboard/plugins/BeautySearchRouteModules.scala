@@ -18,12 +18,26 @@ object BeautySearchRouteModules {
     make[BeautyQSeedLoader].from[BeautyQSeedLoader.ResourceLoader]
   }
 
+  def seedCatalogElasticsearchWithOperatorVisibility: ModuleDef = new ModuleDef {
+    include(seedCatalogElasticsearch)
+    include(BeautySearchPluginModules.operatorVisibilityApi[IO])
+  }
+
   def seedCatalogElasticsearchPortConfigured: ModuleDef = new ModuleDef {
     include(ElasticsearchClientModules.portConfigured)
     include(seedCatalogElasticsearch)
   }
 
+  def seedCatalogElasticsearchPortConfiguredWithOperatorVisibility: ModuleDef = new ModuleDef {
+    include(ElasticsearchClientModules.portConfigured)
+    include(seedCatalogElasticsearchWithOperatorVisibility)
+  }
+
   def apiElasticsearch: ModuleDef = new ModuleDef {
     include(seedCatalogElasticsearchPortConfigured)
+  }
+
+  def apiElasticsearchWithOperatorVisibility: ModuleDef = new ModuleDef {
+    include(seedCatalogElasticsearchPortConfiguredWithOperatorVisibility)
   }
 }

@@ -9,7 +9,7 @@ import io.circe.Json
 import io.circe.parser.parse
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
-import leaderboard.api.{BeautySearchApi, HttpApi}
+import leaderboard.api.{BeautySearchApi, EsLifecycleStatusApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.plugins.{BeautySearchRouteModules, LeaderboardPlugin}
@@ -42,6 +42,15 @@ import scala.util.Using
 trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
   protected final case class BeautySearchProductionRouteProbe(
     beautySearchApi: BeautySearchApi[IO],
+    allHttpApis: Set[HttpApi[IO]],
+    lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
+    productionReadinessState: ElasticsearchProductionReadinessState,
+    startupTransition: ElasticsearchStartupReadinessTransition,
+  )
+
+  protected final case class BeautySearchProductionRouteWithOperatorVisibilityProbe(
+    beautySearchApi: BeautySearchApi[IO],
+    esLifecycleApi: EsLifecycleStatusApi[IO],
     allHttpApis: Set[HttpApi[IO]],
     lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
     productionReadinessState: ElasticsearchProductionReadinessState,
@@ -97,6 +106,35 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     ).unsafeGet()
 
     locator.get[BeautySearchProductionRouteProbe]
+  }
+
+  protected final def buildProductionApiGraphWithOperatorVisibilityRouteProbe(port: Int): BeautySearchProductionRouteWithOperatorVisibilityProbe = {
+    val module = new distage.ModuleDef {
+      include(LeaderboardPlugin.modules.apiBase[IO])
+      include(BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility)
+      make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
+      make[Async[Task]].fromValue(Async[Task])
+      make[BeautySearchProductionRouteWithOperatorVisibilityProbe].from {
+        (
+          beautySearchApi: BeautySearchApi[IO],
+          esLifecycleApi: EsLifecycleStatusApi[IO],
+          allHttpApis: Set[HttpApi[IO]],
+          lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
+          productionReadinessState: ElasticsearchProductionReadinessState,
+          startupTransition: ElasticsearchStartupReadinessTransition,
+        ) =>
+          BeautySearchProductionRouteWithOperatorVisibilityProbe(beautySearchApi, esLifecycleApi, allHttpApis, lifecycleMetadata, productionReadinessState, startupTransition)
+      }
+    }
+
+    val locator = Injector().produce(
+      bindings = module,
+      roots = Roots.target[BeautySearchProductionRouteWithOperatorVisibilityProbe],
+      activation = Activation.empty,
+      locatorPrivacy = LocatorPrivacy.PublicByDefault,
+    ).unsafeGet()
+
+    locator.get[BeautySearchProductionRouteWithOperatorVisibilityProbe]
   }
 
   protected final def buildTargetedEsRouteProbe(port: Int): BeautySearchProductionRouteProbe = {
@@ -177,6 +215,12 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
 
   protected final def assertPreparedStartupTransition(transition: ElasticsearchStartupReadinessTransition): Unit =
     BeautySearchProductionRouteSpecSupport.assertPreparedStartupTransition(transition)
+
+  protected final def assertOperatorVisibilityEndpointPresent(apis: Set[HttpApi[IO]]): Unit =
+    BeautySearchProductionRouteSpecSupport.assertOperatorVisibilityEndpointPresent(apis)
+
+  protected final def assertOperatorVisibilityEndpointAbsent(apis: Set[HttpApi[IO]]): Unit =
+    BeautySearchProductionRouteSpecSupport.assertOperatorVisibilityEndpointAbsent(apis)
 
   protected final def assertDefaultBadRequest(response: ObservedResponse): Unit = {
     assert(
@@ -265,6 +309,16 @@ private[search] object BeautySearchProductionRouteSpecSupport {
       case other =>
         fail(s"Expected Prepared startup transition, got $other")
     }
+    (): Unit
+  }
+
+  def assertOperatorVisibilityEndpointPresent(apis: Set[HttpApi[IO]]): Unit = {
+    assert(apis.collect { case _: EsLifecycleStatusApi[IO] => () }.size == 1, "Expected exactly one EsLifecycleStatusApi in the HttpApi set")
+    (): Unit
+  }
+
+  def assertOperatorVisibilityEndpointAbsent(apis: Set[HttpApi[IO]]): Unit = {
+    assert(apis.collect { case _: EsLifecycleStatusApi[IO] => () }.isEmpty, "Expected no EsLifecycleStatusApi in the default HttpApi set")
     (): Unit
   }
 }

@@ -1,6 +1,6 @@
 # ES Operator Visibility — Design A Implementation Slice Source Confirmation
 
-Status: **implementation-slice source-confirmed**. No endpoint is implemented. No route path is approved. No auth/operator policy is implemented. No status policy is implemented. No `/beauty-search` behavior change. All draft recommendations from `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md` remain unapproved.
+Status: **Design A implemented as explicit opt-in module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility`, `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`). Default `seedCatalogElasticsearch` and `apiElasticsearch` do NOT include the operator visibility endpoint. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful status retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future. Full ES production lifecycle remains incomplete.
 
 ## Purpose
 
@@ -117,16 +117,16 @@ The following decisions must be explicitly approved before any operator visibili
 
 | File | Role | Status |
 |------|------|--------|
-| `leaderboard/http/tapir/EsLifecycleStatusTapirEndpoints.scala` | Pure endpoint contract | Not created; source-confirmed seam |
-| `leaderboard/api/EsLifecycleStatusApi.scala` | Thin Tapir adapter | Not created; source-confirmed seam |
-| `leaderboard/plugins/BeautySearchCatalogBackendModules.scala` | DI wiring (modification) | Existing; will be modified |
-| `leaderboard/plugins/BeautySearchRouteModules.scala` | Route module inclusion (modification) | Existing; will be modified |
+| `leaderboard/http/tapir/EsLifecycleStatusTapirEndpoints.scala` | Pure endpoint contract | Implemented |
+| `leaderboard/api/EsLifecycleStatusApi.scala` | Thin Tapir adapter | Implemented |
+| `leaderboard/plugins/BeautySearchPluginModules.scala` | API module wiring (modification) | Modified: added `operatorVisibilityApi` |
+| `leaderboard/plugins/BeautySearchRouteModules.scala` | Route module inclusion (modification) | Modified: includes `operatorVisibilityApi` in ES route |
 | `leaderboard/plugins/BeautySearchPluginModules.scala` | API module pattern (reference) | Existing; pattern reference |
 | `leaderboard/http/tapir/BeautySearchTapirEndpoints.scala` | Endpoint pattern (reference) | Existing; pattern reference |
 | `leaderboard/api/BeautySearchApi.scala` | API adapter pattern (reference) | Existing; pattern reference |
 | `leaderboard/search/elasticsearch/ElasticsearchStartupReadinessTransition.scala` | DI-bound status source | Existing; no changes needed |
-| `leaderboard/search/elasticsearch/ElasticsearchStartupReadinessStatusResponse.scala` | Response projection | Existing; no changes needed |
-| `leaderboard/search/elasticsearch/ElasticsearchLifecycleStatusResponse.scala` | Nested lifecycle status | Existing; no changes needed |
+| `leaderboard/search/elasticsearch/ElasticsearchStartupReadinessStatusResponse.scala` | Response projection | Modified: added Decoder for Tapir jsonBody |
+| `leaderboard/search/elasticsearch/ElasticsearchLifecycleStatusResponse.scala` | Nested lifecycle status | Modified: added Decoder for Tapir jsonBody |
 
 ## Pending specs as current expectations
 

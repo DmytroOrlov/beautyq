@@ -1,6 +1,6 @@
 # ES Operator Visibility Endpoint Policy — Design A
 
-Status: **draft only; implementation-slice source-confirmed**. No endpoint is implemented. No route path is approved. No auth/operator policy is implemented. No status policy is implemented. No `/beauty-search` behavior change. The smallest safe implementation slice is source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
+Status: **Design A endpoint implemented as explicit opt-in/internal operator visibility endpoint.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. Endpoint is NOT included in the default ES route graph (`seedCatalogElasticsearch`, `apiElasticsearch`). Endpoint is available only through the explicit opt-in modules `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Default `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch` does NOT expose the endpoint. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful status retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. No Design B or Design C behavior. Design B/C remain future. Full ES production lifecycle remains incomplete.
 
 ## Purpose
 

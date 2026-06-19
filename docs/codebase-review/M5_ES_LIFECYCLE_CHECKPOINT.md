@@ -38,8 +38,8 @@ M5 does not include:
 
 - `/beauty-search` behavior is unchanged.
 - No serving gate exists.
-- No endpoint, route path, HTTP status policy, or operator policy is approved.
-- No additional Elasticsearch calls are introduced by the non-serving status models.
+- Design A operator visibility endpoint `GET /ops/beauty-search/lifecycle` is now implemented as explicit opt-in/internal endpoint (post-M5). NOT in the default ES route graph; available only through `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Default `apiElasticsearch` and `LeaderboardPlugin` production graph do NOT expose the endpoint. Returns `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`. No new ES calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior.
+- No additional Elasticsearch calls are introduced by the non-serving status models or the operator visibility endpoint.
 - Production route is exposed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - The route performs eager seed index preparation during composition; this is an implementation fact, not an approved production lifecycle policy.
 

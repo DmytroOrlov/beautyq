@@ -120,20 +120,36 @@ Future/unimplemented unless matching source-backed tests are added. These belong
   - explicit proof that lifecycle-status values distinguish current seed-only state from any future production-ready state;
   - explicit proof that `/beauty-search` serving tests and behavior remain unaffected by any separate status surface.
 
-### Future operator visibility tests required before endpoint implementation
+### Operator visibility tests — Design A implemented as explicit opt-in module
 
-Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy drafted in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Implementation slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`. The following tests are unimplemented and must be added alongside any operator visibility endpoint code:
+Design A operator visibility endpoint is implemented as explicit opt-in module. Endpoint path: `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change.
 
-**Pending/spec-only coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` encodes Design A draft expectations as 28 pending tests using ScalaTest `pending` mechanism. These are pending expectations, not implementation proof. No endpoint is implemented; no route path is approved. Pending specs should be activated or replaced by active endpoint contract tests when implementation starts.
+Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint policy in `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`. Implementation source confirmation in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`.
+
+**Implemented active coverage:** `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` has active Design A endpoint tests (59 active, 5 pending for future Design B/C/runtime-gate/config-auth expectations).
+
+Implemented active tests:
+
+0. **Default graph absence.**
+   - `EsLifecycleStatusApi` is NOT included in the default `seedCatalogElasticsearch` module.
+   - `GET /ops/beauty-search/lifecycle` returns `404 Not Found` in the default graph.
+   - `POST /beauty-search` still returns `200 OK` in the default graph.
+   - Classification: `Contractual + Blackbox + Group` (in-process DI seam).
+
+0a. **Explicit opt-in presence.**
+   - `EsLifecycleStatusApi` IS included in the `seedCatalogElasticsearchWithOperatorVisibility` module.
+   - `GET /ops/beauty-search/lifecycle` returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body in the opt-in graph.
+   - `POST /beauty-search` is additive and unaffected in the opt-in graph.
+   - Classification: `Contractual + Blackbox + Group` (in-process DI seam).
 
 1. **Endpoint returns expected prepared/seed-only status shape.**
-   - `GET` to approved path returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
+   - `GET /ops/beauty-search/lifecycle` returns `200 OK` with `ElasticsearchStartupReadinessStatusResponse` JSON body.
    - The `Prepared` variant includes nested `ElasticsearchLifecycleStatusResponse` with all current seed-only values.
    - `transitionStatus` is `"prepared"`, `servingDecision` is `"not_enforced"`, `productionLifecycleComplete` is `false`.
    - Classification: `Contractual + Blackbox + Group` (in-process route seam).
 
 2. **Endpoint is rooted only in intended ES route graph/module.**
-   - The endpoint is materialized through the ES seed route graph, not through `seedCatalogInMemory` or other unrelated modules.
+   - The endpoint is materialized through the opt-in ES seed route graph, not through `seedCatalogInMemory` or the default `seedCatalogElasticsearch`.
    - Classification: `Contractual + Blackbox + Group` (in-process DI seam).
 
 3. **Endpoint does not alter `POST /beauty-search`.**
@@ -146,17 +162,12 @@ Source-confirmed in `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`. Endpoint po
    - No new ES calls are triggered by the endpoint.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
 
-5. **Endpoint is internal/operator-only according to policy.**
-   - The endpoint respects the approved auth/exposure policy.
-   - If disabled-by-default, the endpoint is not served when not enabled.
-   - Classification: `Contractual + Blackbox + Atomic` (policy assertion).
-
-6. **No startup failure status is exposed in Design A.**
+5. **No startup failure status is exposed in Design A.**
    - The endpoint always returns `Prepared` variant.
    - No `PreparationFailed` variant is reachable from the DI-bound transition.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).
 
-7. **No replacement/freshness/rollback fields claim implemented behavior.**
+6. **No replacement/freshness/rollback fields claim implemented behavior.**
    - All gap fields (`replacement`, `freshness`, `refresh`, `rollback`, `operatorVisibility`) return their current seed-only values.
    - `productionLifecycleComplete` is `false`.
    - Classification: `Contractual + Blackbox + Atomic` (pure assertion).

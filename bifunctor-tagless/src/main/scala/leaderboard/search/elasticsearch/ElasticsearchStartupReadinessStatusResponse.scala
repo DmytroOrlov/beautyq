@@ -1,6 +1,6 @@
 package leaderboard.search.elasticsearch
 
-import io.circe.{Encoder, Json}
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.syntax._
 
 sealed trait ElasticsearchStartupReadinessStatusResponse {
@@ -58,5 +58,20 @@ object ElasticsearchStartupReadinessStatusResponse {
           "message" -> message.asJson,
           "productionLifecycleComplete" -> false.asJson,
         )
+    }
+
+  implicit val decoder: Decoder[ElasticsearchStartupReadinessStatusResponse] =
+    Decoder.instance { cursor =>
+      cursor.get[String]("transitionStatus").flatMap {
+        case "prepared" =>
+          cursor.get[ElasticsearchLifecycleStatusResponse]("lifecycleStatus").map(ls => Prepared(ls))
+        case "preparation_failed" =>
+          for {
+            op <- cursor.get[String]("operationName")
+            msg <- cursor.get[String]("message")
+          } yield PreparationFailed(op, msg)
+        case other =>
+          Left(io.circe.DecodingFailure(s"Unknown transitionStatus: $other", cursor.history))
+      }
     }
 }

@@ -1,13 +1,12 @@
 # ES Lifecycle Status Design
 
-Status: response model/encoder implemented; exposure design remains incomplete. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Endpoint exposure and operator policy remain future work (ES operator visibility track).
+Status: **Design A operator visibility endpoint implemented as explicit opt-in module.** Response model/encoder implemented and HTTP-exposed through `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future. Full ES production lifecycle remains incomplete.
 
-- No endpoint is implemented.
-- No route path is approved.
-- No serving behavior is changed.
+- Endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility endpoint.
+- Endpoint is NOT in the default `apiElasticsearch` graph or `LeaderboardPlugin` production graph.
+- No runtime serving behavior is changed.
 - No production lifecycle completion is claimed.
 - M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full ES production lifecycle remains incomplete.
-- See `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` for closeout checkpoint.
 
 ## Purpose
 
