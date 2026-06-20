@@ -21,10 +21,13 @@ import zio.{IO, ZIO}
 import java.util.UUID
 
 final class BeautyQManualHybridRealQdrantIndexingSmokeSpec extends LeaderboardTest with ProdTest {
-  override def config = super.config.copy(
-    activation = super.config.activation ++ Activation(Mode -> Mode.Test),
-    memoizationRoots = super.config.memoizationRoots + DIKey[QdrantPortCfg],
-  )
+  override def config = {
+    val base = super.config
+    base.copy(
+      activation = base.activation ++ Activation(Mode -> Mode.Test),
+      memoizationRoots = base.memoizationRoots + DIKey[QdrantPortCfg],
+    )
+  }
 
   "BeautyQ manual hybrid real Qdrant indexing smoke" should {
     "index a variant document through the QdrantClientInputs path against real Qdrant" in {

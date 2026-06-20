@@ -5,7 +5,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 
 final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with BeautySearchProductionRouteSpecSupport {
-  "LeaderboardPlugin apiBase plus BeautySearchRouteModules.apiElasticsearch" should {
+  "BeautySearchRouteModules.apiElasticsearch" should {
     "expose BeautySearchApi in the HttpApi set and serve the seed-catalog ES route" in {
       withZeroHitEsServer { port =>
         val probe = buildProductionApiGraphRouteProbe(port)

@@ -12,7 +12,7 @@ import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, EsLifecycleStatusApi, HttpApi}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
-import leaderboard.plugins.{BeautySearchRouteModules, LeaderboardPlugin}
+import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{
   ElasticsearchFreshnessReadiness,
@@ -85,7 +85,6 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
 
   protected final def buildProductionApiGraphRouteProbe(port: Int): BeautySearchProductionRouteProbe = {
     val module = new distage.ModuleDef {
-      include(LeaderboardPlugin.modules.apiBase[IO])
       include(BeautySearchRouteModules.apiElasticsearch)
       make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
       make[Async[Task]].fromValue(Async[Task])
@@ -113,7 +112,6 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
 
   protected final def buildProductionApiGraphWithOperatorVisibilityRouteProbe(port: Int): BeautySearchProductionRouteWithOperatorVisibilityProbe = {
     val module = new distage.ModuleDef {
-      include(LeaderboardPlugin.modules.apiBase[IO])
       include(BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility)
       make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
       make[Async[Task]].fromValue(Async[Task])

@@ -12,10 +12,13 @@ import java.util.UUID
 import zio.ZIO
 
 final class QdrantDockerSmokeSpec extends LeaderboardTest with ProdTest {
-  override def config = super.config.copy(
-    activation = super.config.activation ++ Activation(Mode -> Mode.Test),
-    memoizationRoots = super.config.memoizationRoots + DIKey[QdrantPortCfg],
-  )
+  override def config = {
+    val base = super.config
+    base.copy(
+      activation = base.activation ++ Activation(Mode -> Mode.Test),
+      memoizationRoots = base.memoizationRoots + DIKey[QdrantPortCfg],
+    )
+  }
 
   "Qdrant Docker smoke" should {
     "upsert and search a vector" in {

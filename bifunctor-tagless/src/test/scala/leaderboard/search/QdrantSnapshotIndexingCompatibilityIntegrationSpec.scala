@@ -25,10 +25,13 @@ import zio.{IO, Ref, ZIO}
 import java.util.UUID
 
 final class QdrantSnapshotIndexingCompatibilityIntegrationSpec extends LeaderboardTest with ProdTest {
-  override def config = super.config.copy(
-    activation = super.config.activation ++ Activation(Mode -> Mode.Test),
-    memoizationRoots = super.config.memoizationRoots + DIKey[QdrantPortCfg],
-  )
+  override def config = {
+    val base = super.config
+    base.copy(
+      activation = base.activation ++ Activation(Mode -> Mode.Test),
+      memoizationRoots = base.memoizationRoots + DIKey[QdrantPortCfg],
+    )
+  }
 
   "Qdrant snapshot indexing compatibility integration" should {
     "index through a real collection compatibility guard without real document upserts" in {

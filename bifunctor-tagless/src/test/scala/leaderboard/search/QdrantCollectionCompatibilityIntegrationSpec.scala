@@ -17,10 +17,13 @@ import java.util.UUID
 import zio.ZIO
 
 final class QdrantCollectionCompatibilityIntegrationSpec extends LeaderboardTest with ProdTest {
-  override def config = super.config.copy(
-    activation = super.config.activation ++ Activation(Mode -> Mode.Test),
-    memoizationRoots = super.config.memoizationRoots + DIKey[QdrantPortCfg],
-  )
+  override def config = {
+    val base = super.config
+    base.copy(
+      activation = base.activation ++ Activation(Mode -> Mode.Test),
+      memoizationRoots = base.memoizationRoots + DIKey[QdrantPortCfg],
+    )
+  }
 
   "Qdrant collection compatibility integration" should {
     "check a real collection-info response" in {
