@@ -164,10 +164,25 @@ Repeated topic: M9 static artifact shape and checked-in example.
 - Duplicates now present in: evidence template and roadmap mentions
 - Future action: point future readers to the plan doc and checked-in fixture path instead of repeating artifact-shape prose.
 
+## Consolidation applied in this pass
+
+- `docs/codebase-review/07-current-gaps-and-roadmap.md`: repeated current-state, Qdrant opt-in, M-ESQ-EVAL, and verification-summary blocks were shortened to owner links.
+- `docs/search-dsl-qdrant-vector-backend.md`: repeated production-route, activation, and M8/M9 status prose was collapsed into boundary pointers; the doc keeps Qdrant-specific architecture content.
+- `docs/search-dsl-hybrid-v1-plan.md`: repeated B-lite status and non-production hybrid baseline prose was shortened to roadmap and M8/M9 owner links.
+- `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`: repeated current-state and M8/M9 implementation-status prose was shortened to owner links while keeping the future roadmap.
+- `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`: repeated route-status and approval-status prose was shortened; the doc remains the canonical M8/M9 owner.
+- `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`: repeated saved-artifact and activation-boundary prose was shortened to plan/checklist owner links.
+- `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`: repeated full-suite counts were removed in favor of links to the handoff and test-contract owners.
+
+Docs intentionally kept despite duplication risk:
+
+- `docs/search-dsl-qdrant-vector-backend.md`: still the best owner for Qdrant explicit opt-in state plus Qdrant-specific architecture boundaries.
+- `docs/search-dsl-hybrid-v1-plan.md`: still useful as hybrid-design history and policy detail that is narrower than the roadmap.
+- `docs/local/M_ESQ_EVAL_EVIDENCE_RUN_TEMPLATE.md`: still needed as an operator template even though artifact ownership now lives elsewhere.
+
 ## Consolidation guidance for a later patch
 
-- Keep this patch as inventory only.
-- Do not delete, move, rename, or archive docs yet.
+- Do not delete, move, rename, or archive docs unless the inventory explicitly marks that file as historical/superseded/merge/archive candidate and no unique current source truth would be lost.
 - Start future cleanup by replacing duplicated status paragraphs with one-line links to the canonical owner.
 - Keep local runbooks as local runbooks; they should not become canonical status owners.
 - Keep source-backed test evidence in `06-tests-and-contracts.md`; planning docs should link to it rather than restating test meaning.

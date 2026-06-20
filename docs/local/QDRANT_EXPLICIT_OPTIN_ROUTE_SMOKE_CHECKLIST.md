@@ -67,22 +67,7 @@ If a focused spec fails, do not broaden the slice. Fix the smallest missing prer
 
 ## 5. What Full `sbt test` Proves
 
-The full suite is the wide compatibility check, not a production-activation signal.
-
-Current user-reported result after option93/96:
-
-- `1189` tests run
-- `1189` succeeded
-- `0` failed
-- `0` aborted
-- `1` canceled
-- `2` pending
-
-Interpretation:
-
-- The repo-wide suite was green at that point.
-- The remaining pending expectations were ES operator-visibility future placeholders, not Qdrant blockers.
-- Full green supports disabled-by-default opt-in readiness only. It does not approve production route activation.
+The full suite is the wide compatibility check, not a production-activation signal. Keep the exact counts and pending-map interpretation in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `docs/codebase-review/06-tests-and-contracts.md`; this checklist only relies on that recorded green state as opt-in-readiness evidence, not as production-route approval.
 
 ## 6. Seed/Eval Metrics Interpretation
 

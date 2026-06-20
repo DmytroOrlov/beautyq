@@ -10,30 +10,14 @@ Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic re
 
 ## 1.5. B-lite Strategic Direction
 
-B-lite is the current strategic direction after the B2 hidden control-plane module proof. Full status in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
+B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the current-state status now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted production truth, `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md` for the future-serving phase ladder, and `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` for M8/M9 pure slices plus the planned backend-runner seam.
 
-Production serving stays sequential and safe:
+What matters in this plan:
 
-```text
-current ES seed route (default)
-  -> Qdrant shadow only if eval proves complement
-  -> controlled hybrid only after readiness/kill-switch/policy
-```
-
-Eval/benchmark advances in parallel:
-
-```text
-ES-native eval and Qdrant-native eval appear early and together
-  -> compare ES-alone, Qdrant-alone, simulated hybrid
-  -> decide from metrics, not from architecture enthusiasm
-```
-
-Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is started by the pure `EngineEval` comparison model. M-ESQ-EVAL is not complete. EngineEval pure/report/assembly support exists, Qdrant benchmark run-output JSON markers exist, manual EngineEval saved-report assembly exists, manual EngineEval saved-report comparison exists. Current next step is operational saved-output/runbook/evidence workflow: run/collect concrete ES + selected Qdrant artifacts, assemble EngineEval aggregate reports, compare saved reports, and use evidence for later shadow/hybrid decisions. Still offline/eval only.
-Any later hybrid implementation should use the shared M8/M9 telemetry and offline-eval vocabulary defined in `leaderboard.search.eval.M8M9EvalContracts` and planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
-The M9 saved dataset/report format and deterministic markdown renderer now exist in `leaderboard.search.eval.M9OfflineEvalSavedReport` as a pure artifact-format slice. The static/in-memory runner skeleton exists in `leaderboard.search.eval.M9OfflineEvalStaticRunner` for caller-supplied inputs only. These pure slices remain separate from any production activation, default-route change, ES/Qdrant backend runner, fusion, or reranking.
-
-Simulated hybrid belongs in benchmark/eval only. It must not imply route wiring, HybridServe, or auto-supplement production responses.
+* production serving remains unchanged while hybrid work stays offline/eval-only;
+* runtime hybrid module expansion is paused;
+* simulated hybrid remains benchmark/eval only;
+* any later hybrid eval execution must flow through the planned offline M9 backend-runner seam before any serving change is considered.
 
 Guardrails:
 
@@ -71,41 +55,15 @@ The first hybrid path should therefore be an explicitly measured extension of th
 
 ## 2. Current Baseline
 
-Current measured coverage is split across two separate backend paths:
+The baseline is now short:
 
-- Elasticsearch V1 lexical/filter/facet baseline covers `61/63` eval queries.
-- Qdrant-only semantic candidate quality covers `q_broad_004` and `q_broad_006`.
-- The named non-production embedding benchmark subset now includes more explicit eval query ids beyond `q_broad_004` and `q_broad_006`: `q_broad_001`, `q_broad_002`, `q_broad_003`, and `q_broad_005`.
-- ES plus Qdrant cover the current `63/63` eval intent space only as separately measured backends.
+* ES remains the default production lexical route.
+* Qdrant remains a separate semantic candidate path.
+* Hybrid work remains non-production and eval-only.
+* The generic hybrid retrieval seam is a container/diagnostic boundary only; it does not imply fallback, score fusion, reranking, or route switching.
+* The real-resource runner and smokes remain manual/test/local only.
 
-Current status note:
-
-- generic lexical result seam exists
-- generic semantic backend, assembly, and projection seams exist
-- generic hybrid retrieval container exists
-- pure BeautyQ hybrid projection pipeline is experiment-ready
-- non-production activation/module gating proof exists
-- non-production real-resource Qdrant/hybrid manual runner milestone is reached
-- real-resource non-production adapter smokes exist: indexing (`indexSnapshot()`) and retrieval (`run(...)`) with real Qdrant, env-gated
-- production hybrid orchestration is still not implemented
-- generic retrieval/indexing boundaries are present within the current search DSL, but a full generic search engine is not complete
-
-There is currently no production hybrid behavior:
-
-- no fallback from ES to Qdrant
-- no general Qdrant production default
-- no production routing change
-- no hybrid ranking
-- no score fusion
-- no reranking
-
-The current generic hybrid retrieval seam is a container/diagnostic boundary only.
-It does not add score fusion, reranking, fallback, or a production routing change.
-It is not a BeautyQ projection/merge policy.
-Production hybrid remains out of scope.
-The reached non-production manual real-resource runner remains manual/test/local only, not production, not a `BeautySearchService` replacement, not Qdrant-as-default, and not a combined Qdrant+ES+Llama production module.
-
-The Qdrant semantic quality gate is intentionally environment-gated:
+The Qdrant semantic quality gate remains intentionally environment-gated:
 
 ```bash
 LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \

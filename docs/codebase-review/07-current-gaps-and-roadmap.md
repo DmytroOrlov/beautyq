@@ -6,16 +6,11 @@ For doc ownership, duplicate-topic mapping, and future keep/merge/link decisions
 
 Status ownership:
 
-- M5 closed as a bounded ES startup-readiness lifecycle checkpoint.
-- M6 closed as the Qdrant production-candidate readiness foundation.
-- M7 closed as the activation/source-confirmation and serving-policy planning foundation.
-- ES post-M5 planning aggregate closed as planning only; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain future and unimplemented.
-- Qdrant implementation approval is granted only for disabled-by-default explicit opt-in route wiring. `BeautySearchRouteModules.apiQdrantExplicitOptIn` is implemented and remains outside the default ES route.
-- Production route activation remains absent.
-- Production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
-- Operator/developer smoke for the explicit opt-in route is documented in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is optional and resource-gated.
-- The separate production activation decision boundary is documented in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
-- Full-suite verification status, the Distage include-path NPE closeout, and pending/canceled meanings live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`. The canonical 8-entry pending-expectation map also lives in `06-tests-and-contracts.md`.
+- Current route truth and milestone status: `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`
+- Pending/canceled test meaning and verification evidence: `docs/codebase-review/06-tests-and-contracts.md`
+- Qdrant production-activation boundary: `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`
+- ES/Qdrant/hybrid future-serving roadmap: `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`
+- M8/M9 pure-slice and backend-runner status: `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`
 
 ## Confirmed Current Gaps
 
@@ -33,15 +28,7 @@ Closed as planning only:
 
 ### Search HTTP Exposure
 
-Full current state is in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
-
-Current status:
-
-- Production `POST /beauty-search` is ES-backed seed route: seed catalog → ES index preparation → ES retrieval → Beauty search response projection.
-- `POST /beauty-search` is production-included through `LeaderboardPlugin` top-level via `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
-- `ElasticsearchPortCfg` is loaded from config section `"elasticsearch"`.
-- `seedCatalogInMemory` remains available as rollback/non-default.
-- This closes the ES seed-route exposure gap. Production freshness/refresh/staleness, runtime replacement, alias/versioned-index policy, rollback, observability, and kill-switch behavior remain gaps.
+Current route truth stays in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: default production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`, with seed-resource catalog snapshot + `ElasticsearchSearchBackend` and `seedCatalogInMemory` kept as rollback/non-default.
 
 Strategic gap:
 
@@ -51,11 +38,7 @@ Strategic gap:
 
 ### BeautySearchService Wiring
 
-Current status:
-
-- `BeautySearchService.Impl` is production-bound through `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` → `seedCatalogElasticsearch`.
-- The bound backend is `ElasticsearchSearchBackend[F]` over seed-resource ready catalog documents.
-- The remaining gap is not service binding; it is catalog source-of-truth, freshness, refresh/replacement, rollback, observability, kill switch, and production lifecycle policy.
+Current binding is source-confirmed and unchanged: `BeautySearchService.Impl` is exposed through `BeautySearchRouteModules.seedCatalogElasticsearchPortConfigured` -> `seedCatalogElasticsearch`, backed by `ElasticsearchSearchBackend` over seed-resource ready catalog documents. The remaining gap is lifecycle policy, not service assembly.
 
 Acceptance criteria for future implementation:
 
@@ -94,24 +77,9 @@ Remaining gaps:
 
 ### Qdrant / Hybrid Production Candidate Boundary
 
-Milestone reached:
-
-- `non-production real-resource Qdrant/hybrid manual runner` is achieved.
-- Manual runner layers exist: runner composition boundary, manual lifecycle handle, manual input boundary, adapter-input boundary, Qdrant-client input boundary, real-client input boundary, targeted Distage module-shape proof.
-- Resource-backed real Qdrant smokes cover explicit indexing (`indexSnapshot()`) and explicit retrieval (`run(...)`) with real Qdrant; they auto-run when Qdrant is available and cancel with reason when unavailable.
-- Full-suite verification is already user-reported green after the NPE fix; keep the exact counts in `06-tests-and-contracts.md` to avoid duplicating them here.
-- No env gates are required for a passing full run. Llama endpoint and Qdrant benchmark env vars are optional overrides.
-
 Remaining gap:
 
-- Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
-- The explicit opt-in Qdrant route is disabled by default and prerequisite-gated; it is not included by `apiElasticsearch` or `LeaderboardPlugin`.
-- Current readiness evidence is offline and seed/eval based. It uses curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/no-regression reports, quality-gate reports, route/module specs, and full verification by the coordinator/user. It is not production telemetry.
-- Shared planning for future M8 telemetry vocabulary and M9 offline eval vocabulary/reporting lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
-- The first pure M8/M9 contract slice is implemented in `leaderboard.search.eval.M8M9EvalContracts` and covered by `M8M9EvalContractsSpec`. It defines stable vocabulary, telemetry schema-plan types, and offline eval report metadata/summary types only.
-- The next pure M9 slice is implemented in `leaderboard.search.eval.M9OfflineEvalSavedReport` and covered by `M9OfflineEvalSavedReportSpec`. It defines saved dataset/report artifact types, a stable saved-report format version, negative/out-of-catalog representation, and a deterministic markdown renderer only.
-- `leaderboard.search.eval.M9OfflineEvalStaticRunner` and `M9OfflineEvalStaticFixtures` now provide a pure static runner plus canonical static fixture artifact shape, covered by `M9OfflineEvalStaticRunnerSpec` and `M9OfflineEvalStaticFixturesSpec`; no ES/Qdrant backend runner exists.
-- That evidence can justify explicit opt-in readiness, but it does not by itself authorize production activation of the default `/beauty-search` route.
+Qdrant and hybrid remain non-production/manual/local/test boundaries, not production wiring. For the current opt-in state, read `docs/search-dsl-qdrant-vector-backend.md`; for the separate production-activation gate, read `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`; for M8/M9 pure contracts, saved-report format, static runner, checked-in example artifact, and the planned backend-runner seam, read `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 Coordinator decision:
 
@@ -122,45 +90,7 @@ Coordinator decision:
 
 ### Current phase: ES seed route reached, B-lite eval continues
 
-The current phase is between:
-
-- A: non-production real-resource Qdrant/hybrid manual runner — reached.
-- A→B: production-hybrid control-plane v0 — reached.
-- B1: production-hidden hybrid activation/handle — reached.
-- B2: production-hidden hybrid control-plane modules — reached.
-- ES seed route default: reached.
-- B-lite: ES-native + Qdrant-native benchmark comparison — eval continues.
-- resource-backed hidden Qdrant/hybrid module expansion — paused.
-- C: production `/beauty-search` hybrid backend — future.
-
-ES seed route default is the current production state. B-lite eval comparison continues as eval-only work. M5 is closed as a bounded startup-readiness lifecycle checkpoint; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
-
-Production serving:
-
-```text
-current ES seed route (default)
-  -> Qdrant production-candidate readiness only if contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy are satisfied
-  -> controlled hybrid only after direct production-candidate readiness and explicit serving policy approval
-```
-
-Eval/benchmark advances in parallel:
-
-```text
-ES-native eval and Qdrant-native eval appear early and together
-  -> compare ES-alone, Qdrant-alone, simulated hybrid
-  -> decide from metrics, not from architecture enthusiasm
-```
-
-Runtime hybrid module expansion is paused after the hidden control-plane module proof.
-The active eval checkpoint is expanded M3 / B-lite / M-ESQ-EVAL evidence consolidation: ES-native + Qdrant-native benchmark comparison remains in progress, with evidence interpretation expanded inside the same milestone.
-
-Rationale for pausing runtime hybrid:
-
-* ES seed route is now default, but full production lifecycle is not solved.
-* ES-native eval/baseline is not complete.
-* Continuing resource-backed hybrid before ES-native + Qdrant-native comparison would optimize the wrong layer.
-* The pure `EngineEval` comparison/report/assembly layer is implemented. Remaining work is operational/demo-facing: collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use the results to guide later Qdrant production-candidate readiness and any later hybrid design.
-* The M8/M9 shared vocabulary/reporting foundation has moved from docs-only planning to pure contract slices, including the M9 saved dataset/report format, deterministic renderer, and static/in-memory runner skeleton. Production telemetry emission, ES/Qdrant backend eval runner implementation, hybrid serving, fallback, score fusion, reranking, shadow serving, traffic mirroring, and production activation remain unimplemented.
+The current phase is simple: the ES seed route is the default production state, B-lite / M-ESQ-EVAL stays offline-only, and runtime hybrid module expansion remains paused. The detailed phase ladder and serving target now live in `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`; the current accepted route truth remains in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 The codebase contains a hidden/disabled control-plane foundation in
 `leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`; the
@@ -194,22 +124,7 @@ Preserved boundary:
 
 ### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
-Detailed contracts and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The handoff stays compact and carries only current status and boundaries.
-
-Target milestone: `M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison`
-
-Status:
-
-* M-ESQ-EVAL pure/report/assembly layer is implemented.
-* M9 has shared contracts, saved report rendering, a static/in-memory runner skeleton for caller-supplied inputs, canonical static fixtures, and a checked-in example markdown artifact; ES/Qdrant backend runner execution remains future work.
-* M3 / B-lite remains the current expanded in-progress checkpoint.
-* Current expanded M3 interpretability includes expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
-* Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle tracks and future activation/hybrid decisions.
-* Still offline/eval only. Production route wiring remains ES-backed seed route.
-* M6 is closed as a source-backed pure Qdrant production-candidate readiness foundation. It is readiness groundwork, not real production shadow traffic, production serving, or route activation approval. The current B-lite / M-ESQ-EVAL lane remains offline ES vs Qdrant vs simulated-hybrid comparison.
-* M4 is closed. M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks. The M7 activation planning/source-confirmation foundation is closed without route implementation. M8 controlled hybrid serving remains future-only and conditional. Runtime serving-gate work is still deferred behind a runtime readiness source or replacement/freshness/rollback policy.
-
-Goal: Build ES-native + Qdrant-native eval comparison. Compare ES-alone, Qdrant-alone, simulated hybrid (offline only). Decide from metrics. Keep production serving unchanged during eval development.
+Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the M9 saved-report/static-runner fixture slices exist, and the backend-runner seam remains future work under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 ### Expanded roadmap lanes and milestone gates
 

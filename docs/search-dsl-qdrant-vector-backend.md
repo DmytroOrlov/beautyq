@@ -2,18 +2,11 @@
 
 Status summary:
 
-* M6 is closed as the Qdrant production-candidate readiness foundation.
-* M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
-* Disabled-by-default explicit opt-in Qdrant route implementation approval is granted for this narrow scope.
-* `BeautySearchRouteModules.apiQdrantExplicitOptIn` implements the explicit route path and remains outside the default ES route.
-* Production route activation remains not approved.
-* Production `/beauty-search` remains ES-backed.
-* Explicit opt-in route readiness is judged from offline/seed/eval evidence, not production traffic telemetry.
-* Existing green evidence makes the explicit opt-in route ready for disabled-by-default use, but does not itself approve a future default `/beauty-search` switch.
-* Shadow serving and traffic mirroring remain future-only and non-blocking because there is no real production traffic in this project context.
-* The optional operator smoke checklist lives in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is resource-gated and does not alter the default route.
+* Current route truth stays in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: default production `/beauty-search` remains ES-backed.
+* This document owns only the Qdrant explicit opt-in state and Qdrant-specific architecture boundaries.
 * Separate production activation criteria live in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
-* The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, and the canonical 8-entry pending-expectation map lives in `docs/codebase-review/06-tests-and-contracts.md`.
+* Broader ES/Qdrant/hybrid future-serving work lives in `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
+* M8/M9 pure eval-contract, saved-report, static-runner, and future backend-runner status lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 ## 1. Goal
 
@@ -43,98 +36,18 @@ Elasticsearch remains the deterministic lexical/filter/facet baseline.
 
 ## 2. Current eval and implementation status
 
-Current eval status:
+Current boundary, without repeating the handoff and roadmap status blocks:
 
-* Elasticsearch V1 lexical/filter/facet search covers the deterministic lexical baseline.
-* Qdrant semantic candidate retrieval covers the broad semantic slice that Elasticsearch intentionally does not close with dictionary hacks.
-* generic retrieval/indexing boundaries are present.
-* genericity is currently expressed within the existing search DSL input model.
-* pure BeautyQ domain-specific projection/merge policy and response adapters are present.
-* Env-gated Qdrant plus llama.cpp integration is green locally.
-* The named non-production embedding benchmark subset has been expanded beyond only `q_broad_004` and `q_broad_006`; it now uses a small explicit eval-id list for broad-query coverage.
-* Full test and env-full test have been user-verified green after the current non-production Qdrant composition work.
-* Production hybrid is not implemented.
+* Qdrant remains a separate semantic/vector recall path over the existing lexical ES baseline.
+* `BeautySearchRouteModules.apiQdrantExplicitOptIn` exists as the disabled-by-default opt-in route and remains outside the default ES graph.
+* The production-candidate readiness foundation is pure and route-independent; it is not production activation, route switching, fallback, fusion, reranking, or hybrid serving.
+* Current opt-in readiness is offline/seed/eval evidence only. It depends on curated seed/eval queries, saved/offline eval evidence, prerequisite-gate tests, focused route/module specs, and separate route/serving approval for the opt-in path.
+* Any later default-route activation is a separate approval governed by `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
+* The future backend-runner seam for offline ES/Qdrant evidence is planning-only under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
-Current implemented non-production pieces:
+Implemented Qdrant-side seams are intentionally grouped rather than re-listed here: DSL/spec types (`EmbeddingSpec`, `VectorSearchSpec`, `VectorDistance`), Qdrant clients/interpreters/indexers, collection-identity and compatibility checks, semantic candidate retrieval/projection seams, production-candidate readiness/config/approval models, and non-production experiment composition. Detailed names remain source-truth in `leaderboard.search.qdrant` and adjacent tests.
 
-* `EmbeddingSpec`
-* `VectorSearchSpec`
-* `VectorDistance`
-* `SearchEmbeddingTextExtractor`
-* `QdrantJsonInterpreter`
-* `QdrantClient`
-* `QdrantSearchClient`
-* `QdrantPointUpsertClient`
-* `QdrantPointId`
-* `QdrantDocumentPointBuilder`
-* `QdrantSearchDocumentIndexer`
-* `LexicalDocumentHit`
-* `LexicalDocumentBackend`
-* `SemanticDocumentHit`
-* `SemanticDocumentBackend`
-* `SemanticDocumentLookup`
-* `SemanticCandidateAssembler`
-* `SemanticResponseProjector`
-* `HybridDocumentRetrievalResult`
-* `HybridDocumentRetrievalDiagnostics`
-* `QdrantCollectionInfoClient`
-* `QdrantCandidateHitDecoder`
-* `QdrantSemanticCandidateSearch`
-* `QdrantSemanticCandidateBackend`
-* `QdrantVariantDocumentPointBuilder`
-* `QdrantVariantDocumentIndexer`
-* `VariantSearchDocumentSnapshotProvider`
-* `QdrantVariantDocumentSnapshotIndexer`
-* `QdrantCollectionIdentity`
-* `QdrantCollectionInfoDecoder`
-* `QdrantCollectionCompatibilityValidator`
-* `QdrantCollectionCompatibilityChecker`
-* `QdrantCollectionCompatibilityGuard`
-* `QdrantCollectionReadinessConfig`
-* `QdrantProductionCandidateReadinessStatus`
-* `QdrantProductionCandidateReadinessState`
-* `QdrantProductionCandidateReadinessReport`
-* `QdrantProductionCandidateReadiness`
-* `QdrantProductionCandidateActivationPlanning`
-* `QdrantProductionCandidateActivationConfigApproval`
-* `QdrantProductionCandidateServingApprovalRequest`
-* `QdrantNonProductionExperimentComposition`
-* env-gated Qdrant semantic candidate eval
-* env-gated Qdrant collection compatibility smoke
-* env-gated guarded snapshot indexing smoke
-* env-gated experimental hybrid service smoke
-
-The current path includes a source-backed production-candidate readiness foundation plus non-production runtime experiments.
-
-The readiness foundation is pure and route-independent. It is not production lifecycle completion, production routing, production fallback, or production hybrid wiring.
-
-The explicit opt-in route adds a construction prerequisite only: `QdrantExplicitOptInRoutePrerequisites` must be derived from a ready M6 production-candidate report, ready M7 activation-policy report, enabled config/no-regression approval report, and ready explicit-opt-in planning decision. That prerequisite is evidence-only and does not include shadow serving, traffic mirroring, production telemetry, fallback, score fusion, reranking, or hybrid serving.
-
-Any later default-route activation is a separate decision. It requires explicit production-route approval, an approved default graph exposure plan, rollback/disable plan, observability/status evidence, route exposure coverage, and full-suite verification after implementation. The current opt-in route prerequisites do not satisfy that broader activation gate by themselves.
-
-Current readiness without real production traffic is proven from curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/offline eval reports, quality-gate and no-regression decisions, prerequisite-gate tests, focused route/module specs, and full verification by the coordinator/user. Include regression, edge, and negative cases in the seed/eval set to reduce overfitting.
-
-`QdrantProductionCandidateServingApprovalRequest` is also pure and route-independent. It records the historical post-M7 evidence package that was ready to request explicit approval for a disabled-by-default explicit opt-in Qdrant route implementation. That implementation approval now exists only for explicit opt-in route wiring. It does not approve production activation, a default route switch, shadow serving, traffic mirroring, or hybrid serving.
-
-The real-resource non-production hybrid adapter boundary for future v0 is now recorded at docs level only.
-That adapter is not implemented yet.
-Its scope is semantic-side only: Qdrant semantic backend, embedding/Llama client, document lookup, readiness/compatibility guard, and explicit manual/test/local invocation.
-The Elasticsearch lexical/filter/facet baseline remains separate and injected as the existing lexical backend.
-This future v0 is manual/test/local only.
-It is not production hybrid, not a `BeautySearchService` replacement, not Qdrant-as-default, and not a combined Qdrant+ES+Llama production module.
-
-Reusable domain seams/status:
-
-* generic Qdrant document indexing seam: done
-* Qdrant point-id invariant: done
-* generic semantic backend boundary: done
-* generic semantic candidate assembly boundary: done
-* generic semantic response projector boundary: done
-* generic lexical/Elasticsearch result seam: done
-* generic hybrid document retrieval seam: done
-* ES matched_queries decoding correctness follow-up: done
-* benchmark complete-query validation correctness follow-up: done
-* domain-specific hybrid projection/merge policy: done for variant policy, hydrated variant projection, and intermediate provider/service projection candidates
+The current non-production hybrid adapter boundary is still docs-only planning. It stays semantic-side only, manual/test/local only, and separate from `BeautySearchService` replacement, Qdrant-as-default, or any combined Qdrant+ES+Llama production module.
 
 ### Review follow-ups before projection/merge policy
 

@@ -25,16 +25,14 @@ Rough wording translated to technical terms:
 
 ## 2. Current Accepted Baseline
 
-- Default production `/beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
-- Current production backend remains seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
-- `BeautySearchRouteModules.apiQdrantExplicitOptIn` exists and is disabled by default.
-- `BeautySearchRouteModules.seedCatalogQdrantExplicitOptIn` and `BeautySearchCatalogBackendModules.seedResourceQdrantExplicitOptIn` implement the explicit opt-in Qdrant path.
-- The full suite is green as previously recorded.
-- Deterministic opt-in smoke is green.
-- Real resource-gated Qdrant smoke is green.
-- Production activation for Qdrant remains not approved.
-- Hybrid serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, traffic mirroring, and the production telemetry loop remain future work.
-- There is no real production traffic in this project context yet.
+Keep the current-state block short here:
+
+- Default production `/beauty-search` remains ES-backed.
+- Qdrant explicit opt-in exists and stays disabled by default.
+- Production activation remains not approved.
+- Hybrid serving, fallback, fusion, reranking, telemetry emission, and backend-runner execution remain future work.
+
+For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 ## 3. What Is Done vs Not Done
 
@@ -45,7 +43,7 @@ Rough wording translated to technical terms:
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, telemetry schema-plan, offline report metadata contracts, M9 saved dataset/report format, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, and checked-in example artifact exist; no ES/Qdrant backend runner or production runtime behavior. |
+| M8/M9 shared contracts | Started | Pure vocabulary, saved-report, static-runner, and fixture slices exist; backend-runner execution stays future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -68,7 +66,7 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
-Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The foundation slices implemented so far are pure shared contracts in `leaderboard.search.eval.M8M9EvalContracts`, the M9 saved dataset/report format and deterministic markdown renderer in `leaderboard.search.eval.M9OfflineEvalSavedReport`, the static/in-memory runner skeleton in `leaderboard.search.eval.M9OfflineEvalStaticRunner`, and canonical static fixtures/example artifact in `leaderboard.search.eval.M9OfflineEvalStaticFixtures`.
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, implemented pure slices, and the planned backend-runner seam are owned by `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 - define request/result event schema plan;
 - record backend attribution;
@@ -90,7 +88,7 @@ Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEME
 - track Recall@K, MRR, nDCG@K, zero-result rate, and latency;
 - keep the overfitting warning explicit.
 
-The saved-report format, renderer slice, static/in-memory runner skeleton, canonical static fixtures, and checked-in example artifact are implemented. The stronger offline eval harness, ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
+The saved-report format, renderer slice, static/in-memory runner skeleton, canonical static fixtures, checked-in example artifact, and future backend-runner seam are tracked in the M8/M9 owner doc above. The stronger offline eval harness, ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
 
 ### M10. Query classification and routing policy
 

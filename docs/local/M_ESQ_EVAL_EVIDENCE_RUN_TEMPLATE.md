@@ -6,7 +6,7 @@ Copy/adapt this template before collecting M-ESQ-EVAL evidence. All commands are
 
 Metric naming in this template remains the current evidence-run format. Future evidence reports should align with the implemented shared M8/M9 contracts in `leaderboard.search.eval.M8M9EvalContracts`: `ServingMode`, `CandidateSource`, `QueryClass`, `CatalogSnapshotId`, `EvalDatasetId`, `MetricWindow`, and `OfflineEvalMetricName`.
 
-The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. `leaderboard.search.eval.M9OfflineEvalSavedReport` adds a pure saved dataset/report model and deterministic markdown renderer for the planned M9 format. `leaderboard.search.eval.M9OfflineEvalStaticRunner` can assemble that saved report and markdown artifact from static/in-memory caller-supplied inputs. `leaderboard.search.eval.M9OfflineEvalStaticFixtures` plus the checked-in `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md` show the canonical saved M9 artifact shape for future evidence. They do not add telemetry emission, ES/Qdrant backend execution, route behavior, hybrid serving, fusion, or reranking.
+Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. When the future M9 backend-runner seam is implemented, its offline outputs should materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format.
 
 ## Non-goals
 
@@ -30,7 +30,7 @@ This mapping is evidence-facing only: passed quality supplies satisfied evidence
 
 For the explicit opt-in Qdrant route, this run can supply only the saved/offline eval and no-regression part of the prerequisite package. Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the operator still needs a ready M6 report, ready M7 activation-policy report, enabled config gate, explicitly approved no-regression evidence, observability/status evidence, rollback/disable control, focused route/module safety checks, and separate explicit route/serving approval. Full verification remains a coordinator/user step.
 
-For a bounded opt-in assembly smoke checklist, see `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`. That checklist is optional, resource-gated, and not a production-activation path.
+For the canonical prerequisite and activation boundaries, use `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md` and `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. This template is not a production-activation path.
 
 ## Workspace
 

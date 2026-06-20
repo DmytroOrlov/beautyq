@@ -35,33 +35,15 @@ M8 and M9 are paired because they need the same vocabulary for backend/source at
 
 ## 2. Current baseline
 
-Current source-backed baseline:
+Current route truth is owned by `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, not by this plan. The only baseline facts this doc needs are:
 
-- Default production `POST /beauty-search` remains ES-backed.
-- Default production route exposure remains `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
-- Current production backend remains seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
-- `BeautySearchRouteModules.apiQdrantExplicitOptIn` exists and is disabled by default.
-- Matching explicit opt-in Qdrant module names remain:
-  - `BeautySearchRouteModules.seedCatalogQdrantExplicitOptIn`
-  - `BeautySearchCatalogBackendModules.seedResourceQdrantExplicitOptIn`
-- Qdrant explicit opt-in support classes remain:
-  - `QdrantExplicitOptInBeautySearchBackend`
-  - `QdrantExplicitOptInRoutePrerequisites`
-- Full suite was previously reported green: `1189` run, `1189` succeeded, `0` failed, `0` aborted, `1` canceled, `2` pending.
-- Deterministic explicit opt-in smoke was previously reported green: `40` succeeded, `0` failed, `0` aborted, `0` pending.
-- Real resource-gated Qdrant smoke was previously reported green: `7` succeeded, `0` failed, `0` aborted, `0` pending.
-- Production activation is not approved.
-- Hybrid serving is not implemented.
-- Route switch is not implemented.
-- ES<->Qdrant fallback is not implemented.
-- Score fusion is not implemented.
-- Reranking is not implemented.
-- `HybridServe` is not implemented.
-- Qdrant auto-supplement is not implemented.
-- Shadow serving is not implemented.
-- Traffic mirroring is not implemented.
-- Production telemetry loop is not implemented.
-- There is no real production traffic in this project context yet.
+- default production `/beauty-search` remains ES-backed;
+- Qdrant explicit opt-in exists and stays disabled by default;
+- production activation is not approved;
+- production telemetry emission and offline ES/Qdrant backend-runner execution are not implemented;
+- there is no real production traffic in this project context yet.
+
+For exact route/module names, verification counts, and activation boundary wording, use the handoff plus `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 
 ## 3. Shared vocabulary
 
@@ -241,6 +223,87 @@ Dataset/reporting requirements:
 - Every run should record `catalog_snapshot_id`.
 - Query-class labels should be present before aggregate conclusions are accepted.
 - The harness should support explicit regression subsets in addition to aggregate runs.
+
+### Future M9 backend-runner execution seam
+
+Planning only. This seam is not implemented. It must not be described as production telemetry, production activation, route approval, or serving approval.
+
+Future backend-runner purpose:
+
+- turn the current M9 static report contracts into real offline eval execution over explicit offline inputs;
+- run against explicit offline inputs only;
+- produce the existing `M9OfflineEvalSavedReport` artifact shape through the current saved-report model and renderer;
+- never imply production activation.
+
+Future backend execution seams:
+
+- ES-only offline execution seam:
+  - runs explicit offline dataset queries against an approved offline ES adapter;
+  - records `serving_mode = es_only` and `candidate_source = es`;
+  - must not imply reuse of the production `POST /beauty-search` route.
+- Qdrant-only offline execution seam:
+  - runs explicit offline dataset queries against an approved offline Qdrant adapter;
+  - records `serving_mode = qdrant_only` and `candidate_source = qdrant`;
+  - must stay separate from disabled-by-default production opt-in route approval.
+- future hybrid comparison seam:
+  - compares ES-only and Qdrant-only results and may later materialize planned hybrid comparison rows;
+  - records explicit `serving_mode` and `candidate_source` values for every row;
+  - must not hide fallback, auto-supplement, fusion, reranking, or serving changes inside comparison logic.
+
+Required attribution rules:
+
+- explicit candidate-source attribution;
+- explicit serving-mode attribution;
+- explicit query-class attribution;
+- no hidden fallback;
+- no backend failure rewritten as fallback success;
+- no production route reuse unless separately approved in a different task.
+
+Future input requirements:
+
+- `eval_dataset_id`;
+- `catalog_snapshot_id`;
+- curated canonical seed queries;
+- representative seed/eval fixture queries;
+- regression, edge, negative, and ambiguous query cases;
+- backend execution config;
+- run id / `experiment_id`;
+- `generated_at` value;
+- activation approval status kept separate from runner inputs and separate from saved report output.
+
+Future output requirements:
+
+- saved report artifact using the existing `M9OfflineEvalSavedReport` format and renderer;
+- per-query rows;
+- top-k result ids;
+- metrics;
+- warnings;
+- quality-gate decision;
+- backend/source attribution;
+- serving-mode attribution;
+- query-class attribution;
+- latency fields or latency metrics when available;
+- explicit offline-eval, not-production-telemetry boundary wording.
+
+Stop conditions for any later implementation:
+
+- backend runner cannot run if `eval_dataset_id` is missing;
+- backend runner cannot run if `catalog_snapshot_id` is missing;
+- ES/Qdrant comparison cannot proceed if backend attribution is missing;
+- offline metrics cannot be described as production quality;
+- runner output cannot approve production activation;
+- backend failures cannot be hidden as fallback success;
+- the dataset cannot be only happy-path seed queries.
+
+Implementation candidates for a later patch:
+
+- pure backend-runner interfaces;
+- ES offline adapter;
+- Qdrant offline adapter;
+- hybrid comparison adapter;
+- report writer integration using the existing M9 saved-report shape;
+- quality-gate report integration;
+- focused specs that pin the offline boundary, attribution requirements, failure handling, and no-serving guarantees.
 
 ## 7. M9 offline metrics
 
