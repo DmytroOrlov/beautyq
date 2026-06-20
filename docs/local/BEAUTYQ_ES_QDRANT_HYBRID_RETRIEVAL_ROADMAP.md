@@ -30,7 +30,7 @@ Keep the current-state block short here:
 - Default production `/beauty-search` remains ES-backed.
 - Qdrant explicit opt-in exists and stays disabled by default.
 - Production activation remains not approved.
-- Hybrid serving, fallback, fusion, reranking, telemetry emission, and backend-runner execution remain future work.
+- Hybrid serving, fallback, fusion, reranking, telemetry emission, and real ES/Qdrant backend-runner execution remain future work.
 
 For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
@@ -43,7 +43,7 @@ For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, saved-report, static-runner, and fixture slices exist; backend-runner execution stays future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
+| M8/M9 shared contracts | Started | Pure vocabulary, saved-report, static-runner, fixture, and backend-runner interface slices exist; real ES/Qdrant backend-runner execution stays future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -66,7 +66,7 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
-Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, implemented pure slices, and the planned backend-runner seam are owned by `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, implemented pure slices, and the pure backend-runner interface seam are owned by `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 - define request/result event schema plan;
 - record backend attribution;
@@ -88,7 +88,7 @@ Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEME
 - track Recall@K, MRR, nDCG@K, zero-result rate, and latency;
 - keep the overfitting warning explicit.
 
-The saved-report format, renderer slice, static/in-memory runner skeleton, canonical static fixtures, checked-in example artifact, and future backend-runner seam are tracked in the M8/M9 owner doc above. The stronger offline eval harness, ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
+The saved-report format, renderer slice, static/in-memory runner skeleton, canonical static fixtures, checked-in example artifact, and pure backend-runner interface seam are tracked in the M8/M9 owner doc above. The stronger offline eval harness, real ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
 
 ### M10. Query classification and routing policy
 

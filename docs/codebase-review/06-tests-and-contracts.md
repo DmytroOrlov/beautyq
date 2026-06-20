@@ -627,6 +627,7 @@ Boundary:
 `M8M9EvalContractsSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the first pure M8/M9 foundation slice.
 `M9OfflineEvalSavedReportSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the pure M9 saved dataset/report format and markdown renderer.
 `M9OfflineEvalStaticFixturesSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the canonical static fixtures and checked-in example artifact boundary.
+`M9OfflineEvalBackendRunnerSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the first pure M9 backend-runner interface slice.
 
 Contract facts:
 
@@ -637,6 +638,8 @@ Contract facts:
 - `M9OfflineEvalDataset`, `M9OfflineEvalDatasetQuery`, `M9OfflineEvalExpectedResult`, `M9OfflineEvalSavedReport`, `M9OfflineEvalReportRow`, `M9OfflineEvalReportArtifact`, and `M9OfflineEvalReportFormatVersion` model planned saved M9 inputs and report artifacts without executing retrieval.
 - `M9OfflineEvalReportRenderer` renders deterministic markdown from caller-supplied data, preserving input order for rows, top-k ids, metrics, notes, and warnings.
 - `M9OfflineEvalStaticFixtures` and `M9OfflineEvalExampleArtifacts` provide a canonical static fixture/report shape and generated markdown artifact only; `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md` is checked in as an example resource and uses `sample_not_for_activation`.
+- `M9OfflineEvalBackendRunner`, `M9OfflineEvalBackendAdapter`, execution plans, run/query requests, candidates, query results, failures, run responses, and execution modes model the future backend-runner seam as pure value contracts only.
+- `M9OfflineEvalStaticBackendAdapter` is manual/static only. It preserves dataset query order, represents failures as data, and can produce rows accepted by `M9OfflineEvalStaticRunner`.
 - Negative/out-of-catalog queries are representable through `QueryClass.NegativeOutOfCatalog`, empty expected/top-k ids, expected notes, and an explicit dataset marker.
 - `TelemetryEventFamily.plannedM8Families` covers search request, backend candidate, result exposure, optional interaction, and failure/timeout.
 - `TelemetrySchemaPlan`, `TelemetryFieldName`, `TelemetryMetricName`, and `TelemetrySchemaSummary` model planned telemetry schema/metric vocabulary only.
@@ -645,8 +648,9 @@ Boundary:
 
 - This is pure contract vocabulary and summary modeling.
 - The M9 saved-report renderer is format/rendering only.
+- The M9 backend-runner interface is not a real ES/Qdrant backend runner.
 - It does not change `EngineEvalAggregateReport` or `EngineEvalReportJson`.
-- It does not emit telemetry, integrate a metrics client, add an offline ES/Qdrant runner, change route/API/plugin/DI code, activate production Qdrant, implement hybrid serving, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, or traffic mirroring.
+- It does not emit telemetry, integrate a metrics client, add a real offline ES/Qdrant runner, change route/API/plugin/DI code, activate production Qdrant, implement hybrid serving, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, or traffic mirroring.
 
 ### Qdrant production-candidate readiness contract
 

@@ -79,7 +79,7 @@ Remaining gaps:
 
 Remaining gap:
 
-Qdrant and hybrid remain non-production/manual/local/test boundaries, not production wiring. For the current opt-in state, read `docs/search-dsl-qdrant-vector-backend.md`; for the separate production-activation gate, read `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`; for M8/M9 pure contracts, saved-report format, static runner, checked-in example artifact, and the planned backend-runner seam, read `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+Qdrant and hybrid remain non-production/manual/local/test boundaries, not production wiring. For the current opt-in state, read `docs/search-dsl-qdrant-vector-backend.md`; for the separate production-activation gate, read `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`; for M8/M9 pure contracts, saved-report format, static runner, checked-in example artifact, and the pure backend-runner interface seam, read `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 Coordinator decision:
 
@@ -124,7 +124,7 @@ Preserved boundary:
 
 ### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
-Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the M9 saved-report/static-runner fixture slices exist, and the backend-runner seam remains future work under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the M9 saved-report/static-runner fixture slices exist, and the first pure backend-runner interface seam exists under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Real ES/Qdrant backend runner execution remains future work.
 
 ### Expanded roadmap lanes and milestone gates
 
@@ -541,7 +541,7 @@ In short, the next phases are:
 
 - M8: production telemetry foundation;
 - M9: stronger offline eval harness;
-- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Implemented slices are pure shared contracts plus the M9 saved dataset/report format, markdown renderer, and static/in-memory runner skeleton only, not telemetry emission or an ES/Qdrant backend runner.
+- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Implemented slices are pure shared contracts plus the M9 saved dataset/report format, markdown renderer, static/in-memory runner skeleton, canonical fixtures, and first pure backend-runner interface contracts only, not telemetry emission or a real ES/Qdrant backend runner.
 - M10: query classification and routing policy;
 - M11: hybrid candidate generation;
 - M12: fusion and reranking experiments;

@@ -10,14 +10,14 @@ Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic re
 
 ## 1.5. B-lite Strategic Direction
 
-B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the current-state status now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted production truth, `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md` for the future-serving phase ladder, and `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` for M8/M9 pure slices plus the planned backend-runner seam.
+B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the current-state status now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted production truth, `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md` for the future-serving phase ladder, and `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` for M8/M9 pure slices plus the pure backend-runner interface seam.
 
 What matters in this plan:
 
 * production serving remains unchanged while hybrid work stays offline/eval-only;
 * runtime hybrid module expansion is paused;
 * simulated hybrid remains benchmark/eval only;
-* any later hybrid eval execution must flow through the planned offline M9 backend-runner seam before any serving change is considered.
+* any later hybrid eval execution must flow through the pure offline M9 backend-runner interface before any serving change is considered.
 
 Guardrails:
 
@@ -575,7 +575,7 @@ Future implementation should be split into small patches:
 9. Done: docs record real-resource non-production hybrid adapter boundary.
 10. Done: non-production real-resource Qdrant/hybrid manual runner milestone reached (manual adapter/handle, env-gated indexing and retrieval smokes, Distage module-shape proofs).
 11. Done: production-hybrid control-plane v0 — value/decision types, readiness/diagnostics interfaces, `BeautySearchHybridDecisionEvaluator[F]` with conservative policy (`SeedCatalogOnly` default, `HybridShadow` diagnostics-only, `HybridServe` requires `Ready`, `NotReady` → `UseSeedCatalogOnly`); covered by `BeautySearchHybridControlPlaneSpec`; not production wiring.
-12. Current: B-lite — pure `EngineEval` comparison model implemented (`EngineEval.scala`, `EngineEvalSpec.scala`); M-ESQ-EVAL started, not complete; EngineEval pure/report/assembly support exists, Qdrant benchmark run-output JSON markers exist, manual EngineEval saved-report assembly exists, manual EngineEval saved-report comparison exists; M9 saved report rendering and static/in-memory runner skeleton exist for caller-supplied inputs only; current next step is operational saved-output/runbook/evidence workflow: run/collect concrete ES + selected Qdrant artifacts, assemble EngineEval aggregate reports, compare saved reports, and use evidence for later shadow/hybrid decisions; still offline/eval only; runtime hybrid remains paused.
+12. Current: B-lite — pure `EngineEval` comparison model implemented (`EngineEval.scala`, `EngineEvalSpec.scala`); M-ESQ-EVAL started, not complete; EngineEval pure/report/assembly support exists, Qdrant benchmark run-output JSON markers exist, manual EngineEval saved-report assembly exists, manual EngineEval saved-report comparison exists; M9 saved report rendering, static/in-memory runner skeleton, canonical fixtures, and pure backend-runner interface contracts exist for caller-supplied inputs only; current next step is operational saved-output/runbook/evidence workflow plus future real ES/Qdrant offline adapters; still offline/eval only; runtime hybrid remains paused.
 13. M-ESQ-EVAL: ES-native eval, Qdrant-native eval, simulated hybrid (offline only), overlap/complement/noise metrics.
 14. Later design: lifecycle/freshness/observability.
 15. Much later design: production routing/API/metadata, and only later any production lifecycle/ranking decisions.

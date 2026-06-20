@@ -29,7 +29,9 @@ Implemented pure slices:
 - `leaderboard.search.M9OfflineEvalStaticRunnerSpec` locks validation, input-order preservation, markdown artifact parity with the direct renderer, static quality-gate summary counts, and the no-backend-execution boundary.
 - `leaderboard.search.eval.M9OfflineEvalStaticFixtures` and `M9OfflineEvalExampleArtifacts` provide canonical static fixture data plus a generated example markdown artifact shape for exact, semantic, ambiguous, and negative/out-of-catalog query classes.
 - `leaderboard.search.M9OfflineEvalStaticFixturesSpec` locks fixture query-class coverage, stable order, static-runner assembly, checked-in resource parity, non-activation quality decision, and the non-serving boundary. The checked-in artifact is `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md`.
-- This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, ES/Qdrant runner, hybrid serving, fusion, or reranking.
+- `leaderboard.search.eval.M9OfflineEvalBackendRunner` defines the first pure backend-runner interface slice: execution modes, execution plans, run/query requests, candidates, query results, failures-as-data, run responses, a static/manual adapter, and conversion to `M9OfflineEvalStaticRunInput`.
+- `leaderboard.search.M9OfflineEvalBackendRunnerSpec` locks the vocabulary-only ES-only/Qdrant-only/future-hybrid modes, manual/static adapter boundary, deterministic missing-id validation, failure-as-data rows, static-runner compatibility, no hidden fallback field, and no route/plugin/DI/HTTP/Docker/client surface.
+- This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, real ES adapter, real Qdrant adapter, backend client integration, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
 
@@ -190,7 +192,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, and checked-in example markdown artifact are implemented. The ES/Qdrant backend runner/harness remains unimplemented.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, checked-in example markdown artifact, and first pure backend-runner interface/value-contract slice are implemented. Real ES/Qdrant backend runner execution remains unimplemented.
 
 Planned dataset coverage:
 
@@ -224,18 +226,26 @@ Dataset/reporting requirements:
 - Query-class labels should be present before aggregate conclusions are accepted.
 - The harness should support explicit regression subsets in addition to aggregate runs.
 
-### Future M9 backend-runner execution seam
+### M9 backend-runner execution seam
 
-Planning only. This seam is not implemented. It must not be described as production telemetry, production activation, route approval, or serving approval.
+Pure interfaces only. `M9OfflineEvalBackendRunner` now models the future execution seam as value contracts and a manual/static adapter. It must not be described as production telemetry, production activation, route approval, serving approval, or real ES/Qdrant execution.
 
-Future backend-runner purpose:
+Backend-runner purpose:
 
-- turn the current M9 static report contracts into real offline eval execution over explicit offline inputs;
+- provide the seam for later turning the current M9 static report contracts into real offline eval execution over explicit offline inputs;
 - run against explicit offline inputs only;
 - produce the existing `M9OfflineEvalSavedReport` artifact shape through the current saved-report model and renderer;
 - never imply production activation.
 
-Future backend execution seams:
+Implemented pure interface vocabulary:
+
+- `es_only_offline`;
+- `qdrant_only_offline`;
+- `future_hybrid_comparison`;
+- `manual_static_sample`;
+- `unknown`.
+
+Backend execution seams:
 
 - ES-only offline execution seam:
   - runs explicit offline dataset queries against an approved offline ES adapter;
@@ -297,7 +307,6 @@ Stop conditions for any later implementation:
 
 Implementation candidates for a later patch:
 
-- pure backend-runner interfaces;
 - ES offline adapter;
 - Qdrant offline adapter;
 - hybrid comparison adapter;

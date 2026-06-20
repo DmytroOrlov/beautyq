@@ -6,7 +6,7 @@ Copy/adapt this template before collecting M-ESQ-EVAL evidence. All commands are
 
 Metric naming in this template remains the current evidence-run format. Future evidence reports should align with the implemented shared M8/M9 contracts in `leaderboard.search.eval.M8M9EvalContracts`: `ServingMode`, `CandidateSource`, `QueryClass`, `CatalogSnapshotId`, `EvalDatasetId`, `MetricWindow`, and `OfflineEvalMetricName`.
 
-Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. When the future M9 backend-runner seam is implemented, its offline outputs should materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format.
+Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. Future backend outputs should flow through the pure M9 backend-runner interfaces and materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format.
 
 ## Non-goals
 
