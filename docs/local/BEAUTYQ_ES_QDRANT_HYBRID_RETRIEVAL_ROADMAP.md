@@ -45,6 +45,7 @@ Rough wording translated to technical terms:
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
+| M8/M9 shared contracts | Started | Pure vocabulary, telemetry schema-plan, and offline report metadata contracts exist; no runtime behavior. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -67,9 +68,9 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
-Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The first foundation slice is implemented only as pure shared contracts in `leaderboard.search.eval.M8M9EvalContracts`.
 
-- define request/result event schema;
+- define request/result event schema plan;
 - record backend attribution;
 - record latency metrics;
 - record quality proxy metrics;
@@ -79,7 +80,7 @@ Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop condition
 
 ### M9. Stronger offline eval harness
 
-Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` so offline eval and any later telemetry do not drift apart.
+Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` and `leaderboard.search.eval.M8M9EvalContracts` so offline eval and any later telemetry do not drift apart.
 
 - define curated canonical seed queries;
 - keep representative seed/eval fixture queries;

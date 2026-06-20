@@ -611,6 +611,25 @@ Boundary:
 - It is not production readiness.
 - It is not routing approval.
 
+### M8/M9 shared eval contract vocabulary
+
+`M8M9EvalContractsSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the first pure M8/M9 foundation slice.
+
+Contract facts:
+
+- `ServingMode`, `CandidateSource`, `FusionPolicy`, `RerankerPolicy`, and `QueryClass` have stable `render` strings and stable planned ordering.
+- `QueryClass.stableOrder` covers exact product/name/brand, category, ingredient/attribute, semantic descriptive, typo/noisy, filter-heavy, broad discovery, ambiguous, and negative/out-of-catalog taxonomy values.
+- `OfflineEvalMetricName.plannedM9Metrics` covers Recall@K, MRR, nDCG@K, zero-result rate, low-result rate, top-k overlap, backend contribution ratio, latency, failure count, regression pass/fail, and quality gate decision.
+- `OfflineEvalRunMetadata`, `OfflineEvalMetricValue`, `OfflineEvalQuerySlice`, and `OfflineEvalReportSummary` carry shared metadata and report-summary contracts only.
+- `TelemetryEventFamily.plannedM8Families` covers search request, backend candidate, result exposure, optional interaction, and failure/timeout.
+- `TelemetrySchemaPlan`, `TelemetryFieldName`, `TelemetryMetricName`, and `TelemetrySchemaSummary` model planned telemetry schema/metric vocabulary only.
+
+Boundary:
+
+- This is pure contract vocabulary and summary modeling.
+- It does not change `EngineEvalAggregateReport` or `EngineEvalReportJson`.
+- It does not emit telemetry, integrate a metrics client, add an offline ES/Qdrant runner, change route/API/plugin/DI code, activate production Qdrant, implement hybrid serving, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, or traffic mirroring.
+
 ### Qdrant production-candidate readiness contract
 
 `QdrantProductionCandidateM6CloseoutSpec`, `QdrantProductionCandidateReadinessSpec`, `QdrantProductionCandidateIndexingSearchReadinessSpec`, `QdrantProductionCandidateQualityGateSpec`, `QdrantProductionCandidateActivationPolicySpec`, and `QdrantProductionCandidateControlsReadinessSpec` are `Contractual + Blackbox + Atomic` coverage for the closed pure M6 readiness foundation.

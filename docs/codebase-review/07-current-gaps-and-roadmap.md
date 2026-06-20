@@ -105,7 +105,8 @@ Remaining gap:
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
 - The explicit opt-in Qdrant route is disabled by default and prerequisite-gated; it is not included by `apiElasticsearch` or `LeaderboardPlugin`.
 - Current readiness evidence is offline and seed/eval based. It uses curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/no-regression reports, quality-gate reports, route/module specs, and full verification by the coordinator/user. It is not production telemetry.
-- Shared planning for future M8 telemetry vocabulary and M9 offline eval vocabulary/reporting now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+- Shared planning for future M8 telemetry vocabulary and M9 offline eval vocabulary/reporting lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+- The first pure M8/M9 contract slice is implemented in `leaderboard.search.eval.M8M9EvalContracts` and covered by `M8M9EvalContractsSpec`. It defines stable vocabulary, telemetry schema-plan types, and offline eval report metadata/summary types only.
 - That evidence can justify explicit opt-in readiness, but it does not by itself authorize production activation of the default `/beauty-search` route.
 
 Coordinator decision:
@@ -155,6 +156,7 @@ Rationale for pausing runtime hybrid:
 * ES-native eval/baseline is not complete.
 * Continuing resource-backed hybrid before ES-native + Qdrant-native comparison would optimize the wrong layer.
 * The pure `EngineEval` comparison/report/assembly layer is implemented. Remaining work is operational/demo-facing: collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use the results to guide later Qdrant production-candidate readiness and any later hybrid design.
+* The M8/M9 shared vocabulary/reporting foundation has moved from docs-only planning to a first pure contract slice. Production telemetry emission, stronger offline eval runner implementation, hybrid serving, fallback, score fusion, reranking, shadow serving, traffic mirroring, and production activation remain unimplemented.
 
 The codebase contains a hidden/disabled control-plane foundation in
 `leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`; the
@@ -619,7 +621,7 @@ In short, the next phases are:
 
 - M8: production telemetry foundation;
 - M9: stronger offline eval harness;
-- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The first implemented slice is pure shared contracts only, not telemetry emission or an offline runner.
 - M10: query classification and routing policy;
 - M11: hybrid candidate generation;
 - M12: fusion and reranking experiments;

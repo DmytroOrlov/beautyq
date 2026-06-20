@@ -2,7 +2,7 @@
 
 ## 1. Scope
 
-This document is planning only.
+This document is planning plus the first pure shared-contract slice.
 
 It does not approve or implement:
 
@@ -18,6 +18,12 @@ It does not approve or implement:
 - traffic mirroring;
 - production telemetry code;
 - offline eval harness code.
+
+Implemented first slice:
+
+- `leaderboard.search.eval.M8M9EvalContracts` defines shared vocabulary, offline eval report metadata/summary contracts, and telemetry schema-plan contracts.
+- `leaderboard.search.M8M9EvalContractsSpec` locks stable string rendering, query-class taxonomy coverage, planned M9 metric names, planned M8 event families, and the vocabulary-only status of hybrid/fusion/reranker terms.
+- This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, ES/Qdrant runner, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
 
@@ -53,7 +59,7 @@ Current source-backed baseline:
 
 ## 3. Shared vocabulary
 
-The following terms should be stable across future M8 telemetry and M9 offline eval work:
+The following terms are now represented by pure shared contracts under `leaderboard.search.eval` and should stay stable across future M8 telemetry and M9 offline eval work:
 
 - `serving_mode`: `es_only`, `qdrant_only`, `hybrid`, `unknown`
 - `candidate_source`: `es`, `qdrant`, `manual`, `unknown`
@@ -76,7 +82,7 @@ Additional usage rules:
 
 ## 4. M8 telemetry event schema
 
-This is a schema plan, not an implementation.
+This is a schema-plan contract, not telemetry emission.
 
 Planned event families:
 
@@ -164,6 +170,8 @@ Intended fields:
 - `experiment_id`
 - `catalog_snapshot_id`
 
+The event-family vocabulary is implemented as `TelemetryEventFamily`; field names and metric names are modeled as schema-plan contracts only. No logging hooks, route changes, metrics clients, or runtime production telemetry loop exist.
+
 ## 5. M8 metrics
 
 Planned metrics:
@@ -184,6 +192,8 @@ Planned metrics:
 - click/order proxy metrics only if such data exists later
 - manual relevance judgments if behavioral data does not exist
 
+The planned telemetry metric-name vocabulary is implemented as `TelemetryMetricName`. Future metrics emission remains unimplemented.
+
 Metric naming guidance:
 
 - Reuse offline metric names in future telemetry where the meaning is the same.
@@ -192,7 +202,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness plan, not an implementation.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, and report-summary contracts are implemented; the offline runner/harness remains unimplemented.
 
 Planned dataset coverage:
 
@@ -242,6 +252,8 @@ Planned offline metrics:
 - regression pass/fail
 - quality gate decision
 
+These metric names are implemented as `OfflineEvalMetricName.plannedM9Metrics`. Report summaries can carry metadata, query-class slices, and aggregate metrics, but no ES/Qdrant querying runner or report writer is implemented by this slice.
+
 Reporting rule:
 
 - Offline metrics must be reported by `query_class`, not only globally.
@@ -268,7 +280,7 @@ Initial backend hypotheses to test:
 - Hybrid may help ambiguous or mixed-intent queries.
 - Evidence can overturn these hypotheses.
 
-This taxonomy should drive both offline reporting and any future telemetry rollups. A future implementation should not rely only on overall averages.
+This taxonomy is implemented as `QueryClass.stableOrder` and should drive both offline reporting and any future telemetry rollups. A future implementation should not rely only on overall averages.
 
 ## 9. Report artifacts
 
@@ -312,7 +324,7 @@ Also stop if:
 
 Future implementation slices may include:
 
-- M8 telemetry event model/types
+- M8 telemetry emission hooks
 - M8 metric emission hooks
 - M9 offline eval dataset format
 - M9 ES/Qdrant comparison runner
