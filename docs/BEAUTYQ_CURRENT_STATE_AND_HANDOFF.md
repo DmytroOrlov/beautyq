@@ -6,7 +6,7 @@ Canonical handoff for new chats. Read this first, then see linked docs for deepe
 
 Use this section as the load-bearing source truth for coordination. Other docs should point here instead of restating the same status block.
 
-* Full verification was already run by the user after the Distage NPE fix: `1182 succeeded`, `0 failed`, `0 aborted`, `1 canceled`, `8 pending`, `All tests passed`.
+* Full verification was already run by the user after option93/96: `1189` tests run, `1189` succeeded, `0` failed, `0` aborted, `1` canceled, `2` pending; `All tests passed`.
 * The previous full-suite blocker was Distage `IncludesDSL$Include.interpret` NPE. Before the root fix, the suite had 55 aborted suites; the visible casualties included `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` and `QdrantSemanticCandidateEvalSpec`.
 * Known hazard: ad-hoc test-local composition through the broader `LeaderboardPlugin` route path, such as `include(LeaderboardPlugin.modules.api[IO])` or equivalent broad `apiBase` composition, can trigger that NPE in focused specs.
 * Safe replacement pattern: test-local route probes now include source-confirmed route modules directly, using `BeautySearchRouteModules.apiElasticsearch` and, when operator visibility is needed, `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`.
@@ -130,7 +130,7 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached. Plain `sbt test` is the canonical full verification command.
-* Latest user-verified full `sbt test` after the NPE fix: 1182 succeeded, 0 failed, 0 aborted, 1 canceled, 8 pending; all tests passed.
+* Latest user-verified full `sbt test` after option93/96: 1189 tests run, 1189 succeeded, 0 failed, 0 aborted, 1 canceled, 2 pending; all tests passed.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * ES-native + Qdrant-native benchmark/eval comparison remains offline/eval-only.
 * ES and Qdrant may advance together only in eval/benchmark, not serving.
@@ -161,6 +161,7 @@ Documented as characterized, not as desired final contract:
 * Source-confirmed route seams remain separated: `BeautySearchApi` and `BeautySearchTapirEndpoints` remain backend-agnostic; `BeautySearchRouteModules.apiElasticsearch` selects the current production ES seed composition; `LeaderboardPlugin` includes that ES route directly. `BeautySearchRouteModules.apiQdrantExplicitOptIn` is a separate explicit module and is not included by the default production graph.
 * `QdrantProductionCandidateServingApprovalRequest` remains the historical approval-request boundary. Implementation approval now exists only for disabled-by-default explicit opt-in route wiring, and `/beauty-search` remains ES-backed until separate production-route activation approval.
 * Explicit opt-in route readiness is judged without real production traffic by combining curated canonical seed queries over the seed-resource catalog snapshot, saved/offline eval evidence, no-regression approval, quality-gate evidence, prerequisite-gate construction evidence, focused route/module safety specs, and full verification by the coordinator/user. The seed/eval query set must include representative seed/eval fixture queries plus regression, edge, and negative cases to reduce overfitting.
+* Operator/developer smoke for the explicit opt-in route lives in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is optional, resource-gated, and does not change the default production route.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 

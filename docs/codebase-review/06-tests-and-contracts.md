@@ -12,13 +12,14 @@ For current behavior, focused tests are more authoritative than prose docs. In p
 
 ## Full verification closeout
 
-User-reported full verification after the Distage NPE fix:
+User-reported full verification after option93/96:
 
-- `1182 succeeded`
+- `1189 tests run`
+- `1189 succeeded`
 - `0 failed`
 - `0 aborted`
 - `1 canceled`
-- `8 pending`
+- `2 pending`
 - `All tests passed`
 
 This docs pass did not rerun `sbt test`. Full verification was already run by the user and reported green.
@@ -101,6 +102,7 @@ Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the coordin
 - Observability/status evidence and rollback/disable controls marked satisfied.
 - Separate route/serving approval for the explicit opt-in route only.
 - Saved/offline eval evidence interpreted through `QdrantProductionCandidateQualityGate` and then through the no-regression approval adapter.
+- Operator/developer smoke checklist: `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md` for the bounded optional assembly path and resource-gated smoke steps.
 
 Focused specs prove bounded facts:
 

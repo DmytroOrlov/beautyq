@@ -11,6 +11,7 @@ Status ownership:
 - Qdrant implementation approval is granted only for disabled-by-default explicit opt-in route wiring. `BeautySearchRouteModules.apiQdrantExplicitOptIn` is implemented and remains outside the default ES route.
 - Production route activation remains absent.
 - Production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- Operator/developer smoke for the explicit opt-in route is documented in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is optional and resource-gated.
 - Full-suite verification status, the Distage include-path NPE closeout, and pending/canceled meanings live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`. The canonical 8-entry pending-expectation map also lives in `06-tests-and-contracts.md`.
 
 ## Confirmed Current Gaps
@@ -281,7 +282,7 @@ Closed M7 activation planning/source-confirmation foundation:
 - Target scopes are candidate readiness only, explicit opt-in route, production route activation, and hybrid serving.
 - M6 `productionCandidateReady = true` and a `Ready` activation-policy report are mandatory.
 - Any serving scope additionally requires a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval.
-- The explicit opt-in Qdrant route boundary is source-confirmed as pending only: it must remain a separate module outside default `apiElasticsearch` and consume the pure config/no-regression report before any route wiring. Production route activation is not approved. The per-expectation owner/approval/activation/removal map lives in `06-tests-and-contracts.md`.
+- The explicit opt-in Qdrant route boundary is implemented and remains disabled-by-default outside default `apiElasticsearch`; it consumes the pure config/no-regression report before any route activation discussion. Production route activation is not approved. The per-expectation owner/approval/activation/removal map lives in `06-tests-and-contracts.md`.
 - Default `apiElasticsearch` and `LeaderboardPlugin` remain ES-backed. A disabled-by-default explicit Qdrant opt-in route was added as `BeautySearchRouteModules.apiQdrantExplicitOptIn`; no default route switch or hybrid serving was added.
 - No production-route behavior was added.
 - `QdrantProductionCandidateM7CloseoutSpec` aggregates the accepted pure prerequisites and route-boundary spec evidence while keeping production activation blocked and hybrid serving conditional.

@@ -26,6 +26,8 @@ This mapping is evidence-facing only: passed quality supplies satisfied evidence
 
 For the explicit opt-in Qdrant route, this run can supply only the saved/offline eval and no-regression part of the prerequisite package. Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the operator still needs a ready M6 report, ready M7 activation-policy report, enabled config gate, explicitly approved no-regression evidence, observability/status evidence, rollback/disable control, focused route/module safety checks, and separate explicit route/serving approval. Full verification remains a coordinator/user step.
 
+For a bounded opt-in assembly smoke checklist, see `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`. That checklist is optional, resource-gated, and not a production-activation path.
+
 ## Workspace
 
 Create a project-local workspace by default:
