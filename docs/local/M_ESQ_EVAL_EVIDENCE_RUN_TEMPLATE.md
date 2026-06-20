@@ -10,6 +10,8 @@ Future evidence and telemetry field names should also align with the pure M8 sch
 
 Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. Future backend outputs should preserve explicit ES/Qdrant source attribution, pass through the pure M9 backend-runner interfaces and adapter-skeleton attribution checks, pass the backend-adapter failure-matrix expectations, and materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format. Real backend adapter execution must be gated by the explicit enablement mechanism and required inputs defined in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.
 
+Future captured real-backend artifacts must record the resource-gate decision, whether backend resource config was present, and explicit production-activation non-approval confirmation. If the gate is enabled but resources are absent or the execution branch is not implemented, the artifact should carry not-configured/not-connected failure rows as data rather than a fake successful backend result.
+
 ## Non-goals
 
 This template does **not** represent:

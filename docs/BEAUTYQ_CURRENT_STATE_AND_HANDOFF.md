@@ -30,7 +30,7 @@ Use this section as the load-bearing source truth for coordination. Other docs s
 * The M9 backend-runner execution seam is implemented only as pure interfaces/value contracts plus a manual/static adapter; it does not approve any production route or activation change.
 * Pure ES/Qdrant offline adapter skeletons now exist behind the M9 backend-runner interface; real ES/Qdrant clients/execution remain future work and do not activate production serving.
 * Pure M9 backend adapter failure-matrix fixtures/specs harden not-connected, source/mode mismatch, attribution, duplicate-row, latency-warning, Qdrant metadata-warning, future-hybrid vocabulary, hidden-fallback, and production-non-approval expectations before real ES/Qdrant offline adapter work.
-* Real ES/Qdrant offline adapter execution is planned only behind an explicit resource gate (env flag, required inputs, stop conditions); it is not implemented. Gate design lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.
+* Resource-gated real-backend spike scaffolding now exists for M9 offline eval: explicit env gate, required input checks, not-configured/not-connected evidence as data, and ES/Qdrant source/mode attribution. Real successful ES/Qdrant execution remains disabled by default and future/resource-gated. Gate details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.
 * There is no real production traffic in this project context. Shadow serving and production traffic mirroring are therefore future-only, non-blocking, and not useful as current readiness evidence.
 * Pending expectations map:
   * The former `5` pending expectations in `BeautySearchOptInRouteModuleSpec` are now active tests for the explicit opt-in route module and prerequisite gate.
@@ -143,6 +143,7 @@ Documented as characterized, not as desired final contract:
 * Pure M8 telemetry schema renderer/static adapter — implemented.
 * Pure M9 ES/Qdrant offline adapter skeletons — implemented as value-level/offline foundations only.
 * Pure M9 backend adapter failure-matrix fixtures — implemented as offline guardrails before real backend-client work.
+* M9 resource-gated real-backend spike scaffold — implemented as offline eval foundation only; real successful ES/Qdrant execution remains future/resource-gated.
 
 ## 5. Current priority: post-M7 serving decision remains separate
 

@@ -35,6 +35,8 @@ Implemented pure slices:
 - `leaderboard.search.M9OfflineEvalRealBackendAdapterSkeletonSpec` locks ES-only/Qdrant-only attribution, not-connected failures-as-data, source/mode mismatch rejection, missing attribution validation, static-runner compatibility, latency-missing warnings, production-activation non-approval, and the no-hybrid/fallback/fusion/reranking/serving boundary.
 - `leaderboard.search.eval.M9OfflineEvalBackendAdapterFailureMatrix` defines pure backend-adapter failure-matrix fixtures for ES/Qdrant not-connected cases, source/mode mismatches, duplicate supplied rows, missing dataset/catalog/query attribution, latency warnings, backend failures as data, Qdrant required metadata warnings, future-hybrid vocabulary-only behavior, hidden-fallback non-representation, and production-activation non-approval.
 - `leaderboard.search.M9OfflineEvalBackendAdapterFailureMatrixSpec` locks those matrix expectations and proves static-runner compatibility where expected without ES clients, Qdrant clients, network, HTTP, Distage, Docker, metrics clients, route hooks, or production telemetry.
+- `leaderboard.search.eval.M9OfflineEvalRealBackendResourceGate` defines the first resource-gated real-backend spike scaffold: explicit enablement, required input checks, backend/source/mode attribution, not-configured/not-connected failures as data, and evidence values that feed the existing M9 backend-runner/static-runner path. Real successful ES/Qdrant execution is still not implemented and remains disabled by default.
+- `leaderboard.search.M9OfflineEvalRealBackendResourceGateSpec` locks default-disabled behavior, missing-input denial, production-activation non-approval confirmation, allowed-without-resource not-configured data, ES/Qdrant attribution preservation, and static-runner compatibility without production route/plugin/DI/HTTP/backend-client execution.
 - `leaderboard.search.eval.M8TelemetrySchemaRenderer` defines the first pure M8 telemetry schema renderer/static schema adapter slice: stable schema format version, deterministic markdown and compact text renderers, planned event-family field schemas, metric schemas, and explicit conditional-future marking for fusion/rerank/fallback/interaction metrics.
 - `leaderboard.search.M8TelemetrySchemaRendererSpec` locks event-family order, stable format version, rendered planned field/metric names, conditional-future metric marking, non-emission boundary, no route/plugin/DI/HTTP/backend-client surface, and byte-for-byte repeat rendering.
 - This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, real ES client adapter, real Qdrant client adapter, backend client integration, hybrid serving, fusion, or reranking.
@@ -198,7 +200,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, checked-in example markdown artifact, first pure backend-runner interface/value-contract slice, pure ES/Qdrant offline adapter skeletons, and pure backend-adapter failure-matrix fixtures/specs are implemented. Real ES/Qdrant backend runner execution remains unimplemented.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, checked-in example markdown artifact, first pure backend-runner interface/value-contract slice, pure ES/Qdrant offline adapter skeletons, pure backend-adapter failure-matrix fixtures/specs, and the resource-gated real-backend spike scaffold are implemented. Real successful ES/Qdrant backend runner execution remains unimplemented and disabled by default.
 
 Planned dataset coverage:
 
@@ -364,7 +366,7 @@ Implementation candidates for a later patch:
 
 ### 6.1. Real ES/Qdrant offline adapter execution gate
 
-This section designs the gate for a future resource-gated spike that runs real ES-only and Qdrant-only offline queries. It is planning only; it does not implement real backend clients, execution, route changes, or production activation.
+This section records the gate now implemented as scaffold in `M9OfflineEvalRealBackendResourceGate`. The scaffold can evaluate explicit enablement and required inputs and can emit not-configured/not-connected evidence through the existing M9 backend-runner/static-runner path. It does not implement real successful ES/Qdrant execution, route changes, or production activation.
 
 #### 6.1.1. Execution gate purpose
 
@@ -463,19 +465,19 @@ A real adapter spike must stop or not start if any of the following are true:
 
 #### 6.1.8. Future implementation slices
 
-Planned slices for a future resource-gated spike:
+Resource-gated spike scaffolding exists; remaining planned slices are:
 
 | Slice | Scope | Dependencies |
 |---|---|---|
-| 123 | real-client adapter spike behind manual/resource gate | this gate design; env flag; explicit inputs |
-| 124 | failure-matrix parity spec for real backend outputs | slice 123; option121 failure matrix |
-| 125 | saved-report artifact capture for gated run | slice 123; existing M9 saved-report renderer |
-| 126 | resource-gated ES-only smoke | slice 123; ES endpoint config |
-| 127 | resource-gated Qdrant-only smoke | slice 123; Qdrant endpoint config; embedding prerequisites |
+| 123 | resource-gated adapter spike scaffold | implemented: env flag, explicit inputs, not-configured data, attribution preservation |
+| 124 | failure-matrix parity spec for successful real backend outputs | future real execution branch; option121 failure matrix |
+| 125 | saved-report artifact capture for gated successful run | future real execution branch; existing M9 saved-report renderer |
+| 126 | resource-gated ES-only smoke | future real execution branch; ES endpoint config |
+| 127 | resource-gated Qdrant-only smoke | future real execution branch; Qdrant endpoint config; embedding prerequisites |
 | 128 | offline comparison report over real backend outputs | slices 126+127; existing M9 comparison path |
 | later | no production route integration unless separately approved | separate approval required |
 
-These slices are planning only. They do not implement real backend clients, route changes, Distage module integration, or production activation.
+Implemented slice 123 does not implement real backend clients, route changes, Distage module integration, or production activation.
 
 ## 7. M9 offline metrics
 
@@ -573,6 +575,6 @@ Future implementation slices may include:
 - M9 ES/Qdrant comparison runner after real offline execution adapters exist
 - M9 report persistence/writer around the implemented renderer
 - M9 quality gate update
-- Real ES/Qdrant offline adapter spike behind the explicit resource gate defined in section 6.1
+- Real successful ES/Qdrant offline adapter execution branch behind the explicit resource gate defined in section 6.1
 
 These are handoff candidates only. This document does not approve code changes, tests, route wiring changes, plugin changes, DI changes, or HTTP changes.

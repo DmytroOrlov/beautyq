@@ -105,8 +105,9 @@ Current active pure eval specs prove the non-serving M8/M9 boundary:
 - `M9OfflineEvalBackendRunnerSpec.scala`: pure backend-runner interfaces and the manual/static adapter preserve explicit execution-mode/source attribution, failures-as-data, static-runner compatibility, and no route/plugin/DI/HTTP/backend-client surface.
 - `M9OfflineEvalRealBackendAdapterSkeletonSpec.scala`: pure ES/Qdrant offline adapter skeletons stay behind the backend-runner interface, use ES-only or Qdrant-only attribution, reject source/mode/attribution mismatches deterministically, represent not-connected failures as data, warn when latency is absent, feed the static runner, and keep hybrid/fallback/fusion/reranking/serving vocabulary out of implementation.
 - `M9OfflineEvalBackendAdapterFailureMatrixSpec.scala`: pure backend-adapter failure-matrix coverage locks ES/Qdrant not-connected rows, source/mode mismatches, duplicate supplied rows, missing dataset/catalog/query attribution validation, latency and Qdrant metadata warnings, future-hybrid vocabulary-only behavior, hidden-fallback non-representation, static-runner compatibility where expected, and production-activation non-approval.
+- `M9OfflineEvalRealBackendResourceGateSpec.scala`: resource-gated spike scaffold coverage locks default-disabled execution, missing-flag/input denial, production-activation non-approval confirmation, allowed-without-resource not-configured data, ES/Qdrant source/mode preservation, and static-runner compatibility without production route/plugin/DI/HTTP/backend-client execution.
 
-These specs do not prove ES/Qdrant backend execution, telemetry emission, metrics client integration, route hooks, route wiring, production activation, hybrid serving, fallback, fusion, reranking, shadow serving, or traffic mirroring.
+These specs do not prove successful ES/Qdrant backend execution, telemetry emission, metrics client integration, route hooks, route wiring, production activation, hybrid serving, fallback, fusion, reranking, shadow serving, or traffic mirroring.
 
 ### Explicit opt-in Qdrant route readiness runbook
 
