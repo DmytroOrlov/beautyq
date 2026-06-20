@@ -256,7 +256,9 @@ Current milestone boundary:
 - M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
 - The approval-request boundary reflects the implemented disabled-by-default explicit opt-in Qdrant route.
 - `BeautySearchRouteModules.apiQdrantExplicitOptIn` is implemented and remains outside default `apiElasticsearch`. No default Qdrant route, route switch, hybrid serving, or production activation is implemented.
+- Existing green evidence is sufficient to keep that opt-in route as an approved disabled-by-default construction path. It is not sufficient to approve a future default `/beauty-search` switch.
 - The optional operator smoke checklist for that route lives in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is resource-gated and does not alter the default route.
+- The production activation decision boundary is documented in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`: separate explicit approval, default graph exposure plan, rollback/disable plan, observability/status evidence, route exposure tests, and post-implementation full-suite verification are required before any default route change.
 
 Implemented/current non-production components:
 

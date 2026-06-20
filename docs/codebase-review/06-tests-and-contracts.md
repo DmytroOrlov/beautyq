@@ -89,6 +89,7 @@ Current active Qdrant pure specs already prove the closeout boundary:
 - `QdrantProductionCandidateServingApprovalRequestSpec.scala` proves the historical approval-request readiness boundary.
 - A disabled-by-default explicit opt-in Qdrant route module exists. No production route activation, default route switch, hybrid serving, shadow serving, or traffic mirroring exists today.
 - `BeautySearchOptInRouteModuleSpec.scala` now also pins that `QdrantExplicitOptInRoutePrerequisites` remains an evidence-only prerequisite handle with readiness, activation, config/no-regression, and planning decision fields only. It must not grow shadow-serving, mirroring, production-traffic telemetry, fallback, fusion, reranking, or hybrid-serving semantics.
+- Route/module/spec evidence therefore proves opt-in readiness only. It does not prove production-route activation approval. The separate activation gate is documented in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 
 No additional route/runtime/resource spec is required for this docs closeout because the current boundary is still pure planning/readiness evidence, not serving implementation.
 
@@ -110,6 +111,7 @@ Focused specs prove bounded facts:
 - `BeautySearchProductionRouteExposureSpec.scala`: default `POST /beauty-search` remains ES-backed.
 - `BeautySearchElasticsearchRouteModuleSpec.scala`, `BeautySearchElasticsearchHttpRouteModuleSpec.scala`, and `BeautySearchAppGraphBoundarySpec.scala`: ES/default route and graph boundaries stay intact.
 - Qdrant post-M7/quality/eval specs prove offline evidence and no-serving guardrails, not production activation.
+- Any later default-route switch still needs dedicated route exposure coverage for the approved activation shape and a post-implementation full `sbt test`; the current green evidence does not pre-approve that switch.
 
 Full `sbt test` is still the coordinator/user verification step. It proves the wider suite remains compatible after the focused slice, but it is not run by default for focused Qdrant opt-in hardening tasks.
 

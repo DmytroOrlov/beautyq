@@ -12,6 +12,7 @@ Status ownership:
 - Production route activation remains absent.
 - Production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - Operator/developer smoke for the explicit opt-in route is documented in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is optional and resource-gated.
+- The separate production activation decision boundary is documented in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 - Full-suite verification status, the Distage include-path NPE closeout, and pending/canceled meanings live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`. The canonical 8-entry pending-expectation map also lives in `06-tests-and-contracts.md`.
 
 ## Confirmed Current Gaps
@@ -104,6 +105,7 @@ Remaining gap:
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
 - The explicit opt-in Qdrant route is disabled by default and prerequisite-gated; it is not included by `apiElasticsearch` or `LeaderboardPlugin`.
 - Current readiness evidence is offline and seed/eval based. It uses curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/no-regression reports, quality-gate reports, route/module specs, and full verification by the coordinator/user. It is not production telemetry.
+- That evidence can justify explicit opt-in readiness, but it does not by itself authorize production activation of the default `/beauty-search` route.
 
 Coordinator decision:
 
@@ -252,6 +254,18 @@ Qdrant remains active as a direct production-candidate target. M6 is closed as a
 | Contract parity, indexing, and search readiness | Candidate contracts and operational paths must be explicitly proven | Incomplete candidate behavior |
 | Observability and rollback/disable readiness | Operation and disable controls must be configured before approval | Candidate cannot be diagnosed or safely disabled |
 | Explicit activation policy | Serving requires a separate approved policy | Readiness state accidentally treated as routing approval |
+
+Before any future default `/beauty-search` switch, approval must cover at least:
+
+- explicit production-route activation approval;
+- a default graph exposure plan naming the exact module change from ES-backed default to the approved Qdrant-backed default shape;
+- a rollback/disable plan;
+- observability/status evidence judged sufficient for production;
+- route exposure tests for the approved default graph shape;
+- full-suite verification after implementation;
+- continued exclusion of hidden hybrid serving, fallback, score fusion, reranking, shadow serving, and traffic mirroring.
+
+If that activation is approved later, option103 would be allowed to implement only the approved default-route exposure change plus its rollback/disable and verification surface. It would still not approve hybrid serving, fallback, fusion, reranking, shadow serving, or mirroring.
 
 Closed M6 foundation:
 

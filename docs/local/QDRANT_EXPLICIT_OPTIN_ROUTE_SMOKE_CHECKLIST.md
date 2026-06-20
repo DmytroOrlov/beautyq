@@ -2,6 +2,7 @@
 
 This is an operator/developer smoke checklist for `BeautySearchRouteModules.apiQdrantExplicitOptIn`.
 It is optional, resource-gated, and separate from production route activation.
+The separate activation gate is documented in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 
 ## 1. Scope And Non-Goals
 
@@ -81,7 +82,7 @@ Interpretation:
 
 - The repo-wide suite was green at that point.
 - The remaining pending expectations were ES operator-visibility future placeholders, not Qdrant blockers.
-- Full green does not approve production route activation.
+- Full green supports disabled-by-default opt-in readiness only. It does not approve production route activation.
 
 ## 6. Seed/Eval Metrics Interpretation
 
@@ -145,6 +146,7 @@ Do not treat this checklist as approval for:
 
 - production route activation;
 - a default route switch;
+- default graph exposure changes in `LeaderboardPlugin.modules.apiBase[IO]` or `BeautySearchRouteModules.apiElasticsearch`;
 - hybrid serving;
 - fallback;
 - score fusion;

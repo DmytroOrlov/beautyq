@@ -9,8 +9,10 @@ Status summary:
 * Production route activation remains not approved.
 * Production `/beauty-search` remains ES-backed.
 * Explicit opt-in route readiness is judged from offline/seed/eval evidence, not production traffic telemetry.
+* Existing green evidence makes the explicit opt-in route ready for disabled-by-default use, but does not itself approve a future default `/beauty-search` switch.
 * Shadow serving and traffic mirroring remain future-only and non-blocking because there is no real production traffic in this project context.
 * The optional operator smoke checklist lives in `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md`; it is resource-gated and does not alter the default route.
+* Separate production activation criteria live in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 * The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, and the canonical 8-entry pending-expectation map lives in `docs/codebase-review/06-tests-and-contracts.md`.
 
 ## 1. Goal
@@ -107,6 +109,8 @@ The current path includes a source-backed production-candidate readiness foundat
 The readiness foundation is pure and route-independent. It is not production lifecycle completion, production routing, production fallback, or production hybrid wiring.
 
 The explicit opt-in route adds a construction prerequisite only: `QdrantExplicitOptInRoutePrerequisites` must be derived from a ready M6 production-candidate report, ready M7 activation-policy report, enabled config/no-regression approval report, and ready explicit-opt-in planning decision. That prerequisite is evidence-only and does not include shadow serving, traffic mirroring, production telemetry, fallback, score fusion, reranking, or hybrid serving.
+
+Any later default-route activation is a separate decision. It requires explicit production-route approval, an approved default graph exposure plan, rollback/disable plan, observability/status evidence, route exposure coverage, and full-suite verification after implementation. The current opt-in route prerequisites do not satisfy that broader activation gate by themselves.
 
 Current readiness without real production traffic is proven from curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/offline eval reports, quality-gate and no-regression decisions, prerequisite-gate tests, focused route/module specs, and full verification by the coordinator/user. Include regression, edge, and negative cases in the seed/eval set to reduce overfitting.
 
