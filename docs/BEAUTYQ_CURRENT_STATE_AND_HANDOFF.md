@@ -18,11 +18,12 @@ Use this section as the load-bearing source truth for coordination. Other docs s
 * M6 is closed as the Qdrant production-candidate readiness foundation.
 * M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
 * ES post-M5 future-track planning is closed as planning only.
-* Qdrant approval-request readiness is closed and ready to request explicit approval for a future disabled-by-default opt-in route implementation, but implementation approval remains absent.
+* Qdrant implementation approval is now granted only for disabled-by-default explicit opt-in route wiring.
+* `BeautySearchRouteModules.apiQdrantExplicitOptIn` / `seedCatalogQdrantExplicitOptIn` implement that explicit route path. It is not included by `apiElasticsearch` or `LeaderboardPlugin`.
 * Production route activation remains not approved.
 * Pending expectations map:
-  * `5` pending expectations in `BeautySearchOptInRouteModuleSpec` preserve the future Qdrant explicit opt-in route boundary only.
-  * `1` pending expectation in `BeautySearchProductionRouteExposureSpec` preserves that `POST /beauty-search` stays ES-backed until separate production-route activation approval exists.
+  * The former `5` pending expectations in `BeautySearchOptInRouteModuleSpec` are now active tests for the explicit opt-in route module and prerequisite gate.
+  * The former `1` pending expectation in `BeautySearchProductionRouteExposureSpec` is now active coverage preserving that `POST /beauty-search` stays ES-backed until separate production-route activation approval exists.
   * `2` pending expectations in `ElasticsearchOperatorVisibilityEndpointPolicySpec` preserve future-only ES local/dev fallback and runtime route-gate / HTTP 503 work.
   * The canonical owner, per-expectation owners, approval conditions, activation conditions, and removal conditions live in `docs/codebase-review/06-tests-and-contracts.md`.
 * The single canceled test remains expected manual/resource-gated coverage, not a blocker.
@@ -39,7 +40,7 @@ Current coordinator load-in:
 * M6 is closed as the Qdrant production-candidate readiness foundation.
 * M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
 * ES post-M5 future-track planning is closed as planning only and remains unimplemented.
-* Qdrant approval-request readiness is closed and ready to request explicit approval for a future disabled-by-default opt-in route only; implementation approval remains absent.
+* Disabled-by-default explicit opt-in Qdrant route implementation approval is granted and implemented through `BeautySearchRouteModules.apiQdrantExplicitOptIn`.
 * Production route activation for Qdrant remains not approved.
 
 * `POST /beauty-search` is production-exposed by `LeaderboardPlugin` through `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
@@ -154,9 +155,9 @@ Documented as characterized, not as desired final contract:
 * **M5 is closed as a bounded startup-readiness lifecycle checkpoint.** App-start fail-closed and prepared-serving are covered; non-serving lifecycle metadata, readiness, status, transition, DI/rooting, failure classification, and consistency seams are implemented and tested. Remaining ES work is intentionally split into separate future tracks: runtime route-gate under Candidate A, replacement/freshness/rollback, and full lifecycle operations. Design A operator visibility is implemented as explicit opt-in/internal only and does not change `/beauty-search`.
 * Full verification is separate from focused validation; full `sbt test` was not run from this docs pass.
 * **M6 is closed as the Qdrant production-candidate readiness foundation.** The pure readiness foundation covers collection/identity, contract parity, indexing, search, quality/eval, observability, rollback/disable, and activation-policy categories. It is not serving approval, route wiring, or production activation.
-* **M7 is closed as the activation/source-confirmation and serving-policy planning foundation.** The pure planning/config/no-regression layers close out the prerequisites for a future disabled-by-default explicit opt-in route request, but they do not approve implementation, production route activation, route switching, shadow serving, traffic mirroring, fallback, score fusion, reranking, or hybrid serving.
-* Source-confirmed route seams remain unchanged: `BeautySearchApi` and `BeautySearchTapirEndpoints` remain backend-agnostic; `BeautySearchRouteModules.apiElasticsearch` selects the current production ES seed composition; `LeaderboardPlugin` includes that ES route directly. No Qdrant serving route, opt-in Qdrant route implementation, or production route activation exists today.
-* `QdrantProductionCandidateServingApprovalRequest` closes the approval-request boundary only: the current evidence package is ready to ask for explicit approval of a future disabled-by-default opt-in Qdrant route implementation. Implementation approval remains absent, and `/beauty-search` remains ES-backed until separate production-route activation approval.
+* **M7 is closed as the activation/source-confirmation and serving-policy planning foundation.** The pure planning/config/no-regression layers are now consumed by the disabled-by-default explicit opt-in Qdrant route gate. They still do not approve production route activation, route switching, shadow serving, traffic mirroring, fallback, score fusion, reranking, or hybrid serving.
+* Source-confirmed route seams remain separated: `BeautySearchApi` and `BeautySearchTapirEndpoints` remain backend-agnostic; `BeautySearchRouteModules.apiElasticsearch` selects the current production ES seed composition; `LeaderboardPlugin` includes that ES route directly. `BeautySearchRouteModules.apiQdrantExplicitOptIn` is a separate explicit module and is not included by the default production graph.
+* `QdrantProductionCandidateServingApprovalRequest` remains the historical approval-request boundary. Implementation approval now exists only for disabled-by-default explicit opt-in route wiring, and `/beauty-search` remains ES-backed until separate production-route activation approval.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 

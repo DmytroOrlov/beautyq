@@ -4,8 +4,8 @@ Status summary:
 
 * M6 is closed as the Qdrant production-candidate readiness foundation.
 * M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
-* The approval-request boundary is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route implementation.
-* Implementation approval remains absent.
+* Disabled-by-default explicit opt-in Qdrant route implementation approval is granted for this narrow scope.
+* `BeautySearchRouteModules.apiQdrantExplicitOptIn` implements the explicit route path and remains outside the default ES route.
 * Production route activation remains not approved.
 * Production `/beauty-search` remains ES-backed.
 * The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, and the canonical 8-entry pending-expectation map lives in `docs/codebase-review/06-tests-and-contracts.md`.
@@ -103,7 +103,7 @@ The current path includes a source-backed production-candidate readiness foundat
 
 The readiness foundation is pure and route-independent. It is not production lifecycle completion, production routing, production fallback, or production hybrid wiring.
 
-`QdrantProductionCandidateServingApprovalRequest` is also pure and route-independent. It records whether the current post-M7 evidence package is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route implementation. That is a request-readiness closeout only. It does not approve implementation, production activation, a route switch, serving, shadow serving, traffic mirroring, or hybrid serving.
+`QdrantProductionCandidateServingApprovalRequest` is also pure and route-independent. It records the historical post-M7 evidence package that was ready to request explicit approval for a disabled-by-default explicit opt-in Qdrant route implementation. That implementation approval now exists only for explicit opt-in route wiring. It does not approve production activation, a default route switch, shadow serving, traffic mirroring, or hybrid serving.
 
 The real-resource non-production hybrid adapter boundary for future v0 is now recorded at docs level only.
 That adapter is not implemented yet.
@@ -372,7 +372,7 @@ The explicit opt-in Qdrant route boundary is now source-confirmed as pending onl
 
 `QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It combines the ready M6 and activation-policy reports, conservative and approved config/no-regression reports, complete explicit opt-in planning prerequisites, blocked production-route activation, conditional future hybrid serving, and the existing route-boundary specs. It adds no route, runtime config, HTTP behavior, plugin wiring, or serving approval.
 
-`QdrantProductionCandidatePostM7NoServingGuardrailSpec` records the post-M7 no-serving boundary. The accepted Option72 decision bundle is capture-only evidence and supports asking for explicit approval of a future disabled-by-default explicit opt-in Qdrant route implementation, but it does not approve that implementation, production route activation, Qdrant serving, an opt-in serving route, route switch, `/beauty-search` behavior change, hybrid serving, shadow serving, or production traffic mirroring.
+`QdrantProductionCandidatePostM7NoServingGuardrailSpec` records the post-M7 production no-serving boundary after the scoped implementation approval. The accepted decision bundle now approves only disabled-by-default explicit opt-in route implementation, not production route activation, default route switching, `/beauty-search` behavior change in the default graph, hybrid serving, shadow serving, or production traffic mirroring.
 
 ## 9. Non-production experiment wiring boundary
 
@@ -917,7 +917,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. decide separately whether to authorize an explicit opt-in Qdrant route implementation; the closed M7 planning foundation does not approve implementation
+1. decide separately whether to authorize production route activation; the implemented explicit opt-in Qdrant route does not approve production activation
 
 Immediate code target details:
 

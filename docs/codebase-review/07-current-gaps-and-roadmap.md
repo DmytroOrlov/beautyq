@@ -8,7 +8,8 @@ Status ownership:
 - M6 closed as the Qdrant production-candidate readiness foundation.
 - M7 closed as the activation/source-confirmation and serving-policy planning foundation.
 - ES post-M5 planning aggregate closed as planning only; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain future and unimplemented.
-- Qdrant approval-request boundary is ready to request explicit approval for a future disabled-by-default opt-in route implementation; implementation approval and production route activation remain absent.
+- Qdrant implementation approval is granted only for disabled-by-default explicit opt-in route wiring. `BeautySearchRouteModules.apiQdrantExplicitOptIn` is implemented and remains outside the default ES route.
+- Production route activation remains absent.
 - Production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - Full-suite verification status, the Distage include-path NPE closeout, and pending/canceled meanings live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`. The canonical 8-entry pending-expectation map also lives in `06-tests-and-contracts.md`.
 
@@ -279,11 +280,11 @@ Closed M7 activation planning/source-confirmation foundation:
 - M6 `productionCandidateReady = true` and a `Ready` activation-policy report are mandatory.
 - Any serving scope additionally requires a config gate, no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval.
 - The explicit opt-in Qdrant route boundary is source-confirmed as pending only: it must remain a separate module outside default `apiElasticsearch` and consume the pure config/no-regression report before any route wiring. Production route activation is not approved. The per-expectation owner/approval/activation/removal map lives in `06-tests-and-contracts.md`.
-- Default `apiElasticsearch` and `LeaderboardPlugin` remain ES-backed. No Qdrant serving route, opt-in serving route, route switch, or hybrid serving was added.
-- No Qdrant serving route, hybrid-serving behavior, or production-route behavior was added.
+- Default `apiElasticsearch` and `LeaderboardPlugin` remain ES-backed. A disabled-by-default explicit Qdrant opt-in route was added as `BeautySearchRouteModules.apiQdrantExplicitOptIn`; no default route switch or hybrid serving was added.
+- No production-route behavior was added.
 - `QdrantProductionCandidateM7CloseoutSpec` aggregates the accepted pure prerequisites and route-boundary spec evidence while keeping production activation blocked and hybrid serving conditional.
 - `QdrantProductionCandidatePostM7NoServingGuardrailSpec` records the post-M7 boundary: M7 closeout, offline eval/no-regression evidence, and the accepted capture-only Option72 decision bundle still do not approve implementation, production route activation, a Qdrant serving route, opt-in Qdrant serving route, route switch, `/beauty-search` behavior change, hybrid serving, shadow serving, or production traffic mirroring.
-- `QdrantProductionCandidateServingApprovalRequest` adds the narrow approval-request closeout boundary: current M7 closeout evidence, offline eval/no-regression evidence, post-M7 no-serving guardrail evidence, route-boundary evidence, and config/no-regression gate evidence are sufficient to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route implementation. The model requires explicit serving approval to still be absent and blocks broader production-route or hybrid-serving targets. It is request-ready evidence only; it does not approve implementation, production activation, route wiring, or serving.
+- `QdrantProductionCandidateServingApprovalRequest` remains the historical approval-request closeout boundary. The current slice grants implementation approval only for disabled-by-default explicit opt-in route wiring; it does not approve production activation, default route switching, hybrid serving, fallback, score fusion, reranking, shadow serving, or traffic mirroring.
 
 #### Lane D: Hybrid policy and serving
 

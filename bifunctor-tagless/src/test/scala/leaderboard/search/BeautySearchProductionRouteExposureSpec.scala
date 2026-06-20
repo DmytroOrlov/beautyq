@@ -149,7 +149,23 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
     }
 
     "keep POST /beauty-search ES-backed until separate production-route activation is approved" in {
-      pending
+      withZeroHitEsServer { port =>
+        val probe = buildProductionApiGraphRouteProbe(port)
+
+        assert(probe.allHttpApis.collect { case _: BeautySearchApi[IO] => () }.size == 1)
+        assertSeedOnlyLifecycleMetadata(probe.lifecycleMetadata)
+        assertSeedOnlyProductionReadinessState(probe.productionReadinessState)
+        assertPreparedStartupTransition(probe.startupTransition)
+
+        val response = runIO(
+          observeRoute(
+            probe.allHttpApis,
+            postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""),
+          )
+        )
+
+        assertOkWithEmptyBeautySearchResponseShape(response)
+      }
     }
   }
 

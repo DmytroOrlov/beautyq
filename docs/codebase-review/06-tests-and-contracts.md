@@ -36,36 +36,36 @@ Current source-confirmed closeout:
 
 ## Pending and canceled meaning
 
-The `8 pending` tests are intentional future-boundary expectations, not failures:
+After the disabled-by-default explicit opt-in Qdrant route slice, only the ES operator-visibility future-boundary tests remain pending:
 
-- `BeautySearchOptInRouteModuleSpec.scala`: `5` pending expectations keep the future explicit Qdrant opt-in route boundary compile-safe and outside the default ES graph until separate implementation and serving approval exists.
-- `BeautySearchProductionRouteExposureSpec.scala`: `1` pending expectation keeps `POST /beauty-search` ES-backed until separate production-route activation approval exists.
+- `BeautySearchOptInRouteModuleSpec.scala`: the former `5` pending expectations are active tests for `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the M6/M7 evidence gate, disabled-default config approval, observability/rollback requirements, and separate route/serving approval without production-route activation.
+- `BeautySearchProductionRouteExposureSpec.scala`: the former `1` pending expectation is now active coverage keeping `POST /beauty-search` ES-backed until separate production-route activation approval exists.
 - `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala`: `2` pending expectations keep ES local/dev fallback and runtime route-gate / HTTP 503 behavior as future-only work.
 
 The `1 canceled` test remains expected manual/resource-gated coverage and is not a blocker.
 
-Pending means intentionally deferred future-boundary coverage, not unfinished accepted work. Current full green already includes these pending expectations.
+Remaining pending tests mean intentionally deferred future-boundary coverage, not unfinished accepted work. The user-reported full green predates the opt-in route implementation and included the former pending expectations.
 
 ## Pending expectation map
 
-Use this as the canonical pending-expectation map. Other docs should point here instead of restating all 8 entries.
+Use this as the canonical former-pending and remaining-pending expectation map.
 
 | Pending expectation | Owning spec | Future-track owner | Approval/implementation condition before activation | Condition to convert pending into active test | Condition to remove pending if track is rejected |
 |---|---|---|---|---|---|
-| future explicit Qdrant opt-in route remains a separate module outside default `apiElasticsearch` | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | An implemented Qdrant opt-in route exists and remains outside default `apiElasticsearch` | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
-| future Qdrant route requires M6 `productionCandidateReady` and activation-policy readiness before route wiring | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and proves M6 readiness plus activation-policy readiness as a precondition | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
-| future Qdrant route consumes disabled-by-default config gate and approved no-regression evidence through the M7 config report | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and consumes `QdrantProductionCandidateActivationConfigApproval` evidence for config gate plus approved no-regression evidence | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
-| future Qdrant route requires observability/status evidence and rollback/disable control | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and proves observability/status evidence plus rollback/disable control before activation | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
-| future Qdrant route requires separate route/serving approval without approving production-route activation | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and proves separate route/serving approval while production-route activation remains independently unapproved | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
-| keep `POST /beauty-search` ES-backed until separate production-route activation is approved | `BeautySearchProductionRouteExposureSpec.scala` | Production route activation decision | Separate production-route activation approval | Approved production-route activation implementation exists | Production-route activation is explicitly rejected or permanently deferred |
+| explicit Qdrant opt-in route remains a separate module outside default `apiElasticsearch` | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant disabled-by-default explicit opt-in implementation scope | Implemented and active | `BeautySearchRouteModules.apiQdrantExplicitOptIn` exists and remains outside default `apiElasticsearch` | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| Qdrant route requires M6 `productionCandidateReady` and activation-policy readiness before route wiring | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant disabled-by-default explicit opt-in implementation scope | Implemented and active | Route wiring validates M6 readiness plus activation-policy readiness as a precondition | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| Qdrant route consumes disabled-by-default config gate and approved no-regression evidence through the M7 config report | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant disabled-by-default explicit opt-in implementation scope | Implemented and active | Route wiring consumes `QdrantProductionCandidateActivationConfigApproval` evidence for config gate plus approved no-regression evidence | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| Qdrant route requires observability/status evidence and rollback/disable control | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant disabled-by-default explicit opt-in implementation scope | Implemented and active | Route wiring validates observability/status evidence plus rollback/disable control before activation | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| Qdrant route requires separate route/serving approval without approving production-route activation | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant disabled-by-default explicit opt-in implementation scope | Implemented and active | Route wiring validates separate route/serving approval while production-route activation remains independently unapproved | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| keep `POST /beauty-search` ES-backed until separate production-route activation is approved | `BeautySearchProductionRouteExposureSpec.scala` | Production route activation decision | Implemented and active | Default production graph remains ES-backed | Production-route activation is explicitly rejected or permanently deferred |
 | allow local/dev-only fallback if chosen later | `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` | ES operator visibility / local-dev policy | A local/dev-only fallback policy is explicitly chosen | Fallback behavior is implemented and scoped to local/dev only | Local/dev fallback is explicitly rejected |
 | do not test runtime route-gate or HTTP 503 behavior as implemented | `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` | ES runtime route-gate under Candidate A successor decision | A runtime readiness source or replacement/freshness/rollback policy exists and runtime route-gate implementation is explicitly approved | Runtime route-gate / HTTP 503 behavior is implemented | Runtime route-gate is permanently rejected or replaced by another approved policy |
 
 Current interpretation to preserve:
 
-- all `8` pending expectations are intentional non-blocking future-boundary placeholders;
-- they do not weaken the user-reported full green result;
-- they must not be read as implied implementation approval;
+- the former Qdrant opt-in and production ES-backed placeholders are now active tests;
+- the remaining ES operator-visibility pending expectations are intentional non-blocking future-boundary placeholders;
+- the user-reported full green predates this opt-in route implementation;
 - they must not be read as implied production-route activation approval.
 
 ## ES post-M5 verification boundary
@@ -85,8 +85,8 @@ Current active Qdrant pure specs already prove the closeout boundary:
 
 - M6 is closed as the pure production-candidate readiness foundation.
 - M7 is closed as the pure activation/source-confirmation and serving-policy planning foundation.
-- `QdrantProductionCandidateServingApprovalRequestSpec.scala` proves approval-request readiness only.
-- No Qdrant serving route, opt-in route implementation, production route activation, hybrid serving, shadow serving, or traffic mirroring exists today.
+- `QdrantProductionCandidateServingApprovalRequestSpec.scala` proves the historical approval-request readiness boundary.
+- A disabled-by-default explicit opt-in Qdrant route module exists. No production route activation, default route switch, hybrid serving, shadow serving, or traffic mirroring exists today.
 
 No additional route/runtime/resource spec is required for this docs closeout because the current boundary is still pure planning/readiness evidence, not serving implementation.
 
@@ -120,7 +120,7 @@ Implemented/current:
 - `BeautySearchElasticsearchRouteModuleSpec.scala`: the explicit ES seed route module exposes seed-only lifecycle metadata, the non-serving readiness state, and the prepared startup transition while preserving its zero-hit route response contract.
 - `BeautySearchElasticsearchHttpRouteModuleSpec.scala`: the ES route with the real HTTP client module exposes the state and prepared startup transition while preserving mapping/index PUT, bulk ingestion, refresh, and search calls.
 - `BeautySearchElasticsearchDefaultReadyRouteSpec.scala`: the port-configured default ES route exposes the state and prepared startup transition while preserving route behavior and ES preparation/search calls.
-- `QdrantProductionCandidateServingApprovalRequestSpec.scala`: pins the pure post-M7 approval-request closeout model. It proves the current evidence package is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route only, while implementation approval and production route activation remain absent.
+- `QdrantProductionCandidateServingApprovalRequestSpec.scala`: pins the historical pure post-M7 approval-request closeout model. The current slice grants implementation approval only for disabled-by-default explicit opt-in route wiring; production route activation remains absent.
 - BeautySearch request-boundary tests use `BeautySearchRequestContract` for public limits and semantic error descriptors. A focused mirror assertion keeps `BeautySearchRequestContract.MaxLimit` source-backed by `BeautySearchSpecV1.spec.carouselSpec.variantSize`.
 
 They protect:
@@ -638,9 +638,10 @@ Contract facts:
 Boundary:
 
 - This is a pure report/policy contract, not a serving gate.
-- No Qdrant serving route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
+- The disabled-by-default explicit opt-in Qdrant route is separate from this M6 pure report/policy contract.
+- No default Qdrant route, route switch, hybrid behavior, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement is introduced.
 - Existing production route/module specs remain the route behavior source of truth.
-- Pending route expectations record that any future Qdrant opt-in route stays outside default `apiElasticsearch`, requires activation-policy approval, and cannot replace the ES-backed `/beauty-search` route without separate approval.
+- Active route expectations record that the Qdrant opt-in route stays outside default `apiElasticsearch`, requires activation-policy approval, and cannot replace the ES-backed `/beauty-search` route without separate approval.
 - M6 is closed as a production-candidate readiness foundation only. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M8 controlled hybrid serving remains future-only and conditional.
 
 ### Saved aggregate schema boundary

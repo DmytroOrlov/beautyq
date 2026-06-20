@@ -15,6 +15,14 @@ import leaderboard.search.elasticsearch.{
 }
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
+import leaderboard.search.qdrant.{
+  QdrantExplicitOptInBeautySearchBackend,
+  QdrantExplicitOptInRoutePrerequisites,
+  QdrantProductionCandidateActivationConfigApprovalReport,
+  QdrantProductionCandidateActivationReport,
+  QdrantProductionCandidateReadinessReport,
+}
+import leaderboard.search.semantic.SemanticCandidateBackend
 import leaderboard.search.{BeautySearchBackend, BeautySearchService}
 import leaderboard.seed.BeautyQSeedLoader
 import zio.{IO, Runtime, Unsafe}
@@ -84,6 +92,45 @@ object BeautySearchCatalogBackendModules {
 
     make[BeautySearchService[IO]].from {
       (composition: ElasticsearchSeedSearchComposition) => composition.service
+    }
+  }
+
+  def seedResourceQdrantExplicitOptIn: ModuleDef = new ModuleDef {
+    make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
+    make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
+
+    make[BeautySearchReadyCatalogDocuments].from {
+      (loader: BeautyQSeedLoader) =>
+        BeautySearchCatalogBackendFactory.fromSeedLoader(loader) match {
+          case Right(value) => value
+          case Left(error)  => throw new IllegalStateException(error.message)
+        }
+    }
+
+    make[QdrantExplicitOptInRoutePrerequisites].from {
+      (
+        readinessReport: QdrantProductionCandidateReadinessReport,
+        activationReport: QdrantProductionCandidateActivationReport,
+        configApprovalReport: QdrantProductionCandidateActivationConfigApprovalReport,
+      ) =>
+        QdrantExplicitOptInRoutePrerequisites
+          .fromReports(readinessReport, activationReport, configApprovalReport)
+          .fold(error => throw new IllegalStateException(error.message), identity)
+    }
+
+    make[BeautySearchBackend[IO]].from {
+      (
+        spec: BeautySearchSpec,
+        ready: BeautySearchReadyCatalogDocuments,
+        semanticBackend: SemanticCandidateBackend[IO],
+        prerequisites: QdrantExplicitOptInRoutePrerequisites,
+      ) =>
+        new QdrantExplicitOptInBeautySearchBackend(spec, ready, semanticBackend, prerequisites)
+    }
+
+    make[BeautySearchService[IO]].from {
+      (parser: BeautySearchIntentParser, backend: BeautySearchBackend[IO]) =>
+        new BeautySearchService.Impl[IO](parser, backend)
     }
   }
 }

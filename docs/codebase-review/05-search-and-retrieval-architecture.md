@@ -47,7 +47,7 @@ Implemented/current:
 - `BeautySearchOptInHttpApiModuleSpec`: focused proof that the opt-in module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` aggregation shape consumed by `HttpServer.Impl`, with the repo's role-style concrete API retention edge and a fake `BeautySearchService[IO]` that is not called during graph construction.
 - `BeautySearchRouteModules.seedCatalogInMemory[F]`: explicit opt-in end-to-end route module that composes `BeautySearchCatalogBackendModules.seedResourceInMemory[F]` with `BeautySearchPluginModules.api[F]` and supplies the seed resource loader.
 - `BeautySearchOptInRouteModuleSpec`: focused proof that the composed opt-in route module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response from the seed-resource catalog/in-memory backend without `HttpServer`, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
-- The same spec also owns `5` pending future-boundary expectations for a possible disabled-by-default explicit opt-in Qdrant route. The canonical owner/approval/activation/removal map for those pending expectations lives in `06-tests-and-contracts.md`.
+- The same spec now actively proves the disabled-by-default explicit Qdrant opt-in route boundary: `BeautySearchRouteModules.apiQdrantExplicitOptIn` remains outside default `apiElasticsearch`, consumes M6/M7 readiness/config/no-regression/observability/rollback/serving approval evidence, and does not approve production-route activation.
 - `LeaderboardPlugin` top-level includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch` (ES-backed seed route, default), so `POST /beauty-search` is production-included in the default API graph.
 - `BeautySearchProductionRouteExposureSpec`: focused proof that the default plugin API graph contributes `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response without `HttpServer`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
 - That spec also owns `1` pending expectation preserving the current ES-backed production route until separate production-route activation approval exists. The canonical pending map lives in `06-tests-and-contracts.md`.
@@ -255,7 +255,7 @@ Current milestone boundary:
 - M6 is closed as the Qdrant production-candidate readiness foundation.
 - M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
 - The approval-request boundary is ready for a future disabled-by-default explicit opt-in route request only.
-- No Qdrant serving route, route switch, hybrid serving, or production activation is implemented.
+- A disabled-by-default explicit opt-in Qdrant route module is implemented through `BeautySearchRouteModules.apiQdrantExplicitOptIn`. No default Qdrant route, route switch, hybrid serving, or production activation is implemented.
 
 Implemented/current non-production components:
 
@@ -303,7 +303,7 @@ Non-production Qdrant/hybrid runner status:
 
 Production-wired/current:
 
-- No Qdrant production search binding was found in `LeaderboardPlugin.scala`.
+- No Qdrant production search binding was found in `LeaderboardPlugin.scala`; the Qdrant route is explicit opt-in only.
 - `docs/search-dsl-qdrant-vector-backend.md` records the pure production-candidate readiness foundation plus non-production runtime experiments; neither is production lifecycle/routing/fallback/hybrid wiring.
 
 What not to infer:
@@ -407,7 +407,7 @@ Quality/eval readiness reuses `EngineEvalAggregateReport` through a pure adapter
 
 Activation-policy readiness is also pure and route-independent. It records explicit approval, scope, route/serving approval status, rollback/disable controls, no-regression evidence, observability, and blocking reasons. Candidate-readiness-only activation can become `Ready` when every required control is satisfied. Future explicit opt-in route scope is representable but has no route implementation. Future production route scope is explicitly not approved by this policy.
 
-`QdrantProductionCandidateM6CloseoutSpec` source-confirms the eight-category state shape, conservative default, per-category blockers, all adapter composition, the all-ready active invariant, and the inactive-Qdrant blocker. Existing route specs remain the source of truth that `BeautySearchRouteModules.apiElasticsearch` and `LeaderboardPlugin` keep `/beauty-search` ES-backed, with future Qdrant opt-in activation still pending.
+`QdrantProductionCandidateM6CloseoutSpec` source-confirms the eight-category state shape, conservative default, per-category blockers, all adapter composition, the all-ready active invariant, and the inactive-Qdrant blocker. Existing route specs remain the source of truth that `BeautySearchRouteModules.apiElasticsearch` and `LeaderboardPlugin` keep `/beauty-search` ES-backed, while `BeautySearchRouteModules.apiQdrantExplicitOptIn` is separate explicit opt-in route wiring.
 
 M6 closure does not mean production serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, production traffic mirroring, or production-route activation approval.
 
@@ -419,9 +419,9 @@ The explicit opt-in route planning scope requires M6 `productionCandidateReady =
 
 `QdrantProductionCandidateActivationConfigApproval` supplies only the config-gate and no-regression inputs to that planner. The gate is explicitly `Disabled` or `Enabled` and defaults to disabled. No-regression evidence has a separate requirement status and approval status; only `Satisfied` plus `Approved` maps to satisfied planning evidence. The model has no config loader, route binding, or serving approval.
 
-The source-confirmed future seam is a separate route module outside `BeautySearchRouteModules.apiElasticsearch`: `BeautySearchApi` and `BeautySearchTapirEndpoints` are backend-agnostic, `BeautySearchPluginModules.api` contributes the HTTP API only when included, route modules select the backend composition, and `LeaderboardPlugin` currently includes `apiElasticsearch` directly. Pending route expectations consume `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, alongside M6 readiness, activation-policy readiness, observability/status, rollback/disable, and separate route/serving approval. No Qdrant route or route switch exists. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
+The source-confirmed explicit Qdrant opt-in seam is a separate route module outside `BeautySearchRouteModules.apiElasticsearch`: `BeautySearchApi` and `BeautySearchTapirEndpoints` are backend-agnostic, `BeautySearchPluginModules.api` contributes the HTTP API only when included, route modules select the backend composition, and `LeaderboardPlugin` currently includes `apiElasticsearch` directly. Active route expectations consume `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, alongside M6 readiness, activation-policy readiness, observability/status, rollback/disable, and separate route/serving approval. No default Qdrant route or route switch exists. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
 
-`QdrantProductionCandidateM7CloseoutSpec` aggregates the ready M6 report, ready activation-policy report, conservative and approved config/no-regression reports, explicit opt-in planning decision, blocked production and hybrid decisions, and the existing active/pending route-boundary spec evidence. This closeout is planning evidence only; it does not approve or implement serving.
+`QdrantProductionCandidateM7CloseoutSpec` aggregates the ready M6 report, ready activation-policy report, conservative and approved config/no-regression reports, explicit opt-in planning decision, blocked production and hybrid decisions, and route-boundary spec evidence. The explicit opt-in route now consumes this evidence through `QdrantExplicitOptInRoutePrerequisites`; production activation remains unapproved.
 
 ## F2. Hybrid Control-Plane v0
 

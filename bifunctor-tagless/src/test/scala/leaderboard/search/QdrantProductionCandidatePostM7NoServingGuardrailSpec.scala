@@ -4,7 +4,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWordSpec {
   "post-M7 Qdrant evidence" should {
-    "remain capture-only and imply no serving or route behavior while explicit approval is absent" in {
+    "remain explicit-opt-in only and imply no production route activation after scoped implementation approval" in {
       val evidence = postM7Evidence
 
       assert(evidence.m7CloseoutSpec == classOf[QdrantProductionCandidateM7CloseoutSpec].getSimpleName)
@@ -12,7 +12,7 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
       assert(evidence.decisionBundle == Option72DecisionBundle(
         acceptedAsCaptureOnlyEvidence = true,
         supportsAskingForFutureExplicitOptInApproval = true,
-        approvesRouteImplementation = false,
+        approvesDisabledByDefaultExplicitOptInRouteImplementation = true,
         approvesProductionRouteActivation = false,
       ))
       assert(evidence.routeBoundarySpecs == Set(
@@ -24,8 +24,8 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
 
       assert(evidence.noServingClaims == NoServingClaims(
         productionActivationApproved = false,
-        qdrantServingRouteExists = false,
-        qdrantOptInServingRouteImplemented = false,
+        qdrantDefaultServingRouteExists = false,
+        qdrantOptInServingRouteImplemented = true,
         routeSwitchExists = false,
         beautySearchBehaviorChanged = false,
         hybridServingExists = false,
@@ -43,9 +43,9 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
         backend = "seed-resource catalog snapshot + ElasticsearchSearchBackend",
       ))
       assert(evidence.pendingQdrantBoundary == PendingQdrantBoundary(
-        explicitOptInRouteImplementationApproved = false,
+        explicitOptInRouteImplementationApproved = true,
         productionRouteActivationApproved = false,
-        qdrantServingRouteAdded = false,
+        qdrantExplicitOptInRouteAdded = true,
         routeSwitchAdded = false,
       ))
     }
@@ -64,7 +64,7 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
   private final case class Option72DecisionBundle(
     acceptedAsCaptureOnlyEvidence: Boolean,
     supportsAskingForFutureExplicitOptInApproval: Boolean,
-    approvesRouteImplementation: Boolean,
+    approvesDisabledByDefaultExplicitOptInRouteImplementation: Boolean,
     approvesProductionRouteActivation: Boolean,
   )
 
@@ -77,13 +77,13 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
   private final case class PendingQdrantBoundary(
     explicitOptInRouteImplementationApproved: Boolean,
     productionRouteActivationApproved: Boolean,
-    qdrantServingRouteAdded: Boolean,
+    qdrantExplicitOptInRouteAdded: Boolean,
     routeSwitchAdded: Boolean,
   )
 
   private final case class NoServingClaims(
     productionActivationApproved: Boolean,
-    qdrantServingRouteExists: Boolean,
+    qdrantDefaultServingRouteExists: Boolean,
     qdrantOptInServingRouteImplemented: Boolean,
     routeSwitchExists: Boolean,
     beautySearchBehaviorChanged: Boolean,
@@ -99,7 +99,7 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
       decisionBundle = Option72DecisionBundle(
         acceptedAsCaptureOnlyEvidence = true,
         supportsAskingForFutureExplicitOptInApproval = true,
-        approvesRouteImplementation = false,
+        approvesDisabledByDefaultExplicitOptInRouteImplementation = true,
         approvesProductionRouteActivation = false,
       ),
       routeBoundarySpecs = Set(
@@ -114,15 +114,15 @@ final class QdrantProductionCandidatePostM7NoServingGuardrailSpec extends AnyWor
         backend = "seed-resource catalog snapshot + ElasticsearchSearchBackend",
       ),
       pendingQdrantBoundary = PendingQdrantBoundary(
-        explicitOptInRouteImplementationApproved = false,
+        explicitOptInRouteImplementationApproved = true,
         productionRouteActivationApproved = false,
-        qdrantServingRouteAdded = false,
+        qdrantExplicitOptInRouteAdded = true,
         routeSwitchAdded = false,
       ),
       noServingClaims = NoServingClaims(
         productionActivationApproved = false,
-        qdrantServingRouteExists = false,
-        qdrantOptInServingRouteImplemented = false,
+        qdrantDefaultServingRouteExists = false,
+        qdrantOptInServingRouteImplemented = true,
         routeSwitchExists = false,
         beautySearchBehaviorChanged = false,
         hybridServingExists = false,
