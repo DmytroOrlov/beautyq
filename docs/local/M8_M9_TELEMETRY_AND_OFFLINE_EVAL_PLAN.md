@@ -17,7 +17,7 @@ It does not approve or implement:
 - shadow serving;
 - traffic mirroring;
 - production telemetry code;
-- ES/Qdrant backend eval runner code.
+- real ES/Qdrant backend eval runner execution.
 
 Implemented pure slices:
 
@@ -31,9 +31,11 @@ Implemented pure slices:
 - `leaderboard.search.M9OfflineEvalStaticFixturesSpec` locks fixture query-class coverage, stable order, static-runner assembly, checked-in resource parity, non-activation quality decision, and the non-serving boundary. The checked-in artifact is `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md`.
 - `leaderboard.search.eval.M9OfflineEvalBackendRunner` defines the first pure backend-runner interface slice: execution modes, execution plans, run/query requests, candidates, query results, failures-as-data, run responses, a static/manual adapter, and conversion to `M9OfflineEvalStaticRunInput`.
 - `leaderboard.search.M9OfflineEvalBackendRunnerSpec` locks the vocabulary-only ES-only/Qdrant-only/future-hybrid modes, manual/static adapter boundary, deterministic missing-id validation, failure-as-data rows, static-runner compatibility, no hidden fallback field, and no route/plugin/DI/HTTP/Docker/client surface.
+- `leaderboard.search.eval.M9OfflineEvalRealBackendAdapterSkeleton` defines pure ES-only and Qdrant-only offline adapter skeletons behind the backend-runner interface. They accept caller-supplied static rows or return not-connected/backend-failure data, enforce source/mode attribution, keep latency absence visible as warnings, and do not connect to ES, Qdrant, HTTP, routes, Distage, plugins, Docker, or metrics clients.
+- `leaderboard.search.M9OfflineEvalRealBackendAdapterSkeletonSpec` locks ES-only/Qdrant-only attribution, not-connected failures-as-data, source/mode mismatch rejection, missing attribution validation, static-runner compatibility, latency-missing warnings, production-activation non-approval, and the no-hybrid/fallback/fusion/reranking/serving boundary.
 - `leaderboard.search.eval.M8TelemetrySchemaRenderer` defines the first pure M8 telemetry schema renderer/static schema adapter slice: stable schema format version, deterministic markdown and compact text renderers, planned event-family field schemas, metric schemas, and explicit conditional-future marking for fusion/rerank/fallback/interaction metrics.
 - `leaderboard.search.M8TelemetrySchemaRendererSpec` locks event-family order, stable format version, rendered planned field/metric names, conditional-future metric marking, non-emission boundary, no route/plugin/DI/HTTP/backend-client surface, and byte-for-byte repeat rendering.
-- This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, real ES adapter, real Qdrant adapter, backend client integration, hybrid serving, fusion, or reranking.
+- This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, real ES client adapter, real Qdrant client adapter, backend client integration, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
 
@@ -44,7 +46,7 @@ Current route truth is owned by `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, not
 - default production `/beauty-search` remains ES-backed;
 - Qdrant explicit opt-in exists and stays disabled by default;
 - production activation is not approved;
-- production telemetry emission, metrics client integration, route hooks, and offline ES/Qdrant backend-runner execution are not implemented;
+- production telemetry emission, metrics client integration, route hooks, and real offline ES/Qdrant backend-runner execution are not implemented;
 - there is no real production traffic in this project context yet.
 
 For exact route/module names, verification counts, and activation boundary wording, use the handoff plus `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
@@ -194,7 +196,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, checked-in example markdown artifact, and first pure backend-runner interface/value-contract slice are implemented. Real ES/Qdrant backend runner execution remains unimplemented.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, checked-in example markdown artifact, first pure backend-runner interface/value-contract slice, and pure ES/Qdrant offline adapter skeletons are implemented. Real ES/Qdrant backend runner execution remains unimplemented.
 
 Planned dataset coverage:
 
@@ -230,12 +232,12 @@ Dataset/reporting requirements:
 
 ### M9 backend-runner execution seam
 
-Pure interfaces only. `M9OfflineEvalBackendRunner` now models the future execution seam as value contracts and a manual/static adapter. It must not be described as production telemetry, production activation, route approval, serving approval, or real ES/Qdrant execution.
+Pure interfaces and skeletons only. `M9OfflineEvalBackendRunner` models the future execution seam as value contracts and a manual/static adapter. `M9OfflineEvalRealBackendAdapterSkeleton` adds ES-only and Qdrant-only offline skeleton adapters that accept caller-supplied rows or return typed not-connected failures as data. They must not be described as production telemetry, production activation, route approval, serving approval, or real ES/Qdrant execution.
 
 Backend-runner purpose:
 
 - provide the seam for later turning the current M9 static report contracts into real offline eval execution over explicit offline inputs;
-- connect future offline eval runs to real ES-only and Qdrant-only execution paths through explicit offline adapters only;
+- connect future offline eval runs to real ES-only and Qdrant-only execution paths through explicit offline adapters only after real execution adapters are separately implemented;
 - feed later backend results into the existing `M9OfflineEvalBackendRunner` interfaces;
 - run against explicit offline inputs only;
 - produce the existing `M9OfflineEvalSavedReport` artifact shape through the current saved-report model and renderer and the static runner/report-renderer path;
@@ -249,7 +251,23 @@ Implemented pure interface vocabulary:
 - `manual_static_sample`;
 - `unknown`.
 
-Backend execution seams:
+Implemented skeleton seams:
+
+- ES-only offline adapter skeleton:
+  - records `serving_mode = es_only` and `candidate_source = es`;
+  - accepts caller-supplied static rows or returns typed not-connected/backend-failure data;
+  - rejects source/mode mismatches deterministically;
+  - warns when latency metrics are absent;
+  - does not instantiate an ES client, call `/beauty-search`, or reuse production route/module/plugin surfaces.
+- Qdrant-only offline adapter skeleton:
+  - records `serving_mode = qdrant_only` and `candidate_source = qdrant`;
+  - accepts caller-supplied static rows or returns typed not-connected/backend-failure data;
+  - represents embedding/vector prerequisites as metadata warnings only;
+  - rejects source/mode mismatches deterministically;
+  - warns when latency metrics are absent;
+  - does not instantiate a Qdrant client, activate the explicit opt-in route, or imply Qdrant is default production.
+
+Future backend execution seams:
 
 - ES-only offline execution seam:
   - runs explicit offline dataset queries against an approved offline ES adapter;
@@ -330,10 +348,9 @@ Stop conditions for any later implementation:
 
 Implementation candidates for a later patch:
 
-- pure adapter interface alignment spec;
-- ES offline adapter skeleton;
-- Qdrant offline adapter skeleton;
 - adapter failure fixtures;
+- real ES offline execution adapter;
+- real Qdrant offline execution adapter;
 - saved-report integration spec using the existing M9 saved-report shape;
 - quality-gate integration spec;
 - focused specs that pin the offline boundary, attribution requirements, failure handling, and no-serving guarantees;
@@ -432,7 +449,7 @@ Future implementation slices may include:
 - M8 telemetry emission hooks
 - M8 metric emission hooks
 - M9 offline eval runner that reads the saved dataset format
-- M9 ES/Qdrant comparison runner
+- M9 ES/Qdrant comparison runner after real offline execution adapters exist
 - M9 report persistence/writer around the implemented renderer
 - M9 quality gate update
 
