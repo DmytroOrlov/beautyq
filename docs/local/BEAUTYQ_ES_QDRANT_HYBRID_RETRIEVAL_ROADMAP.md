@@ -31,7 +31,7 @@ Keep the current-state block short here:
 - Qdrant explicit opt-in exists and stays disabled by default.
 - Production activation remains not approved.
 - Hybrid serving, fallback, fusion, reranking, telemetry emission, and real ES/Qdrant backend-runner execution remain future work.
-- Pure ES/Qdrant offline adapter skeletons for M9 exist under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; they are offline eval foundations only and do not imply route activation.
+- Pure ES/Qdrant offline adapter skeletons for M9 exist under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; they are offline eval foundations only and do not imply route activation. Real offline adapter execution is planned only behind an explicit resource gate (section 6.1 of that doc); it is not implemented.
 
 For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 

@@ -10,7 +10,7 @@ Status ownership:
 - Pending/canceled test meaning and verification evidence: `docs/codebase-review/06-tests-and-contracts.md`
 - Qdrant production-activation boundary: `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`
 - ES/Qdrant/hybrid future-serving roadmap: `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`
-- M8/M9 pure-slice, backend-runner status, and future real offline-adapter seam: `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`
+- M8/M9 pure-slice, backend-runner status, future real offline-adapter seam, and real-adapter execution gate: `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`
 
 ## Confirmed Current Gaps
 
@@ -124,7 +124,7 @@ Preserved boundary:
 
 ### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
-Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the pure M8 telemetry schema renderer exists without emission, the M9 saved-report/static-runner fixture slices exist, the first pure backend-runner interface seam exists, pure ES/Qdrant offline adapter skeletons exist, and backend-adapter failure modes are hardened before real backend clients under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Real ES/Qdrant backend runner execution remains future work.
+Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the pure M8 telemetry schema renderer exists without emission, the M9 saved-report/static-runner fixture slices exist, the first pure backend-runner interface seam exists, pure ES/Qdrant offline adapter skeletons exist, backend-adapter failure modes are hardened before real backend clients, and the real-adapter execution gate is designed under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Option122 defines the real-adapter execution gate (explicit enablement, required inputs, stop conditions, future slices) but does not implement real backend calls. Real ES/Qdrant backend runner execution remains future work.
 
 ### Expanded roadmap lanes and milestone gates
 

@@ -362,6 +362,121 @@ Implementation candidates for a later patch:
 - focused specs that pin the offline boundary, attribution requirements, failure handling, and no-serving guarantees;
 - no production route integration unless separately approved.
 
+### 6.1. Real ES/Qdrant offline adapter execution gate
+
+This section designs the gate for a future resource-gated spike that runs real ES-only and Qdrant-only offline queries. It is planning only; it does not implement real backend clients, execution, route changes, or production activation.
+
+#### 6.1.1. Execution gate purpose
+
+- allow a future resource-gated offline adapter spike;
+- run real ES-only and Qdrant-only offline queries only when explicitly enabled;
+- preserve the existing M9 backend-runner interfaces, failure matrix, static runner, and saved report artifact shape;
+- prevent accidental production activation or route reuse.
+
+#### 6.1.2. Explicit enablement
+
+Real backend offline adapter execution must be gated by an explicit enablement mechanism:
+
+- require an env flag such as `RUN_REAL_BACKEND_OFFLINE_EVAL=1` or an equivalent test tag;
+- default must be disabled/skipped;
+- no real backend calls in normal focused validation;
+- no real backend calls in normal unit tests;
+- no production route calls;
+- the gate must be checked before any real ES/Qdrant client is constructed or any backend network call is made.
+
+#### 6.1.3. Required inputs before a real adapter spike may run
+
+A real adapter spike must not run unless every required input is explicitly provided and validated:
+
+| Input | Purpose | Example |
+|---|---|---|
+| `eval_dataset_id` | names the offline dataset or fixture bundle | `beautyq-m9-es-offline-v1` |
+| `catalog_snapshot_id` | identifies the catalog snapshot being evaluated | `seed-resource-catalog` |
+| explicit backend kind | ES or Qdrant; no implicit selection | `es_only_offline` or `qdrant_only_offline` |
+| explicit candidate source | must match backend kind | `es` or `qdrant` |
+| `experiment_id` | labels the run for traceability | `m9-real-es-spike-001` |
+| `request_id` policy | per-query correlation id strategy | caller-supplied or auto-generated |
+| backend endpoint/resource config | ES endpoint or Qdrant endpoint if applicable | `ElasticsearchPortCfg` or `QdrantPortCfg` |
+| `query_class` | explicit taxonomy label per query | `ExactProductNameBrand` |
+| max top-k | caps candidate count per query | `20` |
+| timeout budget | per-query and per-run timeout | `30s` per query |
+| failure/warning handling policy | how failures become data or warnings | `RightFailureRowsAsData` |
+| saved report output path | where the M9 artifact is written | `./.beautyq-evidence-runs/<run>/artifacts/` |
+| production activation non-approval confirmation | explicit statement that this run does not approve production activation | required in every saved report warning |
+
+#### 6.1.4. ES real adapter gate
+
+The real ES offline adapter must satisfy all of the following:
+
+- must use an explicit offline adapter surface, not `LeaderboardPlugin` or `/beauty-search`;
+- must not rely on the default production route;
+- must preserve `CandidateSource.Es` and `ServingMode.EsOnly` attribution;
+- ES failures become data/warnings through the existing `M9OfflineEvalBackendRunner` failure-row mechanism;
+- unavailable latency becomes a warning, not a hard failure;
+- no fallback to Qdrant;
+- no reuse of `BeautySearchRouteModules.apiElasticsearch` as an execution surface;
+- no Distage module integration unless a separate explicit resource-gating design is approved;
+- the adapter must be constructable without the production plugin graph.
+
+#### 6.1.5. Qdrant real adapter gate
+
+The real Qdrant offline adapter must satisfy all of the following:
+
+- must use an explicit offline adapter surface, not the default production route;
+- must not activate the explicit opt-in route as default;
+- must preserve `CandidateSource.Qdrant` and `ServingMode.QdrantOnly` attribution;
+- vector/embedding prerequisites must be explicit (embedding model identity, vector name, dimension, distance);
+- Qdrant failures become data/warnings through the existing failure-row mechanism;
+- unavailable latency becomes a warning, not a hard failure;
+- no fallback to ES;
+- no reuse of `BeautySearchRouteModules.apiQdrantExplicitOptIn` as an execution surface;
+- no Distage module integration unless a separate explicit resource-gating design is approved;
+- the adapter must be constructable without the production plugin graph or the explicit opt-in route.
+
+#### 6.1.6. Saved report/evidence output
+
+Real adapter output must satisfy all of the following:
+
+- output must feed `M9OfflineEvalBackendRunner` through the existing `toStaticRunInput` path;
+- output must pass the option121 failure matrix expectations;
+- output must assemble through `M9OfflineEvalStaticRunner`;
+- output must render through `M9OfflineEvalReportRenderer`;
+- the saved report must state that it is offline eval only, not production telemetry;
+- the saved report must not be used as production activation approval;
+- every saved report must carry the `production_activation_not_approved` warning;
+- the saved artifact must use the existing `M9OfflineEvalSavedReport` format version.
+
+#### 6.1.7. Stop conditions
+
+A real adapter spike must stop or not start if any of the following are true:
+
+- missing explicit enablement flag or test tag;
+- missing `eval_dataset_id`, `catalog_snapshot_id`, backend kind, candidate source, or `query_class`;
+- backend endpoint not configured;
+- hidden fallback attempted (e.g., ES failure silently replaced by Qdrant result);
+- candidate source missing or mismatched with adapter kind;
+- route/plugin/DI/HTTP production path used as execution surface;
+- production telemetry emitted;
+- report claims production activation is approved;
+- normal unit/focused validation attempts a real backend call;
+- the run is not explicitly marked as offline eval only.
+
+#### 6.1.8. Future implementation slices
+
+Planned slices for a future resource-gated spike:
+
+| Slice | Scope | Dependencies |
+|---|---|---|
+| 123 | real-client adapter spike behind manual/resource gate | this gate design; env flag; explicit inputs |
+| 124 | failure-matrix parity spec for real backend outputs | slice 123; option121 failure matrix |
+| 125 | saved-report artifact capture for gated run | slice 123; existing M9 saved-report renderer |
+| 126 | resource-gated ES-only smoke | slice 123; ES endpoint config |
+| 127 | resource-gated Qdrant-only smoke | slice 123; Qdrant endpoint config; embedding prerequisites |
+| 128 | offline comparison report over real backend outputs | slices 126+127; existing M9 comparison path |
+| later | no production route integration unless separately approved | separate approval required |
+
+These slices are planning only. They do not implement real backend clients, route changes, Distage module integration, or production activation.
+
 ## 7. M9 offline metrics
 
 Planned offline metrics:
@@ -458,5 +573,6 @@ Future implementation slices may include:
 - M9 ES/Qdrant comparison runner after real offline execution adapters exist
 - M9 report persistence/writer around the implemented renderer
 - M9 quality gate update
+- Real ES/Qdrant offline adapter spike behind the explicit resource gate defined in section 6.1
 
 These are handoff candidates only. This document does not approve code changes, tests, route wiring changes, plugin changes, DI changes, or HTTP changes.

@@ -19,6 +19,7 @@ What matters in this plan:
 * simulated hybrid remains benchmark/eval only;
 * any later hybrid eval execution must flow through the pure offline M9 backend-runner interface before any serving change is considered.
 * pure ES/Qdrant offline adapter skeletons now prove attribution checks only; future hybrid comparison must wait for real ES/Qdrant offline execution evidence, not just skeleton output.
+* real ES/Qdrant offline adapter execution is planned only behind an explicit resource gate defined in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1; it is not implemented.
 * the M9 backend-adapter failure matrix now hardens source/mode/failure rules before real backend execution; future hybrid comparison must preserve those rules.
 * any later hybrid fusion/reranking experiment depends first on explicit ES/Qdrant offline adapter attribution in that M9 seam; do not hide candidate origin inside comparison logic.
 * any later hybrid telemetry field/metric naming must align with the pure M8 telemetry schema renderer before route hooks, metrics-client integration, or production telemetry are added.
