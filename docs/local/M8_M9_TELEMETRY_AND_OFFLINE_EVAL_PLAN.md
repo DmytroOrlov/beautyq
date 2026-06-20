@@ -23,6 +23,8 @@ Implemented first slice:
 
 - `leaderboard.search.eval.M8M9EvalContracts` defines shared vocabulary, offline eval report metadata/summary contracts, and telemetry schema-plan contracts.
 - `leaderboard.search.M8M9EvalContractsSpec` locks stable string rendering, query-class taxonomy coverage, planned M9 metric names, planned M8 event families, and the vocabulary-only status of hybrid/fusion/reranker terms.
+- `leaderboard.search.eval.M9OfflineEvalSavedReport` defines the pure M9 saved dataset/report format, stable format version, markdown artifact wrapper, and deterministic markdown renderer.
+- `leaderboard.search.M9OfflineEvalSavedReportSpec` locks representative markdown output, metadata/metric/row attribution, negative/out-of-catalog query representation, and the non-serving boundary.
 - This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, ES/Qdrant runner, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
@@ -202,7 +204,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, and report-summary contracts are implemented; the offline runner/harness remains unimplemented.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, and deterministic markdown renderer are implemented; the offline runner/harness remains unimplemented.
 
 Planned dataset coverage:
 
@@ -252,7 +254,7 @@ Planned offline metrics:
 - regression pass/fail
 - quality gate decision
 
-These metric names are implemented as `OfflineEvalMetricName.plannedM9Metrics`. Report summaries can carry metadata, query-class slices, and aggregate metrics, but no ES/Qdrant querying runner or report writer is implemented by this slice.
+These metric names are implemented as `OfflineEvalMetricName.plannedM9Metrics`. Report summaries can carry metadata, query-class slices, and aggregate metrics. `M9OfflineEvalSavedReport` can also carry per-query rows, aggregate metrics, quality-gate decision text, notes, and warnings for deterministic markdown rendering, but no ES/Qdrant querying runner is implemented by this slice.
 
 Reporting rule:
 
@@ -297,6 +299,7 @@ Planned saved artifacts:
 
 Artifact guidance:
 
+- The M9 markdown saved-report artifact is implemented as `M9OfflineEvalReportRenderer.markdownArtifact`; it is deterministic and states that backend execution is not represented by the artifact.
 - Saved artifacts should preserve the shared vocabulary fields from section 3.
 - Backend attribution summaries should use `candidate_source` and `serving_mode`.
 - Comparison artifacts should keep offline evidence separate from any future telemetry dashboards or online summaries.
@@ -326,9 +329,9 @@ Future implementation slices may include:
 
 - M8 telemetry emission hooks
 - M8 metric emission hooks
-- M9 offline eval dataset format
+- M9 offline eval runner that reads the saved dataset format
 - M9 ES/Qdrant comparison runner
-- M9 report writer
+- M9 report persistence/writer around the implemented renderer
 - M9 quality gate update
 
 These are handoff candidates only. This document does not approve code changes, tests, route wiring changes, plugin changes, DI changes, or HTTP changes.

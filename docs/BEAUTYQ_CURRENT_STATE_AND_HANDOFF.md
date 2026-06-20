@@ -24,7 +24,7 @@ Use this section as the load-bearing source truth for coordination. Other docs s
 * Production route activation remains not approved.
 * The activation decision boundary is documented separately in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. Existing green evidence is sufficient for the disabled-by-default opt-in route only; it does not approve any future default `/beauty-search` switch.
 * The broader ES + Qdrant + hybrid retrieval end-state roadmap is documented separately in `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
-* Future M8 production-telemetry planning and M9 offline-eval-harness planning are paired in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; the first pure shared vocabulary/reporting contract slice exists in `leaderboard.search.eval.M8M9EvalContracts`, but telemetry emission, offline runners, route changes, hybrid serving, fusion, reranking, and production activation remain unimplemented.
+* Future M8 production-telemetry planning and M9 offline-eval-harness planning are paired in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; pure shared vocabulary/reporting contracts exist in `leaderboard.search.eval.M8M9EvalContracts`, and the pure M9 saved dataset/report format plus deterministic markdown renderer exists in `leaderboard.search.eval.M9OfflineEvalSavedReport`, but telemetry emission, offline runners, route changes, hybrid serving, fusion, reranking, and production activation remain unimplemented.
 * There is no real production traffic in this project context. Shadow serving and production traffic mirroring are therefore future-only, non-blocking, and not useful as current readiness evidence.
 * Pending expectations map:
   * The former `5` pending expectations in `BeautySearchOptInRouteModuleSpec` are now active tests for the explicit opt-in route module and prerequisite gate.
@@ -130,6 +130,7 @@ Documented as characterized, not as desired final contract:
 * **B1/B2**: production-hidden activation/handle + targeted control-plane module proof — reached.
 * First B-lite pure `EngineEval` model — implemented.
 * First pure M8/M9 shared vocabulary/reporting contract slice — implemented.
+* Pure M9 saved dataset/report format and deterministic markdown renderer — implemented.
 
 ## 5. Current priority: post-M7 serving decision remains separate
 

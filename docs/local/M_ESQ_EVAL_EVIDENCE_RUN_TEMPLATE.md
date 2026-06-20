@@ -6,7 +6,7 @@ Copy/adapt this template before collecting M-ESQ-EVAL evidence. All commands are
 
 Metric naming in this template remains the current evidence-run format. Future evidence reports should align with the implemented shared M8/M9 contracts in `leaderboard.search.eval.M8M9EvalContracts`: `ServingMode`, `CandidateSource`, `QueryClass`, `CatalogSnapshotId`, `EvalDatasetId`, `MetricWindow`, and `OfflineEvalMetricName`.
 
-The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. The shared M8/M9 contracts are a pure vocabulary/reporting foundation only; they do not add telemetry emission, a new offline runner, route behavior, hybrid serving, fusion, or reranking.
+The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. `leaderboard.search.eval.M9OfflineEvalSavedReport` adds a pure saved dataset/report model and deterministic markdown renderer for the planned M9 format; it does not add telemetry emission, a new offline runner, route behavior, hybrid serving, fusion, or reranking.
 
 ## Non-goals
 
@@ -68,6 +68,7 @@ Suggested local artifact filenames for saved-report comparisons:
 * `right-query-classes.json`
 * candidate-specific variants such as `query-classes.benchmark-small.json`
 * candidate-specific variants such as `query-classes.benchmark-large.json`
+* M9 saved markdown artifacts such as `m9-offline-eval.<label>.md`, when a future manual step materializes `M9OfflineEvalSavedReport`
 
 Bundle the workspace only after a run is complete:
 
@@ -342,6 +343,14 @@ Saved comparisons from that run:
 | sidecar source / derivation note | |
 | optional comparison inputs / output | |
 | class-delta comparison output path | |
+| M9 report format version | |
+| M9 generated_at | |
+| M9 eval_dataset_id | |
+| M9 catalog_snapshot_id | |
+| M9 serving_mode / candidate_source | |
+| M9 aggregate metrics | |
+| M9 quality gate decision | |
+| M9 notes / warnings | |
 | validation actually run | |
 | notes / non-goals | |
 ```

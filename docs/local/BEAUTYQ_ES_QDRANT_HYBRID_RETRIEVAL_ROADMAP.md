@@ -45,7 +45,7 @@ Rough wording translated to technical terms:
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, telemetry schema-plan, and offline report metadata contracts exist; no runtime behavior. |
+| M8/M9 shared contracts | Started | Pure vocabulary, telemetry schema-plan, offline report metadata contracts, M9 saved dataset/report format, and deterministic markdown renderer exist; no runtime behavior. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -68,7 +68,7 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
-Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The first foundation slice is implemented only as pure shared contracts in `leaderboard.search.eval.M8M9EvalContracts`.
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The foundation slices implemented so far are pure shared contracts in `leaderboard.search.eval.M8M9EvalContracts` plus the M9 saved dataset/report format and deterministic markdown renderer in `leaderboard.search.eval.M9OfflineEvalSavedReport`.
 
 - define request/result event schema plan;
 - record backend attribution;
@@ -83,11 +83,14 @@ Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop condition
 Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` and `leaderboard.search.eval.M8M9EvalContracts` so offline eval and any later telemetry do not drift apart.
 
 - define curated canonical seed queries;
+- define and render saved M9 dataset/report artifacts;
 - keep representative seed/eval fixture queries;
 - include regression, edge, negative, and ambiguous cases;
 - compare ES-only, Qdrant-only, and simulated hybrid offline;
 - track Recall@K, MRR, nDCG@K, zero-result rate, and latency;
 - keep the overfitting warning explicit.
+
+The saved-report format and renderer slice is implemented. The stronger offline eval harness, ES/Qdrant backend runner, report persistence workflow, and quality-gate update remain future work.
 
 ### M10. Query classification and routing policy
 
