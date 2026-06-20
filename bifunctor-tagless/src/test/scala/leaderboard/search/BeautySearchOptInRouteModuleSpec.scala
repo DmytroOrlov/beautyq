@@ -194,6 +194,28 @@ final class BeautySearchOptInRouteModuleSpec extends AnyWordSpec with HttpContra
           .exists(_.activationReport.policy.scope == QdrantProductionCandidateActivationScope.FutureExplicitOptInRouteOnly)
       )
     }
+
+    "keep readiness evidence independent of shadow serving, mirroring, and production traffic" in {
+      val prerequisites =
+        QdrantExplicitOptInRoutePrerequisites
+          .fromReports(allReadyReadinessReport, explicitOptInActivationReport, approvedConfigReport)
+
+      prerequisites match {
+        case Right(value) =>
+          val fields = value.productElementNames.toSet
+          val forbiddenTerms = List("shadow", "mirror", "traffic", "telemetry", "production")
+
+          assert(fields == Set(
+            "readinessReport",
+            "activationReport",
+            "configApprovalReport",
+            "planningDecision",
+          ))
+          assert(!fields.exists(field => forbiddenTerms.exists(field.toLowerCase.contains)))
+        case Left(failure) =>
+          fail(s"expected ready explicit opt-in prerequisites, got $failure")
+      }
+    }
   }
 
   private val allReadyState =

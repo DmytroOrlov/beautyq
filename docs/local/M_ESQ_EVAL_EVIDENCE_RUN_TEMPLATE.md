@@ -14,12 +14,17 @@ This template does **not** represent:
 * Score fusion or reranking
 * HybridServe activation
 * Qdrant auto-supplement approval
+* Shadow-serving or production traffic-mirroring evidence
+
+There is no real production traffic in this project context. Treat all metrics collected here as offline seed/eval evidence over curated canonical seed queries and representative seed/eval fixture queries. Include regression, edge, and negative cases when selecting query subsets so the evidence is not just a narrow happy-path fit.
 
 ## Activation evidence boundary
 
 An assembled or decoded saved `EngineEvalAggregateReport` may be evaluated by `QdrantProductionCandidateQualityGate.fromEngineEval`. Its quality decision may then be mapped to no-regression evidence by `QdrantProductionCandidateActivationConfigApproval.noRegressionEvidenceFromQuality`.
 
 This mapping is evidence-facing only: passed quality supplies satisfied evidence, failed quality supplies missing/unsatisfied evidence, and absent or incomplete quality remains unknown. It does not approve that evidence, enable a config gate, approve route/serving, or change production behavior.
+
+For the explicit opt-in Qdrant route, this run can supply only the saved/offline eval and no-regression part of the prerequisite package. Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the operator still needs a ready M6 report, ready M7 activation-policy report, enabled config gate, explicitly approved no-regression evidence, observability/status evidence, rollback/disable control, focused route/module safety checks, and separate explicit route/serving approval. Full verification remains a coordinator/user step.
 
 ## Workspace
 

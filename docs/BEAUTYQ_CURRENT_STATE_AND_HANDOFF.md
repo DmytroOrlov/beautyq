@@ -20,7 +20,9 @@ Use this section as the load-bearing source truth for coordination. Other docs s
 * ES post-M5 future-track planning is closed as planning only.
 * Qdrant implementation approval is now granted only for disabled-by-default explicit opt-in route wiring.
 * `BeautySearchRouteModules.apiQdrantExplicitOptIn` / `seedCatalogQdrantExplicitOptIn` implement that explicit route path. It is not included by `apiElasticsearch` or `LeaderboardPlugin`.
+* Explicit opt-in Qdrant route construction requires a ready M6 production-candidate report, ready M7 activation-policy report, enabled config gate, approved no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. These are offline/evidence prerequisites, not production traffic telemetry.
 * Production route activation remains not approved.
+* There is no real production traffic in this project context. Shadow serving and production traffic mirroring are therefore future-only, non-blocking, and not useful as current readiness evidence.
 * Pending expectations map:
   * The former `5` pending expectations in `BeautySearchOptInRouteModuleSpec` are now active tests for the explicit opt-in route module and prerequisite gate.
   * The former `1` pending expectation in `BeautySearchProductionRouteExposureSpec` is now active coverage preserving that `POST /beauty-search` stays ES-backed until separate production-route activation approval exists.
@@ -158,6 +160,7 @@ Documented as characterized, not as desired final contract:
 * **M7 is closed as the activation/source-confirmation and serving-policy planning foundation.** The pure planning/config/no-regression layers are now consumed by the disabled-by-default explicit opt-in Qdrant route gate. They still do not approve production route activation, route switching, shadow serving, traffic mirroring, fallback, score fusion, reranking, or hybrid serving.
 * Source-confirmed route seams remain separated: `BeautySearchApi` and `BeautySearchTapirEndpoints` remain backend-agnostic; `BeautySearchRouteModules.apiElasticsearch` selects the current production ES seed composition; `LeaderboardPlugin` includes that ES route directly. `BeautySearchRouteModules.apiQdrantExplicitOptIn` is a separate explicit module and is not included by the default production graph.
 * `QdrantProductionCandidateServingApprovalRequest` remains the historical approval-request boundary. Implementation approval now exists only for disabled-by-default explicit opt-in route wiring, and `/beauty-search` remains ES-backed until separate production-route activation approval.
+* Explicit opt-in route readiness is judged without real production traffic by combining curated canonical seed queries over the seed-resource catalog snapshot, saved/offline eval evidence, no-regression approval, quality-gate evidence, prerequisite-gate construction evidence, focused route/module safety specs, and full verification by the coordinator/user. The seed/eval query set must include representative seed/eval fixture queries plus regression, edge, and negative cases to reduce overfitting.
 * `seedCatalogInMemory` remains available as rollback/non-default.
 * Simulated hybrid is offline benchmark/eval only.
 

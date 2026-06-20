@@ -304,6 +304,7 @@ Non-production Qdrant/hybrid runner status:
 Production-wired/current:
 
 - No Qdrant production search binding was found in `LeaderboardPlugin.scala`; the Qdrant route is explicit opt-in only.
+- `BeautySearchRouteModules.apiQdrantExplicitOptIn` is a separate disabled-by-default route module. It consumes `QdrantExplicitOptInRoutePrerequisites`, which is built from M6 readiness, M7 activation-policy, config/no-regression approval, and the derived explicit-opt-in planning decision. The prerequisite handle intentionally has no shadow-serving, mirroring, production-traffic, fallback, fusion, reranking, or hybrid-serving field.
 - `docs/search-dsl-qdrant-vector-backend.md` records the pure production-candidate readiness foundation plus non-production runtime experiments; neither is production lifecycle/routing/fallback/hybrid wiring.
 
 What not to infer:
@@ -311,6 +312,7 @@ What not to infer:
 - Qdrant is not the production search backend.
 - Qdrant is not a production fallback.
 - Qdrant readiness tests do not prove production rollout readiness.
+- Shadow serving and production traffic mirroring are not current readiness inputs because this project context has no real production traffic to mirror. Current readiness evidence is offline: curated canonical seed queries over the seed-resource catalog snapshot, saved EngineEval/no-regression reports, quality-gate reports, prerequisite-gate tests, focused route/module specs, and later full verification by the coordinator/user.
 
 ## F. Hybrid / Generic Retrieval Path
 
@@ -422,6 +424,22 @@ The explicit opt-in route planning scope requires M6 `productionCandidateReady =
 The source-confirmed explicit Qdrant opt-in seam is a separate route module outside `BeautySearchRouteModules.apiElasticsearch`: `BeautySearchApi` and `BeautySearchTapirEndpoints` are backend-agnostic, `BeautySearchPluginModules.api` contributes the HTTP API only when included, route modules select the backend composition, and `LeaderboardPlugin` currently includes `apiElasticsearch` directly. Active route expectations consume `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, alongside M6 readiness, activation-policy readiness, observability/status, rollback/disable, and separate route/serving approval. No default Qdrant route or route switch exists. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
 
 `QdrantProductionCandidateM7CloseoutSpec` aggregates the ready M6 report, ready activation-policy report, conservative and approved config/no-regression reports, explicit opt-in planning decision, blocked production and hybrid decisions, and route-boundary spec evidence. The explicit opt-in route now consumes this evidence through `QdrantExplicitOptInRoutePrerequisites`; production activation remains unapproved.
+
+### F1.7. Explicit opt-in Qdrant readiness without production traffic
+
+`BeautySearchRouteModules.apiQdrantExplicitOptIn` may be assembled only after the following evidence exists in the local/coordinator context:
+
+- M6 `QdrantProductionCandidateReadinessReport` with `productionCandidateReady = true`.
+- M7 `QdrantProductionCandidateActivationReport` with explicit approval scoped to `FutureExplicitOptInRouteOnly`.
+- `QdrantProductionCandidateActivationConfigApprovalReport` with the config gate enabled and no-regression evidence both satisfied and approved.
+- Observability/status evidence and rollback/disable control marked satisfied.
+- Separate route/serving approval for the explicit opt-in route only.
+- Saved/offline eval evidence interpreted through the quality gate and no-regression approval flow.
+- Focused route/module specs proving the opt-in module remains separate from default `apiElasticsearch` and the default production graph remains ES-backed.
+
+Ready does not mean production-route activation. It means the explicit opt-in route can be constructed for a bounded manual/operator path using seed-resource catalog documents and a separately supplied semantic candidate backend.
+
+Because this project has no real production traffic, shadow serving and traffic mirroring are deferred. They cannot provide meaningful empirical production-distribution metrics today and are not blockers for the current readiness model. The current metric source is curated canonical seed queries plus representative seed/eval fixture queries, including regression, edge, and negative cases, interpreted as offline decision support rather than production telemetry.
 
 ## F2. Hybrid Control-Plane v0
 

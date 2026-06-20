@@ -101,12 +101,14 @@ Milestone reached:
 Remaining gap:
 
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
+- The explicit opt-in Qdrant route is disabled by default and prerequisite-gated; it is not included by `apiElasticsearch` or `LeaderboardPlugin`.
+- Current readiness evidence is offline and seed/eval based. It uses curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/no-regression reports, quality-gate reports, route/module specs, and full verification by the coordinator/user. It is not production telemetry.
 
 Coordinator decision:
 
 - Qdrant remains an active target.
 - Shadow-first is not required.
-- Real shadow serving and production traffic mirroring are not active objectives.
+- Real shadow serving and production traffic mirroring are not active objectives and are not blockers for the current explicit opt-in readiness model because there is no real production traffic to mirror.
 - Future Qdrant work should move toward direct production-candidate readiness, not shadow machinery, unless a later business decision explicitly re-approves shadow traffic.
 
 ### Current phase: ES seed route reached, B-lite eval continues
@@ -285,6 +287,12 @@ Closed M7 activation planning/source-confirmation foundation:
 - `QdrantProductionCandidateM7CloseoutSpec` aggregates the accepted pure prerequisites and route-boundary spec evidence while keeping production activation blocked and hybrid serving conditional.
 - `QdrantProductionCandidatePostM7NoServingGuardrailSpec` records the post-M7 boundary: M7 closeout, offline eval/no-regression evidence, and the accepted capture-only Option72 decision bundle still do not approve implementation, production route activation, a Qdrant serving route, opt-in Qdrant serving route, route switch, `/beauty-search` behavior change, hybrid serving, shadow serving, or production traffic mirroring.
 - `QdrantProductionCandidateServingApprovalRequest` remains the historical approval-request closeout boundary. The current slice grants implementation approval only for disabled-by-default explicit opt-in route wiring; it does not approve production activation, default route switching, hybrid serving, fallback, score fusion, reranking, shadow serving, or traffic mirroring.
+
+Explicit opt-in route readiness model:
+
+- Ready means M6 production-candidate readiness, M7 explicit-opt-in activation policy, enabled config gate, approved no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval have all been satisfied before assembling `apiQdrantExplicitOptIn`.
+- Ready does not mean production-route activation, default route switching, Qdrant-as-default, hybrid serving, fallback, score fusion, reranking, shadow serving, or traffic mirroring.
+- Curated seed/eval metrics are the current evidence surface. Use curated canonical seed queries and representative seed/eval fixture queries with regression, edge, and negative cases. Treat the metrics as offline decision support for the seed-resource snapshot, not as production-distribution telemetry.
 
 #### Lane D: Hybrid policy and serving
 

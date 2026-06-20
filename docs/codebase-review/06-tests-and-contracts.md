@@ -87,8 +87,31 @@ Current active Qdrant pure specs already prove the closeout boundary:
 - M7 is closed as the pure activation/source-confirmation and serving-policy planning foundation.
 - `QdrantProductionCandidateServingApprovalRequestSpec.scala` proves the historical approval-request readiness boundary.
 - A disabled-by-default explicit opt-in Qdrant route module exists. No production route activation, default route switch, hybrid serving, shadow serving, or traffic mirroring exists today.
+- `BeautySearchOptInRouteModuleSpec.scala` now also pins that `QdrantExplicitOptInRoutePrerequisites` remains an evidence-only prerequisite handle with readiness, activation, config/no-regression, and planning decision fields only. It must not grow shadow-serving, mirroring, production-traffic telemetry, fallback, fusion, reranking, or hybrid-serving semantics.
 
 No additional route/runtime/resource spec is required for this docs closeout because the current boundary is still pure planning/readiness evidence, not serving implementation.
+
+### Explicit opt-in Qdrant route readiness runbook
+
+Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the coordinator/operator evidence package must include:
+
+- A ready M6 `QdrantProductionCandidateReadinessReport`.
+- A ready M7 `QdrantProductionCandidateActivationReport` scoped to `FutureExplicitOptInRouteOnly`.
+- An enabled `QdrantProductionCandidateActivationConfigApprovalReport` with no-regression evidence satisfied and explicitly approved.
+- Observability/status evidence and rollback/disable controls marked satisfied.
+- Separate route/serving approval for the explicit opt-in route only.
+- Saved/offline eval evidence interpreted through `QdrantProductionCandidateQualityGate` and then through the no-regression approval adapter.
+
+Focused specs prove bounded facts:
+
+- `BeautySearchOptInRouteModuleSpec.scala`: opt-in Qdrant module remains separate, prerequisite-gated, and evidence-only.
+- `BeautySearchProductionRouteExposureSpec.scala`: default `POST /beauty-search` remains ES-backed.
+- `BeautySearchElasticsearchRouteModuleSpec.scala`, `BeautySearchElasticsearchHttpRouteModuleSpec.scala`, and `BeautySearchAppGraphBoundarySpec.scala`: ES/default route and graph boundaries stay intact.
+- Qdrant post-M7/quality/eval specs prove offline evidence and no-serving guardrails, not production activation.
+
+Full `sbt test` is still the coordinator/user verification step. It proves the wider suite remains compatible after the focused slice, but it is not run by default for focused Qdrant opt-in hardening tasks.
+
+Read curated seed/eval metrics as offline readiness evidence. Use curated canonical seed queries and representative seed/eval fixture queries, including regression, edge, and negative cases, to reduce overfitting. Do not describe them as production-distribution metrics. This project context has no real production traffic, so shadow serving and traffic mirroring are future-only and non-blocking for the current readiness model.
 
 ## HTTP Contract Tests
 

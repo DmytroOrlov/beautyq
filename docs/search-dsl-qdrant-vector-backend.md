@@ -8,6 +8,8 @@ Status summary:
 * `BeautySearchRouteModules.apiQdrantExplicitOptIn` implements the explicit route path and remains outside the default ES route.
 * Production route activation remains not approved.
 * Production `/beauty-search` remains ES-backed.
+* Explicit opt-in route readiness is judged from offline/seed/eval evidence, not production traffic telemetry.
+* Shadow serving and traffic mirroring remain future-only and non-blocking because there is no real production traffic in this project context.
 * The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, and the canonical 8-entry pending-expectation map lives in `docs/codebase-review/06-tests-and-contracts.md`.
 
 ## 1. Goal
@@ -103,6 +105,10 @@ The current path includes a source-backed production-candidate readiness foundat
 
 The readiness foundation is pure and route-independent. It is not production lifecycle completion, production routing, production fallback, or production hybrid wiring.
 
+The explicit opt-in route adds a construction prerequisite only: `QdrantExplicitOptInRoutePrerequisites` must be derived from a ready M6 production-candidate report, ready M7 activation-policy report, enabled config/no-regression approval report, and ready explicit-opt-in planning decision. That prerequisite is evidence-only and does not include shadow serving, traffic mirroring, production telemetry, fallback, score fusion, reranking, or hybrid serving.
+
+Current readiness without real production traffic is proven from curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/offline eval reports, quality-gate and no-regression decisions, prerequisite-gate tests, focused route/module specs, and full verification by the coordinator/user. Include regression, edge, and negative cases in the seed/eval set to reduce overfitting.
+
 `QdrantProductionCandidateServingApprovalRequest` is also pure and route-independent. It records the historical post-M7 evidence package that was ready to request explicit approval for a disabled-by-default explicit opt-in Qdrant route implementation. That implementation approval now exists only for explicit opt-in route wiring. It does not approve production activation, a default route switch, shadow serving, traffic mirroring, or hybrid serving.
 
 The real-resource non-production hybrid adapter boundary for future v0 is now recorded at docs level only.
@@ -154,6 +160,7 @@ The current Qdrant work explicitly excludes:
 * no Elasticsearch facet replacement
 * no BeautyQ-specific dictionary logic inside Qdrant interpreters
 * no eval query ids in main production routing code
+* no shadow serving or production traffic mirroring as current readiness prerequisites
 
 ## 4. Local prototype commands
 
