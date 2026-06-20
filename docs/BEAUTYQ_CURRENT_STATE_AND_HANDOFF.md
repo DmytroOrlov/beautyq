@@ -2,6 +2,8 @@
 
 Canonical handoff for new chats. Read this first, then see linked docs for deeper detail.
 
+For doc ownership by topic, duplication hotspots, and future keep/merge/link decisions, use `docs/local/BEAUTYQ_DOCS_INVENTORY_AND_CONSOLIDATION_MAP.md`. This handoff remains the first read for current truth; the inventory decides which companion doc is canonical for each repeated topic.
+
 ## 0. Coordinator source truth
 
 Use this section as the load-bearing source truth for coordination. Other docs should point here instead of restating the same status block.

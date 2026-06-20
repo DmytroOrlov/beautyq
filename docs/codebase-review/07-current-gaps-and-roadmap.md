@@ -2,6 +2,8 @@
 
 This file separates current gaps from future recommendations. Do not read recommendations as current implementation.
 
+For doc ownership, duplicate-topic mapping, and future keep/merge/link decisions, see `docs/local/BEAUTYQ_DOCS_INVENTORY_AND_CONSOLIDATION_MAP.md`. Any later deletion, archive, move, or rename should happen in a separate follow-up after that inventory is applied.
+
 Status ownership:
 
 - M5 closed as a bounded ES startup-readiness lifecycle checkpoint.
