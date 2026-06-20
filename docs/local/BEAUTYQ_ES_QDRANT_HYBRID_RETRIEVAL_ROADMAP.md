@@ -33,16 +33,7 @@ Rough wording translated to technical terms:
 - Deterministic opt-in smoke is green.
 - Real resource-gated Qdrant smoke is green.
 - Production activation for Qdrant remains not approved.
-- Hybrid serving is not implemented.
-- Route switch is not implemented.
-- Fallback is not implemented.
-- Score fusion is not implemented.
-- Reranking is not implemented.
-- `HybridServe` is not implemented.
-- Qdrant auto-supplement is not implemented.
-- Shadow serving is not implemented.
-- Traffic mirroring is not implemented.
-- Production telemetry loop is not implemented.
+- Hybrid serving, route switch, fallback, score fusion, reranking, `HybridServe`, Qdrant auto-supplement, shadow serving, traffic mirroring, and the production telemetry loop remain future work.
 - There is no real production traffic in this project context yet.
 
 ## 3. What Is Done vs Not Done
@@ -70,7 +61,7 @@ The desired end-state has several controlled modes:
 - Fusion or reranking only after it is separately implemented, tested, and approved.
 - Observability and rollback so a production decision can be reversed without ambiguity.
 
-This target is intentionally stricter than the current opt-in Qdrant readiness track. Opt-in readiness proves a separate route can be constructed and exercised. It does not prove that production should switch, that hybrid is safe, or that production telemetry exists.
+This target is stricter than the current opt-in Qdrant readiness track. Opt-in readiness proves a separate route can be constructed and exercised; it does not prove that production should switch, that hybrid is safe, or that production telemetry exists.
 
 ## 5. Roadmap Phases
 
