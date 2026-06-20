@@ -30,6 +30,7 @@ ES-native eval and Qdrant-native eval appear early and together
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
 M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is started by the pure `EngineEval` comparison model. M-ESQ-EVAL is not complete. EngineEval pure/report/assembly support exists, Qdrant benchmark run-output JSON markers exist, manual EngineEval saved-report assembly exists, manual EngineEval saved-report comparison exists. Current next step is operational saved-output/runbook/evidence workflow: run/collect concrete ES + selected Qdrant artifacts, assemble EngineEval aggregate reports, compare saved reports, and use evidence for later shadow/hybrid decisions. Still offline/eval only.
+Any later hybrid implementation should wait for the shared M8/M9 telemetry and offline-eval vocabulary defined in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 That plan remains separate from any production activation or default-route change.
 
 Simulated hybrid belongs in benchmark/eval only. It must not imply route wiring, HybridServe, or auto-supplement production responses.

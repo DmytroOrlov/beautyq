@@ -67,6 +67,8 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+
 - define request/result event schema;
 - record backend attribution;
 - record latency metrics;
@@ -76,6 +78,8 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 - do not activate production hybrid yet.
 
 ### M9. Stronger offline eval harness
+
+Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` so offline eval and any later telemetry do not drift apart.
 
 - define curated canonical seed queries;
 - keep representative seed/eval fixture queries;

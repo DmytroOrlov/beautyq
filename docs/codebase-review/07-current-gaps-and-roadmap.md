@@ -105,6 +105,7 @@ Remaining gap:
 - Qdrant and hybrid are non-production/manual/local/test boundaries, not production wiring.
 - The explicit opt-in Qdrant route is disabled by default and prerequisite-gated; it is not included by `apiElasticsearch` or `LeaderboardPlugin`.
 - Current readiness evidence is offline and seed/eval based. It uses curated canonical seed queries over the seed-resource catalog snapshot, representative seed/eval fixture queries, saved/no-regression reports, quality-gate reports, route/module specs, and full verification by the coordinator/user. It is not production telemetry.
+- Shared planning for future M8 telemetry vocabulary and M9 offline eval vocabulary/reporting now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 - That evidence can justify explicit opt-in readiness, but it does not by itself authorize production activation of the default `/beauty-search` route.
 
 Coordinator decision:
@@ -618,6 +619,7 @@ In short, the next phases are:
 
 - M8: production telemetry foundation;
 - M9: stronger offline eval harness;
+- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 - M10: query classification and routing policy;
 - M11: hybrid candidate generation;
 - M12: fusion and reranking experiments;

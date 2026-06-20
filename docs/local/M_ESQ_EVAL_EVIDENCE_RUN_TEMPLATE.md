@@ -4,6 +4,8 @@
 
 Copy/adapt this template before collecting M-ESQ-EVAL evidence. All commands are manual. This is offline/eval-only.
 
+Metric naming in this template remains the current evidence-run format. The stronger shared M9 naming/vocabulary plan now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` and should supersede ad-hoc future metric naming once implementation changes are approved.
+
 ## Non-goals
 
 This template does **not** represent:
