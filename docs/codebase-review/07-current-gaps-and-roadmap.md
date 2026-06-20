@@ -10,7 +10,7 @@ Status ownership:
 - Pending/canceled test meaning and verification evidence: `docs/codebase-review/06-tests-and-contracts.md`
 - Qdrant production-activation boundary: `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`
 - ES/Qdrant/hybrid future-serving roadmap: `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`
-- M8/M9 pure-slice and backend-runner status: `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`
+- M8/M9 pure-slice, backend-runner status, and future real offline-adapter seam: `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`
 
 ## Confirmed Current Gaps
 
@@ -124,7 +124,7 @@ Preserved boundary:
 
 ### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
-Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the pure M8 telemetry schema renderer exists without emission, the M9 saved-report/static-runner fixture slices exist, and the first pure backend-runner interface seam exists under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Real ES/Qdrant backend runner execution remains future work.
+Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the pure M8 telemetry schema renderer exists without emission, the M9 saved-report/static-runner fixture slices exist, and the first pure backend-runner interface seam exists under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Option119 is documentation-only for the future real offline ES/Qdrant adapter seam; real ES/Qdrant backend runner execution remains future work.
 
 ### Expanded roadmap lanes and milestone gates
 

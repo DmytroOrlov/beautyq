@@ -8,7 +8,7 @@ Metric naming in this template remains the current evidence-run format. Future e
 
 Future evidence and telemetry field names should also align with the pure M8 schema renderer/static adapter (`M8TelemetrySchemaRenderer` / `M8TelemetrySchemaAdapter.defaultPlannedSchema`) where relevant. That schema artifact is naming guidance only; it does not emit telemetry, observe production traffic, or query ES/Qdrant.
 
-Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. Future backend outputs should flow through the pure M9 backend-runner interfaces and materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format.
+Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. Future backend outputs should preserve explicit ES/Qdrant source attribution, flow through the pure M9 backend-runner interfaces, and materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format.
 
 ## Non-goals
 

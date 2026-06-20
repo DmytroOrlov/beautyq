@@ -235,8 +235,10 @@ Pure interfaces only. `M9OfflineEvalBackendRunner` now models the future executi
 Backend-runner purpose:
 
 - provide the seam for later turning the current M9 static report contracts into real offline eval execution over explicit offline inputs;
+- connect future offline eval runs to real ES-only and Qdrant-only execution paths through explicit offline adapters only;
+- feed later backend results into the existing `M9OfflineEvalBackendRunner` interfaces;
 - run against explicit offline inputs only;
-- produce the existing `M9OfflineEvalSavedReport` artifact shape through the current saved-report model and renderer;
+- produce the existing `M9OfflineEvalSavedReport` artifact shape through the current saved-report model and renderer and the static runner/report-renderer path;
 - never imply production activation.
 
 Implemented pure interface vocabulary:
@@ -251,16 +253,29 @@ Backend execution seams:
 
 - ES-only offline execution seam:
   - runs explicit offline dataset queries against an approved offline ES adapter;
+  - expected input: dataset query, filters/categories if supported, `catalog_snapshot_id`, `experiment_id`, `request_id`;
+  - expected output: explicit `CandidateSource.Es`, top-k ids, candidate metadata if available, latency if available, warnings/failures as data;
   - records `serving_mode = es_only` and `candidate_source = es`;
-  - must not imply reuse of the production `POST /beauty-search` route.
+  - must not reuse the production route path as an implicit execution surface;
+  - must not make the default `POST /beauty-search` route a test harness;
+  - must not hide ES failures as Qdrant success or fallback success.
 - Qdrant-only offline execution seam:
   - runs explicit offline dataset queries against an approved offline Qdrant adapter;
+  - expected input: dataset query, `query_class`, `catalog_snapshot_id`, `experiment_id`, `request_id`, embedding/vector prerequisites if required;
+  - expected output: explicit `CandidateSource.Qdrant`, top-k ids, candidate metadata if available, latency if available, warnings/failures as data;
   - records `serving_mode = qdrant_only` and `candidate_source = qdrant`;
-  - must stay separate from disabled-by-default production opt-in route approval.
+  - must remain separated from the default production route;
+  - must not activate Qdrant production serving;
+  - must not imply the explicit opt-in route is default production.
 - future hybrid comparison seam:
+  - planned comparison only;
   - compares ES-only and Qdrant-only results and may later materialize planned hybrid comparison rows;
+  - may combine ES and Qdrant rows/candidates only in offline report space;
   - records explicit `serving_mode` and `candidate_source` values for every row;
-  - must not hide fallback, auto-supplement, fusion, reranking, or serving changes inside comparison logic.
+  - must preserve per-candidate source attribution;
+  - fusion/reranking policies must remain explicit values, never hidden behavior;
+  - must not hide fallback, auto-supplement, fusion, reranking, or serving changes inside comparison logic;
+  - does not implement route switch, fallback, or hybrid serving.
 
 Required attribution rules:
 
@@ -301,20 +316,28 @@ Stop conditions for any later implementation:
 
 - backend runner cannot run if `eval_dataset_id` is missing;
 - backend runner cannot run if `catalog_snapshot_id` is missing;
+- backend runner cannot run if `query_class` is missing where the adapter contract requires it;
 - ES/Qdrant comparison cannot proceed if backend attribution is missing;
+- adapter output is invalid if a backend failure occurs without a failure row or warning;
+- adapter output is invalid if latency is unavailable and no warning explains that absence;
 - offline metrics cannot be described as production quality;
+- offline metrics cannot be described as production metrics;
 - runner output cannot approve production activation;
+- adapter output cannot be treated as activation approval;
 - backend failures cannot be hidden as fallback success;
+- hidden fallback is forbidden;
 - the dataset cannot be only happy-path seed queries.
 
 Implementation candidates for a later patch:
 
-- ES offline adapter;
-- Qdrant offline adapter;
-- hybrid comparison adapter;
-- report writer integration using the existing M9 saved-report shape;
-- quality-gate report integration;
-- focused specs that pin the offline boundary, attribution requirements, failure handling, and no-serving guarantees.
+- pure adapter interface alignment spec;
+- ES offline adapter skeleton;
+- Qdrant offline adapter skeleton;
+- adapter failure fixtures;
+- saved-report integration spec using the existing M9 saved-report shape;
+- quality-gate integration spec;
+- focused specs that pin the offline boundary, attribution requirements, failure handling, and no-serving guarantees;
+- no production route integration unless separately approved.
 
 ## 7. M9 offline metrics
 
