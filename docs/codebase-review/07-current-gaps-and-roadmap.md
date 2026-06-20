@@ -157,7 +157,7 @@ Rationale for pausing runtime hybrid:
 * ES-native eval/baseline is not complete.
 * Continuing resource-backed hybrid before ES-native + Qdrant-native comparison would optimize the wrong layer.
 * The pure `EngineEval` comparison/report/assembly layer is implemented. Remaining work is operational/demo-facing: collect concrete ES + selected Qdrant benchmark reports, compare saved reports, and use the results to guide later Qdrant production-candidate readiness and any later hybrid design.
-* The M8/M9 shared vocabulary/reporting foundation has moved from docs-only planning to pure contract slices, including the M9 saved dataset/report format and deterministic renderer. Production telemetry emission, stronger offline eval runner implementation, hybrid serving, fallback, score fusion, reranking, shadow serving, traffic mirroring, and production activation remain unimplemented.
+* The M8/M9 shared vocabulary/reporting foundation has moved from docs-only planning to pure contract slices, including the M9 saved dataset/report format, deterministic renderer, and static/in-memory runner skeleton. Production telemetry emission, ES/Qdrant backend eval runner implementation, hybrid serving, fallback, score fusion, reranking, shadow serving, traffic mirroring, and production activation remain unimplemented.
 
 The codebase contains a hidden/disabled control-plane foundation in
 `leaderboard/search/hybrid/control/BeautySearchHybridControlPlane.scala`; the
@@ -198,6 +198,7 @@ Target milestone: `M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison`
 Status:
 
 * M-ESQ-EVAL pure/report/assembly layer is implemented.
+* M9 has shared contracts, saved report rendering, and a static/in-memory runner skeleton for caller-supplied inputs; ES/Qdrant backend runner execution remains future work.
 * M3 / B-lite remains the current expanded in-progress checkpoint.
 * Current expanded M3 interpretability includes expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
 * Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle tracks and future activation/hybrid decisions.
@@ -622,7 +623,7 @@ In short, the next phases are:
 
 - M8: production telemetry foundation;
 - M9: stronger offline eval harness;
-- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Implemented slices are pure shared contracts plus the M9 saved dataset/report format and markdown renderer only, not telemetry emission or an offline runner.
+- The paired M8/M9 planning vocabulary, schema, dataset, metric, and stop-condition details live in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Implemented slices are pure shared contracts plus the M9 saved dataset/report format, markdown renderer, and static/in-memory runner skeleton only, not telemetry emission or an ES/Qdrant backend runner.
 - M10: query classification and routing policy;
 - M11: hybrid candidate generation;
 - M12: fusion and reranking experiments;

@@ -17,14 +17,16 @@ It does not approve or implement:
 - shadow serving;
 - traffic mirroring;
 - production telemetry code;
-- offline eval harness code.
+- ES/Qdrant backend eval runner code.
 
-Implemented first slice:
+Implemented pure slices:
 
 - `leaderboard.search.eval.M8M9EvalContracts` defines shared vocabulary, offline eval report metadata/summary contracts, and telemetry schema-plan contracts.
 - `leaderboard.search.M8M9EvalContractsSpec` locks stable string rendering, query-class taxonomy coverage, planned M9 metric names, planned M8 event families, and the vocabulary-only status of hybrid/fusion/reranker terms.
 - `leaderboard.search.eval.M9OfflineEvalSavedReport` defines the pure M9 saved dataset/report format, stable format version, markdown artifact wrapper, and deterministic markdown renderer.
 - `leaderboard.search.M9OfflineEvalSavedReportSpec` locks representative markdown output, metadata/metric/row attribution, negative/out-of-catalog query representation, and the non-serving boundary.
+- `leaderboard.search.eval.M9OfflineEvalStaticRunner` defines a pure static/in-memory runner skeleton that assembles caller-supplied dataset, metadata, rows, aggregate metrics, quality-gate decision, notes, warnings, and generated-at text into a saved report plus markdown artifact.
+- `leaderboard.search.M9OfflineEvalStaticRunnerSpec` locks validation, input-order preservation, markdown artifact parity with the direct renderer, static quality-gate summary counts, and the no-backend-execution boundary.
 - This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, ES/Qdrant runner, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
@@ -204,7 +206,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, and deterministic markdown renderer are implemented; the offline runner/harness remains unimplemented.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, and static/in-memory runner skeleton are implemented. The ES/Qdrant backend runner/harness remains unimplemented.
 
 Planned dataset coverage:
 

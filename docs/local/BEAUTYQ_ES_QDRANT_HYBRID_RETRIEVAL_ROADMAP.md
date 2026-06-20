@@ -45,7 +45,7 @@ Rough wording translated to technical terms:
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, telemetry schema-plan, offline report metadata contracts, M9 saved dataset/report format, and deterministic markdown renderer exist; no runtime behavior. |
+| M8/M9 shared contracts | Started | Pure vocabulary, telemetry schema-plan, offline report metadata contracts, M9 saved dataset/report format, deterministic markdown renderer, and static/in-memory runner skeleton exist; no ES/Qdrant backend runner or production runtime behavior. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -68,7 +68,7 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
-Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The foundation slices implemented so far are pure shared contracts in `leaderboard.search.eval.M8M9EvalContracts` plus the M9 saved dataset/report format and deterministic markdown renderer in `leaderboard.search.eval.M9OfflineEvalSavedReport`.
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, and stop conditions are planned in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. The foundation slices implemented so far are pure shared contracts in `leaderboard.search.eval.M8M9EvalContracts`, the M9 saved dataset/report format and deterministic markdown renderer in `leaderboard.search.eval.M9OfflineEvalSavedReport`, and the static/in-memory runner skeleton in `leaderboard.search.eval.M9OfflineEvalStaticRunner`.
 
 - define request/result event schema plan;
 - record backend attribution;
@@ -90,7 +90,7 @@ Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEME
 - track Recall@K, MRR, nDCG@K, zero-result rate, and latency;
 - keep the overfitting warning explicit.
 
-The saved-report format and renderer slice is implemented. The stronger offline eval harness, ES/Qdrant backend runner, report persistence workflow, and quality-gate update remain future work.
+The saved-report format, renderer slice, and static/in-memory runner skeleton are implemented. The stronger offline eval harness, ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
 
 ### M10. Query classification and routing policy
 

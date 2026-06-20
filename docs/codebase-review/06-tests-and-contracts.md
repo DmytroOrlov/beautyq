@@ -93,6 +93,16 @@ Current active Qdrant pure specs already prove the closeout boundary:
 
 No additional route/runtime/resource spec is required for this docs closeout because the current boundary is still pure planning/readiness evidence, not serving implementation.
 
+## M8/M9 eval contract verification boundary
+
+Current active pure eval specs prove the non-serving M8/M9 boundary:
+
+- `M8M9EvalContractsSpec.scala`: shared vocabulary, query-class taxonomy, metric names, and schema-plan terms are stable strings/values only.
+- `M9OfflineEvalSavedReportSpec.scala`: the saved M9 dataset/report format and deterministic markdown renderer exist without backend execution.
+- `M9OfflineEvalStaticRunnerSpec.scala`: the static/in-memory runner assembles caller-supplied dataset, metadata, rows, metrics, quality-gate decision, notes, warnings, and generated-at text into the saved report and markdown artifact; it validates dataset/catalog/query-id consistency and computes only simple supplied-status summary counts.
+
+These specs do not prove ES/Qdrant backend execution, telemetry emission, route wiring, production activation, hybrid serving, fallback, fusion, reranking, shadow serving, or traffic mirroring.
+
 ### Explicit opt-in Qdrant route readiness runbook
 
 Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the coordinator/operator evidence package must include:

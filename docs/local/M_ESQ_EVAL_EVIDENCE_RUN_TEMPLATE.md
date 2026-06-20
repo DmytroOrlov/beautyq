@@ -6,7 +6,7 @@ Copy/adapt this template before collecting M-ESQ-EVAL evidence. All commands are
 
 Metric naming in this template remains the current evidence-run format. Future evidence reports should align with the implemented shared M8/M9 contracts in `leaderboard.search.eval.M8M9EvalContracts`: `ServingMode`, `CandidateSource`, `QueryClass`, `CatalogSnapshotId`, `EvalDatasetId`, `MetricWindow`, and `OfflineEvalMetricName`.
 
-The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. `leaderboard.search.eval.M9OfflineEvalSavedReport` adds a pure saved dataset/report model and deterministic markdown renderer for the planned M9 format; it does not add telemetry emission, a new offline runner, route behavior, hybrid serving, fusion, or reranking.
+The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. `leaderboard.search.eval.M9OfflineEvalSavedReport` adds a pure saved dataset/report model and deterministic markdown renderer for the planned M9 format. `leaderboard.search.eval.M9OfflineEvalStaticRunner` can assemble that saved report and markdown artifact from static/in-memory caller-supplied inputs. It does not add telemetry emission, ES/Qdrant backend execution, route behavior, hybrid serving, fusion, or reranking.
 
 ## Non-goals
 
@@ -68,7 +68,7 @@ Suggested local artifact filenames for saved-report comparisons:
 * `right-query-classes.json`
 * candidate-specific variants such as `query-classes.benchmark-small.json`
 * candidate-specific variants such as `query-classes.benchmark-large.json`
-* M9 saved markdown artifacts such as `m9-offline-eval.<label>.md`, when a future manual step materializes `M9OfflineEvalSavedReport`
+* M9 saved markdown artifacts such as `m9-offline-eval.<label>.md`, when a manual/future evidence step materializes `M9OfflineEvalSavedReport` directly or through the static runner shape
 
 Bundle the workspace only after a run is complete:
 
