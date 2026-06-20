@@ -159,6 +159,7 @@ Consequences:
 - `QdrantProductionCandidateActivationConfigApproval.scala` keeps the M7 config gate disabled by default, separates no-regression evidence from its approval, and translates only complete approved evidence into the existing planning prerequisites. It does not load runtime config or approve serving.
 - The source-confirmed future opt-in seam is a separate route module outside default `apiElasticsearch`; its pending contract consumes `QdrantProductionCandidateActivationConfigApproval` for the disabled-default config gate and separately approved no-regression evidence, plus the remaining M7 prerequisites and separate route/serving approval. `LeaderboardPlugin` continues to include only the ES route module. No Qdrant route or route switch exists.
 - `QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It does not approve an opt-in route, production activation, or hybrid serving.
+- The canonical per-expectation pending map for these route-boundary expectations lives in `docs/codebase-review/06-tests-and-contracts.md`.
 
 What not to infer:
 
@@ -288,6 +289,7 @@ Design A endpoint policy drafted (see `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md
 - Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) as response shape.
 - All draft recommendations remain unapproved.
 - The Design A hardening surface is now captured by active `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` assertions, with only future expectations left pending.
+- Those future expectations are mapped canonically in `docs/codebase-review/06-tests-and-contracts.md`; they do not mean approved implementation.
 - Implementation slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`.
 
 Consequences:

@@ -2,7 +2,7 @@
 
 Status: docs-only policy note. Runtime route-gate code is not implemented. This future track is closed for planning only under Candidate A and remains deferred. M5 remains closed; this note does not reopen it.
 
-The later Distage include-path NPE fix was test-only and does not change this policy note. `POST /beauty-search` remains ES-backed, and runtime route-gate / HTTP 503 expectations remain future-only pending coverage.
+The later Distage include-path NPE fix was test-only and does not change this policy note. `POST /beauty-search` remains ES-backed, and runtime route-gate / HTTP 503 expectations remain future-only pending coverage. The canonical per-expectation pending map lives in `docs/codebase-review/06-tests-and-contracts.md`.
 
 This note source-confirms the runtime serving-gate track after the current startup-readiness closeout:
 

@@ -4,6 +4,8 @@ Status: **Design A operator visibility endpoint implemented as explicit opt-in m
 
 Focused route tests should reach this endpoint through `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`, not through broad top-level plugin include paths. The Distage include-path NPE closeout and safe test-local replacement pattern are summarized in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
+The canonical per-expectation pending map for local/dev fallback and runtime route-gate / HTTP 503 future expectations lives in `docs/codebase-review/06-tests-and-contracts.md`.
+
 - Endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility endpoint.
 - Endpoint is NOT in the default `apiElasticsearch` graph or `LeaderboardPlugin` production graph.
 - No runtime serving behavior is changed.

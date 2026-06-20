@@ -8,7 +8,7 @@ Status summary:
 * Implementation approval remains absent.
 * Production route activation remains not approved.
 * Production `/beauty-search` remains ES-backed.
-* The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth and pending-map live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`.
+* The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, and the canonical 8-entry pending-expectation map lives in `docs/codebase-review/06-tests-and-contracts.md`.
 
 ## 1. Goal
 
@@ -368,7 +368,7 @@ The M7 activation planning/source-confirmation foundation is closed. `QdrantProd
 
 Its offline evidence adapter connects the existing quality report without duplicating EngineEval metrics: passed quality becomes satisfied no-regression evidence, failed quality becomes missing/unsatisfied evidence, and absent, incomplete, or unevaluated quality remains unknown. `QdrantProductionCandidateOfflineEvalEvidenceSpec` proves assembled and saved-report EngineEval evidence can traverse this path while separate approval remains mandatory.
 
-The explicit opt-in Qdrant route boundary is now source-confirmed as pending only. Any future module remains outside default `apiElasticsearch` and must consume this report for the disabled-default config gate and separately approved no-regression evidence, together with the remaining M7 prerequisites and separate route/serving approval. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional.
+The explicit opt-in Qdrant route boundary is now source-confirmed as pending only. Any future module remains outside default `apiElasticsearch` and must consume this report for the disabled-default config gate and separately approved no-regression evidence, together with the remaining M7 prerequisites and separate route/serving approval. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional. The canonical per-expectation owner/approval/activation/removal map lives in `docs/codebase-review/06-tests-and-contracts.md`.
 
 `QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It combines the ready M6 and activation-policy reports, conservative and approved config/no-regression reports, complete explicit opt-in planning prerequisites, blocked production-route activation, conditional future hybrid serving, and the existing route-boundary specs. It adds no route, runtime config, HTTP behavior, plugin wiring, or serving approval.
 

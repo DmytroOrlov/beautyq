@@ -21,9 +21,10 @@ Use this section as the load-bearing source truth for coordination. Other docs s
 * Qdrant approval-request readiness is closed and ready to request explicit approval for a future disabled-by-default opt-in route implementation, but implementation approval remains absent.
 * Production route activation remains not approved.
 * Pending expectations map:
-  * `5` pending expectations in `BeautySearchOptInRouteModuleSpec` preserve the future Qdrant explicit opt-in route boundary only. They remain pending until separate implementation and serving approval exists.
+  * `5` pending expectations in `BeautySearchOptInRouteModuleSpec` preserve the future Qdrant explicit opt-in route boundary only.
   * `1` pending expectation in `BeautySearchProductionRouteExposureSpec` preserves that `POST /beauty-search` stays ES-backed until separate production-route activation approval exists.
   * `2` pending expectations in `ElasticsearchOperatorVisibilityEndpointPolicySpec` preserve future-only ES local/dev fallback and runtime route-gate / HTTP 503 work.
+  * The canonical owner, per-expectation owners, approval conditions, activation conditions, and removal conditions live in `docs/codebase-review/06-tests-and-contracts.md`.
 * The single canceled test remains expected manual/resource-gated coverage, not a blocker.
 
 ## 1. Current production `/beauty-search`

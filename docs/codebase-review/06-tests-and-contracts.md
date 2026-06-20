@@ -44,6 +44,30 @@ The `8 pending` tests are intentional future-boundary expectations, not failures
 
 The `1 canceled` test remains expected manual/resource-gated coverage and is not a blocker.
 
+Pending means intentionally deferred future-boundary coverage, not unfinished accepted work. Current full green already includes these pending expectations.
+
+## Pending expectation map
+
+Use this as the canonical pending-expectation map. Other docs should point here instead of restating all 8 entries.
+
+| Pending expectation | Owning spec | Future-track owner | Approval/implementation condition before activation | Condition to convert pending into active test | Condition to remove pending if track is rejected |
+|---|---|---|---|---|---|
+| future explicit Qdrant opt-in route remains a separate module outside default `apiElasticsearch` | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | An implemented Qdrant opt-in route exists and remains outside default `apiElasticsearch` | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| future Qdrant route requires M6 `productionCandidateReady` and activation-policy readiness before route wiring | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and proves M6 readiness plus activation-policy readiness as a precondition | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| future Qdrant route consumes disabled-by-default config gate and approved no-regression evidence through the M7 config report | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and consumes `QdrantProductionCandidateActivationConfigApproval` evidence for config gate plus approved no-regression evidence | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| future Qdrant route requires observability/status evidence and rollback/disable control | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and proves observability/status evidence plus rollback/disable control before activation | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| future Qdrant route requires separate route/serving approval without approving production-route activation | `BeautySearchOptInRouteModuleSpec.scala` | Qdrant approval-dependent implementation scope | Explicit implementation/serving approval for a disabled-by-default explicit opt-in Qdrant route only | Route wiring exists and proves separate route/serving approval while production-route activation remains independently unapproved | Explicit opt-in Qdrant route track is explicitly rejected or superseded |
+| keep `POST /beauty-search` ES-backed until separate production-route activation is approved | `BeautySearchProductionRouteExposureSpec.scala` | Production route activation decision | Separate production-route activation approval | Approved production-route activation implementation exists | Production-route activation is explicitly rejected or permanently deferred |
+| allow local/dev-only fallback if chosen later | `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` | ES operator visibility / local-dev policy | A local/dev-only fallback policy is explicitly chosen | Fallback behavior is implemented and scoped to local/dev only | Local/dev fallback is explicitly rejected |
+| do not test runtime route-gate or HTTP 503 behavior as implemented | `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` | ES runtime route-gate under Candidate A successor decision | A runtime readiness source or replacement/freshness/rollback policy exists and runtime route-gate implementation is explicitly approved | Runtime route-gate / HTTP 503 behavior is implemented | Runtime route-gate is permanently rejected or replaced by another approved policy |
+
+Current interpretation to preserve:
+
+- all `8` pending expectations are intentional non-blocking future-boundary placeholders;
+- they do not weaken the user-reported full green result;
+- they must not be read as implied implementation approval;
+- they must not be read as implied production-route activation approval.
+
 ## ES post-M5 verification boundary
 
 Current active ES lifecycle specs already prove the planning closeout boundary:
