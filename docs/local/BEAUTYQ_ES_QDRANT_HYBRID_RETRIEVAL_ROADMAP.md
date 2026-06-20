@@ -44,7 +44,7 @@ For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, M8 telemetry schema renderer/static adapter, saved-report, static-runner, fixture, backend-runner interface, and ES/Qdrant offline adapter skeleton slices exist; telemetry emission and real ES/Qdrant backend-runner execution stay future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
+| M8/M9 shared contracts | Started | Pure vocabulary, M8 telemetry schema renderer/static adapter, saved-report, static-runner, fixture, backend-runner interface, ES/Qdrant offline adapter skeleton, and backend-adapter failure-matrix slices exist; telemetry emission and real ES/Qdrant backend-runner execution stay future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -91,7 +91,8 @@ Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEME
 - track Recall@K, MRR, nDCG@K, zero-result rate, and latency;
 - keep the overfitting warning explicit.
 
-The saved-report format, renderer slice, static/in-memory runner skeleton, canonical static fixtures, checked-in example artifact, pure backend-runner interface seam, and pure ES/Qdrant offline adapter skeletons are tracked in the M8/M9 owner doc above. The stronger offline eval harness, real ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
+The saved-report format, renderer slice, static/in-memory runner skeleton, canonical static fixtures, checked-in example artifact, pure backend-runner interface seam, pure ES/Qdrant offline adapter skeletons, and backend-adapter failure-matrix hardening are tracked in the M8/M9 owner doc above. The stronger offline eval harness, real ES/Qdrant backend runner, report persistence workflow, and production-facing quality-gate update remain future work.
+Backend-adapter failure-matrix hardening is complete as an offline eval foundation; it does not implement real ES/Qdrant execution or serving.
 Future real ES/Qdrant offline execution belongs to that M8/M9 owner doc as planned offline-only work, not as production route or activation work.
 
 ### M10. Query classification and routing policy

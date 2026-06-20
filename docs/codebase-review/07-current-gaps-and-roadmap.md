@@ -79,7 +79,7 @@ Remaining gaps:
 
 Remaining gap:
 
-Qdrant and hybrid remain non-production/manual/local/test boundaries, not production wiring. For the current opt-in state, read `docs/search-dsl-qdrant-vector-backend.md`; for the separate production-activation gate, read `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`; for M8/M9 pure contracts, the pure M8 telemetry schema renderer/static adapter, saved-report format, static runner, checked-in example artifact, pure backend-runner interface seam, and pure ES/Qdrant offline adapter skeletons, read `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+Qdrant and hybrid remain non-production/manual/local/test boundaries, not production wiring. For the current opt-in state, read `docs/search-dsl-qdrant-vector-backend.md`; for the separate production-activation gate, read `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`; for M8/M9 pure contracts, the pure M8 telemetry schema renderer/static adapter, saved-report format, static runner, checked-in example artifact, pure backend-runner interface seam, pure ES/Qdrant offline adapter skeletons, and backend-adapter failure matrix, read `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 Coordinator decision:
 
@@ -124,7 +124,7 @@ Preserved boundary:
 
 ### M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison
 
-Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the pure M8 telemetry schema renderer exists without emission, the M9 saved-report/static-runner fixture slices exist, the first pure backend-runner interface seam exists, and pure ES/Qdrant offline adapter skeletons exist under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Real ES/Qdrant backend runner execution remains future work.
+Detailed contracts, pending-map ownership, and metric semantics live in `docs/codebase-review/06-tests-and-contracts.md`. The roadmap-level summary is shorter here: M-ESQ-EVAL remains offline/eval-only, the pure/report/assembly layer exists, the pure M8 telemetry schema renderer exists without emission, the M9 saved-report/static-runner fixture slices exist, the first pure backend-runner interface seam exists, pure ES/Qdrant offline adapter skeletons exist, and backend-adapter failure modes are hardened before real backend clients under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. Real ES/Qdrant backend runner execution remains future work.
 
 ### Expanded roadmap lanes and milestone gates
 
