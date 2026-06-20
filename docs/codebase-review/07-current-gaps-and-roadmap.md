@@ -108,6 +108,7 @@ Remaining gap:
 - Shared planning for future M8 telemetry vocabulary and M9 offline eval vocabulary/reporting lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 - The first pure M8/M9 contract slice is implemented in `leaderboard.search.eval.M8M9EvalContracts` and covered by `M8M9EvalContractsSpec`. It defines stable vocabulary, telemetry schema-plan types, and offline eval report metadata/summary types only.
 - The next pure M9 slice is implemented in `leaderboard.search.eval.M9OfflineEvalSavedReport` and covered by `M9OfflineEvalSavedReportSpec`. It defines saved dataset/report artifact types, a stable saved-report format version, negative/out-of-catalog representation, and a deterministic markdown renderer only.
+- `leaderboard.search.eval.M9OfflineEvalStaticRunner` and `M9OfflineEvalStaticFixtures` now provide a pure static runner plus canonical static fixture artifact shape, covered by `M9OfflineEvalStaticRunnerSpec` and `M9OfflineEvalStaticFixturesSpec`; no ES/Qdrant backend runner exists.
 - That evidence can justify explicit opt-in readiness, but it does not by itself authorize production activation of the default `/beauty-search` route.
 
 Coordinator decision:
@@ -198,7 +199,7 @@ Target milestone: `M-ESQ-EVAL: ES-native + Qdrant-native benchmark comparison`
 Status:
 
 * M-ESQ-EVAL pure/report/assembly layer is implemented.
-* M9 has shared contracts, saved report rendering, and a static/in-memory runner skeleton for caller-supplied inputs; ES/Qdrant backend runner execution remains future work.
+* M9 has shared contracts, saved report rendering, a static/in-memory runner skeleton for caller-supplied inputs, canonical static fixtures, and a checked-in example markdown artifact; ES/Qdrant backend runner execution remains future work.
 * M3 / B-lite remains the current expanded in-progress checkpoint.
 * Current expanded M3 interpretability includes expected-role refinement, `roleDeltas:`, `queryDeltas:`, query-class classification, query-class sidecars, `classDeltas:`, and validated class-sidecar replay for `benchmark-small -> benchmark-large`.
 * Remaining work is evidence consolidation around concrete ES + selected Qdrant benchmark reports and using those results to guide later ES lifecycle tracks and future activation/hybrid decisions.

@@ -27,6 +27,8 @@ Implemented pure slices:
 - `leaderboard.search.M9OfflineEvalSavedReportSpec` locks representative markdown output, metadata/metric/row attribution, negative/out-of-catalog query representation, and the non-serving boundary.
 - `leaderboard.search.eval.M9OfflineEvalStaticRunner` defines a pure static/in-memory runner skeleton that assembles caller-supplied dataset, metadata, rows, aggregate metrics, quality-gate decision, notes, warnings, and generated-at text into a saved report plus markdown artifact.
 - `leaderboard.search.M9OfflineEvalStaticRunnerSpec` locks validation, input-order preservation, markdown artifact parity with the direct renderer, static quality-gate summary counts, and the no-backend-execution boundary.
+- `leaderboard.search.eval.M9OfflineEvalStaticFixtures` and `M9OfflineEvalExampleArtifacts` provide canonical static fixture data plus a generated example markdown artifact shape for exact, semantic, ambiguous, and negative/out-of-catalog query classes.
+- `leaderboard.search.M9OfflineEvalStaticFixturesSpec` locks fixture query-class coverage, stable order, static-runner assembly, checked-in resource parity, non-activation quality decision, and the non-serving boundary. The checked-in artifact is `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md`.
 - This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, ES/Qdrant runner, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
@@ -206,7 +208,7 @@ Metric naming guidance:
 
 ## 6. M9 offline eval harness
 
-This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, and static/in-memory runner skeleton are implemented. The ES/Qdrant backend runner/harness remains unimplemented.
+This is a harness/reporting plan. The shared run metadata, metric-name, metric-value, query-slice, report-summary contracts, saved dataset/report format, stable saved-report format version, deterministic markdown renderer, static/in-memory runner skeleton, canonical static fixtures, and checked-in example markdown artifact are implemented. The ES/Qdrant backend runner/harness remains unimplemented.
 
 Planned dataset coverage:
 
@@ -302,6 +304,7 @@ Planned saved artifacts:
 Artifact guidance:
 
 - The M9 markdown saved-report artifact is implemented as `M9OfflineEvalReportRenderer.markdownArtifact`; it is deterministic and states that backend execution is not represented by the artifact.
+- The canonical static example artifact is `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md`; it is fixture/sample evidence shape only and uses `sample_not_for_activation`.
 - Saved artifacts should preserve the shared vocabulary fields from section 3.
 - Backend attribution summaries should use `candidate_source` and `serving_mode`.
 - Comparison artifacts should keep offline evidence separate from any future telemetry dashboards or online summaries.

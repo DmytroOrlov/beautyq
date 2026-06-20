@@ -6,7 +6,7 @@ Copy/adapt this template before collecting M-ESQ-EVAL evidence. All commands are
 
 Metric naming in this template remains the current evidence-run format. Future evidence reports should align with the implemented shared M8/M9 contracts in `leaderboard.search.eval.M8M9EvalContracts`: `ServingMode`, `CandidateSource`, `QueryClass`, `CatalogSnapshotId`, `EvalDatasetId`, `MetricWindow`, and `OfflineEvalMetricName`.
 
-The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. `leaderboard.search.eval.M9OfflineEvalSavedReport` adds a pure saved dataset/report model and deterministic markdown renderer for the planned M9 format. `leaderboard.search.eval.M9OfflineEvalStaticRunner` can assemble that saved report and markdown artifact from static/in-memory caller-supplied inputs. It does not add telemetry emission, ES/Qdrant backend execution, route behavior, hybrid serving, fusion, or reranking.
+The current `EngineEvalAggregateReport` and saved-report JSON format remain unchanged. `leaderboard.search.eval.M9OfflineEvalSavedReport` adds a pure saved dataset/report model and deterministic markdown renderer for the planned M9 format. `leaderboard.search.eval.M9OfflineEvalStaticRunner` can assemble that saved report and markdown artifact from static/in-memory caller-supplied inputs. `leaderboard.search.eval.M9OfflineEvalStaticFixtures` plus the checked-in `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md` show the canonical saved M9 artifact shape for future evidence. They do not add telemetry emission, ES/Qdrant backend execution, route behavior, hybrid serving, fusion, or reranking.
 
 ## Non-goals
 
@@ -69,6 +69,8 @@ Suggested local artifact filenames for saved-report comparisons:
 * candidate-specific variants such as `query-classes.benchmark-small.json`
 * candidate-specific variants such as `query-classes.benchmark-large.json`
 * M9 saved markdown artifacts such as `m9-offline-eval.<label>.md`, when a manual/future evidence step materializes `M9OfflineEvalSavedReport` directly or through the static runner shape
+
+Use `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md` as the canonical format example for future saved M9 markdown evidence. It is an example-only static fixture artifact with `sample_not_for_activation`; current backend/eval runs and existing `EngineEvalAggregateReport` JSON artifacts remain separate.
 
 Bundle the workspace only after a run is complete:
 

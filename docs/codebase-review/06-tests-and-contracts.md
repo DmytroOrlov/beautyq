@@ -100,6 +100,7 @@ Current active pure eval specs prove the non-serving M8/M9 boundary:
 - `M8M9EvalContractsSpec.scala`: shared vocabulary, query-class taxonomy, metric names, and schema-plan terms are stable strings/values only.
 - `M9OfflineEvalSavedReportSpec.scala`: the saved M9 dataset/report format and deterministic markdown renderer exist without backend execution.
 - `M9OfflineEvalStaticRunnerSpec.scala`: the static/in-memory runner assembles caller-supplied dataset, metadata, rows, metrics, quality-gate decision, notes, warnings, and generated-at text into the saved report and markdown artifact; it validates dataset/catalog/query-id consistency and computes only simple supplied-status summary counts.
+- `M9OfflineEvalStaticFixturesSpec.scala`: canonical static fixtures cover exact product/name/brand, semantic descriptive, ambiguous, and negative/out-of-catalog query classes; generated markdown must match the checked-in example resource artifact and remain example-only/non-serving.
 
 These specs do not prove ES/Qdrant backend execution, telemetry emission, route wiring, production activation, hybrid serving, fallback, fusion, reranking, shadow serving, or traffic mirroring.
 
@@ -625,6 +626,7 @@ Boundary:
 
 `M8M9EvalContractsSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the first pure M8/M9 foundation slice.
 `M9OfflineEvalSavedReportSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the pure M9 saved dataset/report format and markdown renderer.
+`M9OfflineEvalStaticFixturesSpec` is deterministic `Contractual + Blackbox + Atomic` coverage for the canonical static fixtures and checked-in example artifact boundary.
 
 Contract facts:
 
@@ -634,6 +636,7 @@ Contract facts:
 - `OfflineEvalRunMetadata`, `OfflineEvalMetricValue`, `OfflineEvalQuerySlice`, and `OfflineEvalReportSummary` carry shared metadata and report-summary contracts only.
 - `M9OfflineEvalDataset`, `M9OfflineEvalDatasetQuery`, `M9OfflineEvalExpectedResult`, `M9OfflineEvalSavedReport`, `M9OfflineEvalReportRow`, `M9OfflineEvalReportArtifact`, and `M9OfflineEvalReportFormatVersion` model planned saved M9 inputs and report artifacts without executing retrieval.
 - `M9OfflineEvalReportRenderer` renders deterministic markdown from caller-supplied data, preserving input order for rows, top-k ids, metrics, notes, and warnings.
+- `M9OfflineEvalStaticFixtures` and `M9OfflineEvalExampleArtifacts` provide a canonical static fixture/report shape and generated markdown artifact only; `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md` is checked in as an example resource and uses `sample_not_for_activation`.
 - Negative/out-of-catalog queries are representable through `QueryClass.NegativeOutOfCatalog`, empty expected/top-k ids, expected notes, and an explicit dataset marker.
 - `TelemetryEventFamily.plannedM8Families` covers search request, backend candidate, result exposure, optional interaction, and failure/timeout.
 - `TelemetrySchemaPlan`, `TelemetryFieldName`, `TelemetryMetricName`, and `TelemetrySchemaSummary` model planned telemetry schema/metric vocabulary only.
