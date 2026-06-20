@@ -609,3 +609,22 @@ These are recommendations only, not current architecture:
 6. Before repository-backed/live indexing, add explicit backend/client/index lifecycle and freshness design.
 7. Verify future seed-json plus repository snapshot helpers keep a direct `BeautyQSeedReady` edge when they read shared Postgres state by seed-scoped ids.
 8. Reconcile stale docs before relying on them in future implementation passes.
+
+## Broader ES + Qdrant hybrid retrieval roadmap
+
+The detailed end-state roadmap is documented in `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
+
+In short, the next phases are:
+
+- M8: production telemetry foundation;
+- M9: stronger offline eval harness;
+- M10: query classification and routing policy;
+- M11: hybrid candidate generation;
+- M12: fusion and reranking experiments;
+- M13: controlled hybrid explicit opt-in route;
+- M14: production telemetry dry-run;
+- M15: production activation decision;
+- M16: production activation implementation;
+- M17: online optimization loop.
+
+Those phases are future work. They do not claim hybrid serving, production telemetry, or default-route activation already exists.

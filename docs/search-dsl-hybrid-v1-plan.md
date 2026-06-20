@@ -4,6 +4,7 @@
 
 This plan records a non-production hybrid-search foundation, not a production hybrid rollout.
 The reached non-production manual real-resource runner remains manual/test/local only, not a combined Qdrant+ES+Llama production module.
+For the broader ES + Qdrant + hybrid retrieval end-state roadmap, see `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 
 Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall only at explicit non-production boundaries.
 
@@ -29,6 +30,7 @@ ES-native eval and Qdrant-native eval appear early and together
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
 M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) is started by the pure `EngineEval` comparison model. M-ESQ-EVAL is not complete. EngineEval pure/report/assembly support exists, Qdrant benchmark run-output JSON markers exist, manual EngineEval saved-report assembly exists, manual EngineEval saved-report comparison exists. Current next step is operational saved-output/runbook/evidence workflow: run/collect concrete ES + selected Qdrant artifacts, assemble EngineEval aggregate reports, compare saved reports, and use evidence for later shadow/hybrid decisions. Still offline/eval only.
+That plan remains separate from any production activation or default-route change.
 
 Simulated hybrid belongs in benchmark/eval only. It must not imply route wiring, HybridServe, or auto-supplement production responses.
 

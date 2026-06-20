@@ -23,6 +23,7 @@ Use this section as the load-bearing source truth for coordination. Other docs s
 * Explicit opt-in Qdrant route construction requires a ready M6 production-candidate report, ready M7 activation-policy report, enabled config gate, approved no-regression evidence, observability/status evidence, rollback/disable control, and separate route/serving approval. These are offline/evidence prerequisites, not production traffic telemetry.
 * Production route activation remains not approved.
 * The activation decision boundary is documented separately in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. Existing green evidence is sufficient for the disabled-by-default opt-in route only; it does not approve any future default `/beauty-search` switch.
+* The broader ES + Qdrant + hybrid retrieval end-state roadmap is documented separately in `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 * There is no real production traffic in this project context. Shadow serving and production traffic mirroring are therefore future-only, non-blocking, and not useful as current readiness evidence.
 * Pending expectations map:
   * The former `5` pending expectations in `BeautySearchOptInRouteModuleSpec` are now active tests for the explicit opt-in route module and prerequisite gate.

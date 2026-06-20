@@ -502,6 +502,7 @@ Eval/benchmark:
 
 Runtime hybrid module expansion is paused after the hidden control-plane module proof.
 M-ESQ-EVAL remains offline/eval-only. Detailed milestone status and sequencing live in `docs/codebase-review/07-current-gaps-and-roadmap.md`.
+For the broader ES + Qdrant + hybrid retrieval end-state, see `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 The Qdrant production-candidate readiness model is the closed pure M6 foundation. Eval output satisfies quality/eval only after explicit quality-rule evaluation; the report does not approve serving.
 
 ### InMemorySearchBackend role
@@ -587,6 +588,7 @@ Implemented pure EngineEval model (full API and metric semantics in `docs/codeba
 * `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.
 
 M-ESQ-EVAL (= measured Elasticsearch-native + Qdrant-native evaluation comparison) remains offline/eval-only. The production route stays ES-backed seed route; Qdrant and hybrid remain non-serving. For milestone status and sequencing, use `docs/codebase-review/07-current-gaps-and-roadmap.md`.
+The broader end-state roadmap is separate and does not change the current production truth.
 
 ### Test taxonomy for B-lite
 

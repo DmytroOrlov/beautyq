@@ -1,6 +1,7 @@
 # Qdrant Production Activation Decision Criteria
 
 This document defines the separate approval gate for any future default `POST /beauty-search` switch from the current ES-backed route to a Qdrant-backed route.
+It is one decision point in a larger retrieval roadmap; it does not cover hybrid routing, fusion, reranking, or telemetry design. For that broader end-state, see `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 
 Current source-backed baseline:
 
