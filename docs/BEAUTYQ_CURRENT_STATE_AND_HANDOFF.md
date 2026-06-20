@@ -2,6 +2,30 @@
 
 Canonical handoff for new chats. Read this first, then see linked docs for deeper detail.
 
+## 0. Coordinator source truth
+
+Use this section as the load-bearing source truth for coordination. Other docs should point here instead of restating the same status block.
+
+* Full verification was already run by the user after the Distage NPE fix: `1182 succeeded`, `0 failed`, `0 aborted`, `1 canceled`, `8 pending`, `All tests passed`.
+* The previous full-suite blocker was Distage `IncludesDSL$Include.interpret` NPE. Before the root fix, the suite had 55 aborted suites; the visible casualties included `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` and `QdrantSemanticCandidateEvalSpec`.
+* Known hazard: ad-hoc test-local composition through the broader `LeaderboardPlugin` route path, such as `include(LeaderboardPlugin.modules.api[IO])` or equivalent broad `apiBase` composition, can trigger that NPE in focused specs.
+* Safe replacement pattern: test-local route probes now include source-confirmed route modules directly, using `BeautySearchRouteModules.apiElasticsearch` and, when operator visibility is needed, `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`.
+* Additional test-only stabilization: Qdrant resource specs snapshot `super.config` once before adding `Mode.Test` activation and `QdrantPortCfg` memoization roots.
+* The NPE fix changed only test files. No production route, API, plugin, DI, or HTTP source changed. No route behavior changed. `/beauty-search` behavior did not change.
+* Current production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+* Current production backend remains seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
+* M5 is closed as a bounded ES startup-readiness lifecycle checkpoint.
+* M6 is closed as the Qdrant production-candidate readiness foundation.
+* M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
+* ES post-M5 future-track planning is closed as planning only.
+* Qdrant approval-request readiness is closed and ready to request explicit approval for a future disabled-by-default opt-in route implementation, but implementation approval remains absent.
+* Production route activation remains not approved.
+* Pending expectations map:
+  * `5` pending expectations in `BeautySearchOptInRouteModuleSpec` preserve the future Qdrant explicit opt-in route boundary only. They remain pending until separate implementation and serving approval exists.
+  * `1` pending expectation in `BeautySearchProductionRouteExposureSpec` preserves that `POST /beauty-search` stays ES-backed until separate production-route activation approval exists.
+  * `2` pending expectations in `ElasticsearchOperatorVisibilityEndpointPolicySpec` preserve future-only ES local/dev fallback and runtime route-gate / HTTP 503 work.
+* The single canceled test remains expected manual/resource-gated coverage, not a blocker.
+
 ## 1. Current production `/beauty-search`
 
 Current coordinator load-in:
@@ -102,7 +126,7 @@ Documented as characterized, not as desired final contract:
 
 * Default production `/beauty-search` is now ES-backed over the seed catalog.
 * ES seed-route checkpoint is reached. Plain `sbt test` is the canonical full verification command.
-* Latest user-verified plain `sbt test` (Jun 13, 2026): 963 succeeded, 0 failed, 1 canceled.
+* Latest user-verified full `sbt test` after the NPE fix: 1182 succeeded, 0 failed, 0 aborted, 1 canceled, 8 pending; all tests passed.
 * Business demo ready: runbook, query inventory, and smoke spec all in place.
 * ES-native + Qdrant-native benchmark/eval comparison remains offline/eval-only.
 * ES and Qdrant may advance together only in eval/benchmark, not serving.

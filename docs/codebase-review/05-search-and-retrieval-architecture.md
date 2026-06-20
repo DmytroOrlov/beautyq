@@ -66,6 +66,7 @@ Production-wired/current:
 Design boundary:
 
 - The implemented model/service/contract/adapter boundary is now production-exposed only through the ES-backed seed route.
+- Focused route tests should avoid broad top-level plugin include paths. The safe test-local probe boundary is direct inclusion of `BeautySearchRouteModules.apiElasticsearch` or `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`, as recorded in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 - Do not infer Qdrant, hybrid, fallback, reranking, score fusion, or benchmark-driven routing from production route availability.
 - The current proof set covers a pure route contract, a thin unwired API adapter, a fake-service route contract suite, a fake-backend `BeautySearchService.Impl` binding proof, a src/main ready-catalog document helper, an opt-in catalog/in-memory backend/service module proof, an opt-in HttpApi module proof, an explicit opt-in end-to-end route module proof, a test-only complete app-graph boundary proof, a disabled-by-default production inclusion activation/handle proof, and a test-only disabled-by-default include-module aggregation proof.
 - ES production hardening and Qdrant production-candidate readiness can advance as separate bounded tracks; neither implies hybrid or route-serving approval.

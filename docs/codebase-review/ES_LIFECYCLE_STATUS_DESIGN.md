@@ -2,6 +2,8 @@
 
 Status: **Design A operator visibility endpoint implemented as explicit opt-in module.** Response model/encoder implemented and HTTP-exposed through `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future. Runtime serving-gate work is separate and currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists. Full ES production lifecycle remains incomplete, and the post-M5 planning aggregate remains planning only.
 
+Focused route tests should reach this endpoint through `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`, not through broad top-level plugin include paths. The Distage include-path NPE closeout and safe test-local replacement pattern are summarized in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
+
 - Endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility endpoint.
 - Endpoint is NOT in the default `apiElasticsearch` graph or `LeaderboardPlugin` production graph.
 - No runtime serving behavior is changed.

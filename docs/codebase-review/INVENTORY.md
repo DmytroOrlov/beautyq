@@ -26,6 +26,7 @@ Build/module observations:
 Current status map:
 
 - `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: canonical handoff for current production route, milestone closeouts, and next decision boundaries.
+- `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` also carries the compact coordinator source truth for the Distage include-path NPE closeout, the safe test-local route-module replacement pattern, and the current pending/canceled interpretation.
 - `docs/codebase-review/07-current-gaps-and-roadmap.md`: canonical roadmap owner for future ES lifecycle tracks, B-lite eval, and Qdrant candidate/hybrid milestones.
 - `docs/codebase-review/06-tests-and-contracts.md`: canonical verification-scope owner for current route/lifecycle/readiness boundaries.
 - `docs/codebase-review/05-search-and-retrieval-architecture.md`: canonical architecture owner for current implementation surfaces and non-surfaces.

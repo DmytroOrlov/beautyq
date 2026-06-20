@@ -234,6 +234,7 @@ Consequences:
 - Broader operator-facing lifecycle exposure beyond Design A remains unimplemented until additional endpoint path and operator policy approvals are separately granted.
 - Runtime route-gate enforcement is not supported by the current source seam because successful route graphs always bind `Prepared` and there is no stale/previous-index state yet.
 - M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
+- Focused test-local route probing should use direct route-module includes, not the broader `LeaderboardPlugin` include path that previously triggered `IncludesDSL$Include.interpret` NPE.
 
 What not to infer:
 

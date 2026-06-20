@@ -10,6 +10,7 @@ Status ownership:
 - ES post-M5 planning aggregate closed as planning only; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain future and unimplemented.
 - Qdrant approval-request boundary is ready to request explicit approval for a future disabled-by-default opt-in route implementation; implementation approval and production route activation remain absent.
 - Production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+- Full-suite verification status, the Distage include-path NPE closeout, and pending/canceled meanings live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`.
 
 ## Confirmed Current Gaps
 
@@ -93,7 +94,7 @@ Milestone reached:
 - `non-production real-resource Qdrant/hybrid manual runner` is achieved.
 - Manual runner layers exist: runner composition boundary, manual lifecycle handle, manual input boundary, adapter-input boundary, Qdrant-client input boundary, real-client input boundary, targeted Distage module-shape proof.
 - Resource-backed real Qdrant smokes cover explicit indexing (`indexSnapshot()`) and explicit retrieval (`run(...)`) with real Qdrant; they auto-run when Qdrant is available and cancel with reason when unavailable.
-- User-verified plain `sbt test` reported 963 succeeded, 0 failed, 1 canceled.
+- Full-suite verification is already user-reported green after the NPE fix; keep the exact counts in `06-tests-and-contracts.md` to avoid duplicating them here.
 - No env gates are required for a passing full run. Llama endpoint and Qdrant benchmark env vars are optional overrides.
 
 Remaining gap:

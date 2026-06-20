@@ -10,6 +10,40 @@ For current behavior, focused tests are more authoritative than prose docs. In p
 - Search pure/eval specs define parser/DSL/search semantics.
 - Integration/smoke specs prove real-resource paths only under their resource gates.
 
+## Full verification closeout
+
+User-reported full verification after the Distage NPE fix:
+
+- `1182 succeeded`
+- `0 failed`
+- `0 aborted`
+- `1 canceled`
+- `8 pending`
+- `All tests passed`
+
+This docs pass did not rerun `sbt test`. Full verification was already run by the user and reported green.
+
+## NPE hazard closeout
+
+The prior full-suite blocker was Distage `IncludesDSL$Include.interpret` NPE. Before the root fix, the full suite had 55 aborted suites; visible failures included `QdrantEmbeddingBenchmarkExecutorIntegrationSpec` and `QdrantSemanticCandidateEvalSpec`.
+
+Current source-confirmed closeout:
+
+- The hazard is ad-hoc test-local composition through the broader `LeaderboardPlugin` route path, such as `include(LeaderboardPlugin.modules.api[IO])` or equivalent broad `apiBase` composition in focused specs.
+- `BeautySearchProductionRouteSpecSupport.scala` now builds route probes from targeted route modules directly: `BeautySearchRouteModules.apiElasticsearch` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`.
+- Qdrant resource specs snapshot `super.config` once before adding `Mode.Test` activation and `QdrantPortCfg` memoization roots.
+- The fix is test-only. No production route, API, plugin, DI, or HTTP source changed. `/beauty-search` behavior did not change.
+
+## Pending and canceled meaning
+
+The `8 pending` tests are intentional future-boundary expectations, not failures:
+
+- `BeautySearchOptInRouteModuleSpec.scala`: `5` pending expectations keep the future explicit Qdrant opt-in route boundary compile-safe and outside the default ES graph until separate implementation and serving approval exists.
+- `BeautySearchProductionRouteExposureSpec.scala`: `1` pending expectation keeps `POST /beauty-search` ES-backed until separate production-route activation approval exists.
+- `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala`: `2` pending expectations keep ES local/dev fallback and runtime route-gate / HTTP 503 behavior as future-only work.
+
+The `1 canceled` test remains expected manual/resource-gated coverage and is not a blocker.
+
 ## ES post-M5 verification boundary
 
 Current active ES lifecycle specs already prove the planning closeout boundary:

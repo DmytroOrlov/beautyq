@@ -4,6 +4,8 @@ Status: M5 is closed as a bounded startup-readiness lifecycle checkpoint. Full E
 
 Post-M5 planning aggregate status: closed as planning only. The remaining ES future tracks are runtime route-gate deferred under Candidate A, replacement/freshness/rollback future, and full lifecycle operations future.
 
+Verification note: the later Distage `IncludesDSL$Include.interpret` NPE fix and full-suite green closeout were test-only and did not change any M5 boundary, production route behavior, or `/beauty-search` behavior. The compact coordinator source truth for that closeout lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
+
 ## Closeout decision
 
 M5 is closed as a bounded startup-readiness lifecycle checkpoint. Source truth supports closure: all non-serving lifecycle seams are implemented and test-covered, app-start fail-closed and prepared-serving behavior are proven, and the remaining production lifecycle work is clearly bounded and unstarted.

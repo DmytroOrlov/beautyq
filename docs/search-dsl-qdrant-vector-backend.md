@@ -8,6 +8,7 @@ Status summary:
 * Implementation approval remains absent.
 * Production route activation remains not approved.
 * Production `/beauty-search` remains ES-backed.
+* The prior full-suite Distage include-path NPE is closed by test-only changes; the current compact source truth and pending-map live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `06-tests-and-contracts.md`.
 
 ## 1. Goal
 
