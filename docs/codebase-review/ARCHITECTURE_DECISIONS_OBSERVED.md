@@ -239,6 +239,12 @@ What not to infer:
 
 - Do not infer production readiness enforcement, refresh/replacement/rollback policy, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these internal seams.
 
+Current milestone boundary:
+
+- M5 is closed.
+- ES post-M5 planning is closed as planning only.
+- Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain separate future tracks and are not implemented today.
+
 ## Decision 11: ES lifecycle visibility remains non-serving until serving-gate policy is approved
 
 Statement:
@@ -360,3 +366,27 @@ What not to infer:
 - Do not infer production lifecycle completion from M5 closure.
 - Do not infer that runtime serving-gate enforcement, operator-visible endpoint, replacement, freshness, refresh, or rollback are implemented.
 - Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
+
+## Decision 13: Qdrant closeouts stop at approval-request readiness, not serving approval
+
+Statement:
+
+- M6 is closed as the Qdrant production-candidate readiness foundation, and M7 is closed as the activation/source-confirmation and serving-policy planning foundation. The next boundary is approval-request readiness for a future disabled-by-default opt-in route only; implementation approval and production route activation remain absent.
+
+Evidence:
+
+- `QdrantProductionCandidateM6CloseoutSpec` closes the pure readiness foundation.
+- `QdrantProductionCandidateM7CloseoutSpec` closes the pure planning/source-confirmation foundation.
+- `QdrantProductionCandidateServingApprovalRequestSpec` proves the current evidence package is ready to request explicit approval only.
+- `LeaderboardPlugin` still includes only the ES-backed route through `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+
+Consequences:
+
+- `/beauty-search` remains ES-backed.
+- Any future Qdrant route must be a separate opt-in module and requires separate implementation approval.
+- No serving, route switch, hybrid serving, fallback, score fusion, reranking, shadow serving, or traffic mirroring is approved by these closeouts.
+
+What not to infer:
+
+- Do not infer Qdrant implementation approval from approval-request readiness.
+- Do not infer production route activation approval from M6 or M7 closure.

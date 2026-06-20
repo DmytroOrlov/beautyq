@@ -1,5 +1,14 @@
 # Search DSL Qdrant Vector Backend
 
+Status summary:
+
+* M6 is closed as the Qdrant production-candidate readiness foundation.
+* M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
+* The approval-request boundary is ready to request explicit approval for a future disabled-by-default explicit opt-in Qdrant route implementation.
+* Implementation approval remains absent.
+* Production route activation remains not approved.
+* Production `/beauty-search` remains ES-backed.
+
 ## 1. Goal
 
 Qdrant is a separate backend for semantic/vector recall in BeautyQ search.

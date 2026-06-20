@@ -2,6 +2,15 @@
 
 This file separates current gaps from future recommendations. Do not read recommendations as current implementation.
 
+Status ownership:
+
+- M5 closed as a bounded ES startup-readiness lifecycle checkpoint.
+- M6 closed as the Qdrant production-candidate readiness foundation.
+- M7 closed as the activation/source-confirmation and serving-policy planning foundation.
+- ES post-M5 planning aggregate closed as planning only; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain future and unimplemented.
+- Qdrant approval-request boundary is ready to request explicit approval for a future disabled-by-default opt-in route implementation; implementation approval and production route activation remain absent.
+- Production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
+
 ## Confirmed Current Gaps
 
 ## ES post-M5 planning aggregate
@@ -111,7 +120,7 @@ The current phase is between:
 - resource-backed hidden Qdrant/hybrid module expansion — paused.
 - C: production `/beauty-search` hybrid backend — future.
 
-ES seed route default is the current nearest checkpoint. B-lite eval comparison continues as eval-only work. M5 is closed as a bounded startup-readiness lifecycle checkpoint; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
+ES seed route default is the current production state. B-lite eval comparison continues as eval-only work. M5 is closed as a bounded startup-readiness lifecycle checkpoint; runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
 
 Production serving:
 
@@ -228,7 +237,7 @@ M3/B-lite remains an offline evidence lane. The current expanded checkpoint is u
 
 #### Lane C: Qdrant production-candidate readiness
 
-Qdrant remains active as a direct production-candidate target. M6 is closed as a pure, route-independent readiness foundation covering quality/parity, activation policy, indexing/search, observability, and rollback/disable adapters. It does not enable production serving and does not require real production shadow traffic or production traffic mirroring.
+Qdrant remains active as a direct production-candidate target. M6 is closed as a pure, route-independent readiness foundation covering quality/parity, activation policy, indexing/search, observability, and rollback/disable adapters. M7 is closed as the matching activation/source-confirmation and serving-policy planning foundation. Neither milestone enables production serving or route activation.
 
 | Gate | Why | Skip risk |
 |------|-----|-----------|

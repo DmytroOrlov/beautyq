@@ -1,6 +1,6 @@
 # ES Lifecycle Status Design
 
-Status: **Design A operator visibility endpoint implemented as explicit opt-in module.** Response model/encoder implemented and HTTP-exposed through `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future. Runtime serving-gate work is separate and currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists. Full ES production lifecycle remains incomplete.
+Status: **Design A operator visibility endpoint implemented as explicit opt-in module.** Response model/encoder implemented and HTTP-exposed through `GET /ops/beauty-search/lifecycle`. Endpoint is NOT in the default ES route graph; available only through explicit opt-in modules (`seedCatalogElasticsearchWithOperatorVisibility`, `apiElasticsearchWithOperatorVisibility`). Response shape: `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. No new Elasticsearch calls. No `/beauty-search` behavior change. No runtime route gate or HTTP 503 behavior. Design B/C remain future. Runtime serving-gate work is separate and currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists. Full ES production lifecycle remains incomplete, and the post-M5 planning aggregate remains planning only.
 
 - Endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal operator visibility endpoint.
 - Endpoint is NOT in the default `apiElasticsearch` graph or `LeaderboardPlugin` production graph.
@@ -19,6 +19,12 @@ The purpose is to:
 - support future startup readiness, replacement, freshness, refresh, rollback, and operator-visibility decisions.
 
 This document does not approve an endpoint path, HTTP status policy, auth policy, polling policy, caching policy, or dashboard integration.
+
+Current ownership boundary:
+
+- this doc owns the lifecycle-status shape and explicit non-surfaces;
+- it does not own roadmap status, which lives in `07-current-gaps-and-roadmap.md`;
+- it does not own handoff status, which lives in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 ## Current source-backed internal inputs
 

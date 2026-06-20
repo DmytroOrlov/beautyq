@@ -49,10 +49,10 @@ Implemented/current:
 - `BeautySearchOptInRouteModuleSpec`: focused proof that the composed opt-in route module contributes exactly one `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response from the seed-resource catalog/in-memory backend without `HttpServer`, `LeaderboardPlugin`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
 - `LeaderboardPlugin` top-level includes `modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch` (ES-backed seed route, default), so `POST /beauty-search` is production-included in the default API graph.
 - `BeautySearchProductionRouteExposureSpec`: focused proof that the default plugin API graph contributes `BeautySearchApi[IO]` through the real `Set[HttpApi[IO]]` shape and serves one successful non-empty `POST /beauty-search` response without `HttpServer`, Elasticsearch, Qdrant, hybrid, Docker, repository snapshots, or startup indexing.
-- `BeautySearchProductionRouteLimitSpec`: characterizes `POST /beauty-search` limit validation through the ES-backed production route: accepted positive limits return `200 OK`; zero, negative, and above-carousel-maximum limits return Tapir's default `400 BadRequest`.
+- `BeautySearchProductionRouteLimitSpec`: characterizes `POST /beauty-search` limit validation through the ES-backed production route: accepted positive limits return `200 OK`; zero, negative, and above-carousel-maximum limits return structured semantic `400 BadRequest` failures.
 - `BeautySearchProductionRouteErrorSpec`: characterizes malformed or incomplete `POST /beauty-search` requests through the ES-backed production route: malformed JSON, empty body, wrong field types, and missing required fields return Tapir's default `400 BadRequest`.
-- `BeautySearchProductionRouteCoordinateSpec`: characterizes coordinate validation through the ES-backed production route: coordinates within the endpoint bounds are accepted; latitude or longitude outside the configured ranges return Tapir's default `400 BadRequest`.
-- `BeautySearchProductionRouteQuerySpec`: characterizes query validation through the ES-backed production route: non-blank query text is accepted; empty and whitespace-only queries return Tapir's default `400 BadRequest`. No maximum query-length validation is currently defined.
+- `BeautySearchProductionRouteCoordinateSpec`: characterizes coordinate validation through the ES-backed production route: coordinates within the endpoint bounds are accepted; latitude or longitude outside the configured ranges return structured semantic `400 BadRequest` failures.
+- `BeautySearchProductionRouteQuerySpec`: characterizes query validation through the ES-backed production route: non-blank query text is accepted; empty and whitespace-only queries return structured semantic `400 BadRequest` failures. No maximum query-length validation is currently defined.
 
 Production-wired/current:
 
@@ -245,6 +245,13 @@ Future implementation boundary:
 - Repository-backed/live indexing requires explicit index lifecycle, readiness, failure behavior, freshness, and observability design.
 
 ## E. Qdrant / Vector Path
+
+Current milestone boundary:
+
+- M6 is closed as the Qdrant production-candidate readiness foundation.
+- M7 is closed as the activation/source-confirmation and serving-policy planning foundation.
+- The approval-request boundary is ready for a future disabled-by-default explicit opt-in route request only.
+- No Qdrant serving route, route switch, hybrid serving, or production activation is implemented.
 
 Implemented/current non-production components:
 

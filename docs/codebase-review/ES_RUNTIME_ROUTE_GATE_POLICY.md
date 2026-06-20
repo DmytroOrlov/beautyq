@@ -1,6 +1,6 @@
 # ES Runtime Route Gate Policy
 
-Status: docs-only policy note. Runtime route-gate code is not implemented. This future track is closed for planning only under Candidate A and remains deferred.
+Status: docs-only policy note. Runtime route-gate code is not implemented. This future track is closed for planning only under Candidate A and remains deferred. M5 remains closed; this note does not reopen it.
 
 This note source-confirms the runtime serving-gate track after the current startup-readiness closeout:
 
@@ -197,6 +197,13 @@ Production baseline or replacement/freshness/rollback required:
 ## Recommendation
 
 Keep Candidate A for now: app-start fail-closed only, with no runtime HTTP gate until a runtime readiness source or replacement/freshness/rollback policy exists.
+
+Current boundary to preserve:
+
+- no runtime route-gate implementation;
+- no `/beauty-search` behavior change;
+- no operator command surface;
+- no replacement/freshness/rollback implementation.
 
 ## Unresolved decisions before implementation
 

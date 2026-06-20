@@ -21,6 +21,17 @@ Current active ES lifecycle specs already prove the planning closeout boundary:
 
 No additional aggregate Scala spec is required for this docs closeout because the active route/module/status specs already cover the present no-implementation boundary.
 
+## Qdrant post-M7 verification boundary
+
+Current active Qdrant pure specs already prove the closeout boundary:
+
+- M6 is closed as the pure production-candidate readiness foundation.
+- M7 is closed as the pure activation/source-confirmation and serving-policy planning foundation.
+- `QdrantProductionCandidateServingApprovalRequestSpec.scala` proves approval-request readiness only.
+- No Qdrant serving route, opt-in route implementation, production route activation, hybrid serving, shadow serving, or traffic mirroring exists today.
+
+No additional route/runtime/resource spec is required for this docs closeout because the current boundary is still pure planning/readiness evidence, not serving implementation.
+
 ## HTTP Contract Tests
 
 Implemented/current:

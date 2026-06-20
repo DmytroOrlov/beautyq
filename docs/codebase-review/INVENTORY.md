@@ -23,15 +23,22 @@ Build/module observations:
 
 ## 2. Existing documentation
 
+Current status map:
+
+- `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: canonical handoff for current production route, milestone closeouts, and next decision boundaries.
+- `docs/codebase-review/07-current-gaps-and-roadmap.md`: canonical roadmap owner for future ES lifecycle tracks, B-lite eval, and Qdrant candidate/hybrid milestones.
+- `docs/codebase-review/06-tests-and-contracts.md`: canonical verification-scope owner for current route/lifecycle/readiness boundaries.
+- `docs/codebase-review/05-search-and-retrieval-architecture.md`: canonical architecture owner for current implementation surfaces and non-surfaces.
+
 - `README.md`: generic distage-example README. Evidence: describes `bifunctor-tagless/src` as main example, `sbt test`, `./launcher -u scene:managed :leaderboard`, and `./launcher -u repo:dummy :leaderboard`.
 - `beautyq_search_eval_plan_v1.md`: offline benchmark/eval plan for Wandsbek/Hamburg seed dataset. Evidence: names `MasterServiceOfferVariant` as primary buyable unit and lists `variantCarousel`, `providerCarousel`, `serviceIntentCarousel`.
 - `docs/beautyq-search-dsl-v1.md`: describes search V1 as immutable Scala values interpreted into Postgres snapshot flattening, Elasticsearch mapping/ingestion/request/response, and pure in-memory regression backend. Evidence: names packages `leaderboard.search.dsl`, `document`, `parser`, `interpreter`, `elasticsearch`, `inmemory`, `eval`.
 - `docs/search-dsl-domain-onboarding.md`: describes reusable search DSL/interpreter concepts and domain-specific pieces. Evidence: names `SearchField`, `SearchDocumentSpec`, `SearchConstraint`, `SearchSynonym`, `BeautySearchSpec`, Elasticsearch interpreters, `InMemorySearchBackend`, and `BeautySearchEvalTestSupport`.
-- `docs/search-dsl-qdrant-vector-backend.md`: Qdrant/vector backend plan/status. Evidence: states Qdrant is separate semantic/vector recall backend, complements Elasticsearch, and production hybrid is not implemented. It records M6 closed as the pure `QdrantProductionCandidateReadiness*` foundation and the M7 activation planning/source-confirmation foundation closed without serving implementation. The roadmap frames Qdrant as a direct production-candidate target rather than a shadow-first path.
+- `docs/search-dsl-qdrant-vector-backend.md`: Qdrant/vector backend design/history owner. Evidence: states Qdrant is separate semantic/vector recall backend, complements Elasticsearch, and production hybrid is not implemented. It records M6 closed as the pure `QdrantProductionCandidateReadiness*` foundation, M7 closed as planning/source-confirmation, and the approval-request boundary as ready while implementation approval remains absent.
 - `docs/search-dsl-hybrid-v1-plan.md`: hybrid search plan/status. Evidence: states Hybrid V1 is non-production foundation, Elasticsearch remains baseline, and there is no production hybrid behavior, fallback, score fusion, reranking, or production routing change.
 - Removed former HTTP contract inventory for legacy raw JSON single-entity GETs after its remaining current truth was absorbed into canonical HTTP/test docs.
 - Removed historical migration plan for `MasterServiceOfferVariant` typed GET. Its current source truth was absorbed by canonical docs and route-level contract suites before deletion.
-- `docs/codebase-review/07-current-gaps-and-roadmap.md`: roadmap status owner for current gaps, milestone progression, and priority order. Evidence: includes lane/gate breakdowns and milestone summary for ES lifecycle, eval, Qdrant production-candidate readiness, and hybrid serving.
+- `docs/codebase-review/07-current-gaps-and-roadmap.md`: roadmap status owner for current gaps, milestone progression, and priority order. Evidence: includes lane/gate breakdowns and milestone summary for ES lifecycle, eval, Qdrant production-candidate readiness, approval-request readiness, and hybrid serving.
 - `bifunctor-tagless/src/main/scala/leaderboard/search/qdrant/QdrantProductionCandidateReadiness.scala`: pure production-candidate readiness state/status/report and assembler policy. Evidence: active conservative default, eight required readiness categories, all-ready requirement, collection-compatibility adapter, and quality-report helper; no route or serving integration.
 - `bifunctor-tagless/src/main/scala/leaderboard/search/qdrant/QdrantProductionCandidateQualityGate.scala`: pure quality/parity report, explicit query-count/recall-deficit/noise rule, `EngineEvalAggregateReport` adapter, stable decision reasons, and readiness-status mapping; no Qdrant, HTTP, or serving dependency.
 - `bifunctor-tagless/src/main/scala/leaderboard/search/qdrant/QdrantProductionCandidateActivationPolicy.scala`: pure explicit-approval, scope, control/evidence, blocking-reason, and readiness-status policy; production-route activation is not approved and no route is bound.
