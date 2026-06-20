@@ -43,7 +43,7 @@ For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, saved-report, static-runner, fixture, and backend-runner interface slices exist; real ES/Qdrant backend-runner execution stays future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
+| M8/M9 shared contracts | Started | Pure vocabulary, M8 telemetry schema renderer/static adapter, saved-report, static-runner, fixture, and backend-runner interface slices exist; telemetry emission and real ES/Qdrant backend-runner execution stay future under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -69,11 +69,13 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, implemented pure slices, and the pure backend-runner interface seam are owned by `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 - define request/result event schema plan;
+- render the planned M8 schema through pure deterministic schema artifacts;
 - record backend attribution;
 - record latency metrics;
 - record quality proxy metrics;
 - record failure metrics;
 - keep the default route unchanged;
+- do not add telemetry emission, metrics-client integration, route hooks, or production traffic observation in the schema-renderer slice;
 - do not activate production hybrid yet.
 
 ### M9. Stronger offline eval harness

@@ -31,6 +31,8 @@ Implemented pure slices:
 - `leaderboard.search.M9OfflineEvalStaticFixturesSpec` locks fixture query-class coverage, stable order, static-runner assembly, checked-in resource parity, non-activation quality decision, and the non-serving boundary. The checked-in artifact is `bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-static-example-report.md`.
 - `leaderboard.search.eval.M9OfflineEvalBackendRunner` defines the first pure backend-runner interface slice: execution modes, execution plans, run/query requests, candidates, query results, failures-as-data, run responses, a static/manual adapter, and conversion to `M9OfflineEvalStaticRunInput`.
 - `leaderboard.search.M9OfflineEvalBackendRunnerSpec` locks the vocabulary-only ES-only/Qdrant-only/future-hybrid modes, manual/static adapter boundary, deterministic missing-id validation, failure-as-data rows, static-runner compatibility, no hidden fallback field, and no route/plugin/DI/HTTP/Docker/client surface.
+- `leaderboard.search.eval.M8TelemetrySchemaRenderer` defines the first pure M8 telemetry schema renderer/static schema adapter slice: stable schema format version, deterministic markdown and compact text renderers, planned event-family field schemas, metric schemas, and explicit conditional-future marking for fusion/rerank/fallback/interaction metrics.
+- `leaderboard.search.M8TelemetrySchemaRendererSpec` locks event-family order, stable format version, rendered planned field/metric names, conditional-future metric marking, non-emission boundary, no route/plugin/DI/HTTP/backend-client surface, and byte-for-byte repeat rendering.
 - This slice is pure/non-serving. It adds no telemetry emission, metrics client, route wiring, plugin wiring, HTTP behavior, real ES adapter, real Qdrant adapter, backend client integration, hybrid serving, fusion, or reranking.
 
 M8 and M9 are paired because they need the same vocabulary for backend/source attribution, policy naming, query-class reporting, and report artifacts. Offline eval should establish that vocabulary first so future production telemetry can reuse the same terms and metric names where possible. Seed/eval evidence must remain separate from production telemetry, and there is no real production traffic in this project context yet.
@@ -42,7 +44,7 @@ Current route truth is owned by `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, not
 - default production `/beauty-search` remains ES-backed;
 - Qdrant explicit opt-in exists and stays disabled by default;
 - production activation is not approved;
-- production telemetry emission and offline ES/Qdrant backend-runner execution are not implemented;
+- production telemetry emission, metrics client integration, route hooks, and offline ES/Qdrant backend-runner execution are not implemented;
 - there is no real production traffic in this project context yet.
 
 For exact route/module names, verification counts, and activation boundary wording, use the handoff plus `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
@@ -72,7 +74,7 @@ Additional usage rules:
 
 ## 4. M8 telemetry event schema
 
-This is a schema-plan contract, not telemetry emission.
+This is a schema-plan contract, not telemetry emission. The first pure renderer/static adapter exists as `M8TelemetrySchemaRenderer` / `M8TelemetrySchemaAdapter.defaultPlannedSchema`; it renders deterministic schema artifacts only and does not read requests, routes, clocks, metrics clients, ES, Qdrant, or production traffic.
 
 Planned event families:
 

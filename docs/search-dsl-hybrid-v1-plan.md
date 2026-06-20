@@ -18,6 +18,7 @@ What matters in this plan:
 * runtime hybrid module expansion is paused;
 * simulated hybrid remains benchmark/eval only;
 * any later hybrid eval execution must flow through the pure offline M9 backend-runner interface before any serving change is considered.
+* any later hybrid telemetry field/metric naming must align with the pure M8 telemetry schema renderer before route hooks, metrics-client integration, or production telemetry are added.
 
 Guardrails:
 

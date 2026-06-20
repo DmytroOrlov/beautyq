@@ -98,11 +98,12 @@ No additional route/runtime/resource spec is required for this docs closeout bec
 Current active pure eval specs prove the non-serving M8/M9 boundary:
 
 - `M8M9EvalContractsSpec.scala`: shared vocabulary, query-class taxonomy, metric names, and schema-plan terms are stable strings/values only.
+- `M8TelemetrySchemaRendererSpec.scala`: the pure M8 telemetry schema renderer/static adapter keeps event-family order, stable `m8-telemetry-schema-v1` format rendering, planned field and metric names, conditional-future fusion/rerank/fallback/interaction metrics, no telemetry-emission representation, and no route/plugin/DI/HTTP/backend-client surface.
 - `M9OfflineEvalSavedReportSpec.scala`: the saved M9 dataset/report format and deterministic markdown renderer exist without backend execution.
 - `M9OfflineEvalStaticRunnerSpec.scala`: the static/in-memory runner assembles caller-supplied dataset, metadata, rows, metrics, quality-gate decision, notes, warnings, and generated-at text into the saved report and markdown artifact; it validates dataset/catalog/query-id consistency and computes only simple supplied-status summary counts.
 - `M9OfflineEvalStaticFixturesSpec.scala`: canonical static fixtures cover exact product/name/brand, semantic descriptive, ambiguous, and negative/out-of-catalog query classes; generated markdown must match the checked-in example resource artifact and remain example-only/non-serving.
 
-These specs do not prove ES/Qdrant backend execution, telemetry emission, route wiring, production activation, hybrid serving, fallback, fusion, reranking, shadow serving, or traffic mirroring.
+These specs do not prove ES/Qdrant backend execution, telemetry emission, metrics client integration, route hooks, route wiring, production activation, hybrid serving, fallback, fusion, reranking, shadow serving, or traffic mirroring.
 
 ### Explicit opt-in Qdrant route readiness runbook
 
