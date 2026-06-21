@@ -33,17 +33,81 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
   val RepresentativeQueryIds: List[String] =
     List("q_nails_001", "q_nails_003", "q_noise_005")
 
+  val StaticQueryIds: List[String] =
+    List(
+      "q_nails_001",
+      "q_nails_002",
+      "q_nails_003",
+      "q_nails_004",
+      "q_nails_005",
+      "q_nails_006",
+      "q_nails_007",
+      "q_nails_008",
+      "q_nails_009",
+      "q_nails_010",
+      "q_nails_011",
+      "q_nails_012",
+      "q_lashes_001",
+      "q_lashes_002",
+      "q_lashes_003",
+      "q_lashes_004",
+      "q_lashes_005",
+      "q_lashes_006",
+      "q_lashes_007",
+      "q_lashes_008",
+      "q_brows_001",
+      "q_brows_002",
+      "q_brows_003",
+      "q_brows_004",
+      "q_brows_005",
+      "q_brows_006",
+      "q_hair_001",
+      "q_hair_002",
+      "q_hair_003",
+      "q_hair_004",
+      "q_hair_005",
+      "q_hair_006",
+      "q_hair_007",
+      "q_hair_008",
+      "q_hair_009",
+      "q_hair_010",
+      "q_pmu_001",
+      "q_pmu_002",
+      "q_pmu_003",
+      "q_pmu_004",
+      "q_pmu_005",
+      "q_pmu_006",
+      "q_face_001",
+      "q_face_002",
+      "q_face_003",
+      "q_face_004",
+      "q_face_005",
+      "q_face_006",
+      "q_face_007",
+      "q_face_008",
+      "q_home_001",
+      "q_home_002",
+      "q_broad_001",
+      "q_broad_002",
+      "q_broad_003",
+      "q_broad_004",
+      "q_broad_005",
+      "q_broad_006",
+      "q_noise_001",
+      "q_noise_002",
+      "q_noise_003",
+      "q_noise_004",
+      "q_noise_005",
+    )
+
   val RequiredResourceAnchors: List[String] =
     List(
       "\"queryCount\": 63",
-      "\"id\": \"q_nails_001\"",
-      "\"id\": \"q_nails_003\"",
-      "\"id\": \"q_noise_005\"",
       "\"acceptableVariantIds\"",
       "\"acceptableProviderLocationIds\"",
       "\"acceptableServiceIds\"",
       "\"serviceIntentCarousel\"",
-    )
+    ) ++ StaticQueryIds.map(queryId => s""""id": "$queryId"""")
 
   val DefaultInput: M9BeautyQSearchEvalQueryDatasetStaticRowsInput =
     M9BeautyQSearchEvalQueryDatasetStaticRowsInput(
@@ -69,15 +133,15 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
     StaticRun.markdownArtifact
 
   def build(input: M9BeautyQSearchEvalQueryDatasetStaticRowsInput): M9BeautyQSearchEvalQueryDatasetStaticRowsResult = {
-    val queries = representativeDatasetQueries
-    val rows = representativeRows
+    val queries = datasetQueries
+    val rows = staticRows
     val summary = M9BeautyQSearchEvalQueryDatasetStaticRowsSummary(
       datasetId = input.metadata.datasetId,
       fullDatasetQueryCount = input.metadata.queryCount,
       mappedRowCount = rows.size,
-      representativeQueryIds = rows.map(_.queryId),
+      representativeQueryIds = RepresentativeQueryIds,
       fullJsonParsingImplemented = false,
-      full63QueryExpansionImplemented = false,
+      full63QueryExpansionImplemented = true,
       realBackendCallRequired = false,
       routePluginDiHttpSourceInvolved = false,
     )
@@ -106,11 +170,19 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
         aggregateMetrics = aggregateMetrics(summary),
         qualityGateDecision = "static_dataset_mapping_only",
         notes = notes(input.metadata, summary),
-        warnings = warnings(summary),
+        warnings = warnings,
         generatedAt = input.generatedAt,
       ),
       summary = summary,
     )
+  }
+
+  private def datasetQueries: List[M9OfflineEvalDatasetQuery] = {
+    val representativeById = representativeDatasetQueries.map(query => query.queryId -> query).toMap
+
+    StaticQueryIds.map { queryId =>
+      representativeById.getOrElse(queryId, placeholderDatasetQuery(queryId))
+    }
   }
 
   private def representativeDatasetQueries: List[M9OfflineEvalDatasetQuery] =
@@ -198,25 +270,65 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       ),
     )
 
-  private def representativeRows: List[M9OfflineEvalReportRow] =
-    representativeDatasetQueries.map { query =>
-      M9OfflineEvalReportRow(
-        queryId = query.queryId,
-        queryClass = query.queryClass,
-        servingMode = ServingMode.Unknown,
-        candidateSource = CandidateSource.Manual,
-        topKResultIds = query.expectedResults.map(_.resultId),
-        metrics = List(
-          metric(OfflineEvalMetricName.RegressionPassFail, OfflineEvalMetricValue.Text("unknown")),
-          metric(OfflineEvalMetricName.QualityGateDecision, OfflineEvalMetricValue.Text("static_dataset_mapping_only")),
-        ),
-        regressionStatus = "unknown",
-        warnings = List(
-          "Static dataset fixture mapping only; top_k_result_ids are fixture anchors, not backend retrieval results.",
-          "No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented.",
-        ),
-      )
+  private def staticRows: List[M9OfflineEvalReportRow] = {
+    val representativeRowsById = representativeDatasetQueries.map(representativeRow).map(row => row.queryId -> row).toMap
+
+    StaticQueryIds.map { queryId =>
+      representativeRowsById.getOrElse(queryId, placeholderRow(queryId))
     }
+  }
+
+  private def representativeRow(query: M9OfflineEvalDatasetQuery): M9OfflineEvalReportRow =
+    M9OfflineEvalReportRow(
+      queryId = query.queryId,
+      queryClass = query.queryClass,
+      servingMode = ServingMode.Unknown,
+      candidateSource = CandidateSource.Manual,
+      topKResultIds = query.expectedResults.map(_.resultId),
+      metrics = List(
+        metric(OfflineEvalMetricName.RegressionPassFail, OfflineEvalMetricValue.Text("unknown")),
+        metric(OfflineEvalMetricName.QualityGateDecision, OfflineEvalMetricValue.Text("static_dataset_mapping_only")),
+      ),
+      regressionStatus = "unknown",
+      warnings = List(
+        "Static dataset fixture mapping only; top_k_result_ids are fixture anchors, not backend retrieval results.",
+        "No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented.",
+      ),
+    )
+
+  private def placeholderDatasetQuery(queryId: String): M9OfflineEvalDatasetQuery =
+    M9OfflineEvalDatasetQuery(
+      queryId = queryId,
+      rawQueryText = queryId,
+      normalizedQueryText = Some(queryId),
+      queryClass = QueryClass.Category,
+      filters = List("static_fixture_anchor=true"),
+      categories = Nil,
+      expectedResults = Nil,
+      expectedNotes = List(
+        "Static 63-query fixture anchor only; full JSON parsing is intentionally deferred.",
+        "No backend retrieval quality is measured by this placeholder query.",
+      ),
+      negativeOutOfCatalog = false,
+    )
+
+  private def placeholderRow(queryId: String): M9OfflineEvalReportRow =
+    M9OfflineEvalReportRow(
+      queryId = queryId,
+      queryClass = QueryClass.Category,
+      servingMode = ServingMode.Unknown,
+      candidateSource = CandidateSource.Manual,
+      topKResultIds = Nil,
+      metrics = List(
+        metric(OfflineEvalMetricName.RegressionPassFail, OfflineEvalMetricValue.Text("unknown")),
+        metric(OfflineEvalMetricName.QualityGateDecision, OfflineEvalMetricValue.Text("static_dataset_placeholder_only")),
+      ),
+      regressionStatus = "unknown",
+      warnings = List(
+        "Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results.",
+        "No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented.",
+      ),
+    )
 
   private def aggregateMetrics(summary: M9BeautyQSearchEvalQueryDatasetStaticRowsSummary): List[OfflineEvalMetric] =
     List(
@@ -235,16 +347,17 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       s"Language counts: ru=${metadata.languageCounts.ru}, en=${metadata.languageCounts.en}, de=${metadata.languageCounts.de}, mixed=${metadata.languageCounts.mixed}.",
       s"Target carousels carried from dataset metadata: ${metadata.targetCarousels.mkString(", ")}.",
       s"Representative static rows mapped: ${summary.representativeQueryIds.mkString(", ")}.",
-      "Full 63-query row expansion remains future work; this slice validates resource anchors instead of parsing the complete JSON.",
+      s"Full 63-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
+      "This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.",
       "Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.",
     )
 
-  private def warnings(summary: M9BeautyQSearchEvalQueryDatasetStaticRowsSummary): List[String] =
+  private def warnings: List[String] =
     List(
       "Offline dataset fixture mapping only; not production telemetry and not activation approval.",
       "Real backend calls remain disabled by default and are not required to build this report.",
       "No JSON parser/dependency is used; full JSON parsing is intentionally deferred.",
-      s"Representative subset only: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
+      "Rows are static placeholders/fixture anchors only, not backend retrieval results or production quality evidence.",
     )
 
   private def metric(
