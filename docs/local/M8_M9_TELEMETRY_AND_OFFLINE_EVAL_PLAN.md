@@ -594,3 +594,5 @@ Future implementation slices may include:
 - Real successful ES/Qdrant offline adapter execution branch behind the explicit resource gate defined in section 6.1
 
 These are handoff candidates only. This document does not approve code changes, tests, route wiring changes, plugin changes, DI changes, or HTTP changes.
+
+For the future-only operator view of ES-only, Qdrant-only, and combined ES/Qdrant resource-smoke execution, see `docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md`. That runbook is future-only and approves no real ES/Qdrant execution.

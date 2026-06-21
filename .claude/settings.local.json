@@ -3,7 +3,8 @@
     "allow": [
       "Bash(sbt 'Test/compile' *)",
       "Bash(git diff --check)",
-      "Bash(git status --short)"
+      "Bash(git status --short)",
+      "Bash(sbt 'testOnly *)"
     ],
     "deny": []
   }
