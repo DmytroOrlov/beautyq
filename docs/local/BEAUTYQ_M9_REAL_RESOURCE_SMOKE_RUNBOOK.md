@@ -24,6 +24,17 @@ The static scorecard verdict is `dataset_static_rows_ready` (63 mapped rows, 3
 representative anchors, 60 placeholder-only rows, 0 real/ES/Qdrant backend evidence
 rows).
 
+**Execution gate milestone closed as planning/reporting only** (options 142–145B):
+a runbook/evidence consistency contract statically checks this runbook against the
+saved evidence schema and default/no-config artifact; separate ES-only, Qdrant-only,
+and combined ES/Qdrant execution gate designs reach `pending_explicit_execution_task`
+only when prerequisites are complete and otherwise block; a deterministic
+execution-gate renderer produces a checked-in default/no-config markdown artifact
+(`bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-beautyq-real-resource-execution-gate-default.md`)
+rendering blocked/skip evidence for all three gates, never success. See
+`docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.9 for detail. No
+real ES/Qdrant execution or production activation is implemented or accepted.
+
 ## 1. Future modes
 
 This runbook anticipates three future, separately-approved modes:

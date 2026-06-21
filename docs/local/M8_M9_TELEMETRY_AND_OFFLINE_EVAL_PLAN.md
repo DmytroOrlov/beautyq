@@ -495,6 +495,16 @@ Resource-gated spike scaffolding exists; remaining planned slices are:
 
 Implemented slice 123 does not implement real backend clients, route changes, Distage module integration, or production activation.
 
+#### 6.1.9. Execution gate milestone — closed as planning/reporting only (options 142–145B)
+
+This milestone adds the following accepted offline planning/reporting contracts on top of the gate design above, and is now closed:
+
+- a runbook/evidence consistency contract (`M9BeautyQSearchEvalRealResourceRunbookConsistency`) that statically checks the future-only runbook in `docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md` against the saved evidence schema and the checked-in default/no-config evidence artifact;
+- separate ES-only, Qdrant-only, and combined ES/Qdrant execution gate designs (`M9BeautyQSearchEvalEsOnlyExecutionGateDesign`, `M9BeautyQSearchEvalQdrantOnlyExecutionGateDesign`, `M9BeautyQSearchEvalCombinedExecutionGateDesign`) that consume the prerequisites audit and corresponding plan, reach `pending_explicit_execution_task` only when prerequisites are complete, and block on default/no-config or non-ready scorecard/checkpoint states;
+- a deterministic execution-gate renderer (`M9BeautyQSearchEvalRealResourceExecutionGateRenderer`) and a checked-in default/no-config markdown artifact (`bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-beautyq-real-resource-execution-gate-default.md`) that renders blocked/skip evidence for all three gates, never success.
+
+All of the above is planning/design/reporting only: no real ES/Qdrant execution, no route/plugin/DI/HTTP involvement, no production activation, route switch, hybrid serving, fallback, score fusion, reranking, or production telemetry. Full suite after option145B: 1440 tests succeeded, 0 failed, 0 aborted, 1 canceled, 2 pending.
+
 ## 7. M9 offline metrics
 
 Planned offline metrics:
