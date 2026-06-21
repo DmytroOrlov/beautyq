@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sbt 'Test/compile' *)"
+    ],
+    "deny": [
+    ]
+  }
+}
