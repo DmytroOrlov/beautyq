@@ -1,9 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(sbt 'Test/compile' *)"
+      "Bash(sbt 'Test/compile' *)",
+      "Bash(git diff --check)",
+      "Bash(git status --short)"
     ],
-    "deny": [
-    ]
+    "deny": []
   }
 }
