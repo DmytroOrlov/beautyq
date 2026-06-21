@@ -14,6 +14,7 @@
 * Reports should be short: focused result, deviations/compile fixes, blocked verification.
 * Update docs immediately for production exposure, runtime behavior, architecture policy, or roadmap status changes.
 * Docs should record current state briefly and without fluff.
+* For BeautyQ search/eval/reporting tasks, use task-named docs and directly touched source/spec/resource files; do not read broad repo/plugin/route/DI/http files unless a failure or explicit conflict requires it.
 
 ## Verification
 
@@ -27,6 +28,9 @@ Default repo rule: `bifunctor-tagless/src/main` changes need focused checks. Age
 ## sbt rules
 
 * Do not run sbt commands in parallel, instead run one chained sbt command.
+* If a repo-local validation wrapper is provided, run it exactly; otherwise run exact requested sbt commands from the repo working directory and keep sbt tasks quoted, e.g. `sbt 'Test/compile' 'testOnly leaderboard.search.SomeSpec'`.
+* Do not run malformed or diagnostic variants such as `sbt Test/compile ...`, `sbt about`, `sbt ... | tail`, `sbt ... | head`, `sbt ... | tee`, or any command that rewrites, wraps, filters, or decomposes the requested validation command.
+* Do not run setup probes (`type/which sbt`, `java -version`, `echo $JAVA_HOME`, `echo $SBT_OPTS`, `ls/cat .sbtopts .jvmopts`), inspect sbt wrapper/launcher lines, or read resolved tool paths outside the repo unless the exact command fails with a missing-command/setup error.
 * If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
 * If escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
 * Do not edit source to work around sbt locks.
@@ -35,7 +39,7 @@ Default repo rule: `bifunctor-tagless/src/main` changes need focused checks. Age
 Preferred focused shape:
 
 ```bash
-sbt Test/compile 'testOnly leaderboard.search.SomeSpec'
+sbt 'Test/compile' 'testOnly leaderboard.search.SomeSpec'
 ```
 
 ## Current BeautyQ production search
