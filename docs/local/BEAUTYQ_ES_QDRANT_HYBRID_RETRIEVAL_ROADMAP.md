@@ -131,6 +131,8 @@ Future real M13 work — adding a disabled-by-default hybrid route/module exclud
 
 **M14A/M14B/M14C are accepted** (route-gate / serving-readiness design contract, disabled-by-default `BeautySearchServingGate` runtime route gate, and `BeautySearchLocalDevOnlyFallbackPolicy` local/dev-only fallback contract) — gate/fallback contract work only, not production activation. This closes the local/dev-only fallback and runtime route-gate / HTTP 503 behavior named as future work above. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 and section 4 for the full statement. Note: this "M14" route-gate/fallback milestone is numbered independently of the "M14. Production telemetry dry-run" section immediately below — the two are unrelated tracks that happen to share a milestone number.
 
+**M15A/M15B/M16A/M16B are accepted and closed** (M15 manual smoke checklist and its removal once superseded; M16A explicit serving-gate selector surface; M16B executable serving-gate evidence harness) — see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the full statement. This "M16" is likewise numbered independently of the "M16. Production activation implementation" section below — an unrelated, unimplemented, later track.
+
 ### M14. Production telemetry dry-run
 
 - if real production traffic exists, use controlled telemetry, shadowing, or replay only after explicit approval;
