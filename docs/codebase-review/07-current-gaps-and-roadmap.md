@@ -531,6 +531,8 @@ These are recommendations only, not current architecture:
 
 The detailed end-state roadmap is documented in `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 
+**M17 scope correction:** M17 (the gate/foundation checkpoint in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 1) closed foundation/gate/evidence work, not production hybrid search. The original user goal — a generic search DSL, configurable ES+Qdrant ingest, ES-native and Qdrant-native retrieval, metrics for combining them, and one maximally accurate combined response — remains open and is tracked as M18–M21 below.
+
 In short, the next phases are:
 
 - M8: production telemetry foundation;
@@ -540,9 +542,9 @@ In short, the next phases are:
 - M11: hybrid candidate generation;
 - M12: fusion and reranking experiments;
 - M13: controlled hybrid explicit opt-in route;
-- M14: production telemetry dry-run;
-- M15: production activation decision;
-- M16: production activation implementation;
-- M17: online optimization loop.
+- M18: real ES+Qdrant fusion engine / dual-engine retrieval execution;
+- M19: metrics and combination policy decision;
+- M20: hidden/disabled-by-default controlled hybrid serving route;
+- M21: activation decision / default-route switch approval or rejection.
 
-Those phases are future work. They do not claim hybrid serving, production telemetry, or default-route activation already exists.
+Those phases are future work. They do not claim hybrid serving, production telemetry, or default-route activation already exists. M14–M17 are not reused here — those numbers belong to the separate gate-and-evidence track in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2.

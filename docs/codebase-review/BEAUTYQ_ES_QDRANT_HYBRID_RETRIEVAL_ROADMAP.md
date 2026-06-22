@@ -3,6 +3,8 @@
 This document records the desired end-state for BeautyQ retrieval as a roadmap, not as current implementation.
 Current production `/beauty-search` remains ES-backed; Qdrant explicit opt-in exists; hybrid serving is not implemented.
 
+**M17 scope correction:** M17 (see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 1) closed foundation/gate/evidence work, not production hybrid search. The hybrid-production phases below were originally numbered M14–M17, which collided with the unrelated gate-and-evidence track's own M14/M16 numbering. They are renumbered M18–M21 here to remove that collision.
+
 ## 1. User Goals in Precise Technical Terms
 
 The user-facing goal translates to the following engineering target:
@@ -102,43 +104,35 @@ M10 (query classification and retrieval-policy readiness), M11 (candidate-genera
 
 Future real work in this lane — actual candidate generation, real fusion/reranking experiments, and a disabled-by-default hybrid route/module — remains unimplemented and opt-in only, not default production.
 
-**M14A/M14B/M14C are accepted**: route-gate / serving-readiness design contract, the disabled-by-default `BeautySearchServingGate` runtime route gate, and the `BeautySearchLocalDevOnlyFallbackPolicy` local/dev-only fallback contract — gate/fallback contract work only, not production activation. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2. Note: this "M14" route-gate/fallback milestone is numbered independently of the "M14. Production telemetry dry-run" section immediately below — the two are unrelated tracks that happen to share a milestone number.
+**M14A/M14B/M14C are accepted**: route-gate / serving-readiness design contract, the disabled-by-default `BeautySearchServingGate` runtime route gate, and the `BeautySearchLocalDevOnlyFallbackPolicy` local/dev-only fallback contract — gate/fallback contract work only, not production activation. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2. This gate-and-evidence track's M14/M16 numbering belongs to a separate, unrelated track from this roadmap's own milestones; the hybrid-production phases that used to collide with it (M14–M17 below) are renumbered M18–M21 below.
 
-**M15A/M15B/M16A/M16B are accepted and closed**: the M15 manual smoke checklist and its removal once superseded, the M16A explicit serving-gate selector surface, and the M16B executable serving-gate evidence harness. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2. This "M16" is likewise numbered independently of the "M16. Production activation implementation" section below — an unrelated, unimplemented, later track.
+**M15A/M15B/M16A/M16B are accepted and closed**: the M15 manual smoke checklist and its removal once superseded, the M16A explicit serving-gate selector surface, and the M16B executable serving-gate evidence harness. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2. This "M16" belongs to the same gate-and-evidence track noted above, unrelated to this roadmap's M18–M21.
 
-### M14. Production telemetry dry-run
+### M18. Real ES+Qdrant fusion engine / dual-engine retrieval execution
 
-- if real production traffic exists, use controlled telemetry, shadowing, or replay only after explicit approval;
-- if no real traffic exists, do not pretend shadow metrics are meaningful;
-- keep offline/resource/manual evidence honest.
+- implement real ES-native retrieval and real Qdrant-native retrieval as dual-engine execution, not simulated/offline-only;
+- define the candidate-union/fusion engine that combines ES-native and Qdrant-native results into one maximally accurate combined response;
+- keep this engine out of the default production route until M20/M21 approve a serving path;
+- no production wiring, no default route switch, no fallback.
 
-### M15. Production activation decision
+### M19. Metrics and combination policy decision
 
-- choose ES-only, narrow Qdrant, narrow hybrid, global hybrid, or no activation;
-- require explicit approval;
-- keep rollback and observability part of the decision.
+- define the metrics used to compare and combine ES-native and Qdrant-native results (per-query-class and aggregate);
+- decide the combination/fusion policy from evidence, not from a fixed heuristic;
+- keep this decision-support only; it does not authorize serving.
 
-### M16. Production activation implementation
+### M20. Hidden/disabled-by-default controlled hybrid serving route
 
-- implement only after explicit approval;
-- keep it config-gated;
-- keep it rollbackable;
-- keep it observable;
-- keep route-exposure tests in place;
-- rerun the full suite after implementation;
-- do not add hidden hybrid, fallback, fusion, reranking, shadowing, or mirroring behavior.
+- implement a hybrid serving route gated disabled-by-default, mirroring the existing `BeautySearchServingGate` pattern;
+- keep it outside the default `apiElasticsearch` graph, same as the Qdrant explicit opt-in route;
+- route-exposure tests and full-suite verification required before this milestone is accepted;
+- does not change the production default.
 
-### M17. Online optimization loop
+### M21. Activation decision / default-route switch approval or rejection
 
-- collect production metrics;
-- identify ES winners, Qdrant winners, and hybrid winners;
-- tune routing policy;
-- tune fusion weights;
-- tune candidate counts;
-- tune ES analyzers if needed;
-- tune embeddings if needed;
-- add real failure cases to offline eval;
-- repeat with explicit approvals and rollback paths.
+- explicit approval or rejection of switching the default `/beauty-search` route to hybrid (or narrow Qdrant);
+- require rollback/disable plan, observability evidence, and full-suite verification as part of the decision record;
+- this is the only milestone that can approve a default-route switch; absence of approval here means the ES-backed default remains unchanged.
 
 ## 6. Senior-Design Criteria
 
