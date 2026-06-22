@@ -138,6 +138,37 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     locator.get[BeautySearchProductionRouteWithOperatorVisibilityProbe]
   }
 
+  protected final def buildServingGateEsRouteProbe(
+    port: Int,
+    servingGate: leaderboard.api.BeautySearchServingGate,
+  ): BeautySearchProductionRouteProbe = {
+    val module = new distage.ModuleDef {
+      include(leaderboard.plugins.ElasticsearchClientModules.portConfigured)
+      include(BeautySearchRouteModules.seedCatalogElasticsearchWithServingGate(servingGate))
+      make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
+      make[Async[Task]].fromValue(Async[Task])
+      make[BeautySearchProductionRouteProbe].from {
+        (
+          beautySearchApi: BeautySearchApi[IO],
+          allHttpApis: Set[HttpApi[IO]],
+          lifecycleMetadata: ElasticsearchSeedLifecycleMetadata,
+          productionReadinessState: ElasticsearchProductionReadinessState,
+          startupTransition: ElasticsearchStartupReadinessTransition,
+        ) =>
+          BeautySearchProductionRouteProbe(beautySearchApi, allHttpApis, lifecycleMetadata, productionReadinessState, startupTransition)
+      }
+    }
+
+    val locator = Injector().produce(
+      bindings = module,
+      roots = Roots.target[BeautySearchProductionRouteProbe],
+      activation = Activation.empty,
+      locatorPrivacy = LocatorPrivacy.PublicByDefault,
+    ).unsafeGet()
+
+    locator.get[BeautySearchProductionRouteProbe]
+  }
+
   protected final def buildTargetedEsRouteProbe(port: Int): BeautySearchProductionRouteProbe = {
     val module = new distage.ModuleDef {
       include(BeautySearchRouteModules.apiElasticsearch)

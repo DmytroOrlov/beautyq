@@ -9,19 +9,26 @@ import leaderboard.search.BeautySearchService
 import leaderboard.search.elasticsearch.ElasticsearchStartupReadinessTransition
 
 object BeautySearchPluginModules {
-  def api[F[+_, +_]: TagKK: Error2]: ModuleDef = new ModuleDef {
+  def api[F[+_, +_]: TagKK: Error2]: ModuleDef =
+    // Production/default contribution: delegates to the disabled gate, so `/beauty-search` behavior stays unchanged.
+    apiWithServingGate[F](BeautySearchServingGate.disabled)
+
+  // Narrow local/dev/test module surface for selecting an explicit `BeautySearchServingGate` state.
+  // The production default (`api[F]`) delegates here with `BeautySearchServingGate.disabled`; this does not
+  // introduce environment/config/CLI parsing, change the default backend, activate Qdrant, or add fallback.
+  def apiWithServingGate[F[+_, +_]: TagKK: Error2](servingGate: BeautySearchServingGate): ModuleDef = new ModuleDef {
     // Opt-in Beauty search API contribution. Not included by LeaderboardPlugin default modules.
     make[BeautySearchTapirEndpoints].fromValue(BeautySearchTapirEndpoints)
-    // Disabled-by-default runtime serving gate: `/beauty-search` behavior stays unchanged.
-    make[BeautySearchServingGate].fromValue(BeautySearchServingGate.disabled)
+    // Explicit runtime serving gate selection; defaults to disabled via `api[F]`.
+    make[BeautySearchServingGate].fromValue(servingGate)
     make[BeautySearchApi[F]].from {
       (
         service: BeautySearchService[F],
         endpoints: BeautySearchTapirEndpoints,
-        servingGate: BeautySearchServingGate,
+        gate: BeautySearchServingGate,
         async: Async[F[Throwable, _]],
       ) =>
-        new BeautySearchApi[F](service, endpoints, servingGate)(implicitly[Error2[F]], async)
+        new BeautySearchApi[F](service, endpoints, gate)(implicitly[Error2[F]], async)
     }
     many[HttpApi[F]].weak[BeautySearchApi[F]]
   }
