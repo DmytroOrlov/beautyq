@@ -11,6 +11,7 @@ import sttp.tapir.server.http4s.Http4sServerInterpreter
 class BeautySearchApi[F[+_, +_]: Error2](
   beautySearchService: BeautySearchService[F],
   tapirEndpoints: BeautySearchTapirEndpoints,
+  servingGate: BeautySearchServingGate = BeautySearchServingGate.disabled,
 )(implicit
   async: Async[F[Throwable, _]]
 ) extends HttpApi[F] {
@@ -23,6 +24,10 @@ class BeautySearchApi[F[+_, +_]: Error2](
             validate(input) match {
               case Left(failure) =>
                 async.pure(Left(failure))
+              case Right(_) if servingGate.rejectsServing =>
+                // Gate explicitly enabled but serving readiness not satisfied: reject with HTTP 503.
+                // Validation still runs first, so invalid requests keep returning 400.
+                async.pure(Left(HttpApiFailure.ServiceUnavailable.beautySearchNotReady))
               case Right(validInput) =>
                 HttpApiFailure.fromQueryEffect(beautySearchService.search(validInput))
             }

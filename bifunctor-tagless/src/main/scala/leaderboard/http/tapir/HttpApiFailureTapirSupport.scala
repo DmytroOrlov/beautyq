@@ -17,6 +17,13 @@ object HttpApiFailureTapirSupport {
         case _                            => false
       },
       oneOfVariantValueMatcher(
+        statusCode(StatusCode.ServiceUnavailable)
+          .and(jsonBody[HttpApiFailure.ServiceUnavailable])
+      ) {
+        case _: HttpApiFailure.ServiceUnavailable => true
+        case _                                    => false
+      },
+      oneOfVariantValueMatcher(
         statusCode.map[HttpApiFailure]((_: StatusCode) => HttpApiFailure.InternalServerError)(_ => StatusCode.InternalServerError)
       ) {
         case HttpApiFailure.InternalServerError => true

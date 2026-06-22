@@ -11,6 +11,13 @@ object HttpApiFailure {
   case object InternalServerError extends HttpApiFailure
   final case class BadRequest(code: String, message: String) extends HttpApiFailure
   final case class NotFound(code: String, message: String) extends HttpApiFailure
+  final case class ServiceUnavailable(code: String, message: String) extends HttpApiFailure
+
+  object ServiceUnavailable {
+    // Disabled-by-default runtime route-gate rejection for the ES-backed `/beauty-search` route.
+    val beautySearchNotReady: ServiceUnavailable =
+      ServiceUnavailable(code = "service_unavailable", message = "Beauty search is not ready to serve")
+  }
 
   object NotFound {
     def category(id: leaderboard.model.Category.CategoryId): NotFound =
@@ -34,6 +41,7 @@ object HttpApiFailure {
 
   implicit val badRequestCodec: Codec.AsObject[BadRequest] = semiauto.deriveCodec
   implicit val notFoundCodec: Codec.AsObject[NotFound] = semiauto.deriveCodec
+  implicit val serviceUnavailableCodec: Codec.AsObject[ServiceUnavailable] = semiauto.deriveCodec
 
   def fromQueryFailure(error: QueryFailure): HttpApiFailure =
     InternalServerError

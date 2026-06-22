@@ -6,7 +6,7 @@ import io.circe.Json
 import io.circe.syntax._
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
-import leaderboard.api.{BeautySearchApi, EsLifecycleStatusApi, HttpApi}
+import leaderboard.api.{BeautySearchApi, BeautySearchServingGate, EsLifecycleStatusApi, HttpApi}
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, EsLifecycleStatusTapirEndpoints}
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchRouteModules
@@ -349,7 +349,76 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
       assert(lifecycleResponse.productionLifecycleComplete == false)
     }
 
-    "not test runtime route-gate or HTTP 503 behavior as implemented" in pending
+    "keep the runtime route gate disabled by default and serve POST /beauty-search with 200 OK" in {
+      val response = runIO(
+        observeRoute(
+          Set(gatedApi(BeautySearchServingGate.disabled)),
+          postJson("/beauty-search", validSearchBody),
+        )
+      )
+
+      assert(response.status == Status.Ok)
+      (): Unit
+    }
+
+    "return HTTP 503 for a valid POST /beauty-search when the gate is enabled but serving readiness is not satisfied" in {
+      val response = runIO(
+        observeRoute(
+          Set(gatedApi(BeautySearchServingGate.enabledNotReady)),
+          postJson("/beauty-search", validSearchBody),
+        )
+      )
+
+      assert(response.status == Status.ServiceUnavailable)
+      (): Unit
+    }
+
+    "follow the existing ES-backed route behavior for a valid POST /beauty-search when the gate is enabled and serving readiness is satisfied" in {
+      val response = runIO(
+        observeRoute(
+          Set(gatedApi(BeautySearchServingGate.enabledReady)),
+          postJson("/beauty-search", validSearchBody),
+        )
+      )
+
+      assert(response.status == Status.Ok)
+      (): Unit
+    }
+
+    "keep bad-request validation returning 400 and not 503 when the gate is enabled but not ready" in {
+      val response = runIO(
+        observeRoute(
+          Set(gatedApi(BeautySearchServingGate.enabledNotReady)),
+          postJson("/beauty-search", invalidSearchBody),
+        )
+      )
+
+      assert(response.status == Status.BadRequest)
+      (): Unit
+    }
+  }
+
+  private val validSearchBody: String =
+    """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""
+
+  private val invalidSearchBody: String =
+    """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""
+
+  // Directly constructed route gate probe: exercises the runtime gate without any real backend client.
+  private def gatedApi(gate: BeautySearchServingGate): BeautySearchApi[IO] =
+    new BeautySearchApi[IO](stubBeautySearchService, BeautySearchTapirEndpoints, gate)
+
+  private val stubBeautySearchService: BeautySearchService[IO] = new BeautySearchService[IO] {
+    override def search(input: UserSearchInput): IO[QueryFailure, BeautySearchResponse] =
+      ZIO.succeed(
+        BeautySearchResponse(
+          variantCarousel = Nil,
+          providerCarousel = Nil,
+          serviceIntentCarousel = Nil,
+          facets = Nil,
+          inferredFilters = Nil,
+        )
+      )
   }
 
   private def buildDefaultEsRouteProbe(): DefaultEsRouteProbe = {
