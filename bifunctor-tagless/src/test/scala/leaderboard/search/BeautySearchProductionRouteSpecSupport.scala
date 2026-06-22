@@ -197,6 +197,43 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     locator.get[BeautySearchProductionRouteProbe]
   }
 
+  // Reusable executable smoke/evidence harness for the accepted serving-gate route states.
+  //
+  // Each case pins a stable id, an explicit serving gate, a request body, the expected HTTP status,
+  // and a behavior assertion reused from the existing ES-backed route assertions. The harness builds
+  // an ES-backed route probe via the accepted M16A explicit selector surface, observes the route, and
+  // asserts both the expected status and the behavior. It introduces no new route/plugin/DI/http
+  // behavior beyond the accepted selector surface and activates no Qdrant/fallback/hybrid path.
+  protected final case class ServingGateEvidenceCase(
+    id: String,
+    gate: leaderboard.api.BeautySearchServingGate,
+    requestBody: String,
+    expectedStatus: Status,
+    assertBehavior: ObservedResponse => Unit,
+  )
+
+  protected final def runServingGateEvidenceCase(evidenceCase: ServingGateEvidenceCase): Status = {
+    var observedStatus: Status = null
+    withZeroHitEsServer { port =>
+      val probe = buildServingGateEsRouteProbe(port, evidenceCase.gate)
+
+      val response = runIO(
+        observeRoute(
+          probe.allHttpApis,
+          postJson("/beauty-search", evidenceCase.requestBody),
+        )
+      )
+
+      assert(
+        response.status == evidenceCase.expectedStatus,
+        s"[${evidenceCase.id}] expected ${evidenceCase.expectedStatus}, got ${response.status}",
+      )
+      evidenceCase.assertBehavior(response)
+      observedStatus = response.status
+    }
+    observedStatus
+  }
+
   protected final def observeRoute(
     apis: Set[HttpApi[IO]],
     request: Request[Task],

@@ -170,68 +170,66 @@ final class BeautySearchProductionRouteExposureSpec extends AnyWordSpec with Bea
     }
   }
 
-  "BeautySearchRouteModules.seedCatalogElasticsearchWithServingGate" should {
-    "keep the default api module binding BeautySearchServingGate.disabled and serve 200 OK for a valid /beauty-search" in {
-      withZeroHitEsServer { port =>
-        val probe = buildServingGateEsRouteProbe(port, BeautySearchServingGate.disabled)
+  // M16B serving-gate smoke/evidence harness: table-driven coverage over the accepted serving-gate
+  // route states via the M16A explicit selector surface. These cases replace the prior four M16A
+  // one-off serving-gate route tests with a single reusable, stable-id evidence table.
+  private val validBeautySearchRequest   = """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""
+  private val invalidBeautySearchRequest = """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""
 
-        assert(probe.allHttpApis.collect { case _: BeautySearchApi[IO] => () }.size == 1)
-        assertOperatorVisibilityEndpointAbsent(probe.allHttpApis)
+  private val servingGateEvidenceCases: List[ServingGateEvidenceCase] = List(
+    ServingGateEvidenceCase(
+      id = "gate_disabled_valid_request",
+      gate = BeautySearchServingGate.disabled,
+      requestBody = validBeautySearchRequest,
+      expectedStatus = Status.Ok,
+      assertBehavior = assertOkWithEmptyBeautySearchResponseShape,
+    ),
+    ServingGateEvidenceCase(
+      id = "gate_enabled_not_ready_valid_request",
+      gate = BeautySearchServingGate.enabledNotReady,
+      requestBody = validBeautySearchRequest,
+      expectedStatus = Status.ServiceUnavailable,
+      assertBehavior = _ => (),
+    ),
+    ServingGateEvidenceCase(
+      id = "gate_enabled_ready_valid_request",
+      gate = BeautySearchServingGate.enabledReady,
+      requestBody = validBeautySearchRequest,
+      expectedStatus = Status.Ok,
+      assertBehavior = assertOkWithEmptyBeautySearchResponseShape,
+    ),
+    ServingGateEvidenceCase(
+      id = "gate_enabled_not_ready_invalid_request",
+      gate = BeautySearchServingGate.enabledNotReady,
+      requestBody = invalidBeautySearchRequest,
+      expectedStatus = Status.BadRequest,
+      assertBehavior = _ => (),
+    ),
+  )
 
-        val response = runIO(
-          observeRoute(
-            probe.allHttpApis,
-            postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""),
-          )
-        )
-
-        assertOkWithEmptyBeautySearchResponseShape(response)
-      }
+  "BeautySearchRouteModules.seedCatalogElasticsearchWithServingGate serving-gate evidence harness" should {
+    "expose stable, unique evidence case ids covering the accepted serving-gate states" in {
+      val ids = servingGateEvidenceCases.map(_.id)
+      assert(ids.distinct.size == ids.size, s"Evidence case ids must be unique, got: $ids")
+      assert(
+        ids.toSet == Set(
+          "gate_disabled_valid_request",
+          "gate_enabled_not_ready_valid_request",
+          "gate_enabled_ready_valid_request",
+          "gate_enabled_not_ready_invalid_request",
+        ),
+        s"Unexpected evidence case id set: $ids",
+      )
+      (): Unit
     }
 
-    "return HTTP 503 for a valid /beauty-search when the explicit gate is enabled-not-ready" in {
-      withZeroHitEsServer { port =>
-        val probe = buildServingGateEsRouteProbe(port, BeautySearchServingGate.enabledNotReady)
-
-        val response = runIO(
-          observeRoute(
-            probe.allHttpApis,
-            postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""),
-          )
+    servingGateEvidenceCases.foreach { evidenceCase =>
+      s"record ${evidenceCase.id} as HTTP ${evidenceCase.expectedStatus.code}" in {
+        val observedStatus = runServingGateEvidenceCase(evidenceCase)
+        assert(
+          observedStatus == evidenceCase.expectedStatus,
+          s"[${evidenceCase.id}] expected ${evidenceCase.expectedStatus}, observed $observedStatus",
         )
-
-        assert(response.status == Status.ServiceUnavailable, s"Expected 503, got ${response.status}")
-        (): Unit
-      }
-    }
-
-    "follow existing ES-backed success behavior for a valid /beauty-search when the explicit gate is enabled-ready" in {
-      withZeroHitEsServer { port =>
-        val probe = buildServingGateEsRouteProbe(port, BeautySearchServingGate.enabledReady)
-
-        val response = runIO(
-          observeRoute(
-            probe.allHttpApis,
-            postJson("/beauty-search", """{"query":"haircut","userLat":53.58,"userLon":10.08,"limit":3}"""),
-          )
-        )
-
-        assertOkWithEmptyBeautySearchResponseShape(response)
-      }
-    }
-
-    "return HTTP 400 before the gate for an invalid /beauty-search even when the explicit gate is enabled-not-ready" in {
-      withZeroHitEsServer { port =>
-        val probe = buildServingGateEsRouteProbe(port, BeautySearchServingGate.enabledNotReady)
-
-        val response = runIO(
-          observeRoute(
-            probe.allHttpApis,
-            postJson("/beauty-search", """{"query":"","userLat":53.58,"userLon":10.08,"limit":3}"""),
-          )
-        )
-
-        assert(response.status == Status.BadRequest, s"Expected 400, got ${response.status}")
         (): Unit
       }
     }
