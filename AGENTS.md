@@ -15,6 +15,7 @@
 * Update docs immediately for production exposure, runtime behavior, architecture policy, or roadmap status changes.
 * Docs should record current state briefly and without fluff.
 * For BeautyQ search/eval/reporting tasks, use task-named docs and directly touched source/spec/resource files; do not read broad repo/plugin/route/DI/http files unless a failure or explicit conflict requires it.
+* Do not create, read, or write explicit absolute scratch/device paths such as `/tmp`, `/var/tmp`, `/private/tmp`, `/dev`, or `/dev/null` for repo work, validation, or artifacts. Keep temporary files, generated artifacts, and one-off helper outputs inside the repo working tree unless the user explicitly provides another path.
 
 ## Verification
 
