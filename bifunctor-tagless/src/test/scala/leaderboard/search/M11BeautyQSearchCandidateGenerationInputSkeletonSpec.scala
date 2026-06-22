@@ -1,0 +1,361 @@
+package leaderboard.search
+
+import leaderboard.search.eval.{
+  M10BeautyQSearchM11CandidateGenerationInputGroup,
+  M10BeautyQSearchOfflineRetrievalStrategyIntent,
+  M10BeautyQSearchQueryCategory,
+  M10BeautyQSearchRetrievalPolicyReadiness,
+  M11BeautyQSearchCandidateGenerationBackend,
+  M11BeautyQSearchCandidateGenerationInputSkeleton,
+  M11BeautyQSearchCandidateGenerationInputSkeletonMetric,
+  M11BeautyQSearchCandidateGenerationInputSkeletonRenderer,
+}
+import org.scalatest.wordspec.AnyWordSpec
+
+import java.nio.charset.StandardCharsets
+import scala.io.Source
+import scala.util.Using
+
+final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWordSpec {
+
+  private val artifactPath: String =
+    "/leaderboard/search/eval/m11-beautyq-candidate-generation-input-skeleton.md"
+
+  // Marketing/readiness tokens that must never appear as positive claims in the rendered artifact.
+  private val forbiddenRenderedTokens: List[String] = List(
+    "production_ready",
+    "qdrant_ready",
+    "hybrid_ready",
+    "is production ready",
+    "production-ready",
+    "quality is green",
+    "serving approval granted",
+    "route activated",
+    "backend execution ready",
+    "execution ready",
+  )
+
+  "M11BeautyQSearchCandidateGenerationInputSkeleton inputs" should {
+
+    "consume the accepted M10C readiness and still total 63 rows" in {
+      val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+
+      assert(M10BeautyQSearchRetrievalPolicyReadiness.InputRows.size == 63)
+      assert(shapes.size == 63)
+      assert(shapes.map(_.queryId).distinct.size == 63)
+      assert(shapes.map(_.queryId) == M10BeautyQSearchRetrievalPolicyReadiness.InputRows.map(_.queryId))
+      assert(summary.totalQueryCount == 63)
+      assert(
+        summary.consumedM10ReadinessVerdict ==
+          "m11_candidate_generation_inputs_ready_with_negative_control_exclusion",
+      )
+      assert(summary.rowGroupCounts == M10BeautyQSearchRetrievalPolicyReadiness.InputGroupCounts)
+    }
+
+    "preserve M11 row-group counts that sum to 63 and match the accepted distribution" in {
+      val counts = M11BeautyQSearchCandidateGenerationInputSkeleton.RowGroupCounts
+      val byGroup = counts.toMap
+
+      assert(counts.map(_._2).sum == 63)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 13)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 48)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
+
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+      assert(summary.esOnlyRowCount == 13)
+      assert(summary.qdrantOnlyRowCount == 1)
+      assert(summary.combinedComparisonRowCount == 48)
+      assert(summary.acceptedNegativeControlExclusionRowCount == 1)
+      assert(summary.manualReviewBlockedRowCount == 0)
+      assert(summary.noOpNoiseRowCount == 0)
+    }
+
+    "derive an ES request-leg count of 61 (13 ES-only + 48 combined ES legs)" in {
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+      val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+
+      assert(summary.esRequestLegRowCount == 61)
+      assert(shapes.count(_.hasEsLeg) == 61)
+      assert(shapes.count(_.hasEsLeg) == summary.esOnlyRowCount + summary.combinedComparisonRowCount)
+      assert(metricValue(summary.metrics, "es_request_leg_row_count") == "61")
+    }
+
+    "derive a Qdrant request-leg count of 49 (1 Qdrant-only + 48 combined Qdrant legs)" in {
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+      val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+
+      assert(summary.qdrantRequestLegRowCount == 49)
+      assert(shapes.count(_.hasQdrantLeg) == 49)
+      assert(shapes.count(_.hasQdrantLeg) == summary.qdrantOnlyRowCount + summary.combinedComparisonRowCount)
+      assert(metricValue(summary.metrics, "qdrant_request_leg_row_count") == "49")
+    }
+
+    "derive a combined comparison pair count of 48" in {
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+      val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+
+      assert(summary.combinedComparisonPairRowCount == 48)
+      assert(shapes.count(_.isCombinedComparison) == 48)
+      shapes.filter(_.isCombinedComparison).foreach { shape =>
+        assert(shape.hasEsLeg && shape.hasQdrantLeg, s"combined shape missing a leg: ${shape.queryId}")
+        assert(
+          shape.requestLegs == List(
+            M11BeautyQSearchCandidateGenerationBackend.Es,
+            M11BeautyQSearchCandidateGenerationBackend.Qdrant,
+          ),
+        )
+      }
+      assert(metricValue(summary.metrics, "combined_comparison_pair_row_count") == "48")
+    }
+
+    "keep accepted negative-control exclusions out of every backend request leg" in {
+      val negativeControlShapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+        .filter(_.inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput)
+
+      assert(negativeControlShapes.size == 1)
+      negativeControlShapes.foreach { shape =>
+        assert(shape.requestLegs.isEmpty, s"negative-control shape has request legs: ${shape.queryId}")
+        assert(!shape.hasEsLeg)
+        assert(!shape.hasQdrantLeg)
+        assert(!shape.hasAnyRequestLeg)
+      }
+      assert(
+        metricValue(
+          M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.metrics,
+          "accepted_negative_control_has_no_backend_request_leg",
+        ) == "true",
+      )
+    }
+
+    "keep manual-review and no-op/noise groups out of every backend request leg" in {
+      val nonBackendShapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+        .filter(shape =>
+          shape.inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput ||
+            shape.inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput,
+        )
+
+      // Both groups are empty in the accepted dataset, but no such row may ever carry a backend leg.
+      nonBackendShapes.foreach { shape =>
+        assert(shape.requestLegs.isEmpty, s"manual/no-op shape has request legs: ${shape.queryId}")
+      }
+      // Defensive: the input-group -> legs mapping yields no legs for either group.
+      assert(
+        M11BeautyQSearchCandidateGenerationBackend
+          .requestLegsFor(M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput)
+          .isEmpty,
+      )
+      assert(
+        M11BeautyQSearchCandidateGenerationBackend
+          .requestLegsFor(M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput)
+          .isEmpty,
+      )
+      assert(
+        metricValue(
+          M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.metrics,
+          "manual_and_no_op_have_no_backend_request_leg",
+        ) == "true",
+      )
+    }
+
+    "map q_noise_004 to a combined comparison shape with both ES and Qdrant offline legs" in {
+      val shape = M11BeautyQSearchCandidateGenerationInputSkeleton
+        .requestShapeFor("q_noise_004")
+        .getOrElse(fail("missing q_noise_004"))
+
+      assert(shape.category == M10BeautyQSearchQueryCategory.MixedIntent)
+      assert(shape.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison)
+      assert(shape.inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput)
+      assert(shape.isCombinedComparison)
+      assert(shape.hasEsLeg && shape.hasQdrantLeg)
+      assert(
+        shape.requestLegs == List(
+          M11BeautyQSearchCandidateGenerationBackend.Es,
+          M11BeautyQSearchCandidateGenerationBackend.Qdrant,
+        ),
+      )
+    }
+
+    "map q_noise_005 to an accepted negative-control exclusion with no backend legs" in {
+      val shape = M11BeautyQSearchCandidateGenerationInputSkeleton
+        .requestShapeFor("q_noise_005")
+        .getOrElse(fail("missing q_noise_005"))
+
+      assert(shape.category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
+      assert(shape.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded)
+      assert(shape.inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput)
+      assert(!shape.isCombinedComparison)
+      assert(!shape.hasEsLeg)
+      assert(!shape.hasQdrantLeg)
+      assert(shape.requestLegs.isEmpty)
+    }
+
+    "keep combined request shapes as offline comparison study inputs only, not production hybrid serving" in {
+      val combinedShapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
+        .filter(_.isCombinedComparison)
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+
+      assert(combinedShapes.nonEmpty)
+      combinedShapes.foreach { shape =>
+        assert(shape.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison)
+        assert(shape.inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput)
+      }
+      assert(!summary.boundary.hybridServingImplied)
+      assert(metricValue(summary.metrics, "combined_comparison_is_offline_study_input_not_hybrid_serving") == "true")
+      assert(metricValue(summary.metrics, "hybrid_serving_implied") == "false")
+    }
+  }
+
+  "M11BeautyQSearchCandidateGenerationInputSkeleton verdict and boundary" should {
+
+    "carry the offline input-skeleton readiness verdict only, not quality or execution readiness" in {
+      val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
+
+      assert(summary.verdict == "m11_candidate_generation_input_skeleton_ready")
+      assert(summary.m11CandidateGenerationInputSkeletonReady)
+      assert(metricValue(summary.metrics, "m11_candidate_generation_input_skeleton_ready") == "true")
+      assert(
+        metricValue(summary.metrics, "m11_request_shapes_are_offline_study_inputs_not_production_routes") == "true",
+      )
+      assert(metricValue(summary.metrics, "m11_request_shapes_are_request_shapes_not_backend_execution") == "true")
+      assert(!summary.boundary.qualityGreenClaimed)
+      assert(!summary.boundary.productionReadinessClaimed)
+      assert(!summary.boundary.routeActivationClaimed)
+      assert(!summary.boundary.servingApprovalClaimed)
+    }
+
+    "require and implement no real backend/client/route/plugin/DI/HTTP path" in {
+      val b = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.boundary
+      val metrics = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.metrics
+
+      assert(!b.productionBeautySearchCalled)
+      assert(!b.esClientCreated)
+      assert(!b.qdrantClientCreated)
+      assert(!b.esExecuted)
+      assert(!b.qdrantExecuted)
+      assert(!b.routePluginDiHttpInvolved)
+      assert(!b.realBackendCallRequired)
+      assert(!b.realBackendCallImplemented)
+      assert(metricValue(metrics, "production_beauty_search_called") == "false")
+      assert(metricValue(metrics, "es_client_created") == "false")
+      assert(metricValue(metrics, "qdrant_client_created") == "false")
+      assert(metricValue(metrics, "es_executed") == "false")
+      assert(metricValue(metrics, "qdrant_executed") == "false")
+      assert(metricValue(metrics, "route_plugin_di_http_involved") == "false")
+      assert(metricValue(metrics, "real_backend_call_required") == "false")
+      assert(metricValue(metrics, "real_backend_call_implemented") == "false")
+    }
+
+    "keep all production and Qdrant activation boundaries false/not approved" in {
+      val b = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.boundary
+      val metrics = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.metrics
+
+      assert(b.defaultBeautySearchEsBacked)
+      assert(b.qdrantOptInDisabledByDefault)
+      assert(!b.qdrantProductionActivationApproved)
+      assert(!b.productionRouteActivated)
+      assert(!b.defaultRouteSwitched)
+      assert(metricValue(metrics, "qdrant_production_activation_approved") == "false")
+      assert(metricValue(metrics, "production_route_activated") == "false")
+      assert(metricValue(metrics, "default_route_switched") == "false")
+      assert(metricValue(metrics, "default_beauty_search_es_backed") == "true")
+      assert(metricValue(metrics, "qdrant_opt_in_disabled_by_default") == "true")
+    }
+
+    "keep forbidden production/hybrid/fallback/fusion/reranking/telemetry boundaries false" in {
+      val b = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.boundary
+      val metrics = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary.metrics
+
+      assert(!b.hybridServingImplied)
+      assert(!b.fallbackImplied)
+      assert(!b.scoreFusionImplied)
+      assert(!b.rerankingImplied)
+      assert(!b.productionTelemetryImplied)
+      assert(metricValue(metrics, "fallback_implied") == "false")
+      assert(metricValue(metrics, "score_fusion_implied") == "false")
+      assert(metricValue(metrics, "reranking_implied") == "false")
+      assert(metricValue(metrics, "production_telemetry_implied") == "false")
+    }
+  }
+
+  "M11BeautyQSearchCandidateGenerationInputSkeleton artifact" should {
+
+    "include every required section and offline-study disclaimer" in {
+      val rendered = M11BeautyQSearchCandidateGenerationInputSkeleton.MarkdownArtifact.contents
+
+      assert(rendered.contains("## M11 row-group counts"))
+      assert(rendered.contains("## Planned offline request-leg counts"))
+      assert(rendered.contains("## Representative anchors"))
+      assert(rendered.contains("## Noise-probe request shapes"))
+      assert(rendered.contains("## Metrics"))
+      assert(rendered.contains("## Boundary"))
+      assert(rendered.contains("total_query_count: 63"))
+      assert(rendered.contains("consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion"))
+      assert(rendered.contains("offline study inputs"))
+      assert(rendered.contains("not production routes"))
+      assert(rendered.contains("not backend execution"))
+    }
+
+    "map q_noise_004 and q_noise_005 explicitly in the noise-probe section" in {
+      val rendered = M11BeautyQSearchCandidateGenerationInputSkeleton.MarkdownArtifact.contents
+      val probe = section(rendered, "## Noise-probe request shapes")
+
+      assert(probe.contains("| q_noise_004 | mixed_intent | combined_es_qdrant_comparison | combined_es_qdrant_comparison_study_input | es, qdrant |"))
+      assert(probe.contains("| q_noise_005 | noisy_ambiguous_non_beauty_intent | accepted_negative_control_excluded | accepted_negative_control_exclusion_input | (none) |"))
+    }
+
+    "carry no marketing readiness tokens as positive claims" in {
+      val rendered = M11BeautyQSearchCandidateGenerationInputSkeleton.MarkdownArtifact.contents.toLowerCase
+
+      forbiddenRenderedTokens.foreach { token =>
+        assert(!rendered.contains(token), s"forbidden token present: $token")
+      }
+    }
+
+    "render a byte-for-byte deterministic checked-in artifact" in {
+      val artifact = M11BeautyQSearchCandidateGenerationInputSkeleton.MarkdownArtifact
+      val expected = readResource(artifactPath)
+
+      assert(artifact.filename == "m11-beautyq-candidate-generation-input-skeleton.md")
+      assert(artifact.contentType == "text/markdown; charset=utf-8")
+      assert(
+        artifact.contents == M11BeautyQSearchCandidateGenerationInputSkeletonRenderer
+          .renderMarkdown(M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary),
+      )
+      assert(artifact.contents == expected)
+      assert(
+        M11BeautyQSearchCandidateGenerationInputSkeletonRenderer
+          .renderMarkdown(M11BeautyQSearchCandidateGenerationInputSkeleton.build()) == expected,
+      )
+    }
+  }
+
+  private def metricValue(
+    metrics: List[M11BeautyQSearchCandidateGenerationInputSkeletonMetric],
+    name: String,
+  ): String =
+    metrics.find(_.name == name) match {
+      case Some(metric) => metric.value
+      case None         => fail(s"missing readiness metric $name")
+    }
+
+  private def section(contents: String, heading: String): String = {
+    val lines = contents.linesIterator.toList
+    val start = lines.indexWhere(_ == heading)
+    assert(start >= 0, s"missing section $heading")
+    val rest = lines.drop(start + 1)
+    val end = rest.indexWhere(_.startsWith("## "))
+    (if (end < 0) rest else rest.take(end)).mkString("\n")
+  }
+
+  private def readResource(path: String): String =
+    Option(getClass.getResourceAsStream(path)) match {
+      case Some(value) =>
+        Using.resource(Source.fromInputStream(value, StandardCharsets.UTF_8.name()))(_.mkString)
+      case None =>
+        fail(s"missing checked-in resource $path")
+    }
+}
