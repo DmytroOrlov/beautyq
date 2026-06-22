@@ -607,7 +607,7 @@ These are handoff candidates only. This document does not approve code changes, 
 
 For the future-only operator view of ES-only, Qdrant-only, and combined ES/Qdrant resource-smoke execution, see `docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md`. That runbook is future-only and approves no real ES/Qdrant execution.
 
-## 12. M10/M11/M12/M13A closeout (downstream of this plan)
+## 12. M10/M11/M12/M13A/M14 closeout (downstream of this plan)
 
 M10 (query classification, offline routing policy, full 63-query classification coverage, and retrieval-policy readiness) is closed as offline planning/reporting only, reusing the shared vocabulary and query-class taxonomy from sections 3 and 8 of this doc. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the consolidated counts, M11 input-group mapping, and readiness verdict.
 
@@ -615,4 +615,6 @@ M11 (candidate-generation input/request skeleton, result schema, and boundary/fa
 
 M12 (fusion/reranking input scaffold, policy catalog and experiment-plan schema, boundary/failure matrix, and saved-output schema) is closed as offline eval/planning/reporting only, consuming M11's saved-result output. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the consolidated row/policy/matrix counts. M12 prepares placeholder-only planning/reporting surfaces for later evidence work only; it does not implement scoring, fusion execution, reranking execution, candidate retrieval, backend execution, or production routing.
 
-M13A (controlled explicit opt-in route/module planning contract `M13BeautyQSearchControlledOptInRoutePlanning`) is closed as planning/contract work only — not route activation, consuming the M12 closeout only as planning input. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the five route-planning states and the full denied drift list. M13A does not treat M12 placeholder rows as quality evidence, does not change production routing, and does not implement local/dev-only fallback or runtime route-gate / HTTP 503 behavior, which remain future work.
+M13A (controlled explicit opt-in route/module planning contract `M13BeautyQSearchControlledOptInRoutePlanning`) is closed as planning/contract work only — not route activation, consuming the M12 closeout only as planning input. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the five route-planning states and the full denied drift list. M13A does not treat M12 placeholder rows as quality evidence, does not change production routing, and does not implement local/dev-only fallback or runtime route-gate / HTTP 503 behavior, which remain future work as of M13A.
+
+M14A/M14B/M14C (route-gate / serving-readiness design contract `M14BeautyQSearchRouteGateReadinessDesign`, disabled-by-default runtime route gate `BeautySearchServingGate`, and local/dev-only fallback policy contract `BeautySearchLocalDevOnlyFallbackPolicy`) are accepted — gate/fallback contract work only, not production activation. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 and section 4 for the full statement. Default `/beauty-search` remains ES-backed while the gate stays disabled by default; local/dev-only fallback is future local/dev policy only, not production fallback or runtime serving fallback by default. `ElasticsearchOperatorVisibilityEndpointPolicySpec` now has zero pending tests.
