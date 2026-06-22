@@ -34,6 +34,7 @@ Keep the current-state block short here:
 - Pure ES/Qdrant offline adapter skeletons and the resource-gated real-backend spike scaffold for M9 exist under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; they are offline eval foundations only and do not imply route activation. Successful real offline adapter execution remains future/resource-gated and is not default.
 - M10 query classification, offline routing policy, full classification coverage, and retrieval-policy readiness are accepted as closed offline planning/reporting contracts (see M10 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M10 prepares offline M11 candidate-generation inputs only; it does not execute ES/Qdrant and does not change production routing.
 - M11 candidate-generation input/request skeleton, result schema, and boundary/failure matrix are accepted as closed offline eval/planning/reporting contracts (see M11 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M11 does not execute ES/Qdrant, does not implement candidate retrieval/fusion/reranking, and does not change production routing.
+- M12 fusion/reranking input scaffold, policy catalog/experiment-plan schema, boundary/failure matrix, and saved-output schema are accepted as closed offline eval/planning/reporting contracts (see M12 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M12 prepares placeholder-only planning/reporting surfaces only; it does not implement scoring/fusion execution/reranking execution/candidate retrieval/backend execution and does not change production routing.
 
 For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
@@ -111,15 +112,13 @@ M11 defines offline request shapes, saved result/report placeholders, and bounda
 
 Future real candidate generation — actually generating ES top-N / Qdrant top-M candidates, deduplicating, preserving source attribution, and defining stable empty/error behavior — remains unimplemented and opt-in only, not default production.
 
-### M12. Fusion and reranking experiments
+### M12. Fusion and reranking experiments — closed as offline eval/planning/reporting only
 
-- test ES-first policies;
-- test Qdrant-first policies;
-- test weighted-score policies;
-- test reciprocal rank fusion;
-- test rule-based reranking;
-- test learned reranking only if enough data exists;
-- evaluate by query class, not only by global aggregate metrics.
+**M12 is closed.** Fusion/reranking input scaffold, policy catalog and experiment-plan schema, boundary/failure matrix, and saved-output schema are accepted offline contracts, consuming M11's saved-result output. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the consolidated row/policy/matrix counts.
+
+M12 defines schema-only experiment input envelopes, stable non-executable policy names, schema-only experiment-plan rows, a boundary/failure matrix, and a placeholder-only saved-output/report schema. It prepares placeholder-only planning/reporting surfaces for later evidence work; it does not implement scoring, fusion execution, reranking execution, candidate retrieval, backend execution, backend clients, or production routing. Default `/beauty-search` remains ES-backed, the Qdrant opt-in route stays disabled by default, and no production activation, route switch, hybrid serving, fallback, score fusion, reranking, or production telemetry is implemented or accepted by this milestone.
+
+Future real fusion/reranking experiments — testing ES-first, Qdrant-first, weighted-score, reciprocal rank fusion, rule-based reranking, and learned reranking policies, evaluated by query class — remain unimplemented and opt-in only, not default production.
 
 ### M13. Controlled hybrid explicit opt-in route
 

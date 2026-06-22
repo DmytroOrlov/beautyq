@@ -2,8 +2,8 @@
 
 Offline experiment-plan schema over the accepted M12A fusion/reranking input scaffold and the M12
 policy catalog. This is an offline planning/eval artifact only. It assigns one schema-only
-experiment-plan row per consumed M12A input envelope and is NOT scoring, NOT fusion, NOT
-reranking, NOT backend execution, and NOT production routing: no ES or Qdrant client is created
+experiment-plan row per consumed M12A input envelope and is NOT scoring, NOT fusion, NOT reranking,
+NOT backend execution, and NOT production routing: no ES or Qdrant client is created
 and neither backend is run, and no candidate ids, provider ids, scores, ranks, backend
 responses, fused scores, reranked positions, quality labels, fusion outputs, or reranking
 outputs are fabricated. This artifact reports M12 offline experiment-plan readiness only
