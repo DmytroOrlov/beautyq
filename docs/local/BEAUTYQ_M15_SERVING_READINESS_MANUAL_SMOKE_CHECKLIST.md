@@ -5,31 +5,22 @@ local/dev-only fallback state. It is operational/manual smoke planning only — 
 production activation and **not** serving approval. No `sbt run` is required for this
 docs-only milestone.
 
-## 0. Source truth (compact)
+## 0. Source truth (pointer)
 
-* M14A (route-gate / serving-readiness design contract), M14B (disabled-by-default runtime
-  route gate), M14C (local/dev-only fallback policy contract), and M14D (docs closeout) are
-  accepted.
-* `BeautySearchServingGate` states: `disabled`, `enabledNotReady`, `enabledReady`;
-  `rejectsServing = enabled && !servingReady`.
-* Default DI binding uses `BeautySearchServingGate.disabled`.
-* Default `POST /beauty-search` remains ES-backed.
-* Gate `disabled` preserves existing `/beauty-search` behavior.
-* Gate `enabledNotReady` + valid request -> HTTP `503`.
-* Gate `enabledReady` + valid request -> existing ES-backed route behavior.
-* Invalid requests still return HTTP `400` before the gate is evaluated.
-* `BeautySearchLocalDevOnlyFallbackPolicy`: local/dev-only fallback is a future local/dev
-  policy only. Production fallback is not enabled. Runtime serving fallback is not enabled
-  by default.
-* Qdrant remains disabled-by-default and is **not** a fallback target. Explicit Qdrant
-  opt-in remains disabled by default. Qdrant production activation is not approved.
-* No default route switch is approved.
-* No hybrid serving, score fusion, reranking execution, production telemetry,
-  quality-green claim, retrieval-quality claim, production-readiness claim,
-  route-activation claim, or serving-approval claim is approved.
-* `ElasticsearchOperatorVisibilityEndpointPolicySpec` has zero pending tests after M14C.
-* Any recursive `graal-resources/target/.../classes/target/...` cleanup observed earlier is
-  build-artifact cleanup only, not a source/config change.
+The full M14A/M14B/M14C/M14D source-truth statement — `BeautySearchServingGate` states and
+`rejectsServing` formula, the default DI binding, the ES-backed/503/400 behavior, the
+`BeautySearchLocalDevOnlyFallbackPolicy` boundary, the Qdrant/production boundaries, and the
+zero-pending-tests status of `ElasticsearchOperatorVisibilityEndpointPolicySpec` — is canonical
+in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 (M14 bullet) and section 4 (M14
+milestone entry). Read that first; this checklist only adds the manual smoke procedure below
+and does not restate the source truth.
+
+The three facts the smoke cases below directly exercise, repeated here only because the table
+in section 3 depends on them:
+
+* Gate `disabled` / `enabledReady` + valid request -> existing ES-backed route behavior; gate
+  `enabledNotReady` + valid request -> HTTP `503`; invalid requests -> HTTP `400` before the
+  gate is evaluated.
 
 ## 1. Scope and non-goals
 
