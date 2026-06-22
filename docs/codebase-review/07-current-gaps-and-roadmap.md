@@ -547,4 +547,4 @@ In short, the next phases are:
 - M20: hidden/disabled-by-default controlled hybrid serving route;
 - M21: activation decision / default-route switch approval or rejection.
 
-Those phases are future work. They do not claim hybrid serving, production telemetry, or default-route activation already exists. M14–M17 are not reused here — those numbers belong to the separate gate-and-evidence track in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2.
+Those phases are future work. They do not claim hybrid serving, production telemetry, or default-route activation already exists. M14–M17 are not reused here — those numbers belong to the separate gate-and-evidence track in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2. Acceptance gates for M18–M21 — including the rule that docs-only, schema-only, and full-suite-green-alone work cannot close any of them — are recorded in the "M18–M21 Acceptance Gates" section of `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.

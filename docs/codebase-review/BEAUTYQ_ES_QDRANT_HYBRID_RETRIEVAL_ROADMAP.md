@@ -134,6 +134,23 @@ Future real work in this lane — actual candidate generation, real fusion/reran
 - require rollback/disable plan, observability evidence, and full-suite verification as part of the decision record;
 - this is the only milestone that can approve a default-route switch; absence of approval here means the ES-backed default remains unchanged.
 
+### M18–M21 Acceptance Gates
+
+These gates exist so the M17 scope drift cannot repeat: no milestone below is accepted on docs, schema, or full-suite-green alone.
+
+- **M18 can be accepted only if** there is a real dual-engine execution path: ES-native retrieval actually runs; Qdrant-native retrieval actually runs, or is explicitly resource-gated with honest non-success status; outputs keep ES and Qdrant candidates separate; no production route switch; no fake/schema-only success.
+- **M19 can be accepted only if** metrics exist over captured candidates: ES-only vs Qdrant-only vs hybrid comparison; overlap; Qdrant complement over ES misses; Qdrant noise; missing lookup rate; latency if available; clear evidence for how ES and Qdrant should or should not be combined.
+- **M20 can be accepted only if** there is a controlled hidden hybrid route/module: disabled by default; readiness/kill switch; rollback path; operator visibility/observability; default `/beauty-search` remains unchanged until explicit activation approval.
+- **M21 can be accepted only if** there is an explicit approve/reject decision: based on M19/M20 evidence; either approves a controlled default-route switch or clearly rejects it with reasons; no implicit Qdrant activation; no undocumented serving approval.
+
+Non-closable rules:
+
+- Docs-only work cannot close M18, M19, M20, or M21.
+- Schema-only work cannot close M18.
+- Full-suite green alone cannot close hybrid quality.
+- "Qdrant production activation remains not approved" is a boundary, not progress toward the hybrid goal.
+- Any milestone that lacks real ES+Qdrant evidence must say so explicitly and remain incomplete.
+
 ## 6. Senior-Design Criteria
 
 This architecture is only senior-grade if it keeps the following properties:

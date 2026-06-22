@@ -8,7 +8,9 @@
       "Bash(xargs ls -la)",
       "Bash(sbt 'bifunctor-tagless/Test/compile')",
       "Bash(sbt -batch 'bifunctor-tagless/Test/compile')",
-      "Bash(echo \"diff-check-exit:$?\")"
+      "Bash(echo \"diff-check-exit:$?\")",
+      "Bash(xargs cat)",
+      "Bash(echo \"exit:$?\")"
     ],
     "deny": []
   }
