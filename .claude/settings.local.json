@@ -4,7 +4,9 @@
       "Bash(sbt 'Test/compile' *)",
       "Bash(git diff --check)",
       "Bash(git status --short)",
-      "Bash(sbt 'testOnly *)"
+      "Bash(sbt 'testOnly *)",
+      "Bash(xargs ls -la)",
+      "Bash(sbt 'bifunctor-tagless/Test/compile')"
     ],
     "deny": []
   }

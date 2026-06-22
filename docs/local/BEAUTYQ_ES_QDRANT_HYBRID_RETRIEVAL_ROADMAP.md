@@ -32,6 +32,7 @@ Keep the current-state block short here:
 - Production activation remains not approved.
 - Hybrid serving, fallback, fusion, reranking, telemetry emission, and real ES/Qdrant backend-runner execution remain future work.
 - Pure ES/Qdrant offline adapter skeletons and the resource-gated real-backend spike scaffold for M9 exist under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; they are offline eval foundations only and do not imply route activation. Successful real offline adapter execution remains future/resource-gated and is not default.
+- M10 query classification, offline routing policy, full classification coverage, and retrieval-policy readiness are accepted as closed offline planning/reporting contracts (see M10 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M10 prepares offline M11 candidate-generation inputs only; it does not execute ES/Qdrant and does not change production routing.
 
 For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
@@ -95,18 +96,15 @@ The saved-report format, renderer slice, static/in-memory runner skeleton, canon
 Backend-adapter failure-matrix hardening and the resource-gated adapter-spike scaffold are complete as offline eval foundations; they do not implement successful real ES/Qdrant execution or serving.
 Future real ES/Qdrant offline execution belongs to that M8/M9 owner doc as planned offline-only work, not as production route or activation work.
 
-### M10. Query classification and routing policy
+### M10. Query classification and routing policy — closed as offline planning/reporting only
 
-- classify exact queries;
-- classify category queries;
-- classify ingredient/attribute queries;
-- classify semantic/fuzzy queries;
-- classify typo/noisy queries;
-- classify filter-heavy queries;
-- classify broad discovery queries;
-- map those classes to ES, Qdrant, or hybrid contribution rules.
+**M10 is closed.** Query classification foundation, offline routing policy foundation, full 63-query classification coverage scorecard, manual-review/negative-control hardening, and the retrieval-policy readiness contract (M11 input-preparation artifact) are accepted offline contracts. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the consolidated category/strategy-intent/M11-input-group counts and the readiness verdict `m11_candidate_generation_inputs_ready_with_negative_control_exclusion`.
+
+M10 maps query classes to ES, Qdrant, or combined-comparison offline study-input groups for M11. It prepares offline M11 candidate-generation inputs only — it does not implement M11 candidate generation, does not execute real ES/Qdrant, and does not change production routing. Default `/beauty-search` remains ES-backed, the Qdrant opt-in route stays disabled by default, and no production activation, route switch, hybrid serving, fallback, score fusion, reranking, or production telemetry is implemented or accepted by this milestone.
 
 ### M11. Hybrid candidate generation
+
+M10's retrieval-policy readiness contract prepares the offline candidate-generation study inputs this milestone would consume (see M10 closeout above); M11 candidate generation itself remains unimplemented.
 
 - generate ES top-N candidates;
 - generate Qdrant top-M candidates;
