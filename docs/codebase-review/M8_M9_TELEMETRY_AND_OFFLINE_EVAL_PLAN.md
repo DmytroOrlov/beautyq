@@ -66,7 +66,7 @@ Current route truth is owned by `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`, not
 - production telemetry emission, metrics client integration, route hooks, and real offline ES/Qdrant backend-runner execution are not implemented;
 - there is no real production traffic in this project context yet.
 
-For exact route/module names, verification counts, and activation boundary wording, use the handoff plus `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
+For exact route/module names, verification counts, and activation boundary wording, use the handoff plus `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 
 ## 3. Shared vocabulary
 

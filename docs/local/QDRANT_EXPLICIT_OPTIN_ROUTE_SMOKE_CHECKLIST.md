@@ -2,7 +2,7 @@
 
 This is an operator/developer smoke checklist for `BeautySearchRouteModules.apiQdrantExplicitOptIn`.
 It is optional, resource-gated, and separate from production route activation.
-The separate activation gate is documented in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
+The separate activation gate is documented in `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
 
 ## 1. Scope And Non-Goals
 

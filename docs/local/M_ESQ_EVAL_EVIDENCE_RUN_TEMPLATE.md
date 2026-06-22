@@ -8,7 +8,7 @@ Metric naming in this template remains the current evidence-run format. Future e
 
 Future evidence and telemetry field names should also align with the pure M8 schema renderer/static adapter (`M8TelemetrySchemaRenderer` / `M8TelemetrySchemaAdapter.defaultPlannedSchema`) where relevant. That schema artifact is naming guidance only; it does not emit telemetry, observe production traffic, or query ES/Qdrant.
 
-Canonical M8/M9 artifact ownership now lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. Future backend outputs should preserve explicit ES/Qdrant source attribution, pass through the pure M9 backend-runner interfaces and adapter-skeleton attribution checks, pass the backend-adapter failure-matrix expectations, and materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format. Real backend adapter execution must be gated by the explicit enablement mechanism and required inputs defined in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.
+Canonical M8/M9 artifact ownership now lives in `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. This template only applies that vocabulary to manual evidence collection. Future backend outputs should preserve explicit ES/Qdrant source attribution, pass through the pure M9 backend-runner interfaces and adapter-skeleton attribution checks, pass the backend-adapter failure-matrix expectations, and materialize the same `M9OfflineEvalSavedReport` artifact shape rather than inventing a separate report format. Real backend adapter execution must be gated by the explicit enablement mechanism and required inputs defined in `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.
 
 Future captured real-backend artifacts must record the resource-gate decision, whether backend resource config was present, and explicit production-activation non-approval confirmation. If the gate is enabled but resources are absent or the execution branch is not implemented, the artifact should carry not-configured/not-connected failure rows as data rather than a fake successful backend result.
 
@@ -34,7 +34,7 @@ This mapping is evidence-facing only: passed quality supplies satisfied evidence
 
 For the explicit opt-in Qdrant route, this run can supply only the saved/offline eval and no-regression part of the prerequisite package. Before assembling `BeautySearchRouteModules.apiQdrantExplicitOptIn`, the operator still needs a ready M6 report, ready M7 activation-policy report, enabled config gate, explicitly approved no-regression evidence, observability/status evidence, rollback/disable control, focused route/module safety checks, and separate explicit route/serving approval. Full verification remains a coordinator/user step.
 
-For the canonical prerequisite and activation boundaries, use `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md` and `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. This template is not a production-activation path.
+For the canonical prerequisite and activation boundaries, use `docs/local/QDRANT_EXPLICIT_OPTIN_ROUTE_SMOKE_CHECKLIST.md` and `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. This template is not a production-activation path.
 
 ## Workspace
 

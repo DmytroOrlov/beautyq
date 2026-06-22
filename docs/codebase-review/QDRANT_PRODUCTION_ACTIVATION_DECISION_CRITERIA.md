@@ -1,7 +1,7 @@
 # Qdrant Production Activation Decision Criteria
 
 This document defines the separate approval gate for any future default `POST /beauty-search` switch from the current ES-backed route to a Qdrant-backed route.
-It is one decision point in a larger retrieval roadmap; it does not cover hybrid routing, fusion, reranking, or telemetry design. For that broader end-state, see `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
+It is one decision point in a larger retrieval roadmap; it does not cover hybrid routing, fusion, reranking, or telemetry design. For that broader end-state, see `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 
 Current source-backed baseline:
 
@@ -11,9 +11,9 @@ Current source-backed baseline:
 - Current production backend remains seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
 - Production route activation is not approved today.
 
-Current green evidence:
+Historical green evidence (superseded by the M17A full-suite checkpoint in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0; this opt-in route readiness conclusion still holds):
 
-- Option97 full suite green: `1189` run, `1189` succeeded, `0` failed, `0` aborted, `1` canceled, `2` pending.
+- Option97 full suite green (historical): `1189` run, `1189` succeeded, `0` failed, `0` aborted, `1` canceled, `2` pending.
 - Option101 real resource-gated Qdrant smoke green: deterministic smoke `40` succeeded, `0` failed, `0` aborted, `0` pending; resource-gated smoke `7` succeeded, `0` failed, `0` aborted, `0` pending.
 
 Interpret that evidence narrowly:

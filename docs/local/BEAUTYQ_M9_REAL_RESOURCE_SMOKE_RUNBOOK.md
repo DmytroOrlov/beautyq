@@ -32,7 +32,7 @@ only when prerequisites are complete and otherwise block; a deterministic
 execution-gate renderer produces a checked-in default/no-config markdown artifact
 (`bifunctor-tagless/src/test/resources/leaderboard/search/eval/m9-beautyq-real-resource-execution-gate-default.md`)
 rendering blocked/skip evidence for all three gates, never success. See
-`docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.9 for detail. No
+`docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1.9 for detail. No
 real ES/Qdrant execution or production activation is implemented or accepted.
 
 ## 1. Future modes

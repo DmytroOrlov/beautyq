@@ -4,9 +4,9 @@ Status summary:
 
 * Current route truth stays in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: default production `/beauty-search` remains ES-backed.
 * This document owns only the Qdrant explicit opt-in state and Qdrant-specific architecture boundaries.
-* Separate production activation criteria live in `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
-* Broader ES/Qdrant/hybrid future-serving work lives in `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
-* M8/M9 pure eval-contract, saved-report, static-runner, and future backend-runner status lives in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+* Separate production activation criteria live in `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
+* Broader ES/Qdrant/hybrid future-serving work lives in `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
+* M8/M9 pure eval-contract, saved-report, static-runner, and future backend-runner status lives in `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 ## 1. Goal
 
@@ -42,8 +42,8 @@ Current boundary, without repeating the handoff and roadmap status blocks:
 * `BeautySearchRouteModules.apiQdrantExplicitOptIn` exists as the disabled-by-default opt-in route and remains outside the default ES graph.
 * The production-candidate readiness foundation is pure and route-independent; it is not production activation, route switching, fallback, fusion, reranking, or hybrid serving.
 * Current opt-in readiness is offline/seed/eval evidence only. It depends on curated seed/eval queries, saved/offline eval evidence, prerequisite-gate tests, focused route/module specs, and separate route/serving approval for the opt-in path.
-* Any later default-route activation is a separate approval governed by `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
-* The future backend-runner seam for offline ES/Qdrant evidence is planning-only under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+* Any later default-route activation is a separate approval governed by `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
+* The future backend-runner seam for offline ES/Qdrant evidence is planning-only under `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 Implemented Qdrant-side seams are intentionally grouped rather than re-listed here: DSL/spec types (`EmbeddingSpec`, `VectorSearchSpec`, `VectorDistance`), Qdrant clients/interpreters/indexers, collection-identity and compatibility checks, semantic candidate retrieval/projection seams, production-candidate readiness/config/approval models, and non-production experiment composition. Detailed names remain source-truth in `leaderboard.search.qdrant` and adjacent tests.
 

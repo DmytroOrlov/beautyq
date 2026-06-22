@@ -4,13 +4,13 @@
 
 This plan records a non-production hybrid-search foundation, not a production hybrid rollout.
 The reached non-production manual real-resource runner remains manual/test/local only, not a combined Qdrant+ES+Llama production module.
-For the broader ES + Qdrant + hybrid retrieval end-state roadmap, see `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
+For the broader ES + Qdrant + hybrid retrieval end-state roadmap, see `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
 
 Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall only at explicit non-production boundaries.
 
 ## 1.5. B-lite Strategic Direction
 
-B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the current-state status now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted production truth, `docs/local/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md` for the future-serving phase ladder, and `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` for M8/M9 pure slices plus the pure backend-runner interface seam.
+B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the current-state status now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted production truth, `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md` for the future-serving phase ladder, and `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` for M8/M9 pure slices plus the pure backend-runner interface seam.
 
 What matters in this plan:
 
@@ -19,7 +19,7 @@ What matters in this plan:
 * simulated hybrid remains benchmark/eval only;
 * any later hybrid eval execution must flow through the pure offline M9 backend-runner interface before any serving change is considered.
 * pure ES/Qdrant offline adapter skeletons now prove attribution checks only; future hybrid comparison must wait for real ES/Qdrant offline execution evidence, not just skeleton output.
-* resource-gated real-backend adapter spike scaffolding exists behind the explicit gate defined in `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1; successful ES/Qdrant execution remains future/resource-gated and is not default.
+* resource-gated real-backend adapter spike scaffolding exists behind the explicit gate defined in `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1; successful ES/Qdrant execution remains future/resource-gated and is not default.
 * the M9 backend-adapter failure matrix now hardens source/mode/failure rules before real backend execution; future hybrid comparison must preserve those rules.
 * any later hybrid fusion/reranking experiment depends first on explicit ES/Qdrant offline adapter attribution in that M9 seam; do not hide candidate origin inside comparison logic.
 * hybrid/fusion/reranking still require gated ES/Qdrant evidence; this spike does not enable hybrid serving, score fusion, or reranking.

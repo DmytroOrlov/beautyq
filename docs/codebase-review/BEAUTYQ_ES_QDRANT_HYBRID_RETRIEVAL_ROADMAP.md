@@ -31,13 +31,13 @@ Keep the current-state block short here:
 - Qdrant explicit opt-in exists and stays disabled by default.
 - Production activation remains not approved.
 - Hybrid serving, fallback, fusion, reranking, telemetry emission, and real ES/Qdrant backend-runner execution remain future work.
-- Pure ES/Qdrant offline adapter skeletons and the resource-gated real-backend spike scaffold for M9 exist under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; they are offline eval foundations only and do not imply route activation. Successful real offline adapter execution remains future/resource-gated and is not default.
+- Pure ES/Qdrant offline adapter skeletons and the resource-gated real-backend spike scaffold for M9 exist under `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`; they are offline eval foundations only and do not imply route activation. Successful real offline adapter execution remains future/resource-gated and is not default.
 - M10 query classification, offline routing policy, full classification coverage, and retrieval-policy readiness are accepted as closed offline planning/reporting contracts (see M10 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M10 prepares offline M11 candidate-generation inputs only; it does not execute ES/Qdrant and does not change production routing.
 - M11 candidate-generation input/request skeleton, result schema, and boundary/failure matrix are accepted as closed offline eval/planning/reporting contracts (see M11 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M11 does not execute ES/Qdrant, does not implement candidate retrieval/fusion/reranking, and does not change production routing.
 - M12 fusion/reranking input scaffold, policy catalog/experiment-plan schema, boundary/failure matrix, and saved-output schema are accepted as closed offline eval/planning/reporting contracts (see M12 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M12 prepares placeholder-only planning/reporting surfaces only; it does not implement scoring/fusion execution/reranking execution/candidate retrieval/backend execution and does not change production routing.
 - M13A controlled explicit opt-in route/module planning contract (`M13BeautyQSearchControlledOptInRoutePlanning`) is accepted as closed planning/contract work only — not route activation (see M13 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M13A consumes the M12 closeout only as planning input, treats no M12 placeholder row as quality evidence, and does not change production routing. Local/dev-only fallback and runtime route-gate / HTTP 503 remain future work, not implemented by M13A.
 
-For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 ## 3. What Is Done vs Not Done
 
@@ -48,7 +48,7 @@ For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_
 | Qdrant default production activation | Not done | Not approved. |
 | Hybrid candidate generation | Not done | No ES+Qdrant candidate union in production serving. |
 | Score fusion / reranking | Not done | No implemented fusion policy. |
-| M8/M9 shared contracts | Started | Pure vocabulary, M8 telemetry schema renderer/static adapter, saved-report, static-runner, fixture, backend-runner interface, ES/Qdrant offline adapter skeleton, backend-adapter failure-matrix, and resource-gated adapter-spike scaffold slices exist; telemetry emission and successful real ES/Qdrant backend-runner execution stay future/resource-gated under `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
+| M8/M9 shared contracts | Started | Pure vocabulary, M8 telemetry schema renderer/static adapter, saved-report, static-runner, fixture, backend-runner interface, ES/Qdrant offline adapter skeleton, backend-adapter failure-matrix, and resource-gated adapter-spike scaffold slices exist; telemetry emission and successful real ES/Qdrant backend-runner execution stay future/resource-gated under `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`. |
 | Production telemetry loop | Not done | No real production traffic yet. |
 | Online ES vs Qdrant routing policy | Not done | No production routing policy. |
 | Docs/checklists/decision criteria | Done | Existing opt-in and activation criteria docs are in place. |
@@ -71,7 +71,7 @@ This target is stricter than the current opt-in Qdrant readiness track. Opt-in r
 
 ### M8. Production telemetry foundation
 
-Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, implemented pure slices, and the pure backend-runner interface seam are owned by `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, implemented pure slices, and the pure backend-runner interface seam are owned by `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
 - define request/result event schema plan;
 - render the planned M8 schema through pure deterministic schema artifacts;
@@ -85,7 +85,7 @@ Shared M8/M9 vocabulary, schema boundaries, dataset coverage, stop conditions, i
 
 ### M9. Stronger offline eval harness
 
-Use the shared vocabulary and reporting boundaries from `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` and `leaderboard.search.eval.M8M9EvalContracts` so offline eval and any later telemetry do not drift apart.
+Use the shared vocabulary and reporting boundaries from `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` and `leaderboard.search.eval.M8M9EvalContracts` so offline eval and any later telemetry do not drift apart.
 
 - define curated canonical seed queries;
 - define and render saved M9 dataset/report artifacts;

@@ -212,163 +212,20 @@ What not to infer:
 
 - Generic retrieval seams are not production adapters by themselves.
 
-## Decision 10: Current ES lifecycle state is seed-only and non-serving
+## Decision 10: ES startup-readiness lifecycle is non-serving; the production route gate is implemented separately
 
 Statement:
 
-- Current Elasticsearch lifecycle metadata and production-readiness state remain seed-only internal seams, while Design A operator visibility is exposed through an explicit opt-in/internal endpoint. The full production lifecycle contract remains incomplete. The runtime serving-gate track is a separate future decision and is currently recommended to stay deferred until a runtime readiness source or replacement/freshness/rollback policy exists.
+- Current Elasticsearch startup-readiness lifecycle metadata (`ElasticsearchSeedLifecycleMetadata`, `ElasticsearchProductionReadinessState`, `ElasticsearchStartupReadinessTransition`, `ElasticsearchStartupReadinessStatusResponse`) remains seed-only and non-serving. Design A operator visibility (`GET /ops/beauty-search/lifecycle`) is implemented as an explicit opt-in/internal endpoint, absent from the default ES route graph and from `seedCatalogInMemory`. M5 is closed as a bounded startup-readiness lifecycle checkpoint; replacement/freshness/rollback and full lifecycle operations remain separate future tracks.
+- Separately, the runtime route gate for `/beauty-search` itself is implemented as `BeautySearchServingGate` (M14B), disabled by default: disabled -> 200 OK existing ES-backed behavior; enabled-not-ready -> HTTP 503; enabled-ready -> 200 OK; invalid request -> 400 before the gate. `ElasticsearchOperatorVisibilityEndpointPolicySpec` has zero pending tests following M14B/M14C.
 
-Evidence:
-
-- `ElasticsearchSeedIndexReadiness.lifecycleMetadata` sets `EagerSeedIndexPreparation` plus `SeedOnlyNotProductionLifecycle`.
-- `ElasticsearchSeedSearchComposition.lifecycleMetadata` forwards that metadata.
-- `ElasticsearchProductionReadinessState.seedOnly` derives explicit current values: `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, and `NotExposed`.
-- `ElasticsearchSeedSearchComposition.productionReadinessState` forwards the derived state, and focused route/module specs prove it is materialized through the ES-backed route graphs without changing route behavior.
-- `ElasticsearchLifecycleStatusResponse.from` provides a pure non-serving projection with local Circe encoding; it is not bound into route graphs.
-- `ElasticsearchStartupReadinessTransition` provides a pure prepared/operation-failure shape with `ElasticsearchStartupServingDecision.NotEnforced`; prepared values derive the same non-serving response as direct state projection, while failures expose no lifecycle metadata or status response. It is now bound into route graphs through `BeautySearchCatalogBackendModules.seedResourceElasticsearch` from `ElasticsearchSeedSearchComposition.startupReadinessTransition`, but the binding remains non-serving and does not gate startup or route behavior.
-- `ElasticsearchStartupReadinessStatusResponse` provides a pure non-serving startup status projection from prepared and failed transitions. Prepared projections include the nested lifecycle status response; failed projections expose operation/message only without lifecycle metadata or status response. Local Circe encoding is provided. The projection is not DI-bound or HTTP-exposed. Cross-model consistency coverage proves field-level agreement across readiness state, lifecycle response, startup transition, startup status projection, and composition-derived projections.
-
-Consequences:
-
-- Current route-graph state coverage proves DI availability; separate pure transition coverage proves preparation-result and status-projection alignment. These seams make the missing capabilities explicit but do not enforce startup readiness or implement replacement, freshness, refresh triggers, rollback, or broader operator-visible production lifecycle status beyond Design A.
-- Full lifecycle ES operations remain outside the implemented boundary: there is no runtime rebuild/refresh operation, replacement activation, rollback operation, disable/kill-switch operation, stale/current/previous catalog operation state, operator-triggered command surface, or broader lifecycle auth/config/visibility policy beyond explicit opt-in/internal Design A status visibility.
-- Broader operator-facing lifecycle exposure beyond Design A remains unimplemented until additional endpoint path and operator policy approvals are separately granted.
-- Runtime route-gate enforcement is not supported by the current source seam because successful route graphs always bind `Prepared` and there is no stale/previous-index state yet.
-- M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
-- Focused test-local route probing should use direct route-module includes, not the broader `LeaderboardPlugin` include path that previously triggered `IncludesDSL$Include.interpret` NPE.
+Evidence and full M14-M17 statement: `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
 
 What not to infer:
 
-- Do not infer production readiness enforcement, refresh/replacement/rollback policy, route switch, fallback, score fusion, reranking, `HybridServe`, or Qdrant auto-supplement from these internal seams.
-
-Current milestone boundary:
-
-- M5 is closed.
-- ES post-M5 planning is closed as planning only.
-- Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain separate future tracks and are not implemented today.
-
-## Decision 11: ES lifecycle visibility remains non-serving until serving-gate policy is approved
-
-Statement:
-
-- Current ES lifecycle metadata, startup readiness transition, and startup status projection remain non-serving visibility seams until an explicit serving-gate policy is approved and implemented.
-
-Evidence:
-
-- `ElasticsearchProductionReadinessState.seedOnly` records `NotEnforced` serving readiness, `NotConfigured` replacement, `NotTracked` freshness, `EagerSeedPreparationOnly` refresh, `NotConfigured` rollback, and `NotExposed` operator visibility.
-- `ElasticsearchStartupReadinessTransition` records `NotEnforced` serving decision for both prepared and failed transitions.
-- `ElasticsearchStartupReadinessStatusResponse` provides a pure non-serving startup status projection that is not DI-bound or HTTP-exposed.
-- `ES_STARTUP_SERVING_GATE_DESIGN.md` documents the serving-gate policy design with five policy choices (fail closed until prepared, fail fast on preparation failure, continue serving with seed-only status, serve stale/previous index, operator override) that must be approved before enforcement.
-- No endpoint, route path, HTTP status policy, or operator policy is implemented.
-- No serving-readiness enforcement exists.
-- M4 is closed; M5 is closed as a bounded startup-readiness lifecycle checkpoint. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
-- The ES operator visibility track is source-confirmed and Design A is implemented as explicit opt-in/internal endpoint exposure. Design B (startup failure via bootstrap-level state) and Design C (richer status after replacement/freshness/rollback) remain future.
-
-Source-confirmed seam analysis (see `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md`):
-
-- `BeautySearchCatalogBackendModules.seedResourceElasticsearch` eagerly runs `ElasticsearchSeedSearchComposition.build` via `unsafe.run`. If `build` fails, DI graph construction fails and no route is constructed. If `build` succeeds, the DI-bound transition is always `Prepared`.
-- The smallest candidate enforcement seam is `BeautySearchApi.serverLogic` (`BeautySearchApi.scala:21-29`), but enforcement is currently impossible because the DI-bound transition is always `Prepared`.
-- App-start fail-closed behavior is implicitly implemented by the eager composition pattern. Runtime route gate requires a different source seam.
-- Spec-only route-level tests are the recommended next step before any enforcement code.
-
-Operator visibility source-confirmed facts (see `ES_OPERATOR_VISIBILITY_SOURCE_CONFIRMATION.md`):
-
-- `ElasticsearchLifecycleStatusResponse` and `ElasticsearchStartupReadinessStatusResponse` are implemented as pure non-serving models with Circe encoders. They can be exposed later without new ES calls.
-- The `Prepared` variant is always reachable from the DI-bound transition.
-- Cross-model consistency is proven by `ElasticsearchReadinessConsistencySpec`.
-- Failed transition projection shape is available from pure tests but unreachable from the DI-bound transition.
-- Replacement, freshness, refresh, rollback, and operator override data are not available from current source models.
-- The likely future endpoint seam follows existing Tapir/http4s patterns.
-- Policy decisions required: endpoint path, auth/operator access model, response status code policy.
-
-Design A endpoint policy drafted (see `ES_OPERATOR_VISIBILITY_ENDPOINT_POLICY.md`):
-
-- Draft recommends `GET /ops/beauty-search/lifecycle` as endpoint path.
-- Draft recommends disabled-by-default auth policy.
-- Draft recommends `200 OK` for successful retrieval with lifecycle status in body.
-- Draft recommends `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) as response shape.
-- All draft recommendations remain unapproved.
-- The Design A hardening surface is now captured by active `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` assertions, with only future expectations left pending.
-- Those future expectations are mapped canonically in `docs/codebase-review/06-tests-and-contracts.md`; they do not mean approved implementation.
-- Implementation slice source-confirmed in `ES_OPERATOR_VISIBILITY_IMPLEMENTATION_SOURCE_CONFIRMATION.md`: can be implemented without new ES calls and without changing `/beauty-search`.
-
-Consequences:
-
-- The serving-gate design is documented but not enforced.
-- Any enforcement implementation requires explicit approval of a serving-gate policy choice.
-- The recommended default is `fail closed until prepared`, but it is not implemented.
-- App-start fail-closed is implicitly implemented by eager composition; it is now test-covered by `ElasticsearchAppStartServingGateSpec` (composition-level and DI-graph-level). Runtime route gate requires a new source seam.
-- Operator visibility is source-confirmed and ready for design-only policy work (endpoint path, auth, HTTP status).
-
-What not to infer:
-
-- Do not infer that the serving-gate design constitutes enforcement or that any policy choice is approved.
-- Do not infer production lifecycle completion from the existence of the serving-gate design document.
-- Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
-- Do not infer default/public endpoint exposure from the source confirmation or implementation; the current endpoint is explicit opt-in/internal only.
-
-## Decision 13: Design A operator visibility endpoint implemented as explicit opt-in module
-
-Statement:
-
-- Design A operator visibility endpoint `GET /ops/beauty-search/lifecycle` is implemented as explicit opt-in/internal endpoint. It is NOT included in the default ES route graph (`seedCatalogElasticsearch`, `apiElasticsearch`). It is available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` and `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility`. It is also absent from `seedCatalogInMemory`. Response shape is `ElasticsearchStartupReadinessStatusResponse` (always `Prepared` variant) with nested `ElasticsearchLifecycleStatusResponse`. Successful retrieval returns `200 OK`. No new Elasticsearch calls. No `/beauty-search` behavior change.
-
-Evidence:
-
-- `EsLifecycleStatusTapirEndpoints.scala` defines the `GET /ops/beauty-search/lifecycle` endpoint contract.
-- `EsLifecycleStatusApi.scala` is a thin Tapir adapter that reads from DI-bound `ElasticsearchStartupReadinessTransition` and projects via `ElasticsearchStartupReadinessStatusResponse.from(transition)`.
-- `BeautySearchPluginModules.operatorVisibilityApi[F]` contributes `EsLifecycleStatusApi[F]` to `many[HttpApi[F]]`.
-- `BeautySearchRouteModules.seedCatalogElasticsearch` does NOT include `operatorVisibilityApi[IO]`.
-- `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` includes `seedCatalogElasticsearch` plus `operatorVisibilityApi[IO]`.
-- `BeautySearchRouteModules.apiElasticsearchWithOperatorVisibility` includes the port-configured opt-in module.
-- `ElasticsearchOperatorVisibilityEndpointPolicySpec` has active tests covering default absence, opt-in presence, in-memory absence, endpoint response shape, seed-only values, route graph rooting, no-new-ES-calls, and current limitations, with only 2 future expectations left pending.
-- `BeautySearchProductionRouteExposureSpec` verifies default graph absence and explicit opt-in presence.
-- `BeautySearchElasticsearchRouteModuleSpec`, `BeautySearchElasticsearchHttpRouteModuleSpec`, and `BeautySearchElasticsearchDefaultReadyRouteSpec` verify the endpoint is absent from default ES route graphs.
-
-Consequences:
-
-- Design A operator visibility is implemented as an explicit opt-in/internal endpoint, not in the default production graph.
-- The endpoint is not included in `seedCatalogInMemory` (rollback/in-memory backend).
-- The endpoint is not included in the default `apiElasticsearch` or `LeaderboardPlugin` production graph.
-- Design B (bootstrap failure status), Design C (replacement/freshness/rollback-rich status), runtime route gate, and HTTP 503 behavior remain future.
-- Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations remain intentionally separate future tracks.
-
-What not to infer:
-
-- Do not infer that the endpoint is in the default production graph; it requires explicit opt-in.
-- Do not infer that the endpoint is public or production-exposed; it is internal/operator visibility only.
-- Do not infer that runtime serving-gate enforcement is implemented.
-- Do not infer that Design B or Design C behavior is implemented.
-- Do not infer that full ES production lifecycle is complete.
-
-## Decision 12: M5 closed as bounded startup-readiness lifecycle checkpoint
-
-Statement:
-
-- M5 is closed as a bounded startup-readiness lifecycle checkpoint covering app-start fail-closed, prepared-serving, non-serving lifecycle seams, DI/rooting, failure classification, and consistency coverage. Runtime route-gate, replacement/freshness/rollback, and full lifecycle operations are intentionally separate future tracks.
-
-Evidence:
-
-- `docs/codebase-review/M5_ES_LIFECYCLE_CHECKPOINT.md` documents the closeout checkpoint, bounded M5 definition, source/test evidence, and future ES lifecycle tracks.
-- `ElasticsearchAppStartServingGateSpec` proves app-start fail-closed behavior (composition-level and DI-graph-level) and prepared-serving behavior.
-- `ElasticsearchReadinessConsistencySpec` proves cross-model field-level consistency.
-- `ElasticsearchProductionReadinessState.seedOnly` records `NotEnforced`, `NotConfigured`, `NotTracked`, `EagerSeedPreparationOnly`, `NotConfigured`, `NotExposed`.
-- `ElasticsearchLifecycleStatusResponse` has `productionLifecycleComplete = false`.
-- `ES_STARTUP_SERVING_GATE_DESIGN.md` documents five policy choices that must be approved before enforcement.
-- `ES_STARTUP_SERVING_GATE_SOURCE_CONFIRMATION.md` source-confirms the implementation slice analysis and completes the bounded M5 decision.
-
-Consequences:
-
-- M5 is closed with a precise bounded definition that does not claim full production lifecycle completion.
-- Runtime route gate, operator endpoint, replacement, freshness, refresh, rollback, dashboard, and full production lifecycle verification move to named future tracks.
-- The ES operator visibility track, ES runtime serving-gate track, and ES replacement/freshness/rollback track are independent of Qdrant/hybrid roadmap milestones (M6/M7/M8).
-- The ES post-M5 planning aggregate is closed as planning only: Candidate A defers runtime route-gate, replacement/freshness/rollback remains future, and full lifecycle operations remain future.
-
-What not to infer:
-
-- Do not infer production lifecycle completion from M5 closure.
-- Do not infer that runtime serving-gate enforcement, operator-visible endpoint, replacement, freshness, refresh, or rollback are implemented.
-- Do not infer that the implicit app-start fail-closed behavior is an approved production lifecycle policy.
+- Do not infer production lifecycle completion (replacement/freshness/rollback/full lifecycle operations) from the M5 closeout or the M14B gate.
+- Do not infer that the M14B gate changes default behavior; it is `disabled` by default and the default `/beauty-search` route is unchanged.
+- Do not infer default/public exposure of the operator visibility endpoint; it remains explicit opt-in/internal only.
 
 ## Decision 13: Qdrant closeouts stop at approval-request readiness, not serving approval
 
