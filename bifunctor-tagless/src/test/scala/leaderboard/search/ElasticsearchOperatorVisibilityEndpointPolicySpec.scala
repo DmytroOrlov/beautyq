@@ -307,7 +307,45 @@ final class ElasticsearchOperatorVisibilityEndpointPolicySpec extends AnyWordSpe
       assert(optInProbe.allHttpApis.collect { case _: EsLifecycleStatusApi[IO] => () }.size == 1)
     }
 
-    "allow local / dev-only fallback if chosen later" in pending
+    "allow local / dev-only fallback only as an explicit future local/dev choice, never as production or default-runtime fallback" in {
+      import leaderboard.search.eval.{BeautySearchLocalDevOnlyFallbackPolicy => Policy, BeautySearchLocalDevOnlyFallbackPolicyClause => Clause}
+
+      // The previously-pending expectation is closed by a pure data-only policy/contract, not by any
+      // runtime fallback, route change, DI wiring, or backend client.
+      assert(Policy.PolicyClosed)
+      assert(Policy.ClauseCount == 7)
+      assert(Policy.AllowedClauseCount == 1)
+      assert(Policy.DeniedClauseCount == 6)
+
+      // The single allowance: local/dev-only fallback is permitted only as an explicit future local/dev choice.
+      assert(Policy.LocalDevOnlyFallbackAllowedAsExplicitFutureChoice)
+      val allowRow =
+        Policy.clauseRowFor(Clause.AllowLocalDevOnlyFallbackAsExplicitFutureChoice).getOrElse(fail("missing allow clause"))
+      assert(allowRow.decision == "allowed_local_dev_only_explicit_future_choice")
+      assert(allowRow.boundaryHolds)
+
+      // No production fallback and no default runtime serving fallback.
+      assert(!Policy.ProductionFallbackEnabled)
+      assert(!Policy.RuntimeServingFallbackEnabledByDefault)
+
+      // Default /beauty-search stays ES-backed; Qdrant stays disabled-by-default and is not a fallback target.
+      assert(Policy.DefaultBeautySearchEsBacked)
+      assert(Policy.QdrantDisabledByDefault)
+      assert(!Policy.QdrantIsFallbackTarget)
+
+      // The M14B route gate remains separate from fallback; no hybrid/fusion/reranking/telemetry behavior.
+      assert(Policy.M14RouteGateSeparateFromFallback)
+      assert(!Policy.HybridFusionRerankingTelemetryProductionBehaviorIntroduced)
+
+      // Every clause beyond the single allowance is denied and every clause holds against the standing boundary.
+      assert(Policy.Clauses.forall(_.boundaryHolds))
+      assert(
+        Policy.Clauses
+          .filterNot(_.clause == Clause.AllowLocalDevOnlyFallbackAsExplicitFutureChoice)
+          .forall(_.decision == "denied")
+      )
+      (): Unit
+    }
 
     "not expose as public product API" in {
       withZeroHitEsServer { port =>
