@@ -35,6 +35,7 @@ Keep the current-state block short here:
 - M10 query classification, offline routing policy, full classification coverage, and retrieval-policy readiness are accepted as closed offline planning/reporting contracts (see M10 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M10 prepares offline M11 candidate-generation inputs only; it does not execute ES/Qdrant and does not change production routing.
 - M11 candidate-generation input/request skeleton, result schema, and boundary/failure matrix are accepted as closed offline eval/planning/reporting contracts (see M11 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M11 does not execute ES/Qdrant, does not implement candidate retrieval/fusion/reranking, and does not change production routing.
 - M12 fusion/reranking input scaffold, policy catalog/experiment-plan schema, boundary/failure matrix, and saved-output schema are accepted as closed offline eval/planning/reporting contracts (see M12 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M12 prepares placeholder-only planning/reporting surfaces only; it does not implement scoring/fusion execution/reranking execution/candidate retrieval/backend execution and does not change production routing.
+- M13A controlled explicit opt-in route/module planning contract (`M13BeautyQSearchControlledOptInRoutePlanning`) is accepted as closed planning/contract work only — not route activation (see M13 closeout below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0). M13A consumes the M12 closeout only as planning input, treats no M12 placeholder row as quality evidence, and does not change production routing. Local/dev-only fallback and runtime route-gate / HTTP 503 remain future work, not implemented by M13A.
 
 For exact route/module truth and verification counts, use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. For the separate activation gate, use `docs/local/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`. For M8/M9 implementation status, use `docs/local/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
 
@@ -122,12 +123,11 @@ Future real fusion/reranking experiments — testing ES-first, Qdrant-first, wei
 
 ### M13. Controlled hybrid explicit opt-in route
 
-- add a disabled-by-default hybrid route/module;
-- do not include it in the default `apiElasticsearch` graph;
-- add route exposure tests;
-- expose observability fields;
-- add a smoke checklist;
-- keep it separate from production activation.
+**M13A is closed.** Controlled explicit opt-in route/module planning contract (`M13BeautyQSearchControlledOptInRoutePlanning`), consuming the M12 closeout only as planning input, is an accepted contract. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the five route-planning states and the full denied drift list.
+
+M13A is planning/contract work only — not route activation. It defines route-planning states for the preserved ES default, the disabled-by-default explicit Qdrant opt-in, experiment-route planning only, production activation not approved, and serving approval not granted, and denies drift into default route switch, production route activation, implicit Qdrant activation, real backend execution, route/plugin/DI/HTTP change, hybrid serving, fallback, score fusion, reranking execution, production telemetry, or quality/retrieval/readiness/route-activation/serving-approval claims. It does not treat M12 placeholder rows as quality evidence. Default `/beauty-search` remains ES-backed, the explicit Qdrant opt-in route stays disabled by default, and Qdrant production activation remains not approved.
+
+Future real M13 work — adding a disabled-by-default hybrid route/module excluded from the default `apiElasticsearch` graph, route exposure tests, observability fields, a smoke checklist, and local/dev-only fallback and runtime route-gate / HTTP 503 behavior — remains unimplemented and separate from production activation.
 
 ### M14. Production telemetry dry-run
 
