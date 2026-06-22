@@ -11,10 +11,7 @@ Current source-backed baseline:
 - Current production backend remains seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
 - Production route activation is not approved today.
 
-Historical green evidence (superseded by the M17A full-suite checkpoint in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0; this opt-in route readiness conclusion still holds):
-
-- Option97 full suite green (historical): `1189` run, `1189` succeeded, `0` failed, `0` aborted, `1` canceled, `2` pending.
-- Option101 real resource-gated Qdrant smoke green: deterministic smoke `40` succeeded, `0` failed, `0` aborted, `0` pending; resource-gated smoke `7` succeeded, `0` failed, `0` aborted, `0` pending.
+Earlier full-suite and resource-gated Qdrant smoke runs were green; both are superseded by the M17A full-suite checkpoint in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 1. The opt-in route readiness conclusion below still holds.
 
 Interpret that evidence narrowly:
 
@@ -41,7 +38,7 @@ Non-requirements for this decision:
 
 There is no real production traffic in this project context, so activation remains an explicit approval and implementation decision built from offline evidence plus route/control safety, not a telemetry threshold.
 
-If production activation is explicitly approved later, option103 would be allowed to implement only:
+If production activation is explicitly approved later, that approval would allow implementing only:
 
 - the approved default graph exposure change for `/beauty-search`;
 - the approved rollback/disable control for that default route change;
@@ -49,7 +46,7 @@ If production activation is explicitly approved later, option103 would be allowe
 - the route exposure tests required by the approved default graph shape;
 - the required post-implementation full-suite verification closeout.
 
-Option103 would still not approve or implement:
+It would still not approve or implement:
 
 - hybrid serving;
 - fallback;

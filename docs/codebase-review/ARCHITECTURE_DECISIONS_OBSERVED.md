@@ -219,7 +219,7 @@ Statement:
 - Current Elasticsearch startup-readiness lifecycle metadata (`ElasticsearchSeedLifecycleMetadata`, `ElasticsearchProductionReadinessState`, `ElasticsearchStartupReadinessTransition`, `ElasticsearchStartupReadinessStatusResponse`) remains seed-only and non-serving. Design A operator visibility (`GET /ops/beauty-search/lifecycle`) is implemented as an explicit opt-in/internal endpoint, absent from the default ES route graph and from `seedCatalogInMemory`. M5 is closed as a bounded startup-readiness lifecycle checkpoint; replacement/freshness/rollback and full lifecycle operations remain separate future tracks.
 - Separately, the runtime route gate for `/beauty-search` itself is implemented as `BeautySearchServingGate` (M14B), disabled by default: disabled -> 200 OK existing ES-backed behavior; enabled-not-ready -> HTTP 503; enabled-ready -> 200 OK; invalid request -> 400 before the gate. `ElasticsearchOperatorVisibilityEndpointPolicySpec` has zero pending tests following M14B/M14C.
 
-Evidence and full M14-M17 statement: `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
+Evidence and full M14-M17 statement: `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2.
 
 What not to infer:
 

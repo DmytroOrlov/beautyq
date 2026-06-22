@@ -12,7 +12,7 @@ For current behavior, focused tests are more authoritative than prose docs. In p
 
 ## Full verification closeout
 
-The current canonical full-suite verification counts live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 (M17A checkpoint). Do not restate counts here; they go stale quickly.
+The current canonical full-suite verification counts live in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2 (M17A checkpoint). Do not restate counts here; they go stale quickly.
 
 ## NPE hazard closeout
 
@@ -35,22 +35,7 @@ All formerly pending expectations are now active tests:
 
 The single canceled test remains expected manual/resource-gated coverage and is not a blocker.
 
-Pending tests are fully resolved; none remain as deferred future-boundary placeholders. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the consolidated M14-M17 statement and the current full-suite verification counts.
-
-## Pending expectation map (historical)
-
-All entries below are now active tests; the table is retained only as a historical record of what was once pending.
-
-| Former pending expectation | Owning spec | Resolved by |
-|---|---|---|
-| explicit Qdrant opt-in route remains a separate module outside default `apiElasticsearch` | `BeautySearchOptInRouteModuleSpec.scala` | `BeautySearchRouteModules.apiQdrantExplicitOptIn` implemented |
-| Qdrant route requires M6 `productionCandidateReady` and activation-policy readiness before route wiring | `BeautySearchOptInRouteModuleSpec.scala` | M6/M7 closeout |
-| Qdrant route consumes disabled-by-default config gate and approved no-regression evidence | `BeautySearchOptInRouteModuleSpec.scala` | `QdrantProductionCandidateActivationConfigApproval` |
-| Qdrant route requires observability/status evidence and rollback/disable control | `BeautySearchOptInRouteModuleSpec.scala` | M7 closeout |
-| Qdrant route requires separate route/serving approval without approving production-route activation | `BeautySearchOptInRouteModuleSpec.scala` | M7 closeout |
-| keep `POST /beauty-search` ES-backed until separate production-route activation is approved | `BeautySearchProductionRouteExposureSpec.scala` | Default production graph remains ES-backed |
-| allow local/dev-only fallback if chosen later | `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` | M14C `BeautySearchLocalDevOnlyFallbackPolicy` |
-| runtime route-gate / HTTP 503 behavior | `ElasticsearchOperatorVisibilityEndpointPolicySpec.scala` | M14B `BeautySearchServingGate` |
+Pending tests are fully resolved; none remain as deferred future-boundary placeholders. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2 for the consolidated M14-M17 statement and the current full-suite verification counts.
 
 None of these resolutions imply production-route activation, default route switch, Qdrant activation, production fallback, hybrid serving, score fusion, or reranking.
 
@@ -59,7 +44,7 @@ None of these resolutions imply production-route activation, default route switc
 Current active ES lifecycle specs already prove the planning closeout boundary:
 
 - M5 is closed as a bounded startup-readiness lifecycle checkpoint.
-- The runtime route gate (`BeautySearchServingGate`, disabled by default, HTTP 503 when enabled-not-ready) is implemented as of M14B; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
+- The runtime route gate (`BeautySearchServingGate`, disabled by default, HTTP 503 when enabled-not-ready) is implemented as of M14B; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2.
 - Replacement/freshness/rollback does not exist today.
 - Full lifecycle operations do not exist today.
 
@@ -210,7 +195,7 @@ Future/unimplemented unless matching source-backed tests are added. These belong
   - serving path when ES preparation/readiness succeeds;
   - failure path when preparation fails;
   - explicit proof of whether serving blocks, degrades, or fails fast.
-- runtime route-gate enforcement is implemented as `BeautySearchServingGate` (M14B): disabled (default) preserves existing ES-backed behavior, enabled-not-ready returns HTTP 503, enabled-ready preserves existing ES-backed behavior, invalid requests still return 400 before the gate. See the serving-gate evidence ids below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
+- runtime route-gate enforcement is implemented as `BeautySearchServingGate` (M14B): disabled (default) preserves existing ES-backed behavior, enabled-not-ready returns HTTP 503, enabled-ready preserves existing ES-backed behavior, invalid requests still return 400 before the gate. See the serving-gate evidence ids below and `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2.
 - replacement / alias behavior:
   - versioned index naming or alias movement if adopted;
   - atomic versus non-atomic replacement behavior;
@@ -389,7 +374,7 @@ Remaining unimplemented tests (not covered by this task):
 
 Source-confirmed enforcement seam: `BeautySearchApi.serverLogic` (`BeautySearchApi.scala:21-29`). Enforcement is currently impossible because the DI-bound transition is always `Prepared`. Spec-only tests can prove expected behavior before enforcement code.
 
-Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the M5 closeout summary and remaining production lifecycle gaps.
+Current focused pure/composition/route-module specs cover only the seed-only metadata, explicit non-serving state, status projection, and pure startup transition shape. They are not substitutes for production lifecycle tests. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2 for the M5 closeout summary and remaining production lifecycle gaps.
 
 ## Repository Tests
 

@@ -18,7 +18,7 @@ Closed as planning only:
 
 - M5 remains closed as a bounded startup-readiness lifecycle checkpoint.
 - Remaining ES production-lifecycle work is split into two separate future tracks: replacement/freshness/rollback, and full lifecycle operations.
-- The runtime route gate for `/beauty-search` itself is implemented as `BeautySearchServingGate` (M14B), disabled by default; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0. This aggregate closeout does not implement replacement/freshness/rollback, full lifecycle operations, or any change beyond the M14B gate.
+- The runtime route gate for `/beauty-search` itself is implemented as `BeautySearchServingGate` (M14B), disabled by default; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2. This aggregate closeout does not implement replacement/freshness/rollback, full lifecycle operations, or any change beyond the M14B gate.
 - Qdrant approval-request status remains separate and does not change any ES lifecycle track.
 
 ### Search HTTP Exposure
@@ -27,7 +27,7 @@ Current route truth stays in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: defaul
 
 Strategic gap:
 
-- M6 is closed as the Qdrant production-candidate readiness foundation. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M5 remains closed as a bounded startup-readiness lifecycle checkpoint; replacement/freshness/rollback and full lifecycle operations are named future tracks, not an unaccepted M5 remainder. The runtime route gate for `/beauty-search` is implemented as `BeautySearchServingGate` (M14B), disabled by default; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
+- M6 is closed as the Qdrant production-candidate readiness foundation. The M7 activation planning/source-confirmation foundation is closed without serving implementation. M5 remains closed as a bounded startup-readiness lifecycle checkpoint; replacement/freshness/rollback and full lifecycle operations are named future tracks, not an unaccepted M5 remainder. The runtime route gate for `/beauty-search` is implemented as `BeautySearchServingGate` (M14B), disabled by default; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2.
 - The full lifecycle operations track is still unstarted. It separately requires command surface/ownership, authorization policy, runtime rebuild/refresh semantics, replacement activation semantics, rollback semantics, disable/kill-switch semantics, stale/current/previous catalog state modeling, progress/failure status fields, and interaction with any later runtime route-gate.
 - Future production hardening still needs explicit decisions for typed `4xx` error responses, structured error bodies, request validation, query length limits, lat/lon range validation, catalog source-of-truth policy, freshness/staleness definition, replacement/index-identity policy, refresh trigger semantics, rollback/disable policy, observability/status requirements, kill-switch behavior, and any interaction with a future runtime route-gate.
 
@@ -183,7 +183,7 @@ Before any future default `/beauty-search` switch, approval must cover at least:
 - full-suite verification after implementation;
 - continued exclusion of hidden hybrid serving, fallback, score fusion, reranking, shadow serving, and traffic mirroring.
 
-If that activation is approved later, option103 would be allowed to implement only the approved default-route exposure change plus its rollback/disable and verification surface. It would still not approve hybrid serving, fallback, fusion, reranking, shadow serving, or mirroring.
+If that activation is approved later, it would allow implementing only the approved default-route exposure change plus its rollback/disable and verification surface. It would still not approve hybrid serving, fallback, fusion, reranking, shadow serving, or mirroring.
 
 Closed M6 foundation:
 
@@ -253,7 +253,7 @@ Explicit opt-in route readiness model:
 | M2 | ES route contract hardened | Future |
 | M3 | B-lite comparison pipeline usable | In progress / expanded (M-ESQ-EVAL evidence) |
 | M4 | ES production lifecycle designed | Closed. HTTP/BeautySearch contract stabilized and frozen; production route exposure documented/tested; bad-input/default decode/semantic structured errors documented/tested; typed-GET/legacy JSON docs pruned or canonicalized; public examples/freeze/checklist recorded. The startup serving-gate design from this milestone is superseded by the implemented `BeautySearchServingGate` (M14B). Full verification is separate from focused validation. |
-| M5 | Startup-readiness lifecycle checkpoint | Closed as a bounded startup-readiness lifecycle checkpoint: app-start fail-closed, prepared-serving, non-serving lifecycle metadata/readiness/status/transition/projection seams, DI/rooting, failure classification, and consistency coverage. Remaining ES production-lifecycle tracks are intentionally separate post-M5 future tracks: replacement/freshness/rollback and full lifecycle operations. The runtime route gate for `/beauty-search` is implemented separately as `BeautySearchServingGate` (M14B); see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0. |
+| M5 | Startup-readiness lifecycle checkpoint | Closed as a bounded startup-readiness lifecycle checkpoint: app-start fail-closed, prepared-serving, non-serving lifecycle metadata/readiness/status/transition/projection seams, DI/rooting, failure classification, and consistency coverage. Remaining ES production-lifecycle tracks are intentionally separate post-M5 future tracks: replacement/freshness/rollback and full lifecycle operations. The runtime route gate for `/beauty-search` is implemented separately as `BeautySearchServingGate` (M14B); see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2. |
 | M6 | Qdrant production-candidate readiness: contract parity, indexing/search readiness, quality/eval gates, observability, rollback/disable controls, and explicit activation policy. | Closed: Qdrant production-candidate readiness foundation. Five accepted chunks plus source-confirmation closeout; no serving approval |
 | M7 | Activation/source-confirmation and serving-policy planning before any serving, conditional on separate approval | Closed foundation: pure prerequisite/config aggregate plus route-seam source confirmation; no serving implementation or activation approval |
 | M8 | Controlled hybrid serving experiment, conditional on explicit business/serving policy and activation approval | Future-only and conditional; not automatic |
@@ -269,17 +269,17 @@ M4 is closed. Its remaining documented scope is source-backed by current docs an
 - Public examples/freeze/checklist recorded (`04-api-and-http-contracts.md`).
 - Non-serving lifecycle status shape, startup transition shape, and startup status projection exist with pure model/encoder and focused tests.
 - Route-graph state coverage proves lifecycle metadata and readiness state are materialized through ES-backed route graphs.
-- The startup serving-gate design from this milestone is superseded by the implemented `BeautySearchServingGate` (M14B); see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
+- The startup serving-gate design from this milestone is superseded by the implemented `BeautySearchServingGate` (M14B); see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2.
 
 Full verification is separate from focused validation. M4 was not verified by a full `sbt test` run from this docs pass.
 
 #### M5 startup-readiness lifecycle checkpoint — closed
 
-M5 is closed as a bounded startup-readiness lifecycle checkpoint; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the closeout summary. Replacement/freshness/rollback and full lifecycle operations remain separate future tracks. The runtime route gate for `/beauty-search` is implemented as `BeautySearchServingGate` (M14B). Full verification is separate from focused validation.
+M5 is closed as a bounded startup-readiness lifecycle checkpoint; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2 for the closeout summary. Replacement/freshness/rollback and full lifecycle operations remain separate future tracks. The runtime route gate for `/beauty-search` is implemented as `BeautySearchServingGate` (M14B). Full verification is separate from focused validation.
 
 #### M5 closeout — bounded startup-readiness lifecycle checkpoint
 
-M5 is closed as a bounded startup-readiness lifecycle checkpoint; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0 for the closeout summary.
+M5 is closed as a bounded startup-readiness lifecycle checkpoint; see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2 for the closeout summary.
 
 M5 covers:
 
@@ -293,7 +293,7 @@ M5 covers:
 - DI/rooting of prepared transition through ES seed route graphs;
 - source-backed failure classification (`preparationFailed`);
 - cross-model consistency coverage (`ElasticsearchReadinessConsistencySpec`);
-- the startup serving-gate design from this checkpoint is superseded by the implemented `BeautySearchServingGate` (M14B); see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0.
+- the startup serving-gate design from this checkpoint is superseded by the implemented `BeautySearchServingGate` (M14B); see `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2.
 
 M5 does not include:
 
@@ -323,7 +323,7 @@ Remaining ES production lifecycle work is split into named tracks. These tracks 
 | Track | Scope | Dependencies | Current status |
 |-------|-------|-------------|----------------|
 | ES operator visibility track | Operator-visible lifecycle/status endpoint design and policy: endpoint path, HTTP status, auth/operator policy, status fields distinguishing seed-only/preparing/ready/failed/stale/rollback/disabled states | M5 closeout; Design A closed/implemented; module-level opt-in is the only realized exposure policy | **Design A implemented as explicit opt-in/internal module.** Endpoint path `GET /ops/beauty-search/lifecycle` is implemented. NOT in default ES route graph; available only through `BeautySearchRouteModules.seedCatalogElasticsearchWithOperatorVisibility` / `apiElasticsearchWithOperatorVisibility`. Default `seedCatalogElasticsearch`, default `apiElasticsearch`, `LeaderboardPlugin.modules.apiBase[IO] + BeautySearchRouteModules.apiElasticsearch`, and the in-memory graph do NOT expose the endpoint. Response shape: `ElasticsearchStartupReadinessStatusResponse.Prepared` with nested `ElasticsearchLifecycleStatusResponse`. `200 OK` for successful retrieval. No new ES calls. No `/beauty-search` behavior change beyond this endpoint. This endpoint is separate from the `BeautySearchServingGate` runtime route gate (see the row below). Design B (bootstrap failure status) and Design C (replacement/freshness/rollback-rich status) remain future. `ElasticsearchOperatorVisibilityEndpointPolicySpec` has zero pending tests. |
-| ES runtime serving-gate track | Runtime route-gate for `/beauty-search` | M5 closeout | **Implemented as `BeautySearchServingGate` (M14B)**, disabled by default: disabled -> 200 OK existing ES-backed behavior; enabled-not-ready -> HTTP 503; enabled-ready -> 200 OK; invalid request -> 400 before the gate. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 0. Stale/previous index state and replacement/freshness/rollback policy remain separate, still-unimplemented tracks. |
+| ES runtime serving-gate track | Runtime route-gate for `/beauty-search` | M5 closeout | **Implemented as `BeautySearchServingGate` (M14B)**, disabled by default: disabled -> 200 OK existing ES-backed behavior; enabled-not-ready -> HTTP 503; enabled-ready -> 200 OK; invalid request -> 400 before the gate. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` sections 1-2. Stale/previous index state and replacement/freshness/rollback policy remain separate, still-unimplemented tracks. |
 | ES replacement/freshness/rollback track | Replacement/versioned-index/alias policy, freshness tracking, refresh trigger semantics, rollback policy | M5 closeout; individual policy designs approved | Not started; `ElasticsearchProductionReadinessState` records `NotConfigured`/`NotTracked`/`EagerSeedPreparationOnly` |
 | ES full lifecycle operations track | Runtime operator command surface/ownership, auth/config policy, rebuild/refresh semantics, replacement activation, rollback, disable/kill-switch, state transitions, operation progress/failure status | M5 closeout; replacement/freshness/rollback policy and any runtime gate interaction clarified first or alongside | Not started; no runtime lifecycle operation implementation exists today |
 
