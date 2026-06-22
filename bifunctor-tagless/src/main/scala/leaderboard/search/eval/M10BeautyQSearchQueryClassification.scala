@@ -112,6 +112,10 @@ final case class M10BeautyQSearchQueryClassificationInput(
   queryId: String,
   rawQueryText: String,
   signals: List[M10BeautyQSearchQuerySignal],
+  /** Explicit offline marker that this row is an accepted negative control: a noisy/ambiguous anchor
+    * deliberately excluded from backend-candidate study, not an unresolved manual-review row.
+    */
+  acceptedNegativeControl: Boolean = false,
 )
 
 final case class M10BeautyQSearchQueryClassificationResult(
@@ -119,7 +123,12 @@ final case class M10BeautyQSearchQueryClassificationResult(
   rawQueryText: String,
   category: M10BeautyQSearchQueryCategory,
   intentSignals: List[M10BeautyQSearchQuerySignal],
+  /** True only for unresolved noise rows that still require future manual resolution. Accepted
+    * negative controls set this to false.
+    */
   manualReviewEligible: Boolean,
+  /** True for noise rows explicitly accepted as negative-control exclusions. */
+  acceptedNegativeControl: Boolean,
   isNoise: Boolean,
   rationale: String,
 )
@@ -147,8 +156,11 @@ object M10BeautyQSearchQueryClassification {
         }
 
     val isNoise = category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent
-    // Ambiguous-but-beauty queries are held for offline manual review; pure non-beauty/empty is no-op noise.
-    val manualReviewEligible = isNoise && ambiguous && !nonBeauty
+    // An accepted negative control is a noise row deliberately excluded from study; it is never an
+    // unresolved manual-review row. Otherwise ambiguous-but-beauty noise is held for manual review,
+    // and pure non-beauty/empty signal is no-op noise.
+    val acceptedNegativeControl = isNoise && input.acceptedNegativeControl
+    val manualReviewEligible = isNoise && ambiguous && !nonBeauty && !acceptedNegativeControl
 
     M10BeautyQSearchQueryClassificationResult(
       queryId = input.queryId,
@@ -156,6 +168,7 @@ object M10BeautyQSearchQueryClassification {
       category = category,
       intentSignals = intent,
       manualReviewEligible = manualReviewEligible,
+      acceptedNegativeControl = acceptedNegativeControl,
       isNoise = isNoise,
       rationale = rationale(category, intent, nonBeauty),
     )

@@ -20,28 +20,43 @@ enum M10BeautyQSearchOfflineRetrievalStrategyIntent {
   case CombinedEsQdrantComparison
   case ManualReviewBlocked
   case NoOpNoise
+  case AcceptedNegativeControlExcluded
 
   def render: String =
     this match {
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval     => "es_only_candidate_retrieval"
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval => "qdrant_only_candidate_retrieval"
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison   => "combined_es_qdrant_comparison"
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked          => "manual_review_blocked"
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise                    => "no_op_noise"
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval      => "es_only_candidate_retrieval"
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval  => "qdrant_only_candidate_retrieval"
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison    => "combined_es_qdrant_comparison"
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked           => "manual_review_blocked"
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise                     => "no_op_noise"
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded => "accepted_negative_control_excluded"
     }
 
-  /** Whether this intent describes offline candidate-retrieval study (vs manual review / no-op). */
+  /** Whether this intent describes offline candidate-retrieval study (vs manual review / no-op /
+    * accepted negative-control exclusion).
+    */
   def isBackendCandidateRetrievalIntent: Boolean =
     this match {
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval     => true
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval => true
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison   => true
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked          => false
-      case M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise                    => false
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval        => true
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval    => true
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison      => true
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked             => false
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise                       => false
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded => false
     }
+
+  /** Whether this intent marks an unresolved row that still requires future manual resolution.
+    * Accepted negative-control exclusions are explicitly NOT unresolved manual review.
+    */
+  def isUnresolvedManualReview: Boolean =
+    this == M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked
 }
 
 object M10BeautyQSearchOfflineRetrievalStrategyIntent {
+
+  /** Representative-covered intent order. The M10A representative dataset exercises exactly these five
+    * intents; the representative routing fixture is pinned to them.
+    */
   val stableOrder: List[M10BeautyQSearchOfflineRetrievalStrategyIntent] = List(
     EsOnlyCandidateRetrieval,
     QdrantOnlyCandidateRetrieval,
@@ -49,6 +64,12 @@ object M10BeautyQSearchOfflineRetrievalStrategyIntent {
     ManualReviewBlocked,
     NoOpNoise,
   )
+
+  /** Full M10B coverage order: the representative `stableOrder` plus the accepted negative-control
+    * exclusion intent, which only the full 63-query dataset exercises.
+    */
+  val fullCoverageStableOrder: List[M10BeautyQSearchOfflineRetrievalStrategyIntent] =
+    stableOrder :+ AcceptedNegativeControlExcluded
 }
 
 /** Standing offline boundary asserted by every routing decision. Every claim-bearing field is `false`;
@@ -131,7 +152,10 @@ object M10BeautyQSearchOfflineRoutingPolicy {
       case M10BeautyQSearchQueryCategory.ComparisonExplorationIntent => M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval
       case M10BeautyQSearchQueryCategory.MixedIntent           => M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison
       case M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent =>
-        if (result.manualReviewEligible) M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked
+        if (result.acceptedNegativeControl)
+          M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded
+        else if (result.manualReviewEligible)
+          M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked
         else M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise
     }
 
@@ -161,6 +185,8 @@ object M10BeautyQSearchOfflineRoutingPolicy {
         s"Offline strategy intent only: ${category.render} held for manual review; not routed to any backend."
       case M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise =>
         s"Offline strategy intent only: ${category.render} treated as no-op noise; not routed to any backend."
+      case M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded =>
+        s"Offline strategy intent only: ${category.render} kept as an accepted negative-control exclusion; not unresolved manual review and not routed to any backend."
     }
 
   val RepresentativeDecisions: List[M10BeautyQSearchOfflineRoutingDecision] =

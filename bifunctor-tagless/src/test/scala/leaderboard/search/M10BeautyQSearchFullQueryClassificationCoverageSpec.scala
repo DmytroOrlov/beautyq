@@ -1,0 +1,363 @@
+package leaderboard.search
+
+import leaderboard.search.eval.{
+  M10BeautyQSearchFullClassificationCoverageMetric,
+  M10BeautyQSearchFullQueryClassification,
+  M10BeautyQSearchFullQueryClassificationCoverageScorecard,
+  M10BeautyQSearchFullQueryClassificationCoverageScorecardRenderer,
+  M10BeautyQSearchOfflineRetrievalStrategyIntent,
+  M10BeautyQSearchQueryCategory,
+  M9BeautyQSearchEvalQueryDatasetStaticRows,
+}
+import org.scalatest.wordspec.AnyWordSpec
+
+import java.nio.charset.StandardCharsets
+import scala.io.Source
+import scala.util.Using
+
+final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordSpec {
+
+  private val artifactPath: String =
+    "/leaderboard/search/eval/m10-beautyq-full-query-classification-coverage-scorecard.md"
+
+  // Marketing/readiness tokens that must never appear in the rendered scorecard, even as substrings.
+  // Boundary posture is asserted via structured boolean metrics, not by scanning for negated prose.
+  private val forbiddenRenderedTokens: List[String] = List(
+    "production_ready",
+    "qdrant_ready",
+    "hybrid_ready",
+    "is production ready",
+    "production-ready",
+  )
+
+  "M10BeautyQSearchFullQueryClassification" should {
+
+    "map every accepted dataset query id exactly once" in {
+      val ids = M10BeautyQSearchFullQueryClassification.FullResults.map(_.queryId)
+      val expected = M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds
+
+      assert(expected.size == 63)
+      assert(ids.size == 63)
+      assert(ids.distinct.size == 63)
+      assert(ids.toSet == expected.toSet)
+      // Exactly-once: every dataset id resolves to a single classification result.
+      expected.foreach { id =>
+        assert(M10BeautyQSearchFullQueryClassification.resultFor(id).isDefined, s"missing classification $id")
+        assert(ids.count(_ == id) == 1, s"duplicate classification $id")
+      }
+    }
+
+    "have category counts that sum to 63 and match the accepted distribution" in {
+      val counts = M10BeautyQSearchFullQueryClassification.CategoryCounts
+      val byCategory = counts.toMap
+
+      assert(counts.map(_._2).sum == 63)
+      M10BeautyQSearchQueryCategory.stableOrder.foreach { category =>
+        assert(counts.exists(_._1 == category), s"category not reported: ${category.render}")
+      }
+      assert(byCategory(M10BeautyQSearchQueryCategory.ProviderLookup) == 0)
+      assert(byCategory(M10BeautyQSearchQueryCategory.ServiceIntent) == 7)
+      assert(byCategory(M10BeautyQSearchQueryCategory.AttributeFilterIntent) == 5)
+      assert(byCategory(M10BeautyQSearchQueryCategory.LocationIntent) == 1)
+      assert(byCategory(M10BeautyQSearchQueryCategory.PriceBudgetIntent) == 0)
+      assert(byCategory(M10BeautyQSearchQueryCategory.AvailabilityTimeIntent) == 0)
+      assert(byCategory(M10BeautyQSearchQueryCategory.ComparisonExplorationIntent) == 1)
+      assert(byCategory(M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent) == 1)
+      assert(byCategory(M10BeautyQSearchQueryCategory.MixedIntent) == 48)
+    }
+
+    "have strategy intent counts that sum to 63 and match the accepted distribution" in {
+      val counts = M10BeautyQSearchFullQueryClassification.StrategyIntentCounts
+      val byIntent = counts.toMap
+
+      assert(counts.map(_._2).sum == 63)
+      M10BeautyQSearchOfflineRetrievalStrategyIntent.fullCoverageStableOrder.foreach { intent =>
+        assert(counts.exists(_._1 == intent), s"strategy intent not reported: ${intent.render}")
+      }
+      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval) == 13)
+      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval) == 1)
+      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison) == 48)
+      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked) == 0)
+      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise) == 0)
+      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded) == 1)
+    }
+
+    "classify q_noise_004 = gel removal as a beauty-domain mixed-intent candidate study input" in {
+      val result = M10BeautyQSearchFullQueryClassification.resultFor("q_noise_004").getOrElse(fail("missing q_noise_004"))
+      val decision = M10BeautyQSearchFullQueryClassification.decisionFor("q_noise_004").getOrElse(fail("missing q_noise_004"))
+
+      assert(!result.isNoise)
+      assert(!result.acceptedNegativeControl)
+      assert(!result.manualReviewEligible)
+      assert(result.category == M10BeautyQSearchQueryCategory.MixedIntent)
+      assert(decision.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison)
+      assert(decision.strategyIntent.isBackendCandidateRetrievalIntent)
+      assert(!decision.strategyIntent.isUnresolvedManualReview)
+    }
+
+    "keep q_noise_005 = lifting as the accepted noisy/ambiguous negative-control anchor" in {
+      val result = M10BeautyQSearchFullQueryClassification.resultFor("q_noise_005").getOrElse(fail("missing q_noise_005"))
+      val decision = M10BeautyQSearchFullQueryClassification.decisionFor("q_noise_005").getOrElse(fail("missing q_noise_005"))
+
+      assert(result.isNoise)
+      assert(result.category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
+      assert(result.acceptedNegativeControl)
+      assert(!result.manualReviewEligible)
+      assert(decision.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded)
+      assert(!decision.strategyIntent.isBackendCandidateRetrievalIntent)
+      assert(!decision.strategyIntent.isUnresolvedManualReview)
+    }
+
+    "leave no full-dataset row as unresolved manual review" in {
+      val unresolved = M10BeautyQSearchFullQueryClassification.FullDecisions
+        .filter(_.strategyIntent.isUnresolvedManualReview)
+
+      assert(unresolved.isEmpty)
+      assert(M10BeautyQSearchFullQueryClassification.UnresolvedManualReviewQueryIds.isEmpty)
+      assert(
+        !M10BeautyQSearchFullQueryClassification.FullDecisions
+          .exists(_.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked),
+      )
+    }
+
+    "expose exactly q_noise_005 as the accepted negative-control row" in {
+      assert(M10BeautyQSearchFullQueryClassification.AcceptedNegativeControlQueryIds == List("q_noise_005"))
+    }
+
+    "decide category from raw offline signals, not from the query id prefix" in {
+      // Both ids share the q_noise_* prefix yet land in different categories: the prefix carries no
+      // classification meaning; the deterministic offline signals do.
+      val noise004 = M10BeautyQSearchFullQueryClassification.resultFor("q_noise_004").getOrElse(fail("missing q_noise_004"))
+      val noise005 = M10BeautyQSearchFullQueryClassification.resultFor("q_noise_005").getOrElse(fail("missing q_noise_005"))
+
+      assert(noise004.queryId.startsWith("q_noise_"))
+      assert(noise005.queryId.startsWith("q_noise_"))
+      assert(noise004.category != noise005.category)
+      assert(noise004.category == M10BeautyQSearchQueryCategory.MixedIntent)
+      assert(noise005.category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
+      // A non-noise-prefixed beauty row stays beauty; prefixes do not gate either direction.
+      val nails001 = M10BeautyQSearchFullQueryClassification.resultFor("q_nails_001").getOrElse(fail("missing q_nails_001"))
+      assert(!nails001.isNoise)
+    }
+
+    "count exactly 62 backend candidate study inputs and 1 accepted negative-control exclusion" in {
+      val backend = M10BeautyQSearchFullQueryClassification.FullDecisions
+        .count(_.strategyIntent.isBackendCandidateRetrievalIntent)
+      val negativeControls = M10BeautyQSearchFullQueryClassification.AcceptedNegativeControlQueryIds.size
+
+      assert(backend == 62)
+      assert(negativeControls == 1)
+    }
+
+    "keep mixed intent as offline combined comparison without implying production hybrid serving" in {
+      val mixed = M10BeautyQSearchFullQueryClassification.FullResults
+        .filter(_.category == M10BeautyQSearchQueryCategory.MixedIntent)
+
+      assert(mixed.nonEmpty)
+      mixed.foreach { result =>
+        val decision = M10BeautyQSearchFullQueryClassification.decisionFor(result.queryId).getOrElse(fail(result.queryId))
+        assert(decision.strategyIntent == M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison)
+        assert(!decision.boundary.hybridServingImplied)
+        assert(!decision.rationale.toLowerCase.contains("hybrid"))
+      }
+    }
+
+    "never route noisy/ambiguous/non-beauty rows to backend-candidate study intents" in {
+      val noisy = M10BeautyQSearchFullQueryClassification.FullResults
+        .filter(_.category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
+
+      assert(noisy.nonEmpty)
+      noisy.foreach { result =>
+        assert(result.isNoise)
+        val decision = M10BeautyQSearchFullQueryClassification.decisionFor(result.queryId).getOrElse(fail(result.queryId))
+        assert(!decision.strategyIntent.isBackendCandidateRetrievalIntent, s"noisy routed to backend: ${result.queryId}")
+      }
+    }
+
+    "require and implement no real backend/client/route/plugin/DI/HTTP path" in {
+      M10BeautyQSearchFullQueryClassification.FullDecisions.foreach { decision =>
+        val b = decision.boundary
+        assert(!b.productionBeautySearchCalled)
+        assert(!b.esClientCreated)
+        assert(!b.qdrantClientCreated)
+        assert(!b.esExecuted)
+        assert(!b.qdrantExecuted)
+        assert(!b.routePluginDiHttpInvolved)
+        assert(!b.realBackendCallImplemented)
+        assert(!b.realBackendCallRequired)
+      }
+    }
+  }
+
+  "M10BeautyQSearchFullQueryClassificationCoverageScorecard" should {
+
+    "report semantic readiness counts including negative-control exclusion and unresolved manual review" in {
+      val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
+
+      assert(summary.totalQueryCount == 63)
+      assert(summary.mappedRowCount == 63)
+      assert(summary.mixedIntentCount == 48)
+      assert(summary.noisyRowCount == 1)
+      assert(summary.unresolvedManualReviewRowCount == 0)
+      assert(summary.acceptedNegativeControlExclusionCount == 1)
+      assert(summary.noOpRowCount == 0)
+      assert(summary.backendCandidateStudyIntentCount == 62)
+      assert(summary.acceptedNegativeControlRows == List("q_noise_005"))
+      assert(summary.unresolvedManualReviewRows.isEmpty)
+      assert(summary.categoryCounts.map(_._2).sum == 63)
+      assert(summary.strategyIntentCounts.map(_._2).sum == 63)
+    }
+
+    "prove M11 backend candidate inputs are ready via negative-control exclusion, not blocked by manual review" in {
+      val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
+
+      assert(summary.m11BackendCandidateInputsReady)
+      assert(summary.unresolvedManualReviewRowCount == 0)
+      assert(summary.acceptedNegativeControlExclusionCount == 1)
+      assert(summary.backendCandidateStudyIntentCount == 62)
+      assert(metricValue(summary.metrics, "m11_backend_candidate_inputs_ready") == "true")
+      assert(metricValue(summary.metrics, "unresolved_manual_review_row_count") == "0")
+      assert(metricValue(summary.metrics, "accepted_negative_control_exclusion_count") == "1")
+      assert(metricValue(summary.metrics, "backend_candidate_study_intent_count") == "62")
+    }
+
+    "expose semantic metric keys exactly and drop the aggregate manual_review_row_count proxy" in {
+      val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
+      val keys = summary.metrics.map(_.name).toSet
+
+      assert(keys.contains("unresolved_manual_review_row_count"))
+      assert(keys.contains("accepted_negative_control_exclusion_count"))
+      assert(keys.contains("m11_backend_candidate_inputs_ready"))
+      assert(!keys.contains("manual_review_row_count"))
+      assert(metricValue(summary.metrics, "total_query_count") == "63")
+      assert(metricValue(summary.metrics, "mapped_row_count") == "63")
+      assert(metricValue(summary.metrics, "mixed_intent_count") == "48")
+      assert(metricValue(summary.metrics, "noisy_row_count") == "1")
+      assert(metricValue(summary.metrics, "no_op_row_count") == "0")
+    }
+
+    "expose representative anchor rows including the negative-control anchor" in {
+      val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
+      val ids = summary.anchorRows.map(_.queryId)
+
+      assert(ids == List("q_nails_001", "q_nails_003", "q_noise_005"))
+      val byId = summary.anchorRows.map(row => row.queryId -> row).toMap
+      assert(byId("q_nails_001").category == M10BeautyQSearchQueryCategory.MixedIntent)
+      assert(byId("q_nails_003").category == M10BeautyQSearchQueryCategory.AttributeFilterIntent)
+      assert(byId("q_noise_005").category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
+      assert(
+        byId("q_noise_005").strategyIntent ==
+          M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded,
+      )
+    }
+
+    "list accepted negative-control rows explicitly and render (none) for unresolved manual review" in {
+      val rendered = M10BeautyQSearchFullQueryClassificationCoverageScorecard.MarkdownArtifact.contents
+
+      val negSection = section(rendered, "## Accepted negative-control rows")
+      val manualSection = section(rendered, "## Unresolved manual-review rows")
+      assert(negSection.contains("- q_noise_005"))
+      assert(manualSection.contains("(none)"))
+      assert(!manualSection.contains("- q_"))
+    }
+
+    "keep all production and Qdrant activation boundaries false via structured boolean metrics" in {
+      val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
+      val b = summary.boundary
+
+      assert(b.defaultBeautySearchEsBacked)
+      assert(b.qdrantOptInDisabledByDefault)
+      assert(!b.qdrantProductionActivationApproved)
+      assert(!b.productionRouteActivated)
+      assert(!b.defaultRouteSwitched)
+      assert(!b.routeActivationClaimed)
+      assert(!b.servingApprovalClaimed)
+      assert(!b.qualityGreenClaimed)
+      assert(!b.productionReadinessClaimed)
+      assert(!b.hybridServingImplied)
+      assert(!b.fallbackImplied)
+      assert(!b.scoreFusionImplied)
+      assert(!b.rerankingImplied)
+      assert(!b.productionTelemetryImplied)
+
+      assert(metricValue(summary.metrics, "offline_strategy_intent_is_not_production_routing") == "true")
+      assert(metricValue(summary.metrics, "default_beauty_search_es_backed") == "true")
+      assert(metricValue(summary.metrics, "qdrant_opt_in_disabled_by_default") == "true")
+      assert(metricValue(summary.metrics, "qdrant_production_activation_approved") == "false")
+      assert(metricValue(summary.metrics, "production_route_activated") == "false")
+      assert(metricValue(summary.metrics, "default_route_switched") == "false")
+      assert(metricValue(summary.metrics, "production_beauty_search_called") == "false")
+      assert(metricValue(summary.metrics, "es_executed") == "false")
+      assert(metricValue(summary.metrics, "qdrant_executed") == "false")
+      assert(metricValue(summary.metrics, "route_plugin_di_http_involved") == "false")
+      assert(metricValue(summary.metrics, "real_backend_call_required") == "false")
+      assert(metricValue(summary.metrics, "real_backend_call_implemented") == "false")
+      assert(metricValue(summary.metrics, "hybrid_serving_implied") == "false")
+      assert(metricValue(summary.metrics, "fallback_implied") == "false")
+      assert(metricValue(summary.metrics, "score_fusion_implied") == "false")
+      assert(metricValue(summary.metrics, "reranking_implied") == "false")
+      assert(metricValue(summary.metrics, "production_telemetry_implied") == "false")
+      assert(metricValue(summary.metrics, "quality_green_claimed") == "false")
+      assert(metricValue(summary.metrics, "production_readiness_claimed") == "false")
+      assert(metricValue(summary.metrics, "route_activation_claimed") == "false")
+      assert(metricValue(summary.metrics, "serving_approval_claimed") == "false")
+    }
+
+    "carry the readiness-safe verdict and no marketing readiness tokens" in {
+      val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
+      val rendered = M10BeautyQSearchFullQueryClassificationCoverageScorecard.MarkdownArtifact.contents.toLowerCase
+
+      assert(summary.verdict == "full_query_classification_coverage_ready_with_negative_control_exclusion")
+      assert(metricValue(summary.metrics, "verdict") == summary.verdict)
+      forbiddenRenderedTokens.foreach { token =>
+        assert(summary.verdict != token)
+        assert(!rendered.contains(token), s"forbidden token present: $token")
+      }
+    }
+
+    "render a byte-for-byte deterministic checked-in artifact" in {
+      val artifact = M10BeautyQSearchFullQueryClassificationCoverageScorecard.MarkdownArtifact
+      val expected = readResource(artifactPath)
+
+      assert(artifact.filename == "m10-beautyq-full-query-classification-coverage-scorecard.md")
+      assert(artifact.contentType == "text/markdown; charset=utf-8")
+      assert(
+        artifact.contents == M10BeautyQSearchFullQueryClassificationCoverageScorecardRenderer
+          .renderMarkdown(M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary),
+      )
+      assert(artifact.contents == expected)
+      // Determinism: rebuilding the summary renders identical bytes.
+      assert(
+        M10BeautyQSearchFullQueryClassificationCoverageScorecardRenderer
+          .renderMarkdown(M10BeautyQSearchFullQueryClassificationCoverageScorecard.build()) == expected,
+      )
+    }
+  }
+
+  private def metricValue(
+    metrics: List[M10BeautyQSearchFullClassificationCoverageMetric],
+    name: String,
+  ): String =
+    metrics.find(_.name == name) match {
+      case Some(metric) => metric.value
+      case None         => fail(s"missing scorecard metric $name")
+    }
+
+  /** Extract a `##`-delimited section body so row lists are asserted within their own section. */
+  private def section(contents: String, heading: String): String = {
+    val lines = contents.linesIterator.toList
+    val start = lines.indexWhere(_ == heading)
+    assert(start >= 0, s"missing section $heading")
+    val rest = lines.drop(start + 1)
+    val end = rest.indexWhere(_.startsWith("## "))
+    (if (end < 0) rest else rest.take(end)).mkString("\n")
+  }
+
+  private def readResource(path: String): String =
+    Option(getClass.getResourceAsStream(path)) match {
+      case Some(value) =>
+        Using.resource(Source.fromInputStream(value, StandardCharsets.UTF_8.name()))(_.mkString)
+      case None =>
+        fail(s"missing checked-in resource $path")
+    }
+}
