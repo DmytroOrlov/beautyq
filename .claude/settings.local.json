@@ -6,7 +6,8 @@
       "Bash(git status --short)",
       "Bash(sbt 'testOnly *)",
       "Bash(xargs ls -la)",
-      "Bash(sbt 'bifunctor-tagless/Test/compile')"
+      "Bash(sbt 'bifunctor-tagless/Test/compile')",
+      "Bash(sbt -batch 'bifunctor-tagless/Test/compile')"
     ],
     "deny": []
   }
