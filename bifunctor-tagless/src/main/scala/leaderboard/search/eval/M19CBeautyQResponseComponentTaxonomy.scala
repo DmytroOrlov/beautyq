@@ -9,7 +9,7 @@ import io.circe.Decoder
  * carousel, service intent carousel, facets, inferred filters). A future component-level hybrid
  * policy will have to decide, per part, whether ES, Qdrant, both, or neither should own that part.
  * This file does not choose any hybrid policy. It only records, from the listed source files
- * (the M18 dual-engine offline-eval result, the M19A metrics, the M19B evidence report, the
+ * (the M18 dual-engine offline-eval result, the M19A metrics, the
  * `BeautySearchModels` response shape, the `BeautySearchSpecV1` spec, the HTTP contract suite,
  * the eval-query JSON, and the listed code-review/hybrid-plan docs), what is currently
  * source-confirmed and what is still unknown.
@@ -101,7 +101,7 @@ object M19CBeautyQResponseComponentTaxonomy {
         "BeautySearchModels.scala:120-130 (BeautySearchResponse.variantCarousel: List[VariantSearchResult])",
         "BeautySearchApiHttpContractSuite.scala:39-44 (asserts variantCarousel in response body)",
         "BeautySearchSpecV1.scala:29-42 (CarouselSpec.variantSize = 10, ranking weights)",
-        "M19DualEngineOfflineEvalEvidenceReport.scala:75-100 (per-query es_candidate_ids / qdrant_candidate_ids / simulated_hybrid_candidate_ids)",
+        "M19DualEngineOfflineEvalMetrics.scala (per-query es_candidate_ids / qdrant_candidate_ids / simulated_hybrid_candidate_ids)",
       ),
       productionOwnerLabel = "ES lexical backend over the seed-resource catalog snapshot, with deterministic lexical ranking",
       productionOwnerSourceConfirmed = true,
@@ -122,7 +122,7 @@ object M19CBeautyQResponseComponentTaxonomy {
         "BeautySearchModels.scala:91-105 (ProviderSearchResult) and :120-130 (providerCarousel field)",
         "BeautySearchApiHttpContractSuite.scala:40,45 (asserts providerCarousel in response body)",
         "BeautySearchSpecV1.scala:30-34 (CarouselSpec.providerGroupField = masterLocationId, providerSize = 10)",
-        "M19DualEngineOfflineEvalEvidenceReport.scala:75-100 (provider information is NOT a per-query column in the M19 evidence report)",
+        "M19DualEngineOfflineEvalMetrics.scala (provider information is NOT a per-query column in the M19 metrics)",
       ),
       productionOwnerLabel = "ES lexical backend; provider carousel is a domain projection over variant candidates grouped by masterLocationId",
       productionOwnerSourceConfirmed = true,
@@ -143,7 +143,7 @@ object M19CBeautyQResponseComponentTaxonomy {
         "BeautySearchModels.scala:107-118 (ServiceIntentSearchResult) and :120-130 (serviceIntentCarousel field)",
         "BeautySearchApiHttpContractSuite.scala:41,46 (asserts serviceIntentCarousel in response body)",
         "BeautySearchSpecV1.scala:30-34 (CarouselSpec.serviceIntentGroupField = serviceId, serviceIntentSize = 10)",
-        "M19DualEngineOfflineEvalEvidenceReport.scala:75-100 (service-intent information is NOT a per-query column in the M19 evidence report)",
+        "M19DualEngineOfflineEvalMetrics.scala (service-intent information is NOT a per-query column in the M19 metrics)",
       ),
       productionOwnerLabel = "ES lexical backend; service intent carousel is a domain projection over variant candidates grouped by serviceId",
       productionOwnerSourceConfirmed = true,
@@ -166,7 +166,7 @@ object M19CBeautyQResponseComponentTaxonomy {
         "BeautySearchSpecV1.scala:43-48 (FacetSpec: enabled, fields, inferredFilterDominanceThreshold, inferredFilterMinCount)",
         "BeautySearchSpecV1.scala:273-305 (facetFields: serviceName terms, categoryName terms, priceFrom ranges, durationMin ranges, enum attribute terms, boolean attribute terms)",
         "docs/search-dsl-hybrid-v1-plan.md:266-277 (\"Qdrant does not produce facets\", \"Qdrant should not be asked to compute exact filters or canonical facet counts in Hybrid V1\")",
-        "M19DualEngineOfflineEvalEvidenceReport.scala (no facets column is rendered per query)",
+        "M19DualEngineOfflineEvalMetrics.scala (no facets column in per-query metrics)",
       ),
       productionOwnerLabel = "ES backend: facets are produced from the spec's FacetSpec against the ES index; Qdrant is not the source of facets in the listed docs",
       productionOwnerSourceConfirmed = true,
@@ -188,7 +188,7 @@ object M19CBeautyQResponseComponentTaxonomy {
         "BeautySearchApiHttpContractSuite.scala:43,47 (asserts inferredFilters in response body and constraint type near_user)",
         "BeautySearchSpecV1.scala:46-48 (inferredFilterDominanceThreshold = 0.70, inferredFilterMinCount = 2)",
         "docs/search-dsl-hybrid-v1-plan.md:266-277, 469-474 (\"Qdrant does not produce inferred filters\", \"Qdrant-only experimental responses may use empty facets and empty inferred filters\")",
-        "M19DualEngineOfflineEvalEvidenceReport.scala (no inferred-filters column is rendered per query)",
+        "M19DualEngineOfflineEvalMetrics.scala (no inferred-filters column in per-query metrics)",
       ),
       productionOwnerLabel = "ES / parser-owned: inferred filters come from the parser plus the FacetSpec dominance threshold; Qdrant is not the source of inferred filters in the listed docs",
       productionOwnerSourceConfirmed = true,
