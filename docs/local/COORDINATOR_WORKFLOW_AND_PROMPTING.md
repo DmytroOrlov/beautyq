@@ -12,14 +12,8 @@ AGENTS scope boundary:
 * Allowed prompt forms only:
 
   * `Task:` is the only allowed reusable prompt form, and it is for delegated edit work only.
-  * No reusable read-only prompt forms:
-
-    * The coordinator must not emit reusable read-only prompt forms.
-    * Read-only, audit, and source-truth work must be handled directly by the coordinator in the current response when sufficient bundle evidence exists.
-    * If evidence is insufficient, the coordinator must stop with `BLOCKED_NEED_BUNDLE`, `BLOCKED_NEED_BUNDLE_SCOPE`, or `BLOCKED_NEED_CLOSEOUT_SCOPE`.
-    * Do not invent labels such as `Coordinator analysis contract:`, `External high-effort audit:`, `source-confirm prompt`, `read-only brief`, or `audit brief`.
-    * `Do not edit files` must not appear inside a reusable prompt.
-    * After an accepted actionable audit/result, the next reusable prompt must be a delegated edit `Task:`.
+  * No reusable read-only prompt forms. Read-only, audit, and source-truth work is coordinator-owned; see section 1.2.
+  * Do not invent labels such as `Coordinator analysis contract:`, `External high-effort audit:`, `source-confirm prompt`, `read-only brief`, or `audit brief`.
 * Do not cite AGENTS as the reason for coordinator-only response structure.
 * Do not paste all of AGENTS into prompts; include only task-specific excerpts.
 * If AGENTS and this guide appear to conflict on coordinator closeout format, this guide controls the coordinator closeout format.
@@ -43,72 +37,32 @@ user gives bundle
 → user runs full test when coordinator recommends it
 ```
 
-## 1.2 One-step lookahead
+## 1.2 Accepted closeout shape
 
-After closing patch N, the coordinator must include exactly one of:
+After an accepted review / closed patch **A**, the coordinator closeout must have this order:
 
-```text
-If N+1 is source-confirmed:
-  include delegated-agent prompt for N+1.
-  If N+2 is visible but not source-confirmed, also include focused source-truth bundle request for N+2.
+1. `current result review` for **A**.
+2. Extended commit message for **A**.
+3. If the user already selected a source-confirmed follow-up **B**, provide exactly one delegated edit `Task:` prompt for **B**.
+4. Provide the model recommendation for **B** as a coordinator note outside the prompt. The delegated prompt stays model-agnostic.
+5. Provide exactly two unconditional downstream follow-up options after **B**: **C** and **D**, plus exactly one recommendation between them.
+6. Provide one combined post-**B** bundle script with these exact labeled sections:
 
-If N+1 is not source-confirmed:
-  include only focused source-truth bundle request for N+1.
-  Do not write a delegated-agent prompt.
-```
+   * `current result review` — reviews **B** after the agent runs it.
+   * `next option 1 source truth` — gathers evidence/source truth for **C**.
+   * `next option 2 source truth` — gathers evidence/source truth for **D**.
 
-Never write delegated-agent prompts from guesses about APIs, fields, imports, signatures, or test seams.
+Mandatory review is plumbing, not a next-task option. The prompted task **B** must not be repeated as option `1` or option `2`.
 
-After every accepted patch review / closed patch, include the extended commit message before the N+1 delegated prompt or N+1 bundle request.
+If **B** is not source-confirmed, do not write a delegated prompt. Output only the appropriate bundle block: `BLOCKED_NEED_BUNDLE`, `BLOCKED_NEED_BUNDLE_SCOPE`, or `BLOCKED_NEED_CLOSEOUT_SCOPE`, with an executable bundle script.
 
-Mandatory bundle cycle:
+A user reply of only `1` or `2` is only a task selection. It is never review evidence, source truth, or validation.
 
-* Mandatory review is not a next-task option. Option `1` and option `2` must be substantive follow-up work.
-* Accepted closeout without a three-part bundle is invalid.
-* Every accepted-closeout bundle MUST contain these exact labeled sections:
-  * `current result review`
-  * `next option 1 source truth`
-  * `next option 2 source truth`
-* The bundle must copy source files needed for all three sections.
-* `current result review` is mandatory plumbing. It does not count as option `1` or option `2`.
-* `next option 1 source truth` and `next option 2 source truth` must be task-specific. No placeholders. No current-diff-only sections. No coverage for only one next option.
-* If both next-option source-truth sections cannot be provided, the coordinator MUST output only `BLOCKED_NEED_BUNDLE_SCOPE` and a corrected bundle script. No verdict. No commit message. No next-task pair.
-* A user reply of only `1` or `2` is only a task selection. It is never evidence, never review, and never source truth.
-* For read-only, audit, or source-truth work, the coordinator MUST wait for a fresh user bundle/report unless the user explicitly says to reuse an exact prior bundle.
-* If a bundle is missing, the coordinator MUST output only `BLOCKED_NEED_BUNDLE` and the exact bundle script. No source-truth verdict. No commit message. No next-task pair.
-* The next user action must be explicit: run the bundle script and upload the zip/report. Do not ask for a bare `1` or `2` if the bundle is missing.
+Read-only, audit, and source-truth work is coordinator-owned. Do not present it as a delegated prompt, and do not put `Do not edit files` inside a reusable prompt.
 
-Prompted closeout cycle:
+If the user has already chosen the next task, continue that task after review acceptance. Do not re-offer the previously rejected alternative as an equal patch option.
 
-* Any coordinator response that contains an executable prompt/brief MUST also include exactly two substantive downstream tasks, exactly one recommendation, and a three-part bundle.
-* This applies only to delegated edit prompts and correction prompts that are meant to be executed by an agent.
-* The prompted task is the work to run now. It must not be repeated as option `1` or option `2`.
-* Option `1` and option `2` must be downstream follow-up work after the prompted task completes.
-* Mandatory review is not a next-task option.
-* The three-part bundle MUST contain these exact labeled sections:
-  * `current result review`
-  * `next option 1 source truth`
-  * `next option 2 source truth`
-* `current result review` reviews the result produced by the prompted task.
-* `next option 1 source truth` and `next option 2 source truth` must prepare the two downstream options, not the prompted task.
-* No placeholders. No current-diff-only next-option sections. No source-truth for only one downstream option.
-* A bundle script alone is not a next-task prompt.
-* A list of two next tasks alone is not a next-task prompt.
-* If the coordinator cannot provide a prompt/brief, two downstream tasks, one recommendation, and all three bundle sections, it MUST output only `BLOCKED_NEED_CLOSEOUT_SCOPE` and a corrected closeout.
-
-Coordinator-owned read-only work is not an agent task:
-
-* Read-only, audit, and source-truth work is coordinator-owned and must be handled directly in the current response when sufficient bundle evidence exists.
-* Do not present coordinator-owned work as a delegated agent prompt.
-* `Do not edit files` must not appear inside a reusable prompt.
-* If evidence is insufficient, stop with `BLOCKED_NEED_BUNDLE`, `BLOCKED_NEED_BUNDLE_SCOPE`, or `BLOCKED_NEED_CLOSEOUT_SCOPE`.
-* Model recommendation for coordinator-owned read-only work is forbidden. Model recommendations are only for delegated edit prompts.
-* Delegated prompts are only for edit work.
-
-Continuation rule:
-
-* If the user has already chosen the next task, continue that task after review acceptance. Do not re-offer the previously rejected alternative as an equal patch option.
-* Continue only unless blocked by source-truth or validation/safety issues.
+If the next step is evidence-conditional, the coordinator must evaluate the condition during review and choose the branch. Do not present conditional branches as equal user choices. Example: if both real ES and real Qdrant candidate outputs exist, continue to metrics; if either leg is resource-gated, continue to prerequisite closure.
 
 ## 1.3 Verification labels
 
@@ -163,6 +117,13 @@ Report only:
 Never say "use attached bundle" instead of inlining relevant facts.
 For high-specificity edits where the target hunk is known, prefer exact replacement hunk or exact before/after snippet over prose-only instructions.
 
+Prompt cost control:
+
+* Do not hand agents a broad grep-anchor list as the implementation map.
+* Distill bundles into exact read files, edit files, seams, constructors, fixtures, and validation commands before writing the delegated prompt.
+* Include a read budget and stop condition. If the listed files do not expose the needed source truth, the agent must stop with `NEED_BUNDLE` rather than reconstruct project history.
+* Historical milestone context belongs in coordinator review, not in every delegated prompt.
+
 ## 1.6 Unused-param invariant
 
 If a suggested param/import/local is unused and not an intentional lifecycle/readiness edge (Distage roles, seed readiness, FK table creation order, constructor deps that force graph construction), remove it or use it in real behavior.
@@ -192,6 +153,8 @@ Delegated agents do not commit. Non-trivial commits use extended messages: subje
 `AGENTS.md`: stable repo behavior for all agents.
 This file: prompt-writing guidance and coordinator workflow.
 Specific prompt: task-local facts (package paths, class names, imports, helpers, metric semantics).
+
+When the user asks the coordinator to edit this guide or another text doc, provide a ready replacement file/artifact by default. Do not ask the user to apply coordinator-authored patches unless the user explicitly asks for a patch.
 
 ## 1.12 Manual/env-gated/cancel-by-default test DoD
 
@@ -334,12 +297,12 @@ When requesting a bundle from the user, provide an executable shell script, not 
 
 Script rules:
 
-* Create a structured bundle directory: `BASE="/tmp/beautyq-<topic>-<timestamp>-$RANDOM"`, `WORK="$BASE.dir"`, `BUNDLE_ID="$(basename "$BASE")"`.
+* Create a structured repo-local bundle directory: `BASE=".review-bundles/beautyq-<topic>-<timestamp>-$RANDOM"`, `WORK="$BASE.dir"`, `BUNDLE_ID="$(basename "$BASE")"`.
 * Every artifact inside the bundle zip must include the bundle id in its basename. Do not create generic internal filenames such as `bundle.txt`, `tracked-changes-from-head.patch`, `unstaged-tracked-changes.patch`, or `untracked-files.tar.gz`.
 * Include only task-relevant status, compact diff, signatures, nearby specs, docs anchors, hazard scans.
 * Cap/truncate output when large.
 * After truncation, zip the bundle directory (`ZIP="$BASE.zip"`, `zip -9 -r "$ZIP" .` inside `WORK`), then print `wc -c` for each artifact and the zip, then `cpf "$ZIP"`, then `echo "$ZIP"`.
-* Do not include `/tmp`, full `target`, generated build output, screenshots, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
+* Do not include full `target`, generated build output, screenshots, stale numbered files, or broad `HEAD~N --patch` unless explicitly requested.
 * Bundle scripts are read-only context capture only. They may use `git`, bounded `rg/sed`, diff generation, untracked-file archiving, truncation, and zip upload. They must not run `sbt`, tests, Docker cleanup/startup, `find target -delete`, network/resource probes, container launches, package managers, or other heavy/mutating commands. Full verification commands belong outside the bundle and must be run explicitly by the user/coordinator.
 
 Patch-review bundle DoD (post-agent / patch-review bundles): include `git diff --binary HEAD --` as `tracked-changes-from-head.patch`, include `git diff --binary --cached` as `staged-tracked-changes.patch` and `git diff --binary` as `unstaged-tracked-changes.patch` when useful, collect untracked nonignored files NUL-safely and archive into `untracked-files.tar.gz` with a readable manifest, then zip the whole bundle directory and upload only the zip.
@@ -347,7 +310,7 @@ Patch-review bundle DoD (post-agent / patch-review bundles): include `git diff -
 Canonical shell shape:
 
 ```bash
-BASE="/tmp/beautyq-<topic>-$(date +%Y%m%d-%H%M%S)-$RANDOM"
+BASE=".review-bundles/beautyq-<topic>-$(date -u +%Y%m%d-%H%M%S)-$RANDOM"
 WORK="$BASE.dir"
 BUNDLE_ID="$(basename "$BASE")"
 OUT="$WORK/${BUNDLE_ID}-bundle.txt"
@@ -417,7 +380,7 @@ PY
 
 ZIP="$BASE.zip"
 rm -f "$ZIP"
-(cd "$WORK" && zip -9 -r "$ZIP" .) >/dev/null
+(cd "$WORK" && zip -9 -r "../$(basename "$ZIP")" .) >/dev/null
 
 wc -c "$OUT"
 wc -c "$WORK/${BUNDLE_ID}-tracked-changes-from-head.patch"
@@ -435,6 +398,8 @@ echo "$ZIP"
 # 4. Documentation ownership
 
 Before adding or changing a documented fact, identify its canonical owner. Prefer one canonical owner per fact; other docs should use short summaries and pointers.
+
+Coordinator workflow and prompt rules belong in this file. Do not add sibling coordinator/runbook files under `docs/local` unless the user explicitly asks or the file is a task-local temporary evidence template.
 
 Duplicate only safety-critical guardrails that must be visible at multiple entrypoints; keep those duplicates short and free of implementation detail. Do not copy long API lists, metric semantics, roadmap state, bundle rules, or prompt-writing rules into multiple docs.
 
@@ -454,9 +419,7 @@ The source-truth gate is safety-critical and must not be deduplicated away; keep
 □ Did I include an unused suggested param?
 □ Did I tell it not to run full sbt test?
 □ Did I keep report short?
-□ Did I avoid model/thinking boilerplate?
-□ Did I provide a model recommendation block only for non-trivial delegated edit prompts?
-□ Did I avoid model recommendations for coordinator-owned read-only work?
+□ Did I keep model recommendation outside the prompt, only for non-trivial delegated edit prompts?
 □ If I need a bundle, did I give an executable shell script?
 ```
 
