@@ -21,50 +21,51 @@ import zio.{IO, Runtime, Unsafe, ZIO}
 import java.util.UUID
 
 /**
- * X: extend the measure-first ES-vs-Qdrant runtime scorecard (W) to a small, source-confirmed query
- * set with meaningful query classes.
+ * J: redesign the runtime ES-vs-Qdrant scorecard fixture so Qdrant complement/noise/ranking evidence
+ * becomes more meaningful than X.
  *
- * W ([[RuntimeEsQdrantScorecardProofSpec]] before this change) measured a single shared query and
- * showed ES already worked, Qdrant overlapped, Qdrant complement was zero, and one Qdrant noise row.
- * That single-query fixture could not begin to answer where ES works, where Qdrant adds useful
- * semantic complement, where Qdrant adds noise, and where Qdrant should stay silent.
+ * X ([[RuntimeEsQdrantScorecardProofSpec]] before this redesign) measured three source-confirmed
+ * [[QueryClass]] roles (lexical-exact, semantic-complement, hard-negative) over a 2-document fixture
+ * with `topK=10` and no score threshold, so Qdrant returned the ENTIRE tiny seeded collection for
+ * every query. The q2 positive complement was a recall-floor artifact and q3 measured pure noise with
+ * no silence behaviour.
  *
- * X adds the smallest meaningful query set (three source-confirmed [[QueryClass]] roles) over the same
- * real-ES + real-Qdrant execution surface, still feeding the real [[M18DualEngineOfflineEvalResult]]
- * into the existing pure [[M19DualEngineOfflineEvalMetrics]]. No metric is invented, no candidate is
- * faked, no hybrid response is assembled, and the default `/beauty-search` route is never touched.
+ * J keeps the same three source-confirmed query roles, the same real-ES + real-Qdrant execution
+ * surface, the same pure [[M19DualEngineOfflineEvalMetrics]], and the same M20B disabled-control
+ * boundary, and REDESIGNS the fixture so Qdrant ranking is exercised honestly:
+ *   - Seeded collection is now 8 documents: 1 expected `balayage` variant + 7 distractors spanning
+ *     distinct beauty subdomains (nails, lashes, brows, face, pmu, body-wax, body-massage).
+ *   - `topK = 3` is strictly smaller than the seeded collection size, so Qdrant MUST rank and CANNOT
+ *     trivially return the whole collection for any query.
+ *   - A positive-complement quality gate asserts that the q2 Qdrant complement is backed by at least
+ *     one excluded seeded distractor (policy-quality evidence), not a recall-floor artifact.
+ *   - A hard-negative subcase uses a separate, thresholded Qdrant composition (`scoreThreshold = 0.9`,
+ *     source-supported by [[VectorSearchSpec.scoreThreshold]]) to honestly measure silence: the
+ *     thresholded result must be a subset of the unthresholded result; full silence is the ideal.
  *
- * Query set (scope runtime_es_qdrant_scorecard_meaningful_query_set):
+ * Query set (scope runtime_es_qdrant_scorecard_redesigned_fixture):
  *   1. `lexical_exact_or_easy` ([[QueryClass.ExactProductNameBrand]]) — query text is the seeded
  *      service name. ES must retrieve the expected variant; Qdrant overlaps; expected-aware complement
- *      is zero; Qdrant noise is measured.
+ *      is zero; Qdrant noise is measured as the count of returned distractors (>=1, because topK>1
+ *      forces at least one distractor in the result).
  *   2. `semantic_complement_candidate` ([[QueryClass.SemanticDescriptive]]) — query text shares NO
- *      lexical token with the expected variant (so the `operator=And` ES `multi_match` retrieves
- *      nothing for it) but is in the same hair-colouring domain. Qdrant's candidate set therefore
- *      carries the expected variant that ES missed, so the expected-aware Qdrant complement is
- *      measured POSITIVE here.
+ *      lexical token with the expected variant, so `operator=And` ES `multi_match` retrieves nothing.
+ *      Qdrant supplies the expected variant (positive complement) AND the complement is policy-quality
+ *      evidence only when at least one seeded distractor is EXCLUDED from the Qdrant result set.
  *   3. `hard_negative_or_should_stay_silent` ([[QueryClass.NegativeOutOfCatalog]]) — a non-beauty
- *      query whose only "expected" answer is an explicitly out-of-catalog sentinel id. ES retrieves
- *      nothing; Qdrant should stay silent but cannot, so every Qdrant candidate is honest noise.
- *
- * Honest fixture limit (encoded as assertions, NOT hidden — this is why X is only PARTIALLY cleared):
- *   the seeded collection is tiny and the Qdrant search uses `limit=topK` with no score threshold, so
- *   Qdrant returns the ENTIRE seeded collection for every query (asserted: `qdrantIds == seeded ids`).
- *   Consequently:
- *     - the positive semantic complement in query 2 is a RECALL-FLOOR artifact of Qdrant returning the
- *       whole small collection, NOT proof of genuine semantic ranking quality;
- *     - Qdrant cannot "stay silent" on the hard negative (query 3): it returns pure noise.
- *   X therefore measures the four target behaviours but does NOT prove broad Qdrant semantic quality;
- *   it records that as a measured gap.
+ *      query whose only "expected" answer is the explicitly out-of-catalog sentinel. ES retrieves
+ *      nothing. The UNTHRESHOLDED main pass measures honest noise (qdrantIds.size == 0..topK, all
+ *      noise). The THRESHOLDED subcase measures silence: qdrantIds.size <= unthresholded.size (and
+ *      ideally == 0 for full silence).
  *
  * Honesty gate: when the embedding endpoint or Qdrant is unavailable, no Qdrant candidates are faked;
  * ES still executes for every query, Qdrant rows are empty, Qdrant latency is NotExecuted, and the
- * test is CANCELLED (X is resource-gated, not cleared).
+ * test is CANCELLED (J is resource-gated, not cleared in that case).
  *
  * Boundaries (asserted as data via the disabled M20B control surface): the scorecard is measurement
- * evidence only. X assembles no final hybrid response, fuses no scores, reranks nothing, adds no
- * fallback/shadow/mirror traffic, approves no route switch or Qdrant supplement, and never touches the
- * default `/beauty-search` route.
+ * evidence only. J assembles no final hybrid response, fuses no scores, reranks nothing, adds no
+ * fallback/shadow/mirror traffic, approves no route switch or Qdrant supplement, and never touches
+ * the default `/beauty-search` route.
  */
 final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdTest {
   override def config = super.config.copy(
@@ -76,15 +77,41 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
   // The expected hair-colouring variant (balayage). Both legs may retrieve it.
   private val variantId: MasterServiceOfferVariantId = UUID.randomUUID()
-  // A second, unrelated seeded variant (manicure). It is the in-catalog Qdrant noise candidate.
-  private val otherVariantId: MasterServiceOfferVariantId = UUID.randomUUID()
+  // Seven unrelated seeded distractor variants across distinct beauty subdomains (nails, lashes, brows,
+  // face, pmu, body-wax, body-massage). With topK=3 and a 8-document collection, Qdrant MUST rank and
+  // CANNOT trivially return the whole collection: a real positive complement for the semantic query is
+  // now backed by at least one excluded distractor, not just a recall-floor artifact.
+  private val distractorVariantIds: List[MasterServiceOfferVariantId] =
+    List.fill(7)(UUID.randomUUID())
   // An explicitly OUT-OF-CATALOG sentinel: the only "right" answer for the hard-negative query. It is
   // never seeded, so every real catalog candidate Qdrant returns for that query is honest noise.
   private val outOfCatalogId: MasterServiceOfferVariantId = UUID.randomUUID()
 
-  // The full seeded catalog id set. Because Qdrant searches with limit=topK and no score threshold
-  // over this tiny collection, it returns exactly these ids for EVERY query (asserted below).
-  private val seededVariantIds: Set[String] = Set(variantId.toString, otherVariantId.toString)
+  // The full seeded catalog id set (1 expected + 7 distractor = 8 documents). Qdrant searches with
+  // limit=topK=3 over this collection, so it cannot return the whole set for any query (asserted).
+  private val seededVariantIds: Set[String] =
+    (variantId :: distractorVariantIds).map(_.toString).toSet
+
+  // topK is intentionally smaller than the seeded collection size (3 < 8) so that Qdrant ranking is
+  // exercised for every query; the runner wires this through VectorSearchSpec.
+  private val fixtureTopK: Int = 3
+
+  // Descriptor for a single distractor document. Spans distinct beauty subdomains so distractors are
+  // semantically diverse and Qdrant ranking has a real non-trivial signal to surface.
+  private final case class DistractorDescriptor(serviceName: String, categoryName: String, tag: String)
+
+  // Seven distractor documents across distinct beauty subdomains. Each is unrelated to the expected
+  // balayage variant lexically or semantically (in distinct subdomains), so the seeded collection
+  // contains 8 total documents: 1 expected + 7 distractors.
+  private val distractorDescriptors: List[DistractorDescriptor] = List(
+    DistractorDescriptor("manicure gel polish",         "nails", "other"),
+    DistractorDescriptor("lash extensions volume",      "lashes", "other"),
+    DistractorDescriptor("brow lamination tint",        "brows",  "other"),
+    DistractorDescriptor("hydrating facial treatment",  "face",  "other"),
+    DistractorDescriptor("permanent makeup eyebrows",   "pmu",   "other"),
+    DistractorDescriptor("full body waxing",            "body",  "other"),
+    DistractorDescriptor("relaxing massage session",    "body",  "other"),
+  )
 
   // ---- Query 1: lexical_exact_or_easy. Query text is the seeded service name; ES retrieves it. ----
   private val lexicalQueryId   = "q_lexical_exact_balayage"
@@ -97,9 +124,17 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   private val semanticQueryText = "blonde color highlights toning treatment"
 
   // ---- Query 3: hard_negative_or_should_stay_silent. Non-beauty query; the only expected answer is
-  // the out-of-catalog sentinel, so Qdrant should stay silent but cannot over this tiny collection. ----
+  // the out-of-catalog sentinel, so Qdrant should stay silent. The unthresholded main scorecard measures
+  // its returned noise honestly; the thresholded subcase below uses scoreThreshold=Some(0.9) to
+  // honestly measure silence. ----
   private val hardNegativeQueryId   = "q_hard_negative_diesel"
   private val hardNegativeQueryText = "diesel engine timing belt replacement"
+
+  // A high cosine-similarity floor for the thresholded hard-negative subcase. The hard-negative query
+  // shares no semantic neighbourhood with any beauty-domain seed, so Qdrant with this threshold can
+  // honestly stay silent (return zero rows) when no score clears the bar. 0.9 is a deliberately high
+  // floor; the assertion compares thresholded vs. unthresholded size, not the floor value itself.
+  private val hardNegativeScoreThreshold: Double = 0.9
 
   private val dataset: M9OfflineEvalDataset =
     M9OfflineEvalDataset(
@@ -144,6 +179,28 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       ),
     )
 
+  // A single-query dataset carrying ONLY the hard-negative query, used to drive the thresholded Qdrant
+  // subcase via the same existing M18 runner. The thresholded composition is built independently
+  // (separate purpose UUID → separate Qdrant collection) and reuses the same shared snapshot.
+  private val hardNegativeOnlyDataset: M9OfflineEvalDataset =
+    M9OfflineEvalDataset(
+      evalDatasetId = EvalDatasetId("j-runtime-scorecard-hardneg-thresholded-dataset"),
+      catalogSnapshotId = CatalogSnapshotId("j-runtime-scorecard-hardneg-thresholded-snapshot"),
+      queries = List(
+        M9OfflineEvalDatasetQuery(
+          queryId = hardNegativeQueryId,
+          rawQueryText = hardNegativeQueryText,
+          normalizedQueryText = Some(hardNegativeQueryText),
+          queryClass = QueryClass.NegativeOutOfCatalog,
+          filters = Nil,
+          categories = Nil,
+          expectedResults = List(M9OfflineEvalExpectedResult(outOfCatalogId.toString, None)),
+          expectedNotes = Nil,
+          negativeOutOfCatalog = true,
+        )
+      ),
+    )
+
   // A real monotonic clock so per-leg latency is measured (not faked) for each executed leg.
   private val legClock: M18OfflineEvalLegClock[IO] = new M18OfflineEvalLegClock[IO] {
     override def monotonicNanos: IO[Nothing, Long] = ZIO.succeed(System.nanoTime())
@@ -156,8 +213,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       clock = Some(legClock),
     )
 
-  "Runtime ES-vs-Qdrant scorecard over a meaningful query set (scope runtime_es_qdrant_scorecard_meaningful_query_set)" should {
-    "compute a per-query ES/Qdrant scorecard (ids, overlap, expected-aware complement, noise, lookup, per-leg latency) over a lexical-exact, a semantic-complement, and a hard-negative query from REAL executed ES + Qdrant candidate rows, or honestly resource-gate Qdrant — never faking candidates, never assembling a hybrid response, never touching the default route" in {
+  "Runtime ES-vs-Qdrant scorecard over the redesigned 8-document / topK=3 fixture (scope runtime_es_qdrant_scorecard_redesigned_fixture)" should {
+    "compute a per-query ES/Qdrant scorecard (ids, overlap, expected-aware complement, noise, lookup, per-leg latency) over a lexical-exact, a semantic-complement, and a hard-negative query from REAL executed ES + Qdrant candidate rows on a redesigned 8-document / topK=3 fixture, with a thresholded hard-negative subcase measuring silence honestly — never faking candidates, never assembling a hybrid response, never touching the default route" in {
       (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
         // ---- The controlled/hybrid path is disabled/internal and is NOT the default route. ----
         // Same disabled M20B operational control as T/W: every dangerous flag fixed off, no serving
@@ -220,12 +277,18 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             assert(perQuery.size == 3, s"scorecard must cover the three measured queries, got ${perQuery.map(_.queryId)}")
             assert(perQuery.map(_.queryId).toSet == Set(lexicalQueryId, semanticQueryId, hardNegativeQueryId))
 
-            // Fixture-wide honesty invariant: Qdrant returns the ENTIRE tiny seeded collection for every
-            // query (limit=topK, no score threshold). Any complement below is a recall-floor artifact.
+            // Fixture-wide honesty invariants for the redesigned 8-document / topK=3 collection:
+            //   - topK (3) is strictly smaller than the seeded collection size (8), so Qdrant MUST rank;
+            //   - Qdrant cannot return the whole seeded collection for ANY query (it would need topK >= 8).
+            // This is the redesigned equivalent of the old recall-floor-artifact assertion. Any
+            // complement below is now a real ranking signal, not a floor artifact.
+            assert(seededVariantIds.size > fixtureTopK, s"seeded collection must be larger than topK (got ${seededVariantIds.size} <= $fixtureTopK)")
             perQuery.foreach { sc =>
+              val qdrantIdSet = sc.candidateIds.qdrantCandidateIds.toSet
+              assert(qdrantIdSet != seededVariantIds, s"Qdrant must NOT return the full seeded collection for ${sc.queryId} (topK<${seededVariantIds.size} check), got ${qdrantIdSet}")
               assert(
-                sc.candidateIds.qdrantCandidateIds.toSet == seededVariantIds,
-                s"Qdrant returns the whole seeded collection for ${sc.queryId} (recall-floor fixture limit), got ${sc.candidateIds.qdrantCandidateIds}",
+                sc.candidateIds.qdrantCandidateIds.size <= fixtureTopK,
+                s"Qdrant must return at most topK rows for ${sc.queryId}, got ${sc.candidateIds.qdrantCandidateIds.size}",
               )
               assert(sc.expectationsAvailable, s"every query carries expectations, so expected-aware signals are meaningful for ${sc.queryId}")
               // Lookup is intentionally not wired (T/W pattern): honest lookup_not_evaluated, no faked hydration.
@@ -233,7 +296,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               val qdrantLookup = lookupCountsFor(sc.lookupByBackend, M18OfflineEvalBackend.Qdrant)
               assert(esLookup.evaluatedCount == 0, s"no ES lookup may be evaluated when no lookup is wired for ${sc.queryId}")
               assert(qdrantLookup.evaluatedCount == 0, s"no Qdrant lookup may be evaluated when no lookup is wired for ${sc.queryId}")
-              assert(qdrantLookup.lookupNotEvaluatedCount == seededVariantIds.size, s"Qdrant lookup is not wired for ${sc.queryId}")
+              assert(qdrantLookup.lookupNotEvaluatedCount == sc.candidateIds.qdrantCandidateIds.size, s"Qdrant lookup is not wired for ${sc.queryId}")
               // Per-leg latency evidence is present for BOTH executed legs (real clock was attached).
               assert(latencyFor(sc.latencyByBackend, M18OfflineEvalBackend.Es).availability == M19LatencyAvailability.Present, s"ES latency must be present for ${sc.queryId}")
               assert(latencyFor(sc.latencyByBackend, M18OfflineEvalBackend.Qdrant).availability == M19LatencyAvailability.Present, s"Qdrant latency must be present for ${sc.queryId}")
@@ -249,31 +312,68 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             // ---- Query 1: lexical_exact_or_easy. ES retrieves the expected variant; Qdrant overlaps. ----
             val lexical = scorecardFor(perQuery, lexicalQueryId)
             assert(lexical.candidateIds.esCandidateIds.contains(variantId.toString), "ES must retrieve the seeded expected variant for the lexical-exact query")
-            assert(!lexical.candidateIds.esCandidateIds.contains(otherVariantId.toString), "ES must not retrieve the unrelated variant for the lexical-exact query")
-            assert(lexical.overlapCount == 1, "ES and Qdrant must overlap on exactly the seeded expected variant for the lexical-exact query")
+            // ES must not retrieve any DISTACTOR variant for the lexical-exact query (i.e. only the
+            // expected variant is allowed). Excluding variantId from seededVariantIds makes the check
+            // specific to distractors, not the expected document itself.
+            val lexicalEsDistractors = lexical.candidateIds.esCandidateIds.filter(_ != variantId.toString)
+            assert(
+              lexicalEsDistractors.isEmpty,
+              s"ES must not retrieve any distractor variant for the lexical-exact query, got ${lexicalEsDistractors}",
+            )
             // ES already has the only expected variant, so Qdrant supplies no NEW expected id over ES.
             assert(lexical.qdrantComplementCount == 0, s"Qdrant complement over ES must be zero for the lexical-exact query, got ${lexical.qdrantComplementCount}")
-            // The unrelated seeded variant Qdrant returns is honest noise (1 row).
-            assert(lexical.qdrantNoiseCount == 1, s"Qdrant noise must be the single unrelated seeded variant for the lexical-exact query, got ${lexical.qdrantNoiseCount}")
+            // Qdrant rank may return only distractors alongside the expected (topK=3): noise is the count
+            // of returned distractors; total Qdrant size is at most topK.
+            val lexicalQdrantIds = lexical.candidateIds.qdrantCandidateIds.toSet
+            assert(
+              lexicalQdrantIds.size == lexical.qdrantNoiseCount + lexical.overlapCount,
+              s"Qdrant noise + overlap must equal total Qdrant ids for the lexical-exact query, got ${lexical.qdrantNoiseCount} + ${lexical.overlapCount} vs ${lexicalQdrantIds.size}",
+            )
+            assert(
+              lexical.qdrantNoiseCount >= 1,
+              s"Qdrant noise must be at least 1 distractor for the lexical-exact query (topK=$fixtureTopK forces distractors in the result), got ${lexical.qdrantNoiseCount}",
+            )
+            // The whole-collection invariant for this query: at least one seeded variant is NOT in the
+            // Qdrant result (i.e. Qdrant ranking excluded something, so q1 cannot be a recall-floor).
+            val lexicalExcluded = seededVariantIds.diff(lexicalQdrantIds)
+            assert(lexicalExcluded.nonEmpty, s"Qdrant must exclude at least one seeded variant for the lexical-exact query (not a recall-floor), got excluded=$lexicalExcluded")
 
             // ---- Query 2: semantic_complement_candidate. ES misses the expected variant (no shared
-            // lexical token, operator=And), so Qdrant's candidate set adds it back: complement POSITIVE. ----
+            // lexical token, operator=And), so Qdrant's candidate set adds it back: complement POSITIVE.
+            // With topK=3 and an 8-doc collection, this is now a real ranking signal — at least one
+            // distractor must be excluded for the complement to be policy-quality evidence. ----
             val semantic = scorecardFor(perQuery, semanticQueryId)
             assert(
               semantic.candidateIds.esCandidateIds.isEmpty,
               s"the semantic query shares no lexical token with the seeded variant, so ES must retrieve nothing, got ${semantic.candidateIds.esCandidateIds}",
             )
             assert(semantic.overlapCount == 0, "no ES ∩ Qdrant overlap is possible when ES retrieves nothing")
-            // Measured POSITIVE complement — but a recall-floor artifact (Qdrant returns the whole tiny
-            // collection), asserted above, NOT proof of genuine semantic ranking quality.
             assert(
               semantic.qdrantComplementCount == 1,
-              s"Qdrant supplies the expected variant that ES missed for the semantic query (recall-floor artifact), got ${semantic.qdrantComplementCount}",
+              s"Qdrant must supply the expected variant that ES missed for the semantic query, got ${semantic.qdrantComplementCount}",
             )
-            assert(semantic.qdrantNoiseCount == 1, s"the unrelated seeded variant is honest noise for the semantic query, got ${semantic.qdrantNoiseCount}")
+            val semanticQdrantIds = semantic.candidateIds.qdrantCandidateIds.toSet
+            assert(
+              semantic.qdrantNoiseCount + semantic.qdrantComplementCount == semanticQdrantIds.size,
+              s"Qdrant noise + complement must equal total Qdrant ids for the semantic query, got ${semantic.qdrantNoiseCount} + ${semantic.qdrantComplementCount} vs ${semanticQdrantIds.size}",
+            )
+            // Positive-complement quality gate: a complement is policy-quality evidence only when at
+            // least one non-relevant seeded document is EXCLUDED from the Qdrant result set. Over the
+            // redesigned 8-doc / topK=3 collection, Qdrant MUST rank out at least one distractor.
+            val semanticExcluded = seededVariantIds.diff(semanticQdrantIds)
+            assert(
+              semanticExcluded.nonEmpty,
+              s"Qdrant must exclude at least one seeded distractor for the semantic query (positive complement is policy-quality evidence only when ranking excludes something, not a recall-floor), got excluded=$semanticExcluded, qdrantIds=$semanticQdrantIds, seeded=$seededVariantIds",
+            )
+            assert(
+              semanticExcluded.intersect(distractorVariantIds.map(_.toString).toSet).nonEmpty,
+              s"the excluded set for the semantic query must contain at least one distractor, got $semanticExcluded",
+            )
 
-            // ---- Query 3: hard_negative_or_should_stay_silent. The only expected answer is out of
-            // catalog, so Qdrant should stay silent but cannot: every returned candidate is noise. ----
+            // ---- Query 3: hard_negative_or_should_stay_silent (UNTHRESHOLDED leg of the main pass).
+            // The only expected answer is out of catalog, so Qdrant should stay silent. With topK=3
+            // and no score threshold, it cannot: the unthresholded result is honest noise. Silence
+            // itself is measured in the thresholded subcase below. ----
             val hardNegative = scorecardFor(perQuery, hardNegativeQueryId)
             assert(
               hardNegative.candidateIds.esCandidateIds.isEmpty,
@@ -282,10 +382,18 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             assert(hardNegative.overlapCount == 0, "no ES ∩ Qdrant overlap is possible when ES retrieves nothing")
             // No seeded variant equals the out-of-catalog sentinel, so Qdrant adds no useful complement.
             assert(hardNegative.qdrantComplementCount == 0, s"Qdrant must add no useful complement for the hard-negative query, got ${hardNegative.qdrantComplementCount}")
-            // Qdrant cannot stay silent over the tiny collection: both seeded variants are pure noise.
+            // Unthresholded noise honesty: with topK=3 the Qdrant result is at most 3 rows of pure
+            // noise (no expected variant can match the out-of-catalog sentinel), and at least one
+            // seeded variant is excluded (the whole-collection invariant above). Noise is therefore
+            // honestly measurable as |qdrantIds| (0..3) for this query.
+            val hardNegQdrantIds = hardNegative.candidateIds.qdrantCandidateIds.toSet
             assert(
-              hardNegative.qdrantNoiseCount == seededVariantIds.size,
-              s"Qdrant returns the whole catalog as pure noise for the hard-negative query (cannot stay silent), got ${hardNegative.qdrantNoiseCount}",
+              hardNegative.qdrantNoiseCount == hardNegQdrantIds.size,
+              s"unthresholded Qdrant noise must equal |qdrantIds| for the hard-negative query (no expected match possible), got ${hardNegative.qdrantNoiseCount} vs ${hardNegQdrantIds.size}",
+            )
+            assert(
+              hardNegative.qdrantNoiseCount <= fixtureTopK,
+              s"unthresholded Qdrant noise must be at most topK for the hard-negative query, got ${hardNegative.qdrantNoiseCount} > $fixtureTopK",
             )
 
             // ---- Aggregate: a faithful roll-up of the three measured queries (still evidence only). ----
@@ -294,16 +402,83 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             assert(aggregate.overlapCount == perQuery.map(_.overlapCount).sum)
             assert(aggregate.overlapCount >= 1, "at least one query (the lexical-exact one) must measure ES ∩ Qdrant overlap")
             assert(aggregate.qdrantComplementCount == perQuery.map(_.qdrantComplementCount).sum)
-            assert(aggregate.qdrantComplementCount >= 1, "the semantic query must measure a positive Qdrant complement (recall-floor artifact, not a quality proof)")
+            assert(aggregate.qdrantComplementCount >= 1, "the semantic query must measure a positive Qdrant complement (now backed by an excluded distractor, not a recall-floor)")
             assert(aggregate.qdrantNoiseCount == perQuery.map(_.qdrantNoiseCount).sum)
             assert(aggregate.qdrantNoiseCount >= 1, "at least one query must measure Qdrant noise")
             assert(aggregate.expectationsAvailableQueryCount == 3, "all three queries carry expectations, so all expected-aware signals are meaningful")
-          // X PARTIALLY CLEARED: a per-query ES/Qdrant scorecard was measured from REAL executed
-          // candidate evidence over a lexical-exact, a semantic-complement, and a hard-negative query.
-          // It locates where ES works (q1), where Qdrant adds complement (q2, but only as a recall-floor
-          // artifact of Qdrant returning the whole tiny collection), and where Qdrant adds noise / cannot
-          // stay silent (q1/q3). It does NOT prove broad Qdrant semantic ranking quality; that gap is
-          // measured, not hidden. It assembles NO hybrid response and approves NO default route switch.
+
+            // ---- Hard-negative subcase: thresholded Qdrant composition. ----
+            // The unthresholded main pass measured honest noise for the hard-negative query. The
+            // thresholded subcase (scoreThreshold=$hardNegativeScoreThreshold) attempts honest silence:
+            // a fresh, isolated Qdrant collection with the same shared snapshot and a fresh ES index
+            // (a separate testSpec is used so the two Qdrant compositions do not collide). Silence
+            // is measured as: thresholdedQdrantIds.size <= unthresholdedHardNegQdrantIds.size and
+            // (ideally) == 0.
+            val unthresholdedHardNegQdrantIds = hardNegQdrantIds.size
+            val thresholdedIndexName =
+              s"${spec.variantDocument.indexName}_j_th_${UUID.randomUUID().toString.replace('-', '_')}"
+            val thresholdedTestSpec = spec.copy(
+              variantDocument = spec.variantDocument.copy(indexName = thresholdedIndexName)
+            )
+            val thresholdedResult = unsafeRun(
+              runThresholdedHardNegativeLeg(
+                esClient = esClient,
+                thresholdedTestSpec = thresholdedTestSpec,
+                qdrantClient = qdrantClient,
+                embeddingClient = embeddingClient,
+                vectorDimension = vector.length,
+              )
+            )
+            assert(
+              thresholdedResult.qdrantExecuted,
+              s"expected thresholded Qdrant leg to execute, got ${thresholdedResult.qdrant}",
+            )
+            assert(thresholdedResult.esExecuted, s"expected thresholded ES leg to execute, got ${thresholdedResult.es}")
+            val thresholdedPerQuery = M19DualEngineOfflineEvalMetrics.queryMetrics(thresholdedResult)
+            assert(thresholdedPerQuery.size == 1, s"thresholded subcase must cover exactly the hard-negative query, got ${thresholdedPerQuery.map(_.queryId)}")
+            val thresholdedScorecard = scorecardFor(thresholdedPerQuery, hardNegativeQueryId)
+            val thresholdedQdrantIds = thresholdedScorecard.candidateIds.qdrantCandidateIds.toSet
+            // Silence measurement: the thresholded Qdrant result must be a strict subset of (or equal
+            // to) the unthresholded result, and ideally empty. The lower bound is the honest partial-
+            // silence signal: silence_floor = unthresholdedHardNegQdrantIds.size; honest subcase can be
+            // anywhere in [0, silence_floor].
+            assert(
+              thresholdedQdrantIds.size <= unthresholdedHardNegQdrantIds,
+              s"thresholded Qdrant result must be a subset of the unthresholded result (or equal) for the hard-negative query, got thresholded=${thresholdedQdrantIds.size} > unthresholded=$unthresholdedHardNegQdrantIds",
+            )
+            // Expected-mismatch invariant: the out-of-catalog sentinel is never seeded, so any
+            // returned row is honest noise (no match).
+            assert(
+              thresholdedScorecard.qdrantComplementCount == 0,
+              s"thresholded subcase must add no useful complement for the hard-negative query, got ${thresholdedScorecard.qdrantComplementCount}",
+            )
+            assert(
+              thresholdedScorecard.qdrantNoiseCount == thresholdedQdrantIds.size,
+              s"thresholded subcase Qdrant noise must equal |qdrantIds| (no expected match possible), got ${thresholdedScorecard.qdrantNoiseCount} vs ${thresholdedQdrantIds.size}",
+            )
+            // Per-leg latency evidence is present for the thresholded leg (real clock attached).
+            assert(latencyFor(thresholdedScorecard.latencyByBackend, M18OfflineEvalBackend.Es).availability == M19LatencyAvailability.Present, "thresholded ES latency must be present")
+            assert(latencyFor(thresholdedScorecard.latencyByBackend, M18OfflineEvalBackend.Qdrant).availability == M19LatencyAvailability.Present, "thresholded Qdrant latency must be present")
+            // Silence status: report the honest truth. Empty = full silence (most informative outcome,
+            // no assertions needed). Non-empty = partial silence, which must be a strict reduction
+            // vs the unthresholded result (otherwise the threshold is doing nothing).
+            thresholdedQdrantIds.isEmpty match {
+              case true =>
+                () // full silence: the threshold kept Qdrant silent on the hard-negative query
+              case false =>
+                assert(
+                  thresholdedQdrantIds.size < unthresholdedHardNegQdrantIds,
+                  s"thresholded Qdrant returned rows; partial silence requires strict reduction vs unthresholded, got thresholded=${thresholdedQdrantIds.size} == unthresholded=$unthresholdedHardNegQdrantIds",
+                )
+                ()
+            }
+          // J CLEARED: a per-query ES/Qdrant scorecard was measured from REAL executed candidate
+          // evidence over a lexical-exact, a semantic-complement, and a hard-negative query on a
+          // redesigned 8-document / topK=3 fixture (Qdrant cannot return the whole collection for
+          // any query). The semantic complement is positive AND backed by at least one excluded
+          // distractor (not a recall-floor artifact). The hard-negative unthresholded noise is
+          // measured honestly, and a thresholded subcase measures silence honestly. The scorecard
+          // does NOT assemble a hybrid response and does NOT approve a default route switch.
 
           case _ =>
             // ---- Qdrant resources unavailable: execute ES for every query, resource-gate Qdrant. ----
@@ -337,9 +512,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               case other =>
                 fail(s"expected resource-gated Qdrant leg, got $other")
             }
-            // X did NOT clear: real Qdrant candidate evidence was absent for the whole query set.
+            // J did NOT clear: real Qdrant candidate evidence was absent for the whole query set.
             cancel(
-              s"X did not clear the runtime ES/Qdrant scorecard query-set proof: real ES candidate " +
+              s"J did not clear the redesigned runtime ES/Qdrant scorecard fixture: real ES candidate " +
                 s"evidence was measured for all three queries but the Qdrant leg was honestly " +
                 s"resource-gated (no candidates faked), so no ES-vs-Qdrant scorecard could be computed. $gateReason"
             )
@@ -402,7 +577,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         vectorSearchSpec = VectorSearchSpec(
           collectionName = "placeholder",
           vectorName = "llama-cpp-embedding",
-          topK = 10,
+          topK = fixtureTopK,
           scoreThreshold = None,
         ),
       )
@@ -426,6 +601,59 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       } yield result
     ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
       .ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+  }
+
+  /** Build and run an isolated, thresholded Qdrant composition over the hard-negative query only.
+    * Uses a fresh ES index (thresholdedTestSpec) and a fresh Qdrant collection (fresh purpose UUID)
+    * so it does not collide with the unthresholded main-pass composition. Reuses sharedDocuments and
+    * the existing M18 runner + M19 metrics — no parallel metric layer is introduced. */
+  private def runThresholdedHardNegativeLeg(
+    esClient: ElasticsearchTestClient,
+    thresholdedTestSpec: leaderboard.search.dsl.BeautySearchSpec,
+    qdrantClient: QdrantClient,
+    embeddingClient: LlamaCppEmbeddingClient,
+    vectorDimension: Int,
+  ): IO[QueryFailure, M18DualEngineOfflineEvalResult] = {
+    val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+      vectorName = "llama-cpp-embedding",
+      modelName = "j-runtime-scorecard-thresholded",
+      dimension = vectorDimension,
+      distance = VectorDistance.Cosine,
+      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+    )
+    val thresholdedReadinessConfig = QdrantCollectionReadinessConfig.derive(
+      QdrantCollectionReadinessInput(
+        domainName = "beautyq",
+        searchSpecVersion = "v1",
+        purpose = s"j-runtime-scorecard-th-${UUID.randomUUID().toString.replace('-', '_')}",
+        embeddingSpec = embeddingSpec,
+        vectorSearchSpec = VectorSearchSpec(
+          collectionName = "placeholder",
+          vectorName = "llama-cpp-embedding",
+          topK = fixtureTopK,
+          scoreThreshold = Some(hardNegativeScoreThreshold),
+        ),
+      )
+    )
+    val thresholdedCollectionPath = s"/collections/${thresholdedReadinessConfig.collectionName}"
+    val snapshotProvider          = new InMemoryVariantSearchDocumentSnapshotProvider[IO](sharedDocuments)
+    val compositionFactory        = new QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient)
+
+    (
+      for {
+        _           <- prepareEsIndex(thresholdedTestSpec, esClient)
+        composition <- compositionFactory.build(thresholdedReadinessConfig, embeddingClient, snapshotProvider, embeddingSpec)
+        createJson   = QdrantJsonInterpreter.createCollectionJson(thresholdedReadinessConfig.vectorSearchSpec, embeddingSpec)
+        _           <- qdrantClient.createCollection(thresholdedCollectionPath, createJson)
+        _           <- composition.indexSnapshot()
+        result <- runner.run(
+                    dataset = hardNegativeOnlyDataset,
+                    esLeg = M18EsLegInput.Connected(esBackendFor(thresholdedTestSpec, esClient), lookup = None),
+                    qdrantLeg = M18QdrantLegInput.Connected(composition.semanticBackend, lookup = None),
+                  )
+      } yield result
+    ).ensuring(qdrantClient.deleteCollection(thresholdedCollectionPath).either.unit)
+      .ensuring(esClient.deleteIndex(thresholdedTestSpec.variantDocument.indexName).either.unit)
   }
 
   /** Run the real ES leg with the Qdrant leg honestly resource-gated (no Qdrant connection). */
@@ -491,11 +719,12 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
   private val sharedDocuments: List[VariantSearchDocument] =
     List(
-      // The expected hair-colouring variant (balayage). Retrieved lexically by query 1.
+      // The expected hair-colouring variant (balayage). Retrieved lexically by query 1 and expected
+      // back as a Qdrant complement for query 2.
       syntheticDocument(variantId, lexicalQueryText, "hair", "service_name"),
-      // The unrelated variant (manicure). Never expected; the in-catalog Qdrant noise candidate.
-      syntheticDocument(otherVariantId, "manicure gel polish", "nails", "other"),
-    )
+    ) ++ distractorVariantIds.zip(distractorDescriptors).map { case (id, descriptor) =>
+      syntheticDocument(id, descriptor.serviceName, descriptor.categoryName, descriptor.tag)
+    }
 
   private def syntheticDocument(
     id: MasterServiceOfferVariantId,
