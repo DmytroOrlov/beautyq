@@ -35,6 +35,14 @@ import java.util.UUID
  * graph-wired `BeautySearchApi` (observed via the graph's `HttpApi` set); no fresh `BeautySearchApi`
  * is constructed for the asserted path, no service warm-up precedes the route assertion, and no
  * Qdrant / fallback / fusion / reranking / shadow-mirror / route-switch / hybrid path is involved.
+ *
+ * Proof scope: `real_es_default_route_graph_non_empty`.
+ *
+ *   - AP1 default ES route proof IS cleared for this source-confirmed default ES route graph
+ *     (`BeautySearchRouteModules.apiElasticsearch`) against real Elasticsearch.
+ *   - This does NOT prove runtime hybrid execution.
+ *   - This does NOT prove Qdrant contribution.
+ *   - This does NOT approve a default route switch to hybrid.
  */
 final class BeautySearchRealEsRouteRegressionSpec
     extends LeaderboardTest
@@ -99,7 +107,12 @@ final class BeautySearchRealEsRouteRegressionSpec
           // (2) The graph-wired route returns 200 OK non-empty for the SAME input. No warm-up precedes
           //     this; the asserted route is the graph-wired BeautySearchApi via the graph's HttpApi set.
           //     This minimal default ES route graph does NOT reproduce the prior U investigation's 500.
-          val routeResponse = runIO(observeRoute(probe.allHttpApis, postJson("/beauty-search", sameRequestBody)))
+          //     Coarse latency evidence (elapsed wall-clock ms) is captured around the single
+          //     `observeRoute` call; this is proof-scope latency evidence only, not a production
+          //     latency/failure-mode SLO measurement.
+          val routeStartNanos    = System.nanoTime()
+          val routeResponse      = runIO(observeRoute(probe.allHttpApis, postJson("/beauty-search", sameRequestBody)))
+          val routeElapsedMillis = (System.nanoTime() - routeStartNanos) / 1000000L
           assert(
             routeResponse.status == Status.Ok,
             s"AP1 characterization: graph-wired POST /beauty-search returns 200 OK over real ES; the prior U 500 is NOT reproduced by the minimal default graph. Got ${routeResponse.status}; body=${routeResponse.body}",
@@ -108,6 +121,14 @@ final class BeautySearchRealEsRouteRegressionSpec
             variantCarouselSize(routeResponse.body) > 0,
             s"AP1 characterization: graph-wired route variantCarousel must be non-empty for the same input; body=${routeResponse.body}",
           )
+          assert(
+            routeElapsedMillis >= 0L,
+            s"AP1 proof scope real_es_default_route_graph_non_empty: coarse route latency evidence must be present and non-negative; got ${routeElapsedMillis}ms",
+          )
+          // AP1 proof scope real_es_default_route_graph_non_empty is cleared for this source-confirmed
+          // default ES route graph (observed elapsed ${routeElapsedMillis}ms). This does NOT prove
+          // runtime hybrid execution, does NOT prove Qdrant contribution, and does NOT approve a
+          // default route switch to hybrid.
           (): Unit
         }.ensuring(client.deleteIndex(testSpec.variantDocument.indexName).either.unit)
     }
