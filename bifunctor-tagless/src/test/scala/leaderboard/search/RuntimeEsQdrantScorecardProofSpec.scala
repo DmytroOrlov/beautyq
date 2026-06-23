@@ -21,18 +21,16 @@ import zio.{IO, Runtime, Unsafe, ZIO}
 import java.util.UUID
 
 /**
- * J: redesign the runtime ES-vs-Qdrant scorecard fixture so Qdrant complement/noise/ranking evidence
- * becomes more meaningful than X.
+ * H: expand the runtime ES-vs-Qdrant scorecard from the redesigned J 3-query methodology slice to a
+ * small canonical-backed representative query set.
  *
- * X ([[RuntimeEsQdrantScorecardProofSpec]] before this redesign) measured three source-confirmed
+ * X ([[RuntimeEsQdrantScorecardProofSpec]] before the J redesign) measured three source-confirmed
  * [[QueryClass]] roles (lexical-exact, semantic-complement, hard-negative) over a 2-document fixture
  * with `topK=10` and no score threshold, so Qdrant returned the ENTIRE tiny seeded collection for
  * every query. The q2 positive complement was a recall-floor artifact and q3 measured pure noise with
  * no silence behaviour.
  *
- * J keeps the same three source-confirmed query roles, the same real-ES + real-Qdrant execution
- * surface, the same pure [[M19DualEngineOfflineEvalMetrics]], and the same M20B disabled-control
- * boundary, and REDESIGNS the fixture so Qdrant ranking is exercised honestly:
+ * J redesigned the fixture so Qdrant ranking is exercised honestly:
  *   - Seeded collection is now 8 documents: 1 expected `balayage` variant + 7 distractors spanning
  *     distinct beauty subdomains (nails, lashes, brows, face, pmu, body-wax, body-massage).
  *   - `topK = 3` is strictly smaller than the seeded collection size, so Qdrant MUST rank and CANNOT
@@ -43,29 +41,67 @@ import java.util.UUID
  *     source-supported by [[VectorSearchSpec.scoreThreshold]]) to honestly measure silence: the
  *     thresholded result must be a subset of the unthresholded result; full silence is the ideal.
  *
- * Query set (scope runtime_es_qdrant_scorecard_redesigned_fixture):
- *   1. `lexical_exact_or_easy` ([[QueryClass.ExactProductNameBrand]]) — query text is the seeded
- *      service name. ES must retrieve the expected variant; Qdrant overlaps; expected-aware complement
- *      is zero; Qdrant noise is measured as the count of returned distractors (>=1, because topK>1
- *      forces at least one distractor in the result).
- *   2. `semantic_complement_candidate` ([[QueryClass.SemanticDescriptive]]) — query text shares NO
- *      lexical token with the expected variant, so `operator=And` ES `multi_match` retrieves nothing.
- *      Qdrant supplies the expected variant (positive complement) AND the complement is policy-quality
- *      evidence only when at least one seeded distractor is EXCLUDED from the Qdrant result set.
- *   3. `hard_negative_or_should_stay_silent` ([[QueryClass.NegativeOutOfCatalog]]) — a non-beauty
- *      query whose only "expected" answer is the explicitly out-of-catalog sentinel. ES retrieves
- *      nothing. The UNTHRESHOLDED main pass measures honest noise (qdrantIds.size == 0..topK, all
- *      noise). The THRESHOLDED subcase measures silence: qdrantIds.size <= unthresholded.size (and
- *      ideally == 0 for full silence).
+ * H keeps every redesigned J fixture property (real ES, real Qdrant, real embedding endpoint, seeded
+ * collection size > topK, topK < collection size, Qdrant MUST NOT return the full seeded collection
+ * for any query, existing [[M19DualEngineOfflineEvalMetrics]] with no parallel metric layer) and
+ * expands the measured query set from the 3-query J methodology slice to a 6-query canonical-backed
+ * representative set covering FIVE source-confirmed query roles:
+ *
+ *   1. `q_lexical_exact_balayage` ([[QueryClass.ExactProductNameBrand]]) — lexical/easy role.
+ *      Query text = seeded service name. ES retrieves the expected variant; Qdrant overlaps; ES ∩
+ *      Qdrant overlap = 1; Qdrant complement = 0; Qdrant noise is the count of returned distractors
+ *      (>=1, because topK=3 forces at least one distractor in the result). SYNTHETIC fixture text
+ *      (no canonical lexical-easy query text matches the seeded "balayage haircut" doc).
+ *   2. `q_semantic_complement_blonde` ([[QueryClass.SemanticDescriptive]]) — semantic descriptive.
+ *      Query text shares NO lexical token with the seeded variant, so `operator=And` ES `multi_match`
+ *      retrieves nothing. Qdrant supplies the expected variant (positive complement) AND the
+ *      complement is policy-quality evidence only when at least one seeded distractor is EXCLUDED
+ *      from the Qdrant result set. SYNTHETIC fixture text (no canonical semantic-complement query
+ *      text matches the seeded "balayage haircut" doc while staying in the same hair-colouring
+ *      domain).
+ *   3. `q_hard_negative_diesel` ([[QueryClass.NegativeOutOfCatalog]]) — negative out-of-catalog.
+ *      Non-beauty query whose only "expected" answer is the explicitly out-of-catalog sentinel. ES
+ *      retrieves nothing. UNTHRESHOLDED main pass measures honest noise (qdrantIds.size == 0..topK,
+ *      all noise). THRESHOLDED subcase measures silence: qdrantIds.size <= unthresholded.size
+ *      (ideally == 0). SYNTHETIC fixture text.
+ *   4. `q_nails_001_ingredient_attribute` ([[QueryClass.IngredientAttribute]]) — ingredient/attribute
+ *      role. CANONICAL-BACKED: query text "маникюр гель лак" and `IngredientAttribute` class are
+ *      source-confirmed from the canonical
+ *      [[beautyq_search_eval_queries_v1.json]] dataset
+ *      (id=`q_nails_001`, queryTypes=[direct, attribute]) and from the spec anchor in
+ *      [[M9BeautyQSearchEvalQueryDatasetStaticRows]] (line 191-194). The expected variant id is the
+ *      J-fixture `variantId` (not the canonical dataset's own `acceptableVariantIds`); the canonical
+ *      text + class are source-confirmed, the expected-id anchoring is J-fixture-only and recorded
+ *      as a deliberate deviation. Qdrant MAY or MAY NOT surface the expected variant in topK=3.
+ *   5. `q_nails_003_filter_heavy` ([[QueryClass.FilterHeavy]]) — filter-heavy role. CANONICAL-BACKED:
+ *      query text "shellac entfernen und neu" and `FilterHeavy` class are source-confirmed from the
+ *      canonical dataset (id=`q_nails_003`, queryTypes=[german, attribute_heavy]) and from the spec
+ *      anchor in [[M9BeautyQSearchEvalQueryDatasetStaticRows]] (line 217-221). Same expected-id
+ *      deviation as #4.
+ *   6. `q_noise_005_ambiguous` ([[QueryClass.Ambiguous]]) — ambiguous role. CANONICAL-BACKED: query
+ *      text "lifting" and `Ambiguous` class are source-confirmed from the canonical dataset
+ *      (id=`q_noise_005`, queryTypes=[ambiguous, hard_negative]) and from the spec anchor in
+ *      [[M9BeautyQSearchEvalQueryDatasetStaticRows]] (line 244-248). Same expected-id deviation as
+ *      #4. H is partially cleared (not fully cleared) on the canonical-backed coverage axis: three
+ *      of the six queries are source-confirmed canonical query ids/classes, but their expected
+ *      variant ids are the J-fixture id, not the dataset's own `acceptableVariantIds`. Honest
+ *      coverage report:
+ *        - canonical-backed query text + class: q_nails_001, q_nails_003, q_noise_005 (3 of 6)
+ *        - synthetic fixture query text:      q_lexical_exact_balayage,
+ *          q_semantic_complement_blonde, q_hard_negative_diesel (3 of 6)
+ *        - canonical-backed expected variant ids: NONE (expected ids are the J-fixture
+ *          `variantId`, NOT the dataset's own `acceptableVariantIds`, because the seeded
+ *          collection has only 1 expected + 7 distractors).
  *
  * Honesty gate: when the embedding endpoint or Qdrant is unavailable, no Qdrant candidates are faked;
  * ES still executes for every query, Qdrant rows are empty, Qdrant latency is NotExecuted, and the
- * test is CANCELLED (J is resource-gated, not cleared in that case).
+ * test is CANCELLED (H is resource-gated, not cleared in that case).
  *
  * Boundaries (asserted as data via the disabled M20B control surface): the scorecard is measurement
- * evidence only. J assembles no final hybrid response, fuses no scores, reranks nothing, adds no
+ * evidence only. H assembles no final hybrid response, fuses no scores, reranks nothing, adds no
  * fallback/shadow/mirror traffic, approves no route switch or Qdrant supplement, and never touches
- * the default `/beauty-search` route.
+ * the default `/beauty-search` route. All evidence is variant-candidate-level only — no provider
+ * grouping, service grouping, facet, or inferred-filter projection is source-confirmed for Qdrant.
  */
 final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdTest {
   override def config = super.config.copy(
@@ -114,12 +150,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   )
 
   // ---- Query 1: lexical_exact_or_easy. Query text is the seeded service name; ES retrieves it. ----
+  // SYNTHETIC fixture text: no canonical lexical-easy query text matches the seeded "balayage haircut"
+  // doc; the J fixture stands in as the lexical-easy role.
   private val lexicalQueryId   = "q_lexical_exact_balayage"
   private val lexicalQueryText = "balayage haircut"
 
   // ---- Query 2: semantic_complement_candidate. Same hair-colouring domain, but NO lexical token is
   // shared with the seeded variant's searchable text (serviceText/allText/attributeText/providerText/
   // locationText), so the `operator=And` ES multi_match retrieves nothing for it. ----
+  // SYNTHETIC fixture text: no canonical semantic-complement query text matches the seeded
+  // "balayage haircut" doc while staying in the same hair-colouring domain.
   private val semanticQueryId   = "q_semantic_complement_blonde"
   private val semanticQueryText = "blonde color highlights toning treatment"
 
@@ -127,8 +167,44 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // the out-of-catalog sentinel, so Qdrant should stay silent. The unthresholded main scorecard measures
   // its returned noise honestly; the thresholded subcase below uses scoreThreshold=Some(0.9) to
   // honestly measure silence. ----
+  // SYNTHETIC fixture text: the canonical dataset's `hard_negative` rows are real beauty queries
+  // (e.g. "снять ресницы") that DO have a seeded match; a non-beauty "diesel" is the only
+  // genuinely out-of-catalog query available to the J fixture.
   private val hardNegativeQueryId   = "q_hard_negative_diesel"
   private val hardNegativeQueryText = "diesel engine timing belt replacement"
+
+  // ---- Query 4: ingredient_attribute role, CANONICAL-BACKED on text + class. ----
+  // Source: beautyq_search_eval_queries_v1.json id=`q_nails_001`, queryTypes=[direct, attribute],
+  // QueryClass=IngredientAttribute. Spec anchor: M9BeautyQSearchEvalQueryDatasetStaticRows line 194
+  // (q_nails_001 → QueryClass.IngredientAttribute). Expected variant id is the J-fixture
+  // `variantId` (NOT the canonical dataset's own acceptableVariantIds); the canonical text + class
+  // are source-confirmed, the expected-id anchoring is J-fixture-only and recorded as a
+  // deliberate deviation. The query text is RU ("маникюр гель лак" = "manicure gel polish") and
+  // shares no lexical token with the seeded "balayage haircut" doc, so `operator=And` ES
+  // multi_match retrieves nothing for it; Qdrant MAY or MAY NOT surface the expected variant in
+  // topK=3 — both behaviours are honestly measured.
+  private val ingredientAttributeQueryId   = "q_nails_001_ingredient_attribute"
+  private val ingredientAttributeQueryText = "маникюр гель лак"
+
+  // ---- Query 5: filter_heavy role, CANONICAL-BACKED on text + class. ----
+  // Source: beautyq_search_eval_queries_v1.json id=`q_nails_003`, queryTypes=[german,
+  // attribute_heavy], QueryClass=FilterHeavy. Spec anchor: M9BeautyQSearchEvalQueryDatasetStaticRows
+  // line 221 (q_nails_003 → QueryClass.FilterHeavy). Same expected-id deviation as #4. The query
+  // text is DE ("shellac entfernen und neu" = "remove shellac and redo") and shares no lexical token
+  // with the seeded "balayage haircut" doc, so ES retrieves nothing; Qdrant MAY or MAY NOT surface
+  // the expected variant in topK=3.
+  private val filterHeavyQueryId   = "q_nails_003_filter_heavy"
+  private val filterHeavyQueryText = "shellac entfernen und neu"
+
+  // ---- Query 6: ambiguous role, CANONICAL-BACKED on text + class. ----
+  // Source: beautyq_search_eval_queries_v1.json id=`q_noise_005`, queryTypes=[ambiguous,
+  // hard_negative], QueryClass=Ambiguous. Spec anchor: M9BeautyQSearchEvalQueryDatasetStaticRows
+  // line 248 (q_noise_005 → QueryClass.Ambiguous). Same expected-id deviation as #4. The query
+  // text is mixed-language "lifting" — semantically in the lash-lifting / brow-lamination
+  // neighbourhood but completely unrelated lexically to the seeded "balayage haircut" doc; ES
+  // retrieves nothing; Qdrant MAY or MAY NOT surface the expected variant in topK=3.
+  private val ambiguousQueryId   = "q_noise_005_ambiguous"
+  private val ambiguousQueryText = "lifting"
 
   // A high cosine-similarity floor for the thresholded hard-negative subcase. The hard-negative query
   // shares no semantic neighbourhood with any beauty-domain seed, so Qdrant with this threshold can
@@ -138,8 +214,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
   private val dataset: M9OfflineEvalDataset =
     M9OfflineEvalDataset(
-      evalDatasetId = EvalDatasetId("x-runtime-scorecard-dataset"),
-      catalogSnapshotId = CatalogSnapshotId("x-runtime-scorecard-snapshot"),
+      evalDatasetId = EvalDatasetId("h-runtime-scorecard-canonical-backed-dataset"),
+      catalogSnapshotId = CatalogSnapshotId("h-runtime-scorecard-canonical-backed-snapshot"),
       queries = List(
         M9OfflineEvalDatasetQuery(
           queryId = lexicalQueryId,
@@ -175,6 +251,50 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           expectedResults = List(M9OfflineEvalExpectedResult(outOfCatalogId.toString, None)),
           expectedNotes = Nil,
           negativeOutOfCatalog = true,
+        ),
+        M9OfflineEvalDatasetQuery(
+          queryId = ingredientAttributeQueryId,
+          rawQueryText = ingredientAttributeQueryText,
+          normalizedQueryText = Some(ingredientAttributeQueryText),
+          queryClass = QueryClass.IngredientAttribute,
+          filters = Nil,
+          categories = Nil,
+          // Expected-id DEVIATION: the J-fixture `variantId` is the expected id, NOT the canonical
+          // dataset's own acceptableVariantIds for q_nails_001. The query text + class are
+          // source-confirmed; the expected-id anchoring is J-fixture-only.
+          expectedResults = List(M9OfflineEvalExpectedResult(variantId.toString, None)),
+          expectedNotes = List(
+            "canonical-backed text+class from q_nails_001 (IngredientAttribute); expected id is the J-fixture variantId, not the canonical dataset's acceptableVariantIds",
+          ),
+          negativeOutOfCatalog = false,
+        ),
+        M9OfflineEvalDatasetQuery(
+          queryId = filterHeavyQueryId,
+          rawQueryText = filterHeavyQueryText,
+          normalizedQueryText = Some(filterHeavyQueryText),
+          queryClass = QueryClass.FilterHeavy,
+          filters = Nil,
+          categories = Nil,
+          // Expected-id DEVIATION: same pattern as ingredientAttributeQueryId.
+          expectedResults = List(M9OfflineEvalExpectedResult(variantId.toString, None)),
+          expectedNotes = List(
+            "canonical-backed text+class from q_nails_003 (FilterHeavy); expected id is the J-fixture variantId, not the canonical dataset's acceptableVariantIds",
+          ),
+          negativeOutOfCatalog = false,
+        ),
+        M9OfflineEvalDatasetQuery(
+          queryId = ambiguousQueryId,
+          rawQueryText = ambiguousQueryText,
+          normalizedQueryText = Some(ambiguousQueryText),
+          queryClass = QueryClass.Ambiguous,
+          filters = Nil,
+          categories = Nil,
+          // Expected-id DEVIATION: same pattern as ingredientAttributeQueryId.
+          expectedResults = List(M9OfflineEvalExpectedResult(variantId.toString, None)),
+          expectedNotes = List(
+            "canonical-backed text+class from q_noise_005 (Ambiguous); expected id is the J-fixture variantId, not the canonical dataset's acceptableVariantIds",
+          ),
+          negativeOutOfCatalog = false,
         ),
       ),
     )
@@ -213,8 +333,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       clock = Some(legClock),
     )
 
-  "Runtime ES-vs-Qdrant scorecard over the redesigned 8-document / topK=3 fixture (scope runtime_es_qdrant_scorecard_redesigned_fixture)" should {
-    "compute a per-query ES/Qdrant scorecard (ids, overlap, expected-aware complement, noise, lookup, per-leg latency) over a lexical-exact, a semantic-complement, and a hard-negative query from REAL executed ES + Qdrant candidate rows on a redesigned 8-document / topK=3 fixture, with a thresholded hard-negative subcase measuring silence honestly — never faking candidates, never assembling a hybrid response, never touching the default route" in {
+  "Runtime ES-vs-Qdrant scorecard over the redesigned 8-document / topK=3 fixture (scope h_runtime_es_qdrant_scorecard_canonical_backed_query_set)" should {
+    "compute a per-query ES/Qdrant scorecard (ids, overlap, expected-aware complement, noise, lookup, per-leg latency) over 6 queries (3 J-methodology synthetic + 3 canonical-backed ingredient_attribute/filter_heavy/ambiguous) covering 5 source-confirmed query roles from REAL executed ES + Qdrant candidate rows on a redesigned 8-document / topK=3 fixture, with a thresholded hard-negative subcase measuring silence honestly — never faking candidates, never assembling a hybrid response, never touching the default route" in {
       (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
         // ---- The controlled/hybrid path is disabled/internal and is NOT the default route. ----
         // Same disabled M20B operational control as T/W: every dangerous flag fixed off, no serving
@@ -274,8 +394,20 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             // ---- The scorecard: computed by the existing pure M19 metrics over the REAL result. ----
             val perQuery  = M19DualEngineOfflineEvalMetrics.queryMetrics(result)
             val aggregate = M19DualEngineOfflineEvalMetrics.aggregate(perQuery)
-            assert(perQuery.size == 3, s"scorecard must cover the three measured queries, got ${perQuery.map(_.queryId)}")
-            assert(perQuery.map(_.queryId).toSet == Set(lexicalQueryId, semanticQueryId, hardNegativeQueryId))
+            val expectedQueryIds = Set(
+              lexicalQueryId,
+              semanticQueryId,
+              hardNegativeQueryId,
+              ingredientAttributeQueryId,
+              filterHeavyQueryId,
+              ambiguousQueryId,
+            )
+            assert(
+              perQuery.size == expectedQueryIds.size,
+              s"scorecard must cover the six measured queries (3 J-methodology synthetic + 3 canonical-backed), got ${perQuery.map(_.queryId)}",
+            )
+            assert(perQuery.map(_.queryId).toSet == expectedQueryIds, "all six measured query ids must be present in the scorecard")
+            assert(perQuery.size > 3, "H expands beyond the J 3-query methodology slice")
 
             // Fixture-wide honesty invariants for the redesigned 8-document / topK=3 collection:
             //   - topK (3) is strictly smaller than the seeded collection size (8), so Qdrant MUST rank;
@@ -396,16 +528,129 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               s"unthresholded Qdrant noise must be at most topK for the hard-negative query, got ${hardNegative.qdrantNoiseCount} > $fixtureTopK",
             )
 
-            // ---- Aggregate: a faithful roll-up of the three measured queries (still evidence only). ----
+            // ---- Query 4: q_nails_001_ingredient_attribute (CANONICAL-BACKED text+class). ----
+            // The query text "маникюр гель лак" shares NO lexical token with the seeded
+            // "balayage haircut" doc, so `operator=And` ES multi_match retrieves nothing. Qdrant MAY
+            // or MAY NOT surface the expected variant in topK=3; the canonical text + class are
+            // source-confirmed, the expected-id anchoring is J-fixture-only.
+            val ingredientAttribute = scorecardFor(perQuery, ingredientAttributeQueryId)
+            assert(
+              ingredientAttribute.candidateIds.esCandidateIds.isEmpty,
+              s"the ingredient_attribute query shares no lexical token with the seeded variant, so ES must retrieve nothing, got ${ingredientAttribute.candidateIds.esCandidateIds}",
+            )
+            assert(ingredientAttribute.overlapCount == 0, "no ES ∩ Qdrant overlap is possible when ES retrieves nothing for the ingredient_attribute query")
+            val ingredientAttributeQdrantIds = ingredientAttribute.candidateIds.qdrantCandidateIds.toSet
+            // Whole-collection invariant: at least one seeded variant is NOT in the Qdrant result.
+            val ingredientAttributeExcluded = seededVariantIds.diff(ingredientAttributeQdrantIds)
+            assert(
+              ingredientAttributeExcluded.nonEmpty,
+              s"Qdrant must exclude at least one seeded variant for the ingredient_attribute query (not a recall-floor), got excluded=$ingredientAttributeExcluded, qdrantIds=$ingredientAttributeQdrantIds, seeded=$seededVariantIds",
+            )
+            // Expected-aware arithmetic: noise + complement + overlap == total Qdrant size.
+            assert(
+              ingredientAttribute.qdrantNoiseCount + ingredientAttribute.qdrantComplementCount + ingredientAttribute.overlapCount == ingredientAttributeQdrantIds.size,
+              s"ingredient_attribute Qdrant noise + complement + overlap must equal total Qdrant ids, got ${ingredientAttribute.qdrantNoiseCount} + ${ingredientAttribute.qdrantComplementCount} + ${ingredientAttribute.overlapCount} vs ${ingredientAttributeQdrantIds.size}",
+            )
+            assert(ingredientAttribute.qdrantComplementCount <= 1, s"complement must be at most 1 for the ingredient_attribute query (single expected id), got ${ingredientAttribute.qdrantComplementCount}")
+
+            // ---- Query 5: q_nails_003_filter_heavy (CANONICAL-BACKED text+class). ----
+            // Same pattern as #4 but with the DE shellac-removal text. ES retrieves nothing;
+            // Qdrant MAY or MAY NOT surface the expected variant.
+            val filterHeavy = scorecardFor(perQuery, filterHeavyQueryId)
+            assert(
+              filterHeavy.candidateIds.esCandidateIds.isEmpty,
+              s"the filter_heavy query shares no lexical token with the seeded variant, so ES must retrieve nothing, got ${filterHeavy.candidateIds.esCandidateIds}",
+            )
+            assert(filterHeavy.overlapCount == 0, "no ES ∩ Qdrant overlap is possible when ES retrieves nothing for the filter_heavy query")
+            val filterHeavyQdrantIds = filterHeavy.candidateIds.qdrantCandidateIds.toSet
+            val filterHeavyExcluded = seededVariantIds.diff(filterHeavyQdrantIds)
+            assert(
+              filterHeavyExcluded.nonEmpty,
+              s"Qdrant must exclude at least one seeded variant for the filter_heavy query (not a recall-floor), got excluded=$filterHeavyExcluded, qdrantIds=$filterHeavyQdrantIds, seeded=$seededVariantIds",
+            )
+            assert(
+              filterHeavy.qdrantNoiseCount + filterHeavy.qdrantComplementCount + filterHeavy.overlapCount == filterHeavyQdrantIds.size,
+              s"filter_heavy Qdrant noise + complement + overlap must equal total Qdrant ids, got ${filterHeavy.qdrantNoiseCount} + ${filterHeavy.qdrantComplementCount} + ${filterHeavy.overlapCount} vs ${filterHeavyQdrantIds.size}",
+            )
+            assert(filterHeavy.qdrantComplementCount <= 1, s"complement must be at most 1 for the filter_heavy query (single expected id), got ${filterHeavy.qdrantComplementCount}")
+
+            // ---- Query 6: q_noise_005_ambiguous (CANONICAL-BACKED text+class). ----
+            // The query text "lifting" is short and ambiguous in the dataset (also tagged
+            // `hard_negative` in the canonical dataset), so it is a measured hard-negative-or-
+            // ambiguous-silence candidate. ES retrieves nothing; Qdrant MAY or MAY NOT surface
+            // the expected variant; honest unthresholded noise is measured.
+            val ambiguous = scorecardFor(perQuery, ambiguousQueryId)
+            assert(
+              ambiguous.candidateIds.esCandidateIds.isEmpty,
+              s"the ambiguous query shares no lexical token with the seeded variant, so ES must retrieve nothing, got ${ambiguous.candidateIds.esCandidateIds}",
+            )
+            assert(ambiguous.overlapCount == 0, "no ES ∩ Qdrant overlap is possible when ES retrieves nothing for the ambiguous query")
+            val ambiguousQdrantIds = ambiguous.candidateIds.qdrantCandidateIds.toSet
+            val ambiguousExcluded = seededVariantIds.diff(ambiguousQdrantIds)
+            assert(
+              ambiguousExcluded.nonEmpty,
+              s"Qdrant must exclude at least one seeded variant for the ambiguous query (not a recall-floor), got excluded=$ambiguousExcluded, qdrantIds=$ambiguousQdrantIds, seeded=$seededVariantIds",
+            )
+            assert(
+              ambiguous.qdrantNoiseCount + ambiguous.qdrantComplementCount + ambiguous.overlapCount == ambiguousQdrantIds.size,
+              s"ambiguous Qdrant noise + complement + overlap must equal total Qdrant ids, got ${ambiguous.qdrantNoiseCount} + ${ambiguous.qdrantComplementCount} + ${ambiguous.overlapCount} vs ${ambiguousQdrantIds.size}",
+            )
+            assert(ambiguous.qdrantComplementCount <= 1, s"complement must be at most 1 for the ambiguous query (single expected id), got ${ambiguous.qdrantComplementCount}")
+            // Per-leg latency evidence is present for the ambiguous query (real clock attached).
+            assert(latencyFor(ambiguous.latencyByBackend, M18OfflineEvalBackend.Es).availability == M19LatencyAvailability.Present, "ambiguous ES latency must be present")
+            assert(latencyFor(ambiguous.latencyByBackend, M18OfflineEvalBackend.Qdrant).availability == M19LatencyAvailability.Present, "ambiguous Qdrant latency must be present")
+            // Lookup not evaluated for the canonical-backed queries too (T/W pattern).
+            val ambiguousEsLookup     = lookupCountsFor(ambiguous.lookupByBackend, M18OfflineEvalBackend.Es)
+            val ambiguousQdrantLookup = lookupCountsFor(ambiguous.lookupByBackend, M18OfflineEvalBackend.Qdrant)
+            assert(ambiguousEsLookup.evaluatedCount == 0, "no ES lookup may be evaluated when no lookup is wired for the ambiguous query")
+            assert(ambiguousQdrantLookup.evaluatedCount == 0, "no Qdrant lookup may be evaluated when no lookup is wired for the ambiguous query")
+
+            // ---- Aggregate: a faithful roll-up of the six measured queries (still evidence only). ----
             assert(aggregate.queryCount == perQuery.size, "aggregate query count must equal the number of measured queries")
-            assert(aggregate.queryCount == 3, "exactly three queries were measured")
+            assert(aggregate.queryCount == 6, "exactly six queries were measured (3 J-methodology synthetic + 3 canonical-backed)")
+            assert(aggregate.queryCount > 3, "H expands beyond the J 3-query methodology slice")
             assert(aggregate.overlapCount == perQuery.map(_.overlapCount).sum)
             assert(aggregate.overlapCount >= 1, "at least one query (the lexical-exact one) must measure ES ∩ Qdrant overlap")
             assert(aggregate.qdrantComplementCount == perQuery.map(_.qdrantComplementCount).sum)
-            assert(aggregate.qdrantComplementCount >= 1, "the semantic query must measure a positive Qdrant complement (now backed by an excluded distractor, not a recall-floor)")
+            assert(
+              aggregate.qdrantComplementCount >= 1,
+              "at least one query (the semantic-complement one) must measure a positive Qdrant complement (now backed by an excluded distractor, not a recall-floor)",
+            )
             assert(aggregate.qdrantNoiseCount == perQuery.map(_.qdrantNoiseCount).sum)
             assert(aggregate.qdrantNoiseCount >= 1, "at least one query must measure Qdrant noise")
-            assert(aggregate.expectationsAvailableQueryCount == 3, "all three queries carry expectations, so all expected-aware signals are meaningful")
+            // The hard-negative query is the source-confirmed should-stay-silent candidate; its
+            // unthresholded noise is measured honestly and the thresholded subcase below measures
+            // silence. The hard-negative-or-ambiguous silence signal is the q_hard_negative_diesel
+            // query (synthetic) and the q_noise_005_ambiguous query (canonical-backed, also tagged
+            // hard_negative in the dataset): both have ES=[] and a non-trivial Qdrant candidate set
+            // in the unthresholded pass, which the metric arithmetic above records honestly.
+            val negativeOrSilentQueries = perQuery.filter(sc => sc.candidateIds.esCandidateIds.isEmpty)
+            assert(
+              negativeOrSilentQueries.size >= 2,
+              s"at least one negative-or-should-stay-silent query must be measured (hard-negative + ambiguous are both ES-empty), got ${negativeOrSilentQueries.map(_.queryId)}",
+            )
+            val hardNegativeScorecard = scorecardFor(perQuery, hardNegativeQueryId)
+            val ambiguousScorecard    = scorecardFor(perQuery, ambiguousQueryId)
+            assert(
+              hardNegativeScorecard.candidateIds.qdrantCandidateIds.size <= fixtureTopK,
+              "hard-negative unthresholded Qdrant size must be at most topK (honest noise measurement)",
+            )
+            assert(
+              ambiguousScorecard.candidateIds.qdrantCandidateIds.size <= fixtureTopK,
+              "ambiguous unthresholded Qdrant size must be at most topK (honest noise measurement)",
+            )
+            assert(aggregate.expectationsAvailableQueryCount == 6, "all six queries carry expectations, so all expected-aware signals are meaningful")
+            // Canonical-backed coverage report (recorded as data, not a pass/fail).
+            val canonicalBackedQueryIds = Set(ingredientAttributeQueryId, filterHeavyQueryId, ambiguousQueryId)
+            val syntheticFixtureQueryIds = Set(lexicalQueryId, semanticQueryId, hardNegativeQueryId)
+            assert(
+              perQuery.map(_.queryId).toSet.intersect(canonicalBackedQueryIds) == canonicalBackedQueryIds,
+              "all three canonical-backed query ids must be present in the scorecard",
+            )
+            assert(
+              perQuery.map(_.queryId).toSet.intersect(syntheticFixtureQueryIds) == syntheticFixtureQueryIds,
+              "all three synthetic fixture query ids must be present in the scorecard",
+            )
 
             // ---- Hard-negative subcase: thresholded Qdrant composition. ----
             // The unthresholded main pass measured honest noise for the hard-negative query. The
@@ -472,13 +717,24 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 )
                 ()
             }
-          // J CLEARED: a per-query ES/Qdrant scorecard was measured from REAL executed candidate
-          // evidence over a lexical-exact, a semantic-complement, and a hard-negative query on a
-          // redesigned 8-document / topK=3 fixture (Qdrant cannot return the whole collection for
-          // any query). The semantic complement is positive AND backed by at least one excluded
-          // distractor (not a recall-floor artifact). The hard-negative unthresholded noise is
-          // measured honestly, and a thresholded subcase measures silence honestly. The scorecard
-          // does NOT assemble a hybrid response and does NOT approve a default route switch.
+          // H CLEARED (PARTIALLY on canonical-backed coverage): a per-query ES/Qdrant scorecard
+          // was measured from REAL executed candidate evidence over 6 queries covering 5 source-
+          // confirmed query roles (lexical/easy, semantic descriptive, negative out-of-catalog,
+          // ingredient/attribute, filter-heavy) on the redesigned 8-document / topK=3 fixture
+          // (Qdrant cannot return the whole collection for any query). Three of the six queries
+          // (q_nails_001_ingredient_attribute, q_nails_003_filter_heavy, q_noise_005_ambiguous)
+          // are canonical-backed on text + QueryClass from the canonical 63-query dataset and the
+          // M9BeautyQSearchEvalQueryDatasetStaticRows spec anchors. The other three are the J
+          // methodology-slice synthetic queries (lexical-exact, semantic-complement, hard-negative).
+          // The expected variant id for every canonical-backed query is the J-fixture variantId,
+          // NOT the canonical dataset's own acceptableVariantIds, because the seeded collection
+          // is a 1-expected + 7-distractor fixture; the canonical text + class are
+          // source-confirmed, the expected-id anchoring is J-fixture-only. H is therefore
+          // partially cleared (not fully cleared) on the canonical-backed coverage axis. The
+          // semantic complement is positive AND backed by at least one excluded distractor (not
+          // a recall-floor artifact). The hard-negative unthresholded noise is measured honestly
+          // and a thresholded subcase measures silence honestly. The scorecard does NOT assemble
+          // a hybrid response and does NOT approve a default route switch.
 
           case _ =>
             // ---- Qdrant resources unavailable: execute ES for every query, resource-gate Qdrant. ----
@@ -493,7 +749,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             // ES still really executes for the whole set, and the lexical-exact half is real.
             assert(result.esExecuted, s"expected ES leg to execute, got ${result.es}")
             val perQuery = M19DualEngineOfflineEvalMetrics.queryMetrics(result)
-            assert(perQuery.size == 3, s"ES still measures all three queries, got ${perQuery.map(_.queryId)}")
+            assert(perQuery.size == 6, s"ES still measures all six queries (3 J-methodology synthetic + 3 canonical-backed), got ${perQuery.map(_.queryId)}")
             assert(scorecardFor(perQuery, lexicalQueryId).candidateIds.esCandidateIds.contains(variantId.toString), "ES must retrieve the seeded variant for the lexical-exact query")
 
             // No Qdrant candidate evidence exists for any query: no faked ids, Qdrant latency NotExecuted.
@@ -512,11 +768,13 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               case other =>
                 fail(s"expected resource-gated Qdrant leg, got $other")
             }
-            // J did NOT clear: real Qdrant candidate evidence was absent for the whole query set.
+            // H did NOT clear: real Qdrant candidate evidence was absent for the whole query set.
             cancel(
-              s"J did not clear the redesigned runtime ES/Qdrant scorecard fixture: real ES candidate " +
-                s"evidence was measured for all three queries but the Qdrant leg was honestly " +
-                s"resource-gated (no candidates faked), so no ES-vs-Qdrant scorecard could be computed. $gateReason"
+              s"H did not clear the canonical-backed runtime ES/Qdrant scorecard: real ES candidate " +
+                s"evidence was measured for all six queries (3 J-methodology synthetic + 3 " +
+                s"canonical-backed ingredient_attribute/filter_heavy/ambiguous) but the Qdrant leg " +
+                s"was honestly resource-gated (no candidates faked), so no ES-vs-Qdrant scorecard " +
+                s"could be computed. $gateReason"
             )
         }
     }
