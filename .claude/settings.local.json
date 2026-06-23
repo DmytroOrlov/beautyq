@@ -11,7 +11,8 @@
       "Bash(echo \"diff-check-exit:$?\")",
       "Bash(xargs cat)",
       "Bash(echo \"exit:$?\")",
-      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M18DualEngineOfflineEvalQdrantRealLegSpec')"
+      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M18DualEngineOfflineEvalQdrantRealLegSpec')",
+      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19DualEngineOfflineEvalMetricsSpec')"
     ],
     "deny": []
   }
