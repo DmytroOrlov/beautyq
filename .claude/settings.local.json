@@ -13,7 +13,10 @@
       "Bash(echo \"exit:$?\")",
       "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M18DualEngineOfflineEvalQdrantRealLegSpec')",
       "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19DualEngineOfflineEvalMetricsSpec')",
-      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19DualEngineOfflineEvalEvidenceReportSpec')"
+      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19DualEngineOfflineEvalEvidenceReportSpec')",
+      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19FBeautyQEvalComponentExpectationSchemaSpec')",
+      "Bash(echo \"exit=$?\")",
+      "Bash(git checkout *)"
     ],
     "deny": []
   }
