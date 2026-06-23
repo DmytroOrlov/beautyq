@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "dataset": "m19f_synthetic_component_expectation_fixture",
+  "note": "Synthetic fixture for M19F decoder/coverage proof only. Values are illustrative, NOT seed truth.",
+  "queries": [
+    {
+      "id": "q_syn_full",
+      "query": "synthetic full-component query",
+      "language": "en",
+      "queryTypes": ["direct"],
+      "expected": {
+        "variantCarousel": {
+          "acceptableVariantIds": ["syn-variant-1", "syn-variant-2"]
+        },
+        "providerCarousel": {
+          "acceptableProviderLocationIds": ["syn-loc-1"],
+          "expectedGroupingField": "masterLocationId",
+          "sampleAcceptableProviders": [
+            {
+              "masterLocationId": "syn-loc-1",
+              "matchingVariantCount": 2,
+              "sampleMatchingVariantIds": ["syn-variant-1", "syn-variant-2"]
+            }
+          ]
+        },
+        "serviceIntentCarousel": {
+          "acceptableServiceIds": ["syn-service-1"],
+          "expectedGroupingField": "serviceId",
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "syn-service-1",
+              "matchingVariantCount": 2
+            }
+          ]
+        },
+        "facets": [
+          {
+            "fieldPath": "serviceName",
+            "values": [
+              { "value": "syn-service-name", "count": 2 }
+            ]
+          }
+        ],
+        "inferredFilters": [
+          {
+            "constraint": { "kind": "synthetic", "field": "syn-field" },
+            "explicit": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "q_syn_sparse",
+      "query": "synthetic sparse query",
+      "language": "en",
+      "queryTypes": ["broad"],
+      "expected": {
+        "variantCarousel": {
+          "acceptableVariantIds": ["syn-variant-9"]
+        }
+      }
+    }
+  ]
+}
