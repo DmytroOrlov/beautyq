@@ -57,6 +57,51 @@ trait BeautySearchProductionRouteSpecSupport extends HttpContractTestSupport {
     startupTransition: ElasticsearchStartupReadinessTransition,
   )
 
+  // U1/AP1 regression support: exposes both the graph-wired BeautySearchApi (via allHttpApis)
+  // and the graph-wired BeautySearchService from the same default ES route graph, so a single
+  // spec can assert the service vs. route divergence against one real-ES graph.
+  protected final case class BeautySearchRealEsRouteAndServiceProbe(
+    beautySearchApi: BeautySearchApi[IO],
+    beautySearchService: BeautySearchService[IO],
+    allHttpApis: Set[HttpApi[IO]],
+  )
+
+  // Builds the source-confirmed default ES Beauty search route graph
+  // (`BeautySearchRouteModules.apiElasticsearch`) against a real Elasticsearch port, overriding only
+  // the index name on the bound `BeautySearchSpec` for test isolation. Roots both the graph-wired
+  // `BeautySearchApi` and the graph-wired `BeautySearchService` so neither is pruned.
+  protected final def buildRealEsRouteAndServiceProbe(
+    port: Int,
+    spec: leaderboard.search.dsl.BeautySearchSpec,
+  ): BeautySearchRealEsRouteAndServiceProbe = {
+    val base = new distage.ModuleDef {
+      include(BeautySearchRouteModules.apiElasticsearch)
+      make[ElasticsearchPortCfg].fromValue(ElasticsearchPortCfg("localhost", port))
+      make[Async[Task]].fromValue(Async[Task])
+      make[BeautySearchRealEsRouteAndServiceProbe].from {
+        (
+          beautySearchApi: BeautySearchApi[IO],
+          beautySearchService: BeautySearchService[IO],
+          allHttpApis: Set[HttpApi[IO]],
+        ) =>
+          BeautySearchRealEsRouteAndServiceProbe(beautySearchApi, beautySearchService, allHttpApis)
+      }
+    }
+
+    val module = base.overriddenBy(new distage.ModuleDef {
+      make[leaderboard.search.dsl.BeautySearchSpec].fromValue(spec)
+    })
+
+    val locator = Injector().produce(
+      bindings = module,
+      roots = Roots.target[BeautySearchRealEsRouteAndServiceProbe],
+      activation = Activation.empty,
+      locatorPrivacy = LocatorPrivacy.PublicByDefault,
+    ).unsafeGet()
+
+    locator.get[BeautySearchRealEsRouteAndServiceProbe]
+  }
+
   protected final def withRecordingZeroHitEsServer(f: BeautySearchProductionRouteSpecSupport.RecordedEsServer => Unit): Unit =
     BeautySearchProductionRouteSpecSupport.withRecordingZeroHitEsServer(f)
 

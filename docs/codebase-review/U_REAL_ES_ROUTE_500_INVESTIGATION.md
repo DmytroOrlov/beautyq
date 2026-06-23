@@ -65,6 +65,12 @@ The next task is a minimal failing regression spec:
 * keep the spec minimal;
 * then fix the route path until the same spec returns `200 OK` with non-empty `variantCarousel`.
 
+## U1 follow-up characterization
+
+Follow-up U1 minimal route characterization did not reproduce the documented 500: the minimal graph-wired default ES route returned 200 OK with non-empty results. The earlier 500 is treated as diagnostic-patch/test-wiring/cold-start specific until reproduced by a minimal spec.
+
+See `bifunctor-tagless/src/test/scala/leaderboard/search/BeautySearchRealEsRouteRegressionSpec.scala`.
+
 ## Notes
 
 * Do not proceed to runtime hybrid execution until this route blocker is reduced and fixed.
