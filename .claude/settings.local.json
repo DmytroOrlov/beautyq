@@ -16,7 +16,8 @@
       "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19DualEngineOfflineEvalEvidenceReportSpec')",
       "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19FBeautyQEvalComponentExpectationSchemaSpec')",
       "Bash(echo \"exit=$?\")",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.M19HBeautyQComponentCoverageEvidenceReportSpec leaderboard.search.M19DBeautyQCoverageGapModelSpec leaderboard.search.M19FBeautyQEvalComponentExpectationSchemaSpec')"
     ],
     "deny": []
   }

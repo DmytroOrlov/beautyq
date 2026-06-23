@@ -50,6 +50,24 @@ final class M19FBeautyQEvalComponentExpectationSchemaSpec extends AnyWordSpec {
       assert(coverage.rows.forall(_.provider == ExpectationFieldAvailability.PresentWithExpectations))
       assert(coverage.rows.forall(_.serviceIntent == ExpectationFieldAvailability.PresentWithExpectations))
     }
+
+    "carry the source-confirmed provider grouping field on every provider carousel expectation" in {
+      val rows = decodeQueries(loadCheckedInDataset())(evalQueryComponentExpectationsDecoder.decodeJson)
+      val providers = rows.flatMap(_.expectations.provider)
+
+      assert(providers.size == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount)
+      // BeautySearchSpecV1.carouselSpec.providerGroupField = "masterLocationId".
+      assert(providers.forall(_.expectedGroupingField.contains("masterLocationId")))
+    }
+
+    "carry the source-confirmed service grouping field on every service intent carousel expectation" in {
+      val rows = decodeQueries(loadCheckedInDataset())(evalQueryComponentExpectationsDecoder.decodeJson)
+      val services = rows.flatMap(_.expectations.serviceIntent)
+
+      assert(services.size == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount)
+      // BeautySearchSpecV1.carouselSpec.serviceIntentGroupField = "serviceId".
+      assert(services.forall(_.expectedGroupingField.contains("serviceId")))
+    }
   }
 
   "M19F component-expectation schema over a synthetic fixture" should {
