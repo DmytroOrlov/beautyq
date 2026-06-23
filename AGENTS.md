@@ -230,6 +230,8 @@ event match {
 * Fix unreachable matches instead of suppressing them.
 * `@nowarn` must be exact, narrow, intentional, and explained.
 * Prompt-provided imports and helper snippets are candidate source-truth, not paste-all requirements. Use only the imports/helpers needed by the final code or tests. Before running validation or compilation, prune unused imports, params, locals, helper methods, and dead code. Report pruning prompt-provided unused symbols as a normal compile-safety step, not as a behavior deviation.
+* Before the first sbt run after adding/editing Scala files, prune unused imports/dead helpers and qualify or import nested object members consistently.
+* Before final report after editing Scala specs, check touched specs for unsafe extraction (`.head`, `.tail`, `.last`, `Option.get`, `.toOption.get`, projection `.get`, `asInstanceOf`, `isInstanceOf`) and fix it. `getOrElse(fail(...))` and decoder cursor `.get` are allowed.
 * In Scala 3 tests, avoid `E175` discarded-value fixes by making Unit-returning lambdas, callbacks, and match branches explicitly return `Unit`. Do not leave `assert(...)` as the final discarded value in a context typed as `Unit`; add a final `(): Unit` or otherwise make the branch return `Unit` before running validation.
 
 ## HTTP / Tapir rules
