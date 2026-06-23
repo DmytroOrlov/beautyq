@@ -193,7 +193,7 @@ Do not use:
 * `assert(true)`;
 * empty success branches in pattern matches;
 * partial matches in expecting fakes;
-* Do not use unsafe extraction such as `.toOption.get`, `Option.get`, `RightProjection.get`, or `LeftProjection.get`. In production code, preserve typed errors with `Either`, `ZIO.fromEither`, or explicit domain failures. In tests, use pattern matching with `fail(...)` so failures keep useful context. For decoded `Map`, `List`, `Option`, `Either`, or JSON-derived structures, prefer pattern matching with useful failure messages; do not use `Map.apply`, `.head`, `.tail`, `.last`, `.get`, `.toOption.get`, or right/left projection `.get` unless totality is source-proven and documented.
+* Do not use unsafe extraction such as `.toOption.get`, `Option.get`, `RightProjection.get`, or `LeftProjection.get`. In production code, preserve typed errors with `Either`, `ZIO.fromEither`, or explicit domain failures. In tests, use pattern matching with `fail(...)` so failures keep useful context. For decoded `Map`, `List`, `Option`, `Either`, or JSON-derived structures, prefer pattern matching with useful failure messages; do not use `Map.apply`, `.head`, `.tail`, `.last`, `.get`, `.toOption.get`, or right/left projection `.get` unless totality is source-proven and documented. Before final report after editing Scala specs, scan touched specs for these forms and fix them; `getOrElse(fail(...))` and decoder cursor `.get` are allowed.
 * `isInstanceOf` / `asInstanceOf` when pattern matching is practical;
 * `assert(x == null)` / `assert(x != null)`.
 
@@ -229,9 +229,7 @@ event match {
 * Never add `@nowarn("msg=Unreachable")`.
 * Fix unreachable matches instead of suppressing them.
 * `@nowarn` must be exact, narrow, intentional, and explained.
-* Prompt-provided imports and helper snippets are candidate source-truth, not paste-all requirements. Use only the imports/helpers needed by the final code or tests. Before running validation or compilation, prune unused imports, params, locals, helper methods, and dead code. Report pruning prompt-provided unused symbols as a normal compile-safety step, not as a behavior deviation.
-* Before the first sbt run after adding/editing Scala files, prune unused imports/dead helpers and qualify or import nested object members consistently.
-* Before final report after editing Scala specs, check touched specs for unsafe extraction (`.head`, `.tail`, `.last`, `Option.get`, `.toOption.get`, projection `.get`, `asInstanceOf`, `isInstanceOf`) and fix it. `getOrElse(fail(...))` and decoder cursor `.get` are allowed.
+* Prompt-provided imports and helper snippets are candidate source-truth, not paste-all requirements. Use only the imports/helpers needed by the final code or tests. Before running validation or compilation, prune unused imports, params, locals, helper methods, and dead code, and qualify/import nested object members consistently. Report pruning prompt-provided unused symbols as a normal compile-safety step, not as a behavior deviation.
 * In Scala 3 tests, avoid `E175` discarded-value fixes by making Unit-returning lambdas, callbacks, and match branches explicitly return `Unit`. Do not leave `assert(...)` as the final discarded value in a context typed as `Unit`; add a final `(): Unit` or otherwise make the branch return `Unit` before running validation.
 
 ## HTTP / Tapir rules
