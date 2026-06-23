@@ -108,31 +108,16 @@ Future real work in this lane — actual candidate generation, real fusion/reran
 
 **M15A/M15B/M16A/M16B are accepted and closed**: the M15 manual smoke checklist and its removal once superseded, the M16A explicit serving-gate selector surface, and the M16B executable serving-gate evidence harness. See `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 2. This "M16" belongs to the same gate-and-evidence track noted above, unrelated to this roadmap's M18–M21.
 
-### M18. Real ES+Qdrant fusion engine / dual-engine retrieval execution
+### M18–M21: Planned vs Actual Outcome
 
-- implement real ES-native retrieval and real Qdrant-native retrieval as dual-engine execution, not simulated/offline-only;
-- define the candidate-union/fusion engine that combines ES-native and Qdrant-native results into one maximally accurate combined response;
-- keep this engine out of the default production route until M20/M21 approve a serving path;
-- no production wiring, no default route switch, no fallback.
+| Milestone | Planned | Actual outcome |
+|-----------|---------|----------------|
+| M18 | Real ES+Qdrant dual-engine execution with candidate-union/fusion engine, out of default route until M20/M21 approval. | Real ES and real Qdrant candidate evidence produced (offline/eval). No combined serving response. |
+| M19 | Metrics and combination policy decision — metrics over ES/Qdrant results, evidence-based fusion policy, decision-support only. | Offline/eval metrics and component-level policy-as-data produced. No runtime hybrid. |
+| M20 | Hidden/disabled-by-default controlled hybrid serving route with readiness gate, rollback, and route-exposure tests. | Closed as a disabled controlled surface only. Not a route, not runtime serving. |
+| M21 | Activation decision — approve/reject switching the default `/beauty-search` route. | Verdict: defer. Blocked on AP1 (real ES non-empty default-route proof). No approve/reject issued. |
 
-### M19. Metrics and combination policy decision
-
-- define the metrics used to compare and combine ES-native and Qdrant-native results (per-query-class and aggregate);
-- decide the combination/fusion policy from evidence, not from a fixed heuristic;
-- keep this decision-support only; it does not authorize serving.
-
-### M20. Hidden/disabled-by-default controlled hybrid serving route
-
-- implement a hybrid serving route gated disabled-by-default, mirroring the existing `BeautySearchServingGate` pattern;
-- keep it outside the default `apiElasticsearch` graph, same as the Qdrant explicit opt-in route;
-- route-exposure tests and full-suite verification required before this milestone is accepted;
-- does not change the production default.
-
-### M21. Activation decision / default-route switch approval or rejection
-
-- explicit approval or rejection of switching the default `/beauty-search` route to hybrid (or narrow Qdrant);
-- require rollback/disable plan, observability evidence, and full-suite verification as part of the decision record;
-- this is the only milestone that can approve a default-route switch; absence of approval here means the ES-backed default remains unchanged.
+The original hybrid goal remains open. M18–M21 are historical outcomes, not proof that hybrid is done: M18 produced candidate evidence, M19 produced offline policy-as-data, M20 closed as a disabled controlled surface, and M21 deferred activation pending blockers. Do not create additional M18–M21 roadmap/report layers; clear the current blockers, starting with AP1.
 
 ### M18–M21 Acceptance Gates
 

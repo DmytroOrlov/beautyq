@@ -9,7 +9,7 @@ Current source-backed baseline:
 - `BeautySearchRouteModules.seedCatalogQdrantExplicitOptIn` and `BeautySearchCatalogBackendModules.seedResourceQdrantExplicitOptIn` implement the matching opt-in backend path.
 - Default production `POST /beauty-search` remains ES-backed through `LeaderboardPlugin.modules.apiBase[IO]` plus `BeautySearchRouteModules.apiElasticsearch`.
 - Current production backend remains seed-resource catalog snapshot + `ElasticsearchSearchBackend`.
-- Production route activation is not approved today.
+- Default route activation is not approved today.
 
 Earlier full-suite and resource-gated Qdrant smoke runs were green; both are superseded by the M17A full-suite checkpoint in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` section 1. The opt-in route readiness conclusion below still holds.
 
@@ -17,11 +17,11 @@ Interpret that evidence narrowly:
 
 - It is enough to treat the explicit opt-in Qdrant route as ready for disabled-by-default use.
 - It is offline/evidence-based readiness, not production telemetry.
-- It does not approve production activation of the default `/beauty-search` route.
+- It does not approve default route activation of the `/beauty-search` route.
 
 Before any future default-route switch can be implemented, all of the following must be true:
 
-- explicit production-route activation approval exists;
+- explicit default-route activation approval exists;
 - the approved target is a default-route switch, not only explicit opt-in route approval;
 - a default graph exposure plan names the exact source change that will expose the new default route;
 - a rollback/disable plan exists for the default route;
@@ -36,9 +36,9 @@ Non-requirements for this decision:
 - shadow serving;
 - traffic mirroring.
 
-There is no real production traffic in this project context, so activation remains an explicit approval and implementation decision built from offline evidence plus route/control safety, not a telemetry threshold.
+There is no real production traffic in this project context, so live/default route activation remains an explicit approval and implementation decision built from offline evidence plus route/control safety, not a telemetry threshold. Activation-grade latency/failure evidence is still required through accepted local/resource/prod-like proof.
 
-If production activation is explicitly approved later, that approval would allow implementing only:
+If default route activation is explicitly approved later, that approval would allow implementing only:
 
 - the approved default graph exposure change for `/beauty-search`;
 - the approved rollback/disable control for that default route change;

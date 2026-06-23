@@ -1,5 +1,7 @@
 # Search DSL Hybrid V1 Plan
 
+**Status: design/history.** Current execution source is the post-M21 inventory and blocker list (`docs/codebase-review/M21_POST_DEFER_INVENTORY.md`). This design doc must not override the M21 defer state or replace the AP1 blocker path.
+
 ## 1. Goal
 
 This plan records a non-production hybrid-search foundation, not a production hybrid rollout.

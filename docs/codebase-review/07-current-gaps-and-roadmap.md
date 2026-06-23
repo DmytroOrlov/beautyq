@@ -347,6 +347,9 @@ Dashboard/operator integration and full production lifecycle verification remain
 * M6 remains closed and the M7 activation planning/source-confirmation foundation is closed. The disabled-by-default config/no-regression model and pending opt-in module contract are source-confirmed without treating candidate readiness as serving approval or adding a route.
 * M5 remains closed as a bounded startup-readiness lifecycle checkpoint. Remaining ES production-lifecycle tracks are replacement/freshness/rollback and full lifecycle operations; the runtime route gate for `/beauty-search` is implemented separately as `BeautySearchServingGate` (M14B). This is future-track planning after M5, not an unaccepted checkpoint remainder.
 * Current immediate next steps are not Qdrant shadow-first work and not production hybrid.
+
+**AP1 is the first blocker: default route/module proof with real Elasticsearch.**
+Prove the default `apiElasticsearch` graph against a real ES cluster (docker/Testcontainers, as used by `*ElasticsearchIntegrationSpec`) serving **non-empty** results on `POST /beauty-search`, with latency evidence. This is the single change that materially advances the activation path. No fallback/fusion/reranking/shadow/mirror/route-switch. Keep the default route ES-backed.
 * Parallel production lane can handle low-risk ES route stabilization/docs/runbook tasks until focused production-hardening bundle exists.
 
 ## Current nearest search checkpoint
