@@ -6,16 +6,22 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
 import leaderboard.model.Category.CategoryId
-import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
-import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
+import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
 import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.eval.*
 import leaderboard.search.eval.M19IBeautyQComponentCombinationPolicyScaffold.ComponentCombinationPolicy
 import leaderboard.search.eval.M20BControlledHybridServingOperationalControl.M20BOperationalControl
 import leaderboard.search.eval.M20ControlledHybridServingSkeleton.M20HybridServingControl
+import leaderboard.search.hybrid.ExperimentalHybridSearchBackend
 import leaderboard.search.lexical.{LexicalDocumentBackend, LexicalDocumentHit}
+import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.qdrant.{QdrantClient, QdrantCollectionReadinessConfig, QdrantCollectionReadinessInput, QdrantEmbeddingBenchmarkDefaultCompositionFactory, QdrantJsonInterpreter}
+import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter}
+import leaderboard.search.semantic.InMemoryVariantSearchDocumentLookup
+import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, Runtime, Unsafe, ZIO}
 
 import java.util.UUID
@@ -125,6 +131,58 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   )
 
   private val spec = BeautySearchSpecV1.spec
+
+  // ---- Y0C: canonical BeautyQ catalog seed + eval query suite (real-resource supplement proof). ----
+  // The same canonical seed/eval inventory the ES integration + Qdrant hybrid integration specs use.
+  // Y0C loads the FULL canonical catalog (every seeded variant) and the FULL canonical eval query
+  // set (63 queries) from beautyq_search_eval_queries_v1.json, NOT the synthetic K2 fixture above.
+  private val canonicalSeed = new BeautyQSeedLoader.ResourceLoader().load() match {
+    case Right(value) => value
+    case Left(error)  => throw new RuntimeException(error.message)
+  }
+  private val canonicalEvalSuite = BeautySearchEvalInventory.evalSuite
+
+  // Y0C: route-local Qdrant scoreThreshold candidates. Baseline = current default (None), plus the
+  // L3 measurement-promising thresholds 0.60 / 0.62. Each candidate is driven through the SAME real
+  // Qdrant collection (score_threshold is a search-time-only filter) via the existing
+  // QdrantSemanticCandidateBackend route-local VectorSearchSpec seam.
+  private final case class Y0CThresholdCandidate(label: String, scoreThreshold: Option[Double])
+  private val y0cThresholdCandidates: List[Y0CThresholdCandidate] = List(
+    Y0CThresholdCandidate("baseline", None),
+    Y0CThresholdCandidate("0.60", Some(0.60)),
+    Y0CThresholdCandidate("0.62", Some(0.62)),
+  )
+  // topK leaves room for Qdrant to supplement; the route caps the final carousel at
+  // min(input.limit, carouselSpec.variantSize) regardless, so topK only bounds candidate recall.
+  private val y0cTopK: Int = 20
+
+  // A single per-query × per-threshold supplement diagnostic row (variant-candidate-level only).
+  private final case class Y0CSupplementRow(
+    queryId: String,
+    queryText: String,
+    queryTypes: List[String],
+    thresholdLabel: String,
+    acceptableIds: Set[String],
+    esVariantIds: List[String],
+    supplementVariantIds: List[String],
+    appendedQdrantOnlyIds: List[String],
+    duplicateQdrantSkipped: Set[String],
+    appendedAcceptableIds: Set[String],
+    appendedUnacceptableIds: Set[String],
+    esPrefixPreserved: Boolean,
+    esOrderPreserved: Boolean,
+    providerCarouselUnchanged: Boolean,
+    serviceIntentCarouselUnchanged: Boolean,
+    facetsUnchanged: Boolean,
+    inferredFiltersUnchanged: Boolean,
+    recallImproved: Boolean,
+    semanticHarm: Boolean,
+    noAppendBecauseCapFilled: Boolean,
+    allQdrantCandidatesDuplicate: Boolean,
+    qdrantNoUsableCandidates: Boolean,
+    esLatencyNanos: Long,
+    qdrantLatencyNanos: Long,
+  )
 
   // The expected hair-colouring variant (balayage). Both legs may retrieve it. Used as the expected
   // id for the synthetic J-methodology queries (#1 lexical-exact, #2 semantic-complement). NOT used
@@ -2567,6 +2625,477 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             )
         }
     }
+  }
+
+  /**
+   * Y0C: real-resource proof for the Y0A `ElasticsearchWithQdrantVariantSupplement` route across ALL
+   * canonical BeautyQ eval queries.
+   *
+   * Drives the new [[ExperimentalHybridSearchBackend]] route (route fixed to
+   * `SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement`) against REAL Elasticsearch + REAL
+   * Qdrant + REAL embedding over the FULL canonical catalog (every seeded variant) and the FULL
+   * canonical eval query set (63 queries) from [[BeautySearchEvalInventory]]. For each canonical query
+   * it compares the ES-only `BeautySearchResponse` against the ES+Qdrant-supplement
+   * `BeautySearchResponse` and measures, per route-local Qdrant `scoreThreshold` candidate (baseline
+   * None plus the L3 measurement-promising 0.60 / 0.62), exactly where Qdrant appends useful variants
+   * without harming ES.
+   *
+   * Threshold seam (source-confirmed): the route's `semanticBackend` is a
+   * [[leaderboard.search.qdrant.QdrantSemanticCandidateBackend]] built from a route-local
+   * [[VectorSearchSpec]] carrying `scoreThreshold`, via the existing
+   * [[QdrantEmbeddingBenchmarkDefaultCompositionFactory]]; the same real collection is queried at
+   * each candidate threshold (score_threshold is a search-time-only filter).
+   *
+   * Measurement / proof ONLY: this subcase assembles no NEW response layer, fuses no scores, reranks
+   * nothing, adds no fallback/shadow/mirror, approves no route switch, and never changes the default
+   * `/beauty-search` route. The default [[SearchBackendRouter.default]] is asserted to NEVER select
+   * the supplement route. Qdrant ownership stays variant-candidate-level only: providerCarousel,
+   * serviceIntentCarousel, facets and inferredFilters are asserted unchanged for every query. If real
+   * resources are unavailable, Y0C is honestly resource-gated (cancelled), not cleared.
+   */
+  "Y0C ES+Qdrant variant-supplement real-resource proof over all canonical queries (scope y0c_variant_supplement_canonical_proof)" should {
+    "drive the Y0A ElasticsearchWithQdrantVariantSupplement route against real ES + real Qdrant + real embedding across all canonical BeautyQ eval queries, comparing ES-only vs ES+Qdrant-supplement variant carousels at scoreThreshold candidates 0.60 and 0.62 (and the unthresholded baseline) — measurement evidence only, no default route change, no policy selection" in {
+      (
+        esPortCfg: ElasticsearchPortCfg,
+        qdrantPortCfg: QdrantPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
+      ) =>
+        // ---- Re-assert the disabled M20B control surface: no policy promotion in this subcase. ----
+        val policy = ComponentCombinationPolicy(
+          rows = Nil,
+          offlineEvalOnly = true,
+          notServingPolicy = true,
+          doesNotApproveHybrid = true,
+          qdrantDoesNotOwnFacets = true,
+          qdrantDoesNotOwnInferredFilters = true,
+        )
+        val operationalControl =
+          M20BOperationalControl.disabledByDefault(M20HybridServingControl.disabledByDefault(policy))
+        val status = operationalControl.operatorStatus
+        assert(operationalControl.effectiveServingDisabled, "effective serving must be disabled")
+        assert(!operationalControl.servingApproved, "no serving approval may exist")
+        assert(operationalControl.executesNoHybridServing, "no hybrid serving behaviour may be enabled")
+        assert(operationalControl.consumesPolicyAsEvidenceOnly, "policy must be consumed as evidence only")
+        assert(status.defaultBeautySearchRouteUnchanged, "default /beauty-search route must remain unchanged")
+        assert(!status.fallbackEnabled, "no fallback may be introduced")
+        assert(!status.scoreFusionEnabled, "no score fusion may be introduced")
+        assert(!status.rerankingEnabled, "no reranking may be enabled")
+        assert(!status.automaticQdrantSupplementEnabled, "no automatic Qdrant supplement may be introduced")
+        assert(!status.routeSwitchEnabled, "no route switch may be introduced")
+
+        // ---- The default router must NEVER select the supplement route for ANY canonical query. ----
+        val parser = new BeautySearchIntentParser(spec)
+        canonicalEvalSuite.queries.foreach { query =>
+          val input  = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+          val intent = parser.parse(input)
+          val decision = SearchBackendRouter.default.decide(input, intent)
+          assert(
+            decision.route != SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+            s"default router must NOT select ElasticsearchWithQdrantVariantSupplement for ${query.id} (${query.query}), got ${decision.route}",
+          )
+          (): Unit
+        }
+
+        // ---- Probe the real Qdrant + embedding resources honestly (T/W/H pattern). ----
+        val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
+        val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
+        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
+        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+
+        val (embeddingProbe, qdrantProbe) = unsafeRun(
+          for {
+            embeddingResult <- embeddingClient.embed("y0c runtime es+qdrant variant-supplement probe").either
+            qdrantResult    <- qdrantClient.collectionInfo("/collections").either
+          } yield (embeddingResult, qdrantResult)
+        )
+        val embeddingConfigured = embeddingProbe.exists(_.nonEmpty)
+        val qdrantConfigured    = qdrantProbe.isRight
+
+        // Load the FULL canonical catalog of variant documents (real seed-scoped repositories).
+        val documents = unsafeRun(
+          loadCanonicalCatalogDocuments(
+            seedReady,
+            categories,
+            services,
+            serviceVariantSchemas,
+            masters,
+            masterLocations,
+            masterServiceOffers,
+            masterServiceOfferVariants,
+          )
+        )
+        assert(documents.nonEmpty, "the canonical catalog must seed at least one variant document")
+        assert(
+          documents.size == canonicalSeed.masterServiceOfferVariants.size,
+          s"the canonical catalog must seed exactly one document per seeded variant, got ${documents.size} vs ${canonicalSeed.masterServiceOfferVariants.size}",
+        )
+
+        val indexName = s"${spec.variantDocument.indexName}_y0c_${UUID.randomUUID().toString.replace('-', '_')}"
+        val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
+        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+
+        (embeddingProbe, qdrantConfigured) match {
+          case (Right(vector), true) if vector.nonEmpty =>
+            // ---- Both real resources reachable: execute the Y0A supplement route for the WHOLE set. ----
+            val rows = unsafeRun(runY0CSupplementProof(esClient, testSpec, qdrantClient, embeddingClient, vector.length, documents))
+
+            val expectedQueryIds = canonicalEvalSuite.queries.map(_.id).toSet
+            val expectedRowCount = canonicalEvalSuite.queries.size * y0cThresholdCandidates.size
+
+            // Every processed canonical query has a diagnostic row for every threshold candidate.
+            assert(rows.size == expectedRowCount, s"Y0C must produce one row per canonical query × threshold candidate, got ${rows.size} vs $expectedRowCount")
+            y0cThresholdCandidates.foreach { candidate =>
+              val labelRows = rows.filter(_.thresholdLabel == candidate.label)
+              assert(
+                labelRows.map(_.queryId).toSet == expectedQueryIds,
+                s"Y0C must cover every canonical query for threshold ${candidate.label}, missing=${expectedQueryIds.diff(labelRows.map(_.queryId).toSet)}",
+              )
+              (): Unit
+            }
+
+            // ---- Per-row no-harm invariants (every query × every threshold). ----
+            rows.foreach { row =>
+              assert(row.esPrefixPreserved, s"Y0C: ES variant prefix must be preserved for ${row.queryId}@${row.thresholdLabel}; es=${row.esVariantIds} supplement=${row.supplementVariantIds}")
+              assert(row.esOrderPreserved, s"Y0C: ES variant ordering must be preserved for ${row.queryId}@${row.thresholdLabel}; es=${row.esVariantIds} supplement=${row.supplementVariantIds}")
+              assert(row.providerCarouselUnchanged, s"Y0C: providerCarousel must be unchanged for ${row.queryId}@${row.thresholdLabel}")
+              assert(row.serviceIntentCarouselUnchanged, s"Y0C: serviceIntentCarousel must be unchanged for ${row.queryId}@${row.thresholdLabel}")
+              assert(row.facetsUnchanged, s"Y0C: facets must be unchanged for ${row.queryId}@${row.thresholdLabel}")
+              assert(row.inferredFiltersUnchanged, s"Y0C: inferredFilters must be unchanged for ${row.queryId}@${row.thresholdLabel}")
+              assert(
+                row.appendedQdrantOnlyIds.toSet.intersect(row.esVariantIds.toSet).isEmpty,
+                s"Y0C: appended ids must never duplicate ES variant ids for ${row.queryId}@${row.thresholdLabel}, got appended=${row.appendedQdrantOnlyIds} es=${row.esVariantIds}",
+              )
+              assert(
+                row.supplementVariantIds.size <= cap,
+                s"Y0C: final variantCarousel size must never exceed the cap ($cap) for ${row.queryId}@${row.thresholdLabel}, got ${row.supplementVariantIds.size}",
+              )
+              // Duplicate Qdrant candidates skipped because ES already had them are never appended.
+              assert(
+                row.duplicateQdrantSkipped.intersect(row.appendedQdrantOnlyIds.toSet).isEmpty,
+                s"Y0C: a duplicate Qdrant candidate (already in ES) must not be appended for ${row.queryId}@${row.thresholdLabel}",
+              )
+              (): Unit
+            }
+
+            // ---- If any appended id is outside the canonical acceptable set, policy stays blocked. ----
+            val harmRows = rows.filter(_.semanticHarm)
+            assert(
+              operationalControl.effectiveServingDisabled && !status.routeSwitchEnabled && !status.automaticQdrantSupplementEnabled,
+              "Y0C: appended-unacceptable ids (if any) must leave the disabled control surface intact — policy remains blocked, never auto-promoted",
+            )
+
+            // ---- Per-threshold aggregates (faithful roll-up; measurement evidence only). ----
+            val perThresholdEvidence = y0cThresholdCandidates.map { candidate =>
+              val labelRows                = rows.filter(_.thresholdLabel == candidate.label)
+              val appendQueries            = labelRows.filter(_.appendedQdrantOnlyIds.nonEmpty)
+              val totalAppended            = labelRows.map(_.appendedQdrantOnlyIds.size).sum
+              val totalAppendedAcceptable  = labelRows.map(_.appendedAcceptableIds.size).sum
+              val totalAppendedUnacceptable = labelRows.map(_.appendedUnacceptableIds.size).sum
+              val recallImprovedQueries    = labelRows.filter(_.recallImproved).map(_.queryId)
+              val harmQueries              = labelRows.filter(_.semanticHarm).map(_.queryId)
+              val structurallyUnchanged    = labelRows.count(r =>
+                r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged && r.esPrefixPreserved && r.esOrderPreserved
+              )
+              val noAppendCapFilled        = labelRows.count(_.noAppendBecauseCapFilled)
+              val allDuplicate             = labelRows.count(_.allQdrantCandidatesDuplicate)
+              val noUsable                 = labelRows.count(_.qdrantNoUsableCandidates)
+              val helped                   = appendQueries.filter(_.appendedAcceptableIds.nonEmpty).map(_.queryId)
+              val hurt                     = appendQueries.filter(_.appendedUnacceptableIds.nonEmpty).map(_.queryId)
+              (
+                candidate.label,
+                s"threshold=${candidate.label}: appendQueries=${appendQueries.size}/${labelRows.size}, totalAppended=$totalAppended, " +
+                  s"appendedAcceptable=$totalAppendedAcceptable, appendedUnacceptable=$totalAppendedUnacceptable, " +
+                  s"recallImprovedQueries=${recallImprovedQueries.size}, harmQueries=${harmQueries.size}, " +
+                  s"structurallyUnchanged=$structurallyUnchanged/${labelRows.size}, noAppendCapFilled=$noAppendCapFilled, " +
+                  s"allDuplicate=$allDuplicate, noUsableCandidates=$noUsable, " +
+                  s"helpedTop=${helped.take(8).mkString("[", ",", "]")}, hurtTop=${hurt.take(8).mkString("[", ",", "]")}",
+              )
+            }
+
+            val y0cEvidenceLog: String = {
+              val header = "Y0C_VARIANT_SUPPLEMENT_CANONICAL_PROOF_EVIDENCE"
+              val latencyOk = rows.forall(r => r.esLatencyNanos >= 0L && r.qdrantLatencyNanos >= 0L)
+              s"$header\n" +
+                s"CANONICAL_QUERY_COUNT=${canonicalEvalSuite.queries.size}\n" +
+                s"CATALOG_DOCUMENT_COUNT=${documents.size}\n" +
+                s"THRESHOLD_CANDIDATES=${y0cThresholdCandidates.map(c => c.scoreThreshold.map(_.toString).getOrElse("None")).mkString(",")}\n" +
+                s"VARIANT_CAROUSEL_CAP=$cap\n" +
+                s"TOTAL_ROWS=${rows.size}\n" +
+                s"ROWS_WITH_SEMANTIC_HARM=${harmRows.size}\n" +
+                perThresholdEvidence.map(_._2).mkString("\n") + "\n" +
+                s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
+                s"PER_LEG_LATENCY_RECORDED=$latencyOk\n" +
+                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
+                s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}"
+            }
+            println(y0cEvidenceLog)
+
+          // Y0C CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real Qdrant +
+          // real embedding. ES-only vs ES+Qdrant-supplement responses were measured for every canonical
+          // query at scoreThreshold candidates None/0.60/0.62 through the source-confirmed Y0A route.
+          // ES prefix/order are preserved and provider/service/facets/inferredFilters are unchanged for
+          // every query (no harm to ES structure); appended ids never duplicate ES ids and the final
+          // carousel never exceeds the cap. The default router still never selects the supplement route.
+          // This is measurement evidence only: no default route change, no policy selection.
+
+          case _ =>
+            // ---- Resources unavailable: confirm ES still works, then honestly resource-gate Y0C. ----
+            val gateReason =
+              if (!qdrantConfigured) "qdrant search client (host/port) is not configured"
+              else if (!embeddingConfigured) "embedding client (query vectorization) is not configured"
+              else "embedding probe returned an empty vector"
+            val esOnly = unsafeRun(
+              (
+                for {
+                  _        <- prepareEsIndexWith(testSpec, esClient, documents)
+                  backend   = esBeautyBackendFor(testSpec, esClient)
+                  responses <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
+                                 val input  = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+                                 val intent = parser.parse(input)
+                                 backend.search(input, intent).map(query.id -> _.variantCarousel.size)
+                               }
+                } yield responses
+              ).ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+            )
+            assert(esOnly.size == canonicalEvalSuite.queries.size, "ES still measures every canonical query when Qdrant is resource-gated")
+            cancel(
+              s"Y0C did not clear the canonical ES+Qdrant variant-supplement proof: real ES candidate " +
+                s"evidence was measured for all ${canonicalEvalSuite.queries.size} canonical queries but the Qdrant/embedding " +
+                s"resources were honestly resource-gated (no candidates faked), so no ES-vs-ES+supplement " +
+                s"comparison could be computed. $gateReason"
+            )
+        }
+    }
+  }
+
+  /** Y0C: load the full canonical catalog of variant documents from the real seed-scoped repositories. */
+  private def loadCanonicalCatalogDocuments(
+    seedReady: BeautyQSeedReady,
+    categories: Categories[IO],
+    services: Services[IO],
+    serviceVariantSchemas: ServiceVariantSchemas[IO],
+    masters: Masters[IO],
+    masterLocations: MasterLocations[IO],
+    masterServiceOffers: MasterServiceOffers[IO],
+    masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+  ): IO[QueryFailure, List[VariantSearchDocument]] = {
+    val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedReady,
+      canonicalSeed,
+      categories,
+      services,
+      serviceVariantSchemas,
+      masters,
+      masterLocations,
+      masterServiceOffers,
+      masterServiceOfferVariants,
+    )
+    for {
+      snapshot  <- loader.load()
+      documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
+    } yield documents
+  }
+
+  /** Y0C: prepare the real ES index and seed an arbitrary catalog of documents. */
+  private def prepareEsIndexWith(
+    testSpec: BeautySearchSpec,
+    client: ElasticsearchTestClient,
+    documents: List[VariantSearchDocument],
+  ): IO[QueryFailure, Unit] =
+    for {
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.postNdjson(
+             s"/${testSpec.variantDocument.indexName}/_bulk",
+             ElasticsearchIngestionInterpreter.bulkPayload(testSpec, documents),
+           )
+      _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")
+    } yield ()
+
+  /** Y0C: a real-ES [[leaderboard.search.BeautySearchBackend]] over the prepared index (full response). */
+  private def esBeautyBackendFor(
+    testSpec: BeautySearchSpec,
+    client: ElasticsearchTestClient,
+  ): BeautySearchBackend[IO] =
+    new BeautySearchBackend[IO] {
+      override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
+        for {
+          requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(testSpec, input, intent))
+          rawResponse <- client.postJson(s"/${testSpec.variantDocument.indexName}/_search", requestJson)
+          response    <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(testSpec, input, intent, rawResponse))
+        } yield response
+    }
+
+  /** Y0C: measure wall-clock nanos for an executed leg using the real monotonic clock. */
+  private def timedLeg[A](effect: IO[QueryFailure, A]): IO[QueryFailure, (A, Long)] =
+    for {
+      start  <- legClock.monotonicNanos
+      result <- effect
+      end    <- legClock.monotonicNanos
+    } yield (result, end - start)
+
+  /**
+   * Y0C: build ONE real Qdrant collection seeded with the full canonical catalog, then drive the Y0A
+   * supplement route over EVERY canonical query for each route-local scoreThreshold candidate
+   * (baseline None / 0.60 / 0.62). The same indexed collection is queried at each threshold via a
+   * route-local [[VectorSearchSpec]] (score_threshold is a search-time-only filter), so the candidates
+   * differ only by threshold. ES-only is computed once per query (threshold-independent) and reused.
+   */
+  private def runY0CSupplementProof(
+    esClient: ElasticsearchTestClient,
+    testSpec: BeautySearchSpec,
+    qdrantClient: QdrantClient,
+    embeddingClient: LlamaCppEmbeddingClient,
+    vectorDimension: Int,
+    documents: List[VariantSearchDocument],
+  ): IO[QueryFailure, List[Y0CSupplementRow]] = {
+    val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+      vectorName = "llama-cpp-embedding",
+      modelName = "y0c-runtime-scorecard",
+      dimension = vectorDimension,
+      distance = VectorDistance.Cosine,
+      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+    )
+    // Same purpose for every candidate → same collection name (indexed once, queried at each threshold).
+    val purpose = s"y0c-runtime-scorecard-${UUID.randomUUID().toString.replace('-', '_')}"
+    def readiness(threshold: Option[Double]): QdrantCollectionReadinessConfig =
+      QdrantCollectionReadinessConfig.derive(
+        QdrantCollectionReadinessInput(
+          domainName = "beautyq",
+          searchSpecVersion = "v1",
+          purpose = purpose,
+          embeddingSpec = embeddingSpec,
+          vectorSearchSpec = VectorSearchSpec(
+            collectionName = "placeholder",
+            vectorName = "llama-cpp-embedding",
+            topK = y0cTopK,
+            scoreThreshold = threshold,
+          ),
+        )
+      )
+    val baselineReadiness  = readiness(None)
+    val collectionPath     = s"/collections/${baselineReadiness.collectionName}"
+    val snapshotProvider   = new InMemoryVariantSearchDocumentSnapshotProvider[IO](documents)
+    val compositionFactory = new QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient)
+    val lookup             = new InMemoryVariantSearchDocumentLookup[IO](documents)
+    val lexicalBackend     = esBeautyBackendFor(testSpec, esClient)
+    val parser             = new BeautySearchIntentParser(testSpec)
+
+    (
+      for {
+        _                  <- prepareEsIndexWith(testSpec, esClient, documents)
+        baselineComposition <- compositionFactory.build(baselineReadiness, embeddingClient, snapshotProvider, embeddingSpec)
+        createJson          = QdrantJsonInterpreter.createCollectionJson(baselineReadiness.vectorSearchSpec, embeddingSpec)
+        _                  <- qdrantClient.createCollection(collectionPath, createJson)
+        _                  <- baselineComposition.indexSnapshot()
+        // Build one route per threshold candidate over the SAME indexed collection.
+        candidateBackends  <- ZIO.foreach(y0cThresholdCandidates) { candidate =>
+                                val candidateReadiness = readiness(candidate.scoreThreshold)
+                                compositionFactory
+                                  .build(candidateReadiness, embeddingClient, snapshotProvider, embeddingSpec)
+                                  .map { composition =>
+                                    val experimentSpec = testSpec.copy(
+                                      embeddingSpec = Some(embeddingSpec),
+                                      vectorSearchSpec = Some(candidateReadiness.vectorSearchSpec),
+                                    )
+                                    val route = new ExperimentalHybridSearchBackend[IO](
+                                      experimentSpec,
+                                      lexicalBackend,
+                                      (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+                                      composition.semanticBackend,
+                                      lookup,
+                                    )
+                                    (candidate, composition.semanticBackend, route)
+                                  }
+                              }
+        rows <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
+                  val input  = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+                  val intent = parser.parse(input)
+                  val cap    = math.min(input.limit, testSpec.carouselSpec.variantSize)
+                  val acceptableIds = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet
+                  for {
+                    esTimed <- timedLeg(lexicalBackend.search(input, intent))
+                    perThreshold <- ZIO.foreach(candidateBackends) { case (candidate, semanticBackend, route) =>
+                                      for {
+                                        candidateTimed     <- timedLeg(semanticBackend.candidates(input, intent))
+                                        supplementResponse <- route.search(input, intent)
+                                      } yield evaluateY0CRow(
+                                        query = query,
+                                        thresholdLabel = candidate.label,
+                                        acceptableIds = acceptableIds,
+                                        esResponse = esTimed._1,
+                                        supplementResponse = supplementResponse,
+                                        qdrantCandidateIds = candidateTimed._1.map(_.variantId.toString),
+                                        cap = cap,
+                                        esLatencyNanos = esTimed._2,
+                                        qdrantLatencyNanos = candidateTimed._2,
+                                      )
+                                    }
+                  } yield perThreshold
+                }.map(_.flatten)
+      } yield rows
+    ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
+      .ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+  }
+
+  /** Y0C: compute a single per-query × per-threshold supplement diagnostic row from real responses. */
+  private def evaluateY0CRow(
+    query: leaderboard.search.eval.BeautySearchEvalQuery,
+    thresholdLabel: String,
+    acceptableIds: Set[String],
+    esResponse: BeautySearchResponse,
+    supplementResponse: BeautySearchResponse,
+    qdrantCandidateIds: List[String],
+    cap: Int,
+    esLatencyNanos: Long,
+    qdrantLatencyNanos: Long,
+  ): Y0CSupplementRow = {
+    val esVariantIds  = esResponse.variantCarousel.map(_.variantId.toString)
+    val supVariantIds = supplementResponse.variantCarousel.map(_.variantId.toString)
+    val esSet         = esVariantIds.toSet
+    val appended      = supVariantIds.filterNot(esSet.contains)
+    val candidateSet  = qdrantCandidateIds.toSet
+    val duplicateSkipped = candidateSet.intersect(esSet)
+    val qdrantOnly       = candidateSet.diff(esSet)
+    val appendedAcceptable   = appended.toSet.intersect(acceptableIds)
+    val appendedUnacceptable = appended.toSet.diff(acceptableIds)
+    // The route does (esCarousel ++ supplement).take(cap), so ES entries occupy the capped prefix.
+    val expectedPrefix = esVariantIds.take(cap)
+    val esPrefixPreserved = supVariantIds.take(expectedPrefix.size) == expectedPrefix
+    // Order preserved: the ES-derived entries in the supplement response appear in their ES order.
+    val esOrderPreserved = supVariantIds.filter(esSet.contains) == expectedPrefix
+    Y0CSupplementRow(
+      queryId = query.id,
+      queryText = query.query,
+      queryTypes = query.queryTypes,
+      thresholdLabel = thresholdLabel,
+      acceptableIds = acceptableIds,
+      esVariantIds = esVariantIds,
+      supplementVariantIds = supVariantIds,
+      appendedQdrantOnlyIds = appended,
+      duplicateQdrantSkipped = duplicateSkipped,
+      appendedAcceptableIds = appendedAcceptable,
+      appendedUnacceptableIds = appendedUnacceptable,
+      esPrefixPreserved = esPrefixPreserved,
+      esOrderPreserved = esOrderPreserved,
+      providerCarouselUnchanged = supplementResponse.providerCarousel == esResponse.providerCarousel,
+      serviceIntentCarouselUnchanged = supplementResponse.serviceIntentCarousel == esResponse.serviceIntentCarousel,
+      facetsUnchanged = supplementResponse.facets == esResponse.facets,
+      inferredFiltersUnchanged = supplementResponse.inferredFilters == esResponse.inferredFilters,
+      recallImproved = appendedAcceptable.nonEmpty,
+      semanticHarm = appendedUnacceptable.nonEmpty,
+      noAppendBecauseCapFilled = qdrantOnly.nonEmpty && appended.isEmpty && esVariantIds.size >= cap,
+      allQdrantCandidatesDuplicate = candidateSet.nonEmpty && qdrantOnly.isEmpty,
+      qdrantNoUsableCandidates = candidateSet.isEmpty,
+      esLatencyNanos = esLatencyNanos,
+      qdrantLatencyNanos = qdrantLatencyNanos,
+    )
   }
 
   /** Build the real-ES lexical backend over the prepared index, using the existing real-ES pattern. */
