@@ -352,7 +352,6 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     isMeasurementPromising: Boolean,
     isOracleUpperBound: Boolean,
   )
-  private val y0ILostRecallQueryTypes: Set[String] = Set("mixed_language", "technical_token")
   private val y0IGateCandidates: List[Y0IGateCandidate] = List(
     Y0IGateCandidate(
       label = "filter_plus_top1_baseline",
@@ -4124,7 +4123,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
             // ---- Run Y0I proof directly (same infrastructure as Y0G, different gate logic). ----
-            val y0iRows = unsafeRun(runY0IProof(esClient, testSpec, qdrantClient, embeddingClient, vector.length, documents, y0IGateCandidates, baselineRecallWinsFor))
+            val y0iRows = unsafeRun(runY0IProof(esClient, testSpec, qdrantClient, embeddingClient, vector.length, documents, y0IGateCandidates))
 
             val expectedRowCount = canonicalEvalSuite.queries.size * y0IGateCandidates.size
             assert(y0iRows.size == expectedRowCount, s"Y0I must produce one row per canonical query × gate candidate, got ${y0iRows.size} vs $expectedRowCount")
@@ -4164,9 +4163,17 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               ): Unit
             }
 
-            // ---- Identify baseline recall wins from filter_plus_top1_baseline. ----
+            // ---- Identify the fixed recall-win sets. isBaselineRecallWin / isLostRecallWin are
+            // identical across every gate's row for a given query (computed once in runY0IProof
+            // from the actual Y0A route behavior and the Y0G zero-harm baseline gate), so any
+            // gate's rows can be used to read them back; filter_plus_top1_baseline is used here
+            // because it is also the Y0G zero-harm reference for isPreservedRecallWin. ----
             val baselineRows = y0iRows.filter(_.gateLabel == "filter_plus_top1_baseline")
-            val lostRecallWins = baselineRows.filter(_.isLostRecallWin).map(_.queryId).toSet
+            val routeAppendAllRecallWinIds = baselineRows.filter(_.isBaselineRecallWin).map(_.queryId).toSet
+            val zeroHarmBaselinePreservedRecallIds = baselineRows.filter(_.isPreservedRecallWin).map(_.queryId).toSet
+            val lostRecallWinIds = baselineRows.filter(_.isLostRecallWin).map(_.queryId).toSet
+            val derivedLostRecallQueryTypes =
+              canonicalEvalSuite.queries.filter(q => lostRecallWinIds.contains(q.id)).flatMap(_.queryTypes).toSet
 
             // ---- Per-gate Y0I roll-up. ----
             val perGateY0IEvidence: List[Y0IGateEvidence] = y0IGateCandidates.map { gateCandidate =>
@@ -4208,22 +4215,33 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               )
             }
 
-            // ---- Comparison against Y0G baseline. ----
-            val baselineEvidence = perGateY0IEvidence.find(_.label == "filter_plus_top1_baseline").getOrElse(sys.error("missing baseline"))
-            val baselineHarm = baselineEvidence.semanticHarmQueryCount
-            val baselineRecallSet = baselineEvidence.recallImprovedQueryIds
+            // ---- Comparison against the Y0G zero-harm baseline gate (filter_plus_top1_baseline). ----
+            val baselineHarm = baselineRows.count(_.semanticHarm)
 
-            // ---- Y0I decision. ----
-            val promisingCandidates = perGateY0IEvidence.filter(_.isMeasurementPromising).map(_.label)
+            // ---- Y0I decision. The eval-oracle candidate is reported as an upper bound only: it
+            // is excluded from `promisingCandidates` so it can never be classified as production-
+            // ready or become the basis for Y1 (honesty requirement). ----
+            val nonOracleEvidence = perGateY0IEvidence.filterNot(_.isOracleUpperBound)
+            val promisingCandidates = nonOracleEvidence.filter(_.isMeasurementPromising).map(_.label)
             val oracleCandidate = perGateY0IEvidence.find(_.isOracleUpperBound)
+            val oracleRecoversWithZeroHarm =
+              oracleCandidate.exists(oc => oc.semanticHarmQueryCount == 0 && oc.recoveredLostRecallIds.nonEmpty)
+            // Non-oracle candidates that recovered lost recall but also reintroduced harm: zero-harm
+            // recall recovery failed for these even though they are not flagged measurement-promising.
+            val nonOracleRecoveredWithHarm =
+              nonOracleEvidence.filter(e => e.recoveredLostRecallIds.nonEmpty && e.semanticHarmQueryCount > 0).map(_.label)
 
             val y0iDecision: String =
               if (promisingCandidates.nonEmpty)
                 s"MEASUREMENT_PROMISING: ${promisingCandidates.mkString(",")} recovers lost recall with zero harm"
-              else if (oracleCandidate.exists(_.semanticHarmQueryCount == 0) && oracleCandidate.exists(_.recoveredLostRecallIds.nonEmpty))
+              else if (nonOracleRecoveredWithHarm.nonEmpty)
+                s"ZERO_HARM_RECALL_RECOVERY_FAILED: ${nonOracleRecoveredWithHarm.mkString(",")} recovered lost recall but reintroduced semantic harm"
+              else if (oracleRecoversWithZeroHarm)
                 "ORACLE_UPPER_BOUND: eval-oracle candidate recovers recall with zero harm, but non-oracle candidates do not — production-safe gate still missing"
+              else if (lostRecallWinIds.isEmpty)
+                "NO_LOST_RECALL: the Y0G zero-harm baseline gate preserved every baseline route recall win"
               else
-                "ZERO_HARM_RECALL_RECOVERY_FAILED: no candidate recovers lost recall without semantic harm"
+                "ZERO_HARM_RECALL_RECOVERY_FAILED: no candidate recovers lost recall without semantic harm — next step is query/document text redesign or embedding model-axis measurement"
 
             val y0iEvidenceLog: String = {
               val header = "Y0I_LOST_RECALL_RECOVERY_EVIDENCE"
@@ -4234,7 +4252,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                   s"semanticHarm=${evidence.semanticHarmQueryCount}, " +
                   s"preservedRecallWins=${evidence.preservedBaselineRecallWinIds.mkString("[", ",", "]")}, " +
                   s"recoveredLostRecall=${evidence.recoveredLostRecallIds.mkString("[", ",", "]")}, " +
-                  s"measurementPromising=${evidence.isMeasurementPromising}, " +
+                  s"measurementPromising=${evidence.isMeasurementPromising && !evidence.isOracleUpperBound}, " +
                   s"oracleUpperBound=${evidence.isOracleUpperBound}"
               }
               s"$header\n" +
@@ -4242,13 +4260,17 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"SCORE_THRESHOLD=0.62\n" +
                 s"SOURCE_FIELDS=serviceText,attributeText,allText,categoryName\n" +
                 s"GATE_CANDIDATES=${y0IGateCandidates.map(_.label).mkString(",")}\n" +
-                s"BASELINE_RECALL_WINS=${baselineRecallSet.size}\n" +
-                s"BASELINE_RECALL_WIN_IDS=${baselineRecallSet.mkString("[", ",", "]")}\n" +
+                s"BASELINE_ROUTE_RECALL_WINS=${routeAppendAllRecallWinIds.size}\n" +
+                s"BASELINE_ROUTE_RECALL_WIN_IDS=${routeAppendAllRecallWinIds.mkString("[", ",", "]")}\n" +
+                s"ZERO_HARM_BASELINE_PRESERVED_RECALL_WINS=${zeroHarmBaselinePreservedRecallIds.size}\n" +
+                s"ZERO_HARM_BASELINE_PRESERVED_RECALL_WIN_IDS=${zeroHarmBaselinePreservedRecallIds.mkString("[", ",", "]")}\n" +
                 s"BASELINE_HARM_COUNT=$baselineHarm\n" +
-                s"LOST_RECALL_QUERY_TYPES=${y0ILostRecallQueryTypes.mkString("[", ",", "]")}\n" +
-                s"LOST_RECALL_WIN_IDS=${lostRecallWins.mkString("[", ",", "]")}\n" +
+                s"LOST_RECALL_WIN_IDS=${lostRecallWinIds.mkString("[", ",", "]")}\n" +
+                s"DERIVED_LOST_RECALL_QUERY_TYPES=${derivedLostRecallQueryTypes.mkString("[", ",", "]")}\n" +
                 s"PER_GATE_ROLLUP:\n" +
                 perGateLines.mkString("\n") + "\n" +
+                s"NON_ORACLE_MEASUREMENT_PROMISING=${promisingCandidates.nonEmpty}\n" +
+                s"ORACLE_RECOVERS_WITH_ZERO_HARM=$oracleRecoversWithZeroHarm\n" +
                 s"Y0I_DECISION=$y0iDecision\n" +
                 s"POLICY_REMAINS_BLOCKED=true\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
@@ -4592,7 +4614,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   private def y0iEvaluateGate(
     qIn: Y0GQueryInput,
     candidate: Y0IGateCandidate,
-    baselineRecallWins: Set[String],
+    routeAppendAllRecallWinIds: Set[String],
+    lostRecallWinIds: Set[String],
+    lostRecallQueryTypes: Set[String],
     docTextById: Map[String, VariantSearchDocument],
     variantCap: Int,
   ): Y0IRow = {
@@ -4631,7 +4655,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         if (top1Filtered.nonEmpty) top1Filtered
         else {
           val queryTypesSet = qIn.query.queryTypes.toSet
-          if (queryTypesSet.intersect(y0ILostRecallQueryTypes).nonEmpty) top1Original
+          if (queryTypesSet.intersect(lostRecallQueryTypes).nonEmpty) top1Original
           else Nil
         }
       case Y0IGateMode.FilterPlusTop1ElseTop1IfTopCandidateAcceptableInEval =>
@@ -4652,11 +4676,13 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val esPrefixPreserved = gateVariantIds.take(expectedPrefix.size) == expectedPrefix
     val esOrderPreserved = gateVariantIds.filter(esSet.contains) == expectedPrefix
 
-    // Y0I lost-recall diagnostics.
-    val isBaselineRecallWin = baselineRecallWins.contains(qIn.query.id)
+    // Y0I lost-recall diagnostics. isBaselineRecallWin / isLostRecallWin are fixed sets derived
+    // once from the actual Y0A route behavior and the Y0G zero-harm baseline gate (computed in
+    // runY0IProof), not from this row's own candidate-dependent append outcome.
+    val isBaselineRecallWin = routeAppendAllRecallWinIds.contains(qIn.query.id)
+    val isLostRecallWin = lostRecallWinIds.contains(qIn.query.id)
     val isPreservedRecallWin = isBaselineRecallWin && appendedAcceptable.nonEmpty
-    val isLostRecallWin = isBaselineRecallWin && !isPreservedRecallWin && appendedAcceptable.isEmpty
-    val isLostRecallQueryType = qIn.query.queryTypes.toSet.intersect(y0ILostRecallQueryTypes).nonEmpty
+    val isLostRecallQueryType = qIn.query.queryTypes.toSet.intersect(lostRecallQueryTypes).nonEmpty
 
     // For lost-recall queries: capture pre/post filter state.
     val qdrantOnlyBeforeFilter = qdrantOnlySet.toList.sorted
@@ -4724,10 +4750,6 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     )
   }
 
-  /** Y0I: helper to identify baseline recall wins from the baseline gate's Y0G rows. */
-  private def baselineRecallWinsFor: Set[String] =
-    Set.empty[String] // computed at runtime from the actual proof data
-
   /**
     * Y0I: build ONE real Qdrant collection seeded with the full canonical catalog at the Y0E
     * `baseline_current` source fields + Y0E `scoreThreshold` (0.62), then drive the Y0A supplement
@@ -4745,7 +4767,6 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     vectorDimension: Int,
     documents: List[VariantSearchDocument],
     gateCandidates: List[Y0IGateCandidate],
-    baselineRecallWins: Set[String],
   ): IO[QueryFailure, List[Y0IRow]] = {
     val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
       vectorName = "llama-cpp-embedding",
@@ -4832,9 +4853,49 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                               )
                             }
                           }
+        // ---- Fixed baseline route recall wins: derived from the actual Y0A route supplement
+        // response (not a guessed synthetic list). A baseline route recall win means the route's
+        // supplementResponse appended a Qdrant-only id that is in canonical acceptableVariantIds. ----
+        routeAppendAllRecallWinIds = perQueryInputs.collect {
+          case qIn
+              if {
+                val supplementIds = qIn.supplementResponse.variantCarousel.map(_.variantId.toString).toSet
+                val appendedQdrantOnlyIds = supplementIds.intersect(qIn.qdrantOnly)
+                appendedQdrantOnlyIds.intersect(qIn.acceptableIds).nonEmpty
+              } =>
+            qIn.query.id
+        }.toSet
+        // ---- Probe the Y0G zero-harm baseline gate (filter_plus_top1_baseline) in isolation to
+        // derive which baseline route recall wins it preserves. The probe does not depend on
+        // routeAppendAllRecallWinIds / lostRecallWinIds / lostRecallQueryTypes (those only feed
+        // this row's diagnostic fields, not its appended-id computation), so this is safe to run
+        // before those fixed sets exist. ----
+        baselineProbeCandidate = gateCandidates
+          .find(_.gateMode == Y0IGateMode.FilterPlusTop1Baseline)
+          .getOrElse(
+            Y0IGateCandidate(
+              label = "filter_plus_top1_baseline",
+              gateMode = Y0IGateMode.FilterPlusTop1Baseline,
+              line = "filter_plus_top1_baseline probe (zero-harm reference)",
+            )
+          )
+        filterPlusTop1BaselineRecallWinIds = perQueryInputs
+          .map(qIn => y0iEvaluateGate(qIn, baselineProbeCandidate, Set.empty[String], Set.empty[String], Set.empty[String], docTextById, variantCap))
+          .filter(_.appendedAcceptableIds.nonEmpty)
+          .map(_.queryId)
+          .toSet
+        // ---- Fixed lost recall win ids: baseline route recall wins that the Y0G zero-harm gate
+        // does NOT preserve. Independent of any candidate's per-row append outcome. ----
+        lostRecallWinIds = routeAppendAllRecallWinIds -- filterPlusTop1BaselineRecallWinIds
+        // ---- Lost-recall query types derived from canonical queryTypes of the lost recall win
+        // ids (diagnostic only; not the source of truth for which queries are lost-recall wins). ----
+        lostRecallQueryTypes = perQueryInputs
+          .filter(qIn => lostRecallWinIds.contains(qIn.query.id))
+          .flatMap(_.query.queryTypes)
+          .toSet
         rows = perQueryInputs.flatMap { qIn =>
           gateCandidates.map { candidate =>
-            y0iEvaluateGate(qIn, candidate, baselineRecallWins, docTextById, variantCap)
+            y0iEvaluateGate(qIn, candidate, routeAppendAllRecallWinIds, lostRecallWinIds, lostRecallQueryTypes, docTextById, variantCap)
           }
         }
       } yield rows
