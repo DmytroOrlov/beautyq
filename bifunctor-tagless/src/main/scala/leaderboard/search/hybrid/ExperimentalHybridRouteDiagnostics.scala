@@ -50,5 +50,16 @@ object ExperimentalHybridRouteDiagnostics {
           fallbackImplemented = false,
           reasonCategory = "fallback-not-implemented",
         )
+
+      case SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement =>
+        ExperimentalHybridRouteDiagnostics(
+          route = route,
+          routingSignal = metadata.signal,
+          usesLexicalBackend = true,
+          usesSemanticBackend = true,
+          fallbackRequested = false,
+          fallbackImplemented = false,
+          reasonCategory = "lexical-with-qdrant-variant-supplement",
+        )
     }
 }

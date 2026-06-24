@@ -446,6 +446,127 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(response == lexicalResponse)
       assert(lexical.calls == 1)
     }
+
+    "ElasticsearchWithQdrantVariantSupplement appends Qdrant-only variants after ES variants preserving ES order" in {
+      val esDocuments = documents.take(2)
+      val supplementDocuments = documents.slice(2, 4)
+      val esVariants = variantResultsFor(List(
+        SemanticCandidateHit(esDocuments(0).variantId, 0.95),
+        SemanticCandidateHit(esDocuments(1).variantId, 0.85),
+      ))
+      val lexical = new FakeBeautySearchBackend(emptyResponse.copy(variantCarousel = esVariants))
+      val semantic = new CountingSemanticCandidateBackend(List(
+        SemanticCandidateHit(supplementDocuments(0).variantId, 0.72),
+        SemanticCandidateHit(supplementDocuments(1).variantId, 0.61),
+      ))
+      val lookup = new CountingVariantSearchDocumentLookup(documents)
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(UserSearchInput("synthetic supplement", None, None, limit = 10), ParsedSearchIntent("synthetic supplement", Nil, Nil, Nil, "synthetic supplement")))
+
+      assert(response.variantCarousel.map(_.variantId) == List(
+        esDocuments(0).variantId,
+        esDocuments(1).variantId,
+        supplementDocuments(0).variantId,
+        supplementDocuments(1).variantId,
+      ))
+      assert(response.variantCarousel.take(2) == esVariants)
+      assert(lexical.calls == 1)
+      assert(semantic.calls == 1)
+      assert(lookup.calls == 1)
+    }
+
+    "ElasticsearchWithQdrantVariantSupplement does not duplicate ES variants returned by Qdrant" in {
+      val esDocuments = documents.take(2)
+      val newDocument = documents(2)
+      val esVariants = variantResultsFor(List(
+        SemanticCandidateHit(esDocuments(0).variantId, 0.95),
+        SemanticCandidateHit(esDocuments(1).variantId, 0.85),
+      ))
+      val lexical = new FakeBeautySearchBackend(emptyResponse.copy(variantCarousel = esVariants))
+      val semantic = new CountingSemanticCandidateBackend(List(
+        SemanticCandidateHit(esDocuments(1).variantId, 0.99),
+        SemanticCandidateHit(newDocument.variantId, 0.60),
+      ))
+      val lookup = new CountingVariantSearchDocumentLookup(documents)
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(UserSearchInput("synthetic dedup", None, None, limit = 10), ParsedSearchIntent("synthetic dedup", Nil, Nil, Nil, "synthetic dedup")))
+
+      assert(response.variantCarousel.map(_.variantId) == List(
+        esDocuments(0).variantId,
+        esDocuments(1).variantId,
+        newDocument.variantId,
+      ))
+      assert(response.variantCarousel.take(2) == esVariants)
+    }
+
+    "ElasticsearchWithQdrantVariantSupplement preserves ES provider, service, facet and filter fields exactly" in {
+      val esDocuments = documents.take(2)
+      val supplementDocuments = documents.slice(2, 4)
+      val esVariants = variantResultsFor(List(SemanticCandidateHit(esDocuments(0).variantId, 0.9)))
+      val esResponse = BeautySearchResponse(
+        variantCarousel = esVariants,
+        providerCarousel = Nil,
+        serviceIntentCarousel = Nil,
+        facets = List(BeautySearchFacet("es-facet", Nil)),
+        inferredFilters = List(BeautySearchAppliedFilter(SearchConstraint.ServiceAny(Set("Маникюр")), explicit = true)),
+      )
+      val lexical = new FakeBeautySearchBackend(esResponse)
+      val semantic = new CountingSemanticCandidateBackend(List(
+        SemanticCandidateHit(supplementDocuments(0).variantId, 0.72),
+        SemanticCandidateHit(supplementDocuments(1).variantId, 0.61),
+      ))
+      val lookup = new CountingVariantSearchDocumentLookup(documents)
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(UserSearchInput("synthetic preserve", None, None, limit = 10), ParsedSearchIntent("synthetic preserve", Nil, Nil, Nil, "synthetic preserve")))
+
+      assert(response.variantCarousel.size > esVariants.size)
+      assert(response.providerCarousel == esResponse.providerCarousel)
+      assert(response.serviceIntentCarousel == esResponse.serviceIntentCarousel)
+      assert(response.facets == esResponse.facets)
+      assert(response.inferredFilters == esResponse.inferredFilters)
+    }
+
+    "ElasticsearchWithQdrantVariantSupplement returns the ES response unchanged when all Qdrant candidates already exist in ES" in {
+      val esDocuments = documents.take(2)
+      val esVariants = variantResultsFor(List(
+        SemanticCandidateHit(esDocuments(0).variantId, 0.95),
+        SemanticCandidateHit(esDocuments(1).variantId, 0.85),
+      ))
+      val esResponse = emptyResponse.copy(
+        variantCarousel = esVariants,
+        facets = List(BeautySearchFacet("es-facet", Nil)),
+      )
+      val lexical = new FakeBeautySearchBackend(esResponse)
+      val semantic = new CountingSemanticCandidateBackend(List(
+        SemanticCandidateHit(esDocuments(0).variantId, 0.50),
+        SemanticCandidateHit(esDocuments(1).variantId, 0.40),
+      ))
+      val lookup = new CountingVariantSearchDocumentLookup(documents)
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(UserSearchInput("synthetic all dup", None, None, limit = 10), ParsedSearchIntent("synthetic all dup", Nil, Nil, Nil, "synthetic all dup")))
+
+      assert(response == esResponse)
+    }
+
+    "ElasticsearchWithQdrantVariantSupplement returns the ES response unchanged when Qdrant returns no candidates" in {
+      val esVariants = variantResultsFor(List(SemanticCandidateHit(documents(0).variantId, 0.9)))
+      val esResponse = emptyResponse.copy(variantCarousel = esVariants)
+      val lexical = new FakeBeautySearchBackend(esResponse)
+      val semantic = new CountingSemanticCandidateBackend(Nil)
+      val lookup = new CountingVariantSearchDocumentLookup(documents)
+      val backend = experimentalBackend(SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement, lexical, semantic, lookup)
+
+      val response = runIO(backend.search(UserSearchInput("synthetic no candidates", None, None, limit = 10), ParsedSearchIntent("synthetic no candidates", Nil, Nil, Nil, "synthetic no candidates")))
+
+      assert(response == esResponse)
+      assert(lexical.calls == 1)
+      assert(semantic.calls == 1)
+      assert(lookup.calls == 1)
+    }
   }
 
   "ExperimentalBeautySearchService" should {
@@ -1465,6 +1586,28 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(hardNegativeAssembly.isEmpty)
     }
 
+    "never select ElasticsearchWithQdrantVariantSupplement by default" in {
+      val router = SearchBackendRouter.default
+      val inputs = List(
+        UserSearchInput("маникюр", None, None),
+        UserSearchInput("beauty near Wandsbek Markt", None, None),
+        UserSearchInput("synthetic semantic probe", None, None),
+      )
+      val metadatas = List(
+        SearchRoutingMetadata(),
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate)),
+        SearchRoutingMetadata(signal = Some(SearchRoutingSignal.HardNegativeOrNoiseGuard)),
+      )
+
+      for {
+        input <- inputs
+        metadata <- metadatas
+      } {
+        val decision = router.decide(input, parser.parse(input), metadata)
+        assert(decision.route != SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement, s"${input.query}/$metadata must not select the supplement route by default")
+      }
+    }
+
     "not depend on query ids in production router logic" in {
       val decideMethod = classOf[SearchBackendRouter].getMethods.find { method =>
         method.getName == "decide" &&
@@ -1631,6 +1774,15 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   private def assembleQdrantCandidates(hits: List[SemanticCandidateHit]) =
     QdrantCandidateAssembler.assemble(hits, documents)
+
+  private def variantResultsFor(hits: List[SemanticCandidateHit]): List[VariantSearchResult] =
+    QdrantCandidateResponseProjector
+      .project(
+        BeautySearchSpecV1.spec,
+        UserSearchInput("synthetic es fixture", None, None, limit = 10),
+        QdrantCandidateAssembler.assemble(hits, documents),
+      )
+      .variantCarousel
 
   private def emptyResponse =
     BeautySearchResponse(

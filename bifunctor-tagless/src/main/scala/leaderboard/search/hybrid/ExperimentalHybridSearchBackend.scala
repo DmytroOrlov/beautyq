@@ -33,5 +33,25 @@ final class ExperimentalHybridSearchBackend[F[+_, +_]: Error2](
       case SearchBackendRoute.ElasticsearchThenQdrantFallback =>
         // Runtime fallback is intentionally not implemented in this experimental skeleton.
         lexicalBackend.search(input, intent)
+
+      case SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement =>
+        F.flatMap(lexicalBackend.search(input, intent)) { esResponse =>
+          F.flatMap(semanticBackend.candidates(input, intent)) { hits =>
+            F.map(documentLookup.lookup(hits.map(_.variantId))) { documentsById =>
+              val documents = hits.flatMap(hit => documentsById.get(hit.variantId))
+              val assembly = QdrantCandidateAssembler.assemble(hits, documents)
+              val qdrantResponse = QdrantCandidateResponseProjector.project(spec, input, assembly)
+              val esVariantIds = esResponse.variantCarousel.map(_.variantId).toSet
+              val supplement = qdrantResponse.variantCarousel.filterNot(variant => esVariantIds.contains(variant.variantId))
+              if (supplement.isEmpty) esResponse
+              else {
+                val variantCap = math.min(input.limit, spec.carouselSpec.variantSize)
+                esResponse.copy(
+                  variantCarousel = (esResponse.variantCarousel ++ supplement).take(variantCap),
+                )
+              }
+            }
+          }
+        }
     }
 }

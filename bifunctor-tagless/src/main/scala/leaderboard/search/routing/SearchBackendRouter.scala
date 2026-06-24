@@ -7,6 +7,7 @@ object SearchBackendRoute {
   case object ElasticsearchOnly extends SearchBackendRoute
   case object QdrantCandidateRoute extends SearchBackendRoute
   case object ElasticsearchThenQdrantFallback extends SearchBackendRoute
+  case object ElasticsearchWithQdrantVariantSupplement extends SearchBackendRoute
 }
 
 sealed trait SearchRoutingReason extends Product with Serializable

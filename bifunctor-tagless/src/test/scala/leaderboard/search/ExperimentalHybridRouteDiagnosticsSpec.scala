@@ -52,6 +52,20 @@ final class ExperimentalHybridRouteDiagnosticsSpec extends AnyWordSpec {
       assert(diagnostics.reasonCategory == "fallback-not-implemented")
     }
 
+    "mark ElasticsearchWithQdrantVariantSupplement as lexical with semantic supplement" in {
+      val diagnostics = ExperimentalHybridRouteDiagnostics.from(
+        SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+        SearchRoutingMetadata(),
+      )
+
+      assert(diagnostics.route == SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement)
+      assert(diagnostics.usesLexicalBackend)
+      assert(diagnostics.usesSemanticBackend)
+      assert(!diagnostics.fallbackRequested)
+      assert(!diagnostics.fallbackImplemented)
+      assert(diagnostics.reasonCategory == "lexical-with-qdrant-variant-supplement")
+    }
+
     "preserve the routing signal from metadata" in {
       val diagnostics = ExperimentalHybridRouteDiagnostics.from(
         SearchBackendRoute.QdrantCandidateRoute,
