@@ -182,6 +182,24 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     qdrantNoUsableCandidates: Boolean,
     esLatencyNanos: Long,
     qdrantLatencyNanos: Long,
+    // ---- Y0D diagnostic/tightening fields (measurement-only; no production change). ----
+    // Real Qdrant cosine scores for each route-appended (qdrant-only) id, in route-append order.
+    // Surfaced from the existing SemanticCandidateHit.score seam (score is source-confirmed on
+    // QdrantSemanticCandidateBackend.candidates → SemanticCandidateHit).
+    appendedScores: List[(String, Double)],
+    // Whether each route-appended UNACCEPTABLE id shares any normalized token with the query text
+    // via the existing VariantSearchDocument serviceText/categoryName/providerText fields. Answers
+    // "do the harmful ids share category/service/provider text with the query?" — a non-shared
+    // harmful append is a pure semantic-neighbour mistake, not a lexical overlap leak.
+    appendedUnacceptableSharingQueryText: Set[String],
+    // Y0D tightening candidate: append-cap-of-1 = keep only the single HIGHEST-scored qdrant-only
+    // candidate the route would have appended (cap the append count to 1, same ES-absence + room
+    // constraint as the route). Re-derived purely in the measurement from the real Qdrant scores.
+    y0dTightenedAppendedIds: List[String],
+    y0dTightenedAppendedAcceptableIds: Set[String],
+    y0dTightenedAppendedUnacceptableIds: Set[String],
+    y0dTightenedRecallImproved: Boolean,
+    y0dTightenedSemanticHarm: Boolean,
   )
 
   // The expected hair-colouring variant (balayage). Both legs may retrieve it. Used as the expected
@@ -2781,6 +2799,29 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 row.duplicateQdrantSkipped.intersect(row.appendedQdrantOnlyIds.toSet).isEmpty,
                 s"Y0C: a duplicate Qdrant candidate (already in ES) must not be appended for ${row.queryId}@${row.thresholdLabel}",
               )
+              // ---- Y0D tightening invariants (append-cap-of-1; never adds harm/recall the route lacked). ----
+              assert(
+                row.y0dTightenedAppendedIds.size <= 1,
+                s"Y0D: append-cap-of-1 candidate must append at most one id for ${row.queryId}@${row.thresholdLabel}, got ${row.y0dTightenedAppendedIds}",
+              )
+              assert(
+                row.y0dTightenedAppendedIds.toSet.subsetOf(row.appendedQdrantOnlyIds.toSet),
+                s"Y0D: the tightened append must be a subset of the route's qdrant-only appends for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                row.y0dTightenedAppendedIds.toSet.intersect(row.esVariantIds.toSet).isEmpty,
+                s"Y0D: the tightened append must never duplicate ES variant ids for ${row.queryId}@${row.thresholdLabel}",
+              )
+              // Capping the append to the single best score can only remove appends, so the tightened
+              // candidate can never harm (or help) a query the cap=10 route did not already.
+              assert(
+                !row.y0dTightenedSemanticHarm || row.semanticHarm,
+                s"Y0D: tightened harm must imply route harm for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                !row.y0dTightenedRecallImproved || row.recallImproved,
+                s"Y0D: tightened recall-gain must imply route recall-gain for ${row.queryId}@${row.thresholdLabel}",
+              )
               (): Unit
             }
 
@@ -2819,6 +2860,86 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               )
             }
 
+            // ---- Y0D: per-threshold BEFORE (route cap=10) vs AFTER (tightened append-cap-of-1). ----
+            // The single tightening candidate is evaluated against ALL canonical queries (every row
+            // already carries its tightened re-derivation), not just the harmful sample.
+            val y0dTighteningEvidence = y0cThresholdCandidates.map { candidate =>
+              val labelRows = rows.filter(_.thresholdLabel == candidate.label)
+              // BEFORE = route (cap = variant carousel cap); appends every qdrant-only candidate that fits.
+              val beforeAppended      = labelRows.map(_.appendedQdrantOnlyIds.size).sum
+              val beforeAcceptable    = labelRows.map(_.appendedAcceptableIds.size).sum
+              val beforeUnacceptable  = labelRows.map(_.appendedUnacceptableIds.size).sum
+              val beforeRecallQueries = labelRows.filter(_.recallImproved).map(_.queryId)
+              val beforeHarmQueries   = labelRows.filter(_.semanticHarm).map(_.queryId)
+              // AFTER = append-cap-of-1 (keep only the single highest-scored qdrant-only candidate).
+              val afterAppended       = labelRows.map(_.y0dTightenedAppendedIds.size).sum
+              val afterAcceptable     = labelRows.map(_.y0dTightenedAppendedAcceptableIds.size).sum
+              val afterUnacceptable   = labelRows.map(_.y0dTightenedAppendedUnacceptableIds.size).sum
+              val afterRecallQueries  = labelRows.filter(_.y0dTightenedRecallImproved).map(_.queryId)
+              val afterHarmQueries    = labelRows.filter(_.y0dTightenedSemanticHarm).map(_.queryId)
+              val preservedRecall     = beforeRecallQueries.toSet.intersect(afterRecallQueries.toSet)
+              (
+                candidate.label,
+                preservedRecall,
+                afterRecallQueries.toSet,
+                afterHarmQueries.toSet,
+                s"threshold=${candidate.label}: " +
+                  s"appended ${beforeAppended}->${afterAppended}, " +
+                  s"appendedAcceptable ${beforeAcceptable}->${afterAcceptable}, " +
+                  s"appendedUnacceptable ${beforeUnacceptable}->${afterUnacceptable}, " +
+                  s"recallImprovedQueries ${beforeRecallQueries.size}->${afterRecallQueries.size}, " +
+                  s"semanticHarmQueries ${beforeHarmQueries.size}->${afterHarmQueries.size}, " +
+                  s"recallPreservedUnderTightening=${preservedRecall.size}/${beforeRecallQueries.size}, " +
+                  s"helpedAfter=${afterRecallQueries.take(8).mkString("[", ",", "]")}, " +
+                  s"hurtAfter=${afterHarmQueries.take(8).mkString("[", ",", "]")}",
+              )
+            }
+
+            // ---- Y0D: bounded harmful-row sample (worst route-harm rows) with source-confirmed fields. ----
+            val y0dHarmfulSample = rows
+              .filter(_.appendedUnacceptableIds.nonEmpty)
+              .sortBy(r => -r.appendedUnacceptableIds.size)
+              .take(8)
+              .map { r =>
+                val sharing    = r.appendedUnacceptableSharingQueryText
+                val nonSharing = r.appendedUnacceptableIds.diff(sharing)
+                s"  HARM ${r.queryId}@${r.thresholdLabel} types=${r.queryTypes.mkString("[", ",", "]")} '${r.queryText}'\n" +
+                  s"      acceptable=${r.acceptableIds.take(6).mkString("[", ",", "]")}\n" +
+                  s"      esOnly=${r.esVariantIds.take(6).mkString("[", ",", "]")}\n" +
+                  s"      appended=${r.appendedQdrantOnlyIds.take(8).mkString("[", ",", "]")}\n" +
+                  s"      appendedAcceptable=${r.appendedAcceptableIds.take(6).mkString("[", ",", "]")} " +
+                  s"appendedUnacceptable=${r.appendedUnacceptableIds.take(8).mkString("[", ",", "]")}\n" +
+                  s"      scores=${r.appendedScores.take(8).map { case (id, s) => s"$id=${f"$s%.3f"}" }.mkString("[", ",", "]")}\n" +
+                  s"      harmfulSharesQueryText=${sharing.take(8).mkString("[", ",", "]")} harmfulNoLexicalOverlap=${nonSharing.take(8).mkString("[", ",", "]")}\n" +
+                  s"      tightenedAppend=${r.y0dTightenedAppendedIds.mkString("[", ",", "]")} tightenedHarm=${r.y0dTightenedSemanticHarm} tightenedRecall=${r.y0dTightenedRecallImproved}"
+              }
+
+            // ---- Y0D decision (measurement-only language; never production-ready). ----
+            val baselineLabel     = y0cThresholdCandidates.find(_.scoreThreshold.isEmpty).map(_.label).getOrElse("baseline")
+            val baselineRows      = rows.filter(_.thresholdLabel == baselineLabel)
+            val baselineRecallSet = baselineRows.filter(_.recallImproved).map(_.queryId).toSet
+            // Recall improvements preserved under tightening at ANY candidate threshold.
+            val recallPreservedAnywhere =
+              y0dTighteningEvidence.map(_._2).foldLeft(Set.empty[String])(_ ++ _)
+            val anyTightenedRecall  = y0dTighteningEvidence.map(_._3).foldLeft(Set.empty[String])(_ ++ _)
+            val tightenedHarmTotal  = rows.count(_.y0dTightenedSemanticHarm)
+            val routeHarmTotal      = rows.count(_.semanticHarm)
+            // Are the route-harmful appends lexical leaks, or pure semantic-neighbour mistakes?
+            val harmfulLexicalShare = rows.flatMap(_.appendedUnacceptableSharingQueryText).toSet.size
+            val harmfulTotal        = rows.flatMap(_.appendedUnacceptableIds).toSet.size
+            val y0dDecision =
+              if (tightenedHarmTotal * 2 < routeHarmTotal && recallPreservedAnywhere.nonEmpty)
+                "MEASUREMENT_PROMISING: append-cap-of-1 roughly halves semantic-harm rows AND preserves at least " +
+                  s"one known recall improvement (${recallPreservedAnywhere.take(4).mkString(",")}); still measurement-only, NOT production-ready"
+              else if (tightenedHarmTotal < routeHarmTotal && anyTightenedRecall.isEmpty)
+                "QDRANT_SOURCE_NEEDS_QUALITY_WORK: append-cap-of-1 reduces harm but the single top-scored qdrant-only " +
+                  "candidate is itself off-target for every query (zero recall preserved) — candidate source/indexing quality must improve before policy"
+              else if (tightenedHarmTotal >= routeHarmTotal)
+                "DIAGNOSTIC_ONLY: append-cap-of-1 does not reduce harm; the top-scored qdrant-only candidate is as off-target as the rest — " +
+                  "next inspect QdrantSemanticCandidateBackend candidate source / embedding sourceTextFieldPaths (serviceText/attributeText/allText/categoryName) before any policy"
+              else
+                "PARTIAL: append-cap-of-1 reduces harm but the recall picture is mixed; remain diagnostic-only and inspect the Qdrant candidate source next"
+
             val y0cEvidenceLog: String = {
               val header = "Y0C_VARIANT_SUPPLEMENT_CANONICAL_PROOF_EVIDENCE"
               val latencyOk = rows.forall(r => r.esLatencyNanos >= 0L && r.qdrantLatencyNanos >= 0L)
@@ -2830,6 +2951,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"TOTAL_ROWS=${rows.size}\n" +
                 s"ROWS_WITH_SEMANTIC_HARM=${harmRows.size}\n" +
                 perThresholdEvidence.map(_._2).mkString("\n") + "\n" +
+                "Y0D_TIGHTENING_APPEND_CAP_OF_1 (before route cap=" + cap + " -> after cap=1, top cosine score):\n" +
+                y0dTighteningEvidence.map("  " + _._5).mkString("\n") + "\n" +
+                s"Y0D_HARM_LEXICAL_OVERLAP: harmfulUnacceptableSharingQueryText=$harmfulLexicalShare/$harmfulTotal " +
+                "(remainder are pure semantic-neighbour mistakes with no shared service/category/provider token)\n" +
+                "Y0D_HARMFUL_SAMPLE:\n" +
+                y0dHarmfulSample.mkString("\n") + "\n" +
+                s"Y0D_ROUTE_HARM_ROWS=$routeHarmTotal Y0D_TIGHTENED_HARM_ROWS=$tightenedHarmTotal\n" +
+                s"Y0D_BASELINE_RECALL_QUERIES=${baselineRecallSet.take(6).mkString("[", ",", "]")}\n" +
+                s"Y0D_RECALL_PRESERVED_UNDER_TIGHTENING=${recallPreservedAnywhere.take(6).mkString("[", ",", "]")}\n" +
+                s"Y0D_DECISION=$y0dDecision\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
                 s"PER_LEG_LATENCY_RECORDED=$latencyOk\n" +
                 s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
@@ -2986,6 +3117,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val lookup             = new InMemoryVariantSearchDocumentLookup[IO](documents)
     val lexicalBackend     = esBeautyBackendFor(testSpec, esClient)
     val parser             = new BeautySearchIntentParser(testSpec)
+    // Y0D: variant-id → document text lookup, so harmful appends can be diagnosed for query overlap.
+    val docTextById        = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
 
     (
       for {
@@ -3031,7 +3164,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                                         acceptableIds = acceptableIds,
                                         esResponse = esTimed._1,
                                         supplementResponse = supplementResponse,
-                                        qdrantCandidateIds = candidateTimed._1.map(_.variantId.toString),
+                                        qdrantCandidates = candidateTimed._1.map(hit => hit.variantId.toString -> hit.score),
+                                        docTextById = docTextById,
                                         cap = cap,
                                         esLatencyNanos = esTimed._2,
                                         qdrantLatencyNanos = candidateTimed._2,
@@ -3051,11 +3185,14 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     acceptableIds: Set[String],
     esResponse: BeautySearchResponse,
     supplementResponse: BeautySearchResponse,
-    qdrantCandidateIds: List[String],
+    qdrantCandidates: List[(String, Double)],
+    docTextById: Map[String, VariantSearchDocument],
     cap: Int,
     esLatencyNanos: Long,
     qdrantLatencyNanos: Long,
   ): Y0CSupplementRow = {
+    val qdrantCandidateIds = qdrantCandidates.map(_._1)
+    val scoreByVariant     = qdrantCandidates.toMap
     val esVariantIds  = esResponse.variantCarousel.map(_.variantId.toString)
     val supVariantIds = supplementResponse.variantCarousel.map(_.variantId.toString)
     val esSet         = esVariantIds.toSet
@@ -3070,6 +3207,24 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val esPrefixPreserved = supVariantIds.take(expectedPrefix.size) == expectedPrefix
     // Order preserved: the ES-derived entries in the supplement response appear in their ES order.
     val esOrderPreserved = supVariantIds.filter(esSet.contains) == expectedPrefix
+
+    // ---- Y0D: per-appended Qdrant scores + lexical-overlap diagnosis of harmful appends. ----
+    val appendedScores = appended.map(id => id -> scoreByVariant.getOrElse(id, Double.NaN))
+    val queryTokens    = y0dTokenize(query.query)
+    val appendedUnacceptableSharingQueryText = appendedUnacceptable.filter { id =>
+      docTextById.get(id).exists { doc =>
+        val docTokens = y0dTokenize(s"${doc.serviceText} ${doc.categoryName} ${doc.providerText}")
+        queryTokens.intersect(docTokens).nonEmpty
+      }
+    }
+    // ---- Y0D tightening candidate: append-cap-of-1 (keep only the top-scored qdrant-only append). ----
+    // Same ES-absence + carousel-room constraint as the route, but the appended count is capped to 1
+    // (the single highest cosine score). Sorting by descending score then take(1) yields at most one
+    // id without any partial-function access (.head/.get/etc).
+    val y0dTightenedAppendedIds =
+      appended.sortBy(id => -scoreByVariant.getOrElse(id, Double.NegativeInfinity)).take(1)
+    val y0dTightenedAcceptable   = y0dTightenedAppendedIds.toSet.intersect(acceptableIds)
+    val y0dTightenedUnacceptable = y0dTightenedAppendedIds.toSet.diff(acceptableIds)
     Y0CSupplementRow(
       queryId = query.id,
       queryText = query.query,
@@ -3095,8 +3250,19 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       qdrantNoUsableCandidates = candidateSet.isEmpty,
       esLatencyNanos = esLatencyNanos,
       qdrantLatencyNanos = qdrantLatencyNanos,
+      appendedScores = appendedScores,
+      appendedUnacceptableSharingQueryText = appendedUnacceptableSharingQueryText,
+      y0dTightenedAppendedIds = y0dTightenedAppendedIds,
+      y0dTightenedAppendedAcceptableIds = y0dTightenedAcceptable,
+      y0dTightenedAppendedUnacceptableIds = y0dTightenedUnacceptable,
+      y0dTightenedRecallImproved = y0dTightenedAcceptable.nonEmpty,
+      y0dTightenedSemanticHarm = y0dTightenedUnacceptable.nonEmpty,
     )
   }
+
+  /** Y0D: normalize text to a lowercase alphanumeric token set for query/document lexical overlap. */
+  private def y0dTokenize(text: String): Set[String] =
+    text.toLowerCase.split("[^\\p{L}\\p{Nd}]+").iterator.filter(_.nonEmpty).toSet
 
   /** Build the real-ES lexical backend over the prepared index, using the existing real-ES pattern. */
   private def esBackendFor(
