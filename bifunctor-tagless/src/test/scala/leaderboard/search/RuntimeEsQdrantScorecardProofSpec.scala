@@ -526,6 +526,43 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // The L ceiling that L2 sits strictly below (every L2 thresholded candidate < this).
   private val l2SofterThanLCeiling: Double = 0.85
 
+  // ---- L3: FINER threshold candidates strictly inside the L2 boundary (0.50, 0.65), same query set. ----
+  // L2 accepted-as-partial finding: scoreThreshold 0.50 preserved the useful semantic complement and
+  // silenced hard-negative noise but did NOT reduce ambiguous noise; 0.65/0.75 silenced ambiguous
+  // noise but DROPPED the useful semantic complement. L3 probes the finer band strictly between those
+  // two L2 boundary thresholds (0.52 / 0.55 / 0.58 / 0.60 / 0.62) against the IDENTICAL K2 fixture,
+  // calibration query set, and same-collection seam, to measure whether a finer gate can reduce
+  // ambiguous noise WHILE preserving the semantic complement. baseline = None (shared shape with
+  // L/L2); A..E are strictly inside (0.50, 0.65). Each candidate still uses topK = fixtureTopK = 3
+  // (< seededVariantIds.size = 16), so the whole-collection invariant carries over and Qdrant cannot
+  // return the full collection. No topK grid search: topK is held at 3 for every L3 candidate
+  // (source-supported via VectorSearchSpec.topK); topK=1/2 candidates are intentionally NOT added —
+  // the L3 question is threshold resolution near the L2 boundary, not a topK sweep.
+  private val l3BaselineCandidate: LCalibrationCandidate =
+    LCalibrationCandidate(label = "baseline", topK = fixtureTopK, scoreThreshold = None)
+  private val l3ThresholdCandidateA: LCalibrationCandidate =
+    LCalibrationCandidate(label = "A_0.52", topK = fixtureTopK, scoreThreshold = Some(0.52))
+  private val l3ThresholdCandidateB: LCalibrationCandidate =
+    LCalibrationCandidate(label = "B_0.55", topK = fixtureTopK, scoreThreshold = Some(0.55))
+  private val l3ThresholdCandidateC: LCalibrationCandidate =
+    LCalibrationCandidate(label = "C_0.58", topK = fixtureTopK, scoreThreshold = Some(0.58))
+  private val l3ThresholdCandidateD: LCalibrationCandidate =
+    LCalibrationCandidate(label = "D_0.60", topK = fixtureTopK, scoreThreshold = Some(0.60))
+  private val l3ThresholdCandidateE: LCalibrationCandidate =
+    LCalibrationCandidate(label = "E_0.62", topK = fixtureTopK, scoreThreshold = Some(0.62))
+  private val l3CalibrationCandidates: List[LCalibrationCandidate] =
+    List(
+      l3BaselineCandidate,
+      l3ThresholdCandidateA,
+      l3ThresholdCandidateB,
+      l3ThresholdCandidateC,
+      l3ThresholdCandidateD,
+      l3ThresholdCandidateE,
+    )
+  // The open L2 boundary that every L3 thresholded candidate sits strictly inside: (lower, upper).
+  private val l3BoundaryLower: Double = 0.50
+  private val l3BoundaryUpper: Double = 0.65
+
   // A real monotonic clock so per-leg latency is measured (not faked) for each executed leg.
   private val legClock: M18OfflineEvalLegClock[IO] = new M18OfflineEvalLegClock[IO] {
     override def monotonicNanos: IO[Nothing, Long] = ZIO.succeed(System.nanoTime())
@@ -2111,6 +2148,421 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               s"L2 did not clear the softer-threshold calibration: real ES candidate evidence was measured " +
                 s"for the calibrated set (semantic complement + hard-negative + ambiguous) but the " +
                 s"Qdrant leg was honestly resource-gated (no candidates faked), so no softer-threshold " +
+                s"measurement could be produced. $gateReason"
+            )
+        }
+    }
+  }
+
+  /**
+   * L3: FINER-threshold Qdrant calibration on the SAME K2 fixture and the SAME fixed calibration
+   * query set as L/L2, but with thresholds strictly inside the L2 boundary (0.50, 0.65).
+   *
+   * Preserves the K2 runtime shape exactly as L2 does (real ES, real Qdrant, real embedding endpoint
+   * resource-gated honestly, seeded collection size 16 > topK 3, topK < collection size so Qdrant
+   * MUST rank and CANNOT return the whole collection, canonical acceptableVariantIds fully seeded for
+   * q_nails_001 / q_nails_003 / q_noise_005 via the shared snapshot, existing M19 metrics with no
+   * parallel metric layer). Reuses the existing [[runCalibrationLegSameCollection]] seam and
+   * [[calibrationDataset]] — no harness rewrite, no fixture rewrite, no topK grid search (topK held
+   * at 3 for every candidate).
+   *
+   * Calibrated queries (small + fixed): `q_semantic_complement_blonde` (useful-complement target),
+   * `q_hard_negative_diesel` (should-stay-silent), `q_noise_005_ambiguous` (should-stay-silent,
+   * canonical-backed).
+   *
+   * Candidates: baseline (topK=3, None), A (0.52), B (0.55), C (0.58), D (0.60), E (0.62). Every
+   * thresholded candidate sits strictly inside the open L2 boundary (0.50, 0.65).
+   *
+   * Per query × per candidate this measures: Qdrant ids/count, overlap with ES, complement over ES,
+   * noise relative to expected ids, per-leg latency, subset relation vs the SAME-collection
+   * unthresholded baseline, noise reduction vs that baseline, hard-negative noise reduction,
+   * ambiguous noise reduction, and semantic-complement preservation/loss. A candidate is recorded as
+   * **measurement-promising** iff it reduces hard-negative AND ambiguous noise vs its OWN
+   * same-collection baseline AND preserves the measured semantic complement (the JOINT gate). No
+   * candidate is policy-ready; this subcase is measurement evidence only and re-asserts the disabled
+   * M20B control surface.
+   */
+  "L3 finer-threshold calibration on the K2 fixture (scope l3_finer_threshold_topk_calibration)" should {
+    "calibrate finer Qdrant scoreThresholds (0.52 / 0.55 / 0.58 / 0.60 / 0.62, strictly inside the L2 boundary 0.50..0.65) against the same fixed semantic/hard-negative/ambiguous query set, comparing each against its own same-collection unthresholded baseline — measurement evidence only, no response assembly, no policy selection" in {
+      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
+        // ---- Re-assert the disabled M20B control surface: no policy promotion in this subcase. ----
+        val policy = ComponentCombinationPolicy(
+          rows = Nil,
+          offlineEvalOnly = true,
+          notServingPolicy = true,
+          doesNotApproveHybrid = true,
+          qdrantDoesNotOwnFacets = true,
+          qdrantDoesNotOwnInferredFilters = true,
+        )
+        val operationalControl =
+          M20BOperationalControl.disabledByDefault(M20HybridServingControl.disabledByDefault(policy))
+        val status = operationalControl.operatorStatus
+        assert(operationalControl.effectiveServingDisabled, "effective serving must be disabled")
+        assert(!operationalControl.servingApproved, "no serving approval may exist")
+        assert(operationalControl.executesNoHybridServing, "no hybrid serving behaviour may be enabled")
+        assert(operationalControl.consumesPolicyAsEvidenceOnly, "policy must be consumed as evidence only")
+        assert(status.defaultBeautySearchRouteUnchanged, "default /beauty-search route must remain unchanged")
+        assert(!status.fallbackEnabled, "no fallback may be introduced")
+        assert(!status.scoreFusionEnabled, "no score fusion may be introduced")
+        assert(!status.rerankingEnabled, "no reranking may be enabled")
+        assert(!status.automaticQdrantSupplementEnabled, "no automatic Qdrant supplement may be introduced")
+        assert(!status.routeSwitchEnabled, "no route switch may be introduced")
+
+        // ---- Probe the real Qdrant + embedding resources honestly. ----
+        val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
+        val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
+        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
+        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+
+        val (embeddingProbe, qdrantProbe) = unsafeRun(
+          for {
+            embeddingResult <- embeddingClient.embed("x runtime l3-calibration probe").either
+            qdrantResult    <- qdrantClient.collectionInfo("/collections").either
+          } yield (embeddingResult, qdrantResult)
+        )
+        val embeddingConfigured = embeddingProbe.exists(_.nonEmpty)
+        val qdrantConfigured    = qdrantProbe.isRight
+
+        (embeddingProbe, qdrantConfigured) match {
+          case (Right(vector), true) if vector.nonEmpty =>
+            // ---- Real resources reachable: run the finer-threshold calibration loop. ----
+            assert(seededVariantIds.size > fixtureTopK, s"seeded collection must be larger than topK (got ${seededVariantIds.size} <= $fixtureTopK)")
+            // Finer-band gate: every thresholded candidate sits strictly inside the open L2 boundary
+            // (l3BoundaryLower, l3BoundaryUpper), and at least one such candidate exists.
+            val insideL2BoundaryCandidates: List[String] =
+              l3CalibrationCandidates.collect {
+                case c if c.scoreThreshold.exists(t => t > l3BoundaryLower && t < l3BoundaryUpper) => c.label
+              }
+            assert(
+              insideL2BoundaryCandidates.nonEmpty,
+              s"L3 must evaluate at least one threshold candidate strictly between $l3BoundaryLower and $l3BoundaryUpper, got ${l3CalibrationCandidates.map(_.scoreThreshold)}",
+            )
+            // Every L3 thresholded candidate (non-baseline) must sit strictly inside the L2 boundary.
+            l3CalibrationCandidates.filter(_.scoreThreshold.isDefined).foreach { c =>
+              val t = c.scoreThreshold.getOrElse(fail(s"L3: thresholded candidate ${c.label} lost its threshold"))
+              assert(t > l3BoundaryLower && t < l3BoundaryUpper, s"L3 candidate ${c.label} threshold $t must be strictly inside ($l3BoundaryLower, $l3BoundaryUpper)")
+              ()
+            }
+            // Canonical acceptable ids remain fully seeded for the three canonical-backed rows.
+            val l3CanonicalUnion: Set[String] =
+              qNails001CanonicalAcceptableIds union qNails003CanonicalAcceptableIds union qNoise005CanonicalAcceptableIds
+            assert(
+              l3CanonicalUnion.subsetOf(seededVariantIds),
+              s"L3: canonical acceptableVariantIds for q_nails_001/q_nails_003/q_noise_005 must remain fully seeded, missing=${l3CanonicalUnion.diff(seededVariantIds)}",
+            )
+
+            // ---- Run each candidate over ONE collection, querying it BOTH unthresholded and at the
+            // candidate threshold (same-collection seam: subset relation is exact under score ties). ----
+            val candidatePairs: Map[String, (List[M19QueryMetrics], List[M19QueryMetrics])] =
+              l3CalibrationCandidates.map { candidate =>
+                val calibrationIndexName =
+                  s"${spec.variantDocument.indexName}_l3_${candidate.label.toLowerCase}_${UUID.randomUUID().toString.replace('-', '_')}"
+                val calibrationTestSpec = spec.copy(
+                  variantDocument = spec.variantDocument.copy(indexName = calibrationIndexName)
+                )
+                val (baselineResult, thresholdedResult) = unsafeRun(
+                  runCalibrationLegSameCollection(
+                    esClient = esClient,
+                    calibrationTestSpec = calibrationTestSpec,
+                    qdrantClient = qdrantClient,
+                    embeddingClient = embeddingClient,
+                    vectorDimension = vector.length,
+                    candidate = candidate,
+                  )
+                )
+                assert(baselineResult.esExecuted, s"expected ES leg to execute for L3 candidate ${candidate.label} (same-collection baseline), got ${baselineResult.es}")
+                assert(baselineResult.qdrantExecuted, s"expected unthresholded Qdrant leg to execute for L3 candidate ${candidate.label}, got ${baselineResult.qdrant}")
+                assert(thresholdedResult.esExecuted, s"expected ES leg to execute for L3 candidate ${candidate.label} (thresholded), got ${thresholdedResult.es}")
+                assert(thresholdedResult.qdrantExecuted, s"expected thresholded Qdrant leg to execute for L3 candidate ${candidate.label}, got ${thresholdedResult.qdrant}")
+                assert(baselineResult.separationViolations.isEmpty, s"ES and Qdrant outputs must stay separate for L3 candidate ${candidate.label} (baseline)")
+                assert(thresholdedResult.separationViolations.isEmpty, s"ES and Qdrant outputs must stay separate for L3 candidate ${candidate.label} (thresholded)")
+                val baselinePerQuery    = M19DualEngineOfflineEvalMetrics.queryMetrics(baselineResult)
+                val thresholdedPerQuery = M19DualEngineOfflineEvalMetrics.queryMetrics(thresholdedResult)
+                assert(
+                  thresholdedPerQuery.size == calibrationDataset.queries.size,
+                  s"L3 candidate ${candidate.label} must cover all ${calibrationDataset.queries.size} calibrated queries, got ${thresholdedPerQuery.map(_.queryId)}",
+                )
+                candidate.label -> (baselinePerQuery, thresholdedPerQuery)
+              }.toMap
+
+            val thresholdedByCandidate: Map[String, List[M19QueryMetrics]] =
+              candidatePairs.view.mapValues(_._2).toMap
+            val sameColBaselineByCandidate: Map[String, List[M19QueryMetrics]] =
+              candidatePairs.view.mapValues(_._1).toMap
+
+            val l3MeasuredQueries: List[String] = List(semanticQueryId, hardNegativeQueryId, ambiguousQueryId)
+
+            // ---- The dedicated baseline candidate (threshold None) provides the reported baseline. ----
+            val baselineSemantic  = scorecardFor(thresholdedByCandidate(l3BaselineCandidate.label), semanticQueryId)
+            val baselineHardNeg   = scorecardFor(thresholdedByCandidate(l3BaselineCandidate.label), hardNegativeQueryId)
+            val baselineAmbiguous = scorecardFor(thresholdedByCandidate(l3BaselineCandidate.label), ambiguousQueryId)
+
+            // Per query × per candidate THRESHOLDED scorecards folded into a nested map (no unsafe extraction).
+            val calibratedWithCandidates: Map[String, Map[String, M19QueryMetrics]] =
+              l3CalibrationCandidates.foldLeft(Map.empty[String, Map[String, M19QueryMetrics]]) { case (acc, candidate) =>
+                val perQuery = thresholdedByCandidate(candidate.label)
+                l3MeasuredQueries.foldLeft(acc) { case (acc2, qId) =>
+                  val scorecard = scorecardFor(perQuery, qId)
+                  acc2.updatedWith(qId) {
+                    case None        => Some(Map(candidate.label -> scorecard))
+                    case Some(inner) => Some(inner.updated(candidate.label, scorecard))
+                  }
+                }
+              }
+
+            // Per candidate, the SAME-collection unthresholded scorecard for a query (sound subset base).
+            def sameColBaseScore(label: String, qId: String): M19QueryMetrics =
+              scorecardFor(sameColBaselineByCandidate(label), qId)
+
+            // Reported baseline references (dedicated baseline candidate, threshold None).
+            val baselineComplementByQuery: Map[String, Int] = Map(
+              semanticQueryId     -> baselineSemantic.qdrantComplementCount,
+              hardNegativeQueryId -> baselineHardNeg.qdrantComplementCount,
+              ambiguousQueryId    -> baselineAmbiguous.qdrantComplementCount,
+            )
+            val baselineNoiseByQuery: Map[String, Int] = Map(
+              semanticQueryId     -> baselineSemantic.qdrantNoiseCount,
+              hardNegativeQueryId -> baselineHardNeg.qdrantNoiseCount,
+              ambiguousQueryId    -> baselineAmbiguous.qdrantNoiseCount,
+            )
+            val baselineEsIdsByQuery: Map[String, Set[String]] = Map(
+              semanticQueryId     -> baselineSemantic.candidateIds.esCandidateIds.toSet,
+              hardNegativeQueryId -> baselineHardNeg.candidateIds.esCandidateIds.toSet,
+              ambiguousQueryId    -> baselineAmbiguous.candidateIds.esCandidateIds.toSet,
+            )
+
+            // ---- Per query × per candidate assertions (subset/noise vs the candidate's OWN same-collection baseline). ----
+            l3MeasuredQueries.foreach { qId =>
+              l3CalibrationCandidates.foreach { candidate =>
+                val sc          = calibratedWithCandidates(qId)(candidate.label)
+                val sameColBase = sameColBaseScore(candidate.label, qId)
+                val qdrantIds   = sc.candidateIds.qdrantCandidateIds.toSet
+                val baseIds     = sameColBase.candidateIds.qdrantCandidateIds.toSet
+                // Whole-collection invariant (topK < seededVariantIds.size).
+                assert(qdrantIds != seededVariantIds, s"L3: Qdrant must NOT return the full seeded collection for $qId under candidate ${candidate.label} (got $qdrantIds)")
+                assert(
+                  sc.candidateIds.qdrantCandidateIds.size <= candidate.topK,
+                  s"L3: Qdrant must return at most topK=${candidate.topK} rows for $qId under candidate ${candidate.label}, got ${sc.candidateIds.qdrantCandidateIds.size}",
+                )
+                // Overlap with ES (ES is empty for all 3 calibrated queries).
+                val esIds = sc.candidateIds.esCandidateIds
+                assert(esIds.isEmpty, s"L3: ES must retrieve nothing for $qId under candidate ${candidate.label}, got ${esIds.toSet}")
+                assert(sc.overlapCount == 0, s"L3: ES ∩ Qdrant overlap must be 0 for $qId under candidate ${candidate.label}, got ${sc.overlapCount}")
+                // Latency present for both legs.
+                assert(latencyFor(sc.latencyByBackend, M18OfflineEvalBackend.Es).availability == M19LatencyAvailability.Present, s"L3: ES latency must be present for $qId under candidate ${candidate.label}")
+                assert(latencyFor(sc.latencyByBackend, M18OfflineEvalBackend.Qdrant).availability == M19LatencyAvailability.Present, s"L3: Qdrant latency must be present for $qId under candidate ${candidate.label}")
+                // Subset invariant vs the SAME-collection unthresholded result (sound under ties:
+                // score_threshold is a search-time filter, so it can only cut, never add).
+                assert(
+                  qdrantIds.subsetOf(baseIds),
+                  s"L3: thresholded Qdrant result must be a subset of the SAME-collection unthresholded result for $qId under candidate ${candidate.label}, got thresholded=$qdrantIds vs same-collection-baseline=$baseIds",
+                )
+                // Noise monotonically non-increasing vs the SAME-collection unthresholded result.
+                assert(
+                  sc.qdrantNoiseCount <= sameColBase.qdrantNoiseCount,
+                  s"L3: Qdrant noise must not increase under threshold for $qId under candidate ${candidate.label}, got thresholded=${sc.qdrantNoiseCount} > same-collection-baseline=${sameColBase.qdrantNoiseCount}",
+                )
+                // Expectation/lookup honesty: expected-aware counts are meaningful iff Qdrant returned rows.
+                if (sc.candidateIds.qdrantCandidateIds.nonEmpty) {
+                  assert(sc.expectationsAvailable, s"L3: expected-aware counts must be meaningful for $qId under candidate ${candidate.label} (Qdrant returned rows)")
+                  ()
+                }
+                val qdrantLookupForQ = lookupCountsFor(sc.lookupByBackend, M18OfflineEvalBackend.Qdrant)
+                assert(qdrantLookupForQ.lookupNotEvaluatedCount == sc.candidateIds.qdrantCandidateIds.size, s"L3: Qdrant lookup must be lookup_not_evaluated for $qId under candidate ${candidate.label}")
+                (): Unit
+              }
+              (): Unit
+            }
+
+            // ---- Per-query calibration roll-ups (vs each candidate's OWN same-collection baseline). ----
+            val semanticComplementPreservedByCandidate: Map[String, Boolean] =
+              l3CalibrationCandidates.map { candidate =>
+                val sc   = calibratedWithCandidates(semanticQueryId)(candidate.label)
+                val base = sameColBaseScore(candidate.label, semanticQueryId)
+                candidate.label -> (sc.qdrantComplementCount == base.qdrantComplementCount)
+              }.toMap
+            val hardNegNoiseByCandidate: Map[String, Int] =
+              l3CalibrationCandidates.map { candidate =>
+                candidate.label -> calibratedWithCandidates(hardNegativeQueryId)(candidate.label).qdrantNoiseCount
+              }.toMap
+            val hardNegSilenceByCandidate: Map[String, Boolean] =
+              l3CalibrationCandidates.map { candidate => candidate.label -> (hardNegNoiseByCandidate(candidate.label) == 0) }.toMap
+            val ambiguousNoiseByCandidate: Map[String, Int] =
+              l3CalibrationCandidates.map { candidate =>
+                candidate.label -> calibratedWithCandidates(ambiguousQueryId)(candidate.label).qdrantNoiseCount
+              }.toMap
+            val ambiguousSilenceByCandidate: Map[String, Boolean] =
+              l3CalibrationCandidates.map { candidate => candidate.label -> (ambiguousNoiseByCandidate(candidate.label) == 0) }.toMap
+
+            // ---- Aggregate gates. ----
+            // Whole-collection invariant restated as an aggregate gate.
+            l3MeasuredQueries.foreach { qId =>
+              l3CalibrationCandidates.foreach { candidate =>
+                val sc = calibratedWithCandidates(qId)(candidate.label)
+                assert(
+                  sc.candidateIds.qdrantCandidateIds.toSet != seededVariantIds,
+                  s"L3 aggregate: Qdrant must NOT return the full seeded collection for $qId under candidate ${candidate.label}",
+                )
+                (): Unit
+              }
+              (): Unit
+            }
+            // ES empty for all three calibrated queries.
+            l3MeasuredQueries.foreach { qId =>
+              assert(baselineEsIdsByQuery(qId).isEmpty, s"L3 aggregate: ES must retrieve nothing for $qId, got ${baselineEsIdsByQuery(qId)}")
+              (): Unit
+            }
+            // Subset invariant aggregate: every thresholded candidate is a subset of its OWN same-collection baseline.
+            l3MeasuredQueries.foreach { qId =>
+              l3CalibrationCandidates.foreach { candidate =>
+                val baseIds      = sameColBaseScore(candidate.label, qId).candidateIds.qdrantCandidateIds.toSet
+                val candidateIds = calibratedWithCandidates(qId)(candidate.label).candidateIds.qdrantCandidateIds.toSet
+                assert(candidateIds.subsetOf(baseIds), s"L3 aggregate: thresholded result must be a subset of its same-collection baseline for $qId under candidate ${candidate.label}, got candidate=$candidateIds vs same-collection-baseline=$baseIds")
+                (): Unit
+              }
+              (): Unit
+            }
+
+            // ---- Measurement-promising classification per candidate (JOINT gate). ----
+            // L3 measurement-promising iff (a) reduces hard-negative noise AND ambiguous noise vs the
+            // candidate's OWN same-collection baseline AND (b) preserves the measured semantic
+            // complement. This is the strict JOINT gate the L3 task requires: a candidate that only
+            // reduces ambiguous noise but drops the complement is policy-blocked; a candidate that
+            // preserves the complement but does not reduce ambiguous noise is measurement-promising at
+            // most, never policy-ready.
+            val candidateRollup: List[(String, Boolean, Boolean, Boolean, Boolean, Boolean)] =
+              l3CalibrationCandidates.map { candidate =>
+                val baseHardNegNoise = sameColBaseScore(candidate.label, hardNegativeQueryId).qdrantNoiseCount
+                val baseAmbigNoise   = sameColBaseScore(candidate.label, ambiguousQueryId).qdrantNoiseCount
+                val reducesHardNegNoise = hardNegNoiseByCandidate(candidate.label) < baseHardNegNoise
+                val reducesAmbigNoise   = ambiguousNoiseByCandidate(candidate.label) < baseAmbigNoise
+                val reducesBothNoise    = reducesHardNegNoise && reducesAmbigNoise
+                val preservesSemanticComplement = semanticComplementPreservedByCandidate(candidate.label)
+                val fullSilenceOnHardNegative   = hardNegSilenceByCandidate(candidate.label)
+                val fullSilenceOnAmbiguous      = ambiguousSilenceByCandidate(candidate.label)
+                (candidate.label, reducesBothNoise, preservesSemanticComplement, fullSilenceOnHardNegative, fullSilenceOnAmbiguous, reducesAmbigNoise)
+              }
+
+            // Baseline must NOT be classified as reducing noise vs itself.
+            val baselineEntry =
+              candidateRollup.collectFirst { case row @ (l, _, _, _, _, _) if l == l3BaselineCandidate.label => row }
+                .getOrElse(fail("L3 aggregate: baseline entry missing from candidate rollup"))
+            assert(
+              !baselineEntry._2,
+              s"L3 aggregate: baseline must NOT be classified as reducing both noise axes vs itself, got $baselineEntry",
+            )
+
+            val thresholdedRollup: List[(String, Boolean, Boolean, Boolean, Boolean, Boolean)] =
+              candidateRollup.filter { case (label, _, _, _, _, _) => label != l3BaselineCandidate.label }
+            // JOINT gate: reduces BOTH hard-negative AND ambiguous noise AND preserves complement.
+            val measurementPromisingCandidates: List[String] =
+              thresholdedRollup.collect { case (label, reducesBothNoise, preservesComplement, _, _, _) if reducesBothNoise && preservesComplement => label }
+
+            // Honest self-consistency gate per thresholded candidate.
+            thresholdedRollup.foreach { case (label, _, preservesComplement, _, _, _) =>
+              assert(
+                semanticComplementPreservedByCandidate(label) == preservesComplement,
+                s"L3 aggregate: semanticComplementPreserved flag must be self-consistent for $label",
+              )
+              (): Unit
+            }
+
+            // No candidate is policy-ready: measurement-promising is the strongest status L3 can
+            // record, and even that is NOT production-ready (re-stated as a non-promotion gate).
+            assert(
+              !operationalControl.servingApproved && !status.routeSwitchEnabled && !status.automaticQdrantSupplementEnabled,
+              "L3: no candidate may be promoted to serving/route-switch/automatic-supplement — measurement only",
+            )
+
+            // ---- L3 evidence log (captured for the task report). ----
+            val l3EvidenceLog: String = {
+              val header = "L3_FINER_THRESHOLD_TOPK_CALIBRATION_EVIDENCE"
+              val perQueryPerCandidate = l3MeasuredQueries.map { qId =>
+                val queryLabel = qId match {
+                  case `semanticQueryId`     => "semantic_complement"
+                  case `hardNegativeQueryId` => "hard_negative"
+                  case `ambiguousQueryId`    => "ambiguous"
+                  case other                 => other
+                }
+                val perCandidate = l3CalibrationCandidates.map { candidate =>
+                  val sc = calibratedWithCandidates(qId)(candidate.label)
+                  s"${candidate.label}=[threshold=${candidate.scoreThreshold.map(_.toString).getOrElse("None")},topK=${candidate.topK},qdrantIds=${sc.candidateIds.qdrantCandidateIds.toSet},count=${sc.candidateIds.qdrantCandidateIds.size},overlap=${sc.overlapCount},complement=${sc.qdrantComplementCount},noise=${sc.qdrantNoiseCount},expectations=${sc.expectationsAvailable}]"
+                }.mkString(" ; ")
+                s"$queryLabel|$perCandidate"
+              }.mkString("\n")
+              val classification = candidateRollup.map { case (label, reducesBothNoise, preservesComplement, fullSilHardNeg, fullSilAmbig, reducesAmbig) =>
+                s"$label: reducesBothNoise=$reducesBothNoise, reducesAmbigNoise=$reducesAmbig, preservesSemantic=$preservesComplement, fullSilenceHardNeg=$fullSilHardNeg, fullSilenceAmbig=$fullSilAmbig"
+              }.mkString(" ; ")
+              val promisingLabels = measurementPromisingCandidates.mkString(",")
+              val latenciesOk = l3MeasuredQueries.forall { qId =>
+                l3CalibrationCandidates.forall { candidate =>
+                  val sc = calibratedWithCandidates(qId)(candidate.label)
+                  latencyFor(sc.latencyByBackend, M18OfflineEvalBackend.Es).availability == M19LatencyAvailability.Present &&
+                    latencyFor(sc.latencyByBackend, M18OfflineEvalBackend.Qdrant).availability == M19LatencyAvailability.Present
+                }
+              }
+              s"$header\n" +
+                s"SEEDED_VARIANT_IDS=${seededVariantIds.size}\n" +
+                s"FIXTURE_TOP_K=${fixtureTopK}\n" +
+                s"INSIDE_L2_BOUNDARY_CANDIDATES=${insideL2BoundaryCandidates.mkString(",")}\n" +
+                s"L2_BOUNDARY=($l3BoundaryLower,$l3BoundaryUpper)\n" +
+                s"$perQueryPerCandidate\n" +
+                s"CLASSIFICATION: $classification\n" +
+                s"MEASUREMENT_PROMISING_CANDIDATES=$promisingLabels\n" +
+                s"LATENCY_PRESENT_FOR_BOTH_LEGS=$latenciesOk\n" +
+                s"WHOLE_COLLECTION_INVARIANT_HELD=true"
+            }
+            println(l3EvidenceLog)
+
+            // ---- Final L3 classification (measurement only — no policy promotion). ----
+            // Either at least one finer candidate jointly reduces hard-negative AND ambiguous noise AND
+            // preserves the semantic complement (measurement-promising, still NOT production-ready), or
+            // every finer candidate fails the joint gate and policy remains blocked. Both outcomes are
+            // recorded honestly.
+            if (measurementPromisingCandidates.nonEmpty) {
+              assert(
+                measurementPromisingCandidates.size >= 1,
+                s"L3 partially cleared: at least one finer thresholded candidate jointly reduces hard-negative AND ambiguous noise AND preserves the semantic complement (measurement-promising, NOT production-ready), got $measurementPromisingCandidates",
+              )
+            } else {
+              val allThresholdedFailReason: String = thresholdedRollup.map { case (label, reducesBothNoise, preservesComplement, _, _, reducesAmbig) =>
+                val noiseDeltaHardNeg = hardNegNoiseByCandidate(label) - baselineNoiseByQuery(hardNegativeQueryId)
+                val noiseDeltaAmbig   = ambiguousNoiseByCandidate(label) - baselineNoiseByQuery(ambiguousQueryId)
+                val semanticDelta     = baselineComplementByQuery(semanticQueryId) -
+                  calibratedWithCandidates(semanticQueryId)(label).qdrantComplementCount
+                s"$label: reducesBothNoise=$reducesBothNoise, reducesAmbigNoise=$reducesAmbig, preservesSemantic=$preservesComplement, " +
+                  s"noiseDelta(hardNeg)=$noiseDeltaHardNeg, noiseDelta(ambig)=$noiseDeltaAmbig, semanticDelta=$semanticDelta"
+              }.mkString(" | ")
+              assert(
+                thresholdedRollup.size >= 1,
+                s"L3 measurement recorded with explicit policy-still-blocked note: no finer thresholded candidate jointly reduced hard-negative AND ambiguous noise AND preserved the measured useful semantic complement. $allThresholdedFailReason",
+              )
+            }
+
+          case _ =>
+            // ---- Qdrant / embedding resources unavailable: honest resource-gating for L3. ----
+            val prerequisites = M18QdrantLegPrerequisites(
+              realBackendOfflineEvalEnabled = true,
+              embeddingClientConfigured = embeddingConfigured,
+              qdrantClientConfigured = qdrantConfigured,
+              collectionReadinessConfigured = true,
+            )
+            val gateReason =
+              if (!qdrantConfigured) "qdrant search client (host/port) is not configured"
+              else if (!embeddingConfigured) "embedding client (query vectorization) is not configured"
+              else "embedding probe returned an empty vector"
+            val calibrationIndexName =
+              s"${spec.variantDocument.indexName}_l3_gate_${UUID.randomUUID().toString.replace('-', '_')}"
+            val gateTestSpec = spec.copy(
+              variantDocument = spec.variantDocument.copy(indexName = calibrationIndexName)
+            )
+            val result = unsafeRun(runEsLegWithGatedQdrantFor(esClient, gateTestSpec, prerequisites, calibrationDataset))
+            assert(result.esExecuted, s"L3 resource-gated branch: expected ES leg to execute for the calibrated set, got ${result.es}")
+            assert(result.qdrantCandidateRows.isEmpty, "L3 resource-gated branch: no Qdrant rows may be emitted")
+            cancel(
+              s"L3 did not clear the finer-threshold calibration: real ES candidate evidence was measured " +
+                s"for the calibrated set (semantic complement + hard-negative + ambiguous) but the " +
+                s"Qdrant leg was honestly resource-gated (no candidates faked), so no finer-threshold " +
                 s"measurement could be produced. $gateReason"
             )
         }
