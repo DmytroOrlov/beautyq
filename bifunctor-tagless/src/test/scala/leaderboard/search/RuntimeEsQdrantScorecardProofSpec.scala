@@ -111,6 +111,13 @@ import java.util.UUID
  * the default `/beauty-search` route. All evidence is variant-candidate-level only — no provider
  * grouping, service grouping, facet, or inferred-filter projection is source-confirmed for Qdrant.
  */
+// ---- Ownership & guardrail (BeautyQ Hybrid North Star) ----
+// This spec OWNS the runtime ES-vs-Qdrant measurement evidence. It measures real ES/Qdrant overlap,
+// complement, noise, lookup status, and latency. It must NOT assemble a hybrid response, select
+// policy, change the default `/beauty-search` route, or claim Qdrant quality beyond measured
+// evidence. Passing scorecard evidence is DECISION SUPPORT ONLY. Qdrant can become a response-policy
+// candidate only when measured gates preserve useful complement AND control hard-negative / ambiguous
+// noise. See docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md § "BeautyQ Hybrid North Star".
 final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdTest {
   override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Mode -> Mode.Test),

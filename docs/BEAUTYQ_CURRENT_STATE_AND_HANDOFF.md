@@ -104,6 +104,22 @@ Build useful free-string BeautyQ search that turns user text into domain-aware p
 
 No production hybrid; no route switch from benchmark alone; no Qdrant auto-supplement; no `HybridServe` from benchmark alone; no Qdrant-as-default; no startup indexing; no fallback; no score fusion/reranking; no production collection lifecycle manager / alias / blue-green; no production kill-switch integration yet; no freshness/reindex production policy yet; no public response schema changes unless explicitly requested; no forcing ES/Qdrant to mimic `InMemorySearchBackend` (rollback backend only).
 
+## BeautyQ Hybrid North Star
+
+We are **not** building hybrid search by faith.
+
+* Elasticsearch remains the reliable primary path.
+* Qdrant may contribute **only** when runtime evidence shows useful variant recall improvement without unacceptable noise.
+* Evidence must stay close to the runtime path: real ES, real Qdrant, canonical expected ids where canonical queries are used, overlap, complement, noise, lookup status, and latency.
+* No full-collection recall-floor artifacts.
+* No response policy unless measured gates preserve useful complement while controlling hard-negative and ambiguous noise.
+* No new report/projection layer unless it replaces or deletes an older one.
+* The canonical runtime evidence owner is `RuntimeEsQdrantScorecardProofSpec.scala`.
+
+**Current status after L2:** policy remains blocked. L2 found a measurement-promising but not policy-ready tradeoff — `scoreThreshold 0.50` preserves useful semantic complement and silences hard-negative noise but does not reduce ambiguous noise, while `0.65`/`0.75` silence ambiguous noise but drop the useful semantic complement. Next work must either tighten the measured gate or remove/consolidate redundant evidence layers; it must not select response policy on current evidence.
+
+**Anti-noise rule:** A new report/projection layer is forbidden by default. It is allowed only when it becomes the single canonical owner for a decision surface or replaces/deletes an older layer.
+
 ## 8. Verification and testing protocol
 
 * Use the Constructive test taxonomy: pure model/metric logic is `Contractual + Blackbox + Atomic`; in-process service/module seams are `Contractual + Blackbox + Group`; real ES/Qdrant/Llama/Docker/HTTP is `Communication`, resource-backed auto-gated/cancelable (unavailable resources cancel with reason).
