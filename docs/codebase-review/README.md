@@ -2,6 +2,8 @@
 
 ## Start here
 
+This folder is architecture reference. Active current-state, next-step, and Qdrant-hybrid decisions live in [`../BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`](../BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md). Do not treat generated reports or roadmaps in this folder as more current than the handoff.
+
 Read these docs in order:
 
 1. [README.md](README.md): this index and summary.
