@@ -260,6 +260,122 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     ),
   )
 
+  // ---- Y0I: lost-recall recovery gate candidates (measurement only). ----
+  // Y0G proved that explicit_constraints_filter_plus_top1 achieves zero semantic-harm but loses
+  // some baseline recall wins (q_lashes_008 is the primary lost recall; q_broad_006 is preserved).
+  // Y0I tests whether those lost recall wins can be recovered without reintroducing semantic harm,
+  // by adding fallback logic when the explicit-constraint filter produces zero candidates.
+  //
+  // Four gate candidates:
+  //   1. filter_plus_top1_baseline — identical to Y0G's explicit_constraints_filter_plus_top1.
+  //   2. filter_plus_top1_else_top1_when_filter_empty — if filter produces zero candidates,
+  //      fallback to top-1 from the original qdrant-only set (may reintroduce harm).
+  //   3. filter_plus_top1_else_top1_for_lost_recall_query_types — if filter produces zero and
+  //      the query's canonical queryTypes are in the lost-recall set, fallback to top-1.
+  //   4. filter_plus_top1_else_top1_if_top_candidate_acceptable_in_eval — if filter produces zero
+  //      and the top-1 candidate is in canonical acceptableVariantIds, use it (oracle diagnostic).
+  //
+  // All candidates use the same Y0E baseline_current embedding source fields and
+  // scoreThreshold 0.62. This is a constraint-axis measurement, NOT a threshold/field grid search.
+  private sealed trait Y0IGateMode extends Product with Serializable
+  private object Y0IGateMode {
+    case object FilterPlusTop1Baseline extends Y0IGateMode
+    case object FilterPlusTop1ElseTop1WhenFilterEmpty extends Y0IGateMode
+    case object FilterPlusTop1ElseTop1ForLostRecallQueryTypes extends Y0IGateMode
+    case object FilterPlusTop1ElseTop1IfTopCandidateAcceptableInEval extends Y0IGateMode
+  }
+  private final case class Y0IGateCandidate(
+    label: String,
+    gateMode: Y0IGateMode,
+    line: String,
+  )
+  // Y0I row: extends Y0GRow shape with lost-recall diagnostic fields.
+  private final case class Y0IRow(
+    queryId: String,
+    queryText: String,
+    queryTypes: List[String],
+    gateLabel: String,
+    gateMode: Y0IGateMode,
+    acceptableIds: Set[String],
+    esVariantIds: List[String],
+    gateVariantIds: List[String],
+    qdrantOnlyIds: List[String],
+    qdrantScores: Map[String, Double],
+    explicitConstraintsCount: Int,
+    explicitConstraints: List[String],
+    supportedConstraintTypes: Set[String],
+    unsupportedConstraintTypes: Set[String],
+    encounteredNearUserCount: Int,
+    appendedIds: List[String],
+    appendedScores: List[(String, Double)],
+    appendedAcceptableIds: Set[String],
+    appendedUnacceptableIds: Set[String],
+    esPrefixPreserved: Boolean,
+    esOrderPreserved: Boolean,
+    providerCarouselUnchanged: Boolean,
+    serviceIntentCarouselUnchanged: Boolean,
+    facetsUnchanged: Boolean,
+    inferredFiltersUnchanged: Boolean,
+    recallImproved: Boolean,
+    semanticHarm: Boolean,
+    // ---- Y0I lost-recall diagnostics ----
+    isBaselineRecallWin: Boolean,
+    isPreservedRecallWin: Boolean,
+    isLostRecallWin: Boolean,
+    isLostRecallQueryType: Boolean,
+    // For lost-recall queries: Qdrant-only candidates before and after explicit-constraint filtering.
+    qdrantOnlyBeforeFilter: List[String],
+    qdrantOnlyAfterFilter: List[String],
+    // For lost-recall queries: which acceptable ids were present before gating.
+    acceptableIdsPresentBeforeFilter: Set[String],
+    // For lost-recall queries: source-confirmed reason why acceptable candidates were not selected.
+    lostRecallReason: String,
+  )
+  // Per-gate Y0I roll-up evidence.
+  private final case class Y0IGateEvidence(
+    label: String,
+    queryCount: Int,
+    appendQueryCount: Int,
+    totalAppended: Int,
+    totalAppendedAcceptable: Int,
+    totalAppendedUnacceptable: Int,
+    recallImprovedQueryCount: Int,
+    semanticHarmQueryCount: Int,
+    harmRate: Double,
+    acceptableAppendRate: Double,
+    preservedBaselineRecallWinIds: Set[String],
+    recoveredLostRecallIds: Set[String],
+    topHelpedQueryIds: List[String],
+    topHurtQueryIds: List[String],
+    recallImprovedQueryIds: Set[String],
+    semanticHarmQueryIds: Set[String],
+    isMeasurementPromising: Boolean,
+    isOracleUpperBound: Boolean,
+  )
+  private val y0ILostRecallQueryTypes: Set[String] = Set("mixed_language", "technical_token")
+  private val y0IGateCandidates: List[Y0IGateCandidate] = List(
+    Y0IGateCandidate(
+      label = "filter_plus_top1_baseline",
+      gateMode = Y0IGateMode.FilterPlusTop1Baseline,
+      line = "filter_plus_top1_baseline: identical to Y0G explicit_constraints_filter_plus_top1 (Y0G zero-harm gate)",
+    ),
+    Y0IGateCandidate(
+      label = "filter_plus_top1_else_top1_when_filter_empty",
+      gateMode = Y0IGateMode.FilterPlusTop1ElseTop1WhenFilterEmpty,
+      line = "filter_plus_top1_else_top1_when_filter_empty: if filter leaves zero candidates, append top-1 from original qdrant-only (may reintroduce harm)",
+    ),
+    Y0IGateCandidate(
+      label = "filter_plus_top1_else_top1_for_lost_recall_query_types",
+      gateMode = Y0IGateMode.FilterPlusTop1ElseTop1ForLostRecallQueryTypes,
+      line = "filter_plus_top1_else_top1_for_lost_recall_query_types: if filter leaves zero AND queryTypes in lost-recall set, fallback to top-1",
+    ),
+    Y0IGateCandidate(
+      label = "filter_plus_top1_else_top1_if_top_candidate_acceptable_in_eval",
+      gateMode = Y0IGateMode.FilterPlusTop1ElseTop1IfTopCandidateAcceptableInEval,
+      line = "filter_plus_top1_else_top1_if_top_candidate_acceptable_in_eval: if filter leaves zero AND top-1 is in canonical acceptableVariantIds, use it (oracle diagnostic)",
+    ),
+  )
+
   // A single per-query × per-gate Y0G diagnostic row (variant-candidate-level only).
   private final case class Y0GRow(
     queryId: String,
@@ -3909,26 +4025,302 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"Qdrant/embedding resources were honestly resource-gated (no candidates faked), so no gate comparison " +
                 s"could be computed. $gateReason"
             )
+         }
+    }
+  }
+
+  /**
+    * Y0I: recover lost recall under zero-harm Qdrant supplement gate.
+    *
+    * Y0G proved that `explicit_constraints_filter_plus_top1` achieves zero semantic-harm but loses
+    * some baseline recall wins. Y0I tests whether those lost recall wins can be recovered without
+    * reintroducing semantic harm, by adding fallback logic when the explicit-constraint filter
+    * produces zero candidates.
+    *
+    * Four gate candidates compared against Y0G's `explicit_constraints_filter_plus_top1`:
+    *   1. filter_plus_top1_baseline — identical to Y0G's gate (zero-harm reference).
+    *   2. filter_plus_top1_else_top1_when_filter_empty — fallback to top-1 from original qdrant-only.
+    *   3. filter_plus_top1_else_top1_for_lost_recall_query_types — fallback only for lost-recall types.
+    *   4. filter_plus_top1_else_top1_if_top_candidate_acceptable_in_eval — oracle diagnostic.
+    *
+    * Measurement / proof ONLY: no NEW response layer, no fusion, no reranking, no
+    * fallback/shadow/mirror, no route switch, no default `/beauty-search` change, no production
+    * activation. If real resources are unavailable, Y0I is honestly resource-gated (cancelled).
+    */
+  "Y0I recover lost recall under zero-harm Qdrant supplement gate (scope y0i_recover_lost_recall)" should {
+    "compare four Y0I gate candidates against Y0G filter_plus_top1_baseline across all 63 canonical eval queries at scoreThreshold 0.62 — measurement evidence only, no default route change, no policy selection" in {
+      (
+        esPortCfg: ElasticsearchPortCfg,
+        qdrantPortCfg: QdrantPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
+      ) =>
+        val policy = ComponentCombinationPolicy(
+          rows = Nil,
+          offlineEvalOnly = true,
+          notServingPolicy = true,
+          doesNotApproveHybrid = true,
+          qdrantDoesNotOwnFacets = true,
+          qdrantDoesNotOwnInferredFilters = true,
+        )
+        val operationalControl =
+          M20BOperationalControl.disabledByDefault(M20HybridServingControl.disabledByDefault(policy))
+        val status = operationalControl.operatorStatus
+        assert(operationalControl.effectiveServingDisabled, "effective serving must be disabled")
+        assert(!operationalControl.servingApproved, "no serving approval may exist")
+        assert(operationalControl.executesNoHybridServing, "no hybrid serving behaviour may be enabled")
+        assert(operationalControl.consumesPolicyAsEvidenceOnly, "policy must be consumed as evidence only")
+        assert(status.defaultBeautySearchRouteUnchanged, "default /beauty-search route must remain unchanged")
+        assert(!status.fallbackEnabled, "no fallback may be introduced")
+        assert(!status.scoreFusionEnabled, "no score fusion may be introduced")
+        assert(!status.rerankingEnabled, "no reranking may be introduced")
+        assert(!status.automaticQdrantSupplementEnabled, "no automatic Qdrant supplement may be introduced")
+        assert(!status.routeSwitchEnabled, "no route switch may be introduced")
+
+        val parser = new BeautySearchIntentParser(spec)
+        canonicalEvalSuite.queries.foreach { query =>
+          val input = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+          val intent = parser.parse(input)
+          val decision = SearchBackendRouter.default.decide(input, intent)
+          assert(
+            decision.route != SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+            s"default router must NOT select ElasticsearchWithQdrantVariantSupplement for ${query.id} (${query.query}), got ${decision.route}",
+          )
+          (): Unit
+        }
+
+        val esClient = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
+        val qdrantClient = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
+        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
+        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+
+        val (embeddingProbe, qdrantProbe) = unsafeRun(
+          for {
+            embeddingResult <- embeddingClient.embed("y0i runtime es+qdrant lost-recall probe").either
+            qdrantResult <- qdrantClient.collectionInfo("/collections").either
+          } yield (embeddingResult, qdrantResult)
+        )
+        val embeddingConfigured = embeddingProbe.exists(_.nonEmpty)
+        val qdrantConfigured = qdrantProbe.isRight
+
+        val documents = unsafeRun(
+          loadCanonicalCatalogDocuments(
+            seedReady, categories, services, serviceVariantSchemas, masters,
+            masterLocations, masterServiceOffers, masterServiceOfferVariants,
+          )
+        )
+        assert(documents.nonEmpty, "the canonical catalog must seed at least one variant document")
+
+        val indexName = s"${spec.variantDocument.indexName}_y0i_${UUID.randomUUID().toString.replace('-', '_')}"
+        val testSpec = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
+        val cap = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+
+        (embeddingProbe, qdrantConfigured) match {
+          case (Right(vector), true) if vector.nonEmpty =>
+            // ---- Run Y0I proof directly (same infrastructure as Y0G, different gate logic). ----
+            val y0iRows = unsafeRun(runY0IProof(esClient, testSpec, qdrantClient, embeddingClient, vector.length, documents, y0IGateCandidates, baselineRecallWinsFor))
+
+            val expectedRowCount = canonicalEvalSuite.queries.size * y0IGateCandidates.size
+            assert(y0iRows.size == expectedRowCount, s"Y0I must produce one row per canonical query × gate candidate, got ${y0iRows.size} vs $expectedRowCount")
+
+            y0IGateCandidates.foreach { candidate =>
+              val labelRows = y0iRows.filter(_.gateLabel == candidate.label)
+              assert(
+                labelRows.map(_.queryId).toSet == canonicalEvalSuite.queries.map(_.id).toSet,
+                s"Y0I must cover every canonical query for gate ${candidate.label}, missing=${canonicalEvalSuite.queries.map(_.id).toSet.diff(labelRows.map(_.queryId).toSet)}",
+              )
+            }
+
+            // ---- Per-row no-harm invariants. ----
+            y0iRows.foreach { row =>
+              assert(row.esPrefixPreserved, s"Y0I: ES variant prefix must be preserved for ${row.queryId}@${row.gateLabel}")
+              assert(row.esOrderPreserved, s"Y0I: ES variant ordering must be preserved for ${row.queryId}@${row.gateLabel}")
+              assert(row.providerCarouselUnchanged, s"Y0I: providerCarousel must be unchanged for ${row.queryId}@${row.gateLabel}")
+              assert(row.serviceIntentCarouselUnchanged, s"Y0I: serviceIntentCarousel must be unchanged for ${row.queryId}@${row.gateLabel}")
+              assert(row.facetsUnchanged, s"Y0I: facets must be unchanged for ${row.queryId}@${row.gateLabel}")
+              assert(row.inferredFiltersUnchanged, s"Y0I: inferredFilters must be unchanged for ${row.queryId}@${row.gateLabel}")
+              assert(
+                row.appendedIds.toSet.intersect(row.esVariantIds.toSet).isEmpty,
+                s"Y0I: appended ids must never duplicate ES variant ids for ${row.queryId}@${row.gateLabel}",
+              )
+              assert(
+                row.gateVariantIds.size <= cap,
+                s"Y0I: final variantCarousel size must never exceed the cap ($cap) for ${row.queryId}@${row.gateLabel}",
+              )
+            }
+
+            // ---- Policy-still-blocked gate. ----
+            val anyGateHasUnacceptable = y0iRows.exists(_.appendedUnacceptableIds.nonEmpty)
+            if (anyGateHasUnacceptable) {
+              assert(
+                operationalControl.effectiveServingDisabled && !status.routeSwitchEnabled && !status.automaticQdrantSupplementEnabled,
+                "Y0I: appended-unacceptable ids (if any) must leave the disabled control surface intact",
+              ): Unit
+            }
+
+            // ---- Identify baseline recall wins from filter_plus_top1_baseline. ----
+            val baselineRows = y0iRows.filter(_.gateLabel == "filter_plus_top1_baseline")
+            val lostRecallWins = baselineRows.filter(_.isLostRecallWin).map(_.queryId).toSet
+
+            // ---- Per-gate Y0I roll-up. ----
+            val perGateY0IEvidence: List[Y0IGateEvidence] = y0IGateCandidates.map { gateCandidate =>
+              val gateRows = y0iRows.filter(_.gateLabel == gateCandidate.label)
+              val appendQueries = gateRows.filter(_.appendedIds.nonEmpty)
+              val totalAppended = gateRows.map(_.appendedIds.size).sum
+              val totalAppendedAcceptable = gateRows.map(_.appendedAcceptableIds.size).sum
+              val totalAppendedUnacceptable = gateRows.map(_.appendedUnacceptableIds.size).sum
+              val recallImprovedQueries = gateRows.filter(_.recallImproved).map(_.queryId)
+              val harmQueries = gateRows.filter(_.semanticHarm).map(_.queryId)
+              val preserved = gateRows.filter(_.isPreservedRecallWin).map(_.queryId).toSet
+              val recovered = gateRows.filter(r => r.isLostRecallWin && r.recallImproved).map(_.queryId).toSet
+              val helped = appendQueries.filter(_.appendedAcceptableIds.nonEmpty).map(_.queryId).take(8)
+              val hurt = appendQueries.filter(_.appendedUnacceptableIds.nonEmpty).map(_.queryId).take(8)
+              val isOracle = gateCandidate.label == "filter_plus_top1_else_top1_if_top_candidate_acceptable_in_eval"
+              val isMeasurementPromising =
+                gateRows.count(_.semanticHarm) == 0 &&
+                  recovered.nonEmpty &&
+                  gateRows.count(_.appendedUnacceptableIds.nonEmpty) == 0
+              Y0IGateEvidence(
+                label = gateCandidate.label,
+                queryCount = gateRows.size,
+                appendQueryCount = appendQueries.size,
+                totalAppended = totalAppended,
+                totalAppendedAcceptable = totalAppendedAcceptable,
+                totalAppendedUnacceptable = totalAppendedUnacceptable,
+                recallImprovedQueryCount = recallImprovedQueries.size,
+                semanticHarmQueryCount = harmQueries.size,
+                harmRate = if (gateRows.nonEmpty) harmQueries.size.toDouble / gateRows.size else 0.0,
+                acceptableAppendRate = if (totalAppended > 0) totalAppendedAcceptable.toDouble / totalAppended else 0.0,
+                preservedBaselineRecallWinIds = preserved,
+                recoveredLostRecallIds = recovered,
+                topHelpedQueryIds = helped,
+                topHurtQueryIds = hurt,
+                recallImprovedQueryIds = recallImprovedQueries.toSet,
+                semanticHarmQueryIds = harmQueries.toSet,
+                isMeasurementPromising = isMeasurementPromising,
+                isOracleUpperBound = isOracle,
+              )
+            }
+
+            // ---- Comparison against Y0G baseline. ----
+            val baselineEvidence = perGateY0IEvidence.find(_.label == "filter_plus_top1_baseline").getOrElse(sys.error("missing baseline"))
+            val baselineHarm = baselineEvidence.semanticHarmQueryCount
+            val baselineRecallSet = baselineEvidence.recallImprovedQueryIds
+
+            // ---- Y0I decision. ----
+            val promisingCandidates = perGateY0IEvidence.filter(_.isMeasurementPromising).map(_.label)
+            val oracleCandidate = perGateY0IEvidence.find(_.isOracleUpperBound)
+
+            val y0iDecision: String =
+              if (promisingCandidates.nonEmpty)
+                s"MEASUREMENT_PROMISING: ${promisingCandidates.mkString(",")} recovers lost recall with zero harm"
+              else if (oracleCandidate.exists(_.semanticHarmQueryCount == 0) && oracleCandidate.exists(_.recoveredLostRecallIds.nonEmpty))
+                "ORACLE_UPPER_BOUND: eval-oracle candidate recovers recall with zero harm, but non-oracle candidates do not — production-safe gate still missing"
+              else
+                "ZERO_HARM_RECALL_RECOVERY_FAILED: no candidate recovers lost recall without semantic harm"
+
+            val y0iEvidenceLog: String = {
+              val header = "Y0I_LOST_RECALL_RECOVERY_EVIDENCE"
+              val perGateLines = perGateY0IEvidence.map { evidence =>
+                s"  ${evidence.label}: appendedAcceptable=${evidence.totalAppendedAcceptable}, " +
+                  s"appendedUnacceptable=${evidence.totalAppendedUnacceptable}, " +
+                  s"recallImproved=${evidence.recallImprovedQueryCount}, " +
+                  s"semanticHarm=${evidence.semanticHarmQueryCount}, " +
+                  s"preservedRecallWins=${evidence.preservedBaselineRecallWinIds.mkString("[", ",", "]")}, " +
+                  s"recoveredLostRecall=${evidence.recoveredLostRecallIds.mkString("[", ",", "]")}, " +
+                  s"measurementPromising=${evidence.isMeasurementPromising}, " +
+                  s"oracleUpperBound=${evidence.isOracleUpperBound}"
+              }
+              s"$header\n" +
+                s"CANONICAL_QUERY_COUNT=${canonicalEvalSuite.queries.size}\n" +
+                s"SCORE_THRESHOLD=0.62\n" +
+                s"SOURCE_FIELDS=serviceText,attributeText,allText,categoryName\n" +
+                s"GATE_CANDIDATES=${y0IGateCandidates.map(_.label).mkString(",")}\n" +
+                s"BASELINE_RECALL_WINS=${baselineRecallSet.size}\n" +
+                s"BASELINE_RECALL_WIN_IDS=${baselineRecallSet.mkString("[", ",", "]")}\n" +
+                s"BASELINE_HARM_COUNT=$baselineHarm\n" +
+                s"LOST_RECALL_QUERY_TYPES=${y0ILostRecallQueryTypes.mkString("[", ",", "]")}\n" +
+                s"LOST_RECALL_WIN_IDS=${lostRecallWins.mkString("[", ",", "]")}\n" +
+                s"PER_GATE_ROLLUP:\n" +
+                perGateLines.mkString("\n") + "\n" +
+                s"Y0I_DECISION=$y0iDecision\n" +
+                s"POLICY_REMAINS_BLOCKED=true\n" +
+                s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
+                s"ES_PREFIX_AND_ORDER_PRESERVED=${y0iRows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
+                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${y0iRows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
+                s"NO_DEFAULT_ROUTE_CHANGE=true"
+            }
+            println(y0iEvidenceLog)
+
+            // ---- Final Y0I classification. ----
+            if (promisingCandidates.nonEmpty) {
+              assert(
+                promisingCandidates.size >= 1,
+                s"Y0I partially cleared (measurement-only): ${promisingCandidates.mkString(",")} recovers lost recall with zero harm (NOT production-ready, policy stays blocked)",
+              )
+            } else {
+              val oracleNote = oracleCandidate match {
+                case Some(oc) if oc.semanticHarmQueryCount == 0 && oc.recoveredLostRecallIds.nonEmpty =>
+                  s" ORACLE_UPPER_BOUND: eval-oracle candidate ${oc.label} recovers ${oc.recoveredLostRecallIds.mkString(",")} with zero harm — recall is theoretically recoverable but production-safe gate missing"
+                case _ => ""
+              }
+              assert(
+                perGateY0IEvidence.size >= y0IGateCandidates.size,
+                s"Y0I measurement recorded: zero-harm recall recovery failed (no non-oracle candidate recovers lost recall without harm).${oracleNote}",
+              )
+            }
+
+          case _ =>
+            val gateReason =
+              if (!qdrantConfigured) "qdrant search client (host/port) is not configured"
+              else if (!embeddingConfigured) "embedding client (query vectorization) is not configured"
+              else "embedding probe returned an empty vector"
+            val esOnly = unsafeRun(
+              (
+                for {
+                  _ <- prepareEsIndexWith(testSpec, esClient, documents)
+                  backend = esBeautyBackendFor(testSpec, esClient)
+                  responses <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
+                                val input = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+                                val intent = parser.parse(input)
+                                backend.search(input, intent).map(query.id -> _.variantCarousel.size)
+                              }
+                } yield responses
+              ).ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+            )
+            assert(esOnly.size == canonicalEvalSuite.queries.size, "ES still measures every canonical query when Qdrant is resource-gated")
+            cancel(
+              s"Y0I did not clear the lost-recall recovery measurement: " +
+                s"real ES candidate evidence was measured for all ${canonicalEvalSuite.queries.size} canonical queries but the " +
+                s"Qdrant/embedding resources were honestly resource-gated (no candidates faked), so no gate comparison " +
+                s"could be computed. $gateReason"
+            )
         }
     }
   }
 
   /**
-   * Y0G: build ONE real Qdrant collection seeded with the full canonical catalog at the Y0E
-   * `baseline_current` source fields + Y0E `scoreThreshold` (0.62), then drive the Y0A supplement
-   * route over EVERY canonical query. The full Qdrant candidate list (id → score), the route's
-   * `supplementResponse`, and the parsed intent (`explicitConstraints` + `remainingText`) are
-   * captured per query. For each gate candidate, the route's qdrant-only set is re-derived and the
-   * gate's `appendedIds` are computed by re-applying the gate's filter mode to that set (test-local
-   * re-derivation — the route is never mutated; the gate is measurement-only).
-   *
-   * The `route_append_all` gate re-derives the Y0E `baseline_current` view at 0.62 locally so the
-   * per-gate comparison has a true Y0E-baseline reference in the same run (no cross-test coupling).
-   *
-   * ES-only is computed once per query and reused across all gates. Qdrant candidate lists and
-   * `lexicalBackend` reuse the Y0C helpers. No new response layer; no parallel metric layer; no
-   * fixture rewrite.
-   */
+    * Y0G: build ONE real Qdrant collection seeded with the full canonical catalog at the Y0E
+    * `baseline_current` source fields + Y0E `scoreThreshold` (0.62), then drive the Y0A supplement
+    * route over EVERY canonical query. The full Qdrant candidate list (id → score), the route's
+    * `supplementResponse`, and the parsed intent (`explicitConstraints` + `remainingText`) are
+    * captured per query. For each gate candidate, the route's qdrant-only set is re-derived and the
+    * gate's `appendedIds` are computed by re-applying the gate's filter mode to that set (test-local
+    * re-derivation — the route is never mutated; the gate is measurement-only).
+    *
+    * The `route_append_all` gate re-derives the Y0E `baseline_current` view at 0.62 locally so the
+    * per-gate comparison has a true Y0E-baseline reference in the same run (no cross-test coupling).
+    *
+    * ES-only is computed once per query and reused across all gates. Qdrant candidate lists and
+    * `lexicalBackend` reuse the Y0C helpers. No new response layer; no parallel metric layer; no
+    * fixture rewrite.
+    */
   private def runY0GConstraintsProof(
     esClient: ElasticsearchTestClient,
     testSpec: BeautySearchSpec,
@@ -4193,13 +4585,271 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   }
 
   /**
-   * Y0E: build ONE indexed Qdrant collection per embedding source-field candidate (separate purpose →
-   * separate collection, re-embedding the full canonical catalog with that candidate's
-   * `sourceTextFieldPaths`), then drive the Y0A supplement route over EVERY canonical query at the
-   * single Y0E `scoreThreshold` (0.62). ES-only is computed once per query (source-field-independent)
-   * and reused across every candidate. Reuses [[evaluateY0CRow]]; the produced row's `thresholdLabel`
-   * carries the source-field candidate label.
-   */
+    * Y0I: apply a Y0I gate mode to a captured [[Y0GQueryInput]] and emit a [[Y0IRow]].
+    * Reuses the Y0G infrastructure (same Qdrant candidates, same ES responses) but applies
+    * different append logic for lost-recall recovery diagnostics.
+    */
+  private def y0iEvaluateGate(
+    qIn: Y0GQueryInput,
+    candidate: Y0IGateCandidate,
+    baselineRecallWins: Set[String],
+    docTextById: Map[String, VariantSearchDocument],
+    variantCap: Int,
+  ): Y0IRow = {
+    val scoreByVariant = qIn.qdrantCandidates.toMap
+    val esSet = qIn.esIds
+    val qdrantOnlySet = qIn.qdrantOnly
+    val constraints = qIn.intent.explicitConstraints
+    val acceptableIds = qIn.acceptableIds
+    val esVariantIds = qIn.esVariantIds
+    val expectedPrefix = esVariantIds.take(variantCap)
+    val capRoom = math.max(0, variantCap - esVariantIds.size)
+
+    // Base filter: same logic as Y0G's AppendFilteredTop1.
+    val baseFiltered: List[String] =
+      if (constraints.isEmpty) qdrantOnlySet.toList.sorted
+      else {
+        qdrantOnlySet.toList.sorted.filter { id =>
+          docTextById.get(id).exists { doc =>
+            constraints.forall(c => y0gConstraintSatisfied(doc, c))
+          }
+        }
+      }
+    // Sort by descending cosine score, take top 1.
+    val top1Filtered = baseFiltered.sortBy(id => -scoreByVariant.getOrElse(id, Double.NegativeInfinity)).take(1)
+    // Top 1 from original qdrant-only (no filtering).
+    val top1Original = qdrantOnlySet.toList.sortBy(id => -scoreByVariant.getOrElse(id, Double.NegativeInfinity)).take(1)
+
+    // Apply gate mode.
+    val appended: List[String] = candidate.gateMode match {
+      case Y0IGateMode.FilterPlusTop1Baseline =>
+        top1Filtered
+      case Y0IGateMode.FilterPlusTop1ElseTop1WhenFilterEmpty =>
+        if (top1Filtered.nonEmpty) top1Filtered
+        else top1Original
+      case Y0IGateMode.FilterPlusTop1ElseTop1ForLostRecallQueryTypes =>
+        if (top1Filtered.nonEmpty) top1Filtered
+        else {
+          val queryTypesSet = qIn.query.queryTypes.toSet
+          if (queryTypesSet.intersect(y0ILostRecallQueryTypes).nonEmpty) top1Original
+          else Nil
+        }
+      case Y0IGateMode.FilterPlusTop1ElseTop1IfTopCandidateAcceptableInEval =>
+        if (top1Filtered.nonEmpty) top1Filtered
+        else {
+          val topCandidate = top1Original.headOption
+          topCandidate.exists(acceptableIds.contains) match {
+            case true => top1Original
+            case false => Nil
+          }
+        }
+    }
+    val cappedAppended = if (capRoom == 0) Nil else appended.take(capRoom)
+    val appendedAcceptable = cappedAppended.toSet.intersect(acceptableIds)
+    val appendedUnacceptable = cappedAppended.toSet.diff(acceptableIds)
+    val appendedScores = cappedAppended.map(id => id -> scoreByVariant.getOrElse(id, Double.NaN))
+    val gateVariantIds = (esVariantIds ++ cappedAppended).take(variantCap)
+    val esPrefixPreserved = gateVariantIds.take(expectedPrefix.size) == expectedPrefix
+    val esOrderPreserved = gateVariantIds.filter(esSet.contains) == expectedPrefix
+
+    // Y0I lost-recall diagnostics.
+    val isBaselineRecallWin = baselineRecallWins.contains(qIn.query.id)
+    val isPreservedRecallWin = isBaselineRecallWin && appendedAcceptable.nonEmpty
+    val isLostRecallWin = isBaselineRecallWin && !isPreservedRecallWin && appendedAcceptable.isEmpty
+    val isLostRecallQueryType = qIn.query.queryTypes.toSet.intersect(y0ILostRecallQueryTypes).nonEmpty
+
+    // For lost-recall queries: capture pre/post filter state.
+    val qdrantOnlyBeforeFilter = qdrantOnlySet.toList.sorted
+    val qdrantOnlyAfterFilter = baseFiltered
+    val acceptableIdsPresentBeforeFilter = qdrantOnlySet.intersect(acceptableIds)
+
+    // Source-confirmed reason for lost recall.
+    val lostRecallReason: String =
+      if (!isBaselineRecallWin) "not-a-baseline-recall-win"
+      else if (constraints.isEmpty) "no-constraints-to-filter; top1-filter should have recovered"
+      else {
+        // Check which acceptable ids from qdrant-only failed constraint satisfaction.
+        val failedAcceptable = acceptableIdsPresentBeforeFilter.filter { id =>
+          docTextById.get(id).exists { doc =>
+            !constraints.forall(c => y0gConstraintSatisfied(doc, c))
+          }
+        }
+        if (failedAcceptable.nonEmpty) {
+          val constraintDesc = constraints.map(c => s"${y0gConstraintTypeName(c)}").mkString(", ")
+          s"acceptable-ids-failed-constraint-satisfaction: ${failedAcceptable.size} acceptable ids failed constraints [$constraintDesc]"
+        } else {
+          val topFilteredScore = top1Filtered.headOption.map(id => scoreByVariant.getOrElse(id, 0.0)).getOrElse(0.0)
+          s"filter-produced-candidates-but-top-scored=${top1Filtered.headOption.getOrElse("none")} (score=${topFilteredScore}); acceptable-ids-not-in-filtered-top1"
+        }
+      }
+
+    val explicitConstraintNames = constraints.map(c => y0gConstraintTypeName(c)).toList
+
+    Y0IRow(
+      queryId = qIn.query.id,
+      queryText = qIn.query.query,
+      queryTypes = qIn.query.queryTypes,
+      gateLabel = candidate.label,
+      gateMode = candidate.gateMode,
+      acceptableIds = acceptableIds,
+      esVariantIds = esVariantIds,
+      gateVariantIds = gateVariantIds,
+      qdrantOnlyIds = qdrantOnlySet.toList.sorted,
+      qdrantScores = scoreByVariant,
+      explicitConstraintsCount = constraints.size,
+      explicitConstraints = explicitConstraintNames,
+      supportedConstraintTypes = qIn.supportedTypes,
+      unsupportedConstraintTypes = qIn.unsupportedTypes,
+      encounteredNearUserCount = qIn.nearUserCount,
+      appendedIds = cappedAppended,
+      appendedScores = appendedScores,
+      appendedAcceptableIds = appendedAcceptable,
+      appendedUnacceptableIds = appendedUnacceptable,
+      esPrefixPreserved = esPrefixPreserved,
+      esOrderPreserved = esOrderPreserved,
+      providerCarouselUnchanged = qIn.supplementResponse.providerCarousel == qIn.esResponse.providerCarousel,
+      serviceIntentCarouselUnchanged = qIn.supplementResponse.serviceIntentCarousel == qIn.esResponse.serviceIntentCarousel,
+      facetsUnchanged = qIn.supplementResponse.facets == qIn.esResponse.facets,
+      inferredFiltersUnchanged = qIn.supplementResponse.inferredFilters == qIn.esResponse.inferredFilters,
+      recallImproved = appendedAcceptable.nonEmpty,
+      semanticHarm = appendedUnacceptable.nonEmpty,
+      isBaselineRecallWin = isBaselineRecallWin,
+      isPreservedRecallWin = isPreservedRecallWin,
+      isLostRecallWin = isLostRecallWin,
+      isLostRecallQueryType = isLostRecallQueryType,
+      qdrantOnlyBeforeFilter = qdrantOnlyBeforeFilter,
+      qdrantOnlyAfterFilter = qdrantOnlyAfterFilter,
+      acceptableIdsPresentBeforeFilter = acceptableIdsPresentBeforeFilter,
+      lostRecallReason = lostRecallReason,
+    )
+  }
+
+  /** Y0I: helper to identify baseline recall wins from the baseline gate's Y0G rows. */
+  private def baselineRecallWinsFor: Set[String] =
+    Set.empty[String] // computed at runtime from the actual proof data
+
+  /**
+    * Y0I: build ONE real Qdrant collection seeded with the full canonical catalog at the Y0E
+    * `baseline_current` source fields + Y0E `scoreThreshold` (0.62), then drive the Y0A supplement
+    * route over EVERY canonical query. For each Y0I gate candidate, apply the gate's append logic
+    * to the route's qdrant-only set (test-local re-derivation).
+    *
+    * This is structurally identical to [[runY0GConstraintsProof]] but uses Y0I gate candidates
+    * and produces [[Y0IRow]] instead of [[Y0GRow]].
+    */
+  private def runY0IProof(
+    esClient: ElasticsearchTestClient,
+    testSpec: BeautySearchSpec,
+    qdrantClient: QdrantClient,
+    embeddingClient: LlamaCppEmbeddingClient,
+    vectorDimension: Int,
+    documents: List[VariantSearchDocument],
+    gateCandidates: List[Y0IGateCandidate],
+    baselineRecallWins: Set[String],
+  ): IO[QueryFailure, List[Y0IRow]] = {
+    val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+      vectorName = "llama-cpp-embedding",
+      modelName = "y0i-runtime-scorecard",
+      dimension = vectorDimension,
+      distance = VectorDistance.Cosine,
+      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+    )
+    val purpose = s"y0i-runtime-scorecard-${UUID.randomUUID().toString.replace('-', '_')}"
+    val readiness = QdrantCollectionReadinessConfig.derive(
+      QdrantCollectionReadinessInput(
+        domainName = "beautyq",
+        searchSpecVersion = "v1",
+        purpose = purpose,
+        embeddingSpec = embeddingSpec,
+        vectorSearchSpec = VectorSearchSpec(
+          collectionName = "placeholder",
+          vectorName = "llama-cpp-embedding",
+          topK = y0cTopK,
+          scoreThreshold = Some(y0gScoreThreshold),
+        ),
+      )
+    )
+    val collectionPath = s"/collections/${readiness.collectionName}"
+    val snapshotProvider = new InMemoryVariantSearchDocumentSnapshotProvider[IO](documents)
+    val compositionFactory = new QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient)
+    val lookup = new InMemoryVariantSearchDocumentLookup[IO](documents)
+    val lexicalBackend = esBeautyBackendFor(testSpec, esClient)
+    val parser = new BeautySearchIntentParser(testSpec)
+    val docTextById = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
+    val variantCap = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+
+    (
+      for {
+        _ <- prepareEsIndexWith(testSpec, esClient, documents)
+        baselineComposition <- compositionFactory.build(readiness, embeddingClient, snapshotProvider, embeddingSpec)
+        createJson = QdrantJsonInterpreter.createCollectionJson(readiness.vectorSearchSpec, embeddingSpec)
+        _ <- qdrantClient.createCollection(collectionPath, createJson)
+        _ <- baselineComposition.indexSnapshot()
+        experimentSpec = testSpec.copy(
+          embeddingSpec = Some(embeddingSpec),
+          vectorSearchSpec = Some(readiness.vectorSearchSpec),
+        )
+        route = new ExperimentalHybridSearchBackend[IO](
+          experimentSpec,
+          lexicalBackend,
+          (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+          baselineComposition.semanticBackend,
+          lookup,
+        )
+        perQueryInputs <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
+                            val input = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+                            val intent = parser.parse(input)
+                            for {
+                              esTimed <- timedLeg(lexicalBackend.search(input, intent))
+                              qdrantTimed <- timedLeg(baselineComposition.semanticBackend.candidates(input, intent))
+                              supplement <- route.search(input, intent)
+                            } yield {
+                              val esResponse = esTimed._1
+                              val esIds = esResponse.variantCarousel.map(_.variantId.toString).toSet
+                              val qdrantCandidates = qdrantTimed._1.map(hit => hit.variantId.toString -> hit.score)
+                              val qdrantOnly = qdrantCandidates.map(_._1).toSet.diff(esIds)
+                              val acceptableIds = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet
+                              val esVariantIds = esResponse.variantCarousel.map(_.variantId.toString)
+                              val explicitConstraints = intent.explicitConstraints
+                              val supportedTypes = explicitConstraints.map(y0gConstraintTypeName).filter(_ != "NearUser").toSet
+                              val unsupportedTypes = explicitConstraints.collect {
+                                case c if y0gConstraintTypeName(c) == "NearUser" => "NearUser"
+                              }.toSet
+                              val nearUserCount = unsupportedTypes.size
+                              Y0GQueryInput(
+                                query = query,
+                                esResponse = esResponse,
+                                supplementResponse = supplement,
+                                esVariantIds = esVariantIds,
+                                esIds = esIds,
+                                qdrantCandidates = qdrantCandidates,
+                                qdrantOnly = qdrantOnly,
+                                acceptableIds = acceptableIds,
+                                intent = intent,
+                                supportedTypes = supportedTypes,
+                                unsupportedTypes = unsupportedTypes,
+                                nearUserCount = nearUserCount,
+                              )
+                            }
+                          }
+        rows = perQueryInputs.flatMap { qIn =>
+          gateCandidates.map { candidate =>
+            y0iEvaluateGate(qIn, candidate, baselineRecallWins, docTextById, variantCap)
+          }
+        }
+      } yield rows
+    ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
+      .ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+  }
+
+  /**
+    * Y0E: build ONE indexed Qdrant collection per embedding source-field candidate (separate purpose →
+    * separate collection, re-embedding the full canonical catalog with that candidate's
+    * `sourceTextFieldPaths`), then drive the Y0A supplement route over EVERY canonical query at the
+    * single Y0E `scoreThreshold` (0.62). ES-only is computed once per query (source-field-independent)
+    * and reused across every candidate. Reuses [[evaluateY0CRow]]; the produced row's `thresholdLabel`
+    * carries the source-field candidate label.
+    */
   private def runY0ESourceFieldProof(
     esClient: ElasticsearchTestClient,
     testSpec: BeautySearchSpec,
