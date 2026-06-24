@@ -120,6 +120,24 @@ We are **not** building hybrid search by faith.
 
 **Anti-noise rule:** A new report/projection layer is forbidden by default. It is allowed only when it becomes the single canonical owner for a decision surface or replaces/deletes an older layer.
 
+### Reusable domain method
+
+The BeautyQ-specific thresholds (e.g. `0.50`, `0.60`, `0.62`, `0.65`, `0.75`) are **not** the transferable asset. They were fit to BeautyQ's canonical eval set, embedding model, and source text, and must not be reused blindly in another domain.
+
+The transferable asset is the operational method used to evaluate whether Qdrant can safely supplement an existing ES-primary search path:
+
+1. Keep ES as the reliable primary path; never let an unproven supplement displace it.
+2. Add Qdrant only as an additive supplement, never a replacement or fallback.
+3. Prove structural no-harm (the supplement does not corrupt or destabilize the primary result set) before making any semantic claims.
+4. Run the full canonical domain eval set, not a sample or a synthetic subset.
+5. Measure appended acceptable ids versus appended unacceptable ids, not an aggregate score.
+6. Classify the harm type for unacceptable appends, e.g. same-category wrong-attribute, wrong category, duplicate, cap issue, source-text issue, model issue, or parser/constraint issue.
+7. Only then choose the next axis to adjust: constraints, query/document text redesign, embedding model comparison, or no policy. Do not adjust thresholds or caps as a first move when the harm classification points elsewhere — BeautyQ's Y0D/Y0E rounds showed that tightening append count and changing the source field did not fix the underlying candidate-source problem.
+
+This method, not the BeautyQ threshold values, should transfer to future domains. This is anti-noise guidance: a future domain should start from this method rather than recreating an M18-M21 / Y0A-Y0E-style report chain from scratch.
+
+This method does not guarantee a domain will reach a safe Qdrant supplement policy — it only structures the evidence needed to decide. For BeautyQ, following it left policy blocked.
+
 ## 8. Verification and testing protocol
 
 * Use the Constructive test taxonomy: pure model/metric logic is `Contractual + Blackbox + Atomic`; in-process service/module seams are `Contractual + Blackbox + Group`; real ES/Qdrant/Llama/Docker/HTTP is `Communication`, resource-backed auto-gated/cancelable (unavailable resources cancel with reason).
