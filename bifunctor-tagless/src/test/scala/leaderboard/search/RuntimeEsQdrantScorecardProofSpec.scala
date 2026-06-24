@@ -41,26 +41,35 @@ import java.util.UUID
  *     source-supported by [[VectorSearchSpec.scoreThreshold]]) to honestly measure silence: the
  *     thresholded result must be a subset of the unthresholded result; full silence is the ideal.
  *
- * K keeps every redesigned J fixture property (real ES, real Qdrant, real embedding endpoint, seeded
+ * K kept every redesigned J fixture property (real ES, real Qdrant, real embedding endpoint, seeded
  * collection size > topK, topK < collection size, Qdrant MUST NOT return the full seeded collection
  * for any query, existing [[M19DualEngineOfflineEvalMetrics]] with no parallel metric layer) and
- * closes the H canonical-expected-id gap for the runtime scorecard.
+ * closed the H canonical-expected-id gap for the runtime scorecard (K aligned expected ids with
+ * canonical `acceptableVariantIds`).
  *
- * Canonical-expected-id alignment (K):
+ * K2 keeps every K property and closes the remaining K gap: K2 seeds EVERY canonical acceptable id
+ * (across the three canonical-backed queries) into the runtime fixture with benign text that does NOT
+ * lexically match the canonical query. The seeded collection grows to 16 documents (1 J "balayage" +
+ * 7 J distractors + 8 K2 canonical-acceptable-anchored docs = 16); topK (3) stays strictly smaller
+ * than the seeded collection size (16), so the whole-collection invariant still holds. K2 removes
+ * the `expected-but-not-seeded` limitation for the three canonical-backed rows: zero canonical
+ * expected ids remain expected-but-not-seeded for `q_nails_001`, `q_nails_003`, and `q_noise_005`.
+ *
+ * Canonical-expected-id alignment (K2):
  *   - The three canonical-backed queries (`q_nails_001_ingredient_attribute`,
- *     `q_nails_003_filter_heavy`, `q_noise_005_ambiguous`) now carry `expectedResults` built from
- *     the canonical `acceptableVariantIds` in
+ *     `q_nails_003_filter_heavy`, `q_noise_005_ambiguous`) carry `expectedResults` built from the
+ *     canonical `acceptableVariantIds` in
  *     [[beautyq_search_eval_queries_v1.json]] (source-confirmed: lines 164-167 for q_nails_001,
  *     606-609 for q_nails_003, 13731-13736 for q_noise_005), NOT from the J-fixture `variantId`.
- *   - Per row, ONE canonical acceptable id is seeded into the runtime fixture (with text that does
- *     NOT lexically match the canonical query, so ES `operator=And` still retrieves nothing for
- *     these queries); the remaining canonical acceptable ids are expected-but-not-seeded.
- *   - The runtime fixture can only seed one canonical acceptable id per row (the seeded collection
- *     stays at 11 documents: 1 J "balayage" + 7 J distractors + 3 canonical-acceptable-anchored
- *     docs; topK=3 << 11, so the whole-collection invariant still holds). K is therefore
- *     PARTIALLY cleared on the canonical-backed coverage axis (ids aligned, not full canonical
- *     catalog content): the canonical acceptable ids drive expectations and Qdrant
- *     complement/noise metrics; only one of them is seeded per row.
+ *   - K2 seeds ALL canonical acceptable ids into the runtime fixture (2 ids for q_nails_001, 2 ids
+ *     for q_nails_003, 4 ids for q_noise_005 = 8 total). Each seed carries benign text that does
+ *     NOT lexically match its canonical query, so ES `operator=And` still retrieves nothing for
+ *     these queries regardless of which acceptable id Qdrant surfaces in topK=3.
+ *   - The seeded collection is now 16 documents: 1 J "balayage" + 7 J distractors + 8 K2
+ *     canonical-acceptable-anchored docs. topK (3) << 16, so the whole-collection invariant still
+ *     holds. K2 is therefore cleared on the canonical-expected-id coverage axis: every canonical
+ *     acceptable id drives expectations AND is seeded, so the canonical acceptable ids drive
+ *     Qdrant complement/noise metrics with full canonical coverage.
  *
  * Synthetic J queries (kept as lexical/semantic/negative control, reported separately):
  *   1. `q_lexical_exact_balayage` ([[QueryClass.ExactProductNameBrand]]) — SYNTHETIC fixture text;
@@ -73,32 +82,31 @@ import java.util.UUID
  *      ES retrieves nothing; UNTHRESHOLDED main pass measures honest noise; THRESHOLDED subcase
  *      measures silence. Expected id is the never-seeded out-of-catalog sentinel.
  *
- * Canonical-backed queries (K-aligned expected ids):
+ * Canonical-backed queries (K2-aligned expected ids, ALL seeded):
  *   4. `q_nails_001_ingredient_attribute` ([[QueryClass.IngredientAttribute]]) — canonical
- *      acceptableVariantIds = {c82d90c3..., 1fcd6e17...}. ONE canonical acceptable id seeded
- *      (c82d90c3...). Expected set = both canonical acceptable ids.
+ *      acceptableVariantIds = {c82d90c3..., 1fcd6e17...}. BOTH canonical acceptable ids seeded.
+ *      Expected set = both canonical acceptable ids.
  *   5. `q_nails_003_filter_heavy` ([[QueryClass.FilterHeavy]]) — canonical acceptableVariantIds =
- *      {798c4326..., 677dd40f...}. ONE canonical acceptable id seeded (798c4326...). Expected set =
- *      both canonical acceptable ids.
+ *      {798c4326..., 677dd40f...}. BOTH canonical acceptable ids seeded.
  *   6. `q_noise_005_ambiguous` ([[QueryClass.Ambiguous]]) — canonical acceptableVariantIds =
- *      {4f5d8aa6..., d658c194..., b64e24fe..., 3160f0f7...}. ONE canonical acceptable id seeded
- *      (4f5d8aa6...). Expected set = all four canonical acceptable ids.
+ *      {4f5d8aa6..., d658c194..., b64e24fe..., 3160f0f7...}. ALL FOUR canonical acceptable ids
+ *      seeded.
  *
- * K scope honesty notes:
- *   - K aligns expected ids with canonical `acceptableVariantIds`; it does NOT seed full canonical
- *     catalog content (only one canonical acceptable id per row is seeded as a benign document).
- *   - K does NOT measure provider/service/facet/filter runtime projection — all evidence remains
+ * K2 scope honesty notes:
+ *   - K2 seeds every canonical acceptable id for the three canonical-backed rows; the K2 union of
+ *     seeded canonical ids equals the union of the three canonical acceptableVariantIds sets.
+ *   - K2 does NOT measure provider/service/facet/filter runtime projection — all evidence remains
  *     variant-candidate-level only.
- *   - K does NOT change seeded collection size below topK; topK (3) is still strictly smaller than
- *     the seeded collection size (11), so Qdrant ranking is exercised honestly and cannot return
+ *   - K2 does NOT change seeded collection size below topK; topK (3) is still strictly smaller than
+ *     the seeded collection size (16), so Qdrant ranking is exercised honestly and cannot return
  *     the whole collection for any query.
  *
  * Honesty gate: when the embedding endpoint or Qdrant is unavailable, no Qdrant candidates are faked;
  * ES still executes for every query, Qdrant rows are empty, Qdrant latency is NotExecuted, and the
- * test is CANCELLED (H/K is resource-gated, not cleared in that case).
+ * test is CANCELLED (H/K/K2 is resource-gated, not cleared in that case).
  *
  * Boundaries (asserted as data via the disabled M20B control surface): the scorecard is measurement
- * evidence only. K assembles no final hybrid response, fuses no scores, reranks nothing, adds no
+ * evidence only. K2 assembles no final hybrid response, fuses no scores, reranks nothing, adds no
  * fallback/shadow/mirror traffic, approves no route switch or Qdrant supplement, and never touches
  * the default `/beauty-search` route. All evidence is variant-candidate-level only — no provider
  * grouping, service grouping, facet, or inferred-filter projection is source-confirmed for Qdrant.
@@ -126,12 +134,12 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // never seeded, so every real catalog candidate Qdrant returns for that query is honest noise.
   private val outOfCatalogId: MasterServiceOfferVariantId = UUID.randomUUID()
 
-  // ---- K: Canonical acceptableVariantIds (source-confirmed from beautyq_search_eval_queries_v1.json). ----
-  // Each canonical row carries a SET of acceptable variant ids. The runtime fixture can only seed
-  // ONE canonical acceptable id per row; the remaining ids are expected-but-not-seeded and appear
-  // as `Matched` in M19 metrics only if Qdrant happens to return them (it does not, because they
-  // are not in the seeded collection). K is therefore PARTIALLY cleared on canonical-backed
-  // coverage (ids aligned, not full canonical catalog content).
+  // ---- K2: Canonical acceptableVariantIds (source-confirmed from beautyq_search_eval_queries_v1.json). ----
+  // Each canonical row carries a SET of acceptable variant ids. K2 seeds EVERY canonical acceptable
+  // id into the runtime fixture (so M19 `Matched` rows can come from real seeded documents), with
+  // benign text that does NOT lexically match the canonical query, so ES `operator=And` still
+  // retrieves nothing for the canonical-backed queries. K2 is therefore cleared on canonical-
+  // backed coverage (ids aligned AND fully seeded for the three canonical-backed rows).
   //
   // Source: bifunctor-tagless/src/test/resources/leaderboard/search/eval/beautyq_search_eval_queries_v1.json
   //   - q_nails_001 acceptableVariantIds (line 164-167): c82d90c3-d9e4-5f0b-8689-6476c5e7fe35,
@@ -156,26 +164,47 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
   )
 
-  // For each canonical-backed query, ONE canonical acceptable id is seeded into the runtime fixture
-  // so that Qdrant has a real candidate row for it. The seeded canonical id is picked as the first
-  // member of each set (deterministic). The remaining canonical acceptable ids remain
-  // expected-but-not-seeded. MasterServiceOfferVariantId is a type alias for UUID.
+  // For each canonical-backed query, K2 seeds EVERY canonical acceptable id into the runtime
+  // fixture so that zero canonical expected ids remain expected-but-not-seeded for the canonical-
+  // backed rows. The canonical-anchored seed text is deliberately benign (does NOT lexically match
+  // the canonical query text), so ES `operator=And` multi_match still retrieves nothing for the
+  // canonical-backed queries regardless of which acceptable id Qdrant surfaces in topK=3. MasterServiceOfferVariantId
+  // is a type alias for UUID.
+  // K2 deterministic ordering: each canonical row's primary id is still the first member of its set
+  // (kept for assertion stability), and the additional acceptable ids are appended in the canonical
+  // set's order.
   private val qNails001SeededCanonicalId: MasterServiceOfferVariantId =
     UUID.fromString("c82d90c3-d9e4-5f0b-8689-6476c5e7fe35")
+  private val qNails001SeededCanonicalIdSecondary: MasterServiceOfferVariantId =
+    UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659")
   private val qNails003SeededCanonicalId: MasterServiceOfferVariantId =
     UUID.fromString("798c4326-e081-59a9-b659-98671f1fd656")
+  private val qNails003SeededCanonicalIdSecondary: MasterServiceOfferVariantId =
+    UUID.fromString("677dd40f-9ebc-5566-bfc4-9249b7ac5503")
   private val qNoise005SeededCanonicalId: MasterServiceOfferVariantId =
     UUID.fromString("4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7")
+  private val qNoise005SeededCanonicalIdSecondary: MasterServiceOfferVariantId =
+    UUID.fromString("d658c194-38f7-5396-b8cb-cf155739c235")
+  private val qNoise005SeededCanonicalIdTertiary: MasterServiceOfferVariantId =
+    UUID.fromString("b64e24fe-567e-53ed-bb08-1aa217241e2c")
+  private val qNoise005SeededCanonicalIdQuaternary: MasterServiceOfferVariantId =
+    UUID.fromString("3160f0f7-4940-52a7-80e4-fc82adbcfb5d")
 
-  // The full seeded catalog id set (1 J "balayage" + 7 J distractors + 3 canonical-acceptable-anchored
-  // docs = 11 documents). Qdrant searches with limit=topK=3 over this collection, so it cannot
-  // return the whole set for any query (asserted). K extends J by 3 canonical-acceptable-anchored
-  // documents; the seeded collection stays strictly greater than topK.
+  // The full seeded catalog id set (1 J "balayage" + 7 J distractors + 8 K2 canonical-acceptable-
+  // anchored docs = 16 documents). Qdrant searches with limit=topK=3 over this collection, so it
+  // cannot return the whole set for any query (asserted). K2 extends J by 8 canonical-acceptable-
+  // anchored documents (every member of the three canonical acceptableVariantIds sets); the seeded
+  // collection stays strictly greater than topK (16 >> 3).
   private val seededVariantIds: Set[String] =
     (variantId :: distractorVariantIds ++ List(
       qNails001SeededCanonicalId,
+      qNails001SeededCanonicalIdSecondary,
       qNails003SeededCanonicalId,
+      qNails003SeededCanonicalIdSecondary,
       qNoise005SeededCanonicalId,
+      qNoise005SeededCanonicalIdSecondary,
+      qNoise005SeededCanonicalIdTertiary,
+      qNoise005SeededCanonicalIdQuaternary,
     )).map(_.toString).toSet
 
   // topK is intentionally smaller than the seeded collection size (3 < 8) so that Qdrant ranking is
@@ -227,12 +256,12 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // Source: beautyq_search_eval_queries_v1.json id=`q_nails_001`, queryTypes=[direct, attribute],
   // QueryClass=IngredientAttribute. Spec anchor: M9BeautyQSearchEvalQueryDatasetStaticRows line 194
   // (q_nails_001 → QueryClass.IngredientAttribute). Canonical acceptableVariantIds =
-  // {c82d90c3-d9e4-5f0b-8689-6476c5e7fe35, 1fcd6e17-c6bb-5901-9f63-205668897659} (2 ids, K-aligned).
-  // ONE canonical acceptable id (c82d90c3...) is seeded as a benign document with text that does
-  // NOT lexically match the canonical query "маникюр гель лак" (so `operator=And` ES multi_match
-  // retrieves nothing); the other canonical acceptable id (1fcd6e17...) is expected-but-not-seeded.
-  // The expected set passed to M19 metrics is BOTH canonical acceptable ids, so Qdrant complement
-  // and noise are measured against canonical acceptableVariantIds (not the J-fixture variantId).
+  // {c82d90c3-d9e4-5f0b-8689-6476c5e7fe35, 1fcd6e17-c6bb-5901-9f63-205668897659} (2 ids, K2-aligned).
+  // BOTH canonical acceptable ids (c82d90c3..., 1fcd6e17...) are now seeded as benign documents
+  // with text that does NOT lexically match the canonical query "маникюр гель лак" (so
+  // `operator=And` ES multi_match retrieves nothing for it). The expected set passed to M19
+  // metrics is BOTH canonical acceptable ids, so Qdrant complement and noise are measured against
+  // canonical acceptableVariantIds (not the J-fixture variantId).
   private val ingredientAttributeQueryId   = "q_nails_001_ingredient_attribute"
   private val ingredientAttributeQueryText = "маникюр гель лак"
 
@@ -240,10 +269,10 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // Source: beautyq_search_eval_queries_v1.json id=`q_nails_003`, queryTypes=[german,
   // attribute_heavy], QueryClass=FilterHeavy. Spec anchor: M9BeautyQSearchEvalQueryDatasetStaticRows
   // line 221 (q_nails_003 → QueryClass.FilterHeavy). Canonical acceptableVariantIds =
-  // {798c4326-e081-59a9-b659-98671f1fd656, 677dd40f-9ebc-5566-bfc4-9249b7ac5503} (2 ids, K-aligned).
-  // ONE canonical acceptable id (798c4326...) is seeded; the other (677dd40f...) is
-  // expected-but-not-seeded. The query text "shellac entfernen und neu" (DE) shares no lexical
-  // token with the seeded "balayage haircut" doc, so ES retrieves nothing.
+  // {798c4326-e081-59a9-b659-98671f1fd656, 677dd40f-9ebc-5566-bfc4-9249b7ac5503} (2 ids, K2-aligned).
+  // BOTH canonical acceptable ids (798c4326..., 677dd40f...) are seeded. The query text
+  // "shellac entfernen und neu" (DE) shares no lexical token with any seeded doc, so ES retrieves
+  // nothing.
   private val filterHeavyQueryId   = "q_nails_003_filter_heavy"
   private val filterHeavyQueryText = "shellac entfernen und neu"
 
@@ -252,10 +281,10 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // hard_negative], QueryClass=Ambiguous. Spec anchor: M9BeautyQSearchEvalQueryDatasetStaticRows
   // line 248 (q_noise_005 → QueryClass.Ambiguous). Canonical acceptableVariantIds =
   // {4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7, d658c194-38f7-5396-b8cb-cf155739c235,
-  // b64e24fe-567e-53ed-bb08-1aa217241e2c, 3160f0f7-4940-52a7-80e4-fc82adbcfb5d} (4 ids, K-aligned).
-  // ONE canonical acceptable id (4f5d8aa6...) is seeded; the other 3 are expected-but-not-seeded.
-  // The query text "lifting" (mixed) shares no lexical token with the seeded "balayage haircut"
-  // doc, so ES retrieves nothing.
+  // b64e24fe-567e-53ed-bb08-1aa217241e2c, 3160f0f7-4940-52a7-80e4-fc82adbcfb5d} (4 ids, K2-aligned).
+  // ALL FOUR canonical acceptable ids (4f5d8aa6..., d658c194..., b64e24fe..., 3160f0f7...) are
+  // seeded. The query text "lifting" (mixed) shares no lexical token with any seeded doc, so ES
+  // retrieves nothing.
   private val ambiguousQueryId   = "q_noise_005_ambiguous"
   private val ambiguousQueryText = "lifting"
 
@@ -312,17 +341,17 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           queryClass = QueryClass.IngredientAttribute,
           filters = Nil,
           categories = Nil,
-          // K-aligned: expected ids are the canonical acceptableVariantIds for q_nails_001 from
-          // beautyq_search_eval_queries_v1.json (2 ids). ONE of these ids is seeded into the
-          // runtime fixture; the other is expected-but-not-seeded. M19 metrics measure Qdrant
-          // complement and noise against this full canonical set.
+          // K2-aligned: expected ids are the canonical acceptableVariantIds for q_nails_001 from
+          // beautyq_search_eval_queries_v1.json (2 ids). BOTH canonical acceptable ids are now
+          // seeded into the runtime fixture (K2 full canonical coverage). M19 metrics measure
+          // Qdrant complement and noise against this full canonical set.
           expectedResults = qNails001CanonicalAcceptableIds.toList.sorted.map(id =>
             M9OfflineEvalExpectedResult(id, None),
           ),
           expectedNotes = List(
-            "K-aligned: canonical-backed text+class+acceptableVariantIds from q_nails_001 (IngredientAttribute); " +
-              "expected ids are the dataset's acceptableVariantIds; one canonical acceptable id is seeded into the runtime fixture, " +
-              "the other is expected-but-not-seeded; runtime fixture aligns expected ids, not full canonical catalog content",
+            "K2-aligned: canonical-backed text+class+acceptableVariantIds from q_nails_001 (IngredientAttribute); " +
+              "expected ids are the dataset's acceptableVariantIds; BOTH canonical acceptable ids are seeded into the runtime fixture, " +
+              "zero canonical expected ids remain expected-but-not-seeded; runtime fixture aligns expected ids with full canonical coverage",
           ),
           negativeOutOfCatalog = false,
         ),
@@ -333,16 +362,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           queryClass = QueryClass.FilterHeavy,
           filters = Nil,
           categories = Nil,
-          // K-aligned: expected ids are the canonical acceptableVariantIds for q_nails_003 from
-          // beautyq_search_eval_queries_v1.json (2 ids). ONE of these ids is seeded into the
-          // runtime fixture; the other is expected-but-not-seeded.
+          // K2-aligned: expected ids are the canonical acceptableVariantIds for q_nails_003 from
+          // beautyq_search_eval_queries_v1.json (2 ids). BOTH canonical acceptable ids are now
+          // seeded into the runtime fixture.
           expectedResults = qNails003CanonicalAcceptableIds.toList.sorted.map(id =>
             M9OfflineEvalExpectedResult(id, None),
           ),
           expectedNotes = List(
-            "K-aligned: canonical-backed text+class+acceptableVariantIds from q_nails_003 (FilterHeavy); " +
-              "expected ids are the dataset's acceptableVariantIds; one canonical acceptable id is seeded into the runtime fixture, " +
-              "the other is expected-but-not-seeded",
+            "K2-aligned: canonical-backed text+class+acceptableVariantIds from q_nails_003 (FilterHeavy); " +
+              "expected ids are the dataset's acceptableVariantIds; BOTH canonical acceptable ids are seeded into the runtime fixture, " +
+              "zero canonical expected ids remain expected-but-not-seeded",
           ),
           negativeOutOfCatalog = false,
         ),
@@ -353,16 +382,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           queryClass = QueryClass.Ambiguous,
           filters = Nil,
           categories = Nil,
-          // K-aligned: expected ids are the canonical acceptableVariantIds for q_noise_005 from
-          // beautyq_search_eval_queries_v1.json (4 ids). ONE of these ids is seeded into the
-          // runtime fixture; the other 3 are expected-but-not-seeded.
+          // K2-aligned: expected ids are the canonical acceptableVariantIds for q_noise_005 from
+          // beautyq_search_eval_queries_v1.json (4 ids). ALL FOUR canonical acceptable ids are now
+          // seeded into the runtime fixture.
           expectedResults = qNoise005CanonicalAcceptableIds.toList.sorted.map(id =>
             M9OfflineEvalExpectedResult(id, None),
           ),
           expectedNotes = List(
-            "K-aligned: canonical-backed text+class+acceptableVariantIds from q_noise_005 (Ambiguous); " +
-              "expected ids are the dataset's acceptableVariantIds; one canonical acceptable id is seeded into the runtime fixture, " +
-              "the other 3 are expected-but-not-seeded",
+            "K2-aligned: canonical-backed text+class+acceptableVariantIds from q_noise_005 (Ambiguous); " +
+              "expected ids are the dataset's acceptableVariantIds; ALL FOUR canonical acceptable ids are seeded into the runtime fixture, " +
+              "zero canonical expected ids remain expected-but-not-seeded",
           ),
           negativeOutOfCatalog = false,
         ),
@@ -437,9 +466,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           queryClass = QueryClass.Ambiguous,
           filters = Nil,
           categories = Nil,
-          // Canonical acceptableVariantIds for q_noise_005: one is seeded, three are
-          // expected-but-not-seeded. The seed carries benign text that does NOT share the "lifting"
-          // token with the seeded catalog.
+          // Canonical acceptableVariantIds for q_noise_005: ALL FOUR canonical acceptable ids are
+          // seeded (K2 full coverage). The seeds carry benign text that does NOT share the
+          // "lifting" token with the seeded catalog.
           expectedResults = qNoise005CanonicalAcceptableIds.toList.sorted.map(id =>
             M9OfflineEvalExpectedResult(id, None),
           ),
@@ -556,10 +585,10 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             assert(perQuery.map(_.queryId).toSet == expectedQueryIds, "all six measured query ids must be present in the scorecard")
             assert(perQuery.size > 3, "H expands beyond the J 3-query methodology slice")
 
-            // Fixture-wide honesty invariants for the redesigned K-extended 11-document / topK=3 collection:
-            //   - topK (3) is strictly smaller than the seeded collection size (11 = 1 J "balayage"
-            //     + 7 J distractors + 3 K canonical-acceptable-anchored docs), so Qdrant MUST rank;
-            //   - Qdrant cannot return the whole seeded collection for ANY query (it would need topK >= 11).
+            // Fixture-wide honesty invariants for the redesigned K2-extended 16-document / topK=3 collection:
+            //   - topK (3) is strictly smaller than the seeded collection size (16 = 1 J "balayage"
+            //     + 7 J distractors + 8 K2 canonical-acceptable-anchored docs), so Qdrant MUST rank;
+            //   - Qdrant cannot return the whole seeded collection for ANY query (it would need topK >= 16).
             // This is the redesigned equivalent of the old recall-floor-artifact assertion. Any
             // complement below is now a real ranking signal, not a floor artifact.
             assert(seededVariantIds.size > fixtureTopK, s"seeded collection must be larger than topK (got ${seededVariantIds.size} <= $fixtureTopK)")
@@ -677,15 +706,20 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             )
 
             // ---- Query 4: q_nails_001_ingredient_attribute (CANONICAL-BACKED text+class+expected ids). ----
-            // K-aligned: the expected set is qNails001CanonicalAcceptableIds (2 canonical ids from
-            // beautyq_search_eval_queries_v1.json). ONE canonical id is seeded (qNails001SeededCanonicalId);
-            // the other is expected-but-not-seeded. The seeded canonical doc has benign text that does
-            // NOT lexically match the canonical query "маникюр гель лак", so `operator=And` ES multi_match
-            // still retrieves nothing for it. Qdrant MAY or MAY NOT surface the seeded canonical
-            // acceptable id in topK=3 — both behaviours are honestly measured.
+            // K2-aligned: the expected set is qNails001CanonicalAcceptableIds (2 canonical ids from
+            // beautyq_search_eval_queries_v1.json). K2 seeds BOTH canonical ids into the runtime
+            // fixture (qNails001SeededCanonicalId + qNails001SeededCanonicalIdSecondary) with benign
+            // text that does NOT lexically match the canonical query "маникюр гель лак", so
+            // `operator=And` ES multi_match still retrieves nothing for it. The canonical-backed
+            // expected set is fully seeded, so zero canonical expected ids remain
+            // expected-but-not-seeded for this row. Qdrant MAY or MAY NOT surface either seeded
+            // canonical acceptable id in topK=3 — both behaviours are honestly measured.
             val ingredientAttribute = scorecardFor(perQuery, ingredientAttributeQueryId)
             val ingredientAttributeCanonicalExpectedIds = qNails001CanonicalAcceptableIds
-            val ingredientAttributeSeededCanonicalId    = qNails001SeededCanonicalId.toString
+            val ingredientAttributeSeededCanonicalIds   = Set(
+              qNails001SeededCanonicalId.toString,
+              qNails001SeededCanonicalIdSecondary.toString,
+            )
             val ingredientAttributeRuntimeExpectedIds   = ingredientAttributeCanonicalExpectedIds
             assert(
               ingredientAttribute.candidateIds.esCandidateIds.isEmpty,
@@ -708,15 +742,15 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               ingredientAttribute.qdrantNoiseCount + ingredientAttribute.qdrantComplementCount + ingredientAttribute.overlapCount == ingredientAttributeQdrantIds.size,
               s"ingredient_attribute Qdrant noise + complement + overlap must equal total Qdrant ids, got ${ingredientAttribute.qdrantNoiseCount} + ${ingredientAttribute.qdrantComplementCount} + ${ingredientAttribute.overlapCount} vs ${ingredientAttributeQdrantIds.size}",
             )
-            // K-aligned honesty: noise is measured against canonical acceptableVariantIds.
+            // K2-aligned honesty: noise is measured against canonical acceptableVariantIds.
             assert(
               ingredientAttribute.qdrantNoiseCount == ingredientAttributeQdrantNoiseRelativeToCanonical.size,
-              s"ingredient_attribute Qdrant noise must equal |qdrantIds - canonicalAcceptableIds| (K-aligned), got ${ingredientAttribute.qdrantNoiseCount} vs ${ingredientAttributeQdrantNoiseRelativeToCanonical.size}",
+              s"ingredient_attribute Qdrant noise must equal |qdrantIds - canonicalAcceptableIds| (K2-aligned), got ${ingredientAttribute.qdrantNoiseCount} vs ${ingredientAttributeQdrantNoiseRelativeToCanonical.size}",
             )
-            // K-aligned honesty: complement is measured against canonical acceptableVariantIds (set semantics).
+            // K2-aligned honesty: complement is measured against canonical acceptableVariantIds (set semantics).
             assert(
               ingredientAttribute.qdrantComplementCount == ingredientAttributeComplementOverEs.size,
-              s"ingredient_attribute Qdrant complement must equal |canonicalAcceptableIds ∩ qdrantIds - esIds| (K-aligned), got ${ingredientAttribute.qdrantComplementCount} vs ${ingredientAttributeComplementOverEs.size}",
+              s"ingredient_attribute Qdrant complement must equal |canonicalAcceptableIds ∩ qdrantIds - esIds| (K2-aligned), got ${ingredientAttribute.qdrantComplementCount} vs ${ingredientAttributeComplementOverEs.size}",
             )
             // Lookup status (T/W pattern): no lookup is wired for canonical-backed queries either.
             val ingredientAttributeEsLookup     = lookupCountsFor(ingredientAttribute.lookupByBackend, M18OfflineEvalBackend.Es)
@@ -732,17 +766,29 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               ingredientAttributeRuntimeExpectedIds == ingredientAttributeCanonicalExpectedIds,
               s"ingredient_attribute runtime expected ids must equal canonical acceptableVariantIds (no J-fixture substitution), got $ingredientAttributeRuntimeExpectedIds vs $ingredientAttributeCanonicalExpectedIds",
             )
+            // K2 seed-coverage: every canonical acceptable id for this row is seeded into the runtime fixture.
             assert(
-              ingredientAttributeRuntimeExpectedIds.contains(ingredientAttributeSeededCanonicalId),
-              s"the seeded canonical acceptable id must be in the canonical acceptableVariantIds set for the ingredient_attribute query, got $ingredientAttributeSeededCanonicalId not in $ingredientAttributeRuntimeExpectedIds",
+              ingredientAttributeSeededCanonicalIds == ingredientAttributeCanonicalExpectedIds,
+              s"ingredient_attribute seeded canonical ids must equal canonical acceptableVariantIds (K2), got seeded=$ingredientAttributeSeededCanonicalIds vs canonical=$ingredientAttributeCanonicalExpectedIds",
+            )
+            assert(
+              ingredientAttributeCanonicalExpectedIds.subsetOf(seededVariantIds),
+              s"ingredient_attribute canonical acceptableVariantIds must be a subset of the seeded fixture (K2), got canonical=$ingredientAttributeCanonicalExpectedIds missing-from-seeded=${ingredientAttributeCanonicalExpectedIds.diff(seededVariantIds)}",
             )
 
             // ---- Query 5: q_nails_003_filter_heavy (CANONICAL-BACKED text+class+expected ids). ----
-            // K-aligned: expected set is qNails003CanonicalAcceptableIds (2 canonical ids); one is
-            // seeded (qNails003SeededCanonicalId), the other is expected-but-not-seeded.
+            // K2-aligned: expected set is qNails003CanonicalAcceptableIds (2 canonical ids); BOTH
+            // canonical ids are now seeded (qNails003SeededCanonicalId +
+            // qNails003SeededCanonicalIdSecondary) with benign text that does NOT lexically match
+            // the canonical query "shellac entfernen und neu". The canonical-backed expected set
+            // is fully seeded, so zero canonical expected ids remain expected-but-not-seeded for
+            // this row.
             val filterHeavy = scorecardFor(perQuery, filterHeavyQueryId)
             val filterHeavyCanonicalExpectedIds = qNails003CanonicalAcceptableIds
-            val filterHeavySeededCanonicalId    = qNails003SeededCanonicalId.toString
+            val filterHeavySeededCanonicalIds   = Set(
+              qNails003SeededCanonicalId.toString,
+              qNails003SeededCanonicalIdSecondary.toString,
+            )
             val filterHeavyRuntimeExpectedIds   = filterHeavyCanonicalExpectedIds
             assert(
               filterHeavy.candidateIds.esCandidateIds.isEmpty,
@@ -765,11 +811,11 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             )
             assert(
               filterHeavy.qdrantNoiseCount == filterHeavyQdrantNoiseRelativeToCanonical.size,
-              s"filter_heavy Qdrant noise must equal |qdrantIds - canonicalAcceptableIds| (K-aligned), got ${filterHeavy.qdrantNoiseCount} vs ${filterHeavyQdrantNoiseRelativeToCanonical.size}",
+              s"filter_heavy Qdrant noise must equal |qdrantIds - canonicalAcceptableIds| (K2-aligned), got ${filterHeavy.qdrantNoiseCount} vs ${filterHeavyQdrantNoiseRelativeToCanonical.size}",
             )
             assert(
               filterHeavy.qdrantComplementCount == filterHeavyComplementOverEs.size,
-              s"filter_heavy Qdrant complement must equal |canonicalAcceptableIds ∩ qdrantIds - esIds| (K-aligned), got ${filterHeavy.qdrantComplementCount} vs ${filterHeavyComplementOverEs.size}",
+              s"filter_heavy Qdrant complement must equal |canonicalAcceptableIds ∩ qdrantIds - esIds| (K2-aligned), got ${filterHeavy.qdrantComplementCount} vs ${filterHeavyComplementOverEs.size}",
             )
             val filterHeavyEsLookup     = lookupCountsFor(filterHeavy.lookupByBackend, M18OfflineEvalBackend.Es)
             val filterHeavyQdrantLookup = lookupCountsFor(filterHeavy.lookupByBackend, M18OfflineEvalBackend.Qdrant)
@@ -782,19 +828,32 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               filterHeavyRuntimeExpectedIds == filterHeavyCanonicalExpectedIds,
               s"filter_heavy runtime expected ids must equal canonical acceptableVariantIds (no J-fixture substitution), got $filterHeavyRuntimeExpectedIds vs $filterHeavyCanonicalExpectedIds",
             )
+            // K2 seed-coverage: every canonical acceptable id for this row is seeded into the runtime fixture.
             assert(
-              filterHeavyRuntimeExpectedIds.contains(filterHeavySeededCanonicalId),
-              s"the seeded canonical acceptable id must be in the canonical acceptableVariantIds set for the filter_heavy query, got $filterHeavySeededCanonicalId not in $filterHeavyRuntimeExpectedIds",
+              filterHeavySeededCanonicalIds == filterHeavyCanonicalExpectedIds,
+              s"filter_heavy seeded canonical ids must equal canonical acceptableVariantIds (K2), got seeded=$filterHeavySeededCanonicalIds vs canonical=$filterHeavyCanonicalExpectedIds",
+            )
+            assert(
+              filterHeavyCanonicalExpectedIds.subsetOf(seededVariantIds),
+              s"filter_heavy canonical acceptableVariantIds must be a subset of the seeded fixture (K2), got canonical=$filterHeavyCanonicalExpectedIds missing-from-seeded=${filterHeavyCanonicalExpectedIds.diff(seededVariantIds)}",
             )
 
             // ---- Query 6: q_noise_005_ambiguous (CANONICAL-BACKED text+class+expected ids). ----
-            // K-aligned: expected set is qNoise005CanonicalAcceptableIds (4 canonical ids); one is
-            // seeded (qNoise005SeededCanonicalId), the other 3 are expected-but-not-seeded. The
-            // query text "lifting" is short and ambiguous in the dataset (also tagged
-            // `hard_negative` in the canonical dataset); honest unthresholded noise is measured.
+            // K2-aligned: expected set is qNoise005CanonicalAcceptableIds (4 canonical ids); ALL
+            // FOUR canonical ids are now seeded (primary, secondary, tertiary, quaternary) with
+            // benign text that does NOT lexically match the canonical query "lifting". The
+            // canonical-backed expected set is fully seeded, so zero canonical expected ids remain
+            // expected-but-not-seeded for this row. The query text "lifting" is short and
+            // ambiguous in the dataset (also tagged `hard_negative`); honest unthresholded noise
+            // is measured.
             val ambiguous = scorecardFor(perQuery, ambiguousQueryId)
             val ambiguousCanonicalExpectedIds = qNoise005CanonicalAcceptableIds
-            val ambiguousSeededCanonicalId    = qNoise005SeededCanonicalId.toString
+            val ambiguousSeededCanonicalIds   = Set(
+              qNoise005SeededCanonicalId.toString,
+              qNoise005SeededCanonicalIdSecondary.toString,
+              qNoise005SeededCanonicalIdTertiary.toString,
+              qNoise005SeededCanonicalIdQuaternary.toString,
+            )
             val ambiguousRuntimeExpectedIds   = ambiguousCanonicalExpectedIds
             assert(
               ambiguous.candidateIds.esCandidateIds.isEmpty,
@@ -817,11 +876,11 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             )
             assert(
               ambiguous.qdrantNoiseCount == ambiguousQdrantNoiseRelativeToCanonical.size,
-              s"ambiguous Qdrant noise must equal |qdrantIds - canonicalAcceptableIds| (K-aligned), got ${ambiguous.qdrantNoiseCount} vs ${ambiguousQdrantNoiseRelativeToCanonical.size}",
+              s"ambiguous Qdrant noise must equal |qdrantIds - canonicalAcceptableIds| (K2-aligned), got ${ambiguous.qdrantNoiseCount} vs ${ambiguousQdrantNoiseRelativeToCanonical.size}",
             )
             assert(
               ambiguous.qdrantComplementCount == ambiguousComplementOverEs.size,
-              s"ambiguous Qdrant complement must equal |canonicalAcceptableIds ∩ qdrantIds - esIds| (K-aligned), got ${ambiguous.qdrantComplementCount} vs ${ambiguousComplementOverEs.size}",
+              s"ambiguous Qdrant complement must equal |canonicalAcceptableIds ∩ qdrantIds - esIds| (K2-aligned), got ${ambiguous.qdrantComplementCount} vs ${ambiguousComplementOverEs.size}",
             )
             // Per-leg latency evidence is present for the ambiguous query (real clock attached).
             assert(latencyFor(ambiguous.latencyByBackend, M18OfflineEvalBackend.Es).availability == M19LatencyAvailability.Present, "ambiguous ES latency must be present")
@@ -835,9 +894,14 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               ambiguousRuntimeExpectedIds == ambiguousCanonicalExpectedIds,
               s"ambiguous runtime expected ids must equal canonical acceptableVariantIds (no J-fixture substitution), got $ambiguousRuntimeExpectedIds vs $ambiguousCanonicalExpectedIds",
             )
+            // K2 seed-coverage: every canonical acceptable id for this row is seeded into the runtime fixture.
             assert(
-              ambiguousRuntimeExpectedIds.contains(ambiguousSeededCanonicalId),
-              s"the seeded canonical acceptable id must be in the canonical acceptableVariantIds set for the ambiguous query, got $ambiguousSeededCanonicalId not in $ambiguousRuntimeExpectedIds",
+              ambiguousSeededCanonicalIds == ambiguousCanonicalExpectedIds,
+              s"ambiguous seeded canonical ids must equal canonical acceptableVariantIds (K2), got seeded=$ambiguousSeededCanonicalIds vs canonical=$ambiguousCanonicalExpectedIds",
+            )
+            assert(
+              ambiguousCanonicalExpectedIds.subsetOf(seededVariantIds),
+              s"ambiguous canonical acceptableVariantIds must be a subset of the seeded fixture (K2), got canonical=$ambiguousCanonicalExpectedIds missing-from-seeded=${ambiguousCanonicalExpectedIds.diff(seededVariantIds)}",
             )
 
             // ---- Aggregate: a faithful roll-up of the six measured queries (still evidence only). ----
@@ -875,7 +939,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               "ambiguous unthresholded Qdrant size must be at most topK (honest noise measurement)",
             )
             assert(aggregate.expectationsAvailableQueryCount == 6, "all six queries carry expectations, so all expected-aware signals are meaningful")
-            // ---- K aggregate assertions: canonical-expected-id alignment (the K scope). ----
+            // ---- K2 aggregate assertions: canonical-expected-id alignment + seed coverage (the K2 scope). ----
             val canonicalBackedQueryIds = Set(ingredientAttributeQueryId, filterHeavyQueryId, ambiguousQueryId)
             val syntheticFixtureQueryIds = Set(lexicalQueryId, semanticQueryId, hardNegativeQueryId)
             assert(
@@ -886,8 +950,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               perQuery.map(_.queryId).toSet.intersect(syntheticFixtureQueryIds) == syntheticFixtureQueryIds,
               "all three synthetic fixture query ids must be present in the scorecard",
             )
-            // K alignment data: per canonical-backed query, the runtime expected set must equal the
-            // canonical acceptableVariantIds from the JSON (no J-fixture variantId substitution).
+            // K2 alignment data: per canonical-backed query, the runtime expected set must equal
+            // the canonical acceptableVariantIds from the JSON (no J-fixture variantId substitution)
+            // AND every canonical acceptable id must be seeded into the runtime fixture.
             val kExpectedIdsByQuery: Map[String, Set[String]] = Map(
               ingredientAttributeQueryId -> qNails001CanonicalAcceptableIds,
               filterHeavyQueryId          -> qNails003CanonicalAcceptableIds,
@@ -901,16 +966,28 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 !canonicalExpectedIds.contains(variantId.toString),
                 s"K canonical-expected-id alignment: canonical acceptableVariantIds for $queryId must not silently substitute the J-fixture variantId, got $canonicalExpectedIds containing ${variantId.toString}",
               )
-              // The canonical expected set must contain at least the seeded canonical id.
-              val seededCanonicalId = queryId match {
-                case `ingredientAttributeQueryId` => qNails001SeededCanonicalId.toString
-                case `filterHeavyQueryId`          => qNails003SeededCanonicalId.toString
-                case `ambiguousQueryId`            => qNoise005SeededCanonicalId.toString
+              // K2: the canonical expected set must contain the seeded canonical ids.
+              val seededCanonicalIdsForRow: Set[String] = queryId match {
+                case `ingredientAttributeQueryId` =>
+                  Set(qNails001SeededCanonicalId.toString, qNails001SeededCanonicalIdSecondary.toString)
+                case `filterHeavyQueryId`          =>
+                  Set(qNails003SeededCanonicalId.toString, qNails003SeededCanonicalIdSecondary.toString)
+                case `ambiguousQueryId`            =>
+                  Set(
+                    qNoise005SeededCanonicalId.toString,
+                    qNoise005SeededCanonicalIdSecondary.toString,
+                    qNoise005SeededCanonicalIdTertiary.toString,
+                    qNoise005SeededCanonicalIdQuaternary.toString,
+                  )
                 case other                         => fail(s"unexpected canonical-backed query id $other")
               }
               assert(
-                canonicalExpectedIds.contains(seededCanonicalId),
-                s"K canonical-expected-id alignment: canonical acceptableVariantIds for $queryId must contain the seeded canonical id $seededCanonicalId, got $canonicalExpectedIds",
+                seededCanonicalIdsForRow.subsetOf(canonicalExpectedIds),
+                s"K2 canonical-expected-id alignment: every seeded canonical id for $queryId must be in the canonical acceptableVariantIds, got seeded=$seededCanonicalIdsForRow vs canonical=$canonicalExpectedIds",
+              )
+              assert(
+                canonicalExpectedIds.subsetOf(seededCanonicalIdsForRow),
+                s"K2 canonical-expected-id alignment: every canonical acceptableVariantIds for $queryId must be among the seeded canonical ids (full coverage), got canonical=$canonicalExpectedIds, seeded=$seededCanonicalIdsForRow, missing=${canonicalExpectedIds.diff(seededCanonicalIdsForRow)}",
               )
               // The canonical expected set MUST be exactly the dataset's acceptableVariantIds (set
               // equality, not subset) — the runtime fixture aligns expected ids with canonical ids.
@@ -919,7 +996,6 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               // with the canonical set.
               val canonicalIntersection =
                 canonicalExpectedIds.intersect(scorecard.candidateIds.qdrantCandidateIds.toSet)
-              val canonicalExpectedNotInQdrant = canonicalExpectedIds.diff(scorecard.candidateIds.qdrantCandidateIds.toSet)
               // Canonical-backed queries have NO ES candidates, so the canonical-aware complement is
               // exactly the canonical ids returned by Qdrant; the canonical-aware noise is
               // exactly the qdrantIds outside the canonical acceptableVariantIds set.
@@ -932,8 +1008,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"K canonical-expected-id alignment: $queryId Qdrant noise must equal |qdrantIds - canonicalAcceptableIds|, got ${scorecard.qdrantNoiseCount} vs ${scorecard.candidateIds.qdrantCandidateIds.toSet.diff(canonicalExpectedIds).size}",
               )
               assert(
-                canonicalExpectedNotInQdrant.nonEmpty,
-                s"K canonical-expected-id alignment: $queryId must have at least one canonical acceptable id NOT in Qdrant results (expected-but-not-seeded), got $canonicalExpectedNotInQdrant",
+                canonicalExpectedIds.subsetOf(seededVariantIds),
+                s"K2 canonical-expected-id seed-coverage: every canonical acceptableVariantIds for $queryId must be seeded into the runtime fixture, got canonical=$canonicalExpectedIds, seeded=$seededVariantIds, missing=${canonicalExpectedIds.diff(seededVariantIds)}",
               )
               (): Unit
             }
@@ -971,6 +1047,32 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               assert(
                 sc.qdrantNoiseCount == sc.candidateIds.qdrantCandidateIds.toSet.diff(canonicalExpectedIds).size,
                 s"K aggregate: complement/noise must be measured against canonical acceptableVariantIds for $queryId, got noise=${sc.qdrantNoiseCount} vs |qdrantIds - canonical|=${sc.candidateIds.qdrantCandidateIds.toSet.diff(canonicalExpectedIds).size}",
+              )
+              (): Unit
+            }
+            // K2 aggregate: every canonical acceptableVariantIds for the three canonical-backed
+            // queries is now seeded into the runtime fixture (zero expected-but-not-seeded for
+            // those rows). The union of all canonical acceptable ids across the three rows must be
+            // a subset of seededVariantIds.
+            val canonicalBackedExpectedIdsUnion: Set[String] =
+              kExpectedIdsByQuery.values.foldLeft(Set.empty[String])(_ union _)
+            val canonicalBackedMissingFromSeeded: Set[String] =
+              canonicalBackedExpectedIdsUnion.diff(seededVariantIds)
+            assert(
+              canonicalBackedMissingFromSeeded.isEmpty,
+              s"K2 aggregate: every canonical acceptableVariantIds for the three canonical-backed rows must be seeded, missing-from-seeded=$canonicalBackedMissingFromSeeded (expected=$canonicalBackedExpectedIdsUnion, seeded=$seededVariantIds)",
+            )
+            assert(
+              canonicalBackedExpectedIdsUnion.size ==
+                (qNails001CanonicalAcceptableIds.size +
+                  qNails003CanonicalAcceptableIds.size +
+                  qNoise005CanonicalAcceptableIds.size),
+              s"K2 aggregate: the union of canonical acceptableVariantIds across the three canonical-backed rows must contain every acceptable id (2 + 2 + 4 = 8), got union=$canonicalBackedExpectedIdsUnion size=${canonicalBackedExpectedIdsUnion.size}",
+            )
+            kExpectedIdsByQuery.foreach { case (queryId, canonicalExpectedIds) =>
+              assert(
+                canonicalExpectedIds.subsetOf(seededVariantIds),
+                s"K2 aggregate: $queryId canonical acceptableVariantIds must be a subset of seededVariantIds, missing=${canonicalExpectedIds.diff(seededVariantIds)}",
               )
               (): Unit
             }
@@ -1040,29 +1142,29 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 )
                 ()
             }
-          // K CLEARED (PARTIALLY on canonical-expected-id coverage): a per-query ES/Qdrant scorecard
-          // was measured from REAL executed candidate evidence over 6 queries covering 5 source-
-          // confirmed query roles (lexical/easy, semantic descriptive, negative out-of-catalog,
-          // ingredient/attribute, filter-heavy, ambiguous) on the K-extended 11-document / topK=3
-          // fixture (Qdrant cannot return the whole collection for any query; topK=3 << 11).
-          // Three of the six queries (q_nails_001_ingredient_attribute, q_nails_003_filter_heavy,
-          // q_noise_005_ambiguous) are canonical-backed on text + QueryClass + acceptableVariantIds
-          // from the canonical 63-query dataset (source-confirmed: lines 164-167, 606-609,
-          // 13731-13736 of beautyq_search_eval_queries_v1.json). The expected ids for these three
-          // queries are now the canonical acceptableVariantIds (q_nails_001: 2 ids, q_nails_003:
-          // 2 ids, q_noise_005: 4 ids), NOT the J-fixture variantId. ONE canonical acceptable id
-          // per query is seeded into the runtime fixture (the others remain expected-but-not-
-          // seeded); the seeded canonical docs use benign text that does NOT lexically match the
-          // canonical query text, so ES `operator=And` still retrieves nothing for the canonical-
-          // backed queries. K is therefore PARTIALLY cleared on canonical-expected-id coverage
-          // (ids aligned with canonical acceptableVariantIds, not full canonical catalog content).
-          // The other three queries (q_lexical_exact_balayage, q_semantic_complement_blonde,
-          // q_hard_negative_diesel) are the J methodology-slice synthetic queries and keep using
-          // the J-fixture variantId / out-of-catalog sentinel as expected ids. The semantic
-          // complement is positive AND backed by at least one excluded distractor (not a recall-
-          // floor artifact). The hard-negative unthresholded noise is measured honestly and a
-          // thresholded subcase measures silence honestly. The scorecard does NOT assemble a
-          // hybrid response and does NOT approve a default route switch.
+          // K2 CLEARED (canonical-expected-id seed-coverage fully closed for the three canonical-
+          // backed queries): a per-query ES/Qdrant scorecard was measured from REAL executed
+          // candidate evidence over 6 queries covering 5 source-confirmed query roles (lexical/easy,
+          // semantic descriptive, negative out-of-catalog, ingredient/attribute, filter-heavy,
+          // ambiguous) on the K2-extended 16-document / topK=3 fixture (Qdrant cannot return the
+          // whole collection for any query; topK=3 << 16). Three of the six queries
+          // (q_nails_001_ingredient_attribute, q_nails_003_filter_heavy, q_noise_005_ambiguous) are
+          // canonical-backed on text + QueryClass + acceptableVariantIds from the canonical 63-query
+          // dataset (source-confirmed: lines 164-167, 606-609, 13731-13736 of
+          // beautyq_search_eval_queries_v1.json). The expected ids for these three queries are the
+          // canonical acceptableVariantIds (q_nails_001: 2 ids, q_nails_003: 2 ids, q_noise_005: 4
+          // ids), NOT the J-fixture variantId. K2 seeds EVERY canonical acceptable id into the
+          // runtime fixture (2 + 2 + 4 = 8 canonical-acceptable-anchored docs), with benign text
+          // that does NOT lexically match the canonical query text, so ES `operator=And` still
+          // retrieves nothing for the canonical-backed queries. Zero canonical expected ids remain
+          // expected-but-not-seeded for the canonical-backed rows. The other three queries
+          // (q_lexical_exact_balayage, q_semantic_complement_blonde, q_hard_negative_diesel) are
+          // the J methodology-slice synthetic queries and keep using the J-fixture variantId /
+          // out-of-catalog sentinel as expected ids. The semantic complement is positive AND backed
+          // by at least one excluded distractor (not a recall-floor artifact). The hard-negative
+          // unthresholded noise is measured honestly and a thresholded subcase measures silence
+          // honestly. The scorecard does NOT assemble a hybrid response and does NOT approve a
+          // default route switch.
 
           case _ =>
             // ---- Qdrant resources unavailable: execute ES for every query, resource-gate Qdrant. ----
@@ -1096,9 +1198,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               case other =>
                 fail(s"expected resource-gated Qdrant leg, got $other")
             }
-            // K did NOT clear: real Qdrant candidate evidence was absent for the whole query set.
+            // K2 did NOT clear: real Qdrant candidate evidence was absent for the whole query set.
             cancel(
-              s"K did not clear the canonical-expected-id-aligned runtime ES/Qdrant scorecard: " +
+              s"K2 did not clear the canonical-expected-id-aligned runtime ES/Qdrant scorecard: " +
                 s"real ES candidate evidence was measured for all six queries (3 J-methodology " +
                 s"synthetic + 3 canonical-expected-id-aligned ingredient_attribute/filter_heavy/" +
                 s"ambiguous) but the Qdrant leg was honestly resource-gated (no candidates faked), " +
@@ -1109,14 +1211,15 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   }
 
   /**
-   * L: calibrate source-supported Qdrant `topK` and `scoreThreshold` against the same K fixture.
+   * L: calibrate source-supported Qdrant `topK` and `scoreThreshold` against the same K2 fixture.
    *
-   * Preserves the K runtime shape:
+   * Preserves the K2 runtime shape:
    *   - real ES, real Qdrant, real embedding endpoint (resource-gated honestly below),
-   *   - seeded collection size (11) > topK (3),
+   *   - seeded collection size (16) > topK (3),
    *   - topK < collection size (Qdrant MUST rank and CANNOT return the whole collection),
    *   - canonical acceptableVariantIds retained for q_nails_001 / q_nails_003 / q_noise_005 in the
-   *     main K scope; this calibration subcase reuses the same `sharedDocuments` snapshot,
+   *     main K2 scope; this calibration subcase reuses the same `sharedDocuments` snapshot
+   *     (which K2 expanded with all 8 canonical acceptable ids),
    *   - existing M19 metrics, no parallel metric layer.
    *
    * Three calibrated queries:
@@ -1150,7 +1253,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
    * subcase is **measurement evidence only**; the existing M20B disabled control surface is
    * re-asserted at the top to prevent accidental policy promotion.
    */
-  "L threshold/topK calibration on the K fixture (scope l_threshold_topk_calibration)" should {
+  "L threshold/topK calibration on the K2 fixture (scope l_threshold_topk_calibration)" should {
     "calibrate source-supported Qdrant scoreThreshold against a small fixed semantic/hard-negative/ambiguous query set, comparing the unthresholded baseline against 0.85 and 0.90 candidates — measurement evidence only, no response assembly, no policy selection" in {
       (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
         // ---- Re-assert the disabled M20B control surface: no policy promotion in this subcase. ----
@@ -1197,7 +1300,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             // For each candidate, build an isolated Qdrant composition + ES index, then compute
             // per-query M19 scorecards against the shared snapshot. The fixture-wide invariants
             // (seeded collection size > topK, Qdrant cannot return the whole collection) carry over
-            // because the candidate `topK = fixtureTopK = 3` is strictly smaller than `seededVariantIds.size = 11`.
+            // because the candidate `topK = fixtureTopK = 3` is strictly smaller than `seededVariantIds.size = 16`.
             assert(seededVariantIds.size > fixtureTopK, s"seeded collection must be larger than topK (got ${seededVariantIds.size} <= $fixtureTopK)")
 
             // ---- Run each calibration candidate independently and capture per-query scorecards. ----
@@ -1839,21 +1942,33 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     ) ++ distractorVariantIds.zip(distractorDescriptors).map { case (id, descriptor) =>
       syntheticDocument(id, descriptor.serviceName, descriptor.categoryName, descriptor.tag)
     } ++
-      // ---- K: canonical-acceptable-anchored docs (one per canonical-backed query). ----
-      // Each carries ONE canonical acceptable id and a benign service text that does NOT lexically
-      // match the canonical query text, so ES `operator=And` still retrieves nothing for the
-      // canonical-backed queries. Qdrant MAY rank them into topK=3 (or not) — both behaviours are
-      // honestly measured against the full canonical acceptableVariantIds set (K-aligned).
+      // ---- K2: canonical-acceptable-anchored docs (EVERY canonical acceptable id per row). ----
+      // Each carries one canonical acceptable id (from the dataset's acceptableVariantIds set) and
+      // a benign service text that does NOT lexically match the canonical query text. ES
+      // `operator=And` multi_match therefore still retrieves nothing for the canonical-backed
+      // queries regardless of which acceptable id Qdrant surfaces in topK=3. Qdrant MAY rank any
+      // of these into topK=3 (or none) — both behaviours are honestly measured against the full
+      // canonical acceptableVariantIds set. K2 seeds ALL canonical acceptable ids, so zero
+      // canonical expected ids remain expected-but-not-seeded for the canonical-backed rows.
       List(
-        // q_nails_001 seed: benign service text that does NOT share tokens with
-        // "маникюр гель лак" (uses an unrelated English phrase, not RU query tokens).
+        // q_nails_001 primary seed: benign service text that does NOT share tokens with
+        // "маникюр гель лак" (uses an unrelated English phrase, not the RU query tokens).
         syntheticDocument(
           qNails001SeededCanonicalId,
           "manicure service listing",
           "nails",
           "polish service variant",
         ),
-        // q_nails_003 seed: benign service text that does NOT share tokens with
+        // q_nails_001 secondary seed: same canonical row, different acceptable id, also benign
+        // text with no overlap to "маникюр гель лак". K2 requirement: every canonical acceptable
+        // id for q_nails_001 is now seeded.
+        syntheticDocument(
+          qNails001SeededCanonicalIdSecondary,
+          "manicure service listing",
+          "nails",
+          "polish service variant",
+        ),
+        // q_nails_003 primary seed: benign service text that does NOT share tokens with
         // "shellac entfernen und neu" (no shellac/entfernen/neu tokens at all).
         syntheticDocument(
           qNails003SeededCanonicalId,
@@ -1861,12 +1976,44 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           "nails",
           "polish service variant",
         ),
-        // q_noise_005 seed: benign service text that does NOT share tokens with "lifting".
+        // q_nails_003 secondary seed: same canonical row, different acceptable id, also benign
+        // text with no overlap to "shellac entfernen und neu". K2 requirement: every canonical
+        // acceptable id for q_nails_003 is now seeded.
+        syntheticDocument(
+          qNails003SeededCanonicalIdSecondary,
+          "manicure service listing",
+          "nails",
+          "polish service variant",
+        ),
+        // q_noise_005 primary seed: benign service text that does NOT share tokens with "lifting".
         syntheticDocument(
           qNoise005SeededCanonicalId,
           "brow service listing",
           "brows",
           "brow shape variant",
+        ),
+        // q_noise_005 secondary seed: same canonical row, different acceptable id, benign text
+        // with no overlap to "lifting". K2 requirement: every canonical acceptable id for
+        // q_noise_005 is now seeded (this row carries 4 acceptable ids).
+        syntheticDocument(
+          qNoise005SeededCanonicalIdSecondary,
+          "lash service listing",
+          "lashes",
+          "lash shape variant",
+        ),
+        // q_noise_005 tertiary seed: another acceptable id, same row, same benign-text policy.
+        syntheticDocument(
+          qNoise005SeededCanonicalIdTertiary,
+          "brow service listing",
+          "brows",
+          "brow shape variant",
+        ),
+        // q_noise_005 quaternary seed: the fourth acceptable id, same row, same benign-text policy.
+        syntheticDocument(
+          qNoise005SeededCanonicalIdQuaternary,
+          "lash service listing",
+          "lashes",
+          "lash shape variant",
         ),
       )
 
