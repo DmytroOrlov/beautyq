@@ -14,6 +14,7 @@ final class ExperimentalHybridSearchBackend[F[+_, +_]: Error2](
   routeDecision: (UserSearchInput, ParsedSearchIntent) => SearchBackendRoute,
   semanticBackend: SemanticCandidateBackend[F],
   documentLookup: VariantSearchDocumentLookup[F],
+  supplementPolicy: QdrantVariantSupplementPolicy = QdrantVariantSupplementPolicy.AppendAll,
 ) extends BeautySearchBackend[F] {
 
   override def search(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, BeautySearchResponse] =
@@ -38,14 +39,15 @@ final class ExperimentalHybridSearchBackend[F[+_, +_]: Error2](
         F.flatMap(lexicalBackend.search(input, intent)) { esResponse =>
           F.flatMap(semanticBackend.candidates(input, intent)) { hits =>
             F.map(documentLookup.lookup(hits.map(_.variantId))) { documentsById =>
-              val documents = hits.flatMap(hit => documentsById.get(hit.variantId))
-              val assembly = QdrantCandidateAssembler.assemble(hits, documents)
-              val qdrantResponse = QdrantCandidateResponseProjector.project(spec, input, assembly)
               val esVariantIds = esResponse.variantCarousel.map(_.variantId).toSet
-              val supplement = qdrantResponse.variantCarousel.filterNot(variant => esVariantIds.contains(variant.variantId))
-              if (supplement.isEmpty) esResponse
+              val variantCap = math.min(input.limit, spec.carouselSpec.variantSize)
+              val capRoom = math.max(0, variantCap - esResponse.variantCarousel.size)
+              val selectedHits = supplementPolicy.select(intent, esVariantIds, hits, documentsById, capRoom)
+              if (selectedHits.isEmpty) esResponse
               else {
-                val variantCap = math.min(input.limit, spec.carouselSpec.variantSize)
+                val selectedDocuments = selectedHits.flatMap(hit => documentsById.get(hit.variantId))
+                val assembly = QdrantCandidateAssembler.assemble(selectedHits, selectedDocuments)
+                val supplement = QdrantCandidateResponseProjector.project(spec, input, assembly).variantCarousel
                 esResponse.copy(
                   variantCarousel = (esResponse.variantCarousel ++ supplement).take(variantCap),
                 )

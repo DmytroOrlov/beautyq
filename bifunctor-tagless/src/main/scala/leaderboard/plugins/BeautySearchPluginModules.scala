@@ -1,12 +1,17 @@
 package leaderboard.plugins
 
 import cats.effect.Async
-import distage.{ModuleDef, TagKK}
+import distage.{Id, ModuleDef, TagKK}
 import izumi.functional.bio.Error2
 import leaderboard.api.{BeautySearchApi, BeautySearchServingGate, EsLifecycleStatusApi, HttpApi}
 import leaderboard.http.tapir.{BeautySearchTapirEndpoints, EsLifecycleStatusTapirEndpoints}
-import leaderboard.search.BeautySearchService
+import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
+import leaderboard.search.hybrid.{ExperimentalHybridSearchBackend, QdrantVariantSupplementPolicy}
+import leaderboard.search.parser.BeautySearchIntentParser
+import leaderboard.search.routing.SearchBackendRoute
+import leaderboard.search.semantic.{SemanticCandidateBackend, VariantSearchDocumentLookup}
 import leaderboard.search.elasticsearch.ElasticsearchStartupReadinessTransition
+import leaderboard.search.{BeautySearchBackend, BeautySearchService}
 
 object BeautySearchPluginModules {
   def api[F[+_, +_]: TagKK: Error2]: ModuleDef =
@@ -31,6 +36,39 @@ object BeautySearchPluginModules {
         new BeautySearchApi[F](service, endpoints, gate)(implicitly[Error2[F]], async)
     }
     many[HttpApi[F]].weak[BeautySearchApi[F]]
+  }
+
+  // Disabled-by-default, explicit opt-in supplement service: wraps an already-bound ES lexical
+  // backend with a no-worsening Qdrant variant supplement policy (`QdrantVariantSupplementPolicy`).
+  // The lexical Elasticsearch backend (qualified `@Id("qdrantSupplementLexicalElasticsearch")`),
+  // the semantic candidate backend, and the document lookup must be supplied by whichever module
+  // assembles this one; this module does not bind ES/Qdrant client or indexing infrastructure, and
+  // is not included by `api[F]` / `LeaderboardPlugin` default modules.
+  def qdrantVariantSupplementExplicitOptIn[F[+_, +_]: TagKK: Error2](
+    supplementPolicy: QdrantVariantSupplementPolicy
+  ): ModuleDef = new ModuleDef {
+    make[BeautySearchSpec].fromValue(BeautySearchSpecV1.spec)
+    make[BeautySearchIntentParser].from((spec: BeautySearchSpec) => new BeautySearchIntentParser(spec))
+    make[BeautySearchBackend[F]].from {
+      (
+        spec: BeautySearchSpec,
+        lexicalBackend: BeautySearchBackend[F] @Id("qdrantSupplementLexicalElasticsearch"),
+        semanticBackend: SemanticCandidateBackend[F],
+        documentLookup: VariantSearchDocumentLookup[F],
+      ) =>
+        new ExperimentalHybridSearchBackend[F](
+          spec,
+          lexicalBackend,
+          (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+          semanticBackend,
+          documentLookup,
+          supplementPolicy,
+        )
+    }
+    make[BeautySearchService[F]].from {
+      (parser: BeautySearchIntentParser, backend: BeautySearchBackend[F]) =>
+        new BeautySearchService.Impl[F](parser, backend)
+    }
   }
 
   def operatorVisibilityApi[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {

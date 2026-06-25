@@ -3,6 +3,7 @@ package leaderboard.plugins
 import distage.{ModuleDef, TagKK}
 import izumi.functional.bio.Error2
 import leaderboard.api.BeautySearchServingGate
+import leaderboard.search.hybrid.QdrantVariantSupplementPolicy
 import leaderboard.seed.BeautyQSeedLoader
 import zio.IO
 
@@ -59,5 +60,16 @@ object BeautySearchRouteModules {
 
   def apiQdrantExplicitOptIn: ModuleDef = new ModuleDef {
     include(seedCatalogQdrantExplicitOptIn)
+  }
+
+  // Disabled-by-default explicit opt-in: an ES-backed `/beauty-search` supplemented by the measured
+  // Y0G zero-harm Qdrant policy (`QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1`).
+  // Not included by `apiElasticsearch` / `LeaderboardPlugin` default modules. The lexical ES backend
+  // (qualified `@Id("qdrantSupplementLexicalElasticsearch")`), the semantic candidate backend, and
+  // the document lookup must be supplied by whichever module assembles this one; this module does
+  // not bind ES/Qdrant client or indexing infrastructure itself.
+  def apiQdrantVariantSupplementExplicitOptIn(servingGate: BeautySearchServingGate): ModuleDef = new ModuleDef {
+    include(BeautySearchPluginModules.qdrantVariantSupplementExplicitOptIn[IO](QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1))
+    include(BeautySearchPluginModules.apiWithServingGate[IO](servingGate))
   }
 }
