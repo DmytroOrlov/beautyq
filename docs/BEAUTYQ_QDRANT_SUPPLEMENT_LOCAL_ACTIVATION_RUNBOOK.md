@@ -165,3 +165,32 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 ```bash
 sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP14QdrantSupplementActivationDiagnosticsSpec'
 ```
+
+## QP15 local ready enablement rehearsal
+
+Run from the repo root, one command at a time:
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP11QdrantSupplementRealResourcePreflightSpec'
+```
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP12LocalLauncherActivationSmokeSpec'
+```
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP14QdrantSupplementActivationDiagnosticsSpec'
+```
+
+```bash
+git diff --check
+```
+
+Expected outcomes:
+
+* QP11 passes without cancellation: the real local Qdrant probe creates a test-scoped compatible collection and reports `READY_TO_ENABLE`, then reports `BLOCKED` / `READINESS_MISMATCH` for a deliberate real mismatch. If this is resource-gated, stop and report `QP15_RESOURCE_GATED_PRELIGHT` with the exact cancel/failure reason; do not claim local ready enablement.
+* QP12 passes: absent env and explicit `es-only-rollback` serve the ES-backed default; `qdrant-supplement-not-ready` returns 503 with no fallback; invalid activation fails closed; `qdrant-supplement-ready` serves only when composed with `BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(vectorSearchSpec)`, preserving the ES prefix/order, appending at most one Qdrant-only candidate via `ExplicitConstraintsFilterPlusTop1`, never `AppendAll`, with no duplicate ES ids and ES-owned non-variant components unchanged.
+* QP14 passes: diagnostics keep the stable labels for `activation.mode`, `activation.operatorValue`, `activation.parse`, `preflight.status`, `preflight.reason`, `preflight.mismatches`, and `decision.summary`.
+* `git diff --check` passes.
+
+Process/curl boundary: no source-confirmed full subprocess launcher plus fixed `/beauty-search` port convention exists for this path. The source-confirmed local HTTP proof is the QP12 real-socket smoke (`127.0.0.1:0` Ember server via `HttpContractTestSupport.observe`). Therefore QP15 full process/curl remains `QP15_PROCESS_CURL_BLOCKED_NEEDS_PORT_SOURCE` unless a future task adds a sourced process/port convention.
