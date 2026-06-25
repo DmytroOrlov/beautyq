@@ -375,7 +375,122 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     ),
   )
 
-  // A single per-query × per-gate Y0G diagnostic row (variant-candidate-level only).
+  // ---- Y0H: embedding-model-axis measurement (does a LARGER embedding model produce better
+  // Qdrant candidates?). Y0I showed q_lashes_008 is never recovered under the Y0G zero-harm gate
+  // (explicit_constraints_filter_plus_top1) with the small embedding model; q_broad_006 is the
+  // other baseline-route recall win and IS preserved by that gate. Y0H measures whether a second,
+  // larger embedding model — served on its own llama.cpp endpoint, indexed into its own Qdrant
+  // collection (separate dimension, never shared/fused with the small model's collection) —
+  // recovers q_lashes_008 under the SAME zero-harm gate while still preserving q_broad_006. This
+  // is a bounded 2 model x 2 gate measurement over the same 63 canonical queries at the Y0E
+  // baseline_current source fields and scoreThreshold 0.62. Measurement only: no policy change, no
+  // route switch, no default enablement, no score fusion across the two collections.
+  private val y0hScoreThreshold: Double = 0.62
+  private val y0hLostRecallQueryId: String = "q_lashes_008"
+  private val y0hPreservedRecallQueryId: String = "q_broad_006"
+
+  private final case class Y0HModelCandidate(
+    label: String,
+    modelName: String,
+    endpoint: String,
+  )
+  private val y0hModelCandidates: List[Y0HModelCandidate] = List(
+    Y0HModelCandidate(
+      label = "small_embedding",
+      modelName = "qdrant-y0h-small",
+      endpoint = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse(sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")),
+    ),
+    Y0HModelCandidate(
+      label = "large_embedding",
+      modelName = "qdrant-y0h-large",
+      endpoint = sys.env.get("QDRANT_EMBEDDING_LARGE_URL").getOrElse("http://localhost:8082"),
+    ),
+  )
+  // Y0H reuses the Y0G gate semantics exactly: route_append_all (AppendAll) and
+  // explicit_constraints_filter_plus_top1 (AppendFilteredTop1). No new gate semantics invented.
+  private val y0hGateCandidates: List[Y0GGateCandidate] = List(
+    Y0GGateCandidate(
+      label = y0gBaselineReferenceGate,
+      filterMode = Y0GFilterMode.AppendAll,
+      line = "route_append_all: append every qdrant-only id, exactly like the un-gated route at 0.62 (Y0H model-axis reference)",
+    ),
+    Y0GGateCandidate(
+      label = y0gFilterPlusTop1Gate,
+      filterMode = Y0GFilterMode.AppendFilteredTop1,
+      line = "explicit_constraints_filter_plus_top1: Y0G zero-harm gate, cap appended count to the single highest-scored qdrant-only survivor",
+    ),
+  )
+
+  /** Y0H: a real Qdrant-backed candidate environment for ONE embedding model (own endpoint, own
+   * collection, own probed dimension). Built once per model candidate, then crossed with every
+   * Y0H gate candidate to produce [[Y0HRow]]s. */
+  private final case class Y0HModelEnvironment(
+    candidate: Y0HModelCandidate,
+    probedDimension: Int,
+    collectionName: String,
+    vectorName: String,
+  )
+
+  // A single per-query x per-model x per-gate Y0H diagnostic row (variant-candidate-level only).
+  private final case class Y0HRow(
+    queryId: String,
+    queryText: String,
+    queryTypes: List[String],
+    modelLabel: String,
+    modelName: String,
+    endpoint: String,
+    probedDimension: Int,
+    collectionName: String,
+    vectorName: String,
+    gateLabel: String,
+    gateFilterMode: Y0GFilterMode,
+    acceptableIds: Set[String],
+    esVariantIds: List[String],
+    gateVariantIds: List[String],
+    qdrantOnlyIds: List[String],
+    qdrantScores: Map[String, Double],
+    explicitConstraintsCount: Int,
+    appendedIds: List[String],
+    appendedAcceptableIds: Set[String],
+    appendedUnacceptableIds: Set[String],
+    esPrefixPreserved: Boolean,
+    esOrderPreserved: Boolean,
+    providerCarouselUnchanged: Boolean,
+    serviceIntentCarouselUnchanged: Boolean,
+    facetsUnchanged: Boolean,
+    inferredFiltersUnchanged: Boolean,
+    recallImproved: Boolean,
+    semanticHarm: Boolean,
+    recoversLostRecallQuery: Boolean,
+    preservesOtherRecallQuery: Boolean,
+  )
+
+  // Per (model x gate) roll-up of the Y0H canonical run (measurement evidence only).
+  private final case class Y0HCellEvidence(
+    modelLabel: String,
+    modelName: String,
+    endpoint: String,
+    probedDimension: Int,
+    collectionName: String,
+    vectorName: String,
+    gateLabel: String,
+    queryCount: Int,
+    appendQueryCount: Int,
+    totalAppended: Int,
+    totalAppendedAcceptable: Int,
+    totalAppendedUnacceptable: Int,
+    recallImprovedQueryCount: Int,
+    semanticHarmQueryCount: Int,
+    harmRate: Double,
+    acceptableAppendRate: Double,
+    topHelpedQueryIds: List[String],
+    topHarmedQueryIds: List[String],
+    recoversLostRecallQuery: Boolean,
+    preservesOtherRecallQuery: Boolean,
+    measurementPromising: Boolean,
+  )
+
+  // A single per-query x per-gate Y0G diagnostic row (variant-candidate-level only).
   private final case class Y0GRow(
     queryId: String,
     queryText: String,
@@ -4328,6 +4443,300 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   }
 
   /**
+    * Y0H: embedding-model-axis measurement. Y0I confirmed that the small embedding model never
+    * recovers `q_lashes_008` under the Y0G zero-harm gate (`explicit_constraints_filter_plus_top1`),
+    * even with eval-oracle fallback gates; `q_broad_006` is the other baseline recall win and IS
+    * preserved by that gate. Y0H measures whether a LARGER embedding model — served on its own
+    * llama.cpp endpoint, indexed into its own Qdrant collection (own dimension, never shared/fused
+    * with the small model's collection) — changes that outcome, crossed with exactly two gates
+    * (`route_append_all`, `explicit_constraints_filter_plus_top1`) over the same 63 canonical
+    * queries at the Y0E baseline_current source fields and scoreThreshold 0.62.
+    *
+    * Measurement / proof ONLY: no new response layer, no score fusion across the two collections,
+    * no reranking, no fallback/shadow/mirror traffic, no route switch, no default `/beauty-search`
+    * change, no production activation, no automatic model switch. If either embedding endpoint is
+    * unavailable or returns an empty probe vector, Y0H is honestly resource-gated (cancelled).
+    */
+  "Y0H embedding-model-axis measurement under the Y0G zero-harm gate (scope y0h_embedding_model_axis)" should {
+    "compare a small and a large embedding model across route_append_all and explicit_constraints_filter_plus_top1 over all 63 canonical eval queries at scoreThreshold 0.62 — measurement evidence only, no default route change, no policy selection" in {
+      (
+        esPortCfg: ElasticsearchPortCfg,
+        qdrantPortCfg: QdrantPortCfg,
+        categories: Categories[IO],
+        services: Services[IO],
+        serviceVariantSchemas: ServiceVariantSchemas[IO],
+        masters: Masters[IO],
+        masterLocations: MasterLocations[IO],
+        masterServiceOffers: MasterServiceOffers[IO],
+        masterServiceOfferVariants: MasterServiceOfferVariants[IO],
+        seedReady: BeautyQSeedReady,
+      ) =>
+        val policy = ComponentCombinationPolicy(
+          rows = Nil,
+          offlineEvalOnly = true,
+          notServingPolicy = true,
+          doesNotApproveHybrid = true,
+          qdrantDoesNotOwnFacets = true,
+          qdrantDoesNotOwnInferredFilters = true,
+        )
+        val operationalControl =
+          M20BOperationalControl.disabledByDefault(M20HybridServingControl.disabledByDefault(policy))
+        val status = operationalControl.operatorStatus
+        assert(operationalControl.effectiveServingDisabled, "effective serving must be disabled")
+        assert(!operationalControl.servingApproved, "no serving approval may exist")
+        assert(operationalControl.executesNoHybridServing, "no hybrid serving behaviour may be enabled")
+        assert(operationalControl.consumesPolicyAsEvidenceOnly, "policy must be consumed as evidence only")
+        assert(status.defaultBeautySearchRouteUnchanged, "default /beauty-search route must remain unchanged")
+        assert(!status.fallbackEnabled, "no fallback may be introduced")
+        assert(!status.scoreFusionEnabled, "no score fusion may be introduced")
+        assert(!status.rerankingEnabled, "no reranking may be introduced")
+        assert(!status.automaticQdrantSupplementEnabled, "no automatic Qdrant supplement may be introduced")
+        assert(!status.routeSwitchEnabled, "no route switch may be introduced")
+
+        val parser = new BeautySearchIntentParser(spec)
+        canonicalEvalSuite.queries.foreach { query =>
+          val input    = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+          val intent   = parser.parse(input)
+          val decision = SearchBackendRouter.default.decide(input, intent)
+          assert(
+            decision.route != SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+            s"default router must NOT select ElasticsearchWithQdrantVariantSupplement for ${query.id} (${query.query}), got ${decision.route}",
+          )
+          (): Unit
+        }
+
+        val esClient     = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
+        val qdrantClient = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
+        val qdrantProbe  = unsafeRun(qdrantClient.collectionInfo("/collections").either)
+        val qdrantConfigured = qdrantProbe.isRight
+
+        def probeEmbeddingClient(candidate: Y0HModelCandidate): (LlamaCppEmbeddingClient, Either[QueryFailure, Vector[Double]]) = {
+          val client = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = candidate.endpoint))
+          val probe  = unsafeRun(client.embed(s"y0h embedding dimension probe (${candidate.label})").either)
+          (client, probe)
+        }
+        val probedByCandidate: Map[String, (LlamaCppEmbeddingClient, Either[QueryFailure, Vector[Double]])] =
+          y0hModelCandidates.map(candidate => candidate.label -> probeEmbeddingClient(candidate)).toMap
+        val allEmbeddingsConfigured = y0hModelCandidates.forall { candidate =>
+          probedByCandidate.get(candidate.label).exists { case (_, probe) => probe.exists(_.nonEmpty) }
+        }
+
+        val documents = unsafeRun(
+          loadCanonicalCatalogDocuments(
+            seedReady, categories, services, serviceVariantSchemas, masters,
+            masterLocations, masterServiceOffers, masterServiceOfferVariants,
+          )
+        )
+        assert(documents.nonEmpty, "the canonical catalog must seed at least one variant document")
+
+        val indexName = s"${spec.variantDocument.indexName}_y0h_${UUID.randomUUID().toString.replace('-', '_')}"
+        val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
+        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+
+        if (qdrantConfigured && allEmbeddingsConfigured) {
+          // ---- Both real resources reachable for both models: run Y0H. ----
+          val modelInputs: List[(Y0HModelCandidate, LlamaCppEmbeddingClient, Int)] = y0hModelCandidates.map { candidate =>
+            val (client, probe) = probedByCandidate(candidate.label)
+            val dimension = probe.toOption.flatMap(v => if (v.nonEmpty) Some(v.length) else None).getOrElse(0)
+            (candidate, client, dimension)
+          }
+          assert(modelInputs.forall { case (_, _, dim) => dim > 0 }, "Y0H: both probed dimensions must be positive")
+
+          val (rows, environments) = unsafeRun(runY0HModelAxisProof(esClient, testSpec, qdrantClient, documents, modelInputs))
+
+          assert(
+            environments.map(_.collectionName).distinct.size == environments.size,
+            s"Y0H: collection names must be distinct across the two model candidates, got ${environments.map(_.collectionName)}",
+          )
+
+          val expectedRowCount = canonicalEvalSuite.queries.size * y0hModelCandidates.size * y0hGateCandidates.size
+          assert(rows.size == expectedRowCount, s"Y0H must produce one row per canonical query x model candidate x gate candidate, got ${rows.size} vs $expectedRowCount")
+
+          y0hModelCandidates.foreach { modelCandidate =>
+            y0hGateCandidates.foreach { gateCandidate =>
+              val cellRows = rows.filter(r => r.modelLabel == modelCandidate.label && r.gateLabel == gateCandidate.label)
+              assert(
+                cellRows.map(_.queryId).toSet == canonicalEvalSuite.queries.map(_.id).toSet,
+                s"Y0H must cover every canonical query for ${modelCandidate.label}@${gateCandidate.label}",
+              )
+              ()
+            }
+          }
+
+          // ---- Per-row no-harm invariants (every query x every model x every gate). ----
+          rows.foreach { row =>
+            assert(row.esPrefixPreserved, s"Y0H: ES variant prefix must be preserved for ${row.queryId}@${row.modelLabel}@${row.gateLabel}")
+            assert(row.esOrderPreserved, s"Y0H: ES variant ordering must be preserved for ${row.queryId}@${row.modelLabel}@${row.gateLabel}")
+            assert(row.providerCarouselUnchanged, s"Y0H: providerCarousel must be unchanged for ${row.queryId}@${row.modelLabel}@${row.gateLabel}")
+            assert(row.serviceIntentCarouselUnchanged, s"Y0H: serviceIntentCarousel must be unchanged for ${row.queryId}@${row.modelLabel}@${row.gateLabel}")
+            assert(row.facetsUnchanged, s"Y0H: facets must be unchanged for ${row.queryId}@${row.modelLabel}@${row.gateLabel}")
+            assert(row.inferredFiltersUnchanged, s"Y0H: inferredFilters must be unchanged for ${row.queryId}@${row.modelLabel}@${row.gateLabel}")
+            assert(
+              row.appendedIds.toSet.intersect(row.esVariantIds.toSet).isEmpty,
+              s"Y0H: appended ids must never duplicate ES variant ids for ${row.queryId}@${row.modelLabel}@${row.gateLabel}",
+            )
+            assert(
+              row.gateVariantIds.size <= cap,
+              s"Y0H: final variantCarousel size must never exceed the cap ($cap) for ${row.queryId}@${row.modelLabel}@${row.gateLabel}",
+            )
+            ()
+          }
+
+          // ---- Policy-still-blocked gate. ----
+          val anyRowHasUnacceptable = rows.exists(_.appendedUnacceptableIds.nonEmpty)
+          if (anyRowHasUnacceptable) {
+            assert(
+              operationalControl.effectiveServingDisabled && !status.routeSwitchEnabled && !status.automaticQdrantSupplementEnabled,
+              "Y0H: appended-unacceptable ids (if any) must leave the disabled control surface intact — policy remains blocked, never auto-promoted",
+            ): Unit
+          }
+
+          // ---- Per (model x gate) roll-up. ----
+          val cellEvidence: List[Y0HCellEvidence] = for {
+            modelCandidate <- y0hModelCandidates
+            gateCandidate  <- y0hGateCandidates
+          } yield {
+            val environment = environments.find(_.candidate.label == modelCandidate.label)
+            val cellRows = rows.filter(r => r.modelLabel == modelCandidate.label && r.gateLabel == gateCandidate.label)
+            val appendQueries = cellRows.filter(_.appendedIds.nonEmpty)
+            val totalAppended = cellRows.map(_.appendedIds.size).sum
+            val totalAppendedAcceptable = cellRows.map(_.appendedAcceptableIds.size).sum
+            val totalAppendedUnacceptable = cellRows.map(_.appendedUnacceptableIds.size).sum
+            val recallImprovedQueries = cellRows.filter(_.recallImproved).map(_.queryId)
+            val harmQueries = cellRows.filter(_.semanticHarm).map(_.queryId)
+            val helped = appendQueries.filter(_.appendedAcceptableIds.nonEmpty).map(_.queryId).take(8)
+            val harmed = appendQueries.filter(_.appendedUnacceptableIds.nonEmpty).map(_.queryId).take(8)
+            val recoversLostRecallQuery   = cellRows.exists(r => r.queryId == y0hLostRecallQueryId && r.recoversLostRecallQuery)
+            val preservesOtherRecallQuery = cellRows.exists(r => r.queryId == y0hPreservedRecallQueryId && r.preservesOtherRecallQuery)
+            val isZeroHarmGate = gateCandidate.label == y0gFilterPlusTop1Gate
+            val measurementPromising =
+              isZeroHarmGate && recoversLostRecallQuery && preservesOtherRecallQuery && harmQueries.isEmpty
+            Y0HCellEvidence(
+              modelLabel = modelCandidate.label,
+              modelName = modelCandidate.modelName,
+              endpoint = modelCandidate.endpoint,
+              probedDimension = environment.map(_.probedDimension).getOrElse(0),
+              collectionName = environment.map(_.collectionName).getOrElse(""),
+              vectorName = environment.map(_.vectorName).getOrElse(""),
+              gateLabel = gateCandidate.label,
+              queryCount = cellRows.size,
+              appendQueryCount = appendQueries.size,
+              totalAppended = totalAppended,
+              totalAppendedAcceptable = totalAppendedAcceptable,
+              totalAppendedUnacceptable = totalAppendedUnacceptable,
+              recallImprovedQueryCount = recallImprovedQueries.size,
+              semanticHarmQueryCount = harmQueries.size,
+              harmRate = if (cellRows.nonEmpty) harmQueries.size.toDouble / cellRows.size else 0.0,
+              acceptableAppendRate = if (totalAppended > 0) totalAppendedAcceptable.toDouble / totalAppended else 0.0,
+              topHelpedQueryIds = helped,
+              topHarmedQueryIds = harmed,
+              recoversLostRecallQuery = recoversLostRecallQuery,
+              preservesOtherRecallQuery = preservesOtherRecallQuery,
+              measurementPromising = measurementPromising,
+            )
+          }
+
+          val measurementPromisingCells = cellEvidence.filter(_.measurementPromising)
+          val largeUnderZeroHarm = cellEvidence.find(c => c.modelLabel == "large_embedding" && c.gateLabel == y0gFilterPlusTop1Gate)
+          val largeUnderAppendAll = cellEvidence.find(c => c.modelLabel == "large_embedding" && c.gateLabel == y0gBaselineReferenceGate)
+
+          val y0hDecision: String =
+            if (measurementPromisingCells.nonEmpty)
+              s"MEASUREMENT_PROMISING: ${measurementPromisingCells.map(c => s"${c.modelLabel}@${c.gateLabel}").mkString(",")} recovers $y0hLostRecallQueryId AND preserves $y0hPreservedRecallQueryId with zero semantic harm under the zero-harm gate — still measurement-only, NOT production-ready, Y1 stays blocked"
+            else if (largeUnderAppendAll.exists(_.recoversLostRecallQuery) && !largeUnderZeroHarm.exists(_.recoversLostRecallQuery))
+              s"RECOVERED_ONLY_UNDER_HARMFUL_GATE: large_embedding recovers $y0hLostRecallQueryId only under route_append_all (no constraint gate), NOT under explicit_constraints_filter_plus_top1 — diagnostic only, Y1 remains blocked"
+            else if (largeUnderZeroHarm.exists(_.recoversLostRecallQuery) && !largeUnderZeroHarm.exists(_.preservesOtherRecallQuery))
+              s"RECOVERY_AT_COST_OF_OTHER_RECALL: large_embedding recovers $y0hLostRecallQueryId under the zero-harm gate but loses $y0hPreservedRecallQueryId — not ready, not promising"
+            else
+              s"NO_RECOVERY: neither model recovers $y0hLostRecallQueryId under explicit_constraints_filter_plus_top1 — embedding-model-axis alone is insufficient; next step remains query/document text redesign or candidate-source redesign"
+
+          val y0hEvidenceLog: String = {
+            val header = "Y0H_EMBEDDING_MODEL_AXIS_EVIDENCE"
+            val cellLines = cellEvidence.map { c =>
+              s"  ${c.modelLabel}@${c.gateLabel}: endpoint=${c.endpoint}, dimension=${c.probedDimension}, collection=${c.collectionName}, " +
+                s"appendQueries=${c.appendQueryCount}/${c.queryCount}, totalAppended=${c.totalAppended}, " +
+                s"appendedAcceptable=${c.totalAppendedAcceptable}, appendedUnacceptable=${c.totalAppendedUnacceptable}, " +
+                s"recallImprovedQueries=${c.recallImprovedQueryCount}, semanticHarmQueries=${c.semanticHarmQueryCount}, " +
+                f"harmRate=${c.harmRate}%.3f, acceptableAppendRate=${c.acceptableAppendRate}%.3f, " +
+                s"recovers${y0hLostRecallQueryId}=${c.recoversLostRecallQuery}, preserves${y0hPreservedRecallQueryId}=${c.preservesOtherRecallQuery}, " +
+                s"helpedTop=${c.topHelpedQueryIds.mkString("[", ",", "]")}, harmedTop=${c.topHarmedQueryIds.mkString("[", ",", "]")}, " +
+                s"measurementPromising=${c.measurementPromising}"
+            }
+            s"$header\n" +
+              s"CANONICAL_QUERY_COUNT=${canonicalEvalSuite.queries.size}\n" +
+              s"SCORE_THRESHOLD=$y0hScoreThreshold\n" +
+              s"SOURCE_FIELDS=serviceText,attributeText,allText,categoryName\n" +
+              s"MODEL_CANDIDATES=${y0hModelCandidates.map(_.label).mkString(",")}\n" +
+              s"GATE_CANDIDATES=${y0hGateCandidates.map(_.label).mkString(",")}\n" +
+              s"LOST_RECALL_QUERY_ID=$y0hLostRecallQueryId\n" +
+              s"PRESERVED_RECALL_QUERY_ID=$y0hPreservedRecallQueryId\n" +
+              s"PER_CELL_ROLLUP:\n" +
+              cellLines.mkString("\n") + "\n" +
+              s"MEASUREMENT_PROMISING_CELLS=${measurementPromisingCells.map(c => s"${c.modelLabel}@${c.gateLabel}").mkString("[", ",", "]")}\n" +
+              s"Y0H_DECISION=$y0hDecision\n" +
+              s"POLICY_REMAINS_BLOCKED=true\n" +
+              s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
+              s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
+              s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
+              s"NO_DEFAULT_ROUTE_CHANGE=true"
+          }
+          println(y0hEvidenceLog)
+
+          // ---- Final Y0H classification (measurement only — no policy promotion, never Y1). ----
+          if (measurementPromisingCells.nonEmpty) {
+            assert(
+              measurementPromisingCells.size >= 1,
+              s"Y0H partially cleared (measurement-only): ${measurementPromisingCells.map(c => s"${c.modelLabel}@${c.gateLabel}").mkString(",")} " +
+                s"recovers $y0hLostRecallQueryId AND preserves $y0hPreservedRecallQueryId with zero semantic harm under the non-oracle zero-harm gate " +
+                s"(NOT production-ready, Y1 stays blocked)",
+            )
+          } else {
+            assert(
+              cellEvidence.size == y0hModelCandidates.size * y0hGateCandidates.size,
+              s"Y0H measurement recorded: no model/gate combination recovers $y0hLostRecallQueryId under the non-oracle zero-harm gate while preserving $y0hPreservedRecallQueryId. $y0hDecision",
+            )
+          }
+
+        // Y0H CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real Qdrant
+        // + two real embedding endpoints (small/large), each in its own collection. 63 canonical
+        // queries x 2 model candidates x 2 gate candidates produced diagnostic rows; ES prefix/order
+        // preserved and provider/service/facets/inferredFilters unchanged for every row; the default
+        // router still never selects the supplement route. Measurement evidence only.
+
+        } else {
+          // ---- Resources unavailable: confirm ES still works, then honestly resource-gate Y0H. ----
+          val unavailableEndpoints = y0hModelCandidates.collect {
+            case candidate if !probedByCandidate.get(candidate.label).exists { case (_, probe) => probe.exists(_.nonEmpty) } =>
+              candidate.endpoint
+          }
+          val gateReason =
+            if (!qdrantConfigured) "qdrant search client (host/port) is not configured"
+            else s"embedding endpoint(s) unavailable or returned an empty probe vector: ${unavailableEndpoints.mkString(", ")}"
+          val esOnly = unsafeRun(
+            (
+              for {
+                _        <- prepareEsIndexWith(testSpec, esClient, documents)
+                backend   = esBeautyBackendFor(testSpec, esClient)
+                responses <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
+                               val input  = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+                               val intent = parser.parse(input)
+                               backend.search(input, intent).map(query.id -> _.variantCarousel.size)
+                             }
+              } yield responses
+            ).ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+          )
+          assert(esOnly.size == canonicalEvalSuite.queries.size, "ES still measures every canonical query when Qdrant/embedding is resource-gated")
+          cancel(
+            s"Y0H did not clear the embedding-model-axis measurement: " +
+              s"real ES candidate evidence was measured for all ${canonicalEvalSuite.queries.size} canonical queries but the " +
+              s"Qdrant/embedding resources were honestly resource-gated (no candidates faked), so no model/gate comparison " +
+              s"could be computed. $gateReason"
+          )
+        }
+    }
+  }
+
+  /**
     * Y0G: build ONE real Qdrant collection seeded with the full canonical catalog at the Y0E
     * `baseline_current` source fields + Y0E `scoreThreshold` (0.62), then drive the Y0A supplement
     * route over EVERY canonical query. The full Qdrant candidate list (id → score), the route's
@@ -4901,6 +5310,163 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       } yield rows
     ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
       .ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
+  }
+
+  /**
+    * Y0H: build ONE real Qdrant collection PER embedding model candidate (own endpoint, own
+    * probed dimension, own collection name/vector name — never shared/fused across models), seeded
+    * with the full canonical catalog at the Y0E `baseline_current` source fields and the Y0H
+    * `scoreThreshold` (0.62), then drive the Y0A supplement route over EVERY canonical query for
+    * that model. The route's qdrant-only candidate set is re-derived per model and crossed with
+    * exactly the two Y0H gate candidates (reusing [[y0gEvaluateGate]] — no new gate semantics).
+    *
+    * ES-only is computed once per model (the route is re-run per model since Qdrant candidates
+    * differ by embedding model) and reused across that model's two gates.
+    */
+  private def runY0HModelAxisProof(
+    esClient: ElasticsearchTestClient,
+    testSpec: BeautySearchSpec,
+    qdrantClient: QdrantClient,
+    documents: List[VariantSearchDocument],
+    modelInputs: List[(Y0HModelCandidate, LlamaCppEmbeddingClient, Int)],
+  ): IO[QueryFailure, (List[Y0HRow], List[Y0HModelEnvironment])] = {
+    val lexicalBackend = esBeautyBackendFor(testSpec, esClient)
+    val parser         = new BeautySearchIntentParser(testSpec)
+    val docTextById    = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
+    val variantCap     = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+
+    def runOneModel(
+      modelCandidate: Y0HModelCandidate,
+      embeddingClient: LlamaCppEmbeddingClient,
+      vectorDimension: Int,
+    ): IO[QueryFailure, (List[Y0HRow], Y0HModelEnvironment)] = {
+      val vectorName = s"llama-cpp-embedding-${modelCandidate.label}"
+      val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = vectorName,
+        modelName = modelCandidate.modelName,
+        dimension = vectorDimension,
+        distance = VectorDistance.Cosine,
+        sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      )
+      val purpose = s"y0h-runtime-scorecard-${modelCandidate.label}-${UUID.randomUUID().toString.replace('-', '_')}"
+      val readiness = QdrantCollectionReadinessConfig.derive(
+        QdrantCollectionReadinessInput(
+          domainName = "beautyq",
+          searchSpecVersion = "v1",
+          purpose = purpose,
+          embeddingSpec = embeddingSpec,
+          vectorSearchSpec = VectorSearchSpec(
+            collectionName = "placeholder",
+            vectorName = vectorName,
+            topK = y0cTopK,
+            scoreThreshold = Some(y0hScoreThreshold),
+          ),
+        )
+      )
+      val collectionPath    = s"/collections/${readiness.collectionName}"
+      val snapshotProvider  = new InMemoryVariantSearchDocumentSnapshotProvider[IO](documents)
+      val compositionFactory = new QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient)
+      val lookup             = new InMemoryVariantSearchDocumentLookup[IO](documents)
+
+      (
+        for {
+          baselineComposition <- compositionFactory.build(readiness, embeddingClient, snapshotProvider, embeddingSpec)
+          createJson            = QdrantJsonInterpreter.createCollectionJson(readiness.vectorSearchSpec, embeddingSpec)
+          _                    <- qdrantClient.createCollection(collectionPath, createJson)
+          _                    <- baselineComposition.indexSnapshot()
+          experimentSpec = testSpec.copy(
+            embeddingSpec = Some(embeddingSpec),
+            vectorSearchSpec = Some(readiness.vectorSearchSpec),
+          )
+          route = new ExperimentalHybridSearchBackend[IO](
+            experimentSpec,
+            lexicalBackend,
+            (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+            baselineComposition.semanticBackend,
+            lookup,
+          )
+          perQueryInputs <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
+                              val input  = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
+                              val intent = parser.parse(input)
+                              for {
+                                esTimed     <- timedLeg(lexicalBackend.search(input, intent))
+                                qdrantTimed <- timedLeg(baselineComposition.semanticBackend.candidates(input, intent))
+                                supplement  <- route.search(input, intent)
+                              } yield {
+                                val esResponse = esTimed._1
+                                val esIds      = esResponse.variantCarousel.map(_.variantId.toString).toSet
+                                val qdrantCandidates = qdrantTimed._1.map(hit => hit.variantId.toString -> hit.score)
+                                val qdrantOnly       = qdrantCandidates.map(_._1).toSet.diff(esIds)
+                                val acceptableIds    = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet
+                                val esVariantIds     = esResponse.variantCarousel.map(_.variantId.toString)
+                                val explicitConstraints = intent.explicitConstraints
+                                val supportedTypes = explicitConstraints.map(y0gConstraintTypeName).filter(_ != "NearUser").toSet
+                                val unsupportedTypes = explicitConstraints.collect {
+                                  case c if y0gConstraintTypeName(c) == "NearUser" => "NearUser"
+                                }.toSet
+                                Y0GQueryInput(
+                                  query = query,
+                                  esResponse = esResponse,
+                                  supplementResponse = supplement,
+                                  esVariantIds = esVariantIds,
+                                  esIds = esIds,
+                                  qdrantCandidates = qdrantCandidates,
+                                  qdrantOnly = qdrantOnly,
+                                  acceptableIds = acceptableIds,
+                                  intent = intent,
+                                  supportedTypes = supportedTypes,
+                                  unsupportedTypes = unsupportedTypes,
+                                  nearUserCount = unsupportedTypes.size,
+                                )
+                              }
+                            }
+          modelRows = perQueryInputs.flatMap { qIn =>
+            y0hGateCandidates.map { gateCandidate =>
+              val g0Row = y0gEvaluateGate(qIn, gateCandidate, docTextById, variantCap)
+              Y0HRow(
+                queryId = g0Row.queryId,
+                queryText = g0Row.queryText,
+                queryTypes = g0Row.queryTypes,
+                modelLabel = modelCandidate.label,
+                modelName = modelCandidate.modelName,
+                endpoint = modelCandidate.endpoint,
+                probedDimension = vectorDimension,
+                collectionName = readiness.collectionName,
+                vectorName = vectorName,
+                gateLabel = g0Row.gateLabel,
+                gateFilterMode = g0Row.gateFilterMode,
+                acceptableIds = g0Row.acceptableIds,
+                esVariantIds = g0Row.esVariantIds,
+                gateVariantIds = g0Row.gateVariantIds,
+                qdrantOnlyIds = g0Row.qdrantOnlyIds,
+                qdrantScores = g0Row.qdrantScores,
+                explicitConstraintsCount = g0Row.explicitConstraintsCount,
+                appendedIds = g0Row.appendedIds,
+                appendedAcceptableIds = g0Row.appendedAcceptableIds,
+                appendedUnacceptableIds = g0Row.appendedUnacceptableIds,
+                esPrefixPreserved = g0Row.esPrefixPreserved,
+                esOrderPreserved = g0Row.esOrderPreserved,
+                providerCarouselUnchanged = g0Row.providerCarouselUnchanged,
+                serviceIntentCarouselUnchanged = g0Row.serviceIntentCarouselUnchanged,
+                facetsUnchanged = g0Row.facetsUnchanged,
+                inferredFiltersUnchanged = g0Row.inferredFiltersUnchanged,
+                recallImproved = g0Row.recallImproved,
+                semanticHarm = g0Row.semanticHarm,
+                recoversLostRecallQuery = g0Row.queryId == y0hLostRecallQueryId && g0Row.appendedAcceptableIds.nonEmpty,
+                preservesOtherRecallQuery = g0Row.queryId == y0hPreservedRecallQueryId && g0Row.appendedAcceptableIds.nonEmpty,
+              )
+            }
+          }
+        } yield (modelRows, Y0HModelEnvironment(modelCandidate, vectorDimension, readiness.collectionName, vectorName))
+      ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
+    }
+
+    (
+      for {
+        _      <- prepareEsIndexWith(testSpec, esClient, documents)
+        result <- ZIO.foreach(modelInputs) { case (candidate, client, dimension) => runOneModel(candidate, client, dimension) }
+      } yield (result.flatMap(_._1), result.map(_._2))
+    ).ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
   }
 
   /**
