@@ -144,3 +144,24 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 ```bash
 sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP13QdrantSupplementRuntimeBindingsSpec'
 ```
+
+## Activation diagnostics (QP14)
+
+* `BeautySearchQdrantSupplementActivationDiagnostics.from(operatorValue, preflightResult)` is a pure operator-visible summary built from the original operator value plus an already-computed QP8 `BeautySearchQdrantSupplementActivationPreflightResult`. There is **no** runtime logging seam in this path (no `LogIO`/`IzLogger`), so this is a pure formatter only — like the existing `ExperimentalHybridRouteDiagnostics`. It performs no I/O, no readiness HTTP call, no route switching, no activation, and emits **no route JSON / API output**.
+* It exposes a stable ordered key/value line list (`.lines` / `.renderLines` as `key=value`):
+
+| Key | Value |
+|---|---|
+| `activation.mode` | `EsOnlyRollback` / `QdrantSupplementNotReady` / `QdrantSupplementReady` / `InvalidConfig` |
+| `activation.operatorValue` | the raw operator value, or `<absent>` when unset |
+| `activation.parse` | `ACCEPTED` (a mode was selected) / `REJECTED` (fail-closed invalid value) |
+| `preflight.status` | `READY_TO_ENABLE` / `BLOCKED` (the QP8 status label) |
+| `preflight.reason` | the verbatim QP8 reason (`READY_TO_ENABLE`, `ES_ONLY_ROLLBACK_SELECTED`, `QDRANT_SUPPLEMENT_NOT_READY_SELECTED`, `INVALID_OPERATOR_CONFIG`, `READINESS_MISMATCH`) |
+| `preflight.mismatches` | comma-joined mismatch **type** tokens (`COLLECTION_NAME`, `VECTOR_NAME`, `DIMENSION`, `DISTANCE`, `EMBEDDING_MODEL`), or `none`; never the expected/observed payload values |
+| `decision.summary` | `READY_TO_ENABLE` / `DEFAULT_ES_ONLY` / `BLOCKED_NOT_READY` / `BLOCKED_READINESS_MISMATCH` / `BLOCKED_INVALID_CONFIG` |
+
+* Invalid operator config is fail-closed: `activation.parse=REJECTED`, `activation.mode=InvalidConfig`, and `QdrantSupplementReady` is never reported as the selected mode.
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP14QdrantSupplementActivationDiagnosticsSpec'
+```
