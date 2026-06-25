@@ -56,6 +56,10 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP2NoWorseningRouteProofSpec'
 ```
 
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP12LocalLauncherActivationSmokeSpec'
+```
+
 ## Expected outcomes
 
 * **QP8** passes: preflight labels (`READY_TO_ENABLE`, `BLOCKED`, `ES_ONLY_ROLLBACK_SELECTED`, `QDRANT_SUPPLEMENT_NOT_READY_SELECTED`, `INVALID_OPERATOR_CONFIG`, `READINESS_MISMATCH`) are stable, and `READY_TO_ENABLE` requires compatible readiness on every mismatch axis (collection name, vector name, dimension, distance, embedding model).
@@ -109,3 +113,19 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 ```
 
 * Expected outcomes: the pure operator-state tests (absent / `es-only-rollback` / `qdrant-supplement-not-ready` / an unrecognized value, plus deterministic compatible/mismatched/missing/unreachable checker fixtures) always pass with no real resource needed. The final real-local-Qdrant test creates one UUID-namespaced test-only collection (mirroring `QdrantCollectionCompatibilityIntegrationSpec`'s lifecycle, deleting it afterwards), checks it as `READY_TO_ENABLE`, then checks the same collection against a deliberately mismatched expectation as `BLOCKED` / `READINESS_MISMATCH`. If the local/Docker-managed Qdrant the `LeaderboardTest` harness provisions is unavailable, that test fails at the harness/Docker level, which is `VERIFICATION BLOCKED` per `AGENTS.md`, not a production-readiness claim either way.
+
+## Local launcher enablement smoke (QP12)
+
+* `QP12LocalLauncherActivationSmokeSpec` is the narrowest local launcher-level smoke for the seam. It drives the launcher entry point (`BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow()` for the absent-env default, and the documented operator-value -> module mapping for explicit values) and serves `/beauty-search` over a **real** locally bound HTTP server (`HttpContractTestSupport.observe`: an Ember server on the repo's ephemeral `127.0.0.1:0` local-port convention plus a real Ember client).
+* The repo has no process-spawn / fixed-port `./launcher` test convention, so a full `./launcher :leaderboard` subprocess (which needs Docker Postgres + ES) is intentionally not used; the in-process real-server smoke is the established pattern.
+* What it proves:
+  * absent env -> ES-backed default serves 200 (malformed stays 400), no Qdrant binding required;
+  * explicit `es-only-rollback` -> equivalent ES-backed default (200);
+  * explicit `qdrant-supplement-not-ready` -> valid request returns 503 over the real server, fail-if-called backends proving no silent fallback;
+  * explicit `qdrant-supplement-ready` **through the seam alone** (the way `LeaderboardPlugin` includes it, with no other module supplying the supplement runtime bindings) -> fails closed at graph composition naming the exact missing Distage keys (`READY_LAUNCHER_BINDINGS_BLOCKED`): the qualified lexical ES backend `@Id("qdrantSupplementLexicalElasticsearch")`, `SemanticCandidateBackend`, and `VariantSearchDocumentLookup`. This is the expected QP10 seam boundary -- the seam selects the module but does not bind the not-ready/ready backends. Once those documented bindings are supplied, the ready route serves capped at `ExplicitConstraintsFilterPlusTop1` (one append, never AppendAll);
+  * invalid env value -> fails closed at module composition, never selecting ready or the Qdrant supplement.
+* Run it as the existing `testOnly`-spec convention:
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP12LocalLauncherActivationSmokeSpec'
+```
