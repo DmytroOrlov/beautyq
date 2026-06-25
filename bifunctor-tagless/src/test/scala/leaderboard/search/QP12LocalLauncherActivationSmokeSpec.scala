@@ -2,16 +2,22 @@ package leaderboard.search
 
 import cats.effect.Async
 import distage.{Injector, Module, ModuleDef}
-import io.circe.Json
+import io.circe.syntax.*
+import io.circe.{Json, JsonObject}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
-import leaderboard.plugins.{BeautySearchQdrantSupplementActivationConfig, BeautySearchQdrantSupplementActivationLauncherSeam}
-import leaderboard.search.document.VariantSearchDocument
-import leaderboard.search.dsl.SearchGeoPoint
+import leaderboard.plugins.{
+  BeautySearchQdrantSupplementActivationConfig,
+  BeautySearchQdrantSupplementActivationLauncherSeam,
+  BeautySearchQdrantSupplementRuntimeBindingModules,
+}
+import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, VariantSearchDocument}
+import leaderboard.search.dsl.{SearchGeoPoint, VectorSearchSpec}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
-import leaderboard.search.semantic.{SemanticCandidateBackend, SemanticCandidateHit, VariantSearchDocumentLookup}
+import leaderboard.search.embedding.EmbeddingClient
+import leaderboard.search.qdrant.{QdrantSearchClient, QdrantSearchHit}
 import leaderboard.{HttpContractTestSupport, ObservedResponse}
 import org.http4s.Status
 import org.scalatest.wordspec.AnyWordSpec
@@ -21,33 +27,48 @@ import zio.{IO, Runtime, Task, Unsafe, ZIO}
 import java.util.UUID
 
 /**
- * QP12: local launcher enablement smoke for the no-worsening Qdrant supplement activation seam.
+ * QP12b: local launcher enablement smoke for the no-worsening Qdrant supplement activation seam,
+ * updated after QP13 added `BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(...)`.
  *
- * Unlike QP10 (which exercises the seam's pure value->module selector via an in-process http4s
- * `HttpApp.run`), QP12 drives the *launcher entry points* and serves `/beauty-search` over a REAL,
- * locally bound HTTP server (`HttpContractTestSupport.observe`: an Ember server on `127.0.0.1:0`, the
- * repo's ephemeral local-port convention, plus a real Ember client). This is the narrowest in-process
- * launcher-level smoke; the repo has no process-spawn / fixed-port `./launcher` test convention, so a
- * full `./launcher :leaderboard` subprocess (which would need Docker Postgres + ES and be
- * `QP12_RESOURCE_GATED`) is intentionally not used.
+ * Like QP12, this drives the *launcher entry points* (`selectedModuleFromEnvOrThrow()` for the
+ * absent-env default; the documented operator-value -> module mapping for explicit values) and serves
+ * `/beauty-search` over a REAL locally bound HTTP server (`HttpContractTestSupport.observe`: an Ember
+ * server on the repo's ephemeral `127.0.0.1:0` local-port convention plus a real Ember client). The
+ * repo has no process-spawn / fixed-port `./launcher` test convention, so a full `./launcher
+ * :leaderboard` subprocess (which needs Docker Postgres + ES) is intentionally not used.
+ *
+ * The one concrete question this answers after QP13:
+ *   does `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION=qdrant-supplement-ready` have a source-confirmed
+ *   launcher/module path that serves when composed with the QP13 runtime binding module, WITHOUT any
+ *   test-local plain stub binding of the three previously missing keys
+ *   (`BeautySearchBackend @Id("qdrantSupplementLexicalElasticsearch")`, `SemanticCandidateBackend`,
+ *   `VariantSearchDocumentLookup`)?
+ *
+ * Answer (proved below): yes. The launcher-selected ready module composed with
+ * `supplementRuntimeBindings(vectorSearchSpec)` and only the documented leaf I/O doubles
+ * (`ElasticsearchJsonClient`, `EmbeddingClient`, `QdrantSearchClient`) plus a ready catalog fixture
+ * builds and serves capped at `ExplicitConstraintsFilterPlusTop1` (one append, never AppendAll),
+ * preserving the ES prefix, never duplicating an ES id, and leaving the ES-owned non-variant
+ * components untouched by the Qdrant append. The old QP12 expectation -- that the ready state's
+ * final, documented outcome is `READY_LAUNCHER_BINDINGS_BLOCKED` -- is no longer the final state: the
+ * seam-alone block is now only the selection-only boundary that the QP13 runtime module closes.
  *
  * Proves:
- *   - absent env (`BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` unset in this process) -> the real launcher
- *     entry point `selectedModuleFromEnvOrThrow()` selects the ES-backed default; a valid request
- *     serves 200 over the real server, malformed stays 400, and no Qdrant semantic backend / document
- *     lookup binding is required;
- *   - explicit `es-only-rollback` is equivalent to absent/default;
- *   - explicit `qdrant-supplement-not-ready` -> valid request returns 503 over the real server, with
- *     fail-if-called backends proving no silent fallback to ES-only or AppendAll;
+ *   - absent env (`BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` unset) -> ES-backed default serves 200,
+ *     malformed stays 400, with NO Qdrant runtime module required;
+ *   - explicit `es-only-rollback` -> equivalent ES-backed default (200), NO Qdrant runtime module
+ *     required;
+ *   - explicit `qdrant-supplement-not-ready`, with the QP13 runtime binding module supplied -> valid
+ *     request returns 503; fail-if-called leaf clients prove no search invocation and no fallback;
+ *     malformed stays 400;
  *   - explicit `qdrant-supplement-ready`:
- *       * through the launcher seam ALONE (the way `LeaderboardPlugin` includes it, with no other
- *         module supplying the supplement runtime bindings) it fails closed at graph composition,
- *         naming the exact missing Distage keys -> `READY_LAUNCHER_BINDINGS_BLOCKED`;
- *       * once the caller additionally supplies those documented bindings, the route serves capped at
- *         `ExplicitConstraintsFilterPlusTop1` (one append, never AppendAll), preserving the ES prefix
- *         and never duplicating an ES id;
- *   - an invalid env value fails closed at module composition, never selecting ready and never
- *     falling back to the Qdrant supplement.
+ *       * through the launcher seam ALONE, WITHOUT the QP13 runtime module, still fails closed naming
+ *         the three keys -- this is the selection-only boundary the seam documents, not the final
+ *         ready state;
+ *       * composed with the QP13 runtime module + leaf doubles only (no direct binding of the three
+ *         keys) -> serves 200, capped at one append, ES prefix preserved, no duplicate ES id,
+ *         ES-owned provider carousel unchanged by the append;
+ *   - an invalid env value fails closed at module composition, never selecting ready.
  *
  * Proof-only: no default route change, no Qdrant-as-default, no fallback, no fusion/reranking, no
  * route JSON / API change, no real ES/Qdrant/Llama.
@@ -57,22 +78,31 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   private val validRequestBody: String     = """{"query":"zzqx vvbb wwyy qqzz nonsense gibberish impossible token soup","limit":10}"""
   private val malformedRequestBody: String = """{"query":"","limit":10}"""
 
-  // The QP12 smoke for the absent-env launcher default is only meaningful if the env var really is
-  // unset in this JVM; if an operator exported it, cancel rather than assert a false default.
+  private val testVectorSearchSpec: VectorSearchSpec =
+    VectorSearchSpec(
+      collectionName = "qp12b_runtime_binding_collection",
+      vectorName = "qp12b-runtime-binding-vector",
+      topK = 10,
+      scoreThreshold = None,
+    )
+
+  // The absent-env launcher default smoke is only meaningful if the env var really is unset in this
+  // JVM; if an operator exported it, cancel rather than assert a false default.
   private val envOperatorValue: Option[String] =
     sys.env.get(BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName)
 
   // ============================================================================================
-  // Case 1: absent env -> real launcher entry point serves the ES-backed default over HTTP.
+  // Case 1: absent env -> real launcher entry point serves the ES-backed default over HTTP, with no
+  // Qdrant runtime module required.
   // ============================================================================================
 
   "The launcher entry point BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow (absent env)" should {
-    "serve a valid /beauty-search request as the ES-backed default (200) over a real local server, with no Qdrant binding required" in {
+    "serve a valid /beauty-search request as the ES-backed default (200) over a real local server, with no Qdrant runtime module required" in {
       envOperatorValue match {
         case Some(value) =>
-          cancel(s"QP12: ${BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName} is set to '$value' in this process; absent-env default smoke is not applicable")
+          cancel(s"QP12b: ${BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName} is set to '$value' in this process; absent-env default smoke is not applicable")
         case None =>
-          val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow())
+          val apis = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow())
           assert(apis.size == 1)
           assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
 
@@ -84,7 +114,7 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     "leave malformed-request behavior unchanged (400) for the absent-env launcher default" in {
       envOperatorValue match {
         case Some(value) =>
-          cancel(s"QP12: ${BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName} is set to '$value' in this process; absent-env default smoke is not applicable")
+          cancel(s"QP12b: ${BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName} is set to '$value' in this process; absent-env default smoke is not applicable")
         case None =>
           val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow())
           val response = serve(apis, malformedRequestBody)
@@ -94,12 +124,12 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   }
 
   // ============================================================================================
-  // Case 2: explicit es-only-rollback -> equivalent to absent/default.
+  // Case 2: explicit es-only-rollback -> equivalent to absent/default, no Qdrant runtime module.
   // ============================================================================================
 
   "The explicit es-only-rollback launcher value" should {
-    "serve a valid /beauty-search request as the ES-backed default (200), equivalent to the absent default" in {
-      val apis     = esOnlyApis(esOnlyRollbackModule)
+    "serve a valid /beauty-search request as the ES-backed default (200), equivalent to the absent default, with no Qdrant runtime module required" in {
+      val apis = esOnlyApis(esOnlyRollbackModule)
       assert(apis.size == 1)
       assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
 
@@ -109,18 +139,19 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   }
 
   // ============================================================================================
-  // Case 3: explicit qdrant-supplement-not-ready -> 503, no silent fallback.
+  // Case 3: explicit qdrant-supplement-not-ready, WITH the QP13 runtime binding module supplied ->
+  // 503, with fail-if-called leaf clients proving no search invocation and no silent fallback.
   // ============================================================================================
 
-  "The explicit qdrant-supplement-not-ready launcher value" should {
-    "reject a valid /beauty-search request with 503 over a real local server, without invoking the lexical/semantic/document-lookup backends" in {
-      val apis     = supplementApis(notReadyModule, failIfCalledFixture)
+  "The explicit qdrant-supplement-not-ready launcher value composed with the QP13 runtime binding module" should {
+    "reject a valid /beauty-search request with 503 over a real local server, without invoking the ES/embedding/Qdrant leaf clients" in {
+      val apis     = runtimeBoundApis(notReadyModule, failIfCalledLeaves)
       val response = serve(apis, validRequestBody)
       assert(response.status == Status.ServiceUnavailable, s"qdrant-supplement-not-ready must reject a valid request with 503, got ${response.status}")
     }
 
     "leave a malformed request at 400, not 503" in {
-      val apis     = supplementApis(notReadyModule, failIfCalledFixture)
+      val apis     = runtimeBoundApis(notReadyModule, failIfCalledLeaves)
       val response = serve(apis, malformedRequestBody)
       assert(response.status == Status.BadRequest)
     }
@@ -130,8 +161,12 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   // Case 4: explicit qdrant-supplement-ready.
   // ============================================================================================
 
-  "The explicit qdrant-supplement-ready launcher value through the seam alone (no supplement bindings supplied)" should {
-    "fail closed at graph composition, naming the exact missing supplement runtime bindings (READY_LAUNCHER_BINDINGS_BLOCKED)" in {
+  // Selection-only boundary, NOT the final ready state: the ready module through the launcher seam
+  // alone -- exactly how `LeaderboardPlugin` includes the selected module today, with no other module
+  // supplying the supplement runtime bindings -- still fails closed naming the three keys. The QP13
+  // runtime binding module (exercised by the next test) is what closes them.
+  "The explicit qdrant-supplement-ready launcher value through the seam alone (no QP13 runtime module)" should {
+    "fail closed at graph composition, naming the exact missing supplement runtime bindings -- the selection-only boundary, not the final ready state" in {
       val thrown  = intercept[Throwable](apisFromReadyModuleWithoutSupplementBindings())
       val message = causeChainMessage(thrown)
       assert(message.contains("qdrantSupplementLexicalElasticsearch"), s"missing-binding report must name the qualified lexical ES backend; got: $message")
@@ -140,17 +175,31 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     }
   }
 
-  "The explicit qdrant-supplement-ready launcher value once the documented supplement bindings are supplied" should {
-    "serve and stay capped at ExplicitConstraintsFilterPlusTop1 (one append), not AppendAll, preserving the ES prefix and never duplicating an ES id" in {
-      val apis     = supplementApis(readyModule, threeAppendFixture)
+  "The explicit qdrant-supplement-ready launcher value composed with the QP13 runtime binding module (leaf doubles only)" should {
+    "build and serve a valid /beauty-search request (200), capped at ExplicitConstraintsFilterPlusTop1 (one append, never AppendAll), preserving the ES prefix, never duplicating an ES id, and leaving the ES-owned provider carousel unchanged by the append" in {
+      val apis     = runtimeBoundApis(readyModule, dedupLeaves)
       val response = serve(apis, validRequestBody)
-      assert(response.status == Status.Ok)
+      assert(response.status == Status.Ok, s"qdrant-supplement-ready must serve 200 once the QP13 runtime module is composed, got ${response.status}")
 
-      val json       = parseJson(response)
-      val variantIds = json.hcursor.downField("variantCarousel").focus.flatMap(_.asArray).getOrElse(fail("missing variantCarousel"))
+      val json           = parseJson(response)
+      val variantIdStrings = variantCarouselIds(json)
+
+      // ES prefix preserved + exactly one Qdrant-only append (AppendAll would also append the
+      // second qdrant-only candidate `v3`, yielding 3 entries).
       assert(
-        variantIds.size == 1,
-        s"QP12: the ready route must stay capped at one append (ExplicitConstraintsFilterPlusTop1), not AppendAll, got ${variantIds.size}",
+        variantIdStrings == Vector(esVariantId.toString, qdrantOnlyAppendId.toString),
+        s"QP12b: ready route must keep the ES prefix and append exactly one Qdrant-only candidate (ExplicitConstraintsFilterPlusTop1), got $variantIdStrings",
+      )
+      // No duplicate ES id: the Qdrant candidate that duplicates the ES id is dropped, never re-added.
+      assert(variantIdStrings.distinct == variantIdStrings, s"QP12b: variant carousel must contain no duplicate ids, got $variantIdStrings")
+      assert(variantIdStrings.count(_ == esVariantId.toString) == 1, s"QP12b: the ES id must appear exactly once, got $variantIdStrings")
+
+      // ES-owned non-variant component unchanged by the append: the provider carousel reflects only
+      // the ES document (its sole matching variant is the ES id, never the appended Qdrant id).
+      val providerSampleIds = providerSampleVariantIds(json)
+      assert(
+        providerSampleIds == Vector(esVariantId.toString),
+        s"QP12b: ES-owned provider carousel must reflect only the ES document and ignore the Qdrant append, got $providerSampleIds",
       )
     }
   }
@@ -202,7 +251,118 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     runIO(observe(combineApis(apis.toSeq*), postJson("/beauty-search", body)))
 
   // ============================================================================================
-  // Fixtures and graph-composition helpers (QP6/QP8/QP10 style: Stub*/FailIfCalled*, no spies).
+  // Leaf doubles: the I/O collaborators the QP13 runtime binding module depends on, plus the ready
+  // catalog. The runtime module's own three keys are NOT doubled -- they are the real production
+  // implementations under test.
+  // ============================================================================================
+
+  private final case class LeafDoubles(
+    esClient: ElasticsearchJsonClient,
+    embeddingClient: EmbeddingClient,
+    qdrantSearchClient: QdrantSearchClient,
+    readyCatalog: BeautySearchReadyCatalogDocuments,
+  )
+
+  // Ready fixture: one ES hit (`esVariantId`), and three Qdrant candidates in descending score where
+  // the top one duplicates the ES id (must be deduped) and the next is the single Qdrant-only append.
+  private val esVariantId: MasterServiceOfferVariantId        = variantId(1)
+  private val qdrantOnlyAppendId: MasterServiceOfferVariantId = variantId(2)
+  private val qdrantOnlySecondId: MasterServiceOfferVariantId = variantId(3)
+
+  private def dedupLeaves: LeafDoubles = {
+    val catalogDocuments = List(esVariantId, qdrantOnlyAppendId, qdrantOnlySecondId).map(document)
+    LeafDoubles(
+      esClient = singleEsHitClient(esHitDocument(esVariantId)),
+      embeddingClient = new StubEmbeddingClient(Vector(0.1d, 0.2d, 0.3d, 0.4d)),
+      qdrantSearchClient = new StubQdrantSearchClient(List(esVariantId, qdrantOnlyAppendId, qdrantOnlySecondId)),
+      readyCatalog = BeautySearchReadyCatalogDocuments("qp12b-fixture-catalog", catalogDocuments),
+    )
+  }
+
+  private def failIfCalledLeaves: LeafDoubles =
+    LeafDoubles(
+      esClient = failIfCalledEsClient,
+      embeddingClient = new FailIfCalledEmbeddingClient,
+      qdrantSearchClient = new FailIfCalledQdrantSearchClient,
+      readyCatalog = BeautySearchReadyCatalogDocuments("qp12b-fixture-catalog", List(document(variantId(1)))),
+    )
+
+  // ============================================================================================
+  // Graph-composition helpers (QP6/QP8/QP10/QP13 style: Stub*/FailIfCalled*, no spies).
+  // ============================================================================================
+
+  private final case class ApisProbe(allHttpApis: Set[HttpApi[IO]])
+
+  private def apisFrom(module: Module): Set[HttpApi[IO]] = {
+    val locator = Injector().produce(
+      bindings = module,
+      roots = Roots.target[ApisProbe],
+      activation = Activation.empty,
+      locatorPrivacy = LocatorPrivacy.PublicByDefault,
+    ).unsafeGet()
+
+    locator.get[ApisProbe].allHttpApis
+  }
+
+  // Compose the launcher-selected supplement module with the QP13 runtime binding module, supplying
+  // only the documented leaf I/O doubles and the ready catalog -- never binding the three runtime
+  // keys directly.
+  private def runtimeBoundApis(selectedModule: ModuleDef, leaves: LeafDoubles): Set[HttpApi[IO]] = {
+    val module = new ModuleDef {
+      include(selectedModule)
+      include(BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(testVectorSearchSpec))
+      make[Async[Task]].fromValue(Async[Task])
+      make[ApisProbe].from {
+        (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
+          val _ = beautySearchApi
+          ApisProbe(allHttpApis)
+      }
+    }.overriddenBy(new ModuleDef {
+      make[ElasticsearchJsonClient].fromValue(leaves.esClient)
+      make[EmbeddingClient].fromValue(leaves.embeddingClient)
+      make[QdrantSearchClient].fromValue(leaves.qdrantSearchClient)
+      make[BeautySearchReadyCatalogDocuments].fromValue(leaves.readyCatalog)
+    })
+
+    apisFrom(module)
+  }
+
+  private def esOnlyApis(selectedModule: ModuleDef): Set[HttpApi[IO]] = {
+    val module = new ModuleDef {
+      include(selectedModule)
+      make[Async[Task]].fromValue(Async[Task])
+      make[ApisProbe].from {
+        (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
+          val _ = beautySearchApi
+          ApisProbe(allHttpApis)
+      }
+    }.overriddenBy(new ModuleDef {
+      // Replace the port-configured ES client (from `apiElasticsearch`) with a zero-hit mock so the
+      // proof stays focused; this drops the `ElasticsearchPortCfg` dependency edge entirely.
+      make[ElasticsearchJsonClient].fromValue(zeroHitMockEsClient)
+    })
+
+    apisFrom(module)
+  }
+
+  // The ready module selected through the launcher seam alone, deliberately WITHOUT the QP13 runtime
+  // binding module: this is exactly how `LeaderboardPlugin` includes the selected module today, so
+  // graph composition must fail closed and name the missing keys (the selection-only boundary).
+  private def apisFromReadyModuleWithoutSupplementBindings(): Set[HttpApi[IO]] = {
+    val module = new ModuleDef {
+      include(readyModule)
+      make[Async[Task]].fromValue(Async[Task])
+      make[ApisProbe].from {
+        (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
+          val _ = beautySearchApi
+          ApisProbe(allHttpApis)
+      }
+    }
+    apisFrom(module)
+  }
+
+  // ============================================================================================
+  // Documents / fixtures.
   // ============================================================================================
 
   private def variantId(i: Int): MasterServiceOfferVariantId =
@@ -214,6 +374,8 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   private val fixedServiceId            = UUID.fromString("40000000-0000-0000-0000-000000000000")
   private val fixedCategoryId           = UUID.fromString("50000000-0000-0000-0000-000000000000")
 
+  // Minimal catalog/Qdrant document (resolved by the in-memory document lookup and projected by the
+  // Qdrant candidate projector; both proven over this shape by QP6/QP13).
   private def document(id: MasterServiceOfferVariantId): VariantSearchDocument =
     VariantSearchDocument(
       variantId = id,
@@ -244,98 +406,95 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
       locationText = "",
     )
 
-  private final case class SupplementFixture(
-    lexicalBackend: BeautySearchBackend[IO],
-    semanticBackend: SemanticCandidateBackend[IO],
-    documentLookup: VariantSearchDocumentLookup[IO],
-  )
+  // Fully-populated ES `_source` document (the response-interpreter/assembler decode path is proven
+  // over this richer shape by `ElasticsearchSearchResponseInterpreterSpec`).
+  private def esHitDocument(id: MasterServiceOfferVariantId): VariantSearchDocument =
+    VariantSearchDocument(
+      variantId = id,
+      masterServiceOfferId = UUID.fromString("11000000-0000-0000-0000-000000000000"),
+      masterLocationId = UUID.fromString("21000000-0000-0000-0000-000000000000"),
+      masterId = UUID.fromString("31000000-0000-0000-0000-000000000000"),
+      serviceId = UUID.fromString("41000000-0000-0000-0000-000000000000"),
+      categoryId = UUID.fromString("51000000-0000-0000-0000-000000000000"),
+      serviceName = "Manicure",
+      categoryName = "Nails",
+      masterName = "Beauty Master",
+      locationName = "Central Studio",
+      address = "Main street 1",
+      location = SearchGeoPoint(lat = BigDecimal("52.5200"), lon = BigDecimal("13.4050")),
+      lat = BigDecimal("52.5200"),
+      lon = BigDecimal("13.4050"),
+      priceFrom = BigDecimal("25.00"),
+      priceTo = BigDecimal("40.00"),
+      durationMin = 45,
+      enumAttributes = Map("coverage" -> "gel"),
+      booleanAttributes = Map("with_removal" -> true),
+      intAttributes = Map("nails_count" -> 10),
+      bigDecimalAttributes = Map("rating" -> BigDecimal("4.8")),
+      allText = "manicure nails beauty master central studio",
+      serviceText = "manicure nails",
+      attributeText = "coverage gel with removal",
+      providerText = "beauty master central studio",
+      locationText = "central studio main street 1 nails",
+    )
 
-  private val emptyEsResponse: BeautySearchResponse = BeautySearchResponse(Nil, Nil, Nil, Nil, Nil)
+  // ============================================================================================
+  // Leaf doubles (Stub*/FailIfCalled*, no spies).
+  // ============================================================================================
 
-  private def threeAppendFixture: SupplementFixture = {
-    val documents = List(variantId(1), variantId(2), variantId(3)).map(document)
-    SupplementFixture(
-      lexicalBackend = new StubBeautySearchBackend(emptyEsResponse),
-      semanticBackend = new StubSemanticCandidateBackend(
-        List(
-          SemanticCandidateHit(documents(0).variantId, 0.95),
-          SemanticCandidateHit(documents(1).variantId, 0.85),
-          SemanticCandidateHit(documents(2).variantId, 0.75),
+  private final class StubEmbeddingClient(vector: Vector[Double]) extends EmbeddingClient {
+    override def embed(text: String): IO[QueryFailure, Vector[Double]] = ZIO.succeed(vector)
+  }
+
+  // Returns one Qdrant hit per provided variant id, in descending score order, with the variant id
+  // in the payload exactly as the production decoder (`QdrantCandidateHitDecoder`) expects.
+  private final class StubQdrantSearchClient(variantIds: List[MasterServiceOfferVariantId]) extends QdrantSearchClient {
+    override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
+      ZIO.succeed(
+        variantIds.zipWithIndex.map {
+          case (id, index) =>
+            QdrantSearchHit(
+              id = id.toString,
+              payload = JsonObject("variantId" -> Json.fromString(id.toString)),
+              score = 0.95d - index * 0.1d,
+            )
+        }
+      )
+  }
+
+  private final class FailIfCalledEmbeddingClient extends EmbeddingClient {
+    override def embed(text: String): IO[QueryFailure, Vector[Double]] =
+      ZIO.dieMessage("QP12b: embedding client must not be invoked when the serving gate rejects (enabledNotReady)")
+  }
+
+  private final class FailIfCalledQdrantSearchClient extends QdrantSearchClient {
+    override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
+      ZIO.dieMessage("QP12b: Qdrant search client must not be invoked when the serving gate rejects (enabledNotReady)")
+  }
+
+  // ES leaf returning a single decoded hit for the given document on `_search`.
+  private def singleEsHitClient(hitDocument: VariantSearchDocument): ElasticsearchJsonClient = {
+    val searchResponse = Json.obj(
+      "hits" -> Json.obj(
+        "hits" -> Json.arr(
+          Json.obj(
+            "_score" -> Json.fromDoubleOrNull(3.5d),
+            "_source" -> hitDocument.asJson,
+            "matched_queries" -> Json.arr(Json.fromString("serviceName")),
+          )
         )
-      ),
-      documentLookup = new StubVariantSearchDocumentLookup(documents),
+      )
     )
-  }
-
-  private def failIfCalledFixture: SupplementFixture =
-    SupplementFixture(
-      lexicalBackend = new FailIfCalledBeautySearchBackend,
-      semanticBackend = new FailIfCalledSemanticCandidateBackend,
-      documentLookup = new FailIfCalledVariantSearchDocumentLookup,
-    )
-
-  private final case class ApisProbe(allHttpApis: Set[HttpApi[IO]])
-
-  private def apisFrom(module: Module): Set[HttpApi[IO]] = {
-    val locator = Injector().produce(
-      bindings = module,
-      roots = Roots.target[ApisProbe],
-      activation = Activation.empty,
-      locatorPrivacy = LocatorPrivacy.PublicByDefault,
-    ).unsafeGet()
-
-    locator.get[ApisProbe].allHttpApis
-  }
-
-  private def esOnlyApis(selectedModule: ModuleDef): Set[HttpApi[IO]] = {
-    val module = new ModuleDef {
-      include(selectedModule)
-      make[Async[Task]].fromValue(Async[Task])
-      make[ApisProbe].from {
-        (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
-          val _ = beautySearchApi
-          ApisProbe(allHttpApis)
-      }
-    }.overriddenBy(new ModuleDef {
-      // Replace the port-configured ES client (from `apiElasticsearch`) with a zero-hit mock so the
-      // proof stays focused; this drops the `ElasticsearchPortCfg` dependency edge entirely.
-      make[ElasticsearchJsonClient].fromValue(zeroHitMockEsClient)
-    })
-
-    apisFrom(module)
-  }
-
-  private def supplementApis(selectedModule: ModuleDef, fixture: SupplementFixture): Set[HttpApi[IO]] = {
-    val module = new ModuleDef {
-      include(selectedModule)
-      make[Async[Task]].fromValue(Async[Task])
-      make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(fixture.lexicalBackend)
-      make[SemanticCandidateBackend[IO]].fromValue(fixture.semanticBackend)
-      make[VariantSearchDocumentLookup[IO]].fromValue(fixture.documentLookup)
-      make[ApisProbe].from {
-        (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
-          val _ = beautySearchApi
-          ApisProbe(allHttpApis)
-      }
+    new ElasticsearchJsonClient {
+      override def putJson(path: String, json: Json): IO[QueryFailure, Json]  = ZIO.succeed(Json.obj())
+      override def post(path: String): IO[QueryFailure, Json]                 = ZIO.succeed(Json.obj())
+      override def postJson(path: String, json: Json): IO[QueryFailure, Json] =
+        if (path.contains("_search")) ZIO.succeed(searchResponse)
+        else ZIO.succeed(Json.obj())
+      override def postNdjson(path: String, payload: String): IO[QueryFailure, Json] = ZIO.succeed(Json.obj())
+      override def getJson(path: String): IO[QueryFailure, Json]                     = ZIO.dieMessage(s"unexpected getJson($path)")
+      override def delete(path: String): IO[QueryFailure, Unit]                      = ZIO.dieMessage(s"unexpected delete($path)")
     }
-
-    apisFrom(module)
-  }
-
-  // The ready module selected through the launcher seam alone, deliberately WITHOUT the supplement
-  // runtime bindings: this is exactly how `LeaderboardPlugin` includes the selected module today, so
-  // graph composition must fail closed and name the missing keys (READY_LAUNCHER_BINDINGS_BLOCKED).
-  private def apisFromReadyModuleWithoutSupplementBindings(): Set[HttpApi[IO]] = {
-    val module = new ModuleDef {
-      include(readyModule)
-      make[Async[Task]].fromValue(Async[Task])
-      make[ApisProbe].from {
-        (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
-          val _ = beautySearchApi
-          ApisProbe(allHttpApis)
-      }
-    }
-    apisFrom(module)
   }
 
   private def zeroHitMockEsClient: ElasticsearchJsonClient = new ElasticsearchJsonClient {
@@ -349,38 +508,44 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     override def delete(path: String): IO[QueryFailure, Unit]                      = ZIO.dieMessage(s"unexpected delete($path)")
   }
 
-  private final class StubBeautySearchBackend(response: BeautySearchResponse) extends BeautySearchBackend[IO] {
-    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
-      ZIO.succeed(response)
+  private def failIfCalledEsClient: ElasticsearchJsonClient = new ElasticsearchJsonClient {
+    override def putJson(path: String, json: Json): IO[QueryFailure, Json]         = ZIO.dieMessage(s"QP12b: ES client must not be invoked (enabledNotReady): putJson($path)")
+    override def post(path: String): IO[QueryFailure, Json]                        = ZIO.dieMessage(s"QP12b: ES client must not be invoked (enabledNotReady): post($path)")
+    override def postJson(path: String, json: Json): IO[QueryFailure, Json]        = ZIO.dieMessage(s"QP12b: ES client must not be invoked (enabledNotReady): postJson($path)")
+    override def postNdjson(path: String, payload: String): IO[QueryFailure, Json] = ZIO.dieMessage(s"QP12b: ES client must not be invoked (enabledNotReady): postNdjson($path)")
+    override def getJson(path: String): IO[QueryFailure, Json]                     = ZIO.dieMessage(s"QP12b: ES client must not be invoked (enabledNotReady): getJson($path)")
+    override def delete(path: String): IO[QueryFailure, Unit]                      = ZIO.dieMessage(s"QP12b: ES client must not be invoked (enabledNotReady): delete($path)")
   }
 
-  private final class StubSemanticCandidateBackend(hits: List[SemanticCandidateHit]) extends SemanticCandidateBackend[IO] {
-    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] =
-      ZIO.succeed(hits)
-  }
+  // ============================================================================================
+  // JSON helpers.
+  // ============================================================================================
 
-  private final class StubVariantSearchDocumentLookup(documents: List[VariantSearchDocument]) extends VariantSearchDocumentLookup[IO] {
-    private val documentsById = documents.iterator.map(document => document.variantId -> document).toMap
+  private def variantCarouselIds(json: Json): Vector[String] =
+    json.hcursor
+      .downField("variantCarousel")
+      .focus
+      .flatMap(_.asArray)
+      .getOrElse(fail("missing variantCarousel"))
+      .flatMap(_.hcursor.get[String]("variantId").toOption)
 
-    override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
-      ZIO.succeed(variantIds.iterator.flatMap(variantId => documentsById.get(variantId).map(variantId -> _)).toMap)
-  }
-
-  // Proves the collaborators are unused when the gate rejects: a 503 that silently fell back to
-  // ES-only, served append-all, or became Qdrant-as-default would invoke one of these and die.
-  private final class FailIfCalledBeautySearchBackend extends BeautySearchBackend[IO] {
-    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
-      ZIO.dieMessage("QP12: lexical backend must not be invoked when the serving gate rejects (enabledNotReady)")
-  }
-
-  private final class FailIfCalledSemanticCandidateBackend extends SemanticCandidateBackend[IO] {
-    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] =
-      ZIO.dieMessage("QP12: semantic candidate backend must not be invoked when the serving gate rejects (enabledNotReady)")
-  }
-
-  private final class FailIfCalledVariantSearchDocumentLookup extends VariantSearchDocumentLookup[IO] {
-    override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
-      ZIO.dieMessage("QP12: document lookup must not be invoked when the serving gate rejects (enabledNotReady)")
+  private def providerSampleVariantIds(json: Json): Vector[String] = {
+    val providers = json.hcursor
+      .downField("providerCarousel")
+      .focus
+      .flatMap(_.asArray)
+      .getOrElse(fail("missing providerCarousel"))
+    providers.headOption match {
+      case Some(provider) =>
+        provider.hcursor
+          .downField("sampleMatchingVariantIds")
+          .focus
+          .flatMap(_.asArray)
+          .getOrElse(fail("missing sampleMatchingVariantIds"))
+          .flatMap(_.asString)
+      case None =>
+        fail("providerCarousel must be non-empty for the populated ES fixture")
+    }
   }
 
   private def causeChainMessage(throwable: Throwable): String =
