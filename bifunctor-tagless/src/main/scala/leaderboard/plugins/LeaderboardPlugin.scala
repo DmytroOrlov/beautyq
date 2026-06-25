@@ -27,7 +27,10 @@ import scala.concurrent.duration.*
 object LeaderboardPlugin extends PluginDef {
   include(modules.roles[IO])
   include(modules.apiBase[IO])
-  include(BeautySearchRouteModules.apiElasticsearch)
+  // Narrow launcher activation seam (QP10): absent/unset BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION
+  // selects EsOnlyRollback, which is exactly BeautySearchRouteModules.apiElasticsearch -- the same
+  // module this line included before the seam existed. See BeautySearchQdrantSupplementActivationLauncherSeam.
+  include(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow())
   include(modules.repoDummy[IO])
   include(modules.repoProd[IO])
   include(modules.seed[IO])

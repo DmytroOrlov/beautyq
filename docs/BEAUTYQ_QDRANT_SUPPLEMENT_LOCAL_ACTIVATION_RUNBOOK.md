@@ -9,9 +9,9 @@
 ## Current boundary
 
 * Default production `POST /beauty-search` remains ES-backed.
-* The Qdrant supplement is **not** included by default in `LeaderboardPlugin` (it only includes `BeautySearchRouteModules.apiElasticsearch`).
-* `LeaderboardRole` activation integration is **not** wired yet.
-* This runbook does not change runtime behavior.
+* `LeaderboardPlugin` now includes `BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow()` instead of including `BeautySearchRouteModules.apiElasticsearch` directly (QP10). For an absent/unset `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` environment value this selects `EsOnlyRollback`, which is exactly `BeautySearchRouteModules.apiElasticsearch` -- the same module included before this seam existed. The default production graph and behavior are unchanged.
+* Setting `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION=qdrant-supplement-not-ready` or `qdrant-supplement-ready` before launching selects the corresponding supplement module; the caller (launcher/role wiring) must still separately supply the lexical/semantic backend and document lookup bindings, exactly as for `BeautySearchQdrantSupplementActivation.moduleFor(...)`. An unrecognized value throws at plugin-module-composition time (fail closed), never silently selecting ready or falling back to the supplement.
+* This runbook does not change runtime behavior beyond the QP10 launcher seam described above.
 
 ## Operator values
 
@@ -82,7 +82,6 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 
 ## What this runbook does not do
 
-* No launcher/role activation — `LeaderboardRole` is not wired to this selector.
 * No automatic readiness HTTP call — the preflight takes readiness values as pure input.
 * No startup indexing.
 * No collection lifecycle manager.
@@ -92,7 +91,8 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 * No production rollout claim.
 * No route JSON / API change.
 
-## Next unblock
+## Launcher activation seam (QP10)
 
-* Wiring this activation selector into a role/launcher seam (env/CLI -> `BeautySearchQdrantSupplementActivationConfig` -> `LeaderboardRole`) is a separate, not-yet-started task.
-* Use this preflight/runbook to validate operator values and readiness before that seam is enabled.
+* `LeaderboardPlugin` includes `BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow()`, which reads the `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` environment value and selects the module via `BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(...)`.
+* This is a module-selection seam only: it does not itself bind the lexical/semantic backend or document lookup needed for the not-ready/ready states, perform readiness HTTP calls, or change any runtime/route behavior beyond which module is selected.
+* Use the preflight/runbook above to validate operator values and readiness before setting this environment value to `qdrant-supplement-ready` for any local run.

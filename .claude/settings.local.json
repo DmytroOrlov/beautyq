@@ -3,16 +3,17 @@
     "allow": [
       "Bash(sbt *)",
       "Bash(git status --short)",
-      "Bash(git diff --check)"
-    ],
-    "ask": [
-      "Bash(git checkout *)"
+      "Bash(git diff --check)",
+      "Bash(echo \"exit=$?\")"
     ],
     "deny": [
       "Bash(git push *)",
       "Bash(git reset *)",
       "Bash(git clean *)",
       "Bash(rm *)"
+    ],
+    "ask": [
+      "Bash(git checkout *)"
     ]
   }
 }
