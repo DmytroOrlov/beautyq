@@ -129,3 +129,15 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 ```bash
 sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP12LocalLauncherActivationSmokeSpec'
 ```
+
+## Ready-mode runtime binding module (QP13)
+
+* `BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(vectorSearchSpec)` is the smallest module that closes the exact three keys QP12 reported missing for the ready/not-ready states (`READY_LAUNCHER_BINDINGS_BLOCKED`): the qualified lexical ES backend `BeautySearchBackend[IO] @Id("qdrantSupplementLexicalElasticsearch")`, `SemanticCandidateBackend[IO]`, and `VariantSearchDocumentLookup[IO]`.
+* Each is bound to an existing source-confirmed implementation: the lexical leg is the ES-backed `ElasticsearchSearchBackend` over the opt-in module's `BeautySearchSpec` (not in-memory, not Qdrant); the semantic leg is `QdrantSemanticCandidateBackend`/`QdrantSemanticCandidateSearch` (embedding -> Qdrant `points/search`, append-only, no fusion/reranking, no residual-text routing); the document lookup is `InMemoryVariantSearchDocumentLookup` resolving Qdrant candidate variant ids against the ready seed catalog (no invented id translation, Qdrant point-id rules unchanged).
+* It binds **no** Qdrant/ES/Llama leaf I/O client, performs no readiness HTTP call, starts no indexing, registers no config, and is **not** included by `LeaderboardPlugin` default modules. The caller/launcher still supplies the leaf collaborators (`ElasticsearchJsonClient`, `EmbeddingClient`, `QdrantSearchClient`) and the seed loader, exactly as the seam already documents; the QP10 seam itself stays selection-only, so the absent-env / `es-only-rollback` default graph never gains a Qdrant edge.
+* QP11 preflight (`READY_TO_ENABLE`) remains required before an operator selects `qdrant-supplement-ready`; QP13 changes none of the preflight/readiness lifecycle.
+* `QP13QdrantSupplementRuntimeBindingsSpec` proves: with the runtime binding module supplied, the ready route builds and serves over a real local server capped at `ExplicitConstraintsFilterPlusTop1` (one append, never AppendAll); the same bindings under the not-ready gate still reject a valid request with 503 without invoking the leaf collaborators; absent-env / `es-only-rollback` still serves the ES default **without** the runtime module; an invalid env value still fails closed.
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP13QdrantSupplementRuntimeBindingsSpec'
+```

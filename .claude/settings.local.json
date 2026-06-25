@@ -4,7 +4,8 @@
       "Bash(sbt *)",
       "Bash(git status --short)",
       "Bash(git diff --check)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"--- check exit: $? ---\")"
     ],
     "deny": [
       "Bash(git push *)",
