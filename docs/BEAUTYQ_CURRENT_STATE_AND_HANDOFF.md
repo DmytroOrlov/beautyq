@@ -138,6 +138,51 @@ This method, not the BeautyQ threshold values, should transfer to future domains
 
 This method does not guarantee a domain will reach a safe Qdrant supplement policy — it only structures the evidence needed to decide. For BeautyQ, following it left policy blocked.
 
+### BeautyQ runtime supplement evidence ledger
+
+This is a durable summary of the BeautyQ runtime Qdrant supplement tuning loop, not a new report layer. Exact verification counts and detailed per-query tables remain in the measurement specs/reports (Y0A, Y0C-Y0K), not here.
+
+**Worked:**
+
+* ES-first + Qdrant-additive seam can preserve structural response ownership.
+* ES prefix/order and non-variant components stay preserved in measurements.
+* Qdrant can be safely evaluated as a semantic candidate source without production enablement.
+
+**Almost worked:**
+
+* `explicit_constraints_filter_plus_top1` was the strongest runtime supplement gate found.
+* It reduced harm to zero in the measured canonical run.
+* It preserved `q_broad_006`.
+* It lost `q_lashes_008`.
+* Therefore it is measurement-useful but not Y1-ready.
+
+**Did not work as a policy path:**
+
+* threshold tuning;
+* append cap/topK tightening;
+* embedding source-field selection;
+* larger embedding model size;
+* document-side key-value semantic text variants;
+* query-side constraint tags / remainingText tags / oracle query-type tags.
+
+**Decision:**
+
+* Y1 remains blocked.
+* The BeautyQ runtime supplement tuning loop is stopped at Y0K.
+* Do not keep trying thresholds, caps, source fields, model size, or simple text/tag variants without new source truth.
+* Qdrant remains non-production/eval/semantic-candidate evidence.
+
+**For future domains:**
+
+* Transfer the method, not BeautyQ thresholds.
+* Start with ES primary + Qdrant additive seam.
+* Prove structural no-harm.
+* Run the full canonical domain eval.
+* Measure appended acceptable/unacceptable ids.
+* Classify harm type.
+* Try parser/intent constraints before tuning thresholds/caps.
+* Stop early when recovery only appears under harmful gates.
+
 ## 8. Verification and testing protocol
 
 * Use the Constructive test taxonomy: pure model/metric logic is `Contractual + Blackbox + Atomic`; in-process service/module seams are `Contractual + Blackbox + Group`; real ES/Qdrant/Llama/Docker/HTTP is `Communication`, resource-backed auto-gated/cancelable (unavailable resources cancel with reason).
