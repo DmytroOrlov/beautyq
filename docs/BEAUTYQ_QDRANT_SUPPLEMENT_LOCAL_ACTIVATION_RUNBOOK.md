@@ -5,6 +5,7 @@
 * This is a local/operator runbook for the no-worsening Qdrant supplement path.
 * This is **not** a report.
 * This is **not** production rollout approval.
+* For the short operator checklist, see `docs/BEAUTYQ_QDRANT_SUPPLEMENT_OPERATOR_CHECKLIST.md`.
 
 ## Current boundary
 
