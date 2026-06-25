@@ -96,3 +96,16 @@ sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.sea
 * `LeaderboardPlugin` includes `BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow()`, which reads the `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` environment value and selects the module via `BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(...)`.
 * This is a module-selection seam only: it does not itself bind the lexical/semantic backend or document lookup needed for the not-ready/ready states, perform readiness HTTP calls, or change any runtime/route behavior beyond which module is selected.
 * Use the preflight/runbook above to validate operator values and readiness before setting this environment value to `qdrant-supplement-ready` for any local run.
+
+## Real-resource activation preflight command (QP11)
+
+* `BeautySearchQdrantSupplementActivationPreflightCommand.run(operatorValue, expectedReadiness, checker)` (and the env-reading convenience `runFromEnv(expectedReadiness, checker)`) is the first real operator command in this path: it reads the selected `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` value, and -- only for the explicit `qdrant-supplement-ready` value -- runs the existing read-only `QdrantCollectionCompatibilityChecker` (QP5 stack) against the real Qdrant collection, then prints the same stable QP8 result: `READY_TO_ENABLE`, or `BLOCKED` with reason `ES_ONLY_ROLLBACK_SELECTED` / `QDRANT_SUPPLEMENT_NOT_READY_SELECTED` / `INVALID_OPERATOR_CONFIG` / `READINESS_MISMATCH`.
+* A missing/unreachable Qdrant collection is reported as `BLOCKED` / `READINESS_MISMATCH`, exactly like a real mismatch -- never `READY_TO_ENABLE`.
+* This is a probe only: it performs only the checker's read-only collection-info GET. It never creates/deletes/recreates a collection, never switches a route, never starts indexing, and never auto-activates `qdrant-supplement-ready`.
+* Run it as the existing `testOnly`-spec convention (this repo has no standalone CLI/main-class command pattern):
+
+```bash
+sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP11QdrantSupplementRealResourcePreflightSpec'
+```
+
+* Expected outcomes: the pure operator-state tests (absent / `es-only-rollback` / `qdrant-supplement-not-ready` / an unrecognized value, plus deterministic compatible/mismatched/missing/unreachable checker fixtures) always pass with no real resource needed. The final real-local-Qdrant test creates one UUID-namespaced test-only collection (mirroring `QdrantCollectionCompatibilityIntegrationSpec`'s lifecycle, deleting it afterwards), checks it as `READY_TO_ENABLE`, then checks the same collection against a deliberately mismatched expectation as `BLOCKED` / `READINESS_MISMATCH`. If the local/Docker-managed Qdrant the `LeaderboardTest` harness provisions is unavailable, that test fails at the harness/Docker level, which is `VERIFICATION BLOCKED` per `AGENTS.md`, not a production-readiness claim either way.
