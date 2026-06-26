@@ -12,12 +12,15 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.{BeautySearchLocalQdrantSupplementLauncherModule, LeaderboardPlugin}
+import leaderboard.search.document.BeautySearchReadyCatalogDocuments
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
-import leaderboard.search.qdrant.QdrantClient
+import leaderboard.search.qdrant.{QdrantClient, QdrantSearchClient, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
+import leaderboard.search.semantic.SemanticCandidateBackend
 import leaderboard.search.startup.BeautyQManagedLocalSearchDataReady
 import leaderboard.{HttpContractTestSupport, LeaderboardTest, ObservedResponse, ProdTest}
+import logstage.LogIO2
 import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
@@ -84,17 +87,21 @@ final class QP27ManagedLocalLauncherBeautySearchRouteMountSpec
     qdrantClient: QdrantClient,
     embeddingClient: EmbeddingClient,
   ): IO[QueryFailure, Unit] = {
+    val routeVectorSpec = vectorSpec.copy(
+      collectionName = s"${vectorSpec.collectionName}_qp27_${UUID.randomUUID().toString.replace('-', '_')}"
+    )
     val routeSpec = baseSpec.copy(
       variantDocument = baseSpec.variantDocument.copy(
         indexName = s"${baseSpec.variantDocument.indexName}_qp27_${UUID.randomUUID().toString.replace('-', '_')}"
       ),
-      vectorSearchSpec = Some(vectorSpec),
+      vectorSearchSpec = Some(routeVectorSpec),
     )
+    val collectionPath = s"/collections/${routeVectorSpec.collectionName}"
     val esJsonClient = new ElasticsearchJsonClientAdapter(esClient)
 
     (
       for {
-        probe <- buildManagedLocalProbe(esJsonClient, qdrantClient, embeddingClient, routeSpec).mapError(toQueryFailure)
+        probe <- buildManagedLocalProbe(esJsonClient, qdrantClient, embeddingClient, routeSpec, routeVectorSpec).mapError(toQueryFailure)
         apis = probe.allHttpApis
         _ <- ZIO.succeed {
           val beautyApis = apis.collect { case api: BeautySearchApi[IO] => api }
@@ -115,7 +122,8 @@ final class QP27ManagedLocalLauncherBeautySearchRouteMountSpec
           assertAppend(append)
         }
       } yield ()
-    ).ensuring(esClient.deleteIndex(routeSpec.variantDocument.indexName).either.unit)
+    ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
+      .ensuring(esClient.deleteIndex(routeSpec.variantDocument.indexName).either.unit)
   }
 
   private def buildManagedLocalProbe(
@@ -123,6 +131,7 @@ final class QP27ManagedLocalLauncherBeautySearchRouteMountSpec
     qdrantClient: QdrantClient,
     embeddingClient: EmbeddingClient,
     routeSpec: BeautySearchSpec,
+    routeVectorSpec: leaderboard.search.dsl.VectorSearchSpec,
   ): Task[ManagedLocalRouteSetProbe] = {
     val module = new ModuleDef {
       include(LeaderboardPlugin.modules.apiBase[IO])
@@ -143,6 +152,32 @@ final class QP27ManagedLocalLauncherBeautySearchRouteMountSpec
       make[ElasticsearchJsonClient].fromValue(esClient)
       make[EmbeddingClient].fromValue(embeddingClient)
       make[QdrantClient].fromValue(qdrantClient)
+      make[SemanticCandidateBackend[IO]].from {
+        (embeddingClient: EmbeddingClient, qdrantSearchClient: QdrantSearchClient) =>
+          new QdrantSemanticCandidateBackend(
+            new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient),
+            routeVectorSpec,
+          )
+      }
+      make[BeautyQManagedLocalSearchDataReady].fromResource {
+        (
+          esClient: ElasticsearchJsonClient,
+          qdrantClient: QdrantClient,
+          embeddingClient: EmbeddingClient,
+          spec: BeautySearchSpec,
+          catalog: BeautySearchReadyCatalogDocuments,
+          log: LogIO2[IO],
+        ) =>
+          new BeautyQManagedLocalSearchDataReady.Bootstrap(
+            esClient,
+            qdrantClient,
+            embeddingClient,
+            spec,
+            catalog,
+            routeVectorSpec,
+            log,
+          )
+      }
     })
 
     Injector[Task]().produce(

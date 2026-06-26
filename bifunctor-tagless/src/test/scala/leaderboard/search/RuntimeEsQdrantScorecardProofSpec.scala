@@ -3351,8 +3351,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"Y0D_DECISION=$y0dDecision\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
                 s"PER_LEG_LATENCY_RECORDED=$latencyOk\n" +
-                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-                s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}"
+                s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
             }
             println(y0cEvidenceLog)
 
@@ -3626,8 +3626,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"POLICY_REMAINS_BLOCKED=true\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
                 s"PER_LEG_LATENCY_RECORDED=$latencyOk\n" +
-                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-                s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}"
+                s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
             }
             println(y0eEvidenceLog)
 
@@ -4076,9 +4076,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"Y0G_DECISION=$y0gDecision\n" +
                 s"POLICY_REMAINS_BLOCKED=true\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
-                s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
-                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-                s"NO_DEFAULT_ROUTE_CHANGE=true"
+                s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
             }
             println(y0gEvidenceLog)
 
@@ -4389,9 +4388,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"Y0I_DECISION=$y0iDecision\n" +
                 s"POLICY_REMAINS_BLOCKED=true\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
-                s"ES_PREFIX_AND_ORDER_PRESERVED=${y0iRows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
-                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${y0iRows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-                s"NO_DEFAULT_ROUTE_CHANGE=true"
+                s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${y0iRows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+                s"esPrefixPreserved=${y0iRows.forall(_.esPrefixPreserved)} esOrderPreserved=${y0iRows.forall(_.esOrderPreserved)}"
             }
             println(y0iEvidenceLog)
 
@@ -4676,9 +4674,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               s"Y0H_DECISION=$y0hDecision\n" +
               s"POLICY_REMAINS_BLOCKED=true\n" +
               s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
-              s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
-              s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-              s"NO_DEFAULT_ROUTE_CHANGE=true"
+              s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+              s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
           }
           println(y0hEvidenceLog)
 
@@ -5107,9 +5104,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"Y0J_DECISION=$y0jDecision\n" +
                 s"POLICY_REMAINS_BLOCKED=true\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
-                s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
-                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-                s"NO_DEFAULT_ROUTE_CHANGE=true"
+                s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
             }
             println(y0jEvidenceLog)
 
@@ -5576,9 +5572,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"Y0K_DECISION=$y0kDecision\n" +
                 s"POLICY_REMAINS_BLOCKED=true\n" +
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
-                s"ES_PREFIX_AND_ORDER_PRESERVED=${rows.forall(r => r.esPrefixPreserved && r.esOrderPreserved)}\n" +
-                s"ALL_NON_VARIANT_FIELDS_PRESERVED=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)}\n" +
-                s"NO_DEFAULT_ROUTE_CHANGE=true"
+                s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
+                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
             }
             println(y0kEvidenceLog)
 
