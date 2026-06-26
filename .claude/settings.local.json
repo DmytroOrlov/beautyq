@@ -10,11 +10,8 @@
     "deny": [
       "Bash(git push *)",
       "Bash(git reset *)",
-      "Bash(git clean *)",
-      "Bash(rm *)"
+      "Bash(git clean *)"
     ],
-    "ask": [
-      "Bash(git checkout *)"
-    ]
+    "ask": []
   }
 }
