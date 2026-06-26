@@ -12,7 +12,7 @@
 - QP12 local launcher smoke must pass.
 - QP19 measured local acceptance gate must pass.
 - QP14 diagnostics must pass.
-- Future domains use the QP19 measured local gate template: first prove measured local improvement, allow zero ES-baseline regression unless a user-approved explicit harm budget exists, and do not switch production/default routes before the gate is green.
+- Future domains use the QP19 measured local gate template: first prove measured local improvement, allow zero ES-baseline regression unless a user-approved explicit harm budget exists, and do not switch production/default routes before the gate is green. See the reusable checklist at `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`.
 - Default/rollback path must remain ES-backed.
 - Invalid activation must fail closed.
 - Not-ready must return 503 with no fallback.

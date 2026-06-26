@@ -139,6 +139,8 @@ This method, not the BeautyQ threshold values, should transfer to future domains
 
 This method does not guarantee a domain will reach a safe Qdrant supplement policy — it only structures the evidence needed to decide. For BeautyQ, following it left policy blocked.
 
+For a short, reusable starting checklist (metrics, pass conditions, harm budget, forbidden-before-gate-green items) see `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`.
+
 ### BeautyQ runtime supplement evidence ledger
 
 This is a durable summary of the BeautyQ runtime Qdrant supplement tuning loop, not a new report layer. Exact verification counts and detailed per-query tables remain in the measurement specs/reports (Y0A, Y0C-Y0K), not here.
