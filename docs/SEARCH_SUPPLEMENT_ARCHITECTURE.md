@@ -57,6 +57,9 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 * Qdrant supplement
 * `ExplicitConstraintsFilterPlusTop1`
 * local managed launcher selects the supplement route with `./launcher -u scene:managed :leaderboard`
+* local managed startup prepares the BeautyQ data the route reads (SQL/Postgres seed, Elasticsearch
+  baseline index, Qdrant supplement collection/vectors) before serving — no user-facing activation env
+  flag, and without any by-hand Qdrant collection-creation or indexing step
 * 4 queries, 1 improved, 3 unchanged, 0 worsened
 * details live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`
 
@@ -65,7 +68,7 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 * no Qdrant-only search
 * no fallback
 * no score fusion/rerank
-* no startup indexing
+* no production startup indexing (local managed startup may prepare local ES/Qdrant data only)
 * no production collection lifecycle
 * no production route/default behavior change from frontend provenance alone
 * no benchmark output as automatic rollout signal

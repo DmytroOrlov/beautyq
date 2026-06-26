@@ -35,7 +35,7 @@ object BeautySearchPluginModules {
       ) =>
         new BeautySearchApi[F](service, endpoints, gate)(implicitly[Error2[F]], async)
     }
-    many[HttpApi[F]].weak[BeautySearchApi[F]]
+    many[HttpApi[F]].ref[BeautySearchApi[F]]
   }
 
   // Disabled-by-default, explicit opt-in supplement service: wraps an already-bound ES lexical

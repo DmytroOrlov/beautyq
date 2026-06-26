@@ -4,6 +4,7 @@
 
 * QP25 enables test/local `/beauty-search` provenance.
 * QP25b makes the local managed launcher select the Qdrant supplement route by default when local resources are available.
+* QP26 makes the local managed launcher prepare all local data the route needs at startup (SQL/Postgres seed, Elasticsearch baseline index, Qdrant supplement collection/vectors), with no user-facing activation env flag and without any by-hand Qdrant collection-creation or indexing step.
 * Commit: `805edaa48724e16a36dca2ab8955f11c52cef3b2`.
 * This is local/test acceptance evidence. It is not approval to switch production/default behavior.
 * Not production rollout.
@@ -29,7 +30,22 @@ Run the local managed launcher:
 
 The launcher HTTP server binds to source-confirmed port `8080` in `leaderboard.http.HttpServer`.
 
-The local managed launcher path selects the ES baseline plus Qdrant supplement route directly. It still needs the normal local resources: Elasticsearch, Qdrant with a compatible indexed BeautyQ collection, and the embedding endpoint used by the Qdrant collection. The route does not create Qdrant collections, index Qdrant at startup, fall back, fuse scores, or rerank. In short: no fallback, no fusion, no rerank.
+The local managed launcher path selects the ES baseline plus Qdrant supplement route directly and, on
+startup, prepares all local data the route needs before the HTTP server serves `/beauty-search`:
+
+* BeautyQ seed is loaded into SQL/Postgres (`BeautyQSeedReady`).
+* the Elasticsearch baseline index is (re)created and indexed from the BeautyQ catalog;
+* the Qdrant supplement collection
+  (`beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine`, vector
+  `variant-embedding`, dimension `1024`, cosine) is (re)created and the BeautyQ variant vectors are
+  upserted (`BeautyQManagedLocalSearchDataReady` / `BeautyQManagedLocalSearchBootstrap`).
+
+This needs the dockerized Elasticsearch/Qdrant containers (started by the managed scene) and the local
+embedding endpoint (default `http://localhost:8081`). No user-facing Qdrant activation env flag is
+required, and operators never create or index the Qdrant collection by hand — startup does it
+automatically. The bootstrap is idempotent and drops+recreates the local ES index/Qdrant collection on
+each start so repeated launches never raise `resource_already_exists`. The route does not fall back,
+fuse scores, or rerank. In short: no fallback, no fusion, no rerank, and no production startup indexing.
 
 Qdrant append probe:
 
@@ -157,7 +173,7 @@ Any failure means do not claim the local/test supplement proof is green.
 * no fallback
 * no score fusion/rerank
 * no traffic shadowing/mirroring
-* no startup indexing
+* no production startup indexing (local managed startup prepares local ES/Qdrant data only)
 * no production collection lifecycle
 * no benchmark output as automatic rollout signal
 

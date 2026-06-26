@@ -15,7 +15,7 @@ Start here:
 
 Current BeautyQ route truth:
 
-* Local managed launcher `POST /beauty-search` is ES-backed with the constrained Qdrant supplement when local resources are available.
+* Local managed launcher `POST /beauty-search` is ES-backed with the constrained Qdrant supplement.
 * Qdrant remains a constrained supplement only.
 * There is no fallback, fusion, or rerank.
 
@@ -25,7 +25,11 @@ Run the local managed launcher:
 ./launcher -u scene:managed :leaderboard
 ```
 
-The launcher HTTP server binds to source-confirmed port `8080`.
+Local managed startup prepares all local data `/beauty-search` needs before the HTTP server serves:
+BeautyQ seed is loaded into SQL/Postgres, the Elasticsearch baseline index is built, and the Qdrant
+supplement collection/vectors are indexed. No user-facing Qdrant activation env flag is required, and
+operators never create or index the Qdrant collection by hand — startup does it automatically. The
+launcher HTTP server binds to source-confirmed port `8080`.
 
 Qdrant append probe:
 

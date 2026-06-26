@@ -15,6 +15,7 @@ import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
+import leaderboard.search.startup.BeautyQManagedLocalSearchDataReady
 import leaderboard.seed.{BeautyQSeedInserter, BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
@@ -33,7 +34,9 @@ object LeaderboardPlugin extends PluginDef {
   include(modules.repoProd[IO])
   include(modules.seed[IO])
   include(modules.seedProd[IO])
+  include(modules.seedManaged[IO])
   include(modules.seedTest[IO])
+  include(modules.searchDataProvided[IO])
   include(modules.configs)
   include(modules.prodConfigs)
 
@@ -161,14 +164,28 @@ object LeaderboardPlugin extends PluginDef {
       make[BeautyQSeedInserter[F]].from[BeautyQSeedInserter.Impl[F]]
     }
 
+    // Production/provided startup must not auto-seed an external database.
     def seedProd[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
-      tag(Mode.Prod)
+      tag(Mode.Prod, Scene.Provided)
       make[BeautyQSeedReady].fromResource[BeautyQSeedReady.Noop[F]]
+    }
+
+    // Local managed launcher (`./launcher -u scene:managed`, Mode.Prod) seeds the dockerized Postgres,
+    // mirroring the test seed, so `/master`, `/ladder`, ... have BeautyQ data on startup.
+    def seedManaged[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      tag(Mode.Prod, Scene.Managed)
+      make[BeautyQSeedReady].fromResource[BeautyQSeedReady.LoadAndInsert[F]]
     }
 
     def seedTest[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
       tag(Mode.Test)
       make[BeautyQSeedReady].fromResource[BeautyQSeedReady.LoadAndInsert[F]]
+    }
+
+    // Non-managed graphs do not prepare ES/Qdrant search data at startup (no production startup indexing).
+    def searchDataProvided[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+      tag(Scene.Provided)
+      make[BeautyQManagedLocalSearchDataReady].fromResource[BeautyQManagedLocalSearchDataReady.Noop[F]]
     }
 
     val configs: ConfigModuleDef = new ConfigModuleDef {
