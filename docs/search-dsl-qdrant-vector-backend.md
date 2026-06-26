@@ -4,9 +4,9 @@ Status summary:
 
 * Current route truth stays in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: default production `/beauty-search` remains ES-backed.
 * This document owns only the Qdrant explicit opt-in state and Qdrant-specific architecture boundaries.
-* Separate production activation criteria live in `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
-* Broader ES/Qdrant/hybrid future-serving work lives in `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
-* M8/M9 pure eval-contract, saved-report, static-runner, and future backend-runner status lives in `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+* Current local/test Qdrant supplement gate and non-goals live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_OPERATOR_CHECKLIST.md`.
+* Reusable future-domain supplement gating lives in `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`.
+* Older eval-planning and roadmap layers were removed from the docs tree; use the handoff for the accepted current state.
 
 ## 1. Goal
 
@@ -40,10 +40,10 @@ Current boundary, without repeating the handoff and roadmap status blocks:
 
 * Qdrant remains a separate semantic/vector recall path over the existing lexical ES baseline.
 * `BeautySearchRouteModules.apiQdrantExplicitOptIn` exists as the disabled-by-default opt-in route and remains outside the default ES graph.
-* The production-candidate readiness foundation is pure and route-independent; it is not production activation, route switching, fallback, fusion, reranking, or hybrid serving.
+* The production-candidate readiness foundation is pure and route-independent; it is not default-route approval, route switching, fallback, fusion, reranking, or hybrid serving.
 * Current opt-in readiness is offline/seed/eval evidence only. It depends on curated seed/eval queries, saved/offline eval evidence, prerequisite-gate tests, focused route/module specs, and separate route/serving approval for the opt-in path.
-* Any later default-route activation is a separate approval governed by `docs/codebase-review/QDRANT_PRODUCTION_ACTIVATION_DECISION_CRITERIA.md`.
-* The future backend-runner seam for offline ES/Qdrant evidence is planning-only under `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md`.
+* Any later default-route change is a separate approval and is not approved here.
+* The future backend-runner seam for offline ES/Qdrant evidence remains planning-only.
 
 Implemented Qdrant-side seams are intentionally grouped rather than re-listed here: DSL/spec types (`EmbeddingSpec`, `VectorSearchSpec`, `VectorDistance`), Qdrant clients/interpreters/indexers, collection-identity and compatibility checks, semantic candidate retrieval/projection seams, production-candidate readiness/config/approval models, and non-production experiment composition. Detailed names remain source-truth in `leaderboard.search.qdrant` and adjacent tests.
 
@@ -293,7 +293,7 @@ The M7 activation planning/source-confirmation foundation is closed. `QdrantProd
 
 Its offline evidence adapter connects the existing quality report without duplicating EngineEval metrics: passed quality becomes satisfied no-regression evidence, failed quality becomes missing/unsatisfied evidence, and absent, incomplete, or unevaluated quality remains unknown. `QdrantProductionCandidateOfflineEvalEvidenceSpec` proves assembled and saved-report EngineEval evidence can traverse this path while separate approval remains mandatory.
 
-The explicit opt-in Qdrant route boundary is implemented through `BeautySearchRouteModules.apiQdrantExplicitOptIn`, remains disabled-by-default outside default `apiElasticsearch`, and must still consume this report for the disabled-default config gate and separately approved no-regression evidence, together with the remaining M7 prerequisites and separate route/serving approval. Production route activation is not approved. M8 controlled hybrid serving remains future-only and conditional. The canonical per-expectation owner/approval/activation/removal map lives in `docs/codebase-review/06-tests-and-contracts.md`.
+The explicit opt-in Qdrant route boundary is implemented through `BeautySearchRouteModules.apiQdrantExplicitOptIn`, remains disabled-by-default outside default `apiElasticsearch`, and still requires the disabled-default config gate, approved no-regression evidence, and separate route/serving approval before any wider use. Default-route enablement is not approved.
 
 `QdrantProductionCandidateM7CloseoutSpec` is the pure aggregate closeout evidence. It combines the ready M6 and activation-policy reports, conservative and approved config/no-regression reports, complete explicit opt-in planning prerequisites, blocked production-route activation, conditional future hybrid serving, and the existing route-boundary specs. It adds no route, runtime config, HTTP behavior, plugin wiring, or serving approval.
 
@@ -611,7 +611,7 @@ The pure provider/service response carousel adapter now exists as
 The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
 The non-production BeautyQ hybrid response experiment runner now exists as
 `BeautyQNonProductionHybridResponseExperiment`.
-The disabled-by-default non-production activation/factory skeleton now exists as
+The disabled-by-default non-production experiment-factory skeleton now exists as
 `BeautyQNonProductionHybridExperimentActivation`.
 
 The implemented pure policy is lexical-first semantic supplement:
@@ -842,7 +842,7 @@ BeautyQ candidate grouping and response projection remain domain-specific. `Qdra
 
 Immediate next step:
 
-1. decide separately whether to authorize production route activation; the implemented explicit opt-in Qdrant route does not approve production activation
+1. decide separately whether to authorize default-route enablement; the implemented explicit opt-in Qdrant route does not approve wider route enablement
 
 Immediate code target details:
 

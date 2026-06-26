@@ -1,18 +1,18 @@
 # Search DSL Hybrid V1 Plan
 
-**Status: design/history.** Current execution source is the post-M21 inventory and blocker list (`docs/codebase-review/M21_POST_DEFER_INVENTORY.md`). This design doc must not override the M21 defer state or replace the AP1 blocker path.
+**Status: design/history.** Current execution source is `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`. This design doc must not override the accepted QP24 stop-state.
 
 ## 1. Goal
 
 This plan records a non-production hybrid-search foundation, not a production hybrid rollout.
 The reached non-production manual real-resource runner remains manual/test/local only, not a combined Qdrant+ES+Llama production module.
-For the broader ES + Qdrant + hybrid retrieval end-state roadmap, see `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md`.
+For the reusable supplement-gate method, see `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`.
 
 Hybrid V1 should combine Elasticsearch lexical precision with Qdrant semantic recall only at explicit non-production boundaries.
 
 ## 1.5. B-lite Strategic Direction
 
-B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the current-state status now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted production truth, `docs/codebase-review/BEAUTYQ_ES_QDRANT_HYBRID_RETRIEVAL_ROADMAP.md` for the future-serving phase ladder, and `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` for M8/M9 pure slices plus the pure backend-runner interface seam.
+B-lite remains the current strategic direction after the B2 hidden control-plane module proof, but the accepted current state now lives elsewhere: use `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for accepted route truth and `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md` for the reusable supplement-gate method.
 
 What matters in this plan:
 
@@ -21,7 +21,7 @@ What matters in this plan:
 * simulated hybrid remains benchmark/eval only;
 * any later hybrid eval execution must flow through the pure offline M9 backend-runner interface before any serving change is considered.
 * pure ES/Qdrant offline adapter skeletons now prove attribution checks only; future hybrid comparison must wait for real ES/Qdrant offline execution evidence, not just skeleton output.
-* resource-gated real-backend adapter spike scaffolding exists behind the explicit gate defined in `docs/codebase-review/M8_M9_TELEMETRY_AND_OFFLINE_EVAL_PLAN.md` section 6.1; successful ES/Qdrant execution remains future/resource-gated and is not default.
+* resource-gated real-backend adapter spike scaffolding exists as future/resource-gated work and is not default.
 * the M9 backend-adapter failure matrix now hardens source/mode/failure rules before real backend execution; future hybrid comparison must preserve those rules.
 * any later hybrid fusion/reranking experiment depends first on explicit ES/Qdrant offline adapter attribution in that M9 seam; do not hide candidate origin inside comparison logic.
 * hybrid/fusion/reranking still require gated ES/Qdrant evidence; this spike does not enable hybrid serving, score fusion, or reranking.
@@ -290,7 +290,7 @@ The pure provider/service response carousel adapter now exists as
 The pure response pipeline adapter now exists as `BeautyQHybridResponsePipeline.projectResponse`.
 The non-production BeautyQ hybrid response experiment runner now exists as
 `BeautyQNonProductionHybridResponseExperiment`.
-The disabled-by-default non-production activation/factory skeleton now exists as
+The disabled-by-default non-production experiment-factory skeleton now exists as
 `BeautyQNonProductionHybridExperimentActivation`.
 
 It does not implement production hybrid.
@@ -300,11 +300,11 @@ It composes pure retrieval projection into `BeautySearchResponse`.
 The experiment runner is fake-testable/manual-library boundary only, not production hybrid.
 It runs injected lexical and semantic document backends plus document lookup and then calls the pure pipeline.
 
-### Non-production activation and wiring boundary
+### Non-production experiment wiring boundary
 
 `BeautyQNonProductionHybridResponseExperiment` exists, but it is not app wiring.
 It is a library/manual/test/local boundary for explicit experiments.
-`BeautyQNonProductionHybridExperimentActivation` exists as a disabled-by-default, construction-safe activation/factory boundary.
+`BeautyQNonProductionHybridExperimentActivation` exists as a disabled-by-default, construction-safe experiment-factory boundary.
 It builds this non-production experiment runner only when explicitly enabled.
 It is not app wiring, not production hybrid, and does not replace production `BeautySearchService`.
 Production `BeautySearchService` remains unchanged.
