@@ -31,11 +31,18 @@
 - Measured gate: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
 - Diagnostics: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP14QdrantSupplementActivationDiagnosticsSpec'`
 
-## QP22 widened measured gate (local/test evidence only)
+## QP23 locked BeautyQ acceptance baseline (local/test evidence only)
 
-- Query set widened from 2 to 4 source-confirmed BeautyQ queries (added `q_broad_001`/`q_broad_003` from the same 63-query canonical eval inventory as `q_broad_006`).
-- Measured: testedQueries=4, improvedQueries=1, unchangedQueries=3, worsenedQueries=0, totalQdrantOnlyAppends=1, duplicateEsIds=0, lostEsIds=0, prefixOrderRegressions=0, esOwnedComponentChanges=0, appendBudgetViolations=0.
-- Still local/test evidence, not production rollout, not Qdrant-as-default.
+- Gate command: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`.
+- Source-confirmed query set (4 queries, same 63-query canonical BeautyQ eval inventory as `q_broad_006`):
+  - `q_broad_006_ready_append_probe` / `beauty near Wandsbek Markt`
+  - `manicure_real_route_probe` / `маникюр`
+  - `q_broad_001_widened_probe` / `салон красоты wandsbek ногти`
+  - `q_broad_003_widened_probe` / `что-то для лица рядом`
+- Locked expected counts: testedQueries=4, improvedQueries=1, unchangedQueries=3, worsenedQueries=0, totalQdrantOnlyAppends=1, duplicateEsIds=0, lostEsIds=0, prefixOrderRegressions=0, esOwnedComponentChanges=0, appendBudgetViolations=0.
+- The spec fails with `QP23_WIDENED_BASELINE_DRIFT` if the measured outcome no longer matches this exact locked baseline.
+- If the gate fails for any reason (`QP19_NO_IMPROVEMENT_SIGNAL`, `QP19_WORSENING_DETECTED`, `QP19_LOST_ES_IDS_DETECTED`, `QP19_DUPLICATE_ES_IDS_DETECTED`, `QP19_PREFIX_ORDER_REGRESSION_DETECTED`, `QP19_ES_OWNED_COMPONENT_CHANGED`, `QP19_APPEND_BUDGET_VIOLATION_DETECTED`, `QP19_CONTROL_BOUNDARY_FAILED`, or `QP23_WIDENED_BASELINE_DRIFT`): do not select `qdrant-supplement-ready` and do not switch the default `/beauty-search` route.
+- This is local/test acceptance evidence only, not a production rollout signal, not Qdrant-as-default.
 
 ## QP19 gate metrics
 

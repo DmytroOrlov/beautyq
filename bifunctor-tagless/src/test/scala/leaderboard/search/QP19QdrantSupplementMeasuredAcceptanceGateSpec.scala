@@ -52,10 +52,33 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
     memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg],
   )
 
-  private val QuerySetLimitedMarker = "QP22_QUERY_SET_WIDENED_TO_CANONICAL_QBROAD_SOURCE"
-  private val ResourceGatedMarker   = "QP19_RESOURCE_GATED"
-  private val NoImprovementMarker   = "QP19_NO_IMPROVEMENT_SIGNAL"
-  private val WorseningMarker       = "QP19_WORSENING_DETECTED"
+  private val QuerySetLimitedMarker        = "QP22_QUERY_SET_WIDENED_TO_CANONICAL_QBROAD_SOURCE"
+  private val ResourceGatedMarker          = "QP19_RESOURCE_GATED"
+  private val NoImprovementMarker          = "QP19_NO_IMPROVEMENT_SIGNAL"
+  private val WorseningMarker              = "QP19_WORSENING_DETECTED"
+  private val ControlBoundaryMarker        = "QP19_CONTROL_BOUNDARY_FAILED"
+  private val LostEsIdsMarker              = "QP19_LOST_ES_IDS_DETECTED"
+  private val DuplicateEsIdsMarker         = "QP19_DUPLICATE_ES_IDS_DETECTED"
+  private val PrefixOrderRegressionMarker  = "QP19_PREFIX_ORDER_REGRESSION_DETECTED"
+  private val EsOwnedComponentChangeMarker = "QP19_ES_OWNED_COMPONENT_CHANGED"
+  private val AppendBudgetViolationMarker  = "QP19_APPEND_BUDGET_VIOLATION_DETECTED"
+  private val BaselineDriftMarker          = "QP23_WIDENED_BASELINE_DRIFT"
+
+  // QP23: locks the QP22 widened measured outcome as the reusable BeautyQ acceptance baseline.
+  // Any deviation from these exact counts on the source-confirmed 4-query set is reported via
+  // BaselineDriftMarker rather than silently passing under the looser `>=`/`==0` gate conditions.
+  private val ExpectedWidenedBaseline = AcceptanceMetrics(
+    testedQueries = 4,
+    improvedQueries = 1,
+    unchangedQueries = 3,
+    worsenedQueries = 0,
+    totalQdrantOnlyAppends = 1,
+    duplicateEsIds = 0,
+    lostEsIds = 0,
+    prefixOrderRegressions = 0,
+    esOwnedComponentChanges = 0,
+    appendBudgetViolations = 0,
+  )
 
   private val canonicalSeed = new BeautyQSeedLoader.ResourceLoader().load() match {
     case Right(value) => value
@@ -479,11 +502,11 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
         outcome.controlBoundaries.invalidActivationRejected &&
         outcome.controlBoundaries.defaultRollbackEquivalent &&
         outcome.controlBoundaries.routeMatchesService,
-      s"QP19_CONTROL_BOUNDARY_FAILED: ${outcome.render}",
+      s"$ControlBoundaryMarker: default/rollback ES-backed, not-ready 503, or invalid-activation fail-closed control boundary broke. ${outcome.render}",
     )
 
     if (outcome.metrics.improvedQueries == 0) {
-      fail(s"$NoImprovementMarker: ${outcome.render}")
+      fail(s"$NoImprovementMarker: no query showed a measured improvement; the supplement added no Qdrant-only candidate without worsening ES. ${outcome.render}")
     }
     if (
       outcome.metrics.worsenedQueries != 0 ||
@@ -493,20 +516,26 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
       outcome.metrics.esOwnedComponentChanges != 0 ||
       outcome.metrics.appendBudgetViolations != 0
     ) {
-      fail(s"$WorseningMarker: ${outcome.render}")
+      fail(s"$WorseningMarker: at least one no-worsening condition was violated; see the specific metric markers below for which one. ${outcome.render}")
     }
 
     assert(outcome.metrics.testedQueries > 2, s"QP19_ACCEPTANCE_GATE_FAILED: testedQueries must be > 2, got ${outcome.render}")
     assert(outcome.metrics.improvedQueries >= 1, s"QP19_ACCEPTANCE_GATE_FAILED: improvedQueries must be >= 1, got ${outcome.render}")
     assert(outcome.metrics.worsenedQueries == 0, s"QP19_ACCEPTANCE_GATE_FAILED: worsenedQueries must be 0, got ${outcome.render}")
-    assert(outcome.metrics.lostEsIds == 0, s"QP19_ACCEPTANCE_GATE_FAILED: lostEsIds must be 0, got ${outcome.render}")
-    assert(outcome.metrics.duplicateEsIds == 0, s"QP19_ACCEPTANCE_GATE_FAILED: duplicateEsIds must be 0, got ${outcome.render}")
-    assert(outcome.metrics.prefixOrderRegressions == 0, s"QP19_ACCEPTANCE_GATE_FAILED: prefixOrderRegressions must be 0, got ${outcome.render}")
-    assert(outcome.metrics.esOwnedComponentChanges == 0, s"QP19_ACCEPTANCE_GATE_FAILED: esOwnedComponentChanges must be 0, got ${outcome.render}")
-    assert(outcome.metrics.appendBudgetViolations == 0, s"QP19_ACCEPTANCE_GATE_FAILED: appendBudgetViolations must be 0, got ${outcome.render}")
+    assert(outcome.metrics.lostEsIds == 0, s"$LostEsIdsMarker: an ES-baseline variant id was missing from the ready-route response. ${outcome.render}")
+    assert(outcome.metrics.duplicateEsIds == 0, s"$DuplicateEsIdsMarker: an ES-baseline variant id appeared more than once in the ready-route response. ${outcome.render}")
+    assert(outcome.metrics.prefixOrderRegressions == 0, s"$PrefixOrderRegressionMarker: the ready-route response reordered the ES-baseline prefix instead of only appending. ${outcome.render}")
+    assert(outcome.metrics.esOwnedComponentChanges == 0, s"$EsOwnedComponentChangeMarker: providerCarousel/serviceIntentCarousel/facets/inferredFilters changed between default and ready, but those fields are ES-owned. ${outcome.render}")
+    assert(outcome.metrics.appendBudgetViolations == 0, s"$AppendBudgetViolationMarker: a query appended more than one Qdrant-only candidate. ${outcome.render}")
     assert(
       outcome.measurements.forall(_.appendedQdrantOnlyIds.size <= 1),
-      s"QP19_ACCEPTANCE_GATE_FAILED: each query must append at most one Qdrant-only candidate, got ${outcome.render}",
+      s"$AppendBudgetViolationMarker: each query must append at most one Qdrant-only candidate, got ${outcome.render}",
+    )
+
+    assert(
+      outcome.metrics == ExpectedWidenedBaseline,
+      s"$BaselineDriftMarker: the widened QP22 measured baseline drifted from the locked QP23 expectation. " +
+        s"expected=${ExpectedWidenedBaseline.render} actual=${outcome.metrics.render} full=${outcome.render}",
     )
     ()
   }
