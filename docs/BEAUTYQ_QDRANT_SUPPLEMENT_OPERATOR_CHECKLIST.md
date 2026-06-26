@@ -31,6 +31,12 @@
 - Measured gate: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
 - Diagnostics: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP14QdrantSupplementActivationDiagnosticsSpec'`
 
+## QP22 widened measured gate (local/test evidence only)
+
+- Query set widened from 2 to 4 source-confirmed BeautyQ queries (added `q_broad_001`/`q_broad_003` from the same 63-query canonical eval inventory as `q_broad_006`).
+- Measured: testedQueries=4, improvedQueries=1, unchangedQueries=3, worsenedQueries=0, totalQdrantOnlyAppends=1, duplicateEsIds=0, lostEsIds=0, prefixOrderRegressions=0, esOwnedComponentChanges=0, appendBudgetViolations=0.
+- Still local/test evidence, not production rollout, not Qdrant-as-default.
+
 ## QP19 gate metrics
 
 - `testedQueries`

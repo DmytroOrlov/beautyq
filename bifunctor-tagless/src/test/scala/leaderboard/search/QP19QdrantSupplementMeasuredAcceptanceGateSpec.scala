@@ -52,7 +52,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
     memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg],
   )
 
-  private val QuerySetLimitedMarker = "QP19_QUERY_SET_LIMITED_TO_QP18_SOURCE"
+  private val QuerySetLimitedMarker = "QP22_QUERY_SET_WIDENED_TO_CANONICAL_QBROAD_SOURCE"
   private val ResourceGatedMarker   = "QP19_RESOURCE_GATED"
   private val NoImprovementMarker   = "QP19_NO_IMPROVEMENT_SIGNAL"
   private val WorseningMarker       = "QP19_WORSENING_DETECTED"
@@ -90,7 +90,30 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
     ),
   )
 
-  private val queryCases = List(broadComplementProbeQuery, manicureProbeQuery)
+  // QP22 widening candidates: same canonical 63-query BeautyQ eval inventory family as
+  // q_broad_006 (bifunctor-tagless/src/test/resources/leaderboard/search/eval/beautyq_search_eval_queries_v1.json),
+  // not invented text.
+  private val broadSalonNailsQuery = QueryCase(
+    label = "q_broad_001_widened_probe",
+    input = UserSearchInput(
+      query = "салон красоты wandsbek ногти",
+      userLat = None,
+      userLon = None,
+      limit = 10,
+    ),
+  )
+
+  private val broadFaceNearbyQuery = QueryCase(
+    label = "q_broad_003_widened_probe",
+    input = UserSearchInput(
+      query = "что-то для лица рядом",
+      userLat = None,
+      userLon = None,
+      limit = 10,
+    ),
+  )
+
+  private val queryCases = List(broadComplementProbeQuery, manicureProbeQuery, broadSalonNailsQuery, broadFaceNearbyQuery)
 
   private val controlVectorSearchSpec: VectorSearchSpec =
     VectorSearchSpec(
@@ -444,6 +467,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
     )
 
   private def assertAcceptanceGate(outcome: MeasuredGateOutcome): Unit = {
+    println(s"QP22_MEASURED_GATE_OUTCOME: ${outcome.render}")
     assert(
       outcome.preflightStatus == ReadyToEnable.label,
       s"QP19: real-resource preflight must report ${ReadyToEnable.label}, got ${outcome.render}",
@@ -472,7 +496,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
       fail(s"$WorseningMarker: ${outcome.render}")
     }
 
-    assert(outcome.metrics.testedQueries >= 2, s"QP19_ACCEPTANCE_GATE_FAILED: testedQueries must be >= 2, got ${outcome.render}")
+    assert(outcome.metrics.testedQueries > 2, s"QP19_ACCEPTANCE_GATE_FAILED: testedQueries must be > 2, got ${outcome.render}")
     assert(outcome.metrics.improvedQueries >= 1, s"QP19_ACCEPTANCE_GATE_FAILED: improvedQueries must be >= 1, got ${outcome.render}")
     assert(outcome.metrics.worsenedQueries == 0, s"QP19_ACCEPTANCE_GATE_FAILED: worsenedQueries must be 0, got ${outcome.render}")
     assert(outcome.metrics.lostEsIds == 0, s"QP19_ACCEPTANCE_GATE_FAILED: lostEsIds must be 0, got ${outcome.render}")
