@@ -4,7 +4,7 @@ Status summary:
 
 * Current route truth stays in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`: default production `/beauty-search` remains ES-backed.
 * This document owns only the Qdrant explicit opt-in state and Qdrant-specific architecture boundaries.
-* Current local/test Qdrant supplement gate and non-goals live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_OPERATOR_CHECKLIST.md`.
+* Current local/test Qdrant supplement gate and non-goals live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`.
 * Reusable future-domain supplement gating lives in `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`.
 * Older eval-planning and roadmap layers were removed from the docs tree; use the handoff for the accepted current state.
 

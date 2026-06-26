@@ -65,11 +65,5 @@
 
 ## BeautyQ reference (QP19, local example)
 
-- 2 source-confirmed queries.
-- 1 improved.
-- 1 unchanged.
-- 0 worsened.
-- 1 supplement-only append.
-- 0 baseline regressions.
-
-See `docs/BEAUTYQ_QDRANT_SUPPLEMENT_OPERATOR_CHECKLIST.md` for the full BeautyQ/Qdrant operator checklist this template was extracted from.
+- Current BeautyQ local/test supplement gate is documented in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`.
+- Reuse the measured-gate method, not BeautyQ-specific stop-state history.
