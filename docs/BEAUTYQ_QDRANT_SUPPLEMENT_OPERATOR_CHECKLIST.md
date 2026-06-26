@@ -11,6 +11,7 @@
 - QP11 preflight must return `READY_TO_ENABLE`.
 - QP12 local launcher smoke must pass.
 - QP14 diagnostics must pass.
+- Future domain acceptance must start from a measured local gate: at least one positive supplement improvement, zero ES-baseline regression unless an explicit harm budget is approved, no default route switch, and no Qdrant-as-default/fallback/fusion/rerank.
 - Default/rollback path must remain ES-backed.
 - Invalid activation must fail closed.
 - Not-ready must return 503 with no fallback.
