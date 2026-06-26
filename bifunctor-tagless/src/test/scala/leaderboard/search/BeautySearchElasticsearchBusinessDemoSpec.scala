@@ -16,9 +16,9 @@ import java.util.UUID
 // This is the Elasticsearch business demo smoke. It intentionally exercises the explicit ES-only route
 // graph (`BeautySearchRouteModules.apiElasticsearch`, via `buildRealEsRouteAndServiceProbe`) seeded into
 // a real, repo-local Elasticsearch instance under a unique per-run index, NOT the local managed launcher
-// default. Post-QP25 the local managed default `/beauty-search` is the ES + constrained Qdrant supplement
+// default. The local managed default `/beauty-search` is the ES + constrained Qdrant supplement
 // route; that route and its provenance (`executionMode`, `qdrantSupplement`, per-variant `resultOrigin`)
-// are covered by `QP25QdrantSupplementResponseProvenanceSpec`. This spec proves the ES business demo
+// are covered by `BeautySearchQdrantSupplementProvenanceSpec`. This spec proves the ES business demo
 // returns useful non-empty results without depending on a live Qdrant/embedding backend, and uses the
 // isolated probe harness so its ES index never collides with other suites' shared default index.
 final class BeautySearchElasticsearchBusinessDemoSpec

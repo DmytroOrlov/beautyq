@@ -40,7 +40,14 @@ import zio.{IO, Runtime, Task, Unsafe, ZIO}
 
 import java.util.UUID
 
-final class QP25QdrantSupplementResponseProvenanceSpec
+/**
+ * Permanent contract for `/beauty-search` response provenance: ES-only rollback responses expose
+ * ES-only provenance, ready responses expose append / no-append Qdrant-supplement provenance without
+ * disturbing ES-owned response components, not-ready fails closed at 503, and the managed local default
+ * serves supplement provenance. Both deterministic control routes and a real-resource ES + Qdrant route
+ * harness are exercised.
+ */
+final class BeautySearchQdrantSupplementProvenanceSpec
     extends LeaderboardTest
     with ProdTest
     with HttpContractTestSupport {

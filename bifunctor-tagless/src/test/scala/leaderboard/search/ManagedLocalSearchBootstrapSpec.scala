@@ -32,7 +32,7 @@ import zio.{IO, Runtime, Task, Unsafe, ZIO}
 import java.util.UUID
 
 /**
- * QP26: proof that the local managed launcher path (`./launcher -u scene:managed :leaderboard`,
+ * Permanent contract: proof that the local managed launcher path (`./launcher -u scene:managed :leaderboard`,
  * i.e. `Scene.Managed` + `Mode.Prod`) prepares all local data `/beauty-search` needs at startup,
  * with no user-facing activation env flag and no manual Qdrant collection/index step:
  *
@@ -45,7 +45,7 @@ import java.util.UUID
  * managed launcher's `BeautyQManagedLocalSearchDataReady.Bootstrap` resource runs before the HTTP
  * server serves. No fallback, fusion, rerank, or Qdrant-only route is introduced.
  */
-final class QP26ManagedLocalQdrantSeedBootstrapSpec
+final class ManagedLocalSearchBootstrapSpec
     extends LeaderboardTest
     with ProdTest
     with HttpContractTestSupport {
