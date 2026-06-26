@@ -10,8 +10,9 @@
 
 - QP11 preflight must return `READY_TO_ENABLE`.
 - QP12 local launcher smoke must pass.
+- QP19 measured local acceptance gate must pass.
 - QP14 diagnostics must pass.
-- Future domain acceptance must start from a measured local gate: at least one positive supplement improvement, zero ES-baseline regression unless an explicit harm budget is approved, no default route switch, and no Qdrant-as-default/fallback/fusion/rerank.
+- Future domains use the QP19 measured local gate template: first prove measured local improvement, allow zero ES-baseline regression unless a user-approved explicit harm budget exists, and do not switch production/default routes before the gate is green.
 - Default/rollback path must remain ES-backed.
 - Invalid activation must fail closed.
 - Not-ready must return 503 with no fallback.
@@ -27,7 +28,21 @@
 
 - Preflight: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP11QdrantSupplementRealResourcePreflightSpec'`
 - Smoke: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP12LocalLauncherActivationSmokeSpec'`
+- Measured gate: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
 - Diagnostics: `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP14QdrantSupplementActivationDiagnosticsSpec'`
+
+## QP19 gate metrics
+
+- `testedQueries`
+- `improvedQueries`
+- `unchangedQueries`
+- `worsenedQueries`
+- `totalQdrantOnlyAppends`
+- `duplicateEsIds`
+- `lostEsIds`
+- `prefixOrderRegressions`
+- `esOwnedComponentChanges`
+- `appendBudgetViolations`
 
 ## Enable ready
 
