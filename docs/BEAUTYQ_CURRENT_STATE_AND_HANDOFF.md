@@ -11,6 +11,9 @@ Use this as the BeautyQ entry point. It records the current route truth and poin
 ## Canonical docs
 
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`
+* `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`
+* `docs/SEARCH_DOMAIN_ONBOARDING.md`
+* `docs/DISTAGE_HTTP_TESTING.md`
 * `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`
 
 ## QP24 stop-state
@@ -32,8 +35,9 @@ Use this as the BeautyQ entry point. It records the current route truth and poin
 ## Read next
 
 * Use `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for current activation values, preflight, smoke commands, locked query set, failure meanings, and non-goals.
-* Use `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md` for the reusable measured-gate method.
-* Use `docs/search-dsl-hybrid-v1-plan.md` and `docs/search-dsl-qdrant-vector-backend.md` only as design/reference material. They do not override this stop-state.
+* Use `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline/supplement model and non-goals.
+* Use `docs/SEARCH_DOMAIN_ONBOARDING.md` and `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md` for the reusable measured-gate method.
+* Use `docs/DISTAGE_HTTP_TESTING.md` for focused route/service proof rules.
 
 ## Follow-up rule
 
