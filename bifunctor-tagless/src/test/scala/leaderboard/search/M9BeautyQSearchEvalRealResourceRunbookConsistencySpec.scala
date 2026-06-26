@@ -17,15 +17,15 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
 
   "M9BeautyQSearchEvalRealResourceRunbookConsistency" should {
 
-    "name the future-only runbook path" in {
+    "name the current local gate doc path" in {
       assert(
         M9BeautyQSearchEvalRealResourceRunbookConsistency.RunbookPath ==
-          "docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md"
+          "docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md"
       )
       assert(result.runbookPath == M9BeautyQSearchEvalRealResourceRunbookConsistency.RunbookPath)
     }
 
-    "accept the new runbook as consistent with the accepted evidence schema and default artifact" in {
+    "accept the current local gate doc as consistent with the accepted evidence schema and default artifact" in {
       assert(result.missingSections == Nil)
       assert(result.missingModeTokens == Nil)
       assert(result.missingBoundaryTokens == Nil)
@@ -34,25 +34,25 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
       assert(result.consistent)
     }
 
-    "prove the runbook mentions all three evidence modes" in {
+    "prove the doc mentions the required response and provenance modes" in {
       assert(result.allModeTokensPresent)
-      assert(runbookText.contains("ES-only"))
-      assert(runbookText.contains("Qdrant-only"))
-      assert(runbookText.contains("Combined ES/Qdrant"))
+      assert(runbookText.contains("es_only"))
+      assert(runbookText.contains("es_plus_qdrant_supplement"))
+      assert(runbookText.contains("qdrant_supplement"))
       assert(M9BeautyQSearchEvalRealResourceRunbookConsistency.RequiredEvidenceModeTokens.length == 3)
     }
 
-    "prove the runbook carries the required boundary language" in {
+    "prove the doc carries the required launcher, curl, and boundary language" in {
       assert(result.allBoundaryTokensPresent)
-      assert(runbookText.contains("future-only"))
-      assert(runbookText.contains("blocked/skip"))
-      assert(runbookText.contains("pending execution only"))
+      assert(runbookText.contains("./launcher -u scene:managed :leaderboard"))
+      assert(runbookText.contains("http://localhost:8080/beauty-search"))
+      assert(runbookText.contains("does not require an activation value"))
     }
 
-    "prove the runbook makes no forbidden positive claim" in {
+    "prove the doc makes no forbidden positive claim" in {
       assert(
         result.forbiddenClaimTokensPresent == Nil,
-        s"runbook contains forbidden positive-claim tokens: ${result.forbiddenClaimTokensPresent}",
+        s"doc contains forbidden positive-claim tokens: ${result.forbiddenClaimTokensPresent}",
       )
       assert(result.noForbiddenPositiveClaims)
     }
@@ -62,7 +62,7 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
       M9BeautyQSearchEvalRealResourceRunbookConsistency.ForbiddenPositiveClaimTokens.foreach { token =>
         assert(
           !lowered.contains(token.toLowerCase),
-          s"runbook makes forbidden positive claim: $token",
+          s"doc makes forbidden positive claim: $token",
         )
       }
     }
@@ -75,9 +75,10 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
       assert(!result.routePluginDiHttpInvolved)
     }
 
-    "name the saved evidence schema and deterministic renderer as the capture path" in {
-      assert(runbookText.contains("saved evidence schema"))
-      assert(runbookText.contains("deterministic"))
+    "name the locked gate counts and frontend provenance as the capture path" in {
+      assert(runbookText.contains("testedQueries=4"))
+      assert(runbookText.contains("totalQdrantOnlyAppends=1"))
+      assert(runbookText.contains("resultOrigin"))
     }
   }
 
@@ -87,12 +88,12 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
       case Some(file) =>
         Using.resource(Source.fromFile(file, StandardCharsets.UTF_8.name()))(_.mkString)
       case None =>
-        fail(s"missing runbook file $relative (searched upward from ${new File(".").getCanonicalPath})")
+        fail(s"missing doc file $relative (searched upward from ${new File(".").getCanonicalPath})")
     }
   }
 
-  /** Resolve a repository-relative path by walking up from the test working directory. The runbook
-    * lives under the repo root `docs/local`, which is not on the test classpath, so the spec reads it
+  /** Resolve a repository-relative path by walking up from the test working directory. The doc
+    * lives under the repo root `docs`, which is not on the test classpath, so the spec reads it
     * from the filesystem regardless of which module base sbt launches the test from. */
   private def resolveUpwards(relative: String): Option[File] = {
     val start = new File(".").getCanonicalFile

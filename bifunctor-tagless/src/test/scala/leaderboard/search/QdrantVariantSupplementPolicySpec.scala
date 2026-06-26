@@ -196,6 +196,9 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
 
       assert(response.variantCarousel.take(2) == esVariants)
       assert(response.variantCarousel.map(_.variantId) == List(esDocuments(0).variantId, esDocuments(1).variantId, matchingId))
+      assert(response.executionMode == BeautySearchExecutionMode.EsPlusQdrantSupplement)
+      assert(response.qdrantSupplement == QdrantSupplementSummary.usedWithAppend(QdrantSupplementPolicyName.ExplicitConstraintsFilterPlusTop1, List(matchingId)))
+      assert(response.variantCarousel.drop(2).forall(_.resultOrigin == VariantResultOrigin.QdrantSupplement))
       assert(response.providerCarousel == esResponse.providerCarousel)
       assert(response.serviceIntentCarousel == esResponse.serviceIntentCarousel)
       assert(response.facets == esResponse.facets)
@@ -225,7 +228,10 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
       // limit == ES carousel size already, so there is zero cap room left for the supplement.
       val response = runIO(backend.search(UserSearchInput("synthetic cap", None, None, limit = 2), intentWithConstraints(Nil)))
 
-      assert(response == esResponse)
+      assert(response == esResponse.copy(
+        executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
+        qdrantSupplement = QdrantSupplementSummary.usedNoAppend(QdrantSupplementPolicyName.ExplicitConstraintsFilterPlusTop1),
+      ))
     }
   }
 

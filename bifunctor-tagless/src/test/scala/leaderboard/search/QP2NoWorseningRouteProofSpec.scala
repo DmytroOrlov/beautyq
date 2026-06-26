@@ -436,7 +436,10 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
       "QP2: the no-append query's ES leg must be non-empty (real 'Маникюр' catalog matches), to make ES-prefix preservation a non-trivial check",
     )
     assert(
-      outcome.noAppendQuerySupplementResponse == outcome.noAppendQueryEsResponse,
+      outcome.noAppendQuerySupplementResponse == outcome.noAppendQueryEsResponse.copy(
+        executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
+        qdrantSupplement = QdrantSupplementSummary.usedNoAppend(QdrantSupplementPolicyName.ExplicitConstraintsFilterPlusTop1),
+      ),
       s"QP2: the no-append query must leave the ES response structurally unchanged; " +
         s"supplement=${outcome.noAppendQuerySupplementResponse} es=${outcome.noAppendQueryEsResponse}",
     )

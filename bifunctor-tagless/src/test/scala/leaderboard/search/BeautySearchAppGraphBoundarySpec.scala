@@ -44,7 +44,7 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
       )
 
       assert(observed.status == Status.Ok)
-      assert(observed.body == """{"variantCarousel":[],"providerCarousel":[],"serviceIntentCarousel":[],"facets":[],"inferredFilters":[]}""")
+      assert(observed.body == emptySearchResponseJson)
       assert(input.query == "маникюр")
       assert(input.limit == 1)
     }
@@ -121,6 +121,9 @@ final class BeautySearchAppGraphBoundarySpec extends AnyWordSpec with HttpContra
       facets = Nil,
       inferredFilters = Nil,
     )
+
+  private val emptySearchResponseJson: String =
+    """{"variantCarousel":[],"providerCarousel":[],"serviceIntentCarousel":[],"facets":[],"inferredFilters":[],"executionMode":"es_only","qdrantSupplement":{"status":"not_used","policy":"none","appendedVariantIds":[],"contribution":"none"}}"""
 
   private def runIO[E, A](effect: IO[E, A]): A =
     Unsafe.unsafe { implicit unsafe =>

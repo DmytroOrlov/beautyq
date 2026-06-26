@@ -471,6 +471,9 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         supplementDocuments(1).variantId,
       ))
       assert(response.variantCarousel.take(2) == esVariants)
+      assert(response.executionMode == BeautySearchExecutionMode.EsPlusQdrantSupplement)
+      assert(response.qdrantSupplement.appendedVariantIds == supplementDocuments.map(_.variantId))
+      assert(response.variantCarousel.drop(2).forall(_.resultOrigin == VariantResultOrigin.QdrantSupplement))
       assert(lexical.calls == 1)
       assert(semantic.calls == 1)
       assert(lookup.calls == 1)
@@ -499,6 +502,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         newDocument.variantId,
       ))
       assert(response.variantCarousel.take(2) == esVariants)
+      assert(response.executionMode == BeautySearchExecutionMode.EsPlusQdrantSupplement)
+      assert(response.qdrantSupplement.appendedVariantIds == List(newDocument.variantId))
     }
 
     "ElasticsearchWithQdrantVariantSupplement preserves ES provider, service, facet and filter fields exactly" in {
@@ -549,7 +554,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val response = runIO(backend.search(UserSearchInput("synthetic all dup", None, None, limit = 10), ParsedSearchIntent("synthetic all dup", Nil, Nil, Nil, "synthetic all dup")))
 
-      assert(response == esResponse)
+      assert(response == esResponse.copy(
+        executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
+        qdrantSupplement = QdrantSupplementSummary.usedNoAppend(QdrantSupplementPolicyName.None),
+      ))
     }
 
     "ElasticsearchWithQdrantVariantSupplement returns the ES response unchanged when Qdrant returns no candidates" in {
@@ -562,7 +570,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val response = runIO(backend.search(UserSearchInput("synthetic no candidates", None, None, limit = 10), ParsedSearchIntent("synthetic no candidates", Nil, Nil, Nil, "synthetic no candidates")))
 
-      assert(response == esResponse)
+      assert(response == esResponse.copy(
+        executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
+        qdrantSupplement = QdrantSupplementSummary.usedNoAppend(QdrantSupplementPolicyName.None),
+      ))
       assert(lexical.calls == 1)
       assert(semantic.calls == 1)
       assert(lookup.calls == 1)

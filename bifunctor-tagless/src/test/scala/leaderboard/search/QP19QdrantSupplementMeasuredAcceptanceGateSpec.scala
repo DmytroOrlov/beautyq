@@ -376,10 +376,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
             }
             readyRouteResponse <- decodeRouteResponse(readyObserved, query.label, "ready")
             _ <- ZIO.succeed {
-              assert(
-                readyRouteResponse == readyServiceResponse,
-                s"QP19_ROUTE_SERVICE_MISMATCH: query=${query.label} routeResponse=$readyRouteResponse serviceResponse=$readyServiceResponse",
-              )
+              assertRouteServiceContract(readyRouteResponse, readyServiceResponse, query.label)
             }
           } yield QueryResponses(query, defaultResponse, rollbackResponse, readyServiceResponse, readyRouteResponse)
         }
@@ -652,6 +649,49 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
         .left
         .map(error => QueryFailure.operation("decode-qp19-route-response", s"query=$queryLabel mode=$modeLabel error=${error.getMessage} body=${observed.body}"))
     )
+
+  private def assertRouteServiceContract(
+    routeResponse: BeautySearchResponse,
+    serviceResponse: BeautySearchResponse,
+    queryLabel: String,
+  ): Unit = {
+    val routeVariantIds   = routeResponse.variantCarousel.map(_.variantId.toString)
+    val serviceVariantIds = serviceResponse.variantCarousel.map(_.variantId.toString)
+    assert(
+      routeVariantIds == serviceVariantIds,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=variantCarousel.ids routeIds=$routeVariantIds serviceIds=$serviceVariantIds",
+    )
+    assert(
+      routeResponse.variantCarousel.map(_.resultOrigin) == serviceResponse.variantCarousel.map(_.resultOrigin),
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=variantCarousel.resultOrigin " +
+        s"route=${routeResponse.variantCarousel.map(_.resultOrigin)} service=${serviceResponse.variantCarousel.map(_.resultOrigin)}",
+    )
+    assert(
+      routeResponse.executionMode == serviceResponse.executionMode,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=executionMode route=${routeResponse.executionMode} service=${serviceResponse.executionMode}",
+    )
+    assert(
+      routeResponse.qdrantSupplement == serviceResponse.qdrantSupplement,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=qdrantSupplement route=${routeResponse.qdrantSupplement} service=${serviceResponse.qdrantSupplement}",
+    )
+    assert(
+      routeResponse.providerCarousel == serviceResponse.providerCarousel,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=providerCarousel route=${routeResponse.providerCarousel} service=${serviceResponse.providerCarousel}",
+    )
+    assert(
+      routeResponse.serviceIntentCarousel == serviceResponse.serviceIntentCarousel,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=serviceIntentCarousel route=${routeResponse.serviceIntentCarousel} service=${serviceResponse.serviceIntentCarousel}",
+    )
+    assert(
+      routeResponse.facets == serviceResponse.facets,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=facets route=${routeResponse.facets} service=${serviceResponse.facets}",
+    )
+    assert(
+      routeResponse.inferredFilters == serviceResponse.inferredFilters,
+      s"QP19_ROUTE_SERVICE_MISMATCH: query=$queryLabel field=inferredFilters route=${routeResponse.inferredFilters} service=${serviceResponse.inferredFilters}",
+    )
+    ()
+  }
 
   private val failIfCalledEsClient: ElasticsearchJsonClient = new ElasticsearchJsonClient {
     override def putJson(path: String, json: io.circe.Json): IO[QueryFailure, io.circe.Json] =

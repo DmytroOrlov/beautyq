@@ -1,64 +1,65 @@
 package leaderboard.search.eval
 
-/** Pure static runbook/evidence consistency contract.
+/** Pure static local-gate/evidence consistency contract.
   *
-  * This contract names the future-only real-resource smoke runbook and verifies, as a total pure
-  * function of the runbook text, that it stays consistent with the accepted saved-evidence schema and
-  * the accepted default/no-config artifact shape. It is static only: it never parses production routes,
+  * This contract names the current local Qdrant supplement gate doc and verifies, as a total pure
+  * function of the doc text, that it stays consistent with the accepted saved-evidence schema and
+  * the accepted local/test artifact shape. It is static only: it never parses production routes,
   * never inspects the runtime environment, never runs Elasticsearch or Qdrant, never creates a client,
   * never calls production `/beauty-search`, and never touches a route, plugin, DI, or HTTP source.
   *
-  * It proves two things about the runbook:
-  *   1. the runbook mentions the three evidence modes (ES-only, Qdrant-only, combined ES/Qdrant) and the
-  *      required planning-boundary language; and
-  *   2. the runbook does not make any forbidden positive claim (success, production readiness, route
+  * It proves two things about the doc:
+  *   1. the doc mentions the local launcher command, curl contract, frontend provenance fields, locked
+  *      gate counts, and local/test-only boundaries; and
+  *   2. the doc does not make any forbidden positive claim (production readiness, production route
   *      activation, serving approval, quality green, Qdrant production activation, hybrid serving,
   *      fallback, score fusion, reranking, production telemetry, or route switch).
   *
-  * The expected mode count is cross-checked against the accepted evidence schema, and the contract
-  * confirms the accepted default/no-config artifact renders blocked/skip (never success) evidence.
+  * The legacy M9 evidence mode count is still cross-checked against the accepted evidence schema, and
+  * the contract confirms the accepted default/no-config artifact renders blocked/skip (never success)
+  * evidence.
   */
 object M9BeautyQSearchEvalRealResourceRunbookConsistency {
 
-  /** Repository-relative path of the future-only runbook stub. */
-  val RunbookPath: String = "docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md"
+  /** Repository-relative path of the current local/test supplement gate doc. */
+  val RunbookPath: String = "docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md"
 
-  /** Section headers the runbook must contain. */
+  /** Section headers the doc must contain. */
   val RequiredSections: List[String] =
     List(
-      "## 0. Status and scope",
-      "## 1. Future modes",
-      "## 2. Required prerequisites",
-      "## 3. Default / no-config behavior",
-      "## 4. Future evidence capture",
-      "## 5. Preserved production boundaries",
-      "## 6. Not allowed by this runbook",
+      "## Current status",
+      "## Local launcher",
+      "## Frontend provenance contract",
+      "## Locked measured gate",
+      "## Internal rollback/debug values",
+      "## Preflight and smoke commands",
+      "## Non-goals",
     )
 
-  /** The three evidence modes the runbook must mention. One human-readable token per accepted evidence
-    * schema kind; the count is cross-checked against the schema below.
+  /** Three response/provenance mode tokens the doc must mention. The count remains cross-checked
+    * against the legacy M9 schema below.
     */
   val RequiredEvidenceModeTokens: List[String] =
     List(
-      "ES-only",
-      "Qdrant-only",
-      "Combined ES/Qdrant",
+      "es_only",
+      "es_plus_qdrant_supplement",
+      "qdrant_supplement",
     )
 
-  /** Planning-boundary language the runbook must carry. */
+  /** Local/test boundary language the doc must carry. */
   val RequiredBoundaryTokens: List[String] =
     List(
-      "future-only",
-      "does not approve",
-      "remains ES-backed",
-      "disabled by default",
-      "not approved",
-      "blocked/skip",
-      "pending execution only",
-      "real-call checkpoint",
-      "prerequisites audit",
-      "saved evidence schema",
-      "deterministic",
+      "./launcher -u scene:managed :leaderboard",
+      "http://localhost:8080/beauty-search",
+      "does not require an activation value",
+      "used_with_append",
+      "used_no_append",
+      "resultOrigin",
+      "testedQueries=4",
+      "totalQdrantOnlyAppends=1",
+      "no fallback",
+      "no fusion",
+      "no rerank",
     )
 
   /** Forbidden positive-claim tokens (compared case-insensitively). Each affirmative phrase maps to a

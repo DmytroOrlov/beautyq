@@ -11,7 +11,7 @@ No real ES or Qdrant call is executed, implemented, or required.
 
 ## Runbook consistency
 
-- runbook_path: docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md
+- runbook_path: docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md
 - schema_evidence_mode_count: 3
 - mode_token_count_matches_schema: true
 - default_artifact_renders_blocked_skip_only: true

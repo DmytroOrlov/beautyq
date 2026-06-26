@@ -41,6 +41,9 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
         _        <- assertIO(json.hcursor.downField("serviceIntentCarousel").focus.exists(_.asArray.exists(_.size == 1)))
         _        <- assertIO(json.hcursor.downField("facets").focus.exists(_.asArray.exists(_.size == 1)))
         _        <- assertIO(json.hcursor.downField("inferredFilters").focus.exists(_.asArray.exists(_.size == 1)))
+        _        <- assertIO(json.hcursor.downField("executionMode").as[String].toOption.contains("es_only"))
+        _        <- assertIO(json.hcursor.downField("qdrantSupplement").downField("status").as[String].toOption.contains("not_used"))
+        _        <- assertIO(json.hcursor.downField("variantCarousel").downArray.downField("resultOrigin").as[String].toOption.contains("es_baseline"))
         _        <- assertIO(json.hcursor.downField("variantCarousel").downArray.downField("variantId").as[String].toOption.contains("11111111-1111-1111-1111-111111111111"))
         _        <- assertIO(json.hcursor.downField("providerCarousel").downArray.downField("masterLocationId").as[String].toOption.contains("33333333-3333-3333-3333-333333333333"))
         _        <- assertIO(json.hcursor.downField("serviceIntentCarousel").downArray.downField("serviceId").as[String].toOption.contains("55555555-5555-5555-5555-555555555555"))
@@ -54,7 +57,7 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
         response <- observe(app(state), postJson("/beauty-search", """{"query":"нет результатов","userLat":null,"userLon":null,"limit":10}"""))
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(
-          response.body === """{"variantCarousel":[],"providerCarousel":[],"serviceIntentCarousel":[],"facets":[],"inferredFilters":[]}"""
+          response.body === """{"variantCarousel":[],"providerCarousel":[],"serviceIntentCarousel":[],"facets":[],"inferredFilters":[],"executionMode":"es_only","qdrantSupplement":{"status":"not_used","policy":"none","appendedVariantIds":[],"contribution":"none"}}"""
         )
       } yield ()
     }

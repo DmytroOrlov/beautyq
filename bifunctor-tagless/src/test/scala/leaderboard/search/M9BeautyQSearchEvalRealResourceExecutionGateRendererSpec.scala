@@ -22,7 +22,7 @@ final class M9BeautyQSearchEvalRealResourceExecutionGateRendererSpec extends Any
       assert(rendered.contains("- artifact_id: m9-beautyq-real-resource-execution-gate"))
       assert(rendered.contains("- artifact_version: v1"))
       assert(rendered.contains("## Runbook consistency"))
-      assert(rendered.contains("- runbook_path: docs/local/BEAUTYQ_M9_REAL_RESOURCE_SMOKE_RUNBOOK.md"))
+      assert(rendered.contains("- runbook_path: docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md"))
       assert(rendered.contains("- schema_evidence_mode_count: 3"))
       assert(rendered.contains("- mode_token_count_matches_schema: true"))
       assert(rendered.contains("- default_artifact_renders_blocked_skip_only: true"))

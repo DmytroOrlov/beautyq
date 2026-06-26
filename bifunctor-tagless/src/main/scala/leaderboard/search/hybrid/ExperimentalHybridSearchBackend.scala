@@ -39,21 +39,44 @@ final class ExperimentalHybridSearchBackend[F[+_, +_]: Error2](
         F.flatMap(lexicalBackend.search(input, intent)) { esResponse =>
           F.flatMap(semanticBackend.candidates(input, intent)) { hits =>
             F.map(documentLookup.lookup(hits.map(_.variantId))) { documentsById =>
+              val esBaselineResponse = esResponse.copy(
+                variantCarousel = esResponse.variantCarousel.map(_.copy(resultOrigin = VariantResultOrigin.EsBaseline)),
+                executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
+              )
               val esVariantIds = esResponse.variantCarousel.map(_.variantId).toSet
               val variantCap = math.min(input.limit, spec.carouselSpec.variantSize)
               val capRoom = math.max(0, variantCap - esResponse.variantCarousel.size)
               val selectedHits = supplementPolicy.select(intent, esVariantIds, hits, documentsById, capRoom)
-              if (selectedHits.isEmpty) esResponse
+              val provenancePolicy = qdrantSupplementPolicyName(supplementPolicy)
+              if (selectedHits.isEmpty) {
+                esBaselineResponse.copy(qdrantSupplement = QdrantSupplementSummary.usedNoAppend(provenancePolicy))
+              }
               else {
                 val selectedDocuments = selectedHits.flatMap(hit => documentsById.get(hit.variantId))
                 val assembly = QdrantCandidateAssembler.assemble(selectedHits, selectedDocuments)
-                val supplement = QdrantCandidateResponseProjector.project(spec, input, assembly).variantCarousel
-                esResponse.copy(
-                  variantCarousel = (esResponse.variantCarousel ++ supplement).take(variantCap),
+                val supplement = QdrantCandidateResponseProjector.project(spec, input, assembly).variantCarousel.map(
+                  _.copy(resultOrigin = VariantResultOrigin.QdrantSupplement)
+                )
+                val variantCarousel = (esBaselineResponse.variantCarousel ++ supplement).take(variantCap)
+                val appendedVariantIds = supplement.map(_.variantId)
+                val qdrantSupplement =
+                  if (appendedVariantIds.isEmpty) QdrantSupplementSummary.usedNoAppend(provenancePolicy)
+                  else QdrantSupplementSummary.usedWithAppend(provenancePolicy, appendedVariantIds)
+                esBaselineResponse.copy(
+                  variantCarousel = variantCarousel,
+                  qdrantSupplement = qdrantSupplement,
                 )
               }
             }
           }
         }
+    }
+
+  private def qdrantSupplementPolicyName(policy: QdrantVariantSupplementPolicy): QdrantSupplementPolicyName =
+    policy match {
+      case QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1 =>
+        QdrantSupplementPolicyName.ExplicitConstraintsFilterPlusTop1
+      case QdrantVariantSupplementPolicy.AppendAll =>
+        QdrantSupplementPolicyName.None
     }
 }

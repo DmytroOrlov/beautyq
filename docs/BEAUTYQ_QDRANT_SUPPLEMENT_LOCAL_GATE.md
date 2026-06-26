@@ -2,20 +2,90 @@
 
 ## Current status
 
-* Stopped at QP24.
+* QP25 enables test/local `/beauty-search` provenance.
+* QP25b makes the local managed launcher select the Qdrant supplement route by default when local resources are available.
 * Commit: `805edaa48724e16a36dca2ab8955f11c52cef3b2`.
-* This is local/test acceptance evidence. It is not approval to switch the default `/beauty-search` route.
+* This is local/test acceptance evidence. It is not approval to switch production/default behavior.
 * Not production rollout.
 * ES remains primary/default.
 * Qdrant remains constrained supplement only.
 
 ## What exists
 
-* Activation selector exists for ES-only rollback, supplement not-ready, and supplement ready.
+* Internal activation selector exists for ES-only rollback, supplement not-ready, and supplement ready debug probes.
 * Readiness/preflight exists and fail-closes on invalid or mismatched ready selection.
 * Local route smoke exists for the selected supplement states.
 * Measured gate exists and locks the current accepted local/test outcome.
 * QP24 stabilized route/service comparison by checking ids, order, and ES-owned components instead of raw floating scores from independent real-resource calls.
+* QP25 adds frontend-visible execution and provenance fields to the successful route response.
+
+## Local launcher
+
+Run the local managed launcher:
+
+```bash
+./launcher -u scene:managed :leaderboard
+```
+
+The launcher HTTP server binds to source-confirmed port `8080` in `leaderboard.http.HttpServer`.
+
+The local managed launcher path selects the ES baseline plus Qdrant supplement route directly. It still needs the normal local resources: Elasticsearch, Qdrant with a compatible indexed BeautyQ collection, and the embedding endpoint used by the Qdrant collection. The route does not create Qdrant collections, index Qdrant at startup, fall back, fuse scores, or rerank. In short: no fallback, no fusion, no rerank.
+
+Qdrant append probe:
+
+```bash
+curl -sS -X POST 'http://localhost:8080/beauty-search' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"beauty near Wandsbek Markt","limit":10}' \
+| jq '{executionMode, qdrantSupplement, qdrantVariants: [.variantCarousel[] | select(.resultOrigin == "qdrant_supplement") | {variantId, resultOrigin}]}'
+```
+
+Expected:
+
+* `executionMode` is `es_plus_qdrant_supplement`
+* `qdrantSupplement.status` is `used_with_append`
+* `qdrantSupplement.contribution` is `qdrant_only_variant_append`
+* `qdrantSupplement.appendedVariantIds` has exactly one id
+* `qdrantVariants` has exactly one item
+
+Qdrant used with no append:
+
+```bash
+curl -sS -X POST 'http://localhost:8080/beauty-search' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"маникюр","limit":10}' \
+| jq '{executionMode, qdrantSupplement, origins: ([.variantCarousel[].resultOrigin] | unique)}'
+```
+
+Expected:
+
+* `executionMode` is `es_plus_qdrant_supplement`
+* `qdrantSupplement.status` is `used_no_append`
+* `qdrantSupplement.contribution` is `none`
+* `qdrantSupplement.appendedVariantIds` is empty
+* `origins` is only `["es_baseline"]`
+
+## Frontend provenance contract
+
+Response-level execution modes:
+
+* `es_only`
+* `es_plus_qdrant_supplement`
+
+Response-level Qdrant supplement statuses:
+
+* `not_used`
+* `used_no_append`
+* `used_with_append`
+
+Per-variant origins:
+
+* `es_baseline`
+* `qdrant_supplement`
+
+`qdrantSupplement.appendedVariantIds` contains only Qdrant-only variants actually appended to the returned list. `qdrantSupplement.contribution` is `qdrant_only_variant_append` only when that append happened; duplicate-dropped Qdrant candidates are not frontend-visible contribution.
+
+Frontend should treat these fields as explanation, debug, and status metadata. They are not a new ranking contract, and they do not expose raw Qdrant score as an improvement explanation.
 
 ## Locked measured gate
 
@@ -47,18 +117,15 @@ Expected counts:
 
 Do not add arbitrary query text just to increase N. Widen only from source-confirmed inventory.
 
-## Activation values
+## Internal rollback/debug values
 
-* `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION=es-only-rollback`
-* `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION=qdrant-supplement-not-ready`
-* `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION=qdrant-supplement-ready`
+The local managed launcher does not require an activation value for normal supplement behavior. Internal rollback/debug probes can still select ES-only rollback or not-ready states.
 
 Rules:
 
-* Absent/default means ES-only rollback.
 * Invalid value fails closed.
 * Not-ready returns `503` with no fallback.
-* Ready must not be selected unless preflight and measured gate are green.
+* Rollback/debug selection is not the user-facing local launcher path.
 
 ## Preflight and smoke commands
 
@@ -81,18 +148,17 @@ Rules:
 * `QP23_WIDENED_BASELINE_DRIFT`: measured counts no longer match locked baseline.
 * `QP18_ROUTE_SERVICE_CONTRACT_MISMATCH`: HTTP route and direct service disagree on ids/order/components.
 
-Any failure means do not select `qdrant-supplement-ready` and do not switch the default route.
+Any failure means do not claim the local/test supplement proof is green.
 
 ## Non-goals
 
-* no production/default route switch
+* no production route switch
 * no Qdrant-as-default
 * no fallback
 * no score fusion/rerank
 * no traffic shadowing/mirroring
 * no startup indexing
 * no production collection lifecycle
-* no route JSON/API change
 * no benchmark output as automatic rollout signal
 
 ## Reuse for next domain

@@ -15,8 +15,38 @@ Start here:
 
 Current BeautyQ route truth:
 
-* `POST /beauty-search` remains ES-backed by default.
+* Local managed launcher `POST /beauty-search` is ES-backed with the constrained Qdrant supplement when local resources are available.
 * Qdrant remains a constrained supplement only.
-* There is no production/default route switch, fallback, fusion, or rerank.
+* There is no fallback, fusion, or rerank.
+
+Run the local managed launcher:
+
+```bash
+./launcher -u scene:managed :leaderboard
+```
+
+The launcher HTTP server binds to source-confirmed port `8080`.
+
+Qdrant append probe:
+
+```bash
+curl -sS -X POST 'http://localhost:8080/beauty-search' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"beauty near Wandsbek Markt","limit":10}' \
+| jq '{executionMode, qdrantSupplement, qdrantVariants: [.variantCarousel[] | select(.resultOrigin == "qdrant_supplement") | {variantId, resultOrigin}]}'
+```
+
+Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_with_append`, `qdrantSupplement.contribution` is `qdrant_only_variant_append`, and exactly one returned variant has `resultOrigin` equal to `qdrant_supplement`.
+
+Qdrant used with no append:
+
+```bash
+curl -sS -X POST 'http://localhost:8080/beauty-search' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"маникюр","limit":10}' \
+| jq '{executionMode, qdrantSupplement, origins: ([.variantCarousel[].resultOrigin] | unique)}'
+```
+
+Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_no_append`, `qdrantSupplement.contribution` is `none`, `qdrantSupplement.appendedVariantIds` is empty, and `origins` is only `["es_baseline"]`.
 
 The rest of the repository remains the upstream distage example with multiple implementation variants under `bifunctor-tagless`, `monofunctor-tagless`, and `monomorphic-cats`.
