@@ -9,7 +9,6 @@ import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
-import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.search.eval.*
 import leaderboard.search.qdrant.{QdrantClient, QdrantCollectionReadinessConfig, QdrantCollectionReadinessInput, QdrantEmbeddingBenchmarkDefaultCompositionFactory, QdrantJsonInterpreter}
 import zio.{IO, Runtime, Unsafe}
@@ -41,8 +40,8 @@ final class M18DualEngineOfflineEvalQdrantRealLegSpec extends LeaderboardTest wi
       "real candidate rows when the embedding endpoint and Qdrant are reachable, otherwise stay honestly resource-gated" in {
         (portCfg: QdrantPortCfg) =>
           val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-          val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-          val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+          val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+          val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
           val (embeddingProbe, qdrantProbe) = unsafeRun(
             for {
@@ -151,7 +150,7 @@ final class M18DualEngineOfflineEvalQdrantRealLegSpec extends LeaderboardTest wi
 
   private def runGatedLeg(prerequisites: M18QdrantLegPrerequisites): IO[Nothing, M18DualEngineOfflineEvalResult] = {
     val qdrantLeg = M18QdrantLegInput.fromPrerequisites[IO, MasterServiceOfferVariantId](prerequisites) {
-      sys.error("must not connect Qdrant: this branch proves the resource-gated path")
+      fail("must not connect Qdrant: this branch proves the resource-gated path")
     }
     runner.run(
       dataset = dataset,

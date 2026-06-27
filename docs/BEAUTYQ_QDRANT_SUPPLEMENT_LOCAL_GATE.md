@@ -42,7 +42,11 @@ startup, prepares all local data the route needs before the HTTP server serves `
   upserted (`BeautyQManagedLocalSearchDataReady` / `BeautyQManagedLocalSearchBootstrap`).
 
 This needs the dockerized Elasticsearch/Qdrant containers (started by the managed scene) and the local
-embedding endpoint (default `http://localhost:8081`). No user-facing Qdrant activation env flag is
+embedding endpoint configured at `llama-cpp-embedding` in
+`bifunctor-tagless/src/main/resources/common-reference.conf` (default base URL
+`http://localhost:8081`, endpoint path `/v1/embeddings`; base URL override
+`M18_QDRANT_EMBEDDING_ENDPOINT`). The managed launcher reads it through Distage config, and Scala
+constructors do not carry runtime endpoint defaults. No user-facing Qdrant activation env flag is
 required, and operators never create or index the Qdrant collection by hand — startup does it
 automatically.
 
@@ -58,10 +62,10 @@ indexing.
 
 ### Embedding endpoint is a hard startup prerequisite (fail-fast, no ES-only fallback)
 
-The local embedding endpoint (default `http://localhost:8081`) is required: the Qdrant collection holds
-embedding vectors, so the managed bootstrap runs a named embedding preflight as the earliest step on
-every startup, before either rebuild or reuse readiness. The preflight calls the configured endpoint once
-and proves it is reachable, returns a non-empty vector, and returns exactly dimension `1024`.
+The configured local embedding endpoint is required: the Qdrant collection holds embedding vectors, so
+the managed bootstrap runs a named embedding preflight as the earliest step on every startup, before
+either rebuild or reuse readiness. The preflight calls the configured endpoint once and proves it is
+reachable, returns a non-empty vector, and returns exactly dimension `1024`.
 
 If the endpoint is unavailable, returns an empty embedding, or returns the wrong dimension, the managed
 local startup **fails before binding `127.0.0.1:8080`** and never serves `/beauty-search`. `HttpServer`

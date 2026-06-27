@@ -7,7 +7,6 @@ import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder, VariantSearchDocumentSnapshotProvider}
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.qdrant.{
   QdrantClient,
@@ -54,9 +53,9 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        val endpoint = sys.env.get("QDRANT_EMBEDDING_BENCHMARK_ENDPOINT").getOrElse("http://localhost:8081")
+        val endpoint = sys.env.get("QDRANT_EMBEDDING_BENCHMARK_ENDPOINT").getOrElse(LlamaCppEmbeddingTestConfig.default.baseUrl)
         val probeResult = try {
-          unsafeRun(new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = endpoint)).embed("benchmark single endpoint probe").either)
+          unsafeRun(LlamaCppEmbeddingTestConfig.client(LlamaCppEmbeddingTestConfig.withBaseUrl(endpoint)).embed("benchmark single endpoint probe").either)
         } catch {
           case _: Exception => Left(leaderboard.model.QueryFailure.operation("benchmark-probe", "endpoint unavailable"))
         }
@@ -97,11 +96,11 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        val smallUrl = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse("http://localhost:8081")
+        val smallUrl = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse(LlamaCppEmbeddingTestConfig.default.baseUrl)
         val largeUrl = sys.env.get("QDRANT_EMBEDDING_LARGE_URL").getOrElse("http://localhost:8082")
         def probeOne(url: String): Either[leaderboard.model.QueryFailure, Vector[Double]] = {
           try {
-            unsafeRun(new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url)).embed("benchmark dual endpoint probe").either)
+            unsafeRun(LlamaCppEmbeddingTestConfig.client(LlamaCppEmbeddingTestConfig.withBaseUrl(url)).embed("benchmark dual endpoint probe").either)
           } catch {
             case _: Exception => Left(leaderboard.model.QueryFailure.operation("benchmark-probe", s"endpoint $url unavailable"))
           }
@@ -150,6 +149,7 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
       executor = QdrantEmbeddingBenchmarkQdrantCandidateExecutor.fromQdrantClient(
         snapshotProvider = snapshotProvider,
         qdrantClient = qdrantClient,
+        embeddingConfig = LlamaCppEmbeddingTestConfig.default,
         config = QdrantEmbeddingBenchmarkExecutorConfig(
           collectionRunId = UUID.randomUUID().toString,
           topK = 5,
@@ -175,7 +175,7 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
     } yield ()
 
   private def probeCandidateDimension(candidate: QdrantEmbeddingBenchmarkCandidate): IO[QueryFailure, QdrantEmbeddingBenchmarkCandidate] =
-    new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = candidate.endpointLabel))
+    LlamaCppEmbeddingTestConfig.client(LlamaCppEmbeddingTestConfig.withBaseUrl(candidate.endpointLabel))
       .embed("qdrant embedding benchmark dimension probe")
       .flatMap { vector =>
         if (vector.nonEmpty) ZIO.succeed(candidate.copy(vectorDimension = vector.length))

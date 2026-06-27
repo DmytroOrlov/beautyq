@@ -10,7 +10,7 @@ import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
+import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.eval.*
 import leaderboard.search.eval.M19IBeautyQComponentCombinationPolicyScaffold.ComponentCombinationPolicy
 import leaderboard.search.eval.M20BControlledHybridServingOperationalControl.M20BOperationalControl
@@ -398,7 +398,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     Y0HModelCandidate(
       label = "small_embedding",
       modelName = "qdrant-y0h-small",
-      endpoint = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse(sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")),
+      endpoint = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse(LlamaCppEmbeddingTestConfig.default.baseUrl),
     ),
     Y0HModelCandidate(
       label = "large_embedding",
@@ -1071,8 +1071,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly (T/W pattern). ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -1812,8 +1812,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly. ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -2256,8 +2256,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly. ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -2675,8 +2675,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly. ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -3112,8 +3112,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly (T/W/H pattern). ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -3472,8 +3472,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly (T/W/H/Y0C pattern). ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -3770,8 +3770,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         // ---- Probe the real Qdrant + embedding resources honestly (T/W/H/Y0C/Y0E pattern). ----
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -4092,7 +4092,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               )
             } else {
               val allGatesFailReason: String = gateClassifications.map { case (label, cls, _) =>
-                val gateEvidence = perGateEvidence.find(_.label == label).getOrElse(sys.error(s"missing gate $label"))
+                val gateEvidence = perGateEvidence.find(_.label == label).getOrElse(fail(s"missing gate $label"))
                 val harmDelta = gateEvidence.semanticHarmQueryCount - baselineHarmCount
                 val recallDelta = gateEvidence.recallImprovedQueryCount - baselineRecallCount
                 s"$label: classification=$cls, harmDelta=$harmDelta, recallDelta=$recallDelta, " +
@@ -4210,8 +4210,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val esClient = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -4509,7 +4509,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         val qdrantConfigured = qdrantProbe.isRight
 
         def probeEmbeddingClient(candidate: Y0HModelCandidate): (LlamaCppEmbeddingClient, Either[QueryFailure, Vector[Double]]) = {
-          val client = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = candidate.endpoint))
+          val client = new LlamaCppEmbeddingClient(LlamaCppEmbeddingTestConfig.withBaseUrl(candidate.endpoint))
           val probe  = unsafeRun(client.embed(s"y0h embedding dimension probe (${candidate.label})").either)
           (client, probe)
         }
@@ -4942,8 +4942,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -5093,7 +5093,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               s"$header\n" +
                 s"CANONICAL_QUERY_COUNT=${canonicalEvalSuite.queries.size}\n" +
                 s"SCORE_THRESHOLD=$y0jScoreThreshold\n" +
-                s"EMBEDDING_ENDPOINT=$embeddingEndpoint\n" +
+                s"EMBEDDING_ENDPOINT=${embeddingConfig.baseUrl}\n" +
                 s"TEXT_CANDIDATES=${y0jTextCandidates.map(_.label).mkString(",")}\n" +
                 s"GATE_CANDIDATES=${y0jGateCandidates.map(_.label).mkString(",")}\n" +
                 s"LOST_RECALL_QUERY_ID=$y0hLostRecallQueryId\n" +
@@ -5398,8 +5398,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -5559,7 +5559,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               s"$header\n" +
                 s"CANONICAL_QUERY_COUNT=${canonicalEvalSuite.queries.size}\n" +
                 s"SCORE_THRESHOLD=$y0kScoreThreshold\n" +
-                s"EMBEDDING_ENDPOINT=$embeddingEndpoint\n" +
+                s"EMBEDDING_ENDPOINT=${embeddingConfig.baseUrl}\n" +
                 s"QUERY_TEXT_CANDIDATES=${y0kQueryCandidates.map(_.label).mkString(",")}\n" +
                 s"GATE_CANDIDATES=${y0kGateCandidates.map(_.label).mkString(",")}\n" +
                 s"LOST_RECALL_QUERY_ID=$y0hLostRecallQueryId\n" +
@@ -7316,7 +7316,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     ds: M9OfflineEvalDataset,
   ): IO[QueryFailure, M18DualEngineOfflineEvalResult] = {
     val qdrantLeg = M18QdrantLegInput.fromPrerequisites[IO, MasterServiceOfferVariantId](prerequisites) {
-      sys.error("must not connect Qdrant: this branch proves the honest resource-gated path")
+      fail("must not connect Qdrant: this branch proves the honest resource-gated path")
     }
     (
       for {

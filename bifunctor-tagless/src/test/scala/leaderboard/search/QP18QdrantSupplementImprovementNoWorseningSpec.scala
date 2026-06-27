@@ -64,7 +64,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
 
   override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Mode -> Mode.Test),
-    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg],
+    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg] + DIKey[LlamaCppEmbeddingClientConfig],
   )
 
   private val canonicalSeed = new BeautyQSeedLoader.ResourceLoader().load() match {
@@ -133,11 +133,10 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
 
   "QP18 real-resource improvement/no-worsening route proof" should {
     "use the source-confirmed local route harness to show one append-only improvement without worsening the ES baseline" in {
-      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
+      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg, embeddingConfig: LlamaCppEmbeddingClientConfig) =>
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingClient   = new LlamaCppEmbeddingClient(embeddingConfig)
 
         val resourceProbe = runIO(
           for {
@@ -153,9 +152,9 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
             assertRealRouteOutcome(outcome)
           case (esResult, embeddingResult, qdrantResult) =>
             cancel(
-              s"QP18_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
+                s"QP18_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
                 s"embeddingReachable=${embeddingResult.exists(_.nonEmpty)}, " +
-                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=$embeddingEndpoint"
+                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=${embeddingConfig.baseUrl}"
             )
         }
     }

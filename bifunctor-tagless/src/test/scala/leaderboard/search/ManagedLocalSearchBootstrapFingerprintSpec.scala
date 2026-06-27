@@ -1,8 +1,10 @@
 package leaderboard.search
 
+import com.typesafe.config.ConfigFactory
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.VectorSearchSpec
+import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.search.startup.{BeautyQManagedLocalSearchBootstrap, BeautyQManagedLocalSearchBootstrapFingerprint}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
@@ -14,7 +16,13 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
     vectorSpec,
     BeautyQManagedLocalSearchBootstrap.ExpectedVectorDimension,
   )
-  private val endpoint = BeautySearchLocalQdrantSupplementLauncherModule.DefaultEmbeddingEndpoint
+  private val endpoint = {
+    val config = ConfigFactory.load("common-reference.conf").resolve().getConfig("llama-cpp-embedding")
+    LlamaCppEmbeddingClientConfig(
+      baseUrl = config.getString("baseUrl"),
+      endpointPath = config.getString("endpointPath"),
+    ).baseUrl
+  }
 
   private val seed = new BeautyQSeedLoader.ResourceLoader().load() match {
     case Right(value) => value

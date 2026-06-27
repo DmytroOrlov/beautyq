@@ -5,7 +5,6 @@ import io.circe.Json
 import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.qdrant.QdrantJsonInterpreter
 import leaderboard.search.qdrant.QdrantClient
 import java.util.UUID
@@ -25,9 +24,11 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
       (
         portCfg: QdrantPortCfg,
       ) =>
-        val url = sys.env.get("LLAMA_CPP_EMBEDDING_URL").getOrElse("http://localhost:8081")
+        val embeddingConfig = sys.env.get("LLAMA_CPP_EMBEDDING_URL")
+          .map(LlamaCppEmbeddingTestConfig.withBaseUrl)
+          .getOrElse(LlamaCppEmbeddingTestConfig.default)
         val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
         val probeResult = try {
           unsafeRun(embeddingClient.embed("qdrant llama retrieval smoke probe").either)
         } catch {
@@ -38,8 +39,8 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
             val collectionName = s"llama_cpp_retrieval_${UUID.randomUUID().toString.replace('-', '_')}"
             val collectionPath = s"/collections/$collectionName"
             val vectorName = "llama-cpp-embedding"
-            val docs = List(
-              ("550e8400-e29b-41d4-a716-446655440001", "face-care", "facial care skin hydration anti aging"),
+            val firstDoc = ("550e8400-e29b-41d4-a716-446655440001", "face-care", "facial care skin hydration anti aging")
+            val remainingDocs = List(
               ("550e8400-e29b-41d4-a716-446655440002", "nails", "manicure gel polish nails"),
               ("550e8400-e29b-41d4-a716-446655440003", "lashes", "eyelash extension 2d lashes"),
             )
@@ -47,7 +48,7 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
             unsafeRun(
               (
                 for {
-                firstVector <- embeddingClient.embed(docs.head._3)
+                firstVector <- embeddingClient.embed(firstDoc._3)
                 spec = QdrantRetrievalSmokeSpec.collectionSpec(collectionName, vectorName)
                 embeddingSpec = QdrantRetrievalSmokeSpec.embeddingSpec(firstVector.length)
                 collectionJson <- ZIO.succeed(QdrantJsonInterpreter.createCollectionJson(spec, embeddingSpec))
@@ -55,13 +56,13 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
                 _ <- qdrantClient.upsertPoint(
                   s"$collectionPath/points?wait=true",
                   QdrantJsonInterpreter.upsertPointJson(
-                    docs.head._1,
+                    firstDoc._1,
                     vectorName,
                     firstVector.toList,
-                    Map("id" -> Json.fromString(docs.head._2)),
+                    Map("id" -> Json.fromString(firstDoc._2)),
                   ),
                 )
-                _ <- ZIO.foreachDiscard(docs.tail) { case (pointId, payloadId, text) =>
+                _ <- ZIO.foreachDiscard(remainingDocs) { case (pointId, payloadId, text) =>
                   for {
                     vector <- embeddingClient.embed(text)
                     payload = Map("id" -> Json.fromString(payloadId))
@@ -75,14 +76,18 @@ final class QdrantLlamaCppRetrievalSmokeSpec extends LeaderboardTest with ProdTe
                   QdrantRetrievalSmokeSpec.searchJson(vectorName, queryVector.toList),
                 )
                 _ <- ZIO.succeed {
-                  assert(hits.nonEmpty, "expected at least one search hit")
-                  assert(hits.head.payload.apply("id").flatMap(_.asString).contains("face-care"), s"unexpected top payload: ${hits.head.payload}")
+                  hits.headOption match {
+                    case Some(hit) =>
+                      assert(hit.payload.apply("id").flatMap(_.asString).contains("face-care"), s"unexpected top payload: ${hit.payload}")
+                    case None =>
+                      fail("expected at least one search hit")
+                  }
                 }
               } yield ()
               ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)
             )
           case _ =>
-            cancel(s"llama.cpp embedding endpoint $url is unavailable; canceling Qdrant+llama retrieval smoke")
+            cancel(s"llama.cpp embedding endpoint ${embeddingConfig.baseUrl} is unavailable; canceling Qdrant+llama retrieval smoke")
         }
     }
   }

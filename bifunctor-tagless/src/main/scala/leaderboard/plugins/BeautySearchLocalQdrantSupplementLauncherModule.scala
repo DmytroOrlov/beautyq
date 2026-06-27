@@ -21,13 +21,6 @@ object BeautySearchLocalQdrantSupplementLauncherModule {
       scoreThreshold = None,
     )
 
-  /** Default local embedding endpoint required by the managed BeautyQ Qdrant bootstrap. */
-  val DefaultEmbeddingEndpoint: String = "http://localhost:8081"
-
-  /** Configured local embedding endpoint (env override, default `http://localhost:8081`). */
-  def embeddingEndpoint: String =
-    sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", DefaultEmbeddingEndpoint)
-
   def managedLocalDefault: ModuleDef = new ModuleDef {
     tag(Scene.Managed)
 
@@ -36,10 +29,8 @@ object BeautySearchLocalQdrantSupplementLauncherModule {
     include(BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(VectorSpec))
 
     make[EmbeddingClient].from {
-      () =>
-        new LlamaCppEmbeddingClient(
-          LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint)
-        )
+      (config: LlamaCppEmbeddingClientConfig) =>
+        new LlamaCppEmbeddingClient(config)
     }
 
     make[QdrantClient].from {
@@ -60,6 +51,7 @@ object BeautySearchLocalQdrantSupplementLauncherModule {
         esClient: ElasticsearchJsonClient,
         qdrantClient: QdrantClient,
         embeddingClient: EmbeddingClient,
+        embeddingConfig: LlamaCppEmbeddingClientConfig,
         spec: BeautySearchSpec,
         catalog: BeautySearchReadyCatalogDocuments,
         log: LogIO2[IO],
@@ -71,7 +63,7 @@ object BeautySearchLocalQdrantSupplementLauncherModule {
           spec,
           catalog,
           VectorSpec,
-          embeddingEndpoint,
+          embeddingConfig.baseUrl,
           log,
         )
     }

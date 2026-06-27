@@ -15,12 +15,12 @@ trait QdrantEmbeddingBenchmarkEmbeddingClientFactory {
 }
 
 object QdrantEmbeddingBenchmarkEmbeddingClientFactory {
-  final class LlamaCppEndpoint extends QdrantEmbeddingBenchmarkEmbeddingClientFactory {
+  final class LlamaCppEndpoint(configTemplate: LlamaCppEmbeddingClientConfig) extends QdrantEmbeddingBenchmarkEmbeddingClientFactory {
     override def clientFor(candidate: QdrantEmbeddingBenchmarkCandidate): IO[QueryFailure, EmbeddingClient] =
       if (candidate.endpointLabel.trim.isEmpty) {
         ZIO.fail(QueryFailure.operation("qdrant-embedding-benchmark-executor", s"Candidate ${candidate.candidateId} has an empty endpoint label"))
       } else {
-        ZIO.succeed(new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = candidate.endpointLabel)))
+        ZIO.succeed(new LlamaCppEmbeddingClient(configTemplate.copy(baseUrl = candidate.endpointLabel)))
       }
   }
 }
@@ -163,13 +163,14 @@ object QdrantEmbeddingBenchmarkQdrantCandidateExecutor {
   def fromQdrantClient(
     snapshotProvider: VariantSearchDocumentSnapshotProvider[IO],
     qdrantClient: QdrantClient,
-    embeddingClientFactory: QdrantEmbeddingBenchmarkEmbeddingClientFactory = new QdrantEmbeddingBenchmarkEmbeddingClientFactory.LlamaCppEndpoint(),
+    embeddingConfig: LlamaCppEmbeddingClientConfig,
+    embeddingClientFactory: Option[QdrantEmbeddingBenchmarkEmbeddingClientFactory] = None,
     config: QdrantEmbeddingBenchmarkExecutorConfig = QdrantEmbeddingBenchmarkExecutorConfig(),
   ): QdrantEmbeddingBenchmarkQdrantCandidateExecutor =
     new QdrantEmbeddingBenchmarkQdrantCandidateExecutor(
       snapshotProvider = snapshotProvider,
       collectionClient = new QdrantEmbeddingBenchmarkQdrantCollectionClient(qdrantClient),
-      embeddingClientFactory = embeddingClientFactory,
+      embeddingClientFactory = embeddingClientFactory.getOrElse(new QdrantEmbeddingBenchmarkEmbeddingClientFactory.LlamaCppEndpoint(embeddingConfig)),
       compositionFactory = new QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient),
       config = config,
     )

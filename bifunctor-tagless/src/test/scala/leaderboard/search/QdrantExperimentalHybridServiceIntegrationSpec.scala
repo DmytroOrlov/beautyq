@@ -8,7 +8,6 @@ import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.hybrid.ExperimentalBeautySearchService
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -74,13 +73,15 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        val url = sys.env.get("LLAMA_CPP_EMBEDDING_URL").getOrElse("http://localhost:8081")
-        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+        val embeddingConfig = sys.env.get("LLAMA_CPP_EMBEDDING_URL")
+          .map(LlamaCppEmbeddingTestConfig.withBaseUrl)
+          .getOrElse(LlamaCppEmbeddingTestConfig.default)
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
         val testEffect: IO[QueryFailure, Unit] = embeddingClient.embed("experimental hybrid service endpoint probe").either.flatMap {
           case Left(_) =>
-            ZIO.succeed(cancel(s"llama.cpp embedding endpoint $url is unavailable; canceling Qdrant experimental hybrid service integration"))
+            ZIO.succeed(cancel(s"llama.cpp embedding endpoint ${embeddingConfig.baseUrl} is unavailable; canceling Qdrant experimental hybrid service integration"))
           case Right(vector) if vector.isEmpty =>
-            ZIO.succeed(cancel(s"llama.cpp embedding endpoint $url returned an empty vector; canceling Qdrant experimental hybrid service integration"))
+            ZIO.succeed(cancel(s"llama.cpp embedding endpoint ${embeddingConfig.baseUrl} returned an empty vector; canceling Qdrant experimental hybrid service integration"))
           case Right(_) =>
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
             val metadata = SearchRoutingMetadata(signal = Some(SearchRoutingSignal.BroadSemanticCandidate))

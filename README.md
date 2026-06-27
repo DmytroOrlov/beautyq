@@ -34,12 +34,16 @@ incompatible Qdrant vector spec forces rebuild or fails fast before bind. No use
 activation env flag is required, and operators never create or index the Qdrant collection by hand —
 startup does it automatically. The launcher HTTP server binds to source-confirmed port `8080`.
 
-The local embedding endpoint (default `http://localhost:8081`) is a hard startup prerequisite: the
-managed bootstrap runs an embedding preflight on every startup before readiness. If the endpoint is
-unavailable, returns an empty embedding, or returns the wrong vector dimension (expected `1024`), startup
-fails before binding `127.0.0.1:8080` and never serves `/beauty-search`, with a diagnostic naming the
-bootstrap, the endpoint, the expected dimension, and the actual reason. Startup does not silently fall
-back to ES-only.
+The local embedding endpoint is configured at `llama-cpp-embedding` in
+`bifunctor-tagless/src/main/resources/common-reference.conf` (default base URL
+`http://localhost:8081`, endpoint path `/v1/embeddings`; base URL override
+`M18_QDRANT_EMBEDDING_ENDPOINT`). The managed launcher reads that value through Distage config, and
+the Scala constructors do not carry runtime endpoint defaults. The endpoint is a hard startup
+prerequisite: the managed bootstrap runs an embedding preflight on every startup before readiness. If
+the endpoint is unavailable, returns an empty embedding, or returns the wrong vector dimension
+(expected `1024`), startup fails before binding `127.0.0.1:8080` and never serves `/beauty-search`,
+with a diagnostic naming the bootstrap, the endpoint, the expected dimension, and the actual reason.
+Startup does not silently fall back to ES-only.
 
 Qdrant append probe:
 

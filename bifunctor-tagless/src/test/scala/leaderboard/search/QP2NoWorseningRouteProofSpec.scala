@@ -12,7 +12,7 @@ import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchJsonClient, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
+import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.hybrid.{ExperimentalHybridSearchBackend, QdrantVariantSupplementPolicy}
 import leaderboard.search.qdrant.{QdrantClient, QdrantCollectionReadinessConfig, QdrantCollectionReadinessInput, QdrantEmbeddingBenchmarkDefaultCompositionFactory, QdrantJsonInterpreter}
 import leaderboard.search.routing.SearchBackendRoute
@@ -102,8 +102,8 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
       (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
         val esClient           = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient       = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint  = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient    = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig    = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient    = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = runIO(
           for {
@@ -122,7 +122,7 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
 
           case _ =>
             cancel(
-              s"QP2_RESOURCE_GATED: real Qdrant and/or the real embedding endpoint ($embeddingEndpoint) " +
+              s"QP2_RESOURCE_GATED: real Qdrant and/or the real embedding endpoint (${embeddingConfig.baseUrl}) " +
                 s"are unavailable; embeddingReachable=${embeddingProbe.exists(_.nonEmpty)}, qdrantConfigured=${qdrantProbe.isRight}"
             )
         }

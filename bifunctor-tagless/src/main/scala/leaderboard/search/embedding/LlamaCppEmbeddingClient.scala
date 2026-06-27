@@ -10,11 +10,11 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.time.Duration
 
 final case class LlamaCppEmbeddingClientConfig(
-  baseUrl: String = "http://localhost:8081",
-  endpointPath: String = "/v1/embeddings",
+  baseUrl: String,
+  endpointPath: String,
 )
 
-final class LlamaCppEmbeddingClient(config: LlamaCppEmbeddingClientConfig = LlamaCppEmbeddingClientConfig()) extends EmbeddingClient {
+final class LlamaCppEmbeddingClient(config: LlamaCppEmbeddingClientConfig) extends EmbeddingClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
   override def embed(text: String): IO[QueryFailure, Vector[Double]] =

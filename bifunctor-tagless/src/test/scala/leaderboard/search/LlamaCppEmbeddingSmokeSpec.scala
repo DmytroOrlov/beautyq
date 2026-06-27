@@ -1,15 +1,17 @@
 package leaderboard.search
 
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
+import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import org.scalatest.wordspec.AnyWordSpec
 
 final class LlamaCppEmbeddingSmokeSpec extends AnyWordSpec {
-  private val embeddingUrl = sys.env.get("LLAMA_CPP_EMBEDDING_URL").getOrElse("http://localhost:8081")
+  private val embeddingConfig = sys.env.get("LLAMA_CPP_EMBEDDING_URL")
+    .map(LlamaCppEmbeddingTestConfig.withBaseUrl)
+    .getOrElse(LlamaCppEmbeddingTestConfig.default)
 
   "LlamaCppEmbeddingClient smoke" should {
     "call the local llama.cpp embedding endpoint" in {
-      val client = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingUrl))
-      probeEmbeddingClient(client, embeddingUrl) match {
+      val client = new LlamaCppEmbeddingClient(embeddingConfig)
+      probeEmbeddingClient(client, embeddingConfig.baseUrl) match {
         case Some(message) => cancel(message)
         case None =>
           val result = unsafeRun(client.embed("test"))

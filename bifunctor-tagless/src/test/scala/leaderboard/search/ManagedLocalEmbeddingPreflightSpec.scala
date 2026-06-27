@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import com.typesafe.config.ConfigFactory
 import distage.{Injector, Lifecycle, ModuleDef, Scene}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
@@ -10,7 +11,7 @@ import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
 import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
-import leaderboard.search.embedding.EmbeddingClient
+import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.qdrant.QdrantClient
 import leaderboard.search.startup.{BeautyQManagedLocalSearchBootstrap, BeautyQManagedLocalSearchDataReady}
 import logstage.LogIO2
@@ -31,7 +32,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 final class ManagedLocalEmbeddingPreflightSpec extends AnyWordSpec {
 
-  private val endpointLabel: String = "http://localhost:8081"
+  private val endpointLabel: String = {
+    val config = ConfigFactory.load("common-reference.conf").resolve().getConfig("llama-cpp-embedding")
+    LlamaCppEmbeddingClientConfig(
+      baseUrl = config.getString("baseUrl"),
+      endpointPath = config.getString("endpointPath"),
+    ).baseUrl
+  }
   private val expectedDimension: Int = BeautyQManagedLocalSearchBootstrap.ExpectedVectorDimension
 
   "BeautyQManagedLocalSearchBootstrap.embeddingPreflight" should {

@@ -65,7 +65,7 @@ final class ManagedLauncherHttpRouteMountSpec
     with HttpContractTestSupport {
 
   override def config = super.config.copy(
-    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg],
+    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg] + DIKey[LlamaCppEmbeddingClientConfig],
   )
 
   private val baseSpec: BeautySearchSpec = BeautySearchSpecV1.spec
@@ -90,11 +90,10 @@ final class ManagedLauncherHttpRouteMountSpec
 
   "managed launcher public HTTP API set" should {
     "mount every public route expected by the local managed leaderboard launcher" in {
-      (esPortCfg: ElasticsearchPortCfg, postgresPortCfg: PostgresPortCfg, qdrantPortCfg: QdrantPortCfg) =>
+      (esPortCfg: ElasticsearchPortCfg, postgresPortCfg: PostgresPortCfg, qdrantPortCfg: QdrantPortCfg, embeddingConfig: LlamaCppEmbeddingClientConfig) =>
         val esClient          = new leaderboard.search.ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingClient   = new LlamaCppEmbeddingClient(embeddingConfig)
 
         val resourceProbe = runIO(
           for {
@@ -106,12 +105,12 @@ final class ManagedLauncherHttpRouteMountSpec
 
         resourceProbe match {
           case (Right(_), Right(vector), Right(_)) if vector.nonEmpty =>
-            runIO(runRouteMountProof(esClient, postgresPortCfg, qdrantClient, embeddingClient))
+            runIO(runRouteMountProof(esClient, postgresPortCfg, qdrantClient, embeddingClient, embeddingConfig))
           case (esResult, embeddingResult, qdrantResult) =>
             cancel(
-              s"MANAGED_LAUNCHER_ROUTE_MOUNT_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
+                s"MANAGED_LAUNCHER_ROUTE_MOUNT_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
                 s"embeddingReachable=${embeddingResult.exists(_.nonEmpty)}, " +
-                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=$embeddingEndpoint"
+                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=${embeddingConfig.baseUrl}"
             )
         }
     }
@@ -122,6 +121,7 @@ final class ManagedLauncherHttpRouteMountSpec
     postgresPortCfg: PostgresPortCfg,
     qdrantClient: QdrantClient,
     embeddingClient: EmbeddingClient,
+    embeddingConfig: LlamaCppEmbeddingClientConfig,
   ): IO[QueryFailure, Unit] = {
     val routeVectorSpec = vectorSpec.copy(
       collectionName = s"${vectorSpec.collectionName}_route_mount_${UUID.randomUUID().toString.replace('-', '_')}"
@@ -137,7 +137,7 @@ final class ManagedLauncherHttpRouteMountSpec
 
     (
       for {
-        probe <- buildManagedLauncherProbe(esJsonClient, postgresPortCfg, qdrantClient, embeddingClient, routeSpec, routeVectorSpec).mapError(toQueryFailure)
+        probe <- buildManagedLauncherProbe(esJsonClient, postgresPortCfg, qdrantClient, embeddingClient, embeddingConfig, routeSpec, routeVectorSpec).mapError(toQueryFailure)
         apis = probe.allHttpApis
         _ <- ZIO.succeed(assertApiInventory(apis))
         app = combineApis(apis.toSeq*)
@@ -168,6 +168,7 @@ final class ManagedLauncherHttpRouteMountSpec
     postgresPortCfg: PostgresPortCfg,
     qdrantClient: QdrantClient,
     embeddingClient: EmbeddingClient,
+    embeddingConfig: LlamaCppEmbeddingClientConfig,
     routeSpec: BeautySearchSpec,
     routeVectorSpec: leaderboard.search.dsl.VectorSearchSpec,
   ): Task[ManagedLauncherRouteSetProbe] = {
@@ -232,6 +233,7 @@ final class ManagedLauncherHttpRouteMountSpec
       make[BeautySearchSpec].fromValue(routeSpec)
       make[ElasticsearchJsonClient].fromValue(esClient)
       make[EmbeddingClient].fromValue(embeddingClient)
+      make[LlamaCppEmbeddingClientConfig].fromValue(embeddingConfig)
       make[QdrantClient].fromValue(qdrantClient)
       make[SemanticCandidateBackend[IO]].from {
         (embeddingClient: EmbeddingClient, qdrantSearchClient: QdrantSearchClient) =>
@@ -245,6 +247,7 @@ final class ManagedLauncherHttpRouteMountSpec
           esClient: ElasticsearchJsonClient,
           qdrantClient: QdrantClient,
           embeddingClient: EmbeddingClient,
+          embeddingConfig: LlamaCppEmbeddingClientConfig,
           spec: BeautySearchSpec,
           catalog: BeautySearchReadyCatalogDocuments,
           log: LogIO2[IO],
@@ -256,7 +259,7 @@ final class ManagedLauncherHttpRouteMountSpec
             spec,
             catalog,
             routeVectorSpec,
-            BeautySearchLocalQdrantSupplementLauncherModule.embeddingEndpoint,
+            embeddingConfig.baseUrl,
             log,
           )
       }

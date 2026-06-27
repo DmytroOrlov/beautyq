@@ -54,7 +54,7 @@ final class BeautySearchQdrantSupplementProvenanceSpec
 
   override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Mode -> Mode.Test),
-    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg],
+    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg] + DIKey[LlamaCppEmbeddingClientConfig],
   )
 
   private val baseSpec: BeautySearchSpec = BeautySearchSpecV1.spec
@@ -154,11 +154,10 @@ final class BeautySearchQdrantSupplementProvenanceSpec
 
   "QP25 response provenance on the real-resource local/test route harness" should {
     "expose ready/no-append and ready/append provenance without changing ES-owned components" in {
-      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
+      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg, embeddingConfig: LlamaCppEmbeddingClientConfig) =>
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingClient   = new LlamaCppEmbeddingClient(embeddingConfig)
 
         val resourceProbe = runIO(
           for {
@@ -173,9 +172,9 @@ final class BeautySearchQdrantSupplementProvenanceSpec
             runIO(runRealRouteProvenance(esClient, qdrantClient, embeddingClient, vector.length))
           case (esResult, embeddingResult, qdrantResult) =>
             cancel(
-              s"QP25_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
+                s"QP25_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
                 s"embeddingReachable=${embeddingResult.exists(_.nonEmpty)}, " +
-                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=$embeddingEndpoint"
+                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=${embeddingConfig.baseUrl}"
             )
         }
     }

@@ -15,6 +15,7 @@ import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
+import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.search.startup.BeautyQManagedLocalSearchDataReady
 import leaderboard.seed.{BeautyQSeedInserter, BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.services.Ranks
@@ -191,6 +192,7 @@ object LeaderboardPlugin extends PluginDef {
     val configs: ConfigModuleDef = new ConfigModuleDef {
       makeConfig[PostgresCfg]("postgres")
       makeConfig[ElasticsearchPortCfg]("elasticsearch")
+      makeConfig[LlamaCppEmbeddingClientConfig]("llama-cpp-embedding")
     }
     val prodConfigs: ConfigModuleDef = new ConfigModuleDef {
       // only use this if Scene axis is set to Provided

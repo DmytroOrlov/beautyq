@@ -9,7 +9,7 @@ import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
+import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.eval.*
 import leaderboard.search.eval.M19IBeautyQComponentCombinationPolicyScaffold.ComponentCombinationPolicy
 import leaderboard.search.eval.M20BControlledHybridServingOperationalControl.M20BOperationalControl
@@ -134,8 +134,8 @@ final class DisabledRuntimeHybridExecutionEsQdrantProofSpec extends LeaderboardT
         // ---- Probe the real Qdrant + embedding resources honestly. ----
         val esClient        = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient    = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingConfig = LlamaCppEmbeddingTestConfig.default
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
 
         val (embeddingProbe, qdrantProbe) = unsafeRun(
           for {
@@ -304,7 +304,7 @@ final class DisabledRuntimeHybridExecutionEsQdrantProofSpec extends LeaderboardT
     prerequisites: M18QdrantLegPrerequisites,
   ): IO[QueryFailure, M18DualEngineOfflineEvalResult] = {
     val qdrantLeg = M18QdrantLegInput.fromPrerequisites[IO, MasterServiceOfferVariantId](prerequisites) {
-      sys.error("must not connect Qdrant: this branch proves the honest resource-gated path")
+      fail("must not connect Qdrant: this branch proves the honest resource-gated path")
     }
     (
       for {

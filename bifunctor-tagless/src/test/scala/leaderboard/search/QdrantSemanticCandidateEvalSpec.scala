@@ -6,7 +6,6 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.embedding.{LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.eval.BeautySearchEvalQuery
@@ -69,13 +68,15 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
         masterServiceOfferVariants: MasterServiceOfferVariants[IO],
         seedReady: BeautyQSeedReady,
       ) =>
-        val url = sys.env.get("LLAMA_CPP_EMBEDDING_URL").getOrElse("http://localhost:8081")
-        val embeddingClient = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = url))
+        val embeddingConfig = sys.env.get("LLAMA_CPP_EMBEDDING_URL")
+          .map(LlamaCppEmbeddingTestConfig.withBaseUrl)
+          .getOrElse(LlamaCppEmbeddingTestConfig.default)
+        val embeddingClient = LlamaCppEmbeddingTestConfig.client(embeddingConfig)
         val testEffect: IO[QueryFailure, Unit] = embeddingClient.embed("semantic candidate eval endpoint probe").either.flatMap {
           case Left(_) =>
-            ZIO.succeed(cancel(s"llama.cpp embedding endpoint $url is unavailable; canceling Qdrant semantic candidate eval"))
+            ZIO.succeed(cancel(s"llama.cpp embedding endpoint ${embeddingConfig.baseUrl} is unavailable; canceling Qdrant semantic candidate eval"))
           case Right(vector) if vector.isEmpty =>
-            ZIO.succeed(cancel(s"llama.cpp embedding endpoint $url returned an empty vector; canceling Qdrant semantic candidate eval"))
+            ZIO.succeed(cancel(s"llama.cpp embedding endpoint ${embeddingConfig.baseUrl} returned an empty vector; canceling Qdrant semantic candidate eval"))
           case Right(_) =>
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
             val semanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient))

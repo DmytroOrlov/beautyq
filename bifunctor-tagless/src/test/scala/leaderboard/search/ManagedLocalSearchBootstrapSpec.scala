@@ -53,7 +53,7 @@ final class ManagedLocalSearchBootstrapSpec
 
   // No `Activation(Mode -> Mode.Test)`: this stays at the launcher-equivalent `Scene.Managed` + `Mode.Prod`.
   override def config = super.config.copy(
-    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg],
+    memoizationRoots = super.config.memoizationRoots + DIKey[ElasticsearchPortCfg] + DIKey[QdrantPortCfg] + DIKey[LlamaCppEmbeddingClientConfig],
   )
 
   private val baseSpec: BeautySearchSpec = BeautySearchSpecV1.spec
@@ -103,11 +103,10 @@ final class ManagedLocalSearchBootstrapSpec
 
   "QP26 managed local launcher ES + Qdrant startup bootstrap" should {
     "prepare the ES baseline and Qdrant supplement and serve append / no-append provenance" in {
-      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg) =>
+      (esPortCfg: ElasticsearchPortCfg, qdrantPortCfg: QdrantPortCfg, embeddingConfig: LlamaCppEmbeddingClientConfig) =>
         val esClient          = new ElasticsearchTestClient(esPortCfg.host, esPortCfg.port)
         val qdrantClient      = new QdrantClient(qdrantPortCfg.host, qdrantPortCfg.port)
-        val embeddingEndpoint = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081")
-        val embeddingClient   = new LlamaCppEmbeddingClient(LlamaCppEmbeddingClientConfig(baseUrl = embeddingEndpoint))
+        val embeddingClient   = new LlamaCppEmbeddingClient(embeddingConfig)
 
         val resourceProbe = runIO(
           for {
@@ -119,12 +118,12 @@ final class ManagedLocalSearchBootstrapSpec
 
         resourceProbe match {
           case (Right(_), Right(vector), Right(_)) if vector.nonEmpty =>
-            runIO(runBootstrapProof(esClient, qdrantClient, embeddingClient))
+            runIO(runBootstrapProof(esClient, qdrantClient, embeddingClient, embeddingConfig))
           case (esResult, embeddingResult, qdrantResult) =>
             cancel(
-              s"QP26_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
+                s"QP26_RESOURCE_GATED: esReachable=${esResult.isRight}, " +
                 s"embeddingReachable=${embeddingResult.exists(_.nonEmpty)}, " +
-                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=$embeddingEndpoint"
+                s"qdrantReachable=${qdrantResult.isRight}, embeddingEndpoint=${embeddingConfig.baseUrl}"
             )
         }
     }
@@ -134,6 +133,7 @@ final class ManagedLocalSearchBootstrapSpec
     esClient: ElasticsearchTestClient,
     qdrantClient: QdrantClient,
     embeddingClient: LlamaCppEmbeddingClient,
+    embeddingConfig: LlamaCppEmbeddingClientConfig,
   ): IO[QueryFailure, Unit] = {
     // Unique ES index so the suite never clobbers other real-ES suites; the Qdrant collection is the
     // fixed launcher collection (only this suite touches it, and the bootstrap drops+recreates it).
@@ -149,7 +149,7 @@ final class ManagedLocalSearchBootstrapSpec
     val checker = new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
 
     def bootstrap(): IO[QueryFailure, leaderboard.search.startup.BeautyQManagedLocalSearchBootstrapResult] =
-      BeautyQManagedLocalSearchBootstrap.run(esJsonClient, qdrantClient, embeddingClient, routeSpec, catalog, vectorSpec, BeautySearchLocalQdrantSupplementLauncherModule.embeddingEndpoint)
+      BeautyQManagedLocalSearchBootstrap.run(esJsonClient, qdrantClient, embeddingClient, routeSpec, catalog, vectorSpec, embeddingConfig.baseUrl)
 
     (
       for {
