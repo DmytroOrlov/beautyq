@@ -24,6 +24,7 @@ import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, ZIO}
 
 import scala.annotation.unused
+import scala.util.control.NonFatal
 import java.util.UUID
 
 final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardTest with ProdTest {
@@ -54,13 +55,8 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
         seedReady: BeautyQSeedReady,
       ) =>
         val endpoint = sys.env.get("QDRANT_EMBEDDING_BENCHMARK_ENDPOINT").getOrElse(LlamaCppEmbeddingTestConfig.default.baseUrl)
-        val probeResult = try {
-          unsafeRun(LlamaCppEmbeddingTestConfig.client(LlamaCppEmbeddingTestConfig.withBaseUrl(endpoint)).embed("benchmark single endpoint probe").either)
-        } catch {
-          case _: Exception => Left(leaderboard.model.QueryFailure.operation("benchmark-probe", "endpoint unavailable"))
-        }
-        probeResult match {
-          case Right(vector) if vector.nonEmpty =>
+        probeEndpoint(endpoint) match {
+          case ProbeOutcome.Reachable(_) =>
             runPlan(
               portCfg = portCfg,
               snapshotProvider = snapshotProvider(
@@ -79,8 +75,13 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
                 k = 5,
               ),
             )
-          case _ =>
-            cancel(s"Embedding endpoint $endpoint is unavailable; canceling single-endpoint benchmark executor integration")
+          case ProbeOutcome.Unreachable(reason) =>
+            cancel(
+              s"Embedding candidate comparison skipped: candidate endpoint $endpoint is unreachable ($reason). " +
+                s"Start the local embedding endpoint at $endpoint or override QDRANT_EMBEDDING_BENCHMARK_ENDPOINT."
+            )
+          case ProbeOutcome.ContractViolation(reason) =>
+            fail(s"Embedding endpoint $endpoint is reachable but violated the embedding API contract: $reason")
         }
     }
 
@@ -98,42 +99,42 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
       ) =>
         val smallUrl = sys.env.get("QDRANT_EMBEDDING_SMALL_URL").getOrElse(LlamaCppEmbeddingTestConfig.default.baseUrl)
         val largeUrl = sys.env.get("QDRANT_EMBEDDING_LARGE_URL").getOrElse("http://localhost:8082")
-        def probeOne(url: String): Either[leaderboard.model.QueryFailure, Vector[Double]] = {
-          try {
-            unsafeRun(LlamaCppEmbeddingTestConfig.client(LlamaCppEmbeddingTestConfig.withBaseUrl(url)).embed("benchmark dual endpoint probe").either)
-          } catch {
-            case _: Exception => Left(leaderboard.model.QueryFailure.operation("benchmark-probe", s"endpoint $url unavailable"))
-          }
-        }
-        val smallProbe = probeOne(smallUrl)
-        val largeProbe = probeOne(largeUrl)
-        val smallOk = smallProbe.exists(_.nonEmpty)
-        val largeOk = largeProbe.exists(_.nonEmpty)
-        if (smallOk && largeOk) {
-          runPlan(
-            portCfg = portCfg,
-            snapshotProvider = snapshotProvider(
-              categories,
-              services,
-              serviceVariantSchemas,
-              masters,
-              masterLocations,
-              masterServiceOffers,
-              masterServiceOfferVariants,
-              seedReady,
-            ),
-            plan = QdrantEmbeddingBenchmarkPlan(
-              runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
-              candidates = List(candidate("small", smallUrl), candidate("large", largeUrl)),
-              k = 5,
-            ),
-          )
-        } else {
-          val unavailable = List(
-            if (!smallOk) Some(smallUrl) else None,
-            if (!largeOk) Some(largeUrl) else None,
-          ).flatten.mkString(", ")
-          cancel(s"Embedding endpoint(s) unavailable: $unavailable; canceling dual-endpoint benchmark executor integration")
+        val smallProbe = probeEndpoint(smallUrl)
+        val largeProbe = probeEndpoint(largeUrl)
+        (smallProbe, largeProbe) match {
+          case (ProbeOutcome.ContractViolation(reason), _) =>
+            fail(s"Embedding endpoint $smallUrl is reachable but violated the embedding API contract: $reason")
+          case (_, ProbeOutcome.ContractViolation(reason)) =>
+            fail(s"Embedding endpoint $largeUrl is reachable but violated the embedding API contract: $reason")
+          case (ProbeOutcome.Reachable(_), ProbeOutcome.Reachable(_)) =>
+            runPlan(
+              portCfg = portCfg,
+              snapshotProvider = snapshotProvider(
+                categories,
+                services,
+                serviceVariantSchemas,
+                masters,
+                masterLocations,
+                masterServiceOffers,
+                masterServiceOfferVariants,
+                seedReady,
+              ),
+              plan = QdrantEmbeddingBenchmarkPlan(
+                runMode = QdrantEmbeddingBenchmarkRunMode.DualEndpointParallel,
+                candidates = List(candidate("small", smallUrl), candidate("large", largeUrl)),
+                k = 5,
+              ),
+            )
+          case _ =>
+            val unavailable = List(
+              Option.when(!smallProbe.isReachable)(smallUrl),
+              Option.when(!largeProbe.isReachable)(largeUrl),
+            ).flatten.mkString(", ")
+            cancel(
+              s"Embedding candidate comparison skipped: both candidate endpoints are required, pairwise comparison resource-gated. " +
+                s"Start small at $smallUrl and large at $largeUrl, or override QDRANT_EMBEDDING_SMALL_URL / QDRANT_EMBEDDING_LARGE_URL. " +
+                s"Unavailable: $unavailable."
+            )
         }
     }
   }
@@ -173,6 +174,39 @@ final class QdrantEmbeddingBenchmarkExecutorIntegrationSpec extends LeaderboardT
       _ <- assertIO(output.queryResultsByCandidateId.keySet == plan.candidates.map(_.candidateId).toSet)
       _ <- assertIO(output.queryResultsByCandidateId.values.forall(_.size == tinyQueries.size))
     } yield ()
+
+  private sealed trait ProbeOutcome {
+    def isReachable: Boolean = this.isInstanceOf[ProbeOutcome.Reachable]
+  }
+  private object ProbeOutcome {
+    final case class Reachable(vector: Vector[Double]) extends ProbeOutcome
+    final case class Unreachable(reason: String) extends ProbeOutcome
+    final case class ContractViolation(reason: String) extends ProbeOutcome
+  }
+
+  // Distinguishes an absent candidate resource from a broken-but-reachable one so the
+  // live comparison can resource-gate (cancel) the former while still failing red on the latter.
+  // Transport-level failures (connection refused, timeout, unknown host) surface from the HTTP
+  // send as QueryExecutionFailure -> Unreachable. Embedding API contract violations (non-2xx,
+  // non-JSON, missing data, empty embedding) surface as an OperationFailure or an empty vector
+  // -> ContractViolation.
+  private def probeEndpoint(url: String): ProbeOutcome = {
+    val probe =
+      try
+        unsafeRun(
+          LlamaCppEmbeddingTestConfig
+            .client(LlamaCppEmbeddingTestConfig.withBaseUrl(url))
+            .embed("embedding candidate comparison probe")
+            .either
+        )
+      catch { case NonFatal(error) => Left(QueryFailure.fromThrowable("execute-llama-cpp-http", error)) }
+    probe match {
+      case Right(vector) if vector.nonEmpty                        => ProbeOutcome.Reachable(vector)
+      case Right(_)                                                => ProbeOutcome.ContractViolation(s"$url returned an empty embedding")
+      case Left(QueryFailure.QueryExecutionFailure(_, message, _)) => ProbeOutcome.Unreachable(s"$url: $message")
+      case Left(other)                                             => ProbeOutcome.ContractViolation(s"$url: ${other.message}")
+    }
+  }
 
   private def probeCandidateDimension(candidate: QdrantEmbeddingBenchmarkCandidate): IO[QueryFailure, QdrantEmbeddingBenchmarkCandidate] =
     LlamaCppEmbeddingTestConfig.client(LlamaCppEmbeddingTestConfig.withBaseUrl(candidate.endpointLabel))
