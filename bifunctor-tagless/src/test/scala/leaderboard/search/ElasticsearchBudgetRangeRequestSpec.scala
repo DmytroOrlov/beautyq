@@ -14,8 +14,8 @@ import java.util.UUID
 
 /** Budget/range queries are baseline + Elasticsearch-owned hard constraints. This spec proves the
   * [[SearchConstraint.PriceRange]] upper bound becomes an ES bool `filter` range clause over
-  * `SearchFieldSemantic.PriceFrom`, and that the in-memory ES-equivalent backend drops above-threshold
-  * documents. No Qdrant / semantic path is involved.
+  * `SearchFieldSemantic.PriceFrom`, and that the pure in-memory rollback/regression backend drops
+  * above-threshold documents. No Qdrant / semantic path is involved.
   */
 final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
 
@@ -77,7 +77,7 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
     }
   }
 
-  "InMemory ES-equivalent backend budget behavior" should {
+  "Pure in-memory rollback/regression backend budget behavior" should {
 
     "exclude above-threshold variants and keep below-threshold variants for `маникюр under 50`" in {
       val manicure = documents
