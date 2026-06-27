@@ -40,7 +40,7 @@ final class BeautySearchProductionInclusionBoundarySpec extends AnyWordSpec {
         activation = BeautySearchProductionInclusionActivation.Enabled,
         api = {
           apiEvaluations += 1
-          buildApi(new RecordingBeautySearchService(emptySearchResponse))
+          buildApi(new ConstantBeautySearchService(emptySearchResponse))
         },
       )
 
@@ -109,7 +109,7 @@ final class BeautySearchProductionInclusionBoundarySpec extends AnyWordSpec {
   private def buildApi(service: BeautySearchService[IO]): BeautySearchApi[IO] =
     new BeautySearchApi[IO](service, BeautySearchTapirEndpoints)
 
-  private final class RecordingBeautySearchService(
+  private final class ConstantBeautySearchService(
     response: BeautySearchResponse
   ) extends BeautySearchService[IO] {
     override def search(input: UserSearchInput): IO[QueryFailure, BeautySearchResponse] = ZIO.succeed(response)
