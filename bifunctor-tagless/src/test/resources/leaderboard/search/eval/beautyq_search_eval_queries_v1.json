@@ -34,10 +34,10 @@
     }
   ],
   "summary": {
-    "queryCount": 63,
+    "queryCount": 64,
     "languages": {
       "de": 6,
-      "en": 21,
+      "en": 22,
       "mixed": 5,
       "ru": 31
     },
@@ -48,7 +48,7 @@
       "broad": 9,
       "conversational": 5,
       "direct": 19,
-      "english": 13,
+      "english": 14,
       "german": 7,
       "hard_negative": 7,
       "home_visit": 2,
@@ -57,7 +57,7 @@
       "multi_intent": 1,
       "negative_attribute": 1,
       "numeric": 3,
-      "price": 4,
+      "price": 5,
       "synonym": 9,
       "technical_token": 1,
       "typo": 2
@@ -1271,6 +1271,241 @@
               "categoryName": "Ногти, маникюр и педикюр",
               "matchingVariantCount": 6
             }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_price_003",
+      "query": "under 50",
+      "language": "en",
+      "queryTypes": [
+        "price",
+        "english"
+      ],
+      "userIntent": "Find services within a price budget (under 50).",
+      "notes": [
+        "Pure natural-language budget query: the `under 50` phrase becomes a hard ES price upper bound (priceFrom <= 50), owned by the baseline parser/DSL/Elasticsearch path, never a semantic/Qdrant recall hint.",
+        "Required contract is price-only (no service/attribute signal); acceptable evidence spans multiple services to show the budget, not a service, drives the match. Fixture mapping only; no backend retrieval quality is measured."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "price": {
+              "max": 50
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "price": {
+              "min": 51
+            }
+          },
+          "acceptableVariantIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+              "serviceId": "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+              "serviceName": "Маникюр",
+              "masterId": "4859385e-0655-5047-96f1-cf4d2dda475f",
+              "masterName": "Lilly’s Beauty",
+              "masterLocationId": "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+              "locationName": "Lilly’s Beauty Wandsbek",
+              "priceFrom": 30,
+              "priceTo": 30,
+              "durationMin": 40,
+              "distanceKmFromTestUser": 0.11,
+              "enumAttributes": {
+                "nail_service_type": "manicure",
+                "nail_coating_type": "regular_polish"
+              },
+              "booleanAttributes": {
+                "with_removal": false,
+                "with_design": false
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+              "serviceId": "a9d6911c-f69a-5b3b-86c7-8241d13272ec",
+              "serviceName": "Педикюр",
+              "masterId": "4859385e-0655-5047-96f1-cf4d2dda475f",
+              "masterName": "Lilly’s Beauty",
+              "masterLocationId": "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+              "locationName": "Lilly’s Beauty Wandsbek",
+              "priceFrom": 38,
+              "priceTo": 38,
+              "durationMin": 50,
+              "distanceKmFromTestUser": 0.11,
+              "enumAttributes": {
+                "nail_service_type": "pedicure",
+                "nail_coating_type": "no_coating"
+              },
+              "booleanAttributes": {
+                "with_removal": false,
+                "with_design": false
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "5b917daf-ead8-53a2-a850-83a4e0c19713",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "4859385e-0655-5047-96f1-cf4d2dda475f",
+              "masterName": "Lilly’s Beauty",
+              "masterLocationId": "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+              "locationName": "Lilly’s Beauty Wandsbek",
+              "priceFrom": 25,
+              "priceTo": 25,
+              "durationMin": 30,
+              "distanceKmFromTestUser": 0.11,
+              "enumAttributes": {
+                "lash_service_type": "removal"
+              },
+              "booleanAttributes": {
+                "with_removal": true
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "94575ead-5606-58fc-9bff-7f2918344c74",
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "masterId": "8f964855-102f-5c99-9b2e-257bd05e4e49",
+              "masterName": "Beauty de Luxe",
+              "masterLocationId": "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+              "locationName": "Beauty de Luxe Wandsbek",
+              "priceFrom": 18,
+              "priceTo": 18,
+              "durationMin": 15,
+              "distanceKmFromTestUser": 0.35,
+              "enumAttributes": {
+                "hair_removal_method": "wax",
+                "body_area": "upper_lip"
+              },
+              "booleanAttributes": {}
+            },
+            {
+              "masterServiceOfferVariantId": "91cdce5c-7400-5b06-817c-2d04208be28c",
+              "serviceId": "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+              "serviceName": "Брови",
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "priceFrom": 29,
+              "priceTo": 29,
+              "durationMin": 30,
+              "distanceKmFromTestUser": 0.36,
+              "enumAttributes": {
+                "brow_service_type": "shaping"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+              "serviceId": "9587c0ce-951e-5dae-8dae-a522e189567b",
+              "serviceName": "Наращивание и моделирование ногтей",
+              "masterId": "4859385e-0655-5047-96f1-cf4d2dda475f",
+              "masterName": "Lilly’s Beauty",
+              "masterLocationId": "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+              "locationName": "Lilly’s Beauty Wandsbek",
+              "priceFrom": 45,
+              "priceTo": 45,
+              "durationMin": 75,
+              "distanceKmFromTestUser": 0.11,
+              "enumAttributes": {
+                "nail_service_type": "removal",
+                "nail_coating_type": "gel"
+              },
+              "booleanAttributes": {
+                "with_removal": true,
+                "with_design": false,
+                "with_correction": false
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "7ce84040-4005-5796-89d6-e0a51e3fb369",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {},
+          "preferred": {},
+          "forbidden": {},
+          "acceptableServiceIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec",
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
           ],
           "topK": {
             "requiredInTopK": 3,

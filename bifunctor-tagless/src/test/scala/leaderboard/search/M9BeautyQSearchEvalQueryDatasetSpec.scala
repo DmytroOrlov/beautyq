@@ -17,7 +17,7 @@ final class M9BeautyQSearchEvalQueryDatasetSpec extends AnyWordSpec {
       assert(resourceText.nonEmpty)
       assert(resourceText.contains("\"version\": 1"))
       assert(resourceText.contains("\"dataset\": \"wandsbek_hamburg_beauty_services_seed_ready\""))
-      assert(resourceText.contains("\"queryCount\": 63"))
+      assert(resourceText.contains("\"queryCount\": 64"))
     }
 
     "record deterministic metadata for the seed-ready eval fixture" in {
@@ -25,7 +25,7 @@ final class M9BeautyQSearchEvalQueryDatasetSpec extends AnyWordSpec {
 
       assert(metadata.version == 1)
       assert(metadata.datasetId == "wandsbek_hamburg_beauty_services_seed_ready")
-      assert(metadata.queryCount == 63)
+      assert(metadata.queryCount == 64)
       assert(metadata.testUserLocationLabel == "Wandsbek Markt")
     }
 
@@ -33,7 +33,7 @@ final class M9BeautyQSearchEvalQueryDatasetSpec extends AnyWordSpec {
       val counts = M9BeautyQSearchEvalQueryDataset.Metadata.languageCounts
 
       assert(counts.ru == 31)
-      assert(counts.en == 21)
+      assert(counts.en == 22)
       assert(counts.de == 6)
       assert(counts.mixed == 5)
     }

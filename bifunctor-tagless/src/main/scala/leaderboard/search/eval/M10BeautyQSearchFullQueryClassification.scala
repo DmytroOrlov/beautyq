@@ -1,11 +1,11 @@
 package leaderboard.search.eval
 
-/** M10 full 63-query offline classification mapping over the accepted BeautyQ eval dataset.
+/** M10 full 64-query offline classification mapping over the accepted BeautyQ eval dataset.
   *
   * This expands the representative M10 classification foundation to the complete accepted eval dataset:
   * every query id in [[M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds]] gets exactly one
   * classification row, derived offline from deterministic explicit signals. The three accepted M9 anchors
-  * keep their accepted classifications. The remaining 60 static/placeholder rows are classified using the
+  * keep their accepted classifications. The remaining 61 static/placeholder rows are classified using the
   * same total, pure [[M10BeautyQSearchQueryClassification.classify]] function over hand-derived offline
   * signals.
   *
@@ -41,6 +41,9 @@ object M10BeautyQSearchFullQueryClassification {
       in("q_nails_003", "shellac entfernen und neu", Attribute),                  // accepted anchor: attribute/filter
       in("q_nails_004", "обычный маникюр без покрытия", Service, Attribute),
       in("q_nails_005", "дешевый маникюр рядом", Service, Price, Location),
+      // Pure natural-language budget query: a single Price signal maps to PriceBudgetIntent
+      // (EsOnlyCandidateRetrieval). No service/attribute text, so it is not MixedIntent.
+      in("q_price_003", "under 50", Price),
       in("q_nails_006", "педикюр без лака", Service, Attribute),
       in("q_nails_007", "pedicure gel polish", Service, Attribute),
       in("q_nails_008", "Fußpflege Shellac Wandsbek", Service, Attribute, Location),
@@ -135,7 +138,7 @@ object M10BeautyQSearchFullQueryClassification {
     }
 
   /** Offline strategy intent counts in the full-coverage intent order; intents with no rows report
-    * zero. The full 63-query dataset also exercises the accepted negative-control exclusion intent.
+    * zero. The full 64-query dataset also exercises the accepted negative-control exclusion intent.
     */
   val StrategyIntentCounts: List[(M10BeautyQSearchOfflineRetrievalStrategyIntent, Int)] =
     M10BeautyQSearchOfflineRetrievalStrategyIntent.fullCoverageStableOrder.map { intent =>

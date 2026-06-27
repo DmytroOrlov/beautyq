@@ -24,11 +24,11 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 
 ## Notes
 
-- Dataset fixture: wandsbek_hamburg_beauty_services_seed_ready; version=1; full_query_count=63.
-- Language counts: ru=31, en=21, de=6, mixed=5.
+- Dataset fixture: wandsbek_hamburg_beauty_services_seed_ready; version=1; full_query_count=64.
+- Language counts: ru=31, en=22, de=6, mixed=5.
 - Target carousels carried from dataset metadata: variantCarousel, providerCarousel, serviceIntentCarousel.
 - Representative static rows mapped: q_nails_001, q_nails_003, q_noise_005.
-- Full 63-query static-row expansion implemented: mapped_row_count=63; full_dataset_query_count=63.
+- Full 63-query static-row expansion implemented: mapped_row_count=64; full_dataset_query_count=64.
 - This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.
 - Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.
 
@@ -46,7 +46,7 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 | failure_count | 0 |
 | quality_gate_decision | static_dataset_mapping_only |
 | recall@k | not_measured |
-| top_k_overlap | mapped_rows=63;full_dataset_queries=63 |
+| top_k_overlap | mapped_rows=64;full_dataset_queries=64 |
 
 ## Query Rows
 
@@ -57,6 +57,7 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 | q_nails_003 | filter_heavy | unknown | manual | 798c4326-e081-59a9-b659-98671f1fd656, 78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52, a1085253-a9bf-517c-80c4-262b0bf9a5a4 | regression_pass_fail=unknown; quality_gate_decision=static_dataset_mapping_only | unknown | Static dataset fixture mapping only; top_k_result_ids are fixture anchors, not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_nails_004 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_nails_005 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
+| q_price_003 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_nails_006 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_nails_007 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_nails_008 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |

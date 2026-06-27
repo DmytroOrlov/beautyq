@@ -40,6 +40,7 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       "q_nails_003",
       "q_nails_004",
       "q_nails_005",
+      "q_price_003",
       "q_nails_006",
       "q_nails_007",
       "q_nails_008",
@@ -102,7 +103,7 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
 
   val RequiredResourceAnchors: List[String] =
     List(
-      "\"queryCount\": 63",
+      "\"queryCount\": 64",
       "\"acceptableVariantIds\"",
       "\"acceptableProviderLocationIds\"",
       "\"acceptableServiceIds\"",

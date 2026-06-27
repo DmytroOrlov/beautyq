@@ -9,14 +9,14 @@ production routes; offline strategy intent is distinct from production routing.
 
 - dataset_id: wandsbek_hamburg_beauty_services_seed_ready
 - verdict: full_query_classification_coverage_ready_with_negative_control_exclusion
-- total_query_count: 63
-- mapped_row_count: 63
+- total_query_count: 64
+- mapped_row_count: 64
 - mixed_intent_count: 48
 - noisy_row_count: 1
 - unresolved_manual_review_row_count: 0
 - accepted_negative_control_exclusion_count: 1
 - no_op_row_count: 0
-- backend_candidate_study_intent_count: 62
+- backend_candidate_study_intent_count: 63
 - m11_backend_candidate_inputs_ready: true
 
 ## Category counts
@@ -27,7 +27,7 @@ production routes; offline strategy intent is distinct from production routing.
 | service_intent | 7 |
 | attribute_filter_intent | 5 |
 | location_intent | 1 |
-| price_budget_intent | 0 |
+| price_budget_intent | 1 |
 | availability_time_intent | 0 |
 | comparison_exploration_intent | 1 |
 | noisy_ambiguous_non_beauty_intent | 1 |
@@ -39,7 +39,7 @@ These are offline study intents only, not production routes.
 
 | offline_strategy_intent | count |
 |---|---|
-| es_only_candidate_retrieval | 13 |
+| es_only_candidate_retrieval | 14 |
 | qdrant_only_candidate_retrieval | 1 |
 | combined_es_qdrant_comparison | 48 |
 | manual_review_blocked | 0 |
@@ -70,16 +70,16 @@ Rows still requiring future manual resolution; empty for the accepted dataset.
 
 | metric | value |
 |---|---|
-| total_query_count | 63 |
-| mapped_row_count | 63 |
-| category_count_sum | 63 |
-| strategy_intent_count_sum | 63 |
+| total_query_count | 64 |
+| mapped_row_count | 64 |
+| category_count_sum | 64 |
+| strategy_intent_count_sum | 64 |
 | mixed_intent_count | 48 |
 | noisy_row_count | 1 |
 | unresolved_manual_review_row_count | 0 |
 | accepted_negative_control_exclusion_count | 1 |
 | no_op_row_count | 0 |
-| backend_candidate_study_intent_count | 62 |
+| backend_candidate_study_intent_count | 63 |
 | m11_backend_candidate_inputs_ready | true |
 | offline_strategy_intent_is_not_production_routing | true |
 | default_beauty_search_es_backed | true |

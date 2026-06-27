@@ -57,7 +57,7 @@ final class EngineEvalQueryClassSpec extends AnyWordSpec {
   "EngineEvalQueryClass.fromQueryTypes" should {
 
     "cover every current BeautySearch eval inventory query type" in {
-      assert(BeautySearchEvalInventory.evalSuite.queries.size == 63)
+      assert(BeautySearchEvalInventory.evalSuite.queries.size == 64)
 
       BeautySearchEvalInventory.evalSuite.queries.foreach { query =>
         EngineEvalQueryClass.fromQueryTypes(query.queryTypes) match {
@@ -114,6 +114,21 @@ final class EngineEvalQueryClassSpec extends AnyWordSpec {
         case other =>
           fail(s"Expected unknown tag failure naming new_tag, got $other")
       }
+    }
+
+    "classify q_price_003 = under 50 as a pure price-duration class without broad/semantic class" in {
+      val query = BeautySearchEvalInventory.evalSuite.queries.find(_.id == "q_price_003") match {
+        case Some(value) => value
+        case None        => fail("Expected q_price_003 in eval inventory")
+      }
+
+      assert(query.query == "under 50")
+      assert(query.queryTypes == List("price", "english"))
+      assert(
+        EngineEvalQueryClass.fromQueryTypes(query.queryTypes) == Right(
+          List(EngineEvalQueryClass.PriceDuration)
+        )
+      )
     }
 
     "classify q_broad_005 as price-duration plus broad-intent in stable order" in {
