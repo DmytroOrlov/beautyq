@@ -46,10 +46,64 @@ final case class BeautyQManagedLocalSearchBootstrapResult(
 )
 
 object BeautyQManagedLocalSearchBootstrap {
-  val OperationName: String = "beautyq-managed-local-search-bootstrap"
+  val EmbeddingPreflightOperationName: String = "beautyq-managed-local-embedding-preflight"
   val EmbeddingModelName: String = "local-llama-cpp-embedding"
   val SourceTextFieldPaths: List[String] = List("serviceText", "attributeText", "allText", "categoryName")
+
+  /**
+   * Expected local managed BeautyQ Qdrant vector dimension. It matches the fixed local launcher
+   * collection (`..._1024_cosine`, dimension `1024`); the embedding preflight rejects any endpoint
+   * that does not return exactly this many components so the Qdrant collection is only ever created
+   * for vectors it can actually hold.
+   */
+  val ExpectedVectorDimension: Int = 1024
+
   private val DimensionProbeText: String = "beautyq managed local search bootstrap probe"
+  private val EmbeddingPreflightContext: String = "BeautyQ managed local search Qdrant bootstrap embedding preflight"
+
+  /**
+   * Local managed embedding preflight: the earliest safe fail-fast point in the managed bootstrap path.
+   * Before any ES/Qdrant work, it calls the configured embedding endpoint once and proves the endpoint
+   * is reachable, returns a non-empty vector, and returns exactly [[ExpectedVectorDimension]] components.
+   *
+   * On any of those failing it fails with a typed [[QueryFailure]] that names the local managed BeautyQ
+   * Qdrant bootstrap, the embedding endpoint URL, the expected dimension, and the actual failure reason
+   * (connection failure, empty embedding, or wrong dimension). It never catches-and-continues and never
+   * degrades to an ES-only path, so a failing preflight propagates and prevents the HTTP server bind.
+   */
+  def embeddingPreflight(
+    embeddingClient: EmbeddingClient,
+    embeddingEndpoint: String,
+    expectedDimension: Int,
+  ): IO[QueryFailure, Int] =
+    embeddingClient
+      .embed(DimensionProbeText)
+      .foldZIO(
+        failure =>
+          ZIO.fail(
+            QueryFailure.operation(
+              EmbeddingPreflightOperationName,
+              s"$EmbeddingPreflightContext could not reach the embedding endpoint: endpoint=$embeddingEndpoint expectedDimension=$expectedDimension reason=${failure.message}",
+            )
+          ),
+        vector =>
+          if (vector.isEmpty)
+            ZIO.fail(
+              QueryFailure.operation(
+                EmbeddingPreflightOperationName,
+                s"$EmbeddingPreflightContext received an empty embedding: endpoint=$embeddingEndpoint expectedDimension=$expectedDimension reason=empty embedding",
+              )
+            )
+          else if (vector.length != expectedDimension)
+            ZIO.fail(
+              QueryFailure.operation(
+                EmbeddingPreflightOperationName,
+                s"$EmbeddingPreflightContext received the wrong embedding dimension: endpoint=$embeddingEndpoint expectedDimension=$expectedDimension actualDimension=${vector.length}",
+              )
+            )
+          else
+            ZIO.succeed(expectedDimension),
+      )
 
   def embeddingSpec(vectorSearchSpec: VectorSearchSpec, dimension: Int): EmbeddingSpec[VariantSearchDocument] =
     EmbeddingSpec[VariantSearchDocument](
@@ -76,12 +130,13 @@ object BeautyQManagedLocalSearchBootstrap {
     spec: BeautySearchSpec,
     catalog: BeautySearchReadyCatalogDocuments,
     vectorSearchSpec: VectorSearchSpec,
+    embeddingEndpoint: String,
   ): IO[QueryFailure, BeautyQManagedLocalSearchBootstrapResult] = {
     val documents = catalog.documents
     for {
-      probe <- embeddingClient.embed(DimensionProbeText)
-      dimension <- if (probe.nonEmpty) ZIO.succeed(probe.length)
-                   else ZIO.fail(QueryFailure.operation(OperationName, "embedding endpoint returned an empty vector"))
+      // Fail fast before any ES/Qdrant work if the embedding endpoint is unavailable, returns an empty
+      // vector, or returns the wrong dimension. No catch-and-continue, no ES-only fallback.
+      dimension   <- embeddingPreflight(embeddingClient, embeddingEndpoint, ExpectedVectorDimension)
       esReadiness <- prepareElasticsearch(esClient, spec, catalog)
       qdrantIndexed <- prepareQdrant(qdrantClient, embeddingClient, vectorSearchSpec, dimension, documents)
     } yield BeautyQManagedLocalSearchBootstrapResult(
@@ -176,14 +231,15 @@ object BeautyQManagedLocalSearchDataReady {
     spec: BeautySearchSpec,
     catalog: BeautySearchReadyCatalogDocuments,
     vectorSearchSpec: VectorSearchSpec,
+    embeddingEndpoint: String,
     log: LogIO2[IO],
   ) extends Lifecycle.LiftF[IO[Throwable, _], BeautyQManagedLocalSearchDataReady](
       for {
         result <- QueryFailureToThrowable.lift(
-          BeautyQManagedLocalSearchBootstrap.run(esClient, qdrantClient, embeddingClient, spec, catalog, vectorSearchSpec)
+          BeautyQManagedLocalSearchBootstrap.run(esClient, qdrantClient, embeddingClient, spec, catalog, vectorSearchSpec, embeddingEndpoint)
         )
         _ <- log.info(
-          s"BeautyQ managed local search data ready: esIndex=${result.esIndexName} esDocs=${result.esDocumentCount} qdrantCollection=${result.qdrantCollectionName} qdrantVectors=${result.qdrantIndexedCount} dimension=${result.vectorDimension}"
+          s"BeautyQ managed local search data ready: embeddingEndpoint=$embeddingEndpoint esIndex=${result.esIndexName} esDocs=${result.esDocumentCount} qdrantCollection=${result.qdrantCollectionName} qdrantVectors=${result.qdrantIndexedCount} dimension=${result.vectorDimension}"
         )
       } yield Ready
     )

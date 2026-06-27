@@ -47,6 +47,24 @@ automatically. The bootstrap is idempotent and drops+recreates the local ES inde
 each start so repeated launches never raise `resource_already_exists`. The route does not fall back,
 fuse scores, or rerank. In short: no fallback, no fusion, no rerank, and no production startup indexing.
 
+### Embedding endpoint is a hard startup prerequisite (fail-fast, no ES-only fallback)
+
+The local embedding endpoint (default `http://localhost:8081`) is required: the Qdrant collection holds
+embedding vectors, so the managed bootstrap runs a named embedding preflight as the earliest step, before
+any ES/Qdrant work. The preflight calls the configured endpoint once and proves it is reachable, returns a
+non-empty vector, and returns exactly dimension `1024`.
+
+If the endpoint is unavailable, returns an empty embedding, or returns the wrong dimension, the managed
+local startup **fails before binding `127.0.0.1:8080`** and never serves `/beauty-search`. `HttpServer`
+depends on `BeautyQManagedLocalSearchDataReady`, so a failing preflight prevents the HTTP bind. The
+diagnostic names the BeautyQ managed local search Qdrant bootstrap, the embedding endpoint URL, the
+expected dimension `1024`, and the actual reason (connection failure, empty embedding, or wrong
+dimension).
+
+Startup does **not** silently degrade to ES-only: there is no ES-only fallback, no `executionMode=es_only`
+fallback response, and no skipping of Qdrant indexing while claiming readiness. Either the full SQL + ES +
+Qdrant data is prepared and the server binds, or startup fails with the diagnostic above.
+
 Qdrant append probe:
 
 ```bash

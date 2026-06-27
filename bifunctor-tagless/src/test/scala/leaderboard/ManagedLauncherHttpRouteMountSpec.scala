@@ -256,6 +256,7 @@ final class ManagedLauncherHttpRouteMountSpec
             spec,
             catalog,
             routeVectorSpec,
+            BeautySearchLocalQdrantSupplementLauncherModule.embeddingEndpoint,
             log,
           )
       }

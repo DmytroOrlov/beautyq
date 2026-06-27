@@ -148,7 +148,7 @@ final class ManagedLocalSearchBootstrapSpec
     val checker = new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
 
     def bootstrap(): IO[QueryFailure, leaderboard.search.startup.BeautyQManagedLocalSearchBootstrapResult] =
-      BeautyQManagedLocalSearchBootstrap.run(esJsonClient, qdrantClient, embeddingClient, routeSpec, catalog, vectorSpec)
+      BeautyQManagedLocalSearchBootstrap.run(esJsonClient, qdrantClient, embeddingClient, routeSpec, catalog, vectorSpec, BeautySearchLocalQdrantSupplementLauncherModule.embeddingEndpoint)
 
     (
       for {
