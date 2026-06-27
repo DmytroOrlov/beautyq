@@ -11,8 +11,8 @@ import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus.ReadyToEnable
 import leaderboard.plugins.{
+  BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
-  BeautySearchQdrantSupplementActivationLauncherSeam,
   BeautySearchQdrantSupplementActivationPreflightCommand,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
@@ -46,8 +46,8 @@ import java.util.UUID
  * QP18: narrow local/test proof for the no-worsening Qdrant supplement path.
  *
  * Proves over the existing source-confirmed local HTTP harness:
- *   - ES-only baseline can be served through the launcher seam's default/rollback selections;
- *   - ready mode (`qdrant-supplement-ready` + QP13 runtime binding module) serves through the same
+ *   - ES-only baseline can be served through explicit rollback selection;
+ *   - ready mode plus the QP13 runtime binding module serves through the same
  *     real local route path and preserves ES-owned response components;
  *   - at least one tested query improves by appending exactly one Qdrant-only variant id;
  *   - no tested query loses or reorders ES variants, duplicates an ES id, or appends more than one
@@ -112,7 +112,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
 
   "QP18 control behavior on the local launcher/route harness" should {
     "keep default and rollback ES-backed, keep not-ready at 503 with no fallback, and fail closed on invalid activation" in {
-      val defaultResponse  = serve(esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None)), broadComplementProbeQuery.input)
+      val defaultResponse  = serve(esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)), broadComplementProbeQuery.input)
       val rollbackResponse = serve(esOnlyApis(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue)), broadComplementProbeQuery.input)
       assert(defaultResponse.status == Status.Ok, s"default launcher selection must remain ES-backed (200), got ${defaultResponse.status}")
       assert(rollbackResponse.status == Status.Ok, s"es-only-rollback must remain ES-backed (200), got ${rollbackResponse.status}")
@@ -127,10 +127,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
       )
       assert(notReadyResponse.status == Status.ServiceUnavailable, s"qdrant-supplement-not-ready must reject with 503, got ${notReadyResponse.status}")
 
-      val thrown = intercept[IllegalArgumentException] {
-        BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some("totally-unrecognized"))
-      }
-      assert(thrown.getMessage.contains("totally-unrecognized"))
+      assert(BeautySearchQdrantSupplementActivationConfig.fromOperatorValue(Some("totally-unrecognized")).isLeft)
     }
   }
 
@@ -250,7 +247,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
           checker,
         )
         esJsonClient = new ElasticsearchJsonClientAdapter(esClient)
-        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None), defaultRouteSpec), esJsonClient)
+        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback), defaultRouteSpec), esJsonClient)
         rollbackApis = esOnlyApis(moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue), rollbackRouteSpec), esJsonClient)
         readyProbe = runtimeBoundProbe(
           moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue), readyRouteSpec),
@@ -351,7 +348,10 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
   )
 
   private def explicitModule(operatorValue: String): ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some(operatorValue))
+    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(Some(operatorValue)) match {
+      case Right(module) => module
+      case Left(error)   => fail(s"expected valid activation value '$operatorValue', got ${error.message}")
+    }
 
   private def runtimeBoundApis(
     selectedModule: Module,

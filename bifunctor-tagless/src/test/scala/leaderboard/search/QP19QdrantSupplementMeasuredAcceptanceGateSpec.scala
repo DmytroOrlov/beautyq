@@ -11,8 +11,8 @@ import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus.ReadyToEnable
 import leaderboard.plugins.{
+  BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
-  BeautySearchQdrantSupplementActivationLauncherSeam,
   BeautySearchQdrantSupplementActivationPreflightCommand,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
@@ -332,7 +332,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
           checker,
         )
         esJsonClient = new ElasticsearchJsonClientAdapter(esClient)
-        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None), defaultRouteSpec), esJsonClient)
+        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback), defaultRouteSpec), esJsonClient)
         rollbackApis = esOnlyApis(moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue), rollbackRouteSpec), esJsonClient)
         readyProbe = runtimeBoundProbe(
           moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue), readyRouteSpec),
@@ -415,12 +415,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
       ),
       broadComplementProbeQuery.input,
     )
-    val invalidRejected = try {
-      BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some("totally-unrecognized"))
-      false
-    } catch {
-      case _: IllegalArgumentException => true
-    }
+    val invalidRejected = BeautySearchQdrantSupplementActivationConfig.fromOperatorValue(Some("totally-unrecognized")).isLeft
 
     ControlBoundaryResults(
       defaultStatus = defaultResponse.status,
@@ -545,7 +540,10 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
   )
 
   private def explicitModule(operatorValue: String): ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some(operatorValue))
+    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(Some(operatorValue)) match {
+      case Right(module) => module
+      case Left(error)   => fail(s"expected valid activation value '$operatorValue', got ${error.message}")
+    }
 
   private def runtimeBoundApis(
     selectedModule: Module,

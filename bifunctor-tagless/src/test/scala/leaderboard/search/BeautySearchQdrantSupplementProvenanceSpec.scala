@@ -11,7 +11,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationConfig
-import leaderboard.plugins.BeautySearchQdrantSupplementActivationLauncherSeam
+import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightCommand
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus.ReadyToEnable
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
@@ -148,10 +148,7 @@ final class BeautySearchQdrantSupplementProvenanceSpec
         s"not-ready response must not decode as a successful BeautySearchResponse with fake provenance: ${notReady.body}",
       )
 
-      val thrown = intercept[IllegalArgumentException] {
-        BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some("totally-unrecognized"))
-      }
-      assert(thrown.getMessage.contains("totally-unrecognized"))
+      assert(BeautySearchQdrantSupplementActivationConfig.fromOperatorValue(Some("totally-unrecognized")).isLeft)
     }
   }
 
@@ -344,17 +341,13 @@ final class BeautySearchQdrantSupplementProvenanceSpec
   }
 
   private def defaultModule: ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None)
+    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
 
   private def notReadyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-      Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementNotReadyOperatorValue)
-    )
+    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
 
   private def readyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-      Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue)
-    )
+    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
 
   private def moduleWithTestSpec(selectedModule: ModuleDef, testSpec: BeautySearchSpec): Module =
     selectedModule.overriddenBy(new ModuleDef {

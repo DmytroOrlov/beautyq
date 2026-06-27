@@ -9,8 +9,8 @@ import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationConfig
-import leaderboard.plugins.BeautySearchQdrantSupplementActivationLauncherSeam
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -24,8 +24,8 @@ import zio.{IO, Runtime, Task, Unsafe, ZIO}
 import java.util.UUID
 
 /**
- * QP10: narrow launcher/role activation seam for the no-worsening Qdrant supplement, proved via
- * `BeautySearchQdrantSupplementActivationLauncherSeam` plus focused QP6/QP7/QP8-style route probes.
+ * QP10: explicit activation states for the no-worsening Qdrant supplement, proved via focused
+ * QP6/QP7/QP8-style route probes.
  *
  * Proves:
  *   - absent operator value selects EsOnlyRollback's module, byte-for-byte the same module
@@ -41,10 +41,10 @@ import java.util.UUID
  *   - an unrecognized operator value fails closed by throwing, never selecting ready and never
  *     silently falling back to the Qdrant supplement.
  *
- * Proof-only: this is a module-selection seam, not production rollout, Qdrant-as-default, fallback,
+ * Proof-only: this is a module-selection helper, not production rollout, Qdrant-as-default, fallback,
  * score fusion, reranking, or a route JSON/API change. No real ES/Qdrant/Llama. Per AGENTS.md, this
- * spec does not construct the whole `LeaderboardPlugin` production graph -- it exercises the seam's
- * pure selector and the existing QP6/QP7/QP8 focused module/route-probe style directly.
+ * spec does not construct the whole `LeaderboardPlugin` production graph -- it exercises the pure
+ * selector and the existing QP6/QP7/QP8 focused module/route-probe style directly.
  */
 final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with HttpContractTestSupport {
 
@@ -55,9 +55,9 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
   // Safe default: absent operator value.
   // ============================================================================================
 
-  "BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow" should {
+  "BeautySearchQdrantSupplementActivation.moduleFor" should {
     "select EsOnlyRollback's module for an absent operator value, with no Qdrant semantic backend or document lookup bound at all" in {
-      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None))
+      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
       assert(apis.size == 1)
       assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
 
@@ -66,18 +66,14 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
     }
 
     "leave malformed-request behavior unchanged (400) for an absent operator value" in {
-      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None))
+      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
       val response = runIO(observeRoute(apis, postJson("/beauty-search", malformedRequestBody)))
       assert(response.status == Status.BadRequest)
     }
 
     "select the same module for an absent operator value as for the explicit es-only-rollback operator value" in {
-      val absentApis   = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(None))
-      val explicitApis = esOnlyApis(
-        BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-          Some(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue)
-        )
-      )
+      val absentApis   = esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
+      val explicitApis = esOnlyApis(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue))
       assert(absentApis.size == explicitApis.size)
       assert(absentApis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
       assert(explicitApis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
@@ -90,18 +86,14 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
 
   "the explicit qdrant-supplement-not-ready operator value" should {
     "reject a valid request with 503 without invoking the lexical backend, the semantic backend, or the document lookup" in {
-      val module = BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-        Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementNotReadyOperatorValue)
-      )
+      val module = explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementNotReadyOperatorValue)
       val apis     = supplementApis(module, failIfCalledFixture)
       val response = runIO(observeRoute(apis, postJson("/beauty-search", validRequestBody)))
       assert(response.status == Status.ServiceUnavailable, s"qdrant-supplement-not-ready must reject a valid request with 503, got ${response.status}")
     }
 
     "leave a malformed request at 400, not 503" in {
-      val module = BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-        Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementNotReadyOperatorValue)
-      )
+      val module = explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementNotReadyOperatorValue)
       val apis     = supplementApis(module, failIfCalledFixture)
       val response = runIO(observeRoute(apis, postJson("/beauty-search", malformedRequestBody)))
       assert(response.status == Status.BadRequest)
@@ -114,9 +106,7 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
 
   "the explicit qdrant-supplement-ready operator value" should {
     "cap the response at ExplicitConstraintsFilterPlusTop1 (one append), not AppendAll, even with several eligible Qdrant-only candidates" in {
-      val module = BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-        Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue)
-      )
+      val module = explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue)
       val apis     = supplementApis(module, threeAppendFixture)
       val response = runIO(observeRoute(apis, postJson("/beauty-search", validRequestBody)))
       assert(response.status == Status.Ok)
@@ -136,10 +126,7 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
 
   "an unrecognized operator value" should {
     "fail closed by throwing, never producing a module that selects QdrantSupplementReady or the Qdrant supplement" in {
-      val thrown = intercept[IllegalArgumentException] {
-        BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some("totally-unrecognized"))
-      }
-      assert(thrown.getMessage.contains("totally-unrecognized"))
+      assert(BeautySearchQdrantSupplementActivationConfig.fromOperatorValue(Some("totally-unrecognized")).isLeft)
     }
 
     "agree with the underlying pure parser's fail-closed Left for the same value" in {
@@ -203,6 +190,12 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
   )
 
   private val emptyEsResponse: BeautySearchResponse = BeautySearchResponse(Nil, Nil, Nil, Nil, Nil)
+
+  private def explicitModule(operatorValue: String): ModuleDef =
+    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(Some(operatorValue)) match {
+      case Right(module) => module
+      case Left(error)   => fail(s"expected valid activation value '$operatorValue', got ${error.message}")
+    }
 
   private def threeAppendFixture: SupplementFixture = {
     val documents = List(variantId(1), variantId(2), variantId(3)).map(document)

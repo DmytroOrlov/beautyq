@@ -54,14 +54,6 @@ object BeautySearchQdrantSupplementActivationPreflightCommand {
           .catchAll(_ => ZIO.succeed(readinessMismatchResult(None)))
     }
 
-  // Convenience: reads the operator value from the existing launcher-seam environment variable
-  // (`BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION`) instead of requiring the caller to read it themselves.
-  def runFromEnv(
-    expectedReadiness: QdrantCollectionCompatibilityExpectation,
-    checker: QdrantCollectionCompatibilityChecker,
-  ): IO[QueryFailure, BeautySearchQdrantSupplementActivationPreflightResult] =
-    run(sys.env.get(BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName), expectedReadiness, checker)
-
   private def blockedResult(
     selectedActivation: Option[BeautySearchQdrantSupplementActivation],
     reason: String,

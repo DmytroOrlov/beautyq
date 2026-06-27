@@ -9,8 +9,8 @@ import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.{
+  BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
-  BeautySearchQdrantSupplementActivationLauncherSeam,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
 import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, VariantSearchDocument}
@@ -27,48 +27,46 @@ import zio.{IO, Runtime, Task, Unsafe, ZIO}
 import java.util.UUID
 
 /**
- * QP12b: local launcher enablement smoke for the no-worsening Qdrant supplement activation seam,
+ * QP12b: local route-selection smoke for the no-worsening Qdrant supplement activation helper,
  * updated after QP13 added `BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(...)`.
  *
- * Like QP12, this drives the *launcher entry points* (`selectedModuleFromEnvOrThrow()` for the
- * absent-env default; the documented operator-value -> module mapping for explicit values) and serves
+ * Like QP12, this drives the documented explicit module mapping and serves
  * `/beauty-search` over a REAL locally bound HTTP server (`HttpContractTestSupport.observe`: an Ember
  * server on the repo's ephemeral `127.0.0.1:0` local-port convention plus a real Ember client). The
  * repo has no process-spawn / fixed-port `./launcher` test convention, so a full `./launcher
  * :leaderboard` subprocess (which needs Docker Postgres + ES) is intentionally not used.
  *
  * The one concrete question this answers after QP13:
- *   does `BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION=qdrant-supplement-ready` have a source-confirmed
- *   launcher/module path that serves when composed with the QP13 runtime binding module, WITHOUT any
- *   test-local plain stub binding of the three previously missing keys
+ *   does the explicit ready module path serve when composed with the QP13 runtime binding module,
+ *   WITHOUT any test-local plain stub binding of the three previously missing keys
  *   (`BeautySearchBackend @Id("qdrantSupplementLexicalElasticsearch")`, `SemanticCandidateBackend`,
  *   `VariantSearchDocumentLookup`)?
  *
- * Answer (proved below): yes. The launcher-selected ready module composed with
+ * Answer (proved below): yes. The explicitly selected ready module composed with
  * `supplementRuntimeBindings(vectorSearchSpec)` and only the documented leaf I/O doubles
  * (`ElasticsearchJsonClient`, `EmbeddingClient`, `QdrantSearchClient`) plus a ready catalog fixture
  * builds and serves capped at `ExplicitConstraintsFilterPlusTop1` (one append, never AppendAll),
  * preserving the ES prefix, never duplicating an ES id, and leaving the ES-owned non-variant
  * components untouched by the Qdrant append. The old QP12 expectation -- that the ready state's
  * final, documented outcome is `READY_LAUNCHER_BINDINGS_BLOCKED` -- is no longer the final state: the
- * seam-alone block is now only the selection-only boundary that the QP13 runtime module closes.
+ * direct module without runtime bindings is now only the selection boundary that the QP13 runtime
+ * module closes.
  *
  * Proves:
- *   - absent env (`BEAUTYQ_QDRANT_SUPPLEMENT_ACTIVATION` unset) -> ES-backed default serves 200,
- *     malformed stays 400, with NO Qdrant runtime module required;
+ *   - explicit rollback -> ES-backed default serves 200, malformed stays 400, with NO Qdrant runtime
+ *     module required;
  *   - explicit `es-only-rollback` -> equivalent ES-backed default (200), NO Qdrant runtime module
  *     required;
  *   - explicit `qdrant-supplement-not-ready`, with the QP13 runtime binding module supplied -> valid
  *     request returns 503; fail-if-called leaf clients prove no search invocation and no fallback;
  *     malformed stays 400;
  *   - explicit `qdrant-supplement-ready`:
- *       * through the launcher seam ALONE, WITHOUT the QP13 runtime module, still fails closed naming
- *         the three keys -- this is the selection-only boundary the seam documents, not the final
- *         ready state;
+ *       * without the QP13 runtime module, still fails closed naming the three keys -- this is the
+ *         selection-only boundary, not the final ready state;
  *       * composed with the QP13 runtime module + leaf doubles only (no direct binding of the three
  *         keys) -> serves 200, capped at one append, ES prefix preserved, no duplicate ES id,
  *         ES-owned provider carousel unchanged by the append;
- *   - an invalid env value fails closed at module composition, never selecting ready.
+ *   - an invalid explicit value fails closed, never selecting ready.
  *
  * Proof-only: no default route change, no Qdrant-as-default, no fallback, no fusion/reranking, no
  * route JSON / API change, no real ES/Qdrant/Llama.
@@ -86,40 +84,25 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
       scoreThreshold = None,
     )
 
-  // The absent-env launcher default smoke is only meaningful if the env var really is unset in this
-  // JVM; if an operator exported it, cancel rather than assert a false default.
-  private val envOperatorValue: Option[String] =
-    sys.env.get(BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName)
-
   // ============================================================================================
-  // Case 1: absent env -> real launcher entry point serves the ES-backed default over HTTP, with no
+  // Case 1: rollback/default serves the ES-backed default over HTTP, with no
   // Qdrant runtime module required.
   // ============================================================================================
 
-  "The launcher entry point BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow (absent env)" should {
+  "The explicit rollback/default module" should {
     "serve a valid /beauty-search request as the ES-backed default (200) over a real local server, with no Qdrant runtime module required" in {
-      envOperatorValue match {
-        case Some(value) =>
-          cancel(s"QP12b: ${BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName} is set to '$value' in this process; absent-env default smoke is not applicable")
-        case None =>
-          val apis = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow())
-          assert(apis.size == 1)
-          assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
+      val apis = esOnlyApis(esOnlyRollbackModule)
+      assert(apis.size == 1)
+      assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
 
-          val response = serve(apis, validRequestBody)
-          assert(response.status == Status.Ok, s"absent env must serve the ES-backed default (200), got ${response.status}")
-      }
+      val response = serve(apis, validRequestBody)
+      assert(response.status == Status.Ok, s"rollback/default must serve the ES-backed default (200), got ${response.status}")
     }
 
-    "leave malformed-request behavior unchanged (400) for the absent-env launcher default" in {
-      envOperatorValue match {
-        case Some(value) =>
-          cancel(s"QP12b: ${BeautySearchQdrantSupplementActivationLauncherSeam.OperatorEnvVarName} is set to '$value' in this process; absent-env default smoke is not applicable")
-        case None =>
-          val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleFromEnvOrThrow())
-          val response = serve(apis, malformedRequestBody)
-          assert(response.status == Status.BadRequest)
-      }
+    "leave malformed-request behavior unchanged (400) for the rollback/default module" in {
+      val apis     = esOnlyApis(esOnlyRollbackModule)
+      val response = serve(apis, malformedRequestBody)
+      assert(response.status == Status.BadRequest)
     }
   }
 
@@ -127,7 +110,7 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   // Case 2: explicit es-only-rollback -> equivalent to absent/default, no Qdrant runtime module.
   // ============================================================================================
 
-  "The explicit es-only-rollback launcher value" should {
+  "The explicit es-only-rollback module" should {
     "serve a valid /beauty-search request as the ES-backed default (200), equivalent to the absent default, with no Qdrant runtime module required" in {
       val apis = esOnlyApis(esOnlyRollbackModule)
       assert(apis.size == 1)
@@ -143,7 +126,7 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   // 503, with fail-if-called leaf clients proving no search invocation and no silent fallback.
   // ============================================================================================
 
-  "The explicit qdrant-supplement-not-ready launcher value composed with the QP13 runtime binding module" should {
+  "The explicit qdrant-supplement-not-ready module composed with the QP13 runtime binding module" should {
     "reject a valid /beauty-search request with 503 over a real local server, without invoking the ES/embedding/Qdrant leaf clients" in {
       val apis     = runtimeBoundApis(notReadyModule, failIfCalledLeaves)
       val response = serve(apis, validRequestBody)
@@ -161,11 +144,10 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   // Case 4: explicit qdrant-supplement-ready.
   // ============================================================================================
 
-  // Selection-only boundary, NOT the final ready state: the ready module through the launcher seam
-  // alone -- exactly how `LeaderboardPlugin` includes the selected module today, with no other module
-  // supplying the supplement runtime bindings -- still fails closed naming the three keys. The QP13
-  // runtime binding module (exercised by the next test) is what closes them.
-  "The explicit qdrant-supplement-ready launcher value through the seam alone (no QP13 runtime module)" should {
+  // Selection-only boundary, NOT the final ready state: the ready module without the supplement
+  // runtime bindings still fails closed naming the three keys. The QP13 runtime binding module
+  // (exercised by the next test) is what closes them.
+  "The explicit qdrant-supplement-ready module without QP13 runtime bindings" should {
     "fail closed at graph composition, naming the exact missing supplement runtime bindings -- the selection-only boundary, not the final ready state" in {
       val thrown  = intercept[Throwable](apisFromReadyModuleWithoutSupplementBindings())
       val message = causeChainMessage(thrown)
@@ -175,7 +157,7 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     }
   }
 
-  "The explicit qdrant-supplement-ready launcher value composed with the QP13 runtime binding module (leaf doubles only)" should {
+  "The explicit qdrant-supplement-ready module composed with the QP13 runtime binding module (leaf doubles only)" should {
     "build and serve a valid /beauty-search request (200), capped at ExplicitConstraintsFilterPlusTop1 (one append, never AppendAll), preserving the ES prefix, never duplicating an ES id, and leaving the ES-owned provider carousel unchanged by the append" in {
       val apis     = runtimeBoundApis(readyModule, dedupLeaves)
       val response = serve(apis, validRequestBody)
@@ -205,15 +187,12 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   }
 
   // ============================================================================================
-  // Case 5: invalid env value -> fail closed, never ready, never silent Qdrant supplement.
+  // Case 5: invalid explicit value -> fail closed, never ready, never silent Qdrant supplement.
   // ============================================================================================
 
-  "An invalid launcher value" should {
+  "An invalid explicit value" should {
     "fail closed by throwing, never producing a module that selects QdrantSupplementReady or the Qdrant supplement" in {
-      val thrown = intercept[IllegalArgumentException] {
-        BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(Some("totally-unrecognized"))
-      }
-      assert(thrown.getMessage.contains("totally-unrecognized"))
+      assert(BeautySearchQdrantSupplementActivationConfig.fromOperatorValue(Some("totally-unrecognized")).isLeft)
     }
 
     "agree with the underlying pure parser's fail-closed Left for the same value" in {
@@ -225,23 +204,17 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   }
 
   // ============================================================================================
-  // Launcher-selected modules (the launcher's documented env-value -> module mapping).
+  // Explicitly selected modules.
   // ============================================================================================
 
   private def esOnlyRollbackModule: ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-      Some(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue)
-    )
+    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
 
   private def notReadyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-      Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementNotReadyOperatorValue)
-    )
+    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
 
   private def readyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivationLauncherSeam.selectedModuleOrThrow(
-      Some(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue)
-    )
+    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
 
   // ============================================================================================
   // Real-server smoke helper: serve a single request through a real local Ember server/client.
@@ -304,7 +277,7 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     locator.get[ApisProbe].allHttpApis
   }
 
-  // Compose the launcher-selected supplement module with the QP13 runtime binding module, supplying
+  // Compose the explicitly selected supplement module with the QP13 runtime binding module, supplying
   // only the documented leaf I/O doubles and the ready catalog -- never binding the three runtime
   // keys directly.
   private def runtimeBoundApis(selectedModule: ModuleDef, leaves: LeafDoubles): Set[HttpApi[IO]] = {
@@ -345,9 +318,8 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
     apisFrom(module)
   }
 
-  // The ready module selected through the launcher seam alone, deliberately WITHOUT the QP13 runtime
-  // binding module: this is exactly how `LeaderboardPlugin` includes the selected module today, so
-  // graph composition must fail closed and name the missing keys (the selection-only boundary).
+  // The ready module deliberately WITHOUT the QP13 runtime binding module: graph composition must
+  // fail closed and name the missing keys (the selection-only boundary).
   private def apisFromReadyModuleWithoutSupplementBindings(): Set[HttpApi[IO]] = {
     val module = new ModuleDef {
       include(readyModule)

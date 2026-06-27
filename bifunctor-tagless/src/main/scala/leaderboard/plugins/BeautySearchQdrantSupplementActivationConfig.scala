@@ -4,9 +4,9 @@ import distage.ModuleDef
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollback, QdrantSupplementNotReady, QdrantSupplementReady}
 
-// Operator-facing config surface for `BeautySearchQdrantSupplementActivation`. Maps a plain operator
-// value (e.g. read from an env var / CLI flag by the caller) to the activation state, with a safe
-// default and fail-closed handling of unrecognized values:
+// Operator-facing config surface for `BeautySearchQdrantSupplementActivation`. Maps a plain explicit
+// debug/preflight value to the activation state, with a safe default and fail-closed handling of
+// unrecognized values:
 //
 //   - `None` (absent/unset operator config)         -> `EsOnlyRollback`
 //   - `Some("es-only-rollback")`                     -> `EsOnlyRollback`

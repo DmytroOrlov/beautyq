@@ -1,6 +1,7 @@
 package leaderboard.plugins
 
 import distage.{ModuleDef, Scene}
+import leaderboard.api.BeautySearchServingGate
 import leaderboard.config.QdrantPortCfg
 import leaderboard.search.document.BeautySearchReadyCatalogDocuments
 import leaderboard.search.dsl.{BeautySearchSpec, VectorSearchSpec}
@@ -31,7 +32,7 @@ object BeautySearchLocalQdrantSupplementLauncherModule {
     tag(Scene.Managed)
 
     include(ElasticsearchClientModules.portConfigured)
-    include(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady))
+    include(BeautySearchRouteModules.apiQdrantVariantSupplementExplicitOptIn(BeautySearchServingGate.enabledReady))
     include(BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(VectorSpec))
 
     make[EmbeddingClient].from {
