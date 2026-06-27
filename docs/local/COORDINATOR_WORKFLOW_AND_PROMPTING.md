@@ -446,3 +446,39 @@ Do not salvage a source-incomplete task by inventing a source-independent helper
 Do not rescope a source-incomplete task into an adjacent "safe" patch. If the requested task requires missing anchors, stop at the bundle request unless the user explicitly approves a different task after seeing the missing-source report.
 
 A partial inventory may list `SOURCE_CONFIRMED` and `DOC_LEVEL_ONLY` facts, but when required anchors are missing it must end with a bundle request, not a patch proposal. The source-truth gate has higher priority than the requested output shape.
+
+---
+
+# 7. BeautyQ senior audit playbook
+
+Purpose: a compact, coordinator-owned program for finding senior-level improvements and hidden holes across BeautyQ docs, architecture, dependencies, project goals/values, Scala/FP/BIO/Distage usage, and test taxonomy. This is workflow guidance for running audits, not product route truth, not a roadmap, and not a substitute for the canonical docs in `docs/` (handoff, supplement architecture, local gate, DSL).
+
+This playbook is read-only, audit, and source-truth work under §1.1/§1.2: it is coordinator-owned and is run with bundle scripts (§3), never as a delegated read-only prompt. A delegated `Task:` prompt is only ever produced after a wave below ends in an accepted patch candidate, per the source-truth gate in §6.
+
+## 7.1 Review waves
+
+Run waves independently; each wave is scoped read-only evidence gathering over a bundle, not an edit.
+
+1. **Docs-cement audit** — find stale or non-senior worldview cemented in docs: stale milestone counts, aspirational future plans written as current truth, dummy/backend equivalence wording, benchmark-as-rollout wording, fallback/fusion/rerank ambiguity.
+2. **Project values/goals audit** — source truth over roadmap memory; measured local/test gates before any production claim; local/test proof is not production approval; baseline owns hard constraints; supplement stays candidate-only; verification labels stay honest (no claiming a stronger label than the evidence supports).
+3. **Architecture boundary audit** — route/default graph; ES/Qdrant ownership split; frontend provenance contract; benchmark/eval non-goals; local managed vs production boundary.
+4. **Dependency/DI/lifecycle audit** — Distage roots, axes/activation, heavy dependency construction, graph garbage collection, startup/readiness ordering through dependency edges (per `AGENTS.md` "DI, lifecycle, and graph rules").
+5. **Scala/FP/BIO audit** — typed errors preserved, resource safety, no swallowed failures, narrow effects, no mutable spy creep (per `AGENTS.md` "Test doubles and assertions"), no broad production graph pulled into focused specs.
+6. **Test taxonomy audit** — Contractual/Regression/Progression/Benchmark x Blackbox/Effectual/Whitebox x Atomic/Group/Communication coverage gaps; confirm dummy/in-memory backend tests do not oversell real-backend proof.
+7. **Readiness/reuse/state-marker audit** — fingerprints, metadata, sidecars, counts, compatibility checks; confirm markers are validated against real resources, not assumed from the marker alone.
+8. **Eval/golden/report governance audit** — derived counts, golden drift, report/source ownership; confirm no accidental semantic/Qdrant-owned query class creeps into a baseline-owned class.
+9. **Decoder/API-shape drift audit** — live external JSON shapes vs unit fixtures; stable payload keys; persisted JSON compatibility (per `AGENTS.md` "Data/model invariants").
+
+## 7.2 Wave closeout
+
+Every wave must end in exactly one of:
+
+* an accepted patch candidate with source-confirmed edit seams (then proceed through the normal §1.2 closeout, including the extended commit message);
+* no-issue-found evidence (state what was checked and why it is clean; do not invent a patch to justify the wave);
+* `BLOCKED_NEED_BUNDLE` (required anchors are missing; request a focused bundle per §3 and stop).
+
+A wave finding never skips the source-truth gate (§6): "looks stale in docs" is not itself an accepted patch candidate until the current source/behavior is confirmed.
+
+## 7.3 Closeout rules carried over
+
+This playbook does not replace or loosen §1.2/§1.3/§1.10. Any accepted wave finding still requires: an extended commit message, exactly two unconditional downstream follow-up options plus one recommendation, and one combined post-task bundle script (`current result review`, `next option 1 source truth`, `next option 2 source truth`).
