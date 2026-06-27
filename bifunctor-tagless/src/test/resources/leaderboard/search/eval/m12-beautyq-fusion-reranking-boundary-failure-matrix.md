@@ -29,8 +29,8 @@ route activation, not serving approval, and not actual execution readiness.
 - consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready
 - consumed_policy_catalog_name_count: 6
 - consumed_policy_catalog_names_unique: true
-- consumed_experiment_plan_row_count: 63
-- consumed_experiment_plan_es_baseline_rows: 13
+- consumed_experiment_plan_row_count: 64
+- consumed_experiment_plan_es_baseline_rows: 14
 - consumed_experiment_plan_qdrant_baseline_rows: 1
 - consumed_experiment_plan_combined_rows: 48
 - consumed_experiment_plan_accepted_negative_control_rows: 1
@@ -189,8 +189,8 @@ serving-approval claim is denied.
 | consumed_m11c_boundary_failure_matrix_verdict | m11_candidate_generation_boundary_failure_matrix_ready |
 | consumed_policy_catalog_name_count | 6 |
 | consumed_policy_catalog_names_unique | true |
-| consumed_experiment_plan_row_count | 63 |
-| consumed_experiment_plan_es_baseline_rows | 13 |
+| consumed_experiment_plan_row_count | 64 |
+| consumed_experiment_plan_es_baseline_rows | 14 |
 | consumed_experiment_plan_qdrant_baseline_rows | 1 |
 | consumed_experiment_plan_combined_rows | 48 |
 | consumed_experiment_plan_accepted_negative_control_rows | 1 |

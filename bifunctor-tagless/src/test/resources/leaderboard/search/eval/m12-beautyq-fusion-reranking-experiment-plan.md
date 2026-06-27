@@ -18,14 +18,14 @@ quality, not production readiness, not route activation, and not serving approva
 - consumed_m12_policy_catalog_verdict: m12_fusion_reranking_policy_catalog_ready_schema_only
 - consumed_m11b_result_schema_verdict: m11_candidate_generation_result_schema_ready
 - consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready
-- consumed_m12a_input_rows: 63
-- consumed_m12a_backend_candidate_rows: 62
+- consumed_m12a_input_rows: 64
+- consumed_m12a_backend_candidate_rows: 63
 - consumed_m12a_executable_rows: 0
 - consumed_m12a_real_candidate_result_rows: 0
-- consumed_m12a_pending_not_executed_result_leg_rows: 110
+- consumed_m12a_pending_not_executed_result_leg_rows: 111
 - consumed_m12a_combined_comparison_pair_placeholders: 48
 - consumed_m12a_accepted_negative_control_exclusions: 1
-- es_baseline_rows: 13
+- es_baseline_rows: 14
 - qdrant_baseline_rows: 1
 - combined_experiment_rows: 48
 - accepted_negative_control_exclusion_rows: 1
@@ -58,7 +58,7 @@ all. No row is executable and no real scored/reranked result is produced.
 
 | experiment_plan_group | count |
 |---|---|
-| es_baseline_plan | 13 |
+| es_baseline_plan | 14 |
 | qdrant_baseline_plan | 1 |
 | combined_experiment_plan | 48 |
 | accepted_negative_control_exclusion_plan | 1 |
@@ -87,23 +87,23 @@ policy and no real scored/reranked output.
 | consumed_m12_policy_catalog_verdict | m12_fusion_reranking_policy_catalog_ready_schema_only |
 | consumed_m11b_result_schema_verdict | m11_candidate_generation_result_schema_ready |
 | consumed_m11c_boundary_failure_matrix_verdict | m11_candidate_generation_boundary_failure_matrix_ready |
-| consumed_input_row_count | 63 |
-| consumed_m12a_input_rows | 63 |
-| consumed_m12a_backend_candidate_rows | 62 |
+| consumed_input_row_count | 64 |
+| consumed_m12a_input_rows | 64 |
+| consumed_m12a_backend_candidate_rows | 63 |
 | consumed_m12a_executable_rows | 0 |
 | consumed_m12a_real_candidate_result_rows | 0 |
-| consumed_m12a_pending_not_executed_result_leg_rows | 110 |
+| consumed_m12a_pending_not_executed_result_leg_rows | 111 |
 | consumed_m12a_combined_comparison_pair_placeholders | 48 |
 | consumed_m12a_accepted_negative_control_exclusions | 1 |
-| plan_group_count_sum | 63 |
-| es_baseline_rows | 13 |
+| plan_group_count_sum | 64 |
+| es_baseline_rows | 14 |
 | qdrant_baseline_rows | 1 |
 | combined_experiment_rows | 48 |
 | accepted_negative_control_exclusion_rows | 1 |
 | manual_or_no_op_rows | 0 |
 | executable_policy_rows | 0 |
 | real_scored_or_reranked_rows | 0 |
-| policy_plan_count_sum | 63 |
+| policy_plan_count_sum | 64 |
 | assigned_policy_count | 6 |
 | m12_fusion_reranking_experiment_plan_ready | true |
 | m12_plan_is_schema_only_not_scoring | true |

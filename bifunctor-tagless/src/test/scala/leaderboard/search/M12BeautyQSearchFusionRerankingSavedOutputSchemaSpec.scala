@@ -59,16 +59,16 @@ final class M12BeautyQSearchFusionRerankingSavedOutputSchemaSpec extends AnyWord
 
   "M12BeautyQSearchFusionRerankingSavedOutputSchema inputs" should {
 
-    "consume the accepted M12B experiment-plan verdict and still total 63 plan rows" in {
+    "consume the accepted M12B experiment-plan verdict and still total 64 plan rows" in {
       val summary = M12BeautyQSearchFusionRerankingSavedOutputSchema.DefaultSummary
 
       assert(summary.consumedM12ExperimentPlanVerdict == "m12_fusion_reranking_experiment_plan_ready_schema_only")
       assert(
         summary.consumedM12ExperimentPlanVerdict == M12BeautyQSearchFusionRerankingExperimentPlan.Verdict,
       )
-      assert(summary.consumedExperimentPlanRowCount == 63)
-      assert(M12BeautyQSearchFusionRerankingExperimentPlan.PlanRows.size == 63)
-      assert(metricValue(summary.metrics, "consumed_experiment_plan_row_count") == "63")
+      assert(summary.consumedExperimentPlanRowCount == 64)
+      assert(M12BeautyQSearchFusionRerankingExperimentPlan.PlanRows.size == 64)
+      assert(metricValue(summary.metrics, "consumed_experiment_plan_row_count") == "64")
     }
 
     "consume the accepted M12B policy catalog verdict" in {
@@ -105,36 +105,36 @@ final class M12BeautyQSearchFusionRerankingSavedOutputSchemaSpec extends AnyWord
 
   "M12BeautyQSearchFusionRerankingSavedOutputSchema counts" should {
 
-    "carry 63 saved output rows whose kind counts sum to 63" in {
+    "carry 64 saved output rows whose kind counts sum to 64" in {
       val summary = M12BeautyQSearchFusionRerankingSavedOutputSchema.DefaultSummary
       val rows = M12BeautyQSearchFusionRerankingSavedOutputSchema.SavedOutputRows
 
-      assert(rows.size == 63)
-      assert(summary.savedOutputRowCount == 63)
-      assert(summary.kindCounts.map(_._2).sum == 63)
-      assert(summary.esBaselinePlaceholderOutputRows == 13)
+      assert(rows.size == 64)
+      assert(summary.savedOutputRowCount == 64)
+      assert(summary.kindCounts.map(_._2).sum == 64)
+      assert(summary.esBaselinePlaceholderOutputRows == 14)
       assert(summary.qdrantBaselinePlaceholderOutputRows == 1)
       assert(summary.combinedPlaceholderOutputRows == 48)
       assert(summary.acceptedNegativeControlOutputRows == 1)
       assert(summary.manualOrNoOpOutputRows == 0)
       assert(summary.esBaselinePlaceholderOutputRows + summary.qdrantBaselinePlaceholderOutputRows +
         summary.combinedPlaceholderOutputRows + summary.acceptedNegativeControlOutputRows +
-        summary.manualOrNoOpOutputRows == 63)
+        summary.manualOrNoOpOutputRows == 64)
       assert(summary.m12SavedOutputSchemaReady)
-      assert(metricValue(summary.metrics, "saved_output_rows") == "63")
-      assert(metricValue(summary.metrics, "saved_output_row_count_sum") == "63")
+      assert(metricValue(summary.metrics, "saved_output_rows") == "64")
+      assert(metricValue(summary.metrics, "saved_output_row_count_sum") == "64")
       assert(metricValue(summary.metrics, "m12_saved_output_schema_ready") == "true")
     }
 
-    "report 62 placeholder output rows and 1 excluded output row" in {
+    "report 63 placeholder output rows and 1 excluded output row" in {
       val summary = M12BeautyQSearchFusionRerankingSavedOutputSchema.DefaultSummary
 
-      assert(summary.placeholderOutputRows == 62)
+      assert(summary.placeholderOutputRows == 63)
       assert(summary.excludedOutputRows == 1)
-      assert(summary.placeholderOutputRows + summary.excludedOutputRows == 63)
-      assert(metricValue(summary.metrics, "placeholder_output_rows") == "62")
+      assert(summary.placeholderOutputRows + summary.excludedOutputRows == 64)
+      assert(metricValue(summary.metrics, "placeholder_output_rows") == "63")
       assert(metricValue(summary.metrics, "excluded_output_rows") == "1")
-      assert(metricValue(summary.metrics, "placeholder_plus_excluded_output_rows") == "63")
+      assert(metricValue(summary.metrics, "placeholder_plus_excluded_output_rows") == "64")
     }
 
     "report 0 executable, 0 real scored/reranked, 0 fabricated candidate payload rows" in {
@@ -324,8 +324,8 @@ final class M12BeautyQSearchFusionRerankingSavedOutputSchemaSpec extends AnyWord
       assert(rendered.contains("consumed_m12b_policy_catalog_verdict: m12_fusion_reranking_policy_catalog_ready_schema_only"))
       assert(rendered.contains("consumed_m12b_experiment_plan_verdict: m12_fusion_reranking_experiment_plan_ready_schema_only"))
       assert(rendered.contains("consumed_m12c_boundary_failure_matrix_verdict: m12_fusion_reranking_boundary_failure_matrix_ready_schema_only"))
-      assert(rendered.contains("saved_output_rows: 63"))
-      assert(rendered.contains("placeholder_output_rows: 62"))
+      assert(rendered.contains("saved_output_rows: 64"))
+      assert(rendered.contains("placeholder_output_rows: 63"))
       assert(rendered.contains("excluded_output_rows: 1"))
       assert(rendered.contains("executable_output_rows: 0"))
       assert(rendered.contains("fabricated_candidate_payload_rows: 0"))

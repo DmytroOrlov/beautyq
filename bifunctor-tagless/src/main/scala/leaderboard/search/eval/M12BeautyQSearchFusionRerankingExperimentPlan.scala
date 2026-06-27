@@ -191,10 +191,10 @@ final case class M12BeautyQSearchFusionRerankingExperimentPlanSummary(
   * scores, ranks, backend responses, fused scores, reranked positions, quality labels, fusion
   * outputs, or reranking outputs.
   *
-  * The plan preserves the M12A counts (63 input rows, 62 backend candidate placeholder rows, 0
-  * executable rows, 0 real candidate result rows, 110 pending/not-executed result-leg rows, 48
+  * The plan preserves the M12A counts (64 input rows, 63 backend candidate placeholder rows, 0
+  * executable rows, 0 real candidate result rows, 111 pending/not-executed result-leg rows, 48
   * combined comparison pair placeholders, 1 accepted negative-control exclusion) and derives
-  * policy-plan counts (13 ES baseline rows, 1 Qdrant baseline row, 48 combined experiment rows, 1
+  * policy-plan counts (14 ES baseline rows, 1 Qdrant baseline row, 48 combined experiment rows, 1
   * accepted negative-control exclusion row, 0 manual/no-op rows, 0 executable policy rows, 0 real
   * scored/reranked rows). Combined experiment plan rows list the three future combined placeholder
   * policies (union, intersection, tie-breaker), every one non-executable and placeholder-only. A
@@ -291,13 +291,13 @@ object M12BeautyQSearchFusionRerankingExperimentPlan {
     val anchorRows = M12BeautyQSearchFusionRerankingInputScaffold.AnchorQueryIds.flatMap(planRowFor)
     val noiseProbeRows = NoiseProbeQueryIds.flatMap(planRowFor)
 
-    // The plan is ready when it consumes the accepted 63-row M12A scaffold, every plan row is
+    // The plan is ready when it consumes the accepted 64-row M12A scaffold, every plan row is
     // non-executable, every assigned policy is non-executable, every plan row preserves its
     // pending/not-executed legs verbatim, and the plan counts match the M12A-derived expectations.
     val m12FusionRerankingExperimentPlanReady =
       m12InputScaffoldSummary.m12FusionRerankingInputScaffoldReady &&
-        PlanRows.size == 63 &&
-        esBaselineRows == 13 &&
+        PlanRows.size == 64 &&
+        esBaselineRows == 14 &&
         qdrantBaselineRows == 1 &&
         combinedExperimentRows == 48 &&
         acceptedNegativeControlExclusionRows == 1 &&
@@ -305,7 +305,7 @@ object M12BeautyQSearchFusionRerankingExperimentPlan {
         executablePolicyRows == 0 &&
         realScoredOrRerankedRows == 0 &&
         esBaselineRows + qdrantBaselineRows + combinedExperimentRows +
-          acceptedNegativeControlExclusionRows + manualOrNoOpRows == 63 &&
+          acceptedNegativeControlExclusionRows + manualOrNoOpRows == 64 &&
         PlanRows.forall(row => !row.isExecutable && row.allPoliciesNonExecutable && row.allLegsPendingNotExecuted) &&
         // Exclusions must not carry any backend candidate policy.
         PlanRows.filter(_.isExclusion).forall(!_.hasBackendCandidatePolicy) &&

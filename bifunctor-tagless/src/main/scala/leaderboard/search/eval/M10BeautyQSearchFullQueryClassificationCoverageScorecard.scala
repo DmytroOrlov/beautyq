@@ -32,7 +32,7 @@ final case class M10BeautyQSearchFullClassificationCoverageSummary(
   metrics: List[M10BeautyQSearchFullClassificationCoverageMetric],
 )
 
-/** Deterministic full-dataset classification coverage scorecard over the 63-query M10 mapping.
+/** Deterministic full-dataset classification coverage scorecard over the 64-query M10 mapping.
   *
   * This is an offline coverage/reporting contract only. It summarizes the full classification mapping and
   * its offline strategy intents; it never calls production `/beauty-search`, never creates an ES or
@@ -174,7 +174,7 @@ object M10BeautyQSearchFullQueryClassificationCoverageScorecardRenderer {
 
     line(builder, "# M10 BeautyQ Full Query Classification Coverage Scorecard")
     line(builder, "")
-    line(builder, "Offline classification coverage report over the full accepted 63-query BeautyQ eval dataset. This is an")
+    line(builder, "Offline classification coverage report over the full accepted 64-query BeautyQ eval dataset. This is an")
     line(builder, "offline planning/eval artifact only: it is not backend quality evidence, not production readiness, not route")
     line(builder, "activation, and not serving approval. `strategy_intent` values are offline study intents only and are NOT")
     line(builder, "production routes; offline strategy intent is distinct from production routing.")

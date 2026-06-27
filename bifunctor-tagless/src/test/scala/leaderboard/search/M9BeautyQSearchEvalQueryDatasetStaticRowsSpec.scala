@@ -64,7 +64,7 @@ final class M9BeautyQSearchEvalQueryDatasetStaticRowsSpec extends AnyWordSpec {
       assert(notes.contains("full_query_count=64"))
       assert(notes.contains("ru=31, en=22, de=6, mixed=5"))
       assert(notes.contains("variantCarousel, providerCarousel, serviceIntentCarousel"))
-      assert(notes.contains("Full 63-query static-row expansion implemented"))
+      assert(notes.contains("Full 64-query static-row expansion implemented"))
     }
 
     "keep deterministic row count, manual source attribution, and unknown serving mode" in {
@@ -140,7 +140,7 @@ final class M9BeautyQSearchEvalQueryDatasetStaticRowsSpec extends AnyWordSpec {
       val input = M9BeautyQSearchEvalQueryDatasetStaticRows.DefaultResult.staticRunInput
       val warningsAndNotes = (input.warnings ++ input.notes).mkString("\n")
 
-      assert(warningsAndNotes.contains("Full 63-query static-row expansion implemented: mapped_row_count=64; full_dataset_query_count=64"))
+      assert(warningsAndNotes.contains("Full 64-query static-row expansion implemented: mapped_row_count=64; full_dataset_query_count=64"))
       assert(warningsAndNotes.contains("Rows are static placeholders/fixture anchors only"))
       assert(warningsAndNotes.contains("No JSON parser/dependency is used"))
     }

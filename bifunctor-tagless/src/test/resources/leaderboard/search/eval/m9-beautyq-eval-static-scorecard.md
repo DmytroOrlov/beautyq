@@ -13,11 +13,11 @@ This scorecard is a dataset/static readiness contract over checked-in BeautyQ ev
 
 | metric | value |
 |---|---|
-| dataset_query_count | 63 |
-| mapped_row_count | 63 |
-| static_runner_accepted_row_count | 63 |
+| dataset_query_count | 64 |
+| mapped_row_count | 64 |
+| static_runner_accepted_row_count | 64 |
 | representative_anchor_row_count | 3 |
-| placeholder_only_row_count | 60 |
+| placeholder_only_row_count | 61 |
 | candidate_source | manual |
 | serving_mode | unknown |
 | manual_static_only | true |
@@ -28,7 +28,7 @@ This scorecard is a dataset/static readiness contract over checked-in BeautyQ ev
 | production_activation_approval | false |
 | route_plugin_di_http_involved | false |
 | full_json_parsing_implemented | false |
-| full_63_query_static_expansion_implemented | true |
+| full_64_query_static_expansion_implemented | true |
 | real_backend_call_required | false |
 | verdict | dataset_static_rows_ready |
 
@@ -36,5 +36,5 @@ This scorecard is a dataset/static readiness contract over checked-in BeautyQ ev
 
 - No real ES or Qdrant backend call is required or represented.
 - No route, plugin, DI, or HTTP source is involved.
-- Full JSON parsing remains intentionally deferred; the 63-query static-row expansion is implemented.
+- Full JSON parsing remains intentionally deferred; the 64-query static-row expansion is implemented.
 - Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.

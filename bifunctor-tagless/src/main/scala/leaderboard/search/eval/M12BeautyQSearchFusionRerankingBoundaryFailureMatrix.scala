@@ -276,7 +276,7 @@ final case class M12BeautyQSearchFusionRerankingBoundaryFailureMatrixSummary(
   * backend execution, hybrid serving, fallback, telemetry, or production routing. It consumes the
   * accepted M12B policy catalog ([[M12BeautyQSearchFusionRerankingPolicyCatalog]]) and the accepted M12B
   * experiment-plan schema ([[M12BeautyQSearchFusionRerankingExperimentPlan]]) — including their verdicts,
-  * the 63-row plan total, and the standing boundary — and enumerates deterministic accepted/denied
+  * the 64-row plan total, and the standing boundary — and enumerates deterministic accepted/denied
   * policy-handling cases with explicit reason codes. It never calls production `/beauty-search`, never
   * creates an ES or Qdrant client, never runs Elasticsearch or Qdrant, and never touches a route, plugin,
   * DI, or HTTP source. It implements no scoring, fusion, reranking, candidate retrieval, fallback,
@@ -685,12 +685,12 @@ object M12BeautyQSearchFusionRerankingBoundaryFailureMatrix {
     val consumedPolicyCatalogNamesUnique =
       consumedCatalog.policyNames.map(_.render).distinct.size == consumedCatalog.policyCount
 
-    // The matrix is ready when it consumes the accepted 63-row M12B experiment plan with a stable,
+    // The matrix is ready when it consumes the accepted 64-row M12B experiment plan with a stable,
     // unique policy catalog, and every row's decision matches the decision its group requires
     // (accepted-groups accepted, denied-groups denied).
     val consumedExperimentPlanRowCountFromPlan = consumedPlan.planGroupCounts.map(_._2).sum
     val m12BoundaryFailureMatrixReady =
-      consumedExperimentPlanRowCountFromPlan == 63 &&
+      consumedExperimentPlanRowCountFromPlan == 64 &&
         consumedPlan.executablePolicyRows == 0 &&
         consumedPlan.realScoredOrRerankedRows == 0 &&
         consumedPolicyCatalogNamesUnique &&

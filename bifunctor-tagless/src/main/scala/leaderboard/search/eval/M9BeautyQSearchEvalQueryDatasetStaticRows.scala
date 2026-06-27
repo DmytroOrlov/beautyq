@@ -307,7 +307,7 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       categories = Nil,
       expectedResults = Nil,
       expectedNotes = List(
-        "Static 63-query fixture anchor only; full JSON parsing is intentionally deferred.",
+        "Static 64-query fixture anchor only; full JSON parsing is intentionally deferred.",
         "No backend retrieval quality is measured by this placeholder query.",
       ),
       negativeOutOfCatalog = false,
@@ -348,7 +348,7 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       s"Language counts: ru=${metadata.languageCounts.ru}, en=${metadata.languageCounts.en}, de=${metadata.languageCounts.de}, mixed=${metadata.languageCounts.mixed}.",
       s"Target carousels carried from dataset metadata: ${metadata.targetCarousels.mkString(", ")}.",
       s"Representative static rows mapped: ${summary.representativeQueryIds.mkString(", ")}.",
-      s"Full 63-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
+      s"Full 64-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
       "This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.",
       "Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.",
     )

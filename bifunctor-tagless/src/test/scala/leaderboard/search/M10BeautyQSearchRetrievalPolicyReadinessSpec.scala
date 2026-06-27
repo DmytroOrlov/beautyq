@@ -36,24 +36,24 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
 
   "M10BeautyQSearchRetrievalPolicyReadiness inputs" should {
 
-    "consume the hardened M10B coverage and still total 63 rows" in {
+    "consume the hardened M10B coverage and still total 64 rows" in {
       val rows = M10BeautyQSearchRetrievalPolicyReadiness.InputRows
 
-      assert(M10BeautyQSearchFullQueryClassification.FullResults.size == 63)
-      assert(rows.size == 63)
-      assert(rows.map(_.queryId).distinct.size == 63)
+      assert(M10BeautyQSearchFullQueryClassification.FullResults.size == 64)
+      assert(rows.size == 64)
+      assert(rows.map(_.queryId).distinct.size == 64)
       assert(rows.map(_.queryId) == M10BeautyQSearchFullQueryClassification.FullDecisions.map(_.queryId))
     }
 
-    "have M11 input group counts that sum to 63 and match the expected distribution" in {
+    "have M11 input group counts that sum to 64 and match the expected distribution" in {
       val counts = M10BeautyQSearchRetrievalPolicyReadiness.InputGroupCounts
       val byGroup = counts.toMap
 
-      assert(counts.map(_._2).sum == 63)
+      assert(counts.map(_._2).sum == 64)
       M10BeautyQSearchM11CandidateGenerationInputGroup.stableOrder.foreach { group =>
         assert(counts.exists(_._1 == group), s"input group not reported: ${group.render}")
       }
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 13)
+      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 14)
       assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
       assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 48)
       assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
@@ -61,10 +61,10 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
       assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
     }
 
-    "count exactly 62 backend candidate-generation study inputs, 1 negative control, 0 unresolved manual review" in {
+    "count exactly 63 backend candidate-generation study inputs, 1 negative control, 0 unresolved manual review" in {
       val summary = M10BeautyQSearchRetrievalPolicyReadiness.DefaultSummary
 
-      assert(summary.backendCandidateGenerationInputCount == 62)
+      assert(summary.backendCandidateGenerationInputCount == 63)
       assert(summary.acceptedNegativeControlExclusionInputCount == 1)
       assert(summary.unresolvedManualReviewInputCount == 0)
       assert(summary.noOpNoiseInputCount == 0)

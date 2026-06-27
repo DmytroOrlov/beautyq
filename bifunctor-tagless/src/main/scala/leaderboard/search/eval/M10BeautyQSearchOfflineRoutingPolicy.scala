@@ -66,7 +66,7 @@ object M10BeautyQSearchOfflineRetrievalStrategyIntent {
   )
 
   /** Full M10B coverage order: the representative `stableOrder` plus the accepted negative-control
-    * exclusion intent, which only the full 63-query dataset exercises.
+    * exclusion intent, which only the full 64-query dataset exercises.
     */
   val fullCoverageStableOrder: List[M10BeautyQSearchOfflineRetrievalStrategyIntent] =
     stableOrder :+ AcceptedNegativeControlExcluded

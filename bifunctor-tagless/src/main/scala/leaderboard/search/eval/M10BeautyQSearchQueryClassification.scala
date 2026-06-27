@@ -211,7 +211,7 @@ object M10BeautyQSearchQueryClassification {
     }
 
   /** Representative offline classification inputs: the three accepted anchors plus enough additional
-    * cases to cover every category. Deterministic and focused; this does not remap the full 63-query
+    * cases to cover every category. Deterministic and focused; this does not remap the full 64-query
     * dataset.
     */
   val RepresentativeInputs: List[M10BeautyQSearchQueryClassificationInput] =

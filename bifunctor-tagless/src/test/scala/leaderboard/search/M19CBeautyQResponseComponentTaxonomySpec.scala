@@ -178,7 +178,7 @@ final class M19CBeautyQResponseComponentTaxonomySpec extends AnyWordSpec {
       val queries = loadEvalQueries()
 
       assert(queries.nonEmpty)
-      assert(queries.size == 63)
+      assert(queries.size == 64)
     }
 
     "report a known carousels expectation for every query and no facets/inferredFilters expectations" in {

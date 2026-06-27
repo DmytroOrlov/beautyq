@@ -28,7 +28,7 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 - Language counts: ru=31, en=22, de=6, mixed=5.
 - Target carousels carried from dataset metadata: variantCarousel, providerCarousel, serviceIntentCarousel.
 - Representative static rows mapped: q_nails_001, q_nails_003, q_noise_005.
-- Full 63-query static-row expansion implemented: mapped_row_count=64; full_dataset_query_count=64.
+- Full 64-query static-row expansion implemented: mapped_row_count=64; full_dataset_query_count=64.
 - This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.
 - Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.
 

@@ -27,18 +27,18 @@ readiness, not route activation, and not serving approval.
 - consumed_m12b_policy_catalog_verdict: m12_fusion_reranking_policy_catalog_ready_schema_only
 - consumed_m12b_experiment_plan_verdict: m12_fusion_reranking_experiment_plan_ready_schema_only
 - consumed_m12c_boundary_failure_matrix_verdict: m12_fusion_reranking_boundary_failure_matrix_ready_schema_only
-- consumed_experiment_plan_row_count: 63
+- consumed_experiment_plan_row_count: 64
 - consumed_matrix_row_count: 38
 - consumed_matrix_accepted_row_count: 9
 - consumed_matrix_denied_row_count: 29
 - consumed_matrix_skipped_row_count: 0
-- saved_output_rows: 63
-- es_baseline_placeholder_output_rows: 13
+- saved_output_rows: 64
+- es_baseline_placeholder_output_rows: 14
 - qdrant_baseline_placeholder_output_rows: 1
 - combined_placeholder_output_rows: 48
 - accepted_negative_control_output_rows: 1
 - manual_or_no_op_output_rows: 0
-- placeholder_output_rows: 62
+- placeholder_output_rows: 63
 - excluded_output_rows: 1
 - executable_output_rows: 0
 - real_scored_or_reranked_output_rows: 0
@@ -56,7 +56,7 @@ and no real scored/reranked output is produced.
 
 | saved_output_kind | count |
 |---|---|
-| es_baseline_placeholder_output | 13 |
+| es_baseline_placeholder_output | 14 |
 | qdrant_baseline_placeholder_output | 1 |
 | combined_placeholder_output | 48 |
 | accepted_negative_control_excluded_output | 1 |
@@ -83,24 +83,24 @@ candidate policy output.
 | consumed_m12b_policy_catalog_verdict | m12_fusion_reranking_policy_catalog_ready_schema_only |
 | consumed_m12b_experiment_plan_verdict | m12_fusion_reranking_experiment_plan_ready_schema_only |
 | consumed_m12c_boundary_failure_matrix_verdict | m12_fusion_reranking_boundary_failure_matrix_ready_schema_only |
-| consumed_experiment_plan_row_count | 63 |
+| consumed_experiment_plan_row_count | 64 |
 | consumed_matrix_row_count | 38 |
 | consumed_matrix_accepted_row_count | 9 |
 | consumed_matrix_denied_row_count | 29 |
 | consumed_matrix_skipped_row_count | 0 |
-| saved_output_rows | 63 |
-| es_baseline_placeholder_output_rows | 13 |
+| saved_output_rows | 64 |
+| es_baseline_placeholder_output_rows | 14 |
 | qdrant_baseline_placeholder_output_rows | 1 |
 | combined_placeholder_output_rows | 48 |
 | accepted_negative_control_output_rows | 1 |
 | manual_or_no_op_output_rows | 0 |
-| placeholder_output_rows | 62 |
+| placeholder_output_rows | 63 |
 | excluded_output_rows | 1 |
 | executable_output_rows | 0 |
 | real_scored_or_reranked_output_rows | 0 |
 | fabricated_candidate_payload_rows | 0 |
-| saved_output_row_count_sum | 63 |
-| placeholder_plus_excluded_output_rows | 63 |
+| saved_output_row_count_sum | 64 |
+| placeholder_plus_excluded_output_rows | 64 |
 | m12_saved_output_schema_ready | true |
 | saved_output_is_placeholder_only_not_scoring | true |
 | saved_output_is_placeholder_only_not_fusion_execution | true |

@@ -183,7 +183,7 @@ final case class M11BeautyQSearchCandidateGenerationBoundaryFailureMatrixSummary
   *
   * This is a boundary/failure matrix only, never backend execution and never production routing. It
   * consumes the accepted M11B result schema ([[M11BeautyQSearchCandidateGenerationResultSchema]]) —
-  * including its verdict, its 63-row total, and its standing boundary — and enumerates deterministic
+  * including its verdict, its 64-row total, and its standing boundary — and enumerates deterministic
   * accepted/denied result-shape handling cases with explicit reason codes. It never calls production
   * `/beauty-search`, never creates an ES or Qdrant client, never runs Elasticsearch or Qdrant, and never
   * touches a route, plugin, DI, or HTTP source. It implements no candidate retrieval, scoring, fusion,
@@ -215,7 +215,7 @@ object M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix {
   val ConsumedM11ResultSchemaVerdict: String =
     M11BeautyQSearchCandidateGenerationResultSchema.Verdict
 
-  /** The accepted M11B result-row total (63) this matrix is asserted against. */
+  /** The accepted M11B result-row total (64) this matrix is asserted against. */
   val ConsumedResultRowCount: Int =
     M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary.totalRowCount
 
@@ -412,10 +412,10 @@ object M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix {
     val deniedBoundaryRows = rowsForGroup(DeniedBoundaryViolation)
     val deniedFabricationRows = rowsForGroup(DeniedFabrication)
 
-    // The matrix is ready when it consumes the accepted 63-row M11B schema and every row's decision
+    // The matrix is ready when it consumes the accepted 64-row M11B schema and every row's decision
     // matches the decision its group requires (accepted-groups accepted, denied-groups denied).
     val m11BoundaryFailureMatrixReady =
-      ConsumedResultRowCount == 63 &&
+      ConsumedResultRowCount == 64 &&
         MatrixRows.nonEmpty &&
         MatrixRows.forall(_.decisionMatchesGroup)
 

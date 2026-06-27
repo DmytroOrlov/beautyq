@@ -12,8 +12,8 @@ and not actual execution readiness.
 - dataset_id: wandsbek_hamburg_beauty_services_seed_ready
 - verdict: m11_candidate_generation_input_skeleton_ready
 - consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion
-- total_query_count: 63
-- es_request_leg_row_count: 61
+- total_query_count: 64
+- es_request_leg_row_count: 62
 - qdrant_request_leg_row_count: 49
 - combined_comparison_pair_row_count: 48
 - accepted_negative_control_exclusion_row_count: 1
@@ -25,7 +25,7 @@ These are offline study input groups only, not production routes.
 
 | m11_input_group | count |
 |---|---|
-| es_candidate_generation_study_input | 13 |
+| es_candidate_generation_study_input | 14 |
 | qdrant_candidate_generation_study_input | 1 |
 | combined_es_qdrant_comparison_study_input | 48 |
 | accepted_negative_control_exclusion_input | 1 |
@@ -39,7 +39,7 @@ combined-comparison ES legs; Qdrant legs = Qdrant-only rows + combined-compariso
 
 | metric | value |
 |---|---|
-| es_request_leg_row_count | 61 |
+| es_request_leg_row_count | 62 |
 | qdrant_request_leg_row_count | 49 |
 | combined_comparison_pair_row_count | 48 |
 
@@ -65,16 +65,16 @@ ES/Qdrant offline comparison shape, q_noise_005 is an accepted negative-control 
 
 | metric | value |
 |---|---|
-| total_query_count | 63 |
+| total_query_count | 64 |
 | consumed_m10_readiness_verdict | m11_candidate_generation_inputs_ready_with_negative_control_exclusion |
-| row_group_count_sum | 63 |
-| es_only_row_count | 13 |
+| row_group_count_sum | 64 |
+| es_only_row_count | 14 |
 | qdrant_only_row_count | 1 |
 | combined_comparison_row_count | 48 |
 | accepted_negative_control_exclusion_row_count | 1 |
 | manual_review_blocked_row_count | 0 |
 | no_op_noise_row_count | 0 |
-| es_request_leg_row_count | 61 |
+| es_request_leg_row_count | 62 |
 | qdrant_request_leg_row_count | 49 |
 | combined_comparison_pair_row_count | 48 |
 | m11_candidate_generation_input_skeleton_ready | true |

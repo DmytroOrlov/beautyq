@@ -5,7 +5,7 @@ package leaderboard.search.eval
   * This expands the representative M10 classification foundation to the complete accepted eval dataset:
   * every query id in [[M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds]] gets exactly one
   * classification row, derived offline from deterministic explicit signals. The three accepted M9 anchors
-  * keep their accepted classifications. The remaining 61 static/placeholder rows are classified using the
+  * keep their accepted classifications. The remaining 61 non-anchor static/placeholder rows are classified using the
   * same total, pure [[M10BeautyQSearchQueryClassification.classify]] function over hand-derived offline
   * signals.
   *

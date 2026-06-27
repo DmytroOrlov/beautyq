@@ -218,10 +218,10 @@ final case class M12BeautyQSearchFusionRerankingSavedOutputSchemaSummary(
   * accepted negative-control rows render excluded output with no backend candidate policy output;
   * manual/no-op rows stay explicitly supported even though their current count is zero.
   *
-  * The schema preserves the M12B plan counts (63 saved-output rows: 13 ES baseline placeholder, 1 Qdrant
+  * The schema preserves the M12B plan counts (64 saved-output rows: 14 ES baseline placeholder, 1 Qdrant
   * baseline placeholder, 48 combined placeholder, 1 accepted negative-control exclusion, 0 manual/no-op, 0
   * executable, 0 real scored/reranked) and the M12C matrix counts (38 rows, 9 accepted, 29 denied, 0
-  * skipped). It derives saved-output metrics (62 placeholder rows, 1 excluded row, 0 executable rows, 0
+  * skipped). It derives saved-output metrics (63 placeholder rows, 1 excluded row, 0 executable rows, 0
   * real scored/reranked rows, 0 fabricated candidate payload rows, 48 combined placeholder rows, 1
   * accepted negative-control row).
   *
@@ -312,30 +312,30 @@ object M12BeautyQSearchFusionRerankingSavedOutputSchema {
     val qNoise004OutputRow = savedOutputRowFor("q_noise_004")
     val qNoise005OutputRow = savedOutputRowFor("q_noise_005")
 
-    // The schema is ready when it consumes the accepted 63-row M12B plan and the accepted 38-row M12C
+    // The schema is ready when it consumes the accepted 64-row M12B plan and the accepted 38-row M12C
     // matrix (9 accepted / 29 denied / 0 skipped), the saved-output rows preserve the M12B plan counts,
     // and every row is placeholder-only: non-executable, never scored/reranked, never fabricated, never
     // computing a fused or reranked order, with excluded rows carrying no backend candidate policy output.
     val m12SavedOutputSchemaReady =
       consumedPlan.m12FusionRerankingExperimentPlanReady &&
-        consumedExperimentPlanRowCount == 63 &&
+        consumedExperimentPlanRowCount == 64 &&
         consumedMatrix.m12BoundaryFailureMatrixReady &&
         consumedMatrix.matrixRowCount == 38 &&
         consumedMatrix.acceptedRowCount == 9 &&
         consumedMatrix.deniedRowCount == 29 &&
         consumedMatrix.skippedRowCount == 0 &&
-        savedOutputRowCount == 63 &&
-        esBaselinePlaceholderOutputRows == 13 &&
+        savedOutputRowCount == 64 &&
+        esBaselinePlaceholderOutputRows == 14 &&
         qdrantBaselinePlaceholderOutputRows == 1 &&
         combinedPlaceholderOutputRows == 48 &&
         acceptedNegativeControlOutputRows == 1 &&
         manualOrNoOpOutputRows == 0 &&
-        placeholderOutputRows == 62 &&
+        placeholderOutputRows == 63 &&
         excludedOutputRows == 1 &&
-        placeholderOutputRows + excludedOutputRows == 63 &&
+        placeholderOutputRows + excludedOutputRows == 64 &&
         esBaselinePlaceholderOutputRows + qdrantBaselinePlaceholderOutputRows +
           combinedPlaceholderOutputRows + acceptedNegativeControlOutputRows +
-          manualOrNoOpOutputRows == 63 &&
+          manualOrNoOpOutputRows == 64 &&
         executableOutputRows == 0 &&
         realScoredOrRerankedOutputRows == 0 &&
         fabricatedCandidatePayloadRows == 0 &&

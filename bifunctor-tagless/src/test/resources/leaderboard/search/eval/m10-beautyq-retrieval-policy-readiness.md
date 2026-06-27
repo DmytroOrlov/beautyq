@@ -1,7 +1,7 @@
 # M10 BeautyQ Retrieval-Policy Readiness
 
 Offline M11 candidate-generation input-preparation contract over the accepted hardened M10B full
-63-query classification coverage. This is an offline planning/eval artifact only. The M11 input groups
+64-query classification coverage. This is an offline planning/eval artifact only. The M11 input groups
 below are offline study inputs only and are NOT production routes; offline strategy intent and offline
 input groups are distinct from production routing. This artifact reports M11 offline input-preparation
 readiness only: it is not backend quality green, not retrieval quality, not production readiness, not
@@ -11,8 +11,8 @@ route activation, not serving approval, and not actual execution readiness.
 
 - dataset_id: wandsbek_hamburg_beauty_services_seed_ready
 - verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion
-- total_query_count: 63
-- backend_candidate_generation_input_count: 62
+- total_query_count: 64
+- backend_candidate_generation_input_count: 63
 - accepted_negative_control_exclusion_input_count: 1
 - unresolved_manual_review_input_count: 0
 - no_op_noise_input_count: 0
@@ -26,7 +26,7 @@ route activation, not serving approval, and not actual execution readiness.
 | service_intent | 7 |
 | attribute_filter_intent | 5 |
 | location_intent | 1 |
-| price_budget_intent | 0 |
+| price_budget_intent | 1 |
 | availability_time_intent | 0 |
 | comparison_exploration_intent | 1 |
 | noisy_ambiguous_non_beauty_intent | 1 |
@@ -38,7 +38,7 @@ These are offline study intents only, not production routes.
 
 | offline_strategy_intent | count |
 |---|---|
-| es_only_candidate_retrieval | 13 |
+| es_only_candidate_retrieval | 14 |
 | qdrant_only_candidate_retrieval | 1 |
 | combined_es_qdrant_comparison | 48 |
 | manual_review_blocked | 0 |
@@ -51,7 +51,7 @@ These are offline study input groups only, not production routes.
 
 | m11_input_group | count |
 |---|---|
-| es_candidate_generation_study_input | 13 |
+| es_candidate_generation_study_input | 14 |
 | qdrant_candidate_generation_study_input | 1 |
 | combined_es_qdrant_comparison_study_input | 48 |
 | accepted_negative_control_exclusion_input | 1 |
@@ -80,15 +80,15 @@ classification meaning; the deterministic offline signals do.
 
 | metric | value |
 |---|---|
-| total_query_count | 63 |
-| input_group_count_sum | 63 |
-| es_candidate_generation_study_input_count | 13 |
+| total_query_count | 64 |
+| input_group_count_sum | 64 |
+| es_candidate_generation_study_input_count | 14 |
 | qdrant_candidate_generation_study_input_count | 1 |
 | combined_es_qdrant_comparison_study_input_count | 48 |
 | accepted_negative_control_exclusion_input_count | 1 |
 | manual_review_blocked_input_count | 0 |
 | no_op_noise_input_count | 0 |
-| backend_candidate_generation_input_count | 62 |
+| backend_candidate_generation_input_count | 63 |
 | unresolved_manual_review_input_count | 0 |
 | m11_candidate_generation_inputs_ready | true |
 | m11_inputs_are_offline_study_inputs_not_production_routes | true |

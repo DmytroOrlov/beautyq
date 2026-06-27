@@ -1,6 +1,6 @@
 # M10 BeautyQ Full Query Classification Coverage Scorecard
 
-Offline classification coverage report over the full accepted 63-query BeautyQ eval dataset. This is an
+Offline classification coverage report over the full accepted 64-query BeautyQ eval dataset. This is an
 offline planning/eval artifact only: it is not backend quality evidence, not production readiness, not route
 activation, and not serving approval. `strategy_intent` values are offline study intents only and are NOT
 production routes; offline strategy intent is distinct from production routing.

@@ -1,7 +1,7 @@
 {
   "file": "beautyq_search_eval_queries_v1.json",
   "validJson": true,
-  "queryCount": 63,
+  "queryCount": 64,
   "uniqueQueryIds": true,
   "allQueriesHaveVariantMatches": true,
   "allReferencedVariantIdsExist": true,
@@ -9,10 +9,10 @@
   "allReferencedLocationIdsExist": true,
   "errors": [],
   "summary": {
-    "queryCount": 63,
+    "queryCount": 64,
     "languages": {
       "de": 6,
-      "en": 21,
+      "en": 22,
       "mixed": 5,
       "ru": 31
     },
@@ -23,7 +23,7 @@
       "broad": 9,
       "conversational": 5,
       "direct": 19,
-      "english": 13,
+      "english": 14,
       "german": 7,
       "hard_negative": 7,
       "home_visit": 2,
@@ -32,7 +32,7 @@
       "multi_intent": 1,
       "negative_attribute": 1,
       "numeric": 3,
-      "price": 4,
+      "price": 5,
       "synonym": 9,
       "technical_token": 1,
       "typo": 2

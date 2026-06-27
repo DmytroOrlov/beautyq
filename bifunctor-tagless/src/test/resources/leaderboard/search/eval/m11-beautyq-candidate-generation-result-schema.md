@@ -14,8 +14,8 @@ activation, not serving approval, and not actual execution readiness.
 - verdict: m11_candidate_generation_result_schema_ready
 - consumed_m11_request_skeleton_verdict: m11_candidate_generation_input_skeleton_ready
 - consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion
-- total_row_count: 63
-- es_result_leg_placeholder_count: 61
+- total_row_count: 64
+- es_result_leg_placeholder_count: 62
 - qdrant_result_leg_placeholder_count: 49
 - combined_comparison_pair_placeholder_count: 48
 - accepted_negative_control_exclusion_row_count: 1
@@ -28,7 +28,7 @@ pending/not-executed result legs; the excluded/skipped dispositions carry no bac
 
 | result_disposition | count |
 |---|---|
-| es_only_pending_not_executed | 13 |
+| es_only_pending_not_executed | 14 |
 | qdrant_only_pending_not_executed | 1 |
 | combined_comparison_pending_not_executed | 48 |
 | accepted_negative_control_excluded | 1 |
@@ -42,7 +42,7 @@ rows + combined-comparison ES legs; Qdrant legs = Qdrant-only rows + combined-co
 
 | metric | value |
 |---|---|
-| es_result_leg_placeholder_count | 61 |
+| es_result_leg_placeholder_count | 62 |
 | qdrant_result_leg_placeholder_count | 49 |
 | combined_comparison_pair_placeholder_count | 48 |
 
@@ -69,18 +69,18 @@ with no backend result legs.
 
 | metric | value |
 |---|---|
-| total_row_count | 63 |
+| total_row_count | 64 |
 | consumed_m11_request_skeleton_verdict | m11_candidate_generation_input_skeleton_ready |
 | consumed_m10_readiness_verdict | m11_candidate_generation_inputs_ready_with_negative_control_exclusion |
-| disposition_count_sum | 63 |
-| row_group_count_sum | 63 |
-| es_only_row_count | 13 |
+| disposition_count_sum | 64 |
+| row_group_count_sum | 64 |
+| es_only_row_count | 14 |
 | qdrant_only_row_count | 1 |
 | combined_comparison_row_count | 48 |
 | accepted_negative_control_exclusion_row_count | 1 |
 | manual_review_blocked_row_count | 0 |
 | no_op_noise_row_count | 0 |
-| es_result_leg_placeholder_count | 61 |
+| es_result_leg_placeholder_count | 62 |
 | qdrant_result_leg_placeholder_count | 49 |
 | combined_comparison_pair_placeholder_count | 48 |
 | m11_candidate_generation_result_schema_ready | true |

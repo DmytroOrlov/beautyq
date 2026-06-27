@@ -104,7 +104,7 @@ final case class M10BeautyQSearchRetrievalPolicyReadinessSummary(
 )
 
 /** M10 retrieval-policy readiness contract: prepares deterministic offline M11 candidate-generation
-  * input groups from the hardened M10B full 63-query classification coverage.
+  * input groups from the hardened M10B full 64-query classification coverage.
   *
   * This is pure offline eval/planning work only. It consumes the accepted full classification coverage
   * ([[M10BeautyQSearchFullQueryClassification]]) and bundles each accepted row into an offline M11
@@ -283,7 +283,7 @@ object M10BeautyQSearchRetrievalPolicyReadinessRenderer {
     line(builder, "# M10 BeautyQ Retrieval-Policy Readiness")
     line(builder, "")
     line(builder, "Offline M11 candidate-generation input-preparation contract over the accepted hardened M10B full")
-    line(builder, "63-query classification coverage. This is an offline planning/eval artifact only. The M11 input groups")
+    line(builder, "64-query classification coverage. This is an offline planning/eval artifact only. The M11 input groups")
     line(builder, "below are offline study inputs only and are NOT production routes; offline strategy intent and offline")
     line(builder, "input groups are distinct from production routing. This artifact reports M11 offline input-preparation")
     line(builder, "readiness only: it is not backend quality green, not retrieval quality, not production readiness, not")

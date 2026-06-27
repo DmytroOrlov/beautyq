@@ -363,11 +363,27 @@ object BeautyQEvalQueryJson {
         queryText <- cursor.get[Option[String]]("query")
         language  <- cursor.get[Option[String]]("language")
         queryTypes <- cursor.getOrElse[List[String]]("queryTypes")(Nil)
-        notes     <- cursor.get[Option[String]]("notes")
+        notes     <- decodeNotes(cursor.downField("notes"))
         expected  <- cursor.get[Option[BeautyQEvalQueryExpectedJson]]("expected")
         scoring   <- cursor.get[Option[BeautyQEvalQueryScoringJson]]("scoring")
       } yield BeautyQEvalQueryJson(queryId, queryText, language, queryTypes, notes, expected, scoring)
     }
+
+  private def decodeNotes(cursor: io.circe.ACursor): Decoder.Result[Option[String]] =
+    if (!cursor.succeeded) Right(None)
+    else
+      cursor.as[String] match {
+        case Right(value) => Right(nonEmpty(value))
+        case Left(_) =>
+          cursor.as[List[String]].map { values =>
+            nonEmpty(values.mkString("; "))
+          }
+      }
+
+  private def nonEmpty(value: String): Option[String] = {
+    val trimmed = value.trim
+    if (trimmed.isEmpty) None else Some(trimmed)
+  }
 }
 
 object BeautyQEvalQueryExpectedJson {

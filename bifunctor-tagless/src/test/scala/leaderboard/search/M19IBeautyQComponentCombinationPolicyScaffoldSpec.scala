@@ -26,7 +26,7 @@ import scala.util.Using
 
 final class M19IBeautyQComponentCombinationPolicyScaffoldSpec extends AnyWordSpec {
 
-  "M19I component combination policy scaffold over the checked-in 63-query dataset" should {
+  "M19I component combination policy scaffold over the checked-in 64-query dataset" should {
 
     "represent every BeautyQ response component exactly once" in {
       val policy = buildPolicy()
