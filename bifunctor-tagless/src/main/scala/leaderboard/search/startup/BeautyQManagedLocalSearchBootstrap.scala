@@ -175,8 +175,7 @@ object BeautyQManagedLocalSearchBootstrap {
       } else {
         for {
           esReadiness <- prepareElasticsearch(esClient, spec, catalog)
-          qdrantIndexed <- prepareQdrant(qdrantClient, embeddingClient, vectorSearchSpec, dimension, documents)
-          _ <- writeFingerprint(esClient, spec, fingerprint)
+          qdrantIndexed <- prepareQdrant(qdrantClient, embeddingClient, vectorSearchSpec, dimension, documents, fingerprint)
         } yield BeautyQManagedLocalSearchBootstrapResult(
           esIndexName = esReadiness.indexName,
           esDocumentCount = esReadiness.documentCount,
@@ -201,34 +200,31 @@ object BeautyQManagedLocalSearchBootstrap {
     fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
   ): IO[QueryFailure, Boolean] =
     for {
-      esReusable     <- elasticsearchReusable(esClient, spec, fingerprint)
-      qdrantReusable <- qdrantReusable(qdrantClient, vectorSearchSpec, dimension, expectedDocumentCount)
+      esReusable     <- elasticsearchReusable(esClient, spec, expectedDocumentCount)
+      qdrantReusable <- qdrantReusable(qdrantClient, vectorSearchSpec, dimension, expectedDocumentCount, fingerprint)
     } yield esReusable && qdrantReusable
 
   private def elasticsearchReusable(
     esClient: ElasticsearchJsonClient,
     spec: BeautySearchSpec,
-    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
+    expectedDocumentCount: Int,
   ): IO[QueryFailure, Boolean] =
     for {
       indexExists <- esClient.getJson(s"/${spec.variantDocument.indexName}").either.map(_.isRight)
-      marker <- if (indexExists) {
-        esClient.getJson(s"/${fingerprintIndexName(spec)}/_doc/current").either.map {
-          case Right(json) =>
-            BeautyQManagedLocalSearchBootstrapFingerprint.decodeValue(json).contains(fingerprint.value)
-          case Left(_) =>
-            false
+      countReady <- if (indexExists) {
+        esClient.getJson(s"/${spec.variantDocument.indexName}/_count").either.map {
+          case Right(json) => json.hcursor.get[Long]("count").toOption.exists(_ >= expectedDocumentCount.toLong)
+          case Left(_)     => false
         }
-      } else {
-        ZIO.succeed(false)
-      }
-    } yield indexExists && marker
+      } else ZIO.succeed(false)
+    } yield indexExists && countReady
 
   private def qdrantReusable(
     qdrantClient: QdrantClient,
     vectorSearchSpec: VectorSearchSpec,
     dimension: Int,
     expectedDocumentCount: Int,
+    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
   ): IO[QueryFailure, Boolean] = {
     val checker = new leaderboard.search.qdrant.QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
     val expectation = readinessConfig(vectorSearchSpec, dimension).compatibilityExpectation
@@ -237,8 +233,10 @@ object BeautyQManagedLocalSearchBootstrap {
       reusable <- compatibility match {
         case Right(Right(())) =>
           qdrantClient.collectionInfo(s"/collections/${vectorSearchSpec.collectionName}").either.map {
-            case Right(json) => observedQdrantPointCount(json).exists(_ >= expectedDocumentCount)
-            case Left(_)     => false
+            case Right(json) =>
+              qdrantCollectionInfoReusable(json, expectedDocumentCount, fingerprint)
+            case Left(_) =>
+              false
           }
         case Right(Left(_)) =>
           ZIO.succeed(false)
@@ -248,6 +246,14 @@ object BeautyQManagedLocalSearchBootstrap {
     } yield reusable
   }
 
+  def qdrantCollectionInfoReusable(
+    json: Json,
+    expectedDocumentCount: Int,
+    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
+  ): Boolean =
+    observedQdrantPointCount(json).exists(_ >= expectedDocumentCount) &&
+      BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains(fingerprint.value)
+
   private def prepareElasticsearch(
     esClient: ElasticsearchJsonClient,
     spec: BeautySearchSpec,
@@ -256,20 +262,8 @@ object BeautyQManagedLocalSearchBootstrap {
     for {
       // Drop a stale index first so repeated starts/test runs never raise resource_already_exists.
       _ <- esClient.delete(s"/${spec.variantDocument.indexName}").either
-      _ <- esClient.delete(s"/${fingerprintIndexName(spec)}").either
       readiness <- new ElasticsearchSeedIndexInitializer(spec, esClient).prepare(catalog)
     } yield readiness
-
-  private def writeFingerprint(
-    esClient: ElasticsearchJsonClient,
-    spec: BeautySearchSpec,
-    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
-  ): IO[QueryFailure, Unit] =
-    for {
-      _ <- esClient.putJson(s"/${fingerprintIndexName(spec)}", fingerprintIndexMapping)
-      _ <- esClient.putJson(s"/${fingerprintIndexName(spec)}/_doc/current", fingerprint.asMetadataJson)
-      _ <- esClient.post(s"/${fingerprintIndexName(spec)}/_refresh")
-    } yield ()
 
   private def prepareQdrant(
     qdrantClient: QdrantClient,
@@ -277,6 +271,7 @@ object BeautyQManagedLocalSearchBootstrap {
     vectorSearchSpec: VectorSearchSpec,
     dimension: Int,
     documents: List[VariantSearchDocument],
+    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
   ): IO[QueryFailure, Int] = {
     val spec = embeddingSpec(vectorSearchSpec, dimension)
     val config = readinessConfig(vectorSearchSpec, dimension)
@@ -290,7 +285,10 @@ object BeautyQManagedLocalSearchBootstrap {
         for {
           _ <- qdrantClient.deleteCollection(collectionPath).either
           _ <- qdrantClient
-            .createCollection(collectionPath, QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, spec))
+            .createCollection(
+              collectionPath,
+              QdrantJsonInterpreter.createCollectionJson(vectorSearchSpec, spec, fingerprint.asQdrantCollectionMetadata),
+            )
             .either
             .flatMap {
               case Right(_) => ZIO.unit
@@ -320,25 +318,6 @@ object BeautyQManagedLocalSearchBootstrap {
       case _ =>
         false
     }
-
-  private def fingerprintIndexName(spec: BeautySearchSpec): String =
-    s"${spec.variantDocument.indexName}__managed_local_bootstrap_fingerprint"
-
-  private val fingerprintIndexMapping: Json =
-    Json.obj(
-      "settings" -> Json.obj(
-        "index" -> Json.obj(
-          "number_of_shards" -> Json.fromInt(1),
-          "number_of_replicas" -> Json.fromInt(0),
-        )
-      ),
-      "mappings" -> Json.obj(
-        "properties" -> Json.obj(
-          "fingerprint" -> Json.obj("type" -> Json.fromString("keyword")),
-          "inputs" -> Json.obj("enabled" -> Json.fromBoolean(false)),
-        )
-      ),
-    )
 
   private def observedQdrantPointCount(json: Json): Option[Int] =
     List(

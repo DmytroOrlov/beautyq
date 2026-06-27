@@ -5,6 +5,7 @@ import io.circe.syntax.*
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 import leaderboard.search.qdrant.{ObservedQdrantVectorConfig, QdrantCollectionInfoDecoder}
+import leaderboard.search.startup.BeautyQManagedLocalSearchBootstrapFingerprint
 import org.scalatest.wordspec.AnyWordSpec
 
 final class QdrantCollectionInfoDecoderSpec extends AnyWordSpec {
@@ -98,6 +99,51 @@ final class QdrantCollectionInfoDecoderSpec extends AnyWordSpec {
       val result = QdrantCollectionInfoDecoder.decode(collectionName, vectorName, json)
 
       assert(result.map(_.embeddingModelName) == Right(None))
+    }
+
+    "decode managed bootstrap fingerprint from result metadata" in {
+      val json = collectionInfoJson(distance = "Cosine").deepMerge(
+        Json.obj(
+          "result" -> Json.obj(
+            "metadata" -> Json.obj(
+              "managedBootstrapFingerprint" -> "fingerprint-value".asJson,
+              "managedBootstrapFingerprintVersion" -> BeautyQManagedLocalSearchBootstrapFingerprint.Version.asJson,
+            )
+          )
+        )
+      )
+
+      assert(BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains("fingerprint-value"))
+    }
+
+    "decode managed bootstrap fingerprint from top-level metadata" in {
+      val json = collectionInfoJson(distance = "Cosine").deepMerge(
+        Json.obj(
+          "metadata" -> Json.obj(
+            "managedBootstrapFingerprint" -> "top-level-fingerprint".asJson,
+            "managedBootstrapFingerprintVersion" -> BeautyQManagedLocalSearchBootstrapFingerprint.Version.asJson,
+          )
+        )
+      )
+
+      assert(BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains("top-level-fingerprint"))
+    }
+
+    "decode managed bootstrap fingerprint from Qdrant result config metadata" in {
+      val json = collectionInfoJson(distance = "Cosine").deepMerge(
+        Json.obj(
+          "result" -> Json.obj(
+            "config" -> Json.obj(
+              "metadata" -> Json.obj(
+                "managedBootstrapFingerprint" -> "config-fingerprint".asJson,
+                "managedBootstrapFingerprintVersion" -> BeautyQManagedLocalSearchBootstrapFingerprint.Version.asJson,
+              )
+            )
+          )
+        )
+      )
+
+      assert(BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains("config-fingerprint"))
     }
   }
 

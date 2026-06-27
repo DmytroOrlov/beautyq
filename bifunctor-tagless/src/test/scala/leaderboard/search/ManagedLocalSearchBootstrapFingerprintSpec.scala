@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import com.typesafe.config.ConfigFactory
+import io.circe.Json
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.VectorSearchSpec
@@ -78,5 +79,53 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
 
       assert(original.value != changed.value)
     }
+
+    "treat Qdrant collection info without managed fingerprint metadata as not reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(qdrantInfo(pointsCount = documents.size), documents.size, fingerprint))
+    }
+
+    "treat Qdrant collection info with mismatched managed fingerprint metadata as not reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(pointsCount = documents.size, managedFingerprint = Some("other-fingerprint")),
+        documents.size,
+        fingerprint,
+      ))
+    }
+
+    "treat Qdrant collection info with matching managed fingerprint metadata and enough points as reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(pointsCount = documents.size, managedFingerprint = Some(fingerprint.value)),
+        documents.size,
+        fingerprint,
+      ))
+    }
   }
+
+  private def qdrantInfo(pointsCount: Int, managedFingerprint: Option[String] = None): Json =
+    Json.obj(
+      "result" -> Json.obj(
+        "points_count" -> Json.fromInt(pointsCount),
+        "indexed_vectors_count" -> Json.fromInt(pointsCount),
+      ).deepMerge(
+        managedFingerprint.fold(Json.obj()) { value =>
+          Json.obj(
+            "metadata" -> Json.obj(
+              BeautyQManagedLocalSearchBootstrapFingerprint.MetadataKey -> Json.fromString(value),
+              BeautyQManagedLocalSearchBootstrapFingerprint.MetadataVersionKey -> Json.fromString(
+                BeautyQManagedLocalSearchBootstrapFingerprint.Version
+              ),
+            )
+          )
+        }
+      )
+    )
 }

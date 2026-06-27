@@ -1,6 +1,6 @@
 package leaderboard.search.qdrant
 
-import io.circe.{ACursor, Json}
+import io.circe.{ACursor, Json, JsonObject}
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.VectorDistance
 
@@ -25,6 +25,13 @@ object QdrantCollectionInfoDecoder {
       distance = distance,
       embeddingModelName = None,
     )
+
+  def metadata(json: Json): Option[JsonObject] =
+    List(
+      json.hcursor.downField("result").downField("metadata").focus,
+      json.hcursor.downField("result").downField("config").downField("metadata").focus,
+      json.hcursor.downField("metadata").focus,
+    ).flatten.flatMap(_.asObject).headOption
 
   private def vectorsCursor(json: Json): Option[ACursor] = {
     val root = json.hcursor

@@ -5,8 +5,12 @@ import io.circe.{Json, JsonObject}
 import leaderboard.search.dsl.{EmbeddingSpec, VectorDistance, VectorSearchSpec}
 
 object QdrantJsonInterpreter {
-  def createCollectionJson(spec: VectorSearchSpec, embeddingSpec: EmbeddingSpec[?]): Json =
-    Json.obj(
+  def createCollectionJson(
+    spec: VectorSearchSpec,
+    embeddingSpec: EmbeddingSpec[?],
+    collectionMetadata: JsonObject = JsonObject.empty,
+  ): Json = {
+    val base = JsonObject(
       "vectors" -> Json.obj(
         spec.vectorName -> Json.obj(
           "size" -> embeddingSpec.dimension.asJson,
@@ -14,6 +18,11 @@ object QdrantJsonInterpreter {
         )
       )
     )
+    Json.fromJsonObject(
+      if (collectionMetadata.isEmpty) base
+      else base.add("metadata", Json.fromJsonObject(collectionMetadata))
+    )
+  }
 
   def searchRequestJson(spec: VectorSearchSpec, queryVector: List[Double]): Json =
     Json.fromJsonObject(

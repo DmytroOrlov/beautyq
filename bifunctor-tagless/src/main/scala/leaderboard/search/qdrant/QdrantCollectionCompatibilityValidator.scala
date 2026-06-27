@@ -47,10 +47,7 @@ object QdrantCollectionCompatibilityValidator {
   }
 
   private def decodeObservedEmbeddingModelName(json: Json): Option[String] =
-    List(
-      json.hcursor.downField("result").downField("metadata").get[String]("embeddingModelName").toOption,
-      json.hcursor.downField("metadata").get[String]("embeddingModelName").toOption,
-    ).flatten.headOption
+    QdrantCollectionInfoDecoder.metadata(json).flatMap(_.apply("embeddingModelName")).flatMap(_.asString)
 
   private def failure(message: String): QueryFailure =
     QueryFailure.operation(OperationName, message)

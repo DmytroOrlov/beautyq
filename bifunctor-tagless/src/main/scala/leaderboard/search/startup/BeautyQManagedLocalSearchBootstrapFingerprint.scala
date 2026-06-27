@@ -13,16 +13,18 @@ final case class BeautyQManagedLocalSearchBootstrapFingerprint(
   value: String,
   inputs: Json,
 ) {
-  def asMetadataJson: Json =
-    Json.obj(
-      "fingerprint" -> Json.fromString(value),
-      "inputs" -> inputs,
+  def asQdrantCollectionMetadata: JsonObject =
+    JsonObject(
+      BeautyQManagedLocalSearchBootstrapFingerprint.MetadataKey -> Json.fromString(value),
+      BeautyQManagedLocalSearchBootstrapFingerprint.MetadataVersionKey -> Json.fromString(BeautyQManagedLocalSearchBootstrapFingerprint.Version),
     )
 }
 
 object BeautyQManagedLocalSearchBootstrapFingerprint {
   val Version: String = "beautyq-managed-local-search-bootstrap-fingerprint-v1"
   val VariantSearchDocumentSchemaVersion: String = "VariantSearchDocument:v1"
+  val MetadataKey: String = "managedBootstrapFingerprint"
+  val MetadataVersionKey: String = "managedBootstrapFingerprintVersion"
 
   def build(
     spec: BeautySearchSpec,
@@ -67,9 +69,10 @@ object BeautyQManagedLocalSearchBootstrapFingerprint {
     )
   }
 
-  def decodeValue(json: Json): Option[String] =
-    json.hcursor.downField("_source").get[String]("fingerprint").toOption
-      .orElse(json.hcursor.get[String]("fingerprint").toOption)
+  def decodeCollectionMetadataValue(json: Json): Option[String] =
+    leaderboard.search.qdrant.QdrantCollectionInfoDecoder.metadata(json)
+      .flatMap(_.apply(MetadataKey))
+      .flatMap(_.asString)
 
   private def canonicalJson(json: Json): Json =
     json.arrayOrObject(

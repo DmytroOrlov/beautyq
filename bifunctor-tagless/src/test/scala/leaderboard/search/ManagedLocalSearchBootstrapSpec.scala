@@ -23,7 +23,7 @@ import leaderboard.search.qdrant.{
   QdrantJsonInterpreter,
   QdrantSearchClient,
 }
-import leaderboard.search.startup.{BeautyQManagedLocalSearchBootstrap, BeautyQManagedLocalSearchBootstrapAction}
+import leaderboard.search.startup.{BeautyQManagedLocalSearchBootstrap, BeautyQManagedLocalSearchBootstrapAction, BeautyQManagedLocalSearchBootstrapFingerprint}
 import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.{HttpContractTestSupport, LeaderboardTest, ObservedResponse, ProdTest}
 import org.http4s.Status
@@ -156,6 +156,7 @@ final class ManagedLocalSearchBootstrapSpec
         firstResult  <- bootstrap()
         // Idempotence: a repeated managed start reuses matching prepared resources without resource_already_exists.
         secondResult <- bootstrap()
+        metadataInfo <- qdrantClient.collectionInfo(collectionPath)
         _ <- ZIO.succeed {
           assert(firstResult.qdrantIndexedCount == canonicalDocuments.size, s"QP26: bootstrap must index all seed vectors, got ${firstResult.qdrantIndexedCount}")
           assert(firstResult.esDocumentCount == canonicalDocuments.size, s"QP26: bootstrap must index all ES docs, got ${firstResult.esDocumentCount}")
@@ -167,6 +168,10 @@ final class ManagedLocalSearchBootstrapSpec
           assert(secondResult.esAction == BeautyQManagedLocalSearchBootstrapAction.Reused, s"QP31: unchanged ES bootstrap action=${secondResult.esAction}")
           assert(secondResult.qdrantAction == BeautyQManagedLocalSearchBootstrapAction.Reused, s"QP31: unchanged Qdrant bootstrap action=${secondResult.qdrantAction}")
           assert(secondResult.fingerprint == firstResult.fingerprint, "QP31: unchanged bootstrap must keep the same fingerprint")
+          assert(
+            BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(metadataInfo).contains(firstResult.fingerprint),
+            s"QP31: live Qdrant collection metadata must expose managed bootstrap fingerprint, got $metadataInfo",
+          )
         }
         // Missing Qdrant collection and missing ES index both make the next managed start rebuild.
         _ <- qdrantClient.deleteCollection(collectionPath).either
