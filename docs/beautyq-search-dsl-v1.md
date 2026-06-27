@@ -149,20 +149,15 @@ The ES integration suite uses a seed-scoped Postgres snapshot loader so tests st
 
 ## Current Eval Coverage
 
-* **Total eval queries**: 63
-* **ES V1 lexical covered queries**: 61
-* **Qdrant-only semantic candidates**: 2
-* **Qdrant-only ids**:
-  * `q_broad_004`
-  * `q_broad_006`
-* **Combined intent-space coverage**: 63/63
+* **Total eval queries**: 64. `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` own the current detailed eval/gate counts; this doc does not duplicate them.
+* Two queries (`q_broad_004`, `q_broad_006`) are intentionally non-lexical and fall outside the ES V1 lexical contract described below. They are candidates for the Qdrant supplement candidate source, not a Qdrant-only retrieval path.
 
-## Qdrant-Only Semantic Candidate Eval
+## Qdrant Supplement Candidate Eval
 
-The two intentionally non-lexical eval queries now pass in a separate Qdrant-only semantic candidate run:
+The two intentionally non-lexical eval queries can be exercised through a separate Qdrant supplement candidate run, consistent with the supplement contract in `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`: Qdrant is a constrained candidate source only, not a Qdrant-only retrieval path.
 
-* `q_broad_004`: passed via Qdrant-only semantic retrieval
-* `q_broad_006`: passed via Qdrant-only semantic retrieval
+* `q_broad_004`: surfaced as a Qdrant supplement candidate
+* `q_broad_006`: surfaced as a Qdrant supplement candidate
 
 This run was manual and environment-gated:
 
@@ -192,18 +187,15 @@ ES V1 should not be forced to cover:
 * semantic similarity without dictionary support
 * unseen paraphrases that require embeddings
 
-`q_broad_004` and `q_broad_006` remain outside the ES V1 lexical contract. They are covered by the separate Qdrant-only semantic candidate eval and are not treated as failed lexical coverage work.
+`q_broad_004` and `q_broad_006` remain outside the ES V1 lexical contract. They are covered by the separate Qdrant supplement candidate eval (candidate-source only, not a Qdrant-only retrieval path) and are not treated as failed lexical coverage work.
 
 ## Combined Architecture Status
 
-Current backend roles are intentionally separate:
+Current backend roles are intentionally separate, per `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`:
 
-* Elasticsearch V1 remains the deterministic lexical/filter/facet baseline.
-* Qdrant remains a separate semantic recall backend for broad semantic candidates.
-* Together they cover the current 63/63 BeautyQ eval intent space.
-* No ES/Qdrant fallback has been implemented yet.
-* No hybrid ranking/fusion has been implemented yet.
-* No reranking has been implemented yet.
+* Elasticsearch V1 remains the deterministic lexical/filter/facet baseline and owns default route behavior.
+* Qdrant is a constrained supplement candidate source only: it may append at most one candidate by default and must not remove/reorder ES baseline ids.
+* There is no Qdrant-only search, no fallback, no score fusion, and no rerank.
 
 ### Coverage Rules
 
@@ -211,11 +203,6 @@ New coverage should continue to follow this rule:
 1. Add pure/in-memory test first.
 2. Then add Elasticsearch integration test in a separate patch.
 3. Production changes should be limited to narrow `BeautySearchSpecV1` dictionary/spec data unless a real spec-driven interpreter bug is found.
-
-## Recommended Next Step
-
-1. Add explicit Qdrant quality assertions only after the embedding model and config are stable.
-2. Design fallback or hybrid criteria later as a separate measured change.
 
 ## B-lite EngineEval Model
 
