@@ -20,9 +20,10 @@ import leaderboard.search.qdrant.{
   QdrantClientCollectionInfoAdapter,
   QdrantClientSearchAdapter,
   QdrantCollectionCompatibilityChecker,
+  QdrantJsonInterpreter,
   QdrantSearchClient,
 }
-import leaderboard.search.startup.BeautyQManagedLocalSearchBootstrap
+import leaderboard.search.startup.{BeautyQManagedLocalSearchBootstrap, BeautyQManagedLocalSearchBootstrapAction}
 import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.{HttpContractTestSupport, LeaderboardTest, ObservedResponse, ProdTest}
 import org.http4s.Status
@@ -153,14 +154,35 @@ final class ManagedLocalSearchBootstrapSpec
     (
       for {
         firstResult  <- bootstrap()
-        // Idempotence: a repeated managed start drops+recreates without resource_already_exists.
+        // Idempotence: a repeated managed start reuses matching prepared resources without resource_already_exists.
         secondResult <- bootstrap()
         _ <- ZIO.succeed {
           assert(firstResult.qdrantIndexedCount == canonicalDocuments.size, s"QP26: bootstrap must index all seed vectors, got ${firstResult.qdrantIndexedCount}")
           assert(firstResult.esDocumentCount == canonicalDocuments.size, s"QP26: bootstrap must index all ES docs, got ${firstResult.esDocumentCount}")
+          assert(firstResult.esAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: first ES bootstrap action=${firstResult.esAction}")
+          assert(firstResult.qdrantAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: first Qdrant bootstrap action=${firstResult.qdrantAction}")
           assert(firstResult.qdrantCollectionName == vectorSpec.collectionName)
           assert(firstResult.vectorDimension == 1024, s"QP26: managed local Qdrant collection must use dimension 1024, got ${firstResult.vectorDimension}")
           assert(secondResult.qdrantIndexedCount == firstResult.qdrantIndexedCount, "QP26: repeated bootstrap must be idempotent")
+          assert(secondResult.esAction == BeautyQManagedLocalSearchBootstrapAction.Reused, s"QP31: unchanged ES bootstrap action=${secondResult.esAction}")
+          assert(secondResult.qdrantAction == BeautyQManagedLocalSearchBootstrapAction.Reused, s"QP31: unchanged Qdrant bootstrap action=${secondResult.qdrantAction}")
+          assert(secondResult.fingerprint == firstResult.fingerprint, "QP31: unchanged bootstrap must keep the same fingerprint")
+        }
+        // Missing Qdrant collection and missing ES index both make the next managed start rebuild.
+        _ <- qdrantClient.deleteCollection(collectionPath).either
+        missingQdrantResult <- bootstrap()
+        _ <- esClient.deleteIndex(routeSpec.variantDocument.indexName).either
+        missingEsResult <- bootstrap()
+        _ <- qdrantClient.deleteCollection(collectionPath).either
+        incompatibleEmbeddingSpec = BeautyQManagedLocalSearchBootstrap.embeddingSpec(vectorSpec, 512)
+        _ <- qdrantClient.createCollection(collectionPath, QdrantJsonInterpreter.createCollectionJson(vectorSpec, incompatibleEmbeddingSpec))
+        incompatibleQdrantResult <- bootstrap()
+        _ <- ZIO.succeed {
+          assert(missingQdrantResult.qdrantAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: missing Qdrant collection action=${missingQdrantResult.qdrantAction}")
+          assert(missingQdrantResult.esAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: missing Qdrant collection should rebuild both resources, esAction=${missingQdrantResult.esAction}")
+          assert(missingEsResult.esAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: missing ES index action=${missingEsResult.esAction}")
+          assert(missingEsResult.qdrantAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: missing ES index should rebuild both resources, qdrantAction=${missingEsResult.qdrantAction}")
+          assert(incompatibleQdrantResult.qdrantAction == BeautyQManagedLocalSearchBootstrapAction.Rebuilt, s"QP31: incompatible Qdrant collection action=${incompatibleQdrantResult.qdrantAction}")
         }
         // Qdrant collection exists with the expected vector name / dimension / distance.
         compatibility <- checker.check(BeautyQManagedLocalSearchBootstrap.readinessConfig(vectorSpec, 1024).compatibilityExpectation)

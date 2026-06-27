@@ -6,10 +6,12 @@ import leaderboard.model.QueryFailure
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpec, EmbeddingSpec, VectorDistance, VectorSearchSpec}
+import io.circe.Json
 import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedIndexInitializer}
 import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.qdrant.{
   QdrantClient,
+  QdrantClientCollectionInfoAdapter,
   QdrantCollectionIdentity,
   QdrantCollectionReadinessConfig,
   QdrantEmbeddingBenchmarkDefaultCompositionFactory,
@@ -40,10 +42,27 @@ import zio.{Duration, IO, Schedule, ZIO}
 final case class BeautyQManagedLocalSearchBootstrapResult(
   esIndexName: String,
   esDocumentCount: Int,
+  esAction: BeautyQManagedLocalSearchBootstrapAction,
   qdrantCollectionName: String,
   qdrantIndexedCount: Int,
+  qdrantAction: BeautyQManagedLocalSearchBootstrapAction,
   vectorDimension: Int,
+  fingerprint: String,
 )
+
+sealed trait BeautyQManagedLocalSearchBootstrapAction extends Product with Serializable {
+  def label: String
+}
+
+object BeautyQManagedLocalSearchBootstrapAction {
+  case object Rebuilt extends BeautyQManagedLocalSearchBootstrapAction {
+    override val label: String = "rebuilt"
+  }
+
+  case object Reused extends BeautyQManagedLocalSearchBootstrapAction {
+    override val label: String = "reused"
+  }
+}
 
 object BeautyQManagedLocalSearchBootstrap {
   val EmbeddingPreflightOperationName: String = "beautyq-managed-local-embedding-preflight"
@@ -136,16 +155,97 @@ object BeautyQManagedLocalSearchBootstrap {
     for {
       // Fail fast before any ES/Qdrant work if the embedding endpoint is unavailable, returns an empty
       // vector, or returns the wrong dimension. No catch-and-continue, no ES-only fallback.
-      dimension   <- embeddingPreflight(embeddingClient, embeddingEndpoint, ExpectedVectorDimension)
-      esReadiness <- prepareElasticsearch(esClient, spec, catalog)
-      qdrantIndexed <- prepareQdrant(qdrantClient, embeddingClient, vectorSearchSpec, dimension, documents)
-    } yield BeautyQManagedLocalSearchBootstrapResult(
-      esIndexName = esReadiness.indexName,
-      esDocumentCount = esReadiness.documentCount,
-      qdrantCollectionName = vectorSearchSpec.collectionName,
-      qdrantIndexedCount = qdrantIndexed,
-      vectorDimension = dimension,
-    )
+      dimension <- embeddingPreflight(embeddingClient, embeddingEndpoint, ExpectedVectorDimension)
+      embeddingSpec = BeautyQManagedLocalSearchBootstrap.embeddingSpec(vectorSearchSpec, dimension)
+      fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(spec, catalog, vectorSearchSpec, embeddingSpec, embeddingEndpoint)
+      reuse <- preparedResourcesReusable(esClient, qdrantClient, spec, vectorSearchSpec, dimension, documents.size, fingerprint)
+      result <- if (reuse) {
+        ZIO.succeed(
+          BeautyQManagedLocalSearchBootstrapResult(
+            esIndexName = spec.variantDocument.indexName,
+            esDocumentCount = documents.size,
+            esAction = BeautyQManagedLocalSearchBootstrapAction.Reused,
+            qdrantCollectionName = vectorSearchSpec.collectionName,
+            qdrantIndexedCount = documents.size,
+            qdrantAction = BeautyQManagedLocalSearchBootstrapAction.Reused,
+            vectorDimension = dimension,
+            fingerprint = fingerprint.value,
+          )
+        )
+      } else {
+        for {
+          esReadiness <- prepareElasticsearch(esClient, spec, catalog)
+          qdrantIndexed <- prepareQdrant(qdrantClient, embeddingClient, vectorSearchSpec, dimension, documents)
+          _ <- writeFingerprint(esClient, spec, fingerprint)
+        } yield BeautyQManagedLocalSearchBootstrapResult(
+          esIndexName = esReadiness.indexName,
+          esDocumentCount = esReadiness.documentCount,
+          esAction = BeautyQManagedLocalSearchBootstrapAction.Rebuilt,
+          qdrantCollectionName = vectorSearchSpec.collectionName,
+          qdrantIndexedCount = qdrantIndexed,
+          qdrantAction = BeautyQManagedLocalSearchBootstrapAction.Rebuilt,
+          vectorDimension = dimension,
+          fingerprint = fingerprint.value,
+        )
+      }
+    } yield result
+  }
+
+  private def preparedResourcesReusable(
+    esClient: ElasticsearchJsonClient,
+    qdrantClient: QdrantClient,
+    spec: BeautySearchSpec,
+    vectorSearchSpec: VectorSearchSpec,
+    dimension: Int,
+    expectedDocumentCount: Int,
+    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
+  ): IO[QueryFailure, Boolean] =
+    for {
+      esReusable     <- elasticsearchReusable(esClient, spec, fingerprint)
+      qdrantReusable <- qdrantReusable(qdrantClient, vectorSearchSpec, dimension, expectedDocumentCount)
+    } yield esReusable && qdrantReusable
+
+  private def elasticsearchReusable(
+    esClient: ElasticsearchJsonClient,
+    spec: BeautySearchSpec,
+    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
+  ): IO[QueryFailure, Boolean] =
+    for {
+      indexExists <- esClient.getJson(s"/${spec.variantDocument.indexName}").either.map(_.isRight)
+      marker <- if (indexExists) {
+        esClient.getJson(s"/${fingerprintIndexName(spec)}/_doc/current").either.map {
+          case Right(json) =>
+            BeautyQManagedLocalSearchBootstrapFingerprint.decodeValue(json).contains(fingerprint.value)
+          case Left(_) =>
+            false
+        }
+      } else {
+        ZIO.succeed(false)
+      }
+    } yield indexExists && marker
+
+  private def qdrantReusable(
+    qdrantClient: QdrantClient,
+    vectorSearchSpec: VectorSearchSpec,
+    dimension: Int,
+    expectedDocumentCount: Int,
+  ): IO[QueryFailure, Boolean] = {
+    val checker = new leaderboard.search.qdrant.QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
+    val expectation = readinessConfig(vectorSearchSpec, dimension).compatibilityExpectation
+    for {
+      compatibility <- checker.check(expectation).either
+      reusable <- compatibility match {
+        case Right(Right(())) =>
+          qdrantClient.collectionInfo(s"/collections/${vectorSearchSpec.collectionName}").either.map {
+            case Right(json) => observedQdrantPointCount(json).exists(_ >= expectedDocumentCount)
+            case Left(_)     => false
+          }
+        case Right(Left(_)) =>
+          ZIO.succeed(false)
+        case Left(_) =>
+          ZIO.succeed(false)
+      }
+    } yield reusable
   }
 
   private def prepareElasticsearch(
@@ -156,8 +256,20 @@ object BeautyQManagedLocalSearchBootstrap {
     for {
       // Drop a stale index first so repeated starts/test runs never raise resource_already_exists.
       _ <- esClient.delete(s"/${spec.variantDocument.indexName}").either
+      _ <- esClient.delete(s"/${fingerprintIndexName(spec)}").either
       readiness <- new ElasticsearchSeedIndexInitializer(spec, esClient).prepare(catalog)
     } yield readiness
+
+  private def writeFingerprint(
+    esClient: ElasticsearchJsonClient,
+    spec: BeautySearchSpec,
+    fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
+  ): IO[QueryFailure, Unit] =
+    for {
+      _ <- esClient.putJson(s"/${fingerprintIndexName(spec)}", fingerprintIndexMapping)
+      _ <- esClient.putJson(s"/${fingerprintIndexName(spec)}/_doc/current", fingerprint.asMetadataJson)
+      _ <- esClient.post(s"/${fingerprintIndexName(spec)}/_refresh")
+    } yield ()
 
   private def prepareQdrant(
     qdrantClient: QdrantClient,
@@ -208,6 +320,33 @@ object BeautyQManagedLocalSearchBootstrap {
       case _ =>
         false
     }
+
+  private def fingerprintIndexName(spec: BeautySearchSpec): String =
+    s"${spec.variantDocument.indexName}__managed_local_bootstrap_fingerprint"
+
+  private val fingerprintIndexMapping: Json =
+    Json.obj(
+      "settings" -> Json.obj(
+        "index" -> Json.obj(
+          "number_of_shards" -> Json.fromInt(1),
+          "number_of_replicas" -> Json.fromInt(0),
+        )
+      ),
+      "mappings" -> Json.obj(
+        "properties" -> Json.obj(
+          "fingerprint" -> Json.obj("type" -> Json.fromString("keyword")),
+          "inputs" -> Json.obj("enabled" -> Json.fromBoolean(false)),
+        )
+      ),
+    )
+
+  private def observedQdrantPointCount(json: Json): Option[Int] =
+    List(
+      json.hcursor.downField("result").get[Int]("points_count").toOption,
+      json.hcursor.downField("result").get[Int]("indexed_vectors_count").toOption,
+      json.hcursor.get[Int]("points_count").toOption,
+      json.hcursor.get[Int]("indexed_vectors_count").toOption,
+    ).flatten.headOption
 }
 
 /**
@@ -239,7 +378,7 @@ object BeautyQManagedLocalSearchDataReady {
           BeautyQManagedLocalSearchBootstrap.run(esClient, qdrantClient, embeddingClient, spec, catalog, vectorSearchSpec, embeddingEndpoint)
         )
         _ <- log.info(
-          s"BeautyQ managed local search data ready: embeddingEndpoint=$embeddingEndpoint esIndex=${result.esIndexName} esDocs=${result.esDocumentCount} qdrantCollection=${result.qdrantCollectionName} qdrantVectors=${result.qdrantIndexedCount} dimension=${result.vectorDimension}"
+          s"BeautyQ managed local search data ready: embeddingEndpoint=$embeddingEndpoint esIndex=${result.esIndexName} esAction=${result.esAction.label} esDocs=${result.esDocumentCount} qdrantCollection=${result.qdrantCollectionName} qdrantAction=${result.qdrantAction.label} qdrantVectors=${result.qdrantIndexedCount} dimension=${result.vectorDimension} fingerprint=${result.fingerprint}"
         )
       } yield Ready
     )

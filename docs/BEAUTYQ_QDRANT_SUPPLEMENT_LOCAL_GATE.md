@@ -5,6 +5,7 @@
 * QP25 enables test/local `/beauty-search` provenance.
 * QP25b makes the local managed launcher select the Qdrant supplement route by default when local resources are available.
 * QP26 makes the local managed launcher prepare all local data the route needs at startup (SQL/Postgres seed, Elasticsearch baseline index, Qdrant supplement collection/vectors), with no user-facing activation env flag and without any by-hand Qdrant collection-creation or indexing step.
+* QP31 keeps that local managed preparation self-starting while skipping unchanged ES/Qdrant rebuilds when the managed bootstrap fingerprint matches.
 * Commit: `805edaa48724e16a36dca2ab8955f11c52cef3b2`.
 * This is local/test acceptance evidence. It is not approval to switch production/default behavior.
 * Not production rollout.
@@ -43,16 +44,24 @@ startup, prepares all local data the route needs before the HTTP server serves `
 This needs the dockerized Elasticsearch/Qdrant containers (started by the managed scene) and the local
 embedding endpoint (default `http://localhost:8081`). No user-facing Qdrant activation env flag is
 required, and operators never create or index the Qdrant collection by hand — startup does it
-automatically. The bootstrap is idempotent and drops+recreates the local ES index/Qdrant collection on
-each start so repeated launches never raise `resource_already_exists`. The route does not fall back,
-fuse scores, or rerank. In short: no fallback, no fusion, no rerank, and no production startup indexing.
+automatically.
+
+The bootstrap is idempotent. It writes a local managed bootstrap fingerprint for the prepared data and,
+on repeated starts, skips ES/Qdrant rebuild/indexing when the fingerprint still matches the
+seed/catalog/search/vector/embedding inputs and live resource checks pass. The embedding preflight still
+runs every startup before readiness. Changed seed/search/vector/embedding inputs, a missing fingerprint,
+a missing ES index, a missing Qdrant collection, an incompatible Qdrant vector spec, or an insufficient
+Qdrant point count causes the bootstrap to rebuild the local ES baseline and Qdrant collection/vectors,
+or to fail fast before HTTP bind if the required resource cannot be prepared. The route does not fall
+back, fuse scores, or rerank. In short: no fallback, no fusion, no rerank, and no production startup
+indexing.
 
 ### Embedding endpoint is a hard startup prerequisite (fail-fast, no ES-only fallback)
 
 The local embedding endpoint (default `http://localhost:8081`) is required: the Qdrant collection holds
-embedding vectors, so the managed bootstrap runs a named embedding preflight as the earliest step, before
-any ES/Qdrant work. The preflight calls the configured endpoint once and proves it is reachable, returns a
-non-empty vector, and returns exactly dimension `1024`.
+embedding vectors, so the managed bootstrap runs a named embedding preflight as the earliest step on
+every startup, before either rebuild or reuse readiness. The preflight calls the configured endpoint once
+and proves it is reachable, returns a non-empty vector, and returns exactly dimension `1024`.
 
 If the endpoint is unavailable, returns an empty embedding, or returns the wrong dimension, the managed
 local startup **fails before binding `127.0.0.1:8080`** and never serves `/beauty-search`. `HttpServer`

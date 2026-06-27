@@ -60,6 +60,9 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 * local managed startup prepares the BeautyQ data the route reads (SQL/Postgres seed, Elasticsearch
   baseline index, Qdrant supplement collection/vectors) before serving — no user-facing activation env
   flag, and without any by-hand Qdrant collection-creation or indexing step
+* repeated local starts still run embedding preflight, then skip ES/Qdrant rebuild/indexing only when the
+  managed bootstrap fingerprint matches and the ES/Qdrant resources are present and compatible; changed
+  inputs or missing/incompatible resources force rebuild or fail before bind
 * 4 queries, 1 improved, 3 unchanged, 0 worsened
 * details live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`
 

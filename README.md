@@ -27,15 +27,19 @@ Run the local managed launcher:
 
 Local managed startup prepares all local data `/beauty-search` needs before the HTTP server serves:
 BeautyQ seed is loaded into SQL/Postgres, the Elasticsearch baseline index is built, and the Qdrant
-supplement collection/vectors are indexed. No user-facing Qdrant activation env flag is required, and
-operators never create or index the Qdrant collection by hand — startup does it automatically. The
-launcher HTTP server binds to source-confirmed port `8080`.
+supplement collection/vectors are indexed. Repeated starts skip the ES/Qdrant rebuild when the local
+bootstrap fingerprint still matches the seed/search/vector/embedding inputs and the prepared resources
+are present and compatible; changed inputs, a missing ES index, a missing Qdrant collection, or an
+incompatible Qdrant vector spec forces rebuild or fails fast before bind. No user-facing Qdrant
+activation env flag is required, and operators never create or index the Qdrant collection by hand —
+startup does it automatically. The launcher HTTP server binds to source-confirmed port `8080`.
 
 The local embedding endpoint (default `http://localhost:8081`) is a hard startup prerequisite: the
-managed bootstrap runs an embedding preflight before any ES/Qdrant work. If the endpoint is unavailable,
-returns an empty embedding, or returns the wrong vector dimension (expected `1024`), startup fails before
-binding `127.0.0.1:8080` and never serves `/beauty-search`, with a diagnostic naming the bootstrap, the
-endpoint, the expected dimension, and the actual reason. Startup does not silently fall back to ES-only.
+managed bootstrap runs an embedding preflight on every startup before readiness. If the endpoint is
+unavailable, returns an empty embedding, or returns the wrong vector dimension (expected `1024`), startup
+fails before binding `127.0.0.1:8080` and never serves `/beauty-search`, with a diagnostic naming the
+bootstrap, the endpoint, the expected dimension, and the actual reason. Startup does not silently fall
+back to ES-only.
 
 Qdrant append probe:
 
