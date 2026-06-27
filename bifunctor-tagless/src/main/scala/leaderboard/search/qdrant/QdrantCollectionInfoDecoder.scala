@@ -27,11 +27,19 @@ object QdrantCollectionInfoDecoder {
     )
 
   def metadata(json: Json): Option[JsonObject] =
+    metadataObjects(json).headOption
+
+  def metadataValue(json: Json, key: String): Option[Json] =
+    metadataObjects(json).collectFirst {
+      case metadataObject if metadataObject.contains(key) => metadataObject(key)
+    }.flatten
+
+  private def metadataObjects(json: Json): List[JsonObject] =
     List(
       json.hcursor.downField("result").downField("metadata").focus,
       json.hcursor.downField("result").downField("config").downField("metadata").focus,
       json.hcursor.downField("metadata").focus,
-    ).flatten.flatMap(_.asObject).headOption
+    ).flatten.flatMap(_.asObject)
 
   private def vectorsCursor(json: Json): Option[ACursor] = {
     val root = json.hcursor

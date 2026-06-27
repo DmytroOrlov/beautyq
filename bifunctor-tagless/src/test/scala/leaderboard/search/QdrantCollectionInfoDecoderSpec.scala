@@ -145,6 +145,43 @@ final class QdrantCollectionInfoDecoderSpec extends AnyWordSpec {
 
       assert(BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains("config-fingerprint"))
     }
+
+    "decode managed bootstrap fingerprint from result config metadata even when result metadata is present but unrelated" in {
+      val json = collectionInfoJson(distance = "Cosine").deepMerge(
+        Json.obj(
+          "result" -> Json.obj(
+            "metadata" -> Json.obj(),
+            "config" -> Json.obj(
+              "metadata" -> Json.obj(
+                "managedBootstrapFingerprint" -> "config-fingerprint-after-empty".asJson,
+                "managedBootstrapFingerprintVersion" -> BeautyQManagedLocalSearchBootstrapFingerprint.Version.asJson,
+              )
+            ),
+          )
+        )
+      )
+
+      assert(BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains("config-fingerprint-after-empty"))
+    }
+
+    "decode managed bootstrap fingerprint from top-level metadata even when earlier metadata locations are present but unrelated" in {
+      val json = collectionInfoJson(distance = "Cosine").deepMerge(
+        Json.obj(
+          "result" -> Json.obj(
+            "metadata" -> Json.obj(),
+            "config" -> Json.obj(
+              "metadata" -> Json.obj()
+            ),
+          ),
+          "metadata" -> Json.obj(
+            "managedBootstrapFingerprint" -> "top-level-fingerprint-after-empty".asJson,
+            "managedBootstrapFingerprintVersion" -> BeautyQManagedLocalSearchBootstrapFingerprint.Version.asJson,
+          ),
+        )
+      )
+
+      assert(BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains("top-level-fingerprint-after-empty"))
+    }
   }
 
   private val collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine"

@@ -103,6 +103,25 @@ final class QdrantCollectionCompatibilityValidatorSpec extends AnyWordSpec {
       ))))
       assert(noMetadataResult == Right(Right(())))
     }
+
+    "decode embedding model name from result config metadata even when an earlier metadata location is present but unrelated" in {
+      val json = collectionInfoJson().deepMerge(
+        Json.obj(
+          "result" -> Json.obj(
+            "metadata" -> Json.obj(),
+            "config" -> Json.obj(
+              "metadata" -> Json.obj(
+                "embeddingModelName" -> expectation.embeddingModelName.asJson
+              )
+            ),
+          )
+        )
+      )
+
+      val result = QdrantCollectionCompatibilityValidator.validate(expectation, json)
+
+      assert(result == Right(Right(())))
+    }
   }
 
   private val expectation =

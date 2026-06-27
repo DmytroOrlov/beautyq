@@ -70,8 +70,7 @@ object BeautyQManagedLocalSearchBootstrapFingerprint {
   }
 
   def decodeCollectionMetadataValue(json: Json): Option[String] =
-    leaderboard.search.qdrant.QdrantCollectionInfoDecoder.metadata(json)
-      .flatMap(_.apply(MetadataKey))
+    leaderboard.search.qdrant.QdrantCollectionInfoDecoder.metadataValue(json, MetadataKey)
       .flatMap(_.asString)
 
   private def canonicalJson(json: Json): Json =
