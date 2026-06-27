@@ -26,6 +26,11 @@ request
 * owns hard constraints
 * owns facets/provider/service/filter/inferred components
 * owns default route behavior
+* owns natural-language budget/range expressions (`under 3k`, `under 3000`, `below 3000`, `up to 3000`,
+  `маникюр under 50`): the domain parser/DSL turns them into a hard `SearchConstraint.PriceRange` upper
+  bound and Elasticsearch applies it as a `priceFrom` range filter. The supplement/Qdrant path never owns
+  price budgets or any hard price constraint. Model/domain onboarding should include budget examples in
+  the eval query set.
 
 ### Supplement backend
 

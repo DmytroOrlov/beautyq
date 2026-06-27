@@ -9,7 +9,8 @@ final class BeautySearchIntentParser(spec: BeautySearchSpec) {
   import BeautySearchIntentParser.*
 
   def parse(input: UserSearchInput): ParsedSearchIntent = {
-    val normalizedQuery = normalize(input.query)
+    val (budgetConstraint, queryForMatching) = extractBudget(input.query)
+    val normalizedQuery = normalize(queryForMatching)
     val normalizedTokens = tokenize(normalizedQuery)
     val baseMatches = selectMatches(
       synonyms = spec.synonyms.filter(_.requires.isEmpty),
@@ -25,7 +26,7 @@ final class BeautySearchIntentParser(spec: BeautySearchSpec) {
     )
 
     val allMatches = (baseMatches ++ contextualMatches).sortBy(matchResult => (matchResult.start, matchResult.end))
-    val explicitConstraints = distinctConstraints(allMatches.flatMap(_.synonym.constraints))
+    val explicitConstraints = distinctConstraints(allMatches.flatMap(_.synonym.constraints) ++ budgetConstraint.toList)
     val softBoosts = distinctConstraints(allMatches.flatMap(_.synonym.softBoosts))
     val occupiedPositions = allMatches.foldLeft(Set.empty[Int]) { (acc, next) =>
       acc ++ (next.start until next.end)
@@ -45,6 +46,41 @@ final class BeautySearchIntentParser(spec: BeautySearchSpec) {
 }
 
 object BeautySearchIntentParser {
+  /** Deterministic natural-language budget phrase: an upper-bound keyword followed by a number with an
+    * optional `k` thousands shorthand. Matches `under 3k`, `under 3000`, `below 3000`, `up to 3000`,
+    * `under 50`, `under 50.00`. No fuzzy ("cheap") interpretation, no currency parsing, no rewrite.
+    */
+  private val BudgetPattern: java.util.regex.Pattern =
+    java.util.regex.Pattern.compile("(?i)\\b(?:under|below|up\\s+to)\\s+(\\d+(?:[.,]\\d+)?)(k)?\\b")
+
+  /** Extracts at most one hard upper-bound [[SearchConstraint.PriceRange]] from a raw query and returns
+    * the query with the matched budget phrase removed so the residual text stays free of `under`/`below`/
+    * `3k` tokens. Noisy input without a numeric bound (e.g. `under abc`, `nails 3k followers`) yields no
+    * constraint and an unchanged query.
+    */
+  private[parser] def extractBudget(query: String): (Option[SearchConstraint], String) = {
+    val matcher = BudgetPattern.matcher(query)
+    if (matcher.find()) {
+      val hasThousandsSuffix = Option(matcher.group(2)).isDefined
+      parseBudgetAmount(matcher.group(1), hasThousandsSuffix) match {
+        case Some(amount) =>
+          val cleaned = (query.substring(0, matcher.start) + " " + query.substring(matcher.end))
+            .replaceAll("\\s+", " ")
+            .trim
+          (Some(SearchConstraint.PriceRange(None, Some(amount))), cleaned)
+        case None =>
+          (None, query)
+      }
+    } else {
+      (None, query)
+    }
+  }
+
+  private def parseBudgetAmount(numberText: String, hasThousandsSuffix: Boolean): Option[BigDecimal] =
+    scala.util.Try(BigDecimal(numberText.replace(',', '.'))).toOption.map { value =>
+      if (hasThousandsSuffix) value * BigDecimal(1000) else value
+    }
+
   private final case class MatchResult(
     synonym: SearchSynonym,
     phrase: String,
