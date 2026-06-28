@@ -203,12 +203,13 @@ private final case class SemanticEvalMeasurement(
     val providerTopK = query.expectedProviderCarousel.topK.requiredInTopK.getOrElse(5)
     val serviceTopK = query.expectedServiceIntentCarousel.topK.requiredInTopK.getOrElse(3)
 
-    // ES eval uses a tighter variant top-3 expectation, but that is too strict for
-    // Qdrant-only broad semantic recall. This optional Qdrant-only gate validates
-    // semantic candidate recall quality: an acceptable variant must appear somewhere
-    // in the returned Qdrant topK, while provider/service stay constrained by their
-    // eval topK windows. Exact variant ranking, fusion, and reranking remain future
-    // hybrid/rerank work and are intentionally out of scope for this spec.
+    // ES eval uses a tighter variant top-3 expectation. This resource-backed Qdrant
+    // supplement candidate quality check validates candidate recall in Qdrant topK
+    // for the broad non-lexical queries: an acceptable variant must appear somewhere
+    // in the returned Qdrant topK, while provider/service expectations remain
+    // constrained by their eval topK windows. Exact variant ranking, score fusion,
+    // reranking, and route/default behavior are intentionally out of scope and not
+    // implied by this spec.
     val variantOk = topVariantIds.exists(acceptableVariantIds.contains)
     val providerOk = topProviderIds.take(providerTopK).exists(acceptableProviderIds.contains)
     val serviceOk = topServiceIds.take(serviceTopK).exists(acceptableServiceIds.contains)
