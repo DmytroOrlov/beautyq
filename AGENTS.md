@@ -5,7 +5,6 @@
 * Keep patches atomic: one purpose, no unrelated refactors or mixed risk layers. If broader changes are required, stop and report the smallest safe next step.
 * Inspect nearby repo code before using framework APIs from memory.
 * Existing focused tests and route-level HTTP contract tests are the primary source of truth for intended behavior. If tests, docs, and implementation conflict, flag the mismatch instead of guessing.
-* Keep project/domain policy out of this file. Put product-specific routes, roadmap status, domain invariants, backend ownership rules, and milestone notes in project docs or task-local handoff files.
 
 ## Agent discipline
 
@@ -23,15 +22,22 @@
 Labels:
 
 * `FOCUSED GREEN`: requested focused suite passed; full repo unknown.
-* `FULL GREEN`: full requested repo/project verification passed.
-* `VERIFICATION BLOCKED`: local permissions, resources, sbt, docker, or environment blocked verification.
+* `USER-VERIFIED FULL GREEN`: the user ran the exact full verification command and reported green.
+* `VERIFICATION BLOCKED`: local permissions, resources, sbt, docker, environment, or agent policy blocked verification.
 
-Default rule: source changes need focused checks. Run only requested focused checks unless the task explicitly asks for full-suite validation.
+Default rule: source changes need focused checks. Run only requested focused checks.
+
+Delegated agents must not run full-suite verification. Do not run broad project/repo test commands such as unscoped `test`, `Test/test`, or project-wide test tasks. If a patch requires full-suite confidence, report the focused result and say coordinator/user full verification is required.
+
+Focused-only checks are never `FULL GREEN`.
+
+Do not call a patch commit-ready from focused checks alone when the task touches plugin/module shape, production graph wiring, lifecycle/readiness, or other full-graph-sensitive code. Report: focused result only; coordinator/user full verification required.
 
 ## sbt rules
 
 * Do not run sbt commands in parallel; run one chained sbt command.
-* If a repo-local validation wrapper is provided, run it exactly. Otherwise run exact requested sbt commands from the repo working directory and keep sbt tasks quoted, e.g. `sbt 'Test/compile' 'testOnly package.SomeSpec'`.
+* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run exact requested focused sbt commands from the repo working directory and keep sbt tasks quoted, e.g. `sbt 'Test/compile' 'testOnly package.SomeSpec'`.
+* If the requested command is full-suite verification, do not run it as a delegated agent. Report `VERIFICATION BLOCKED` by agent policy and ask coordinator/user to run it.
 * Do not run malformed or diagnostic variants such as `sbt Test/compile ...`, `sbt about`, `sbt ... | tail`, `sbt ... | head`, `sbt ... | tee`, or any command that rewrites, wraps, filters, or decomposes the requested validation command.
 * Do not run setup probes (`type/which sbt`, `java -version`, `echo $JAVA_HOME`, `echo $SBT_OPTS`, `ls/cat .sbtopts .jvmopts`), inspect sbt wrapper/launcher lines, or read resolved tool paths outside the repo unless the exact command fails with a missing-command/setup error.
 * If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
@@ -45,6 +51,14 @@ Preferred focused shape:
 sbt 'Test/compile' 'testOnly package.SomeSpec'
 ```
 
+## Cleanup / reset policy
+
+* Do not run Docker cleanup, database reset, broad target deletion, or cold reset as a first response to unexplained failures.
+* Use the smallest relevant reset only when the failure indicates stale generated state, stale build artifacts, stale containers, or stale database schema/data state, especially after schema or migration-related changes.
+* Report the reset as environment/state cleanup, not as a source fix.
+* Rerun the same validation command after cleanup.
+* Do not use cleanup to hide a reproducible source/test failure.
+
 ## DI, lifecycle, and graph rules
 
 * DI startup follows dependency edges, not binding order.
@@ -52,15 +66,30 @@ sbt 'Test/compile' 'testOnly package.SomeSpec'
 * Graph garbage collection may remove bindings without concrete roots. Inspect roots, axes/activation, and suite inheritance before changing production modules.
 * Disabled experiment activation must not construct heavy dependencies. Use explicit axis/config, by-name/factory/resource boundaries, or separate modules.
 * Do not include a whole production plugin/application graph inside focused/unit spec modules unless the task explicitly asks for production graph coverage.
-* Use targeted modules, existing app/role/testkit fixtures, or full-suite validation for production graph coverage.
+* Use targeted modules, existing app/role/testkit fixtures, or coordinator/user full-suite validation for production graph coverage.
 
-Intentional dependency edges:
+### Whole-plugin include hazard
+
+* Do not use ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])` inside focused/unit spec `ModuleDef`s.
+* `LeaderboardPlugin.modules.api[IO]` is a concrete example of the broader hazard: whole-plugin includes inside focused specs.
+* The reproduced hazard is ad-hoc whole-plugin include in focused specs, which can trigger `IncludesDSL$Include.interpret` NPE in Distage.
+* Do not assume the nearest touched feature binding is the direct root cause.
+* Changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require coordinator/user full project verification. Delegated agents must not run full-suite verification and must not call such patches commit-ready from focused checks alone.
+
+### Intentional dependency edges
 
 * `@unused` is for intentional dependency/lifecycle/readiness edges: roles, readiness, schema/table creation order, and constructor dependencies that force graph construction.
 * Do not use `@unused`, `val _ = x`, or `@nowarn` to keep future placeholder params in pure functions.
 * If a param/import/local is unused and not an intentional edge, remove it or make it part of real behavior.
 * Prompt snippets and suggested signatures are subordinate to behavior. If a suggested param is unused, either use it in the real contract or remove it and report the deviation.
 * Do not investigate scalac warning flags for unused symbols unless the failure remains unexplained after removing unused code.
+
+### Readiness and weak-set proof
+
+* If a test reads data that depends on readiness/seed/bootstrap completion, it must depend directly on the readiness edge before repository reads.
+* Do not fix missing readiness-edge failures by changing unrelated search, storage, or external-client code first.
+* Weak-set contributions may require concrete retention roots in tests.
+* Do not fake weak-set proof with alias bindings that bypass the weak set.
 
 ## Constructive test style
 
@@ -89,7 +118,7 @@ final class LadderTestDummy extends LadderTest with DummyTest
 final class LadderTestPostgres extends LadderTest with ProdTest
 ```
 
-For simple pure model tests, prefer `AnyWordSpec`, deterministic fixtures, direct `assert`, and no effects/DI/runtime.
+For simple pure model tests, prefer `AnyWordSpec`, deterministic UUID fixtures when IDs are needed, direct `assert`, and no effects/DI/runtime.
 
 ### Fixture style
 
@@ -179,8 +208,8 @@ event match {
 
 ## HTTP / Tapir rules
 
-* Put pure Tapir endpoint contracts in the repo's Tapir endpoint package.
-* Keep API classes as thin HTTP adapters.
+* Put pure Tapir endpoint contracts in the repo's Tapir endpoint package, usually `leaderboard/http/tapir/*TapirEndpoints.scala`.
+* Keep `leaderboard.api.*Api` classes as thin `HttpApi[F]` adapters.
 * Reuse existing support helpers.
 * Do not migrate many endpoints in one patch.
 * Do not change malformed path/body/exception contracts unless explicitly asked.
@@ -193,16 +222,29 @@ event match {
 * Preserve unified storage paths and stable enum/string codes unless the task explicitly changes them.
 * Treat existing route contracts and persisted JSON contracts as compatibility boundaries.
 
+## Eval-style failure reports
+
+For eval-style failures, report:
+
+* case id/name;
+* input;
+* parsed/decoded state if available;
+* observed output;
+* expected output;
+* failed assertion.
+
 ## Failure protocol
 
-If one query/test fails, stop expanding the slice.
+If one focused query/test fails or aborts, stop expanding the slice.
 
 Report:
 
 * suite/test name;
 * exact error;
-* whether it reproduces alone;
+* whether it reproduces alone, if focused reproduction was requested or safe;
 * whether it appears related to the patch;
-* smallest safe next diagnostic command.
+* smallest safe next focused diagnostic command.
+
+If external resources or environment are missing, report blocked/canceled verification, not product behavior failure.
 
 Then fix only that failure with the smallest safe change.
