@@ -6,7 +6,7 @@
 * QP25b makes the local managed launcher select the Qdrant supplement route by default when local resources are available.
 * QP26 makes the local managed launcher prepare all local data the route needs at startup (SQL/Postgres seed, Elasticsearch baseline index, Qdrant supplement collection/vectors), with no user-facing activation env flag and without any by-hand Qdrant collection-creation or indexing step.
 * QP31 keeps that local managed preparation self-starting while skipping unchanged ES/Qdrant rebuilds when the managed bootstrap fingerprint matches.
-* Commit: `805edaa48724e16a36dca2ab8955f11c52cef3b2`.
+* QP24 stop-state commit: `805edaa48724e16a36dca2ab8955f11c52cef3b2` (the QP24 stop-state reference, not the current doc/code commit).
 * This is local/test acceptance evidence. It is not approval to switch production/default behavior.
 * Not production rollout.
 * ES remains primary/default.
@@ -207,6 +207,59 @@ Any failure means do not claim the local/test supplement proof is green.
 * no production startup indexing (local managed startup prepares local ES/Qdrant data only)
 * no production collection lifecycle
 * no benchmark output as automatic rollout signal
+
+## M3 embedding benchmark comparison (runbook)
+
+The M3 embedding benchmark comparison picks and runs the strongest *real* embedding-candidate
+comparison available, with no fixture/auto-pass path. Source truth lives in
+`QdrantEmbeddingBenchmarkComparisonSelection.scala` (pure selection),
+`QdrantEmbeddingBenchmarkComparisonSelectionSpec.scala` (deterministic selection matrix), and
+`QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala` (real-resource orchestrator).
+
+This is a local/test embedding-candidate comparison only. It does not switch, approve, or imply any
+production/default `/beauty-search` route, and its output is not a rollout signal.
+
+### Selection order
+
+1. Either live probe returns a `ContractViolation` (reachable-but-broken endpoint) → **fail red**, no
+   downgrade to a saved comparison.
+2. Both live candidates reachable → `fresh-vs-fresh`.
+3. Left live only + right saved report present → `fresh-vs-saved`.
+4. Right live only + left saved report present → `fresh-vs-saved`.
+5. No live candidates + both saved reports present → `saved-vs-saved`.
+6. No sufficient real pair (one live with missing counterpart, or no live with fewer than two saved
+   reports) → **cancel** with an actionable reason (not a failure, not a fabricated comparison).
+
+### Env vars
+
+* `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON` — saved left single-candidate report JSON.
+* `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` — saved right single-candidate report JSON.
+
+Saved report JSON content comes only from these two env vars. There is no directory scan or hidden
+file discovery.
+
+### Fresh report capture
+
+Each live candidate run prints its fresh single-candidate report between bounded markers:
+
+```
+BEGIN_QDRANT_EMBEDDING_BENCHMARK_FRESH_REPORT_JSON (<candidateId>)
+... report JSON ...
+END_QDRANT_EMBEDDING_BENCHMARK_FRESH_REPORT_JSON (<candidateId>)
+```
+
+This print is the only export. Fresh reports are generated in memory and are **not** auto-written to
+any file; capture the block by hand to replay it later as a saved counterpart via the env vars above.
+
+### Semantics
+
+* **Fail red** (test fails): a live endpoint is reachable but violated the embedding/benchmark
+  contract, or a present saved report is invalid JSON.
+* **Cancel** (test cancelled, not failed): no sufficient real comparison pair exists.
+* No fixture/auto-pass fallback: when no real pair exists the result is cancel, never a fabricated
+  comparison.
+* A reachable-but-broken live endpoint never silently downgrades to a saved-only comparison.
+* No automatic file write; no production route/default implication.
 
 ## Reuse for next domain
 

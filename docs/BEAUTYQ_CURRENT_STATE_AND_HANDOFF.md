@@ -4,8 +4,10 @@ Use this as the BeautyQ entry point. It records the current route truth and poin
 
 ## Current route truth
 
-* Default `POST /beauty-search` remains ES-backed.
+* Production / non-managed default `POST /beauty-search` remains ES-backed.
+* The local managed launcher path uses the ES baseline plus a constrained Qdrant supplement when local resources are available.
 * Qdrant supplement remains local/test constrained supplement only.
+* Local/test provenance, measured gates, and benchmark reports are local/test evidence only; they do not approve a production/default route switch.
 * Qdrant is not approved for the default route.
 
 ## Canonical docs
