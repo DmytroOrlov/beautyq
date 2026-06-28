@@ -28,6 +28,16 @@ import leaderboard.api.{
 }
 import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg, QdrantPortCfg}
 import leaderboard.http.HttpServer
+import leaderboard.http.tapir.{
+  CategoryTapirEndpoints,
+  LadderTapirEndpoints,
+  MasterLocationTapirEndpoints,
+  MasterServiceOfferTapirEndpoints,
+  MasterServiceOfferVariantTapirEndpoints,
+  MasterTapirEndpoints,
+  ProfileTapirEndpoints,
+  ServiceTapirEndpoints,
+}
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.{BeautySearchLocalQdrantSupplementLauncherModule, LeaderboardPlugin}
 import leaderboard.search.document.BeautySearchReadyCatalogDocuments
@@ -46,6 +56,7 @@ import leaderboard.search.{
   VariantResultOrigin,
 }
 import leaderboard.seed.BeautyQSeedReady
+import leaderboard.services.Ranks
 import logstage.LogIO2
 import org.http4s.Status
 import org.http4s.ember.server.EmberServerBuilder
@@ -163,6 +174,52 @@ final class ManagedLauncherHttpRouteMountSpec
       .ensuring(esClient.deleteIndex(routeSpec.variantDocument.indexName).either.unit)
   }
 
+  // Test-local mirror of only the non-search public HTTP API portion of
+  // `LeaderboardPlugin.modules.apiBase[IO]`: the eight non-search APIs, their Tapir endpoint
+  // singletons, their weak `Set[HttpApi[IO]]` contributions, and `Ranks[IO]`. The managed
+  // `/beauty-search` route and its `BeautySearchApi[IO]` contribution still come from
+  // `BeautySearchLocalQdrantSupplementLauncherModule.managedLocalDefault`. This avoids an ad-hoc
+  // whole/broad plugin API include inside the focused spec graph.
+  private def managedLauncherNonSearchPublicApiModule: ModuleDef = new ModuleDef {
+    // The `ladder` API
+    make[LadderTapirEndpoints].fromValue(LadderTapirEndpoints)
+    make[LadderApi[IO]]
+    // The `category` API
+    make[CategoryTapirEndpoints].fromValue(CategoryTapirEndpoints)
+    make[CategoryApi[IO]]
+    // The `service` API
+    make[ServiceTapirEndpoints].fromValue(ServiceTapirEndpoints)
+    make[ServiceApi[IO]]
+    // The `master` API
+    make[MasterTapirEndpoints].fromValue(MasterTapirEndpoints)
+    make[MasterApi[IO]]
+    // The `master-location` API
+    make[MasterLocationTapirEndpoints].fromValue(MasterLocationTapirEndpoints)
+    make[MasterLocationApi[IO]]
+    // The `master-service-offer` API
+    make[MasterServiceOfferTapirEndpoints].fromValue(MasterServiceOfferTapirEndpoints)
+    make[MasterServiceOfferApi[IO]]
+    // The `master-service-offer-variant` API
+    make[MasterServiceOfferVariantTapirEndpoints].fromValue(MasterServiceOfferVariantTapirEndpoints)
+    make[MasterServiceOfferVariantApi[IO]]
+    // The `profile` API
+    make[ProfileTapirEndpoints].fromValue(ProfileTapirEndpoints)
+    make[ProfileApi[IO]]
+
+    // The eight non-search public APIs as weak `Set[HttpApi[IO]]` members
+    many[HttpApi[IO]]
+      .weak[LadderApi[IO]]
+      .weak[CategoryApi[IO]]
+      .weak[ServiceApi[IO]]
+      .weak[MasterApi[IO]]
+      .weak[MasterLocationApi[IO]]
+      .weak[MasterServiceOfferApi[IO]]
+      .weak[MasterServiceOfferVariantApi[IO]]
+      .weak[ProfileApi[IO]]
+
+    make[Ranks[IO]].from[Ranks.Impl[IO]]
+  }
+
   private def buildManagedLauncherProbe(
     esClient: ElasticsearchJsonClient,
     postgresPortCfg: PostgresPortCfg,
@@ -173,7 +230,7 @@ final class ManagedLauncherHttpRouteMountSpec
     routeVectorSpec: leaderboard.search.dsl.VectorSearchSpec,
   ): Task[ManagedLauncherRouteSetProbe] = {
     val module = new ModuleDef {
-      include(LeaderboardPlugin.modules.apiBase[IO])
+      include(managedLauncherNonSearchPublicApiModule)
       include(LeaderboardPlugin.modules.repoProd[IO])
       include(LeaderboardPlugin.modules.seed[IO])
       include(LeaderboardPlugin.modules.seedManaged[IO])
