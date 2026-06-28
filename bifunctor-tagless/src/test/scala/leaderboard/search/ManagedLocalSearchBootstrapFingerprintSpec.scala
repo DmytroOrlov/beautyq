@@ -84,7 +84,7 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
       val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
       val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
 
-      assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(qdrantInfo(pointsCount = documents.size), documents.size, fingerprint))
+      assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(qdrantInfo(pointsCount = Some(documents.size)), documents.size, fingerprint))
     }
 
     "treat Qdrant collection info with mismatched managed fingerprint metadata as not reusable" in {
@@ -92,7 +92,7 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
       val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
 
       assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
-        qdrantInfo(pointsCount = documents.size, managedFingerprint = Some("other-fingerprint")),
+        qdrantInfo(pointsCount = Some(documents.size), managedFingerprint = Some("other-fingerprint")),
         documents.size,
         fingerprint,
       ))
@@ -103,29 +103,95 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
       val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
 
       assert(BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
-        qdrantInfo(pointsCount = documents.size, managedFingerprint = Some(fingerprint.value)),
+        qdrantInfo(pointsCount = Some(documents.size), managedFingerprint = Some(fingerprint.value)),
+        documents.size,
+        fingerprint,
+      ))
+    }
+
+    "treat Qdrant collection info with matching managed fingerprint metadata but too few points as not reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(pointsCount = Some(documents.size - 1), managedFingerprint = Some(fingerprint.value)),
+        documents.size,
+        fingerprint,
+      ))
+    }
+
+    "treat Qdrant collection info with matching managed fingerprint metadata but no supported count field as not reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(!BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(managedFingerprint = Some(fingerprint.value)),
+        documents.size,
+        fingerprint,
+      ))
+    }
+
+    "treat Qdrant collection info with matching managed fingerprint metadata and enough result.indexed_vectors_count as reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(indexedVectorsCount = Some(documents.size), managedFingerprint = Some(fingerprint.value)),
+        documents.size,
+        fingerprint,
+      ))
+    }
+
+    "treat Qdrant collection info with matching managed fingerprint metadata and enough top-level points_count as reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(topLevelPointsCount = Some(documents.size), managedFingerprint = Some(fingerprint.value)),
+        documents.size,
+        fingerprint,
+      ))
+    }
+
+    "treat Qdrant collection info with matching managed fingerprint metadata and enough top-level indexed_vectors_count as reusable" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+
+      assert(BeautyQManagedLocalSearchBootstrap.qdrantCollectionInfoReusable(
+        qdrantInfo(topLevelIndexedVectorsCount = Some(documents.size), managedFingerprint = Some(fingerprint.value)),
         documents.size,
         fingerprint,
       ))
     }
   }
 
-  private def qdrantInfo(pointsCount: Int, managedFingerprint: Option[String] = None): Json =
-    Json.obj(
-      "result" -> Json.obj(
-        "points_count" -> Json.fromInt(pointsCount),
-        "indexed_vectors_count" -> Json.fromInt(pointsCount),
-      ).deepMerge(
-        managedFingerprint.fold(Json.obj()) { value =>
-          Json.obj(
-            "metadata" -> Json.obj(
-              BeautyQManagedLocalSearchBootstrapFingerprint.MetadataKey -> Json.fromString(value),
-              BeautyQManagedLocalSearchBootstrapFingerprint.MetadataVersionKey -> Json.fromString(
-                BeautyQManagedLocalSearchBootstrapFingerprint.Version
-              ),
-            )
-          )
-        }
+  private def qdrantInfo(
+    pointsCount: Option[Int] = None,
+    indexedVectorsCount: Option[Int] = None,
+    topLevelPointsCount: Option[Int] = None,
+    topLevelIndexedVectorsCount: Option[Int] = None,
+    managedFingerprint: Option[String] = None,
+  ): Json = {
+    val resultCountFields = List(
+      pointsCount.map("points_count" -> Json.fromInt(_)),
+      indexedVectorsCount.map("indexed_vectors_count" -> Json.fromInt(_)),
+    ).flatten
+
+    val topLevelCountFields = List(
+      topLevelPointsCount.map("points_count" -> Json.fromInt(_)),
+      topLevelIndexedVectorsCount.map("indexed_vectors_count" -> Json.fromInt(_)),
+    ).flatten
+
+    val metadataField = managedFingerprint.map { value =>
+      "metadata" -> Json.obj(
+        BeautyQManagedLocalSearchBootstrapFingerprint.MetadataKey -> Json.fromString(value),
+        BeautyQManagedLocalSearchBootstrapFingerprint.MetadataVersionKey -> Json.fromString(
+          BeautyQManagedLocalSearchBootstrapFingerprint.Version
+        ),
       )
-    )
+    }
+
+    Json.obj("result" -> Json.obj((resultCountFields ++ metadataField.toList): _*))
+      .deepMerge(Json.obj(topLevelCountFields: _*))
+  }
 }
