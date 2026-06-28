@@ -447,7 +447,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       assert(lexical.calls == 1)
     }
 
-    "ElasticsearchWithQdrantVariantSupplement appends Qdrant-only variants after ES variants preserving ES order" in {
+    "ElasticsearchWithQdrantVariantSupplement appends Qdrant supplement variants absent from ES after ES variants preserving ES order" in {
       val esDocuments = documents.take(2)
       val supplementDocuments = documents.slice(2, 4)
       val esVariants = variantResultsFor(List(
