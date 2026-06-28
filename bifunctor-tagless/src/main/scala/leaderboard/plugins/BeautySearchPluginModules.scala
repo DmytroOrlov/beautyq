@@ -15,7 +15,10 @@ import leaderboard.search.{BeautySearchBackend, BeautySearchService}
 
 object BeautySearchPluginModules {
   def api[F[+_, +_]: TagKK: Error2]: ModuleDef =
-    // Production/default contribution: delegates to the disabled gate, so `/beauty-search` behavior stays unchanged.
+    // Default BeautySearch API contribution for route modules; uses the disabled serving gate by default.
+    // It does not activate Qdrant, fallback, fusion, reranking, or production/default route switching.
+    // Concrete route ownership stays with `BeautySearchRouteModules.*`; local managed Qdrant supplement
+    // ownership stays with `BeautySearchLocalQdrantSupplementLauncherModule.managedLocalDefault`.
     apiWithServingGate[F](BeautySearchServingGate.disabled)
 
   // Narrow local/dev/test module surface for selecting an explicit `BeautySearchServingGate` state.
