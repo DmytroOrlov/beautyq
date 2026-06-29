@@ -7,6 +7,7 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure, ServiceId, ServiceVariantSchema}
+import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -20,6 +21,21 @@ trait MasterServiceOfferVariants[F[_, _]] {
 }
 
 object MasterServiceOfferVariants {
+  /** Model-derived entity metadata for [[MasterServiceOfferVariant]]. */
+  val entity: RepoEntity[MasterServiceOfferVariant] = RepoEntity.derived[MasterServiceOfferVariant]
+
+  /** Optional variant by id. */
+  def byId[F[_, _]](repo: MasterServiceOfferVariants[F]): OptionalByKey[F, MasterServiceOfferVariantId, MasterServiceOfferVariant] =
+    OptionalByKey(repo.getMasterServiceOfferVariant)
+
+  /** Variants by offer id. */
+  def byOffer[F[_, _]](repo: MasterServiceOfferVariants[F]): ManyByKey[F, MasterServiceOfferId, MasterServiceOfferVariant] =
+    ManyByKey(repo.getMasterServiceOfferVariantsByOffer)
+
+  /** Variants by location id. */
+  def byLocation[F[_, _]](repo: MasterServiceOfferVariants[F]): ManyByKey[F, MasterLocationId, MasterServiceOfferVariant] =
+    ManyByKey(repo.getMasterServiceOfferVariantsByLocation)
+
   private case class MasterServiceOfferVariantBaseRow(
     id: MasterServiceOfferVariantId,
     masterServiceOfferId: MasterServiceOfferId,
@@ -146,7 +162,7 @@ object MasterServiceOfferVariants {
     sql.execute("get-master-service-offer-summary") {
       sql"""
         select master_id, service_id
-        from master_service_offers
+        from master_service_offer
         where id = $masterServiceOfferId
       """.query[(MasterId, ServiceId)].option
     }
@@ -158,7 +174,7 @@ object MasterServiceOfferVariants {
     sql.execute("get-master-location-master-id") {
       sql"""
         select master_id
-        from master_locations
+        from master_location
         where id = $masterLocationId
       """.query[MasterId].option
     }
@@ -381,7 +397,7 @@ object MasterServiceOfferVariants {
       for {
         _ <- log.info("Creating MasterServiceOfferVariants table")
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variants") {
-          sql"""create table if not exists master_service_offer_variants (
+          sql"""create table if not exists master_service_offer_variant (
                |  id uuid not null,
                |  master_service_offer_id uuid not null,
                |  master_location_id uuid not null,
@@ -389,29 +405,29 @@ object MasterServiceOfferVariants {
                |  price_to numeric not null,
                |  duration_min int not null,
                |  primary key (id),
-               |  constraint master_service_offer_variants_offer_fk
-               |    foreign key (master_service_offer_id) references master_service_offers(id),
-               |  constraint master_service_offer_variants_location_fk
-               |    foreign key (master_location_id) references master_locations(id),
-               |  constraint master_service_offer_variants_price_from_non_negative
+               |  constraint master_service_offer_variant_offer_fk
+               |    foreign key (master_service_offer_id) references master_service_offer(id),
+               |  constraint master_service_offer_variant_location_fk
+               |    foreign key (master_location_id) references master_location(id),
+               |  constraint master_service_offer_variant_price_from_non_negative
                |    check (price_from >= 0),
-               |  constraint master_service_offer_variants_price_range
+               |  constraint master_service_offer_variant_price_range
                |    check (price_to >= price_from),
-               |  constraint master_service_offer_variants_duration_positive
+               |  constraint master_service_offer_variant_duration_positive
                |    check (duration_min > 0)
                |) without oids
                |""".stripMargin.update.run
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variants-offer-id-idx") {
           sql"""
-            create index if not exists master_service_offer_variants_offer_id_idx
-              on master_service_offer_variants(master_service_offer_id)
+            create index if not exists master_service_offer_variant_offer_id_idx
+              on master_service_offer_variant(master_service_offer_id)
           """.update.run
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variants-location-id-idx") {
           sql"""
-            create index if not exists master_service_offer_variants_location_id_idx
-              on master_service_offer_variants(master_location_id)
+            create index if not exists master_service_offer_variant_location_id_idx
+              on master_service_offer_variant(master_location_id)
           """.update.run
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offer-variant-attributes") {
@@ -442,7 +458,7 @@ object MasterServiceOfferVariants {
                               sql
                                 .execute("upsert-master-service-offer-variant") {
                                   for {
-                                    _ <- sql"""insert into master_service_offer_variants (
+                                    _ <- sql"""insert into master_service_offer_variant (
                                               |  id,
                                               |  master_service_offer_id,
                                               |  master_location_id,
@@ -486,8 +502,8 @@ object MasterServiceOfferVariants {
                               |       variant.price_to,
                               |       variant.duration_min,
                               |       offer.service_id
-                              |from master_service_offer_variants variant
-                              |join master_service_offers offer on offer.id = variant.master_service_offer_id
+                              |from master_service_offer_variant variant
+                              |join master_service_offer offer on offer.id = variant.master_service_offer_id
                               |where variant.id = $id
                               |""".stripMargin.query[MasterServiceOfferVariantStoredRow].option
                   data <- loadStoredVariant(row, attributesRepository)
@@ -513,8 +529,8 @@ object MasterServiceOfferVariants {
                                |       variant.price_to,
                                |       variant.duration_min,
                                |       offer.service_id
-                               |from master_service_offer_variants variant
-                               |join master_service_offers offer on offer.id = variant.master_service_offer_id
+                               |from master_service_offer_variant variant
+                               |join master_service_offer offer on offer.id = variant.master_service_offer_id
                                |where variant.master_service_offer_id = $masterServiceOfferId
                                |order by variant.id asc
                                |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]
@@ -538,8 +554,8 @@ object MasterServiceOfferVariants {
                                |       variant.price_to,
                                |       variant.duration_min,
                                |       offer.service_id
-                               |from master_service_offer_variants variant
-                               |join master_service_offers offer on offer.id = variant.master_service_offer_id
+                               |from master_service_offer_variant variant
+                               |join master_service_offer offer on offer.id = variant.master_service_offer_id
                                |where variant.master_location_id = $masterLocationId
                                |order by variant.id asc
                                |""".stripMargin.query[MasterServiceOfferVariantStoredRow].to[List]

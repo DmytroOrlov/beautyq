@@ -5,6 +5,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, QueryFailure, ServiceId}
+import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -18,6 +19,21 @@ trait MasterServiceOffers[F[_, _]] {
 }
 
 object MasterServiceOffers {
+  /** Model-derived entity metadata for [[MasterServiceOffer]]. */
+  val entity: RepoEntity[MasterServiceOffer] = RepoEntity.derived[MasterServiceOffer]
+
+  /** Optional offer by id. */
+  def byId[F[_, _]](repo: MasterServiceOffers[F]): OptionalByKey[F, MasterServiceOfferId, MasterServiceOffer] =
+    OptionalByKey(repo.getMasterServiceOffer)
+
+  /** Offers by master id. */
+  def byMaster[F[_, _]](repo: MasterServiceOffers[F]): ManyByKey[F, MasterId, MasterServiceOffer] =
+    ManyByKey(repo.getMasterServiceOffersByMaster)
+
+  /** Offers by service id. */
+  def byService[F[_, _]](repo: MasterServiceOffers[F]): ManyByKey[F, ServiceId, MasterServiceOffer] =
+    ManyByKey(repo.getMasterServiceOffersByService)
+
   private def masterNotFound(masterId: MasterId): QueryFailure =
     QueryFailure.domain(s"Master $masterId does not exist")
 
@@ -29,7 +45,7 @@ object MasterServiceOffers {
       sql"""
         select exists(
           select 1
-          from masters
+          from master
           where id = $masterId
         )
       """.query[Boolean].unique
@@ -40,7 +56,7 @@ object MasterServiceOffers {
       sql"""
         select exists(
           select 1
-          from services
+          from service
           where id = $serviceId
         )
       """.query[Boolean].unique
@@ -98,28 +114,28 @@ object MasterServiceOffers {
       for {
         _ <- log.info("Creating MasterServiceOffers table")
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offers") {
-          sql"""create table if not exists master_service_offers (
+          sql"""create table if not exists master_service_offer (
                |  id uuid not null,
                |  master_id uuid not null,
                |  service_id uuid not null,
                |  primary key (id),
-               |  constraint master_service_offers_master_fk
-               |    foreign key (master_id) references masters(id),
-               |  constraint master_service_offers_service_fk
-               |    foreign key (service_id) references services(id)
+               |  constraint master_service_offer_master_fk
+               |    foreign key (master_id) references master(id),
+               |  constraint master_service_offer_service_fk
+               |    foreign key (service_id) references service(id)
                |) without oids
                |""".stripMargin.update.run
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offers-master-id-idx") {
           sql"""
-            create index if not exists master_service_offers_master_id_idx
-              on master_service_offers(master_id)
+            create index if not exists master_service_offer_master_id_idx
+              on master_service_offer(master_id)
           """.update.run
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-master-service-offers-service-id-idx") {
           sql"""
-            create index if not exists master_service_offers_service_id_idx
-              on master_service_offers(service_id)
+            create index if not exists master_service_offer_service_id_idx
+              on master_service_offer(service_id)
           """.update.run
         })
       } yield new MasterServiceOffers[F] {
@@ -136,7 +152,7 @@ object MasterServiceOffers {
                     } else {
                       sql
                         .execute("upsert-master-service-offer") {
-                          sql"""insert into master_service_offers (id, master_id, service_id)
+                          sql"""insert into master_service_offer (id, master_id, service_id)
                                |values (${offer.id}, ${offer.masterId}, ${offer.serviceId})
                                |on conflict (id) do update set
                                |  master_id = excluded.master_id,
@@ -152,7 +168,7 @@ object MasterServiceOffers {
         def getMasterServiceOffer(id: MasterServiceOfferId): F[QueryFailure, Option[MasterServiceOffer]] =
           sql.execute("get-master-service-offer") {
             sql"""select id, master_id, service_id
-                 |from master_service_offers
+                 |from master_service_offer
                  |where id = $id
                  |""".stripMargin.query[MasterServiceOffer].option
           }
@@ -160,7 +176,7 @@ object MasterServiceOffers {
         def getMasterServiceOffersByMaster(masterId: MasterId): F[QueryFailure, List[MasterServiceOffer]] =
           sql.execute("get-master-service-offers-by-master") {
             sql"""select id, master_id, service_id
-                 |from master_service_offers
+                 |from master_service_offer
                  |where master_id = $masterId
                  |order by id asc
                  |""".stripMargin.query[MasterServiceOffer].to[List]
@@ -169,7 +185,7 @@ object MasterServiceOffers {
         def getMasterServiceOffersByService(serviceId: ServiceId): F[QueryFailure, List[MasterServiceOffer]] =
           sql.execute("get-master-service-offers-by-service") {
             sql"""select id, master_id, service_id
-                 |from master_service_offers
+                 |from master_service_offer
                  |where service_id = $serviceId
                  |order by id asc
                  |""".stripMargin.query[MasterServiceOffer].to[List]

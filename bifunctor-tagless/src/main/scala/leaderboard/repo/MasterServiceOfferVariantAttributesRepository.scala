@@ -421,7 +421,7 @@ private[repo] object MasterServiceOfferVariantAttributesRepository {
                   |  value numeric not null,
                   |  primary key (master_service_offer_variant_id, attribute_code),
                   |  constraint master_service_offer_variant_numeric_attributes_variant_fk
-                  |    foreign key (master_service_offer_variant_id) references master_service_offer_variants(id)
+                  |    foreign key (master_service_offer_variant_id) references master_service_offer_variant(id)
                   |) without oids
                   |""".stripMargin.update.run
       } yield ()

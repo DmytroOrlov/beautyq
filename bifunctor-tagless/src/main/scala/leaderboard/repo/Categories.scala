@@ -7,6 +7,7 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
+import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -18,6 +19,17 @@ trait Categories[F[_, _]] {
 }
 
 object Categories {
+  /** Model-derived entity metadata for [[Category]]. */
+  val entity: RepoEntity[Category] = RepoEntity.derived[Category]
+
+  /** Optional category by id. */
+  def byId[F[_, _]](repo: Categories[F]): OptionalByKey[F, CategoryId, Category] =
+    OptionalByKey(repo.getCategory)
+
+  /** Children by parent id. */
+  def childrenByParent[F[_, _]](repo: Categories[F]): ManyByKey[F, CategoryId, Category] =
+    ManyByKey(repo.getChildren)
+
   private def parentNotFound(parentId: CategoryId): QueryFailure =
     QueryFailure.domain(s"Parent category $parentId does not exist")
 
@@ -70,7 +82,7 @@ object Categories {
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-categories") {
           Fragment
             .const("""
-          create table if not exists categories (
+          create table if not exists category (
                 id uuid not null,
                 parent_id uuid not null,
                 depth int not null,
@@ -82,8 +94,8 @@ object Categories {
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-categories-parent-id-idx") {
           sql"""
-            create index if not exists categories_parent_id_idx
-              on categories(parent_id)
+            create index if not exists category_parent_id_idx
+              on category(parent_id)
           """.update.run
         })
       } yield new Categories[F] {
@@ -99,7 +111,7 @@ object Categories {
                   sql
                     .execute("upsert-category") {
                       sql"""
-                      insert into categories (id, parent_id, depth, name)
+                      insert into category (id, parent_id, depth, name)
                       values (${category.id}, ${category.parentId}, ${category.depth}, ${category.name})
                       on conflict (id) do update set
                         parent_id = excluded.parent_id,
@@ -117,7 +129,7 @@ object Categories {
           sql.execute("get-category") {
             sql"""
                 select id, parent_id, depth, name
-                from categories
+                from category
                 where id = $id
               """.query[Category].option
           }
@@ -127,7 +139,7 @@ object Categories {
           sql.execute(if (parentId == rootCategoryId) "get-root-children" else "get-children") {
             sql"""
                 select id, parent_id, depth, name
-                from categories
+                from category
                 where parent_id = $parentId
                 order by depth asc, name asc
               """.query[Category].to[List]
@@ -142,7 +154,7 @@ object Categories {
               sql"""
                 select exists(
                   select 1
-                  from categories
+                  from category
                   where id = $parentId
                 )
               """.query[Boolean].unique

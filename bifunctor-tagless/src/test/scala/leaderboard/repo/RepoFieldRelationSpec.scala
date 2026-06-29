@@ -1,0 +1,108 @@
+package leaderboard.repo
+
+import leaderboard.model.Category.CategoryId
+import leaderboard.model.{Category, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema}
+import leaderboard.repo.RepoOp.ManyByKey
+import org.scalatest.wordspec.AnyWordSpec
+import zio.{IO, ZIO}
+
+import java.util.UUID
+
+final class RepoFieldRelationSpec extends AnyWordSpec {
+
+  private def uuid(suffix: String): UUID = UUID.fromString(s"00000000-0000-0000-0000-$suffix")
+
+  "RepoField selector derivation" should {
+    "derive Category.parentId as parentId / parent_id and select the value" in {
+      val field   = Categories.entity.field(_.parentId)
+      val parent  = uuid("0000000000a1")
+      val category = Category(uuid("0000000000a2"), parent, 1, "child")
+      assert(field.label == "parentId")
+      assert(field.column == "parent_id")
+      assert(field.select(category) == parent)
+    }
+
+    "derive Service.categoryId as categoryId / category_id" in {
+      val field = Services.entity.field(_.categoryId)
+      assert(field.label == "categoryId")
+      assert(field.column == "category_id")
+    }
+
+    "derive MasterServiceOfferVariant.masterServiceOfferId as masterServiceOfferId / master_service_offer_id" in {
+      val field = MasterServiceOfferVariants.entity.field(_.masterServiceOfferId)
+      assert(field.label == "masterServiceOfferId")
+      assert(field.column == "master_service_offer_id")
+    }
+  }
+
+  "Entity nodes" should {
+    "expose the key field label and column for Categories" in {
+      val node = Categories.entity.node(_.id)
+      assert(node.key.label == "id")
+      assert(node.key.column == "id")
+    }
+
+    "expose the key field label and column for Services" in {
+      val node = Services.entity.node(_.id)
+      assert(node.key.label == "id")
+      assert(node.key.column == "id")
+    }
+  }
+
+  "Relation metadata" should {
+    val category = Categories.entity.node(_.id)
+    val service  = Services.entity.node(_.id)
+    val offer    = MasterServiceOffers.entity.node(_.id)
+    val variant  = MasterServiceOfferVariants.entity.node(_.id)
+
+    val noCategories = ManyByKey[IO, CategoryId, Category](_ => ZIO.succeed(Nil))
+    val noServices   = ManyByKey[IO, CategoryId, Service](_ => ZIO.succeed(Nil))
+    val noVariants   = ManyByKey[IO, MasterServiceOfferId, MasterServiceOfferVariant](_ => ZIO.succeed(Nil))
+
+    "store the self-tree parent field label and column" in {
+      val tree = category.selfTree(parent = _.parentId, children = noCategories)
+      assert(tree.parent.label == "parentId")
+      assert(tree.parent.column == "parent_id")
+      assert(tree.node.entity.sourceName == "category")
+    }
+
+    "store the has-many child foreign-key field and retain both nodes" in {
+      val relation = category.hasMany(service)(by = _.categoryId, load = noServices)
+      assert(relation.foreignKey.label == "categoryId")
+      assert(relation.foreignKey.column == "category_id")
+      assert(relation.parent.entity.sourceName == "category")
+      assert(relation.child.entity.sourceName == "service")
+    }
+
+    "store the offer-variants child foreign-key field" in {
+      val relation = offer.hasMany(variant)(by = _.masterServiceOfferId, load = noVariants)
+      assert(relation.foreignKey.label == "masterServiceOfferId")
+      assert(relation.foreignKey.column == "master_service_offer_id")
+      assert(relation.child.entity.sourceName == "master_service_offer_variant")
+    }
+
+    "store the has-value parent node, value source and value key field" in {
+      val schemaLoad = RepoOp.ValueByKey[IO, ServiceId, ServiceVariantSchema](id => ZIO.succeed(ServiceVariantSchema.empty(id)))
+      val relation   = service.hasValue(ServiceVariantSchemas.valueSource)(by = _.serviceId, load = schemaLoad)
+      assert(relation.parent.entity.sourceName == "service")
+      assert(relation.valueKey.label == "serviceId")
+      assert(relation.valueKey.column == "service_id")
+      assert(relation.value.rowSource.sourceName == "service_variant_schema_item")
+    }
+  }
+
+  "ServiceVariantSchema value source" should {
+    "be represented separately from the physical item row source" in {
+      val source = ServiceVariantSchemas.valueSource
+      assert(source.valueModelName == "ServiceVariantSchema")
+      assert(source.rowSource.modelName == "ServiceVariantSchemaItem")
+      assert(source.rowSource.sourceName == "service_variant_schema_item")
+    }
+
+    "key the aggregate by serviceId / service_id" in {
+      val source = ServiceVariantSchemas.valueSource
+      assert(source.keyField.label == "serviceId")
+      assert(source.keyField.column == "service_id")
+    }
+  }
+}

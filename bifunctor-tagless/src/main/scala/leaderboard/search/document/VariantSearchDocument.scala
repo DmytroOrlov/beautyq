@@ -2,10 +2,10 @@ package leaderboard.search.document
 
 import io.circe.{Codec, Decoder, Encoder, HCursor}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import izumi.functional.bio.{Error2, F}
+import izumi.functional.bio.Error2
 import leaderboard.model.Category.CategoryId
 import leaderboard.model.*
-import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.{BeautyQRepoGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}
 
@@ -289,6 +289,14 @@ trait BeautySearchCatalogSnapshotLoader[F[_, _]] {
 }
 
 object BeautySearchCatalogSnapshotLoader {
+
+  /** Loads the full BeautyQ catalog by traversing the model-first repo graph.
+    *
+    * The traversal order, ordering guarantees and first-occurrence dedup are
+    * defined by [[BeautyQRepoGraph]] (structure) and [[GraphLoading]] (generic
+    * interpreter); this loader only orchestrates the relations and assembles
+    * the snapshot.
+    */
   final class FromRepositories[F[+_, +_]: Error2](
     categories: Categories[F],
     services: Services[F],
@@ -299,69 +307,40 @@ object BeautySearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautySearchCatalogSnapshotLoader[F] {
 
-    override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] = {
+    private val graph = new BeautyQRepoGraph[F](
+      categories,
+      services,
+      serviceVariantSchemas,
+      masters,
+      masterLocations,
+      masterServiceOffers,
+      masterServiceOfferVariants,
+    )
+
+    override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
-        loadedCategories <- loadCategories(Category.rootCategoryId)
-        loadedServices <- loadMany(loadedCategories)(category => services.getServicesByCategory(category.id))
-        loadedSchemas <- loadOne(loadedServices)(service => serviceVariantSchemas.getServiceVariantSchema(service.id))
-        loadedMasters <- masters.getMasters()
-        loadedLocations <- loadMany(loadedMasters)(master => masterLocations.getMasterLocationsByMaster(master.id))
-        loadedOffers <- loadMany(loadedMasters)(master => masterServiceOffers.getMasterServiceOffersByMaster(master.id))
-        loadedVariants <- loadMany(loadedOffers)(offer => masterServiceOfferVariants.getMasterServiceOfferVariantsByOffer(offer.id))
+        loadedCategories <- GraphLoading.selfTreeFrom(graph.categoryTree, Category.rootCategoryId)
+        loadedServices   <- GraphLoading.manyFor(graph.categoryServices, loadedCategories)
+        loadedSchemas    <- GraphLoading.valueFor(graph.serviceSchemas, loadedServices)
+        loadedMasters    <- GraphLoading.allOf(graph.allMasters)
+        loadedLocations  <- GraphLoading.manyFor(graph.masterLocationsByMaster, loadedMasters)
+        loadedOffers     <- GraphLoading.manyFor(graph.masterOffersByMaster, loadedMasters)
+        loadedVariants   <- GraphLoading.manyFor(graph.offerVariants, loadedOffers)
       } yield BeautySearchCatalogSnapshot(
-        categories = loadedCategories,
-        services = distinctById(loadedServices)(_.id),
-        serviceVariantSchemas = distinctById(loadedSchemas)(_.serviceId),
-        masters = distinctById(loadedMasters)(_.id),
-        masterLocations = distinctById(loadedLocations)(_.id),
-        masterServiceOffers = distinctById(loadedOffers)(_.id),
-        masterServiceOfferVariants = distinctById(loadedVariants)(_.id),
+        categories                 = loadedCategories,
+        services                   = GraphLoading.distinctByKey(loadedServices)(_.id),
+        serviceVariantSchemas      = GraphLoading.distinctByKey(loadedSchemas)(_.serviceId),
+        masters                    = GraphLoading.distinctByKey(loadedMasters)(_.id),
+        masterLocations            = GraphLoading.distinctByKey(loadedLocations)(_.id),
+        masterServiceOffers        = GraphLoading.distinctByKey(loadedOffers)(_.id),
+        masterServiceOfferVariants = GraphLoading.distinctByKey(loadedVariants)(_.id),
       )
-    }
-
-    private def loadCategories(parentId: CategoryId): F[QueryFailure, List[Category]] = {
-      categories.getChildren(parentId).flatMap {
-        directChildren =>
-          directChildren.foldRight(F.pure(List.empty[Category]): F[QueryFailure, List[Category]]) {
-            (child, acc) =>
-              for {
-                tail <- acc
-                descendants <- loadCategories(child.id)
-              } yield child :: (descendants ++ tail)
-          }
-      }
-    }
-
-    private def loadMany[A, B](items: List[A])(fetch: A => F[QueryFailure, List[B]]): F[QueryFailure, List[B]] =
-      items.foldRight(F.pure(List.empty[B]): F[QueryFailure, List[B]]) {
-        (item, acc) =>
-          for {
-            tail <- acc
-            loaded <- fetch(item)
-          } yield loaded ++ tail
-      }
-
-    private def loadOne[A, B](items: List[A])(fetch: A => F[QueryFailure, B]): F[QueryFailure, List[B]] =
-      items.foldRight(F.pure(List.empty[B]): F[QueryFailure, List[B]]) {
-        (item, acc) =>
-          for {
-            tail <- acc
-            loaded <- fetch(item)
-          } yield loaded :: tail
-      }
-
-    private def distinctById[A, K](items: List[A])(key: A => K): List[A] =
-      items.foldLeft((Set.empty[K], List.empty[A])) {
-        case ((seen, acc), item) =>
-          val itemKey = key(item)
-          if (seen.contains(itemKey)) {
-            (seen, acc)
-          } else {
-            (seen + itemKey, item :: acc)
-          }
-      }._2.reverse
   }
 
+  /** Loads exactly the seed-scoped catalog through the shared repo operation
+    * layer, failing with the canonical missing-entity message when a seed item
+    * is absent.
+    */
   final class SeedScopedFromRepositories[F[+_, +_]: Error2](
     @unused seedReady: BeautyQSeedReady,
     seed: BeautyQSeedData,
@@ -374,48 +353,33 @@ object BeautySearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautySearchCatalogSnapshotLoader[F] {
 
+    private val graph = new BeautyQRepoGraph[F](
+      categories,
+      services,
+      serviceVariantSchemas,
+      masters,
+      masterLocations,
+      masterServiceOffers,
+      masterServiceOfferVariants,
+    )
+
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
-        loadedCategories <- loadExisting(seed.nonRootCategories, "Category")(category => categories.getCategory(category.id))
-        loadedServices <- loadExisting(seed.services, "Service")(service => services.getService(service.id))
-        loadedSchemas <- loadSchemas(seed.services.map(_.id))
-        loadedMasters <- loadExisting(seed.masters, "Master")(master => masters.getMaster(master.id))
-        loadedLocations <- loadExisting(seed.masterLocations, "MasterLocation")(location => masterLocations.getMasterLocation(location.id))
-        loadedOffers <- loadExisting(seed.masterServiceOffers, "MasterServiceOffer")(offer => masterServiceOffers.getMasterServiceOffer(offer.id))
-        loadedVariants <- loadExisting(seed.masterServiceOfferVariants, "MasterServiceOfferVariant")(variant =>
-          masterServiceOfferVariants.getMasterServiceOfferVariant(variant.id)
-        )
+        loadedCategories <- GraphLoading.seedRequired(seed.nonRootCategories, graph.categoryEntity.modelName, (_: Category).id, graph.categoryById)
+        loadedServices   <- GraphLoading.seedRequired(seed.services, graph.serviceEntity.modelName, (_: Service).id, graph.serviceById)
+        loadedSchemas    <- GraphLoading.seedValues(seed.services.map(_.id), graph.schemaByService)
+        loadedMasters    <- GraphLoading.seedRequired(seed.masters, graph.masterEntity.modelName, (_: Master).id, graph.masterById)
+        loadedLocations  <- GraphLoading.seedRequired(seed.masterLocations, graph.masterLocationEntity.modelName, (_: MasterLocation).id, graph.masterLocationById)
+        loadedOffers     <- GraphLoading.seedRequired(seed.masterServiceOffers, graph.masterServiceOfferEntity.modelName, (_: MasterServiceOffer).id, graph.masterServiceOfferById)
+        loadedVariants   <- GraphLoading.seedRequired(seed.masterServiceOfferVariants, graph.masterServiceOfferVariantEntity.modelName, (_: MasterServiceOfferVariant).id, graph.masterServiceOfferVariantById)
       } yield BeautySearchCatalogSnapshot(
-        categories = loadedCategories,
-        services = loadedServices,
-        serviceVariantSchemas = loadedSchemas,
-        masters = loadedMasters,
-        masterLocations = loadedLocations,
-        masterServiceOffers = loadedOffers,
+        categories                 = loadedCategories,
+        services                   = loadedServices,
+        serviceVariantSchemas      = loadedSchemas,
+        masters                    = loadedMasters,
+        masterLocations            = loadedLocations,
+        masterServiceOffers        = loadedOffers,
         masterServiceOfferVariants = loadedVariants,
       )
-
-    private def loadExisting[A, B](items: List[A], entityName: String)(fetch: A => F[QueryFailure, Option[B]]): F[QueryFailure, List[B]] =
-      items.foldRight(F.pure(List.empty[B]): F[QueryFailure, List[B]]) {
-        (item, acc) =>
-          for {
-            tail <- acc
-            loaded <- fetch(item).flatMap {
-              case Some(value) =>
-                F.pure(value)
-              case None =>
-                F.fail(QueryFailure.domain(s"Seed-scoped search snapshot is missing $entityName for seed item $item"))
-            }
-          } yield loaded :: tail
-      }
-
-    private def loadSchemas(serviceIds: List[ServiceId]): F[QueryFailure, List[ServiceVariantSchema]] =
-      serviceIds.foldRight(F.pure(List.empty[ServiceVariantSchema]): F[QueryFailure, List[ServiceVariantSchema]]) {
-        (serviceId, acc) =>
-          for {
-            tail <- acc
-            schema <- serviceVariantSchemas.getServiceVariantSchema(serviceId)
-          } yield schema :: tail
-      }
   }
 }

@@ -7,6 +7,7 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{QueryFailure, Service, ServiceId}
+import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -20,6 +21,17 @@ trait Services[F[_, _]] {
 }
 
 object Services {
+  /** Model-derived entity metadata for [[Service]]. */
+  val entity: RepoEntity[Service] = RepoEntity.derived[Service]
+
+  /** Optional service by id. */
+  def byId[F[_, _]](repo: Services[F]): OptionalByKey[F, ServiceId, Service] =
+    OptionalByKey(repo.getService)
+
+  /** Services by category id. */
+  def byCategory[F[_, _]](repo: Services[F]): ManyByKey[F, CategoryId, Service] =
+    ManyByKey(repo.getServicesByCategory)
+
   private def categoryNotFound(categoryId: CategoryId): QueryFailure =
     QueryFailure.domain(s"Category $categoryId does not exist")
 
@@ -70,21 +82,21 @@ object Services {
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-services") {
           Fragment
             .const("""
-              create table if not exists services (
+              create table if not exists service (
                 id uuid not null,
                 category_id uuid not null,
                 name text not null,
                 primary key (id),
-                constraint services_category_fk
-                  foreign key (category_id) references categories(id),
-                constraint services_category_not_root
+                constraint service_category_fk
+                  foreign key (category_id) references category(id),
+                constraint service_category_not_root
                   check (category_id <> %s)
               ) without oids""".formatted(rootCategoryIdSqlLiteral)).update.run
         })
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-services-category-id-idx") {
           sql"""
-            create index if not exists services_category_id_idx
-              on services(category_id)
+            create index if not exists service_category_id_idx
+              on service(category_id)
           """.update.run
         })
       } yield new Services[F] {
@@ -100,7 +112,7 @@ object Services {
                   sql
                     .execute("upsert-service") {
                       sql"""
-                      insert into services (id, category_id, name)
+                      insert into service (id, category_id, name)
                       values (${service.id}, ${service.categoryId}, ${service.name})
                       on conflict (id) do update set
                         category_id = excluded.category_id,
@@ -116,7 +128,7 @@ object Services {
           sql.execute("get-service") {
             sql"""
               select id, category_id, name
-              from services
+              from service
               where id = $id
             """.query[Service].option
           }
@@ -125,7 +137,7 @@ object Services {
           sql.execute("get-services-by-category") {
             sql"""
               select id, category_id, name
-              from services
+              from service
               where category_id = $categoryId
               order by name asc
             """.query[Service].to[List]
@@ -136,7 +148,7 @@ object Services {
             sql"""
         select exists(
           select 1
-          from categories
+          from category
           where id = $categoryId
         )
       """.query[Boolean].unique

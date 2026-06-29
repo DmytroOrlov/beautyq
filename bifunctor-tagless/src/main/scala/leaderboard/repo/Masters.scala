@@ -5,6 +5,7 @@ import doobie.postgres.implicits.*
 import doobie.implicits.*
 import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.{Master, MasterId, QueryFailure}
+import leaderboard.repo.RepoOp.{AllValues, OptionalByKey}
 import leaderboard.sql.SQL
 import leaderboard.runtime.QueryFailureToThrowable
 import logstage.LogIO2
@@ -16,6 +17,17 @@ trait Masters[F[_, _]] {
 }
 
 object Masters {
+  /** Model-derived entity metadata for [[Master]]. */
+  val entity: RepoEntity[Master] = RepoEntity.derived[Master]
+
+  /** Optional master by id. */
+  def byId[F[_, _]](repo: Masters[F]): OptionalByKey[F, MasterId, Master] =
+    OptionalByKey(repo.getMaster)
+
+  /** All masters. */
+  def all[F[_, _]](repo: Masters[F]): AllValues[F, Master] =
+    AllValues(() => repo.getMasters())
+
   class Dummy[F[+_, +_]: Applicative2: Primitives2]
     extends Lifecycle.LiftF[F[Nothing, _], Masters[F]](for {
       state <- F.mkRef(Map.empty[MasterId, Master])
@@ -41,7 +53,7 @@ object Masters {
   ) extends Lifecycle.LiftF[F[Throwable, _], Masters[F]](for {
       _ <- log.info("Creating Masters table")
       _ <- QueryFailureToThrowable.lift(sql.execute("ddl-masters") {
-        sql"""create table if not exists masters (
+        sql"""create table if not exists master (
              |  id uuid not null,
              |  name text not null,
              |  primary key (id)
@@ -52,7 +64,7 @@ object Masters {
       def upsertMaster(master: Master): F[QueryFailure, Unit] =
         sql
           .execute("upsert-master") {
-            sql"""insert into masters (id, name)
+            sql"""insert into master (id, name)
                  |values (${master.id}, ${master.name})
                  |on conflict (id) do update set
                  |  name = excluded.name
@@ -61,14 +73,14 @@ object Masters {
 
       def getMaster(id: MasterId): F[QueryFailure, Option[Master]] =
         sql.execute("get-master") {
-          sql"""select id, name from masters
+          sql"""select id, name from master
                |where id = $id
                |""".stripMargin.query[Master].option
         }
 
       def getMasters(): F[QueryFailure, List[Master]] =
         sql.execute("get-masters") {
-          sql"""select id, name from masters
+          sql"""select id, name from master
                |order by name asc, id asc
                |""".stripMargin.query[Master].to[List]
         }

@@ -224,7 +224,7 @@ abstract class ServiceVariantSchemasStorageValidationTest extends LeaderboardTes
           _          <- categories.upsertCategory(category)
           _          <- services.upsertService(service)
           _          <- db.execute("insert-invalid-service-variant-schema-item") {
-            sql"""insert into service_variant_schema_items (
+            sql"""insert into service_variant_schema_item (
                  |  service_id,
                  |  attribute_code,
                  |  required

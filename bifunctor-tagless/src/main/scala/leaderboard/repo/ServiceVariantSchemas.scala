@@ -7,6 +7,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{AttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
+import leaderboard.repo.RepoOp.ValueByKey
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -18,6 +19,27 @@ trait ServiceVariantSchemas[F[_, _]] {
 }
 
 object ServiceVariantSchemas {
+  /** Model-derived entity metadata for the physical schema item rows. The
+    * physical table stores one row per schema item, so the source name is
+    * derived from [[ServiceVariantSchemaItem]] rather than the aggregate.
+    */
+  val itemEntity: RepoEntity[ServiceVariantSchemaItem] = RepoEntity.derived[ServiceVariantSchemaItem]
+
+  /** Typed value source for the [[ServiceVariantSchema]] aggregate: keyed by
+    * `serviceId`, physically sourced from the [[ServiceVariantSchemaItem]] rows.
+    * The aggregate is not claimed to share the physical item-row columns.
+    */
+  val valueSource: RepoValueSource[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
+    RepoValueSource(
+      valueModelName = "ServiceVariantSchema",
+      rowSource      = itemEntity,
+      keyField       = RepoField.derived[ServiceVariantSchema, ServiceId](_.serviceId),
+    )
+
+  /** Service variant schema (aggregate value) by service id. */
+  def byService[F[_, _]](repo: ServiceVariantSchemas[F]): ValueByKey[F, ServiceId, ServiceVariantSchema] =
+    ValueByKey(repo.getServiceVariantSchema)
+
   private type ServiceVariantSchemaRow       = (String, Boolean)
   private type ServiceVariantSchemaInsertRow = (ServiceId, String, Boolean)
 
@@ -72,7 +94,7 @@ object ServiceVariantSchemas {
       sql"""
         select exists(
           select 1
-          from services
+          from service
           where id = $serviceId
         )
       """.query[Boolean].unique
@@ -83,7 +105,7 @@ object ServiceVariantSchemas {
       FC.pure(0)
     } else {
       Update[ServiceVariantSchemaInsertRow](
-        """insert into service_variant_schema_items (
+        """insert into service_variant_schema_item (
           |  service_id,
           |  attribute_code,
           |  required
@@ -125,13 +147,13 @@ object ServiceVariantSchemas {
       for {
         _ <- log.info("Creating ServiceVariantSchemas table")
         _ <- QueryFailureToThrowable.lift(sql.execute("ddl-service-variant-schema-items") {
-          sql"""create table if not exists service_variant_schema_items (
+          sql"""create table if not exists service_variant_schema_item (
                |  service_id uuid not null,
                |  attribute_code text not null,
                |  required boolean not null,
                |  primary key (service_id, attribute_code),
-               |  constraint service_variant_schema_items_service_fk
-               |    foreign key (service_id) references services(id)
+               |  constraint service_variant_schema_item_service_fk
+               |    foreign key (service_id) references service(id)
                |) without oids
                |""".stripMargin.update.run
         })
@@ -145,7 +167,7 @@ object ServiceVariantSchemas {
                 sql
                   .execute("upsert-service-variant-schema") {
                     for {
-                      _ <- sql"""delete from service_variant_schema_items
+                      _ <- sql"""delete from service_variant_schema_item
                                 |where service_id = ${schema.serviceId}
                                 |""".stripMargin.update.run
                       _ <- insertSchemaRows(schemaInsertRows(schema))
@@ -159,7 +181,7 @@ object ServiceVariantSchemas {
           sql
             .execute("get-service-variant-schema") {
               sql"""select attribute_code, required
-                   |from service_variant_schema_items
+                   |from service_variant_schema_item
                    |where service_id = $serviceId
                    |order by attribute_code asc
                    |""".stripMargin.query[ServiceVariantSchemaRow].to[List]
