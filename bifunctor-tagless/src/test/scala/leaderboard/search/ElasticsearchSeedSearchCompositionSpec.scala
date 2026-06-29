@@ -2,8 +2,8 @@ package leaderboard.search
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
-import leaderboard.search.dsl.BeautySearchSpecV1
+import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.dsl.{BeautySearchSpecV1, SearchGeoPoint}
 import leaderboard.search.elasticsearch.{
   ElasticsearchFreshnessReadiness,
   ElasticsearchJsonClient,
@@ -17,10 +17,13 @@ import leaderboard.search.elasticsearch.{
   ElasticsearchServingReadiness,
   ElasticsearchStartupReadinessTransition,
   ElasticsearchStartupServingDecision,
+  ElasticsearchIngestionInterpreter,
 }
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
+
+import java.util.UUID
 
 final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
 
@@ -153,6 +156,73 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
       assert(response.variantCarousel.isEmpty)
       assert(response.providerCarousel.isEmpty)
       assert(response.serviceIntentCarousel.isEmpty)
+    }
+
+    "derive unchanged source JSON with nested dynamic attributes" in {
+      val document = VariantSearchDocument(
+        variantId = UUID.fromString("00000000-0000-0000-0000-000000000101"),
+        masterServiceOfferId = UUID.fromString("00000000-0000-0000-0000-000000000202"),
+        masterLocationId = UUID.fromString("00000000-0000-0000-0000-000000000303"),
+        masterId = UUID.fromString("00000000-0000-0000-0000-000000000404"),
+        serviceId = UUID.fromString("00000000-0000-0000-0000-000000000505"),
+        categoryId = UUID.fromString("00000000-0000-0000-0000-000000000606"),
+        serviceName = "Manicure",
+        categoryName = "Nails",
+        masterName = "Beauty Master",
+        locationName = "Central Studio",
+        address = "Main street 1",
+        location = SearchGeoPoint(lat = BigDecimal("52.5200"), lon = BigDecimal("13.4050")),
+        lat = BigDecimal("52.5200"),
+        lon = BigDecimal("13.4050"),
+        priceFrom = BigDecimal("25.00"),
+        priceTo = BigDecimal("40.00"),
+        durationMin = 45,
+        enumAttributes = Map("nail_service_type" -> "manicure"),
+        booleanAttributes = Map("with_removal" -> true),
+        intAttributes = Map.empty,
+        bigDecimalAttributes = Map.empty,
+        allText = "manicure nails beauty master central studio",
+        serviceText = "manicure nails",
+        attributeText = "nail service type manicure with removal true",
+        providerText = "beauty master central studio",
+        locationText = "central studio main street 1 nails",
+      )
+
+      val json = ElasticsearchIngestionInterpreter.sourceJson(spec, document)
+
+      assert(json == Json.obj(
+        "variantId" -> Json.fromString("00000000-0000-0000-0000-000000000101"),
+        "masterServiceOfferId" -> Json.fromString("00000000-0000-0000-0000-000000000202"),
+        "masterLocationId" -> Json.fromString("00000000-0000-0000-0000-000000000303"),
+        "masterId" -> Json.fromString("00000000-0000-0000-0000-000000000404"),
+        "serviceId" -> Json.fromString("00000000-0000-0000-0000-000000000505"),
+        "categoryId" -> Json.fromString("00000000-0000-0000-0000-000000000606"),
+        "serviceName" -> Json.fromString("Manicure"),
+        "categoryName" -> Json.fromString("Nails"),
+        "masterName" -> Json.fromString("Beauty Master"),
+        "locationName" -> Json.fromString("Central Studio"),
+        "address" -> Json.fromString("Main street 1"),
+        "lat" -> Json.fromBigDecimal(BigDecimal("52.5200")),
+        "lon" -> Json.fromBigDecimal(BigDecimal("13.4050")),
+        "priceFrom" -> Json.fromBigDecimal(BigDecimal("25.00")),
+        "priceTo" -> Json.fromBigDecimal(BigDecimal("40.00")),
+        "durationMin" -> Json.fromInt(45),
+        "location" -> Json.obj(
+          "lat" -> Json.fromBigDecimal(BigDecimal("52.5200")),
+          "lon" -> Json.fromBigDecimal(BigDecimal("13.4050")),
+        ),
+        "allText" -> Json.fromString("manicure nails beauty master central studio"),
+        "serviceText" -> Json.fromString("manicure nails"),
+        "attributeText" -> Json.fromString("nail service type manicure with removal true"),
+        "providerText" -> Json.fromString("beauty master central studio"),
+        "locationText" -> Json.fromString("central studio main street 1 nails"),
+        "enumAttributes" -> Json.obj(
+          "nail_service_type" -> Json.fromString("manicure"),
+        ),
+        "booleanAttributes" -> Json.obj(
+          "with_removal" -> Json.True,
+        ),
+      ))
     }
   }
 }

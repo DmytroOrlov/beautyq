@@ -20,6 +20,17 @@ object BeautyQVariantSearchDocumentSchema {
       fields = baseFields ++ dynamicAttributeFields,
     )
 
+  lazy val qdrantPayloadSpec: SearchDocumentPayloadSpec[VariantSearchDocument] =
+    SearchDocumentPayloadSpec(
+      documentSpec = documentSpec,
+      fieldPaths = List(
+        "variantId",
+        "masterLocationId",
+        "serviceId",
+        "serviceName",
+      ),
+    )
+
   lazy val projection: SearchDocumentProjection[BeautySearchCatalogSnapshot, VariantSearchDocument] =
     SearchDocumentProjection(
       documentSpec = documentSpec,

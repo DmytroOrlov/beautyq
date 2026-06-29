@@ -81,6 +81,32 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
   }
 
+  "BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec" should {
+    "own exactly the Qdrant payload field paths" in {
+      val payloadSpec = BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec
+
+      assert(payloadSpec.fieldPaths == List(
+        "variantId",
+        "masterLocationId",
+        "serviceId",
+        "serviceName",
+      ))
+    }
+
+    "reference only fields defined by the document spec" in {
+      val payloadSpec = BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec
+
+      payloadSpec.fieldPaths.foreach { path =>
+        payloadSpec.documentSpec.fieldsByPath.get(path) match {
+          case Some(_) =>
+            (): Unit
+          case None =>
+            fail(s"Expected Qdrant payload field path '$path' to exist in documentSpec")
+        }
+      }
+    }
+  }
+
   "BeautyQVariantSearchDocumentSchema.project" should {
     "project seed variants in source order" in {
       val documents = projectSeedDocuments()

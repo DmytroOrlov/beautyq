@@ -2,23 +2,21 @@ package leaderboard.search.qdrant
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.VariantSearchDocument
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
 
 object QdrantVariantDocumentPointBuilder extends QdrantDocumentPointBuilder[VariantSearchDocument] {
+  private val delegate: QdrantDocumentPointBuilder[VariantSearchDocument] =
+    QdrantDocumentPointBuilder.fromPayloadSpec(BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+
   override def qdrantPointId(document: VariantSearchDocument): Either[QueryFailure, QdrantPointId] =
-    QdrantPointId.fromUuidString(pointId(document))
+    delegate.qdrantPointId(document)
 
   def pointId(document: VariantSearchDocument): String =
-    document.variantId.toString
+    BeautyQVariantSearchDocumentSchema.documentSpec.id(document)
 
   def upsertPointJson(document: VariantSearchDocument, vectorName: String, vector: List[Double]): Json =
     QdrantJsonInterpreter.upsertPointJson(pointId(document), vectorName, vector, payload(document))
 
   override def payload(document: VariantSearchDocument): Map[String, Json] =
-    Map(
-      "variantId" -> Json.fromString(document.variantId.toString),
-      "masterLocationId" -> Json.fromString(document.masterLocationId.toString),
-      "serviceId" -> Json.fromString(document.serviceId.toString),
-      "serviceName" -> Json.fromString(document.serviceName),
-    )
+    delegate.payload(document)
 }
