@@ -27,7 +27,7 @@ final class QdrantJsonInterpreterSpec extends AnyWordSpec {
         embeddingSpec,
         io.circe.JsonObject(
           "managedBootstrapFingerprint" -> "abc123".asJson,
-          "managedBootstrapFingerprintVersion" -> "beautyq-managed-local-search-bootstrap-fingerprint-v1".asJson,
+          "managedBootstrapFingerprintVersion" -> "beautyq-managed-local-search-bootstrap-fingerprint-v2".asJson,
         ),
       )
 
@@ -40,7 +40,7 @@ final class QdrantJsonInterpreterSpec extends AnyWordSpec {
         ),
         "metadata" -> Json.obj(
           "managedBootstrapFingerprint" -> "abc123".asJson,
-          "managedBootstrapFingerprintVersion" -> "beautyq-managed-local-search-bootstrap-fingerprint-v1".asJson,
+          "managedBootstrapFingerprintVersion" -> "beautyq-managed-local-search-bootstrap-fingerprint-v2".asJson,
         ),
       ))
     }

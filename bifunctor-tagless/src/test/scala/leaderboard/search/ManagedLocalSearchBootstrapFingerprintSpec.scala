@@ -61,6 +61,52 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
       assert(original.value != changed.value)
     }
 
+    "expose layered runtime and schema-derived inputs at version v2" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+      val cursor = fingerprint.inputs.hcursor
+
+      assert(BeautyQManagedLocalSearchBootstrapFingerprint.Version == "beautyq-managed-local-search-bootstrap-fingerprint-v2")
+      assert(cursor.get[String]("fingerprintVersion") == Right(BeautyQManagedLocalSearchBootstrapFingerprint.Version))
+      assert(cursor.downField("catalog").succeeded, "expected a catalog section")
+      assert(cursor.downField("runtime").succeeded, "expected a runtime section")
+      assert(cursor.downField("elasticsearch").succeeded, "expected an elasticsearch section")
+      assert(cursor.downField("managedBootstrap").succeeded, "expected a managedBootstrap section")
+      assert(
+        cursor.downField("managedBootstrap").get[String]("embeddingEndpoint") == Right(endpoint),
+        "expected the embedding endpoint as an explicit managed-bootstrap input",
+      )
+    }
+
+    "derive catalog document JSON and runtime field metadata from the document schema" in {
+      val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
+      val fingerprint = BeautyQManagedLocalSearchBootstrapFingerprint.build(baseSpec, catalog, vectorSpec, embeddingSpec, endpoint)
+      val cursor = fingerprint.inputs.hcursor
+
+      val firstDocument = documents.sortBy(_.variantId.toString) match {
+        case head :: _ => head
+        case Nil       => fail("expected seed documents to be non-empty")
+      }
+      val firstDocumentJson = cursor.downField("catalog").downField("documents").downN(0)
+      assert(
+        firstDocumentJson.get[String]("serviceName") == Right(firstDocument.serviceName),
+        "catalog document JSON must be schema-derived from the document spec fields",
+      )
+
+      val runtimeFieldPaths = cursor
+        .downField("runtime")
+        .downField("document")
+        .downField("fields")
+        .focus
+        .flatMap(_.asArray)
+        .map(_.toList.flatMap(_.hcursor.get[String]("path").toOption))
+        .getOrElse(Nil)
+      assert(
+        runtimeFieldPaths == baseSpec.variantDocument.fields.map(_.path),
+        "runtime field metadata must be derived from the document spec fields",
+      )
+    }
+
     "change when the Qdrant vector spec changes" in {
       val catalog = BeautySearchReadyCatalogDocuments("managed-local-fingerprint-spec", documents)
       val changedVectorSpec = VectorSearchSpec(
