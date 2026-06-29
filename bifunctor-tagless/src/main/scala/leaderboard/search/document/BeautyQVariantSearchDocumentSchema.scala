@@ -235,183 +235,135 @@ object BeautyQVariantSearchDocumentSchema {
 
   object Fields {
     val variantId: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "variantId",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.variantId.toString)),
+      SearchField.keywordRendered(
+        _.variantId,
+        _.toString,
         semantic = Some(SearchFieldSemantic.VariantId),
         filterable = true,
         sortable = true,
       )
     val masterServiceOfferId: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "masterServiceOfferId",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.masterServiceOfferId.toString)),
+      SearchField.keywordRendered(
+        _.masterServiceOfferId,
+        _.toString,
         semantic = Some(SearchFieldSemantic.MasterServiceOfferId),
         filterable = true,
       )
     val masterLocationId: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "masterLocationId",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.masterLocationId.toString)),
+      SearchField.keywordRendered(
+        _.masterLocationId,
+        _.toString,
         semantic = Some(SearchFieldSemantic.MasterLocationId),
         filterable = true,
         facetable = true,
       )
     val masterId: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "masterId",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.masterId.toString)),
+      SearchField.keywordRendered(
+        _.masterId,
+        _.toString,
         semantic = Some(SearchFieldSemantic.MasterId),
         filterable = true,
       )
     val serviceId: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "serviceId",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.serviceId.toString)),
+      SearchField.keywordRendered(
+        _.serviceId,
+        _.toString,
         semantic = Some(SearchFieldSemantic.ServiceId),
         filterable = true,
         facetable = true,
       )
     val serviceName: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "serviceName",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.serviceName)),
+      SearchField.keyword(
+        _.serviceName,
         semantic = Some(SearchFieldSemantic.ServiceName),
         filterable = true,
         facetable = true,
       )
     val categoryId: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "categoryId",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.categoryId.toString)),
+      SearchField.keywordRendered(
+        _.categoryId,
+        _.toString,
         semantic = Some(SearchFieldSemantic.CategoryId),
         filterable = true,
         facetable = true,
       )
     val categoryName: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "categoryName",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.categoryName)),
+      SearchField.keyword(
+        _.categoryName,
         semantic = Some(SearchFieldSemantic.CategoryName),
         filterable = true,
         facetable = true,
       )
     val masterName: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "masterName",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.masterName)),
-      )
+      SearchField.keyword(_.masterName)
     val locationName: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "locationName",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.locationName)),
-      )
+      SearchField.keyword(_.locationName)
     val address: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "address",
-        kind = SearchFieldKind.Keyword,
-        extract = document => Some(SearchValue.Keyword(document.address)),
-      )
+      SearchField.keyword(_.address)
     val lat: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "lat",
-        kind = SearchFieldKind.Decimal,
-        extract = document => Some(SearchValue.Decimal(document.lat)),
-      )
+      SearchField.decimal(_.lat)
     val lon: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "lon",
-        kind = SearchFieldKind.Decimal,
-        extract = document => Some(SearchValue.Decimal(document.lon)),
-      )
+      SearchField.decimal(_.lon)
     val priceFrom: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "priceFrom",
-        kind = SearchFieldKind.Decimal,
-        extract = document => Some(SearchValue.Decimal(document.priceFrom)),
+      SearchField.decimal(
+        _.priceFrom,
         semantic = Some(SearchFieldSemantic.PriceFrom),
         filterable = true,
         facetable = true,
         sortable = true,
       )
     val priceTo: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "priceTo",
-        kind = SearchFieldKind.Decimal,
-        extract = document => Some(SearchValue.Decimal(document.priceTo)),
+      SearchField.decimal(
+        _.priceTo,
         semantic = Some(SearchFieldSemantic.PriceTo),
         filterable = true,
         sortable = true,
       )
     val durationMin: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "durationMin",
-        kind = SearchFieldKind.Integer,
-        extract = document => Some(SearchValue.Integer(document.durationMin)),
+      SearchField.integer(
+        _.durationMin,
         semantic = Some(SearchFieldSemantic.DurationMin),
         filterable = true,
         facetable = true,
         sortable = true,
       )
     val location: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "location",
-        kind = SearchFieldKind.GeoPoint,
-        extract = document => Some(SearchValue.GeoPoint(document.location)),
+      SearchField.geoPoint(
+        _.location,
         semantic = Some(SearchFieldSemantic.Location),
         sortable = true,
       )
     val allText: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "allText",
-        kind = SearchFieldKind.Text,
-        extract = document => Some(SearchValue.Text(document.allText)),
+      SearchField.text(
+        _.allText,
         semantic = Some(SearchFieldSemantic.AllText),
         searchable = true,
         boost = 4.0,
       )
     val serviceText: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "serviceText",
-        kind = SearchFieldKind.Text,
-        extract = document => Some(SearchValue.Text(document.serviceText)),
+      SearchField.text(
+        _.serviceText,
         semantic = Some(SearchFieldSemantic.ServiceText),
         searchable = true,
         boost = 5.0,
       )
     val attributeText: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "attributeText",
-        kind = SearchFieldKind.Text,
-        extract = document => Some(SearchValue.Text(document.attributeText)),
+      SearchField.text(
+        _.attributeText,
         semantic = Some(SearchFieldSemantic.AttributeText),
         searchable = true,
         boost = 4.0,
       )
     val providerText: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "providerText",
-        kind = SearchFieldKind.Text,
-        extract = document => Some(SearchValue.Text(document.providerText)),
+      SearchField.text(
+        _.providerText,
         semantic = Some(SearchFieldSemantic.ProviderText),
         searchable = true,
         boost = 2.0,
       )
     val locationText: SearchField[VariantSearchDocument] =
-      SearchField(
-        path = "locationText",
-        kind = SearchFieldKind.Text,
-        extract = document => Some(SearchValue.Text(document.locationText)),
+      SearchField.text(
+        _.locationText,
         semantic = Some(SearchFieldSemantic.LocationText),
         searchable = true,
         boost = 2.5,

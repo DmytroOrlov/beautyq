@@ -111,6 +111,197 @@ final case class SearchField[A](
   analyzer: Option[String] = None,
 )
 
+/** Semi-auto, Caliban-style helpers for declaring [[SearchField]] handles.
+  *
+  * The schema owner still explicitly chooses every field and its kind/semantics/flags; these helpers only
+  * derive the external `path` from a Scala field selector (`_.fieldName`) so the path is never written as a
+  * raw string for static direct document fields. Field kind is visible at the call site through the helper
+  * name, so a `String` field is never ambiguously both text and keyword. Computed/dynamic fields with paths
+  * that do not equal a direct document field label must keep using the explicit [[SearchField]] apply via
+  * [[SearchField.computed]].
+  */
+object SearchField {
+
+  /** Explicit, named alias for the raw constructor, for computed/dynamic fields whose path is not a direct
+    * field label.
+    */
+  def computed[A](
+    path: String,
+    kind: SearchFieldKind,
+    extract: A => Option[SearchValue],
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(path, kind, extract, semantic, searchable, filterable, facetable, sortable, boost, analyzer)
+
+  inline def keyword[A](
+    inline selector: A => String,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, String](selector),
+      kind = SearchFieldKind.Keyword,
+      extract = a => Some(SearchValue.Keyword(selector(a))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+
+  inline def keywordRendered[A, B](
+    inline selector: A => B,
+    render: B => String,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, B](selector),
+      kind = SearchFieldKind.Keyword,
+      extract = a => Some(SearchValue.Keyword(render(selector(a)))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+
+  inline def text[A](
+    inline selector: A => String,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, String](selector),
+      kind = SearchFieldKind.Text,
+      extract = a => Some(SearchValue.Text(selector(a))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+
+  inline def integer[A](
+    inline selector: A => Int,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, Int](selector),
+      kind = SearchFieldKind.Integer,
+      extract = a => Some(SearchValue.Integer(selector(a))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+
+  inline def decimal[A](
+    inline selector: A => BigDecimal,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, BigDecimal](selector),
+      kind = SearchFieldKind.Decimal,
+      extract = a => Some(SearchValue.Decimal(selector(a))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+
+  inline def boolean[A](
+    inline selector: A => Boolean,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, Boolean](selector),
+      kind = SearchFieldKind.Boolean,
+      extract = a => Some(SearchValue.Boolean(selector(a))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+
+  inline def geoPoint[A](
+    inline selector: A => SearchGeoPoint,
+    semantic: Option[SearchFieldSemantic] = None,
+    searchable: Boolean = false,
+    filterable: Boolean = false,
+    facetable: Boolean = false,
+    sortable: Boolean = false,
+    boost: Double = 1.0,
+    analyzer: Option[String] = None,
+  ): SearchField[A] =
+    SearchField(
+      path = SearchFieldMacro.label[A, SearchGeoPoint](selector),
+      kind = SearchFieldKind.GeoPoint,
+      extract = a => Some(SearchValue.GeoPoint(selector(a))),
+      semantic = semantic,
+      searchable = searchable,
+      filterable = filterable,
+      facetable = facetable,
+      sortable = sortable,
+      boost = boost,
+      analyzer = analyzer,
+    )
+}
+
 final case class SearchDocumentSpec[A](
   indexName: String,
   id: A => String,
