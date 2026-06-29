@@ -2,10 +2,10 @@ package leaderboard.search
 
 import io.circe.{Json, JsonObject}
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.BeautyQVariantSearchDocumentSchema
-import leaderboard.search.dsl.VectorSearchSpec
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
+import leaderboard.search.dsl.{SearchField, SearchFieldKind, SearchValue, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
-import leaderboard.search.qdrant.{QdrantCandidateHit, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateSearch}
+import leaderboard.search.qdrant.{QdrantCandidateHit, QdrantCandidateHitDecoder, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateSearch}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Ref, Runtime, Unsafe, ZIO}
 
@@ -74,6 +74,47 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
 
       assert(error.message.contains("Missing payload.variantId"))
       assert(error.message.contains("point-missing-variant-id"))
+    }
+
+    "propagate decoder failure for invalid payload.variantId" in {
+      val spec = VectorSearchSpec(
+        collectionName = "beauty-semantic",
+        vectorName = "variant-embedding",
+        topK = 1,
+        scoreThreshold = None,
+      )
+      val embeddingClient = new ConstEmbeddingClient(Vector(0.5, 0.4))
+      val searchClient = new ConstQdrantSearchClient(Right(List(
+        QdrantSearchHit(
+          id = "point-invalid-variant-id",
+          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString("not-a-uuid"))),
+          score = 0.66,
+        )
+      )))
+
+      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId).search("query", spec))
+
+      assert(error.message.contains("Invalid payload.variantId"))
+      assert(error.message.contains("point-invalid-variant-id"))
+    }
+
+    "derive missing and invalid id diagnostics from the payload field path" in {
+      val customIdField = SearchField[VariantSearchDocument](
+        path = "ids.variant",
+        kind = SearchFieldKind.Keyword,
+        extract = _ => Some(SearchValue.Keyword("unused")),
+      )
+      val missing = QdrantCandidateHitDecoder.decode(
+        hits = List(QdrantSearchHit(id = "point-custom-missing", payload = JsonObject.empty, score = 0.1)),
+        variantIdPayloadField = customIdField,
+      )
+      val invalid = QdrantCandidateHitDecoder.decode(
+        hits = List(QdrantSearchHit(id = "point-custom-invalid", payload = JsonObject.fromMap(Map("ids.variant" -> Json.fromString("bad"))), score = 0.1)),
+        variantIdPayloadField = customIdField,
+      )
+
+      assert(missing.left.exists(_.message.contains("Missing payload.ids.variant")))
+      assert(invalid.left.exists(_.message.contains("Invalid payload.ids.variant")))
     }
 
     "propagate embedding failure" in {

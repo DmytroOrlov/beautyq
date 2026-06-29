@@ -24,12 +24,15 @@ object QdrantCandidateHitDecoder {
     variantIdPayloadField: SearchField[VariantSearchDocument],
   ): Either[QueryFailure, MasterServiceOfferVariantId] =
     hit.payload(variantIdPayloadField.path)
-      .toRight(missingVariantId(hit))
-      .flatMap(json => json.as[MasterServiceOfferVariantId].left.map(_ => invalidVariantId(hit, json)))
+      .toRight(missingVariantId(hit, variantIdPayloadField))
+      .flatMap(json => json.as[MasterServiceOfferVariantId].left.map(_ => invalidVariantId(hit, json, variantIdPayloadField)))
 
-  private def missingVariantId(hit: QdrantSearchHit): QueryFailure =
-    QueryFailure.operation(OperationName, s"Missing payload.variantId for Qdrant hit ${hit.id}")
+  private def missingVariantId(hit: QdrantSearchHit, variantIdPayloadField: SearchField[VariantSearchDocument]): QueryFailure =
+    QueryFailure.operation(OperationName, s"Missing ${payloadFieldLabel(variantIdPayloadField)} for Qdrant hit ${hit.id}")
 
-  private def invalidVariantId(hit: QdrantSearchHit, json: Json): QueryFailure =
-    QueryFailure.operation(OperationName, s"Invalid payload.variantId for Qdrant hit ${hit.id}: ${json.noSpaces}")
+  private def invalidVariantId(hit: QdrantSearchHit, json: Json, variantIdPayloadField: SearchField[VariantSearchDocument]): QueryFailure =
+    QueryFailure.operation(OperationName, s"Invalid ${payloadFieldLabel(variantIdPayloadField)} for Qdrant hit ${hit.id}: ${json.noSpaces}")
+
+  private def payloadFieldLabel(field: SearchField[VariantSearchDocument]): String =
+    s"payload.${field.path}"
 }

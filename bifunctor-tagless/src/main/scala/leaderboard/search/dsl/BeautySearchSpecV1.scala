@@ -6,6 +6,11 @@ import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantS
 object BeautySearchSpecV1 {
   private val Fields = BeautyQVariantSearchDocumentSchema.Fields
 
+  lazy val runtimeSpec: SearchRuntimeSpec[VariantSearchDocument] =
+    spec.runtimeSpec(
+      Map(SearchRuntimeSpec.QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+    )
+
   lazy val spec: BeautySearchSpec = BeautySearchSpec(
     variantDocument = BeautyQVariantSearchDocumentSchema.documentSpec,
     intentVocabulary = BeautyQSearchIntentVocabulary.vocabulary,

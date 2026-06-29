@@ -27,10 +27,34 @@ import java.util.UUID
 final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContractTestSupport {
   private val spec = BeautySearchSpecV1.spec
 
+  "QdrantVariantSupplementPolicy.AppendAll" should {
+    "preserve existing qdrant-only append behavior up to cap room" in {
+      val esOwnedId = variantId(1)
+      val firstQdrantOnly = variantId(2)
+      val secondQdrantOnly = variantId(3)
+      val hits = List(
+        SemanticCandidateHit(esOwnedId, 0.99),
+        SemanticCandidateHit(firstQdrantOnly, 0.90),
+        SemanticCandidateHit(secondQdrantOnly, 0.80),
+      )
+
+      val selected = QdrantVariantSupplementPolicy.AppendAll.select(
+        intent = intentWithConstraints(Nil),
+        esVariantIds = Set(esOwnedId),
+        qdrantHits = hits,
+        documentsById = Map.empty,
+        capRoom = 1,
+      )
+
+      assert(selected == List(SemanticCandidateHit(firstQdrantOnly, 0.90)))
+    }
+  }
+
   "QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1" should {
     "append at most one Qdrant-only candidate even with several survivors and no constraints" in {
+      val expectedHit = SemanticCandidateHit(variantId(1), 0.9)
       val hits = List(
-        SemanticCandidateHit(variantId(1), 0.9),
+        expectedHit,
         SemanticCandidateHit(variantId(2), 0.8),
         SemanticCandidateHit(variantId(3), 0.7),
       )
@@ -44,7 +68,7 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
         capRoom = 3,
       )
 
-      assert(selected == List(hits.head))
+      assert(selected == List(expectedHit))
     }
 
     "filter by explicit constraints before selecting the top survivor" in {
@@ -61,6 +85,29 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
 
       val selected = QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1.select(
         intent = intentWithConstraints(List(SearchConstraint.ServiceAny(Set("Manicure")))),
+        esVariantIds = Set.empty,
+        qdrantHits = hits,
+        documentsById = documentsById,
+        capRoom = 3,
+      )
+
+      assert(selected == List(SemanticCandidateHit(matchingId, 0.80)))
+    }
+
+    "preserve BeautyQ price-overlap constraint semantics" in {
+      val matchingId = variantId(1)
+      val nonMatchingId = variantId(2)
+      val hits = List(
+        SemanticCandidateHit(nonMatchingId, 0.95),
+        SemanticCandidateHit(matchingId, 0.80),
+      )
+      val documentsById = Map(
+        nonMatchingId -> document(nonMatchingId, priceFrom = BigDecimal(10), priceTo = BigDecimal(14)),
+        matchingId -> document(matchingId, priceFrom = BigDecimal(10), priceTo = BigDecimal(20)),
+      )
+
+      val selected = QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1.select(
+        intent = intentWithConstraints(List(SearchConstraint.PriceRange(Some(BigDecimal(15)), None))),
         esVariantIds = Set.empty,
         qdrantHits = hits,
         documentsById = documentsById,
@@ -106,6 +153,20 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
       )
 
       assert(selected == Nil)
+    }
+
+    "preserve existing qdrant-only behavior when the lexical prefix is empty and cap room is available" in {
+      val hit = SemanticCandidateHit(variantId(1), 0.9)
+
+      val selected = QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1.select(
+        intent = intentWithConstraints(Nil),
+        esVariantIds = Set.empty,
+        qdrantHits = List(hit),
+        documentsById = Map.empty,
+        capRoom = 3,
+      )
+
+      assert(selected == List(hit))
     }
 
     "not silently approve candidates that fail any supported constraint type" in {
@@ -203,6 +264,32 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
       assert(response.serviceIntentCarousel == esResponse.serviceIntentCarousel)
       assert(response.facets == esResponse.facets)
       assert(response.inferredFilters == esResponse.inferredFilters)
+    }
+
+    "not fall back to Qdrant-only when the ES prefix is empty and explicit constraints reject every semantic candidate" in {
+      val candidateId = variantId(1)
+      val esResponse = BeautySearchResponse(Nil, Nil, Nil, Nil, Nil)
+      val lexical = new StubBeautySearchBackend(esResponse)
+      val semantic = new StubSemanticCandidateBackend(List(SemanticCandidateHit(candidateId, 0.9)))
+      val lookup = new StubVariantSearchDocumentLookup(List(document(candidateId, serviceName = "Massage")))
+      val backend = new ExperimentalHybridSearchBackend[IO](
+        spec,
+        lexical,
+        (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+        semantic,
+        lookup,
+        QdrantVariantSupplementPolicy.ExplicitConstraintsFilterPlusTop1,
+      )
+
+      val response = runIO(
+        backend.search(
+          UserSearchInput("synthetic rejected supplement", None, None, limit = 10),
+          intentWithConstraints(List(SearchConstraint.ServiceAny(Set("Manicure")))),
+        )
+      )
+
+      assert(response.variantCarousel == Nil)
+      assert(response.qdrantSupplement == QdrantSupplementSummary.usedNoAppend(QdrantSupplementPolicyName.ExplicitConstraintsFilterPlusTop1))
     }
 
     "never exceed the carousel cap" in {

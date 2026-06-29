@@ -21,21 +21,41 @@ object SearchSpecSupport {
     spec: BeautySearchSpec,
     document: VariantSearchDocument,
   ): Map[String, SearchValue] =
-    spec.variantDocument.fields.flatMap(field => field.extract(document).map(field.path -> _)).toMap
+    valuesByPath(spec.runtimeSpec(Map.empty), document)
+
+  def valuesByPath[A](
+    runtimeSpec: SearchRuntimeSpec[A],
+    document: A,
+  ): Map[String, SearchValue] =
+    runtimeSpec.documentSpec.fields.flatMap(field => field.extract(document).map(field.path -> _)).toMap
 
   def valueByPath(
     spec: BeautySearchSpec,
     document: VariantSearchDocument,
     path: String,
   ): Either[QueryFailure, Option[SearchValue]] =
-    spec.variantDocument.fieldByPath(path).map(field => field.extract(document))
+    valueByPath(spec.runtimeSpec(Map.empty), document, path)
+
+  def valueByPath[A](
+    runtimeSpec: SearchRuntimeSpec[A],
+    document: A,
+    path: String,
+  ): Either[QueryFailure, Option[SearchValue]] =
+    runtimeSpec.documentSpec.fieldByPath(path).map(field => field.extract(document))
 
   def valueByField(
     spec: BeautySearchSpec,
     document: VariantSearchDocument,
     field: SearchField[VariantSearchDocument],
   ): Either[QueryFailure, Option[SearchValue]] =
-    spec.variantDocument.fieldByPath(field.path).map(_ => field.extract(document))
+    valueByField(spec.runtimeSpec(Map.empty), document, field)
+
+  def valueByField[A](
+    runtimeSpec: SearchRuntimeSpec[A],
+    document: A,
+    field: SearchField[A],
+  ): Either[QueryFailure, Option[SearchValue]] =
+    runtimeSpec.documentSpec.fieldByPath(field.path).map(_ => field.extract(document))
 
   def valueBySemantic(
     spec: BeautySearchSpec,
@@ -61,26 +81,40 @@ object SearchSpecSupport {
     document: VariantSearchDocument,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Boolean] =
-    spec.querySchema.resolve(constraint).flatMap(resolvedConstraintMatches(spec, document, _))
+    matchesConstraint(spec.runtimeSpec(Map.empty), document, constraint)
+
+  def matchesConstraint[A](
+    runtimeSpec: SearchRuntimeSpec[A],
+    document: A,
+    constraint: SearchConstraint,
+  ): Either[QueryFailure, Boolean] =
+    runtimeSpec.querySchema.resolve(constraint).flatMap(resolvedConstraintMatches(runtimeSpec, document, _))
 
   def resolvedConstraintMatches(
     spec: BeautySearchSpec,
     document: VariantSearchDocument,
     constraint: ResolvedSearchConstraint[VariantSearchDocument],
   ): Either[QueryFailure, Boolean] =
+    resolvedConstraintMatches(spec.runtimeSpec(Map.empty), document, constraint)
+
+  def resolvedConstraintMatches[A](
+    runtimeSpec: SearchRuntimeSpec[A],
+    document: A,
+    constraint: ResolvedSearchConstraint[A],
+  ): Either[QueryFailure, Boolean] =
     constraint match {
       case ResolvedSearchConstraint.Terms(field, values, _) =>
-        valueByField(spec, document, field).map {
+        valueByField(runtimeSpec, document, field).map {
           case Some(value) => values.contains(value.render)
           case None => false
         }
       case ResolvedSearchConstraint.BooleanTerm(field, expected, _) =>
-        valueByField(spec, document, field).map {
+        valueByField(runtimeSpec, document, field).map {
           case Some(SearchValue.Boolean(actual)) => actual == expected
           case _ => false
         }
       case ResolvedSearchConstraint.Range(field, min, max, _) =>
-        valueByField(spec, document, field).map {
+        valueByField(runtimeSpec, document, field).map {
           case Some(SearchValue.Integer(actual)) => rangeMatches(BigDecimal(actual), min, max)
           case Some(SearchValue.Decimal(actual)) => rangeMatches(actual, min, max)
           case _ => false
