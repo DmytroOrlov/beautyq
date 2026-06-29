@@ -1,11 +1,12 @@
 package leaderboard.search
 
 import com.typesafe.config.ConfigFactory
+import distage.config.ConfigModuleDef
 import distage.{Injector, ModuleDef, Scene}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
-import leaderboard.plugins.{BeautySearchLocalQdrantSupplementLauncherModule, LeaderboardPlugin}
+import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClientConfig}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -42,7 +43,7 @@ final class LlamaCppEmbeddingClientConfigSpec extends AnyWordSpec {
     "resolve managed local EmbeddingClient and config through Distage" in {
       val module = new ModuleDef {
         make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
-        include(LeaderboardPlugin.modules.configs)
+        include(llamaCppEmbeddingConfigModule)
         include(BeautySearchLocalQdrantSupplementLauncherModule.managedLocalDefault)
         make[Probe].from {
           (config: LlamaCppEmbeddingClientConfig, client: EmbeddingClient) =>
@@ -75,6 +76,10 @@ final class LlamaCppEmbeddingClientConfigSpec extends AnyWordSpec {
       baseUrl = config.getString("baseUrl"),
       endpointPath = config.getString("endpointPath"),
     )
+  }
+
+  private def llamaCppEmbeddingConfigModule: ConfigModuleDef = new ConfigModuleDef {
+    makeConfig[LlamaCppEmbeddingClientConfig]("llama-cpp-embedding")
   }
 
   private final case class Probe(

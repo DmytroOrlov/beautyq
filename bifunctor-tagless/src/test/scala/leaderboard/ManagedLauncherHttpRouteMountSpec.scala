@@ -3,12 +3,15 @@ package leaderboard
 import cats.effect.Async
 import cats.syntax.all.*
 import com.comcast.ip4s.{Ipv4Address, Port}
+import distage.Mode
 import distage.Lifecycle
 import distage.StandardAxis.Repo
 import distage.{DIKey, Injector, ModuleDef, Scene}
+import doobie.util.transactor.Transactor
 import fs2.io.net.Network
 import io.circe.parser.{decode, parse}
 import io.circe.syntax.*
+import izumi.fundamentals.platform.integration.PortCheck
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import izumi.logstage.api.IzLogger
@@ -39,7 +42,8 @@ import leaderboard.http.tapir.{
   ServiceTapirEndpoints,
 }
 import leaderboard.model.QueryFailure
-import leaderboard.plugins.{BeautySearchLocalQdrantSupplementLauncherModule, LeaderboardPlugin}
+import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
+import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import leaderboard.search.document.BeautySearchReadyCatalogDocuments
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -56,7 +60,9 @@ import leaderboard.search.{
   VariantResultOrigin,
 }
 import leaderboard.seed.BeautyQSeedReady
+import leaderboard.seed.{BeautyQSeedInserter, BeautyQSeedLoader}
 import leaderboard.services.Ranks
+import leaderboard.sql.{SQL, TransactorResource}
 import logstage.LogIO2
 import org.http4s.Status
 import org.http4s.ember.server.EmberServerBuilder
@@ -64,6 +70,7 @@ import zio.interop.catz.*
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
 
 import java.util.UUID
+import scala.concurrent.duration.*
 
 /**
  * Permanent managed-launcher route mount smoke. It mirrors the local managed launcher retention shape:
@@ -231,9 +238,9 @@ final class ManagedLauncherHttpRouteMountSpec
   ): Task[ManagedLauncherRouteSetProbe] = {
     val module = new ModuleDef {
       include(managedLauncherNonSearchPublicApiModule)
-      include(LeaderboardPlugin.modules.repoProd[IO])
-      include(LeaderboardPlugin.modules.seed[IO])
-      include(LeaderboardPlugin.modules.seedManaged[IO])
+      include(managedLauncherRepoProdModule)
+      include(managedLauncherSeedModule)
+      include(managedLauncherSeedManagedModule)
       include(BeautySearchLocalQdrantSupplementLauncherModule.managedLocalDefault)
       include(LogIO2Module[IO]())
       make[IzLogger].fromValue(IzLogger())
@@ -348,6 +355,35 @@ final class ManagedLauncherHttpRouteMountSpec
         locatorPrivacy = LocatorPrivacy.PublicByDefault,
       )
       .use(locator => ZIO.succeed(locator.get[ManagedLauncherRouteSetProbe]))
+  }
+
+  private def managedLauncherRepoProdModule: ModuleDef = new ModuleDef {
+    tag(Repo.Prod)
+
+    make[Ladder[IO]].fromResource[Ladder.Postgres[IO]]
+    make[Categories[IO]].fromResource[Categories.Postgres[IO]]
+    make[Masters[IO]].fromResource[Masters.Postgres[IO]]
+    make[MasterLocations[IO]].fromResource[MasterLocations.Postgres[IO]]
+    make[MasterServiceOffers[IO]].fromResource[MasterServiceOffers.Postgres[IO]]
+    make[ServiceVariantSchemas[IO]].fromResource[ServiceVariantSchemas.Postgres[IO]]
+    make[MasterServiceOfferVariants[IO]].fromResource[MasterServiceOfferVariants.Postgres[IO]]
+    make[Services[IO]].fromResource[Services.Postgres[IO]]
+    make[Profiles[IO]].fromResource[Profiles.Postgres[IO]]
+
+    make[SQL[IO]].from[SQL.Impl[IO]]
+
+    make[Transactor[IO[Throwable, _]]].fromResource[TransactorResource[IO[Throwable, _]]]
+    make[PortCheck].from(new PortCheck(3.seconds))
+  }
+
+  private def managedLauncherSeedModule: ModuleDef = new ModuleDef {
+    make[BeautyQSeedLoader].from[BeautyQSeedLoader.ResourceLoader]
+    make[BeautyQSeedInserter[IO]].from[BeautyQSeedInserter.Impl[IO]]
+  }
+
+  private def managedLauncherSeedManagedModule: ModuleDef = new ModuleDef {
+    tag(Mode.Prod, Scene.Managed)
+    make[BeautyQSeedReady].fromResource[BeautyQSeedReady.LoadAndInsert[IO]]
   }
 
   private def assertApiInventory(apis: Set[HttpApi[IO]]): Unit = {

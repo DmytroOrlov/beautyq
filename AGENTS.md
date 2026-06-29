@@ -73,7 +73,9 @@ sbt 'Test/compile' 'testOnly package.SomeSpec'
 * Do not use ad-hoc test-local `include(LeaderboardPlugin.modules.api[IO])` inside focused/unit spec `ModuleDef`s.
 * `LeaderboardPlugin.modules.api[IO]` is a concrete example of the broader hazard: whole-plugin includes inside focused specs.
 * The reproduced hazard is ad-hoc whole-plugin include in focused specs, which can trigger `IncludesDSL$Include.interpret` NPE in Distage.
-* Do not assume the nearest touched feature binding is the direct root cause.
+* When a full-suite/coordinator run aborts with `IncludesDSL$Include.interpret` or `Include.bindings() is null`, do not debug the first aborted suite as root cause. First search for ad-hoc whole-plugin includes in tests, including `LeaderboardPlugin.modules.api`, `apiBase`, and similar broad plugin module includes.
+* Replace test-local whole-plugin includes with targeted modules, existing role/testkit fixtures, or explicit minimal bindings. If no broad include is found, stop and request a bundle with the matched stack trace, module snippets, and grep output.
+* This abort is a graph-construction hazard, not product behavior evidence.
 * Changes touching `LeaderboardPlugin.modules.api` or whole-plugin include tests require coordinator/user full project verification. Delegated agents must not run full-suite verification and must not call such patches commit-ready from focused checks alone.
 
 ### Intentional dependency edges

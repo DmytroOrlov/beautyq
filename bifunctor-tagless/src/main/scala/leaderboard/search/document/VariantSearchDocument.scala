@@ -3,9 +3,9 @@ package leaderboard.search.document
 import io.circe.{Codec, Decoder, Encoder, HCursor}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import izumi.functional.bio.Error2
-import leaderboard.model.Category.CategoryId
 import leaderboard.model.*
 import leaderboard.repo.{BeautyQRepoGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}
 
@@ -131,157 +131,8 @@ object VariantSearchDocument {
 }
 
 object VariantSearchDocumentBuilder {
-  private val BuildOperationName = "build-variant-search-documents"
-
-  def build(snapshot: BeautySearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] = {
-    val categoriesById = snapshot.categories.iterator.map(category => category.id -> category).toMap
-    val servicesById = snapshot.services.iterator.map(service => service.id -> service).toMap
-    val schemasByServiceId = snapshot.serviceVariantSchemas.iterator.map(schema => schema.serviceId -> schema).toMap
-    val mastersById = snapshot.masters.iterator.map(master => master.id -> master).toMap
-    val locationsById = snapshot.masterLocations.iterator.map(location => location.id -> location).toMap
-    val offersById = snapshot.masterServiceOffers.iterator.map(offer => offer.id -> offer).toMap
-
-    snapshot.masterServiceOfferVariants.foldRight[Either[QueryFailure, List[VariantSearchDocument]]](Right(Nil)) {
-      (variant, acc) =>
-        for {
-          tail <- acc
-          next <- buildDocument(
-            variant = variant,
-            categoriesById = categoriesById,
-            servicesById = servicesById,
-            schemasByServiceId = schemasByServiceId,
-            mastersById = mastersById,
-            locationsById = locationsById,
-            offersById = offersById,
-          )
-        } yield next :: tail
-    }
-  }
-
-  private def buildDocument(
-    variant: MasterServiceOfferVariant,
-    categoriesById: Map[CategoryId, Category],
-    servicesById: Map[ServiceId, Service],
-    schemasByServiceId: Map[ServiceId, ServiceVariantSchema],
-    mastersById: Map[MasterId, Master],
-    locationsById: Map[MasterLocationId, MasterLocation],
-    offersById: Map[MasterServiceOfferId, MasterServiceOffer],
-  ): Either[QueryFailure, VariantSearchDocument] = {
-    for {
-      offer <- offersById.get(variant.masterServiceOfferId).toRight(missingJoin("MasterServiceOffer", variant.masterServiceOfferId, variant.id))
-      service <- servicesById.get(offer.serviceId).toRight(missingJoin("Service", offer.serviceId, variant.id))
-      category <- categoriesById.get(service.categoryId).toRight(missingJoin("Category", service.categoryId, variant.id))
-      master <- mastersById.get(offer.masterId).toRight(missingJoin("Master", offer.masterId, variant.id))
-      location <- locationsById.get(variant.masterLocationId).toRight(missingJoin("MasterLocation", variant.masterLocationId, variant.id))
-      _ <- {
-        if (location.masterId == offer.masterId) {
-          Right(())
-        } else {
-          Left(
-            QueryFailure.domain(
-              s"$BuildOperationName: variant ${variant.id} joins offer ${offer.id} and location ${location.id} from different masters (${offer.masterId} != ${location.masterId})"
-            )
-          )
-        }
-      }
-      _ <- validateAgainstSchema(variant, service.id, schemasByServiceId.get(service.id))
-      enumAttributes = variant.enumAttributes.iterator.collect {
-        case (definition: EnumAttributeDefinition[?], value) => definition.code -> value.stringCode
-      }.toMap
-      booleanAttributes = variant.booleanAttributes.iterator.map {
-        case (definition, value) => definition.code -> value
-      }.toMap
-      intAttributes = variant.intAttributes.iterator.map {
-        case (definition, value) => definition.code -> value
-      }.toMap
-      bigDecimalAttributes = variant.bigDecimalAttributes.iterator.map {
-        case (definition, value) => definition.code -> value
-      }.toMap
-      attributeTokens = makeAttributeTokens(enumAttributes, booleanAttributes, intAttributes, bigDecimalAttributes)
-      serviceText = normalizeText(List(service.name, category.name))
-      attributeText = normalizeText(attributeTokens)
-      providerText = normalizeText(List(master.name, location.name))
-      locationText = normalizeText(List(location.name, location.address, category.name))
-      allText = normalizeText(List(serviceText, attributeText, providerText, locationText))
-    } yield VariantSearchDocument(
-      variantId = variant.id,
-      masterServiceOfferId = variant.masterServiceOfferId,
-      masterLocationId = variant.masterLocationId,
-      masterId = master.id,
-      serviceId = service.id,
-      categoryId = category.id,
-      serviceName = service.name,
-      categoryName = category.name,
-      masterName = master.name,
-      locationName = location.name,
-      address = location.address,
-      location = SearchGeoPoint(location.lat, location.lon),
-      lat = location.lat,
-      lon = location.lon,
-      priceFrom = variant.priceFrom,
-      priceTo = variant.priceTo,
-      durationMin = variant.durationMin,
-      enumAttributes = enumAttributes,
-      booleanAttributes = booleanAttributes,
-      intAttributes = intAttributes,
-      bigDecimalAttributes = bigDecimalAttributes,
-      allText = allText,
-      serviceText = serviceText,
-      attributeText = attributeText,
-      providerText = providerText,
-      locationText = locationText,
-    )
-  }
-
-  private def validateAgainstSchema(
-    variant: MasterServiceOfferVariant,
-    serviceId: ServiceId,
-    schema: Option[ServiceVariantSchema],
-  ): Either[QueryFailure, Unit] =
-    schema match {
-      case Some(value) =>
-        value.validate(variant.attributes).left.map {
-          error =>
-            QueryFailure.domain(s"$BuildOperationName: variant ${variant.id} violates schema for service $serviceId: $error")
-        }
-      case None =>
-        Right(())
-    }
-
-  private def missingJoin(entityName: String, id: Any, variantId: MasterServiceOfferVariantId): QueryFailure =
-    QueryFailure.domain(s"$BuildOperationName: missing $entityName $id while building document for variant $variantId")
-
-  private def makeAttributeTokens(
-    enumAttributes: Map[String, String],
-    booleanAttributes: Map[String, Boolean],
-    intAttributes: Map[String, Int],
-    bigDecimalAttributes: Map[String, BigDecimal],
-  ): List[String] = {
-    val enumTokens = enumAttributes.toList.flatMap {
-      case (code, value) =>
-        List(code, value, humanize(code), humanize(value))
-    }
-    val booleanTokens = booleanAttributes.toList.flatMap {
-      case (code, value) =>
-        List(code, humanize(code), value.toString)
-    }
-    val intTokens = intAttributes.toList.flatMap {
-      case (code, value) =>
-        List(code, humanize(code), value.toString)
-    }
-    val decimalTokens = bigDecimalAttributes.toList.flatMap {
-      case (code, value) =>
-        List(code, humanize(code), value.toString())
-    }
-
-    enumTokens ++ booleanTokens ++ intTokens ++ decimalTokens
-  }
-
-  private def humanize(value: String): String =
-    value.replace('_', ' ')
-
-  private def normalizeText(parts: Iterable[String]): String =
-    parts.iterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
+  def build(snapshot: BeautySearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] =
+    BeautyQVariantSearchDocumentSchema.project(snapshot)
 }
 
 trait BeautySearchCatalogSnapshotLoader[F[_, _]] {

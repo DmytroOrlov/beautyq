@@ -3,7 +3,7 @@ package leaderboard.plugins
 import distage.{ModuleDef, TagKK}
 import izumi.functional.bio.Error2
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.elasticsearch.{
   ElasticsearchJsonClient,
@@ -141,7 +141,7 @@ object BeautySearchCatalogBackendFactory {
   def fromSeedLoader(loader: BeautyQSeedLoader): Either[QueryFailure, BeautySearchReadyCatalogDocuments] =
     for {
       seed <- loader.load()
-      documents <- VariantSearchDocumentBuilder.build(BeautySearchCatalogSnapshot.fromSeedData(seed))
+      documents <- BeautyQVariantSearchDocumentSchema.project(BeautySearchCatalogSnapshot.fromSeedData(seed))
       ready <- BeautySearchReadyCatalogDocuments.from(SeedResourceLoaderSource, documents)
     } yield ready
 
