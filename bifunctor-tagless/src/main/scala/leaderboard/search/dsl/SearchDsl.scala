@@ -3,7 +3,6 @@ package leaderboard.search.dsl
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
 import io.circe.syntax.*
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{SearchDocumentPayloadSpec, VariantSearchDocument}
 
 sealed trait VectorDistance extends Product with Serializable
 object VectorDistance {
@@ -620,28 +619,3 @@ final case class CarouselSpec[A](
   serviceIntentGroupField: SearchField[A],
   ranking: RankingSpec = RankingSpec(),
 )
-
-final case class BeautySearchSpec(
-  variantDocument: SearchDocumentSpec[VariantSearchDocument],
-  intentVocabulary: SearchIntentVocabulary,
-  carouselSpec: CarouselSpec[VariantSearchDocument],
-  facetSpec: FacetSpec[VariantSearchDocument],
-  requestSpec: SearchRequestSpec = SearchRequestSpec(),
-  querySchema: SearchQuerySchema[VariantSearchDocument],
-  embeddingSpec: Option[EmbeddingSpec[VariantSearchDocument]] = None,
-  vectorSearchSpec: Option[VectorSearchSpec] = None,
-) {
-  def runtimeSpec(
-    payloadSpecs: Map[String, SearchDocumentPayloadSpec[VariantSearchDocument]]
-  ): SearchRuntimeSpec[VariantSearchDocument] =
-    SearchRuntimeSpec(
-      documentSpec = variantDocument,
-      querySchema = querySchema,
-      requestSpec = requestSpec,
-      facetSpec = facetSpec,
-      carouselSpec = carouselSpec,
-      payloadSpecs = payloadSpecs,
-      embeddingSpec = embeddingSpec,
-      vectorSearchSpec = vectorSearchSpec,
-    )
-}

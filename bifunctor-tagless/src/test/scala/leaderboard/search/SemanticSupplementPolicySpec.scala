@@ -1,97 +1,82 @@
 package leaderboard.search
 
-import leaderboard.search.dsl.*
-import leaderboard.search.hybrid.SemanticSupplementPolicy
+import leaderboard.search.semantic.{SemanticSupplementPolicy, SemanticSupplementWindow}
 import org.scalatest.wordspec.AnyWordSpec
 
 final class SemanticSupplementPolicySpec extends AnyWordSpec {
+  "SemanticSupplementPolicy.AppendAll" should {
+    "preserve the lexical prefix order and append semantic candidates within cap room" in {
+      val lexicalPrefix = List(ToyDocument("lex-1"), ToyDocument("lex-2"))
+      val semanticCandidates = List(ToyDocument("sem-1"), ToyDocument("sem-2"), ToyDocument("sem-3"))
+      val policy = SemanticSupplementPolicy.AppendAll[ToyDocument]()
+
+      val selected = policy.select(
+        lexicalPrefix = lexicalPrefix,
+        semanticCandidates = semanticCandidates,
+        window = SemanticSupplementWindow(capRoom = 2),
+      )
+
+      assert(selected == lexicalPrefix ++ List(ToyDocument("sem-1"), ToyDocument("sem-2")))
+    }
+
+    "remove semantic candidates already present in the lexical prefix" in {
+      val lexicalPrefix = List(ToyDocument("lex-1"), ToyDocument("lex-2"))
+      val semanticCandidates = List(ToyDocument("lex-1"), ToyDocument("sem-1"))
+      val policy = SemanticSupplementPolicy.AppendAll[ToyDocument]()
+
+      val selected = policy.select(
+        lexicalPrefix = lexicalPrefix,
+        semanticCandidates = semanticCandidates,
+        window = SemanticSupplementWindow(capRoom = 4),
+      )
+
+      assert(selected == lexicalPrefix ++ List(ToyDocument("sem-1")))
+    }
+  }
+
   "SemanticSupplementPolicy.PrefixPreservingTop1" should {
-    "preserve lexical prefix order and append only the first eligible semantic candidate after the prefix" in {
-      val firstLexical = ToyDocument("lex-1", eligible = true)
-      val secondLexical = ToyDocument("lex-2", eligible = true)
-      val skippedSemantic = ToyDocument("sem-1", eligible = false)
+    "preserve the lexical prefix order and append only the first eligible candidate" in {
+      val lexicalPrefix = List(ToyDocument("lex-1"), ToyDocument("lex-2"))
+      val skipped = ToyDocument("sem-1", eligible = false)
       val selectedSemantic = ToyDocument("sem-2", eligible = true)
-      val laterSemantic = ToyDocument("sem-3", eligible = true)
+      val later = ToyDocument("sem-3", eligible = true)
       val policy = SemanticSupplementPolicy.PrefixPreservingTop1[ToyDocument](_.eligible)
 
       val selected = policy.select(
-        lexicalPrefix = List(firstLexical, secondLexical),
-        semanticCandidates = List(skippedSemantic, selectedSemantic, laterSemantic),
-        request = UserSearchInput("toy", None, None, limit = 4),
-        runtimeSpec = runtimeSpec,
+        lexicalPrefix = lexicalPrefix,
+        semanticCandidates = List(skipped, selectedSemantic, later),
+        window = SemanticSupplementWindow(capRoom = 4),
       )
 
-      assert(selected == List(firstLexical, secondLexical, selectedSemantic))
+      assert(selected == lexicalPrefix ++ List(selectedSemantic))
     }
 
-    "never produce Qdrant-only fallback when request limit leaves no room after the lexical prefix" in {
-      val lexicalPrefix = List(ToyDocument("lex-1", eligible = true), ToyDocument("lex-2", eligible = true))
+    "append nothing when cap room is zero" in {
+      val lexicalPrefix = List(ToyDocument("lex-1"), ToyDocument("lex-2"))
       val policy = SemanticSupplementPolicy.PrefixPreservingTop1[ToyDocument](_.eligible)
 
       val selected = policy.select(
         lexicalPrefix = lexicalPrefix,
         semanticCandidates = List(ToyDocument("sem-1", eligible = true)),
-        request = UserSearchInput("toy", None, None, limit = lexicalPrefix.size),
-        runtimeSpec = runtimeSpec,
+        window = SemanticSupplementWindow(capRoom = 0),
+      )
+
+      assert(selected == lexicalPrefix)
+    }
+
+    "append nothing when no semantic candidate is eligible" in {
+      val lexicalPrefix = List(ToyDocument("lex-1"), ToyDocument("lex-2"))
+      val policy = SemanticSupplementPolicy.PrefixPreservingTop1[ToyDocument](_.eligible)
+
+      val selected = policy.select(
+        lexicalPrefix = lexicalPrefix,
+        semanticCandidates = List(ToyDocument("sem-1", eligible = false), ToyDocument("sem-2", eligible = false)),
+        window = SemanticSupplementWindow(capRoom = 4),
       )
 
       assert(selected == lexicalPrefix)
     }
   }
 
-  "SemanticSupplementPolicy.AppendAll" should {
-    "append semantic candidates after the lexical prefix without reordering the prefix" in {
-      val lexicalPrefix = List(ToyDocument("lex-1", eligible = true), ToyDocument("lex-2", eligible = true))
-      val semanticCandidates = List(ToyDocument("sem-1", eligible = true), ToyDocument("sem-2", eligible = true))
-      val policy = SemanticSupplementPolicy.AppendAll[ToyDocument]()
-
-      val selected = policy.select(
-        lexicalPrefix = lexicalPrefix,
-        semanticCandidates = semanticCandidates,
-        request = UserSearchInput("toy", None, None, limit = 4),
-        runtimeSpec = runtimeSpec,
-      )
-
-      assert(selected == lexicalPrefix ++ semanticCandidates)
-    }
-  }
-
-  private final case class ToyDocument(id: String, eligible: Boolean)
-
-  private val idField: SearchField[ToyDocument] =
-    SearchField(
-      path = "id",
-      kind = SearchFieldKind.Keyword,
-      extract = document => Some(SearchValue.Keyword(document.id)),
-    )
-
-  private val runtimeSpec: SearchRuntimeSpec[ToyDocument] =
-    SearchRuntimeSpec(
-      documentSpec = SearchDocumentSpec(
-        indexName = "toy-semantic-supplement",
-        id = _.id,
-        fields = List(idField),
-      ),
-      querySchema = SearchQuerySchema(
-        serviceName = idField,
-        categoryName = idField,
-        priceFrom = idField,
-        durationMin = idField,
-        location = idField,
-        enumAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"enum $code")),
-        booleanAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"boolean $code")),
-        intAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"int $code")),
-        decimalAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"decimal $code")),
-      ),
-      requestSpec = SearchRequestSpec(),
-      facetSpec = FacetSpec(enabled = false, fields = Nil),
-      carouselSpec = CarouselSpec(
-        variantSize = 10,
-        providerGroupField = idField,
-        serviceIntentGroupField = idField,
-      ),
-      payloadSpecs = Map.empty,
-      embeddingSpec = None,
-      vectorSearchSpec = None,
-    )
+  private final case class ToyDocument(id: String, eligible: Boolean = true)
 }

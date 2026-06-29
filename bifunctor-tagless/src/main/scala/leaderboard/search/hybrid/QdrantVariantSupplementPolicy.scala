@@ -1,67 +1,11 @@
 package leaderboard.search.hybrid
 
 import leaderboard.model.MasterServiceOfferVariantId
-import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
+import leaderboard.search.ParsedSearchIntent
 import leaderboard.search.dsl.*
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.interpreter.SearchSpecSupport
-import leaderboard.search.semantic.SemanticCandidateHit
-
-trait SemanticSupplementPolicy[A] {
-  def select(
-    lexicalPrefix: List[A],
-    semanticCandidates: List[A],
-    request: UserSearchInput,
-    runtimeSpec: SearchRuntimeSpec[A],
-  ): List[A]
-}
-
-object SemanticSupplementPolicy {
-  final case class AppendAll[A](
-    sameDocument: (A, A) => Boolean = (left: A, right: A) => left == right
-  ) extends SemanticSupplementPolicy[A] {
-    override def select(
-      lexicalPrefix: List[A],
-      semanticCandidates: List[A],
-      request: UserSearchInput,
-      runtimeSpec: SearchRuntimeSpec[A],
-    ): List[A] =
-      appendWithinCap(lexicalPrefix, qdrantOnly(lexicalPrefix, semanticCandidates, sameDocument), request, runtimeSpec)
-  }
-
-  final case class PrefixPreservingTop1[A](
-    eligible: A => Boolean,
-    sameDocument: (A, A) => Boolean = (left: A, right: A) => left == right,
-  ) extends SemanticSupplementPolicy[A] {
-    override def select(
-      lexicalPrefix: List[A],
-      semanticCandidates: List[A],
-      request: UserSearchInput,
-      runtimeSpec: SearchRuntimeSpec[A],
-    ): List[A] = {
-      val eligibleCandidates = qdrantOnly(lexicalPrefix, semanticCandidates, sameDocument).filter(eligible)
-      appendWithinCap(lexicalPrefix, eligibleCandidates.take(1), request, runtimeSpec)
-    }
-  }
-
-  private def qdrantOnly[A](
-    lexicalPrefix: List[A],
-    semanticCandidates: List[A],
-    sameDocument: (A, A) => Boolean,
-  ): List[A] =
-    semanticCandidates.filterNot(candidate => lexicalPrefix.exists(prefix => sameDocument(prefix, candidate)))
-
-  private def appendWithinCap[A](
-    lexicalPrefix: List[A],
-    semanticCandidates: List[A],
-    request: UserSearchInput,
-    runtimeSpec: SearchRuntimeSpec[A],
-  ): List[A] = {
-    val limit = math.min(request.limit, runtimeSpec.carouselSpec.variantSize)
-    val capRoom = math.max(0, limit - lexicalPrefix.size)
-    lexicalPrefix ++ semanticCandidates.take(capRoom)
-  }
-}
+import leaderboard.search.semantic.{SemanticCandidateHit, SemanticSupplementPolicy, SemanticSupplementWindow}
 
 // Production-usable, testable policy for selecting which Qdrant-only candidates may supplement an
 // ES-owned variant carousel in `ExperimentalHybridSearchBackend`'s `ElasticsearchWithQdrantVariantSupplement`
@@ -143,53 +87,14 @@ object QdrantVariantSupplementPolicy {
     capRoom: Int,
   ): List[SemanticCandidateHit] = {
     val lexicalPrefix = esVariantIds.toList.map(SemanticCandidateHit(_, 0.0))
-    val request = UserSearchInput(query = "", userLat = None, userLon = None, limit = lexicalPrefix.size + capRoom)
     policy
       .select(
         lexicalPrefix = lexicalPrefix,
         semanticCandidates = qdrantHits,
-        request = request,
-        runtimeSpec = semanticHitRuntimeSpec,
+        window = SemanticSupplementWindow(capRoom),
       )
       .drop(lexicalPrefix.size)
   }
-
-  private val semanticHitVariantIdField: SearchField[SemanticCandidateHit] =
-    SearchField(
-      path = "variantId",
-      kind = SearchFieldKind.Keyword,
-      extract = hit => Some(SearchValue.Keyword(hit.variantId.toString)),
-    )
-
-  private val semanticHitRuntimeSpec: SearchRuntimeSpec[SemanticCandidateHit] =
-    SearchRuntimeSpec(
-      documentSpec = SearchDocumentSpec(
-        indexName = "semantic-candidate-hit",
-        id = hit => hit.variantId.toString,
-        fields = List(semanticHitVariantIdField),
-      ),
-      querySchema = SearchQuerySchema(
-        serviceName = semanticHitVariantIdField,
-        categoryName = semanticHitVariantIdField,
-        priceFrom = semanticHitVariantIdField,
-        durationMin = semanticHitVariantIdField,
-        location = semanticHitVariantIdField,
-        enumAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"Search enum attribute '$code' is not defined for semantic candidate hits")),
-        booleanAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"Search boolean attribute '$code' is not defined for semantic candidate hits")),
-        intAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"Search int attribute '$code' is not defined for semantic candidate hits")),
-        decimalAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"Search decimal attribute '$code' is not defined for semantic candidate hits")),
-      ),
-      requestSpec = SearchRequestSpec(),
-      facetSpec = FacetSpec(enabled = false, fields = Nil),
-      carouselSpec = CarouselSpec(
-        variantSize = Int.MaxValue,
-        providerGroupField = semanticHitVariantIdField,
-        serviceIntentGroupField = semanticHitVariantIdField,
-      ),
-      payloadSpecs = Map.empty,
-      embeddingSpec = None,
-      vectorSearchSpec = None,
-    )
 
   private final case class BeautyQSemanticSupplementEligibility(
     constraints: List[SearchConstraint],
