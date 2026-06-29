@@ -105,7 +105,7 @@ private object QdrantRetrievalSmokeSpec {
       modelName = "local-llama-cpp-embedding",
       dimension = dimension,
       distance = leaderboard.search.dsl.VectorDistance.Cosine,
-      sourceTextFieldPaths = Nil,
+      sourceTextFields = Nil,
     )
 
   def collectionSpec(collectionName: String, vectorName: String): leaderboard.search.dsl.VectorSearchSpec =

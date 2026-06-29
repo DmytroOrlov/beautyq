@@ -115,7 +115,7 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
       modelName = "llama-cpp-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceName", "allText"),
+      sourceTextFields = Nil,
     )
 
   private val vectorSearchSpec: VectorSearchSpec =

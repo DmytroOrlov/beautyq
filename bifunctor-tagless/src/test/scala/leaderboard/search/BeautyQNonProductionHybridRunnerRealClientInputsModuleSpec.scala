@@ -373,7 +373,7 @@ final class BeautyQNonProductionHybridRunnerRealClientInputsModuleSpec extends A
       modelName = "llama-cpp-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("allText"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText),
     )
 
   private val testDocumentSpec: SearchDocumentSpec[VariantSearchDocument] =

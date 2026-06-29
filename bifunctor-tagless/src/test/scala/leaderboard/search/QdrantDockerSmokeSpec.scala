@@ -37,7 +37,7 @@ final class QdrantDockerSmokeSpec extends LeaderboardTest with ProdTest {
           modelName = "smoke-test",
           dimension = 3,
           distance = VectorDistance.Cosine,
-          sourceTextFieldPaths = Nil,
+          sourceTextFields = Nil,
         )
         val collectionName = s"smoke_${UUID.randomUUID().toString.replace('-', '_')}"
         val collectionPath = s"/collections/$collectionName"

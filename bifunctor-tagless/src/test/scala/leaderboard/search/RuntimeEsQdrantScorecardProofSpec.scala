@@ -166,16 +166,44 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // the embedded text is fixed at upsert time. Every candidate path is a registered field on the
   // BeautySearchSpecV1 variant document (serviceText/attributeText/allText/categoryName/serviceName);
   // an unregistered path would be silently dropped by the extractor, so only registered paths are used.
-  private final case class Y0ESourceFieldCandidate(label: String, sourceTextFieldPaths: List[String])
+  private final case class Y0ESourceFieldCandidate(
+    label: String,
+    sourceTextFields: List[leaderboard.search.dsl.SearchField[VariantSearchDocument]],
+  ) {
+    def sourceTextFieldPaths: List[String] = sourceTextFields.map(_.path)
+  }
   private val y0eSourceFieldCandidates: List[Y0ESourceFieldCandidate] = List(
     // 1. Baseline current (the Y0C/Y0D runtime embedding source fields).
-    Y0ESourceFieldCandidate("baseline_current", List("serviceText", "attributeText", "allText", "categoryName")),
+    Y0ESourceFieldCandidate(
+      "baseline_current",
+      List(
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+      ),
+    ),
     // 2. No broad duplicate fields (drop allText/categoryName, which also live inside serviceText/allText).
-    Y0ESourceFieldCandidate("no_broad_dupes", List("serviceText", "attributeText")),
+    Y0ESourceFieldCandidate(
+      "no_broad_dupes",
+      List(
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText,
+      ),
+    ),
     // 3. Attribute-focused (discriminating attributes + bare service name, no broad category/provider/location).
-    Y0ESourceFieldCandidate("attribute_focused", List("attributeText", "serviceName")),
+    Y0ESourceFieldCandidate(
+      "attribute_focused",
+      List(
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceName,
+      ),
+    ),
     // 4. Attribute-only diagnostic (pure attribute signal; expected to be the harm/recall extreme).
-    Y0ESourceFieldCandidate("attribute_only", List("attributeText")),
+    Y0ESourceFieldCandidate(
+      "attribute_only",
+      List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText),
+    ),
   )
   // Y0E uses the single most-informative Y0C/Y0D scoreThreshold candidate (0.62) for every source-field
   // candidate; this is a source-field measurement, NOT a threshold grid search.
@@ -5660,7 +5688,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = "y0g-runtime-scorecard",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val purpose = s"y0g-runtime-scorecard-${UUID.randomUUID().toString.replace('-', '_')}"
     val readiness = QdrantCollectionReadinessConfig.derive(
@@ -6075,7 +6103,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = "y0i-runtime-scorecard",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val purpose = s"y0i-runtime-scorecard-${UUID.randomUUID().toString.replace('-', '_')}"
     val readiness = QdrantCollectionReadinessConfig.derive(
@@ -6239,7 +6267,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         modelName = modelCandidate.modelName,
         dimension = vectorDimension,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+        sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
       )
       val purpose = s"y0h-runtime-scorecard-${modelCandidate.label}-${UUID.randomUUID().toString.replace('-', '_')}"
       val readiness = QdrantCollectionReadinessConfig.derive(
@@ -6394,7 +6422,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         modelName = "qdrant-y0j-small",
         dimension = vectorDimension,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+        sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
       )
       val purpose = s"y0j-runtime-scorecard-${candidate.label}-${UUID.randomUUID().toString.replace('-', '_')}"
       val readiness = QdrantCollectionReadinessConfig.derive(
@@ -6541,7 +6569,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = "y0k-runtime-scorecard",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val purpose = s"y0k-runtime-scorecard-${UUID.randomUUID().toString.replace('-', '_')}"
     val readiness = QdrantCollectionReadinessConfig.derive(
@@ -6703,7 +6731,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         modelName = "y0e-runtime-scorecard",
         dimension = vectorDimension,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = candidate.sourceTextFieldPaths,
+        sourceTextFields = candidate.sourceTextFields,
       )
       val purpose = s"y0e-${candidate.label}-${UUID.randomUUID().toString.replace('-', '_')}"
       val readiness = QdrantCollectionReadinessConfig.derive(
@@ -6864,7 +6892,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = "y0c-runtime-scorecard",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     // Same purpose for every candidate → same collection name (indexed once, queried at each threshold).
     val purpose = s"y0c-runtime-scorecard-${UUID.randomUUID().toString.replace('-', '_')}"
@@ -7081,7 +7109,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = "x-runtime-scorecard",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val readinessConfig = QdrantCollectionReadinessConfig.derive(
       QdrantCollectionReadinessInput(
@@ -7137,7 +7165,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = s"l-runtime-scorecard-${candidate.label}",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val calibrationReadinessConfig = QdrantCollectionReadinessConfig.derive(
       QdrantCollectionReadinessInput(
@@ -7197,7 +7225,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = s"l2-runtime-scorecard-${candidate.label}",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     // Same purpose for both readiness configs → same collection name (queried at two thresholds).
     val purpose = s"l2-runtime-scorecard-${candidate.label}-${UUID.randomUUID().toString.replace('-', '_')}"
@@ -7261,7 +7289,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       modelName = "j-runtime-scorecard-thresholded",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val thresholdedReadinessConfig = QdrantCollectionReadinessConfig.derive(
       QdrantCollectionReadinessInput(

@@ -1,9 +1,11 @@
 package leaderboard.search.dsl
 
 import leaderboard.model.*
-import leaderboard.search.document.BeautyQVariantSearchDocumentSchema
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
 
 object BeautySearchSpecV1 {
+  private val Fields = BeautyQVariantSearchDocumentSchema.Fields
+
   private val ManicureService = "Маникюр"
   private val PedicureService = "Педикюр"
   private val NailExtensionService = "Наращивание и моделирование ногтей"
@@ -26,8 +28,8 @@ object BeautySearchSpecV1 {
       variantSize = 10,
       providerSize = 10,
       serviceIntentSize = 10,
-      providerGroupField = "masterLocationId",
-      serviceIntentGroupField = "serviceId",
+      providerGroupField = Fields.masterLocationId,
+      serviceIntentGroupField = Fields.serviceId,
       ranking = RankingSpec(
         textScoreWeight = 1.0,
         serviceBoostWeight = 2.0,
@@ -50,14 +52,15 @@ object BeautySearchSpecV1 {
       geoDistanceOffset = "0km",
       geoDistanceDecay = 0.5d,
     ),
+    querySchema = BeautyQVariantSearchDocumentSchema.querySchema,
   )
 
-  private val facetFields: List[FacetField] =
+  private val facetFields: List[FacetField[VariantSearchDocument]] =
     List(
-      FacetField("serviceName", FacetFieldMode.Terms, limit = 10),
-      FacetField("categoryName", FacetFieldMode.Terms, limit = 10),
+      FacetField(Fields.serviceName, FacetFieldMode.Terms, limit = 10),
+      FacetField(Fields.categoryName, FacetFieldMode.Terms, limit = 10),
       FacetField(
-        "priceFrom",
+        Fields.priceFrom,
         FacetFieldMode.Ranges(
           List(
             FacetRangeBucket("0-30", max = Some(BigDecimal(30))),
@@ -69,7 +72,7 @@ object BeautySearchSpecV1 {
         )
       ),
       FacetField(
-        "durationMin",
+        Fields.durationMin,
         FacetFieldMode.Ranges(
           List(
             FacetRangeBucket("0-30", max = Some(BigDecimal(30))),
@@ -80,10 +83,10 @@ object BeautySearchSpecV1 {
           )
         )
       ),
-    ) ++ AttributeDefinition.enumDefinitions.map { definition =>
-      FacetField(s"enumAttributes.${definition.code}", FacetFieldMode.Terms, limit = definition.values.size)
-    } ++ AttributeDefinition.booleanDefinitions.map { definition =>
-      FacetField(s"booleanAttributes.${definition.code}", FacetFieldMode.Terms, limit = 2)
+    ) ++ AttributeDefinition.enumDefinitions.flatMap { definition =>
+      Fields.enumAttributesByCode.get(definition.code).map(FacetField(_, FacetFieldMode.Terms, limit = definition.values.size))
+    } ++ AttributeDefinition.booleanDefinitions.flatMap { definition =>
+      Fields.booleanAttributesByCode.get(definition.code).map(FacetField(_, FacetFieldMode.Terms, limit = 2))
     }
 
   private val dictionary: List[SearchSynonym] =

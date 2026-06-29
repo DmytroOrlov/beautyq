@@ -256,7 +256,7 @@ final class HybridGenericSecondDomainProofSpec extends AnyWordSpec {
       modelName = "article-fake-embedding",
       dimension = 3,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("title", "summary"),
+      sourceTextFields = articleDocumentSpec.fields,
     )
 
   private final class FakeEmbeddingClient(

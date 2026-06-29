@@ -144,6 +144,7 @@ final class QdrantEmbeddingBenchmarkExecutorSpec extends AnyWordSpec {
       val semanticSearch = new QdrantSemanticCandidateSearch(
         new RecordingEmbeddingClient(embeddingClient, searchQueriesRef),
         new ConstQdrantSearchClient(hits),
+      leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
       )
       ZIO.succeed(QdrantNonProductionExperimentComposition.build(
         readinessConfig = readinessConfig,

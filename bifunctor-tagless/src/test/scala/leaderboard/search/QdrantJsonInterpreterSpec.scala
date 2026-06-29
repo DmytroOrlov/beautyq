@@ -58,6 +58,6 @@ final class QdrantJsonInterpreterSpec extends AnyWordSpec {
     modelName = "local-llama-cpp-embedding",
     dimension = 1024,
     distance = VectorDistance.Cosine,
-    sourceTextFieldPaths = Nil,
+    sourceTextFields = Nil,
   )
 }

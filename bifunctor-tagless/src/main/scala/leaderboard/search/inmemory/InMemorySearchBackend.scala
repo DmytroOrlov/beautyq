@@ -37,7 +37,11 @@ final class InMemorySearchBackend[F[+_, +_]: Error2](
         val softBoostScore = intent.softBoosts.foldLeft(0.0d) {
           (score, constraint) =>
             SearchSpecSupport.matchesConstraint(spec, document, constraint) match {
-              case Right(true) => score + SearchSpecSupport.constraintBoostWeight(spec.carouselSpec.ranking, constraint) * 0.5d
+              case Right(true) =>
+                SearchSpecSupport.constraintBoostWeight(spec, constraint) match {
+                  case Right(weight) => score + weight * 0.5d
+                  case Left(_) => score
+                }
               case _ => score
             }
         }

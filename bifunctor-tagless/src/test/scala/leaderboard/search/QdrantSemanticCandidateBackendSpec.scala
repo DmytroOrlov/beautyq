@@ -2,6 +2,7 @@ package leaderboard.search
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
+import leaderboard.search.document.BeautyQVariantSearchDocumentSchema
 import leaderboard.search.dsl.VectorSearchSpec
 import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.qdrant.{QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
@@ -45,7 +46,7 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       val pathRef = runUio(Ref.make(Option.empty[String]))
       val embeddingClient = new RecordingEmbeddingClient(queryRef, Right(vector))
       val searchClient = new RecordingQdrantSearchClient(pathRef, Right(hits))
-      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient), spec)
+      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId), spec)
 
       val result = run(backend.candidates(input, intent))
 
@@ -70,6 +71,7 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
         new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.2, 0.6)),
           new ConstQdrantSearchClient(Left(failure)),
+          BeautyQVariantSearchDocumentSchema.Fields.variantId,
         ),
         spec,
       )
@@ -94,7 +96,7 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       val pathRef = runUio(Ref.make(Option.empty[String]))
       val embeddingClient = new RecordingEmbeddingClient(queryRef, Left(embeddingFailure))
       val searchClient = new RecordingQdrantSearchClient(pathRef, Right(Nil))
-      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient), spec)
+      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId), spec)
 
       val error = runFail(backend.candidates(
         UserSearchInput(query = "nail art", userLat = None, userLon = None),
@@ -118,7 +120,7 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       val pathRef = runUio(Ref.make(Option.empty[String]))
       val embeddingClient = new RecordingEmbeddingClient(queryRef, Right(vector))
       val searchClient = new RecordingQdrantSearchClient(pathRef, Right(Nil))
-      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient), spec)
+      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId), spec)
 
       val result = run(backend.candidates(
         UserSearchInput(query = "rare service xyz", userLat = None, userLon = None),
@@ -154,7 +156,7 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       val pathRef = runUio(Ref.make(Option.empty[String]))
       val embeddingClient = new RecordingEmbeddingClient(queryRef, Right(vector))
       val searchClient = new RecordingQdrantSearchClient(pathRef, Right(hits))
-      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient), spec)
+      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId), spec)
 
       val result = run(backend.documentHits(
         UserSearchInput(query = "test doc hits", userLat = None, userLon = None),
@@ -184,7 +186,7 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       )
       val embeddingClient = new ConstEmbeddingClient(vector)
       val searchClient = new ConstQdrantSearchClient(Right(hits))
-      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient), spec)
+      val backend = new QdrantSemanticCandidateBackend(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId), spec)
 
       val error = runFail(backend.candidates(
         UserSearchInput(query = "test missing id", userLat = None, userLon = None),

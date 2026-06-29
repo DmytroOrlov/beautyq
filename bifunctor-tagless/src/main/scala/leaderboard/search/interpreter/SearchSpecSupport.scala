@@ -30,6 +30,13 @@ object SearchSpecSupport {
   ): Either[QueryFailure, Option[SearchValue]] =
     spec.variantDocument.fieldByPath(path).map(field => field.extract(document))
 
+  def valueByField(
+    spec: BeautySearchSpec,
+    document: VariantSearchDocument,
+    field: SearchField[VariantSearchDocument],
+  ): Either[QueryFailure, Option[SearchValue]] =
+    spec.variantDocument.fieldByPath(field.path).map(_ => field.extract(document))
+
   def valueBySemantic(
     spec: BeautySearchSpec,
     document: VariantSearchDocument,
@@ -40,13 +47,13 @@ object SearchSpecSupport {
   def groupValue(
     spec: BeautySearchSpec,
     document: VariantSearchDocument,
-    path: String,
+    field: SearchField[VariantSearchDocument],
   ): Either[QueryFailure, String] =
-    valueByPath(spec, document, path).flatMap {
+    valueByField(spec, document, field).flatMap {
       case Some(value) =>
         Right(value.render)
       case None =>
-        Left(QueryFailure.domain(s"Document ${document.variantId} does not contain group field '$path'"))
+        Left(QueryFailure.domain(s"Document ${document.variantId} does not contain group field '${field.path}'"))
     }
 
   def matchesConstraint(
@@ -54,51 +61,49 @@ object SearchSpecSupport {
     document: VariantSearchDocument,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Boolean] =
+    spec.querySchema.resolve(constraint).flatMap(resolvedConstraintMatches(spec, document, _))
+
+  def resolvedConstraintMatches(
+    spec: BeautySearchSpec,
+    document: VariantSearchDocument,
+    constraint: ResolvedSearchConstraint[VariantSearchDocument],
+  ): Either[QueryFailure, Boolean] =
     constraint match {
-      case SearchConstraint.ServiceAny(names) =>
-        matchesTextSemantic(spec, document, SearchFieldSemantic.ServiceName, names)
-      case SearchConstraint.CategoryAny(names) =>
-        matchesTextSemantic(spec, document, SearchFieldSemantic.CategoryName, names)
-      case SearchConstraint.EnumAttr(attributeCode, values) =>
-        matchesTextSemantic(spec, document, SearchFieldSemantic.EnumAttribute(attributeCode), values)
-      case SearchConstraint.BoolAttr(attributeCode, value) =>
-        valueBySemantic(spec, document, SearchFieldSemantic.BooleanAttribute(attributeCode)).map {
-          case Some(SearchValue.Boolean(actual)) => actual == value
+      case ResolvedSearchConstraint.Terms(field, values, _) =>
+        valueByField(spec, document, field).map {
+          case Some(value) => values.contains(value.render)
+          case None => false
+        }
+      case ResolvedSearchConstraint.BooleanTerm(field, expected, _) =>
+        valueByField(spec, document, field).map {
+          case Some(SearchValue.Boolean(actual)) => actual == expected
           case _ => false
         }
-      case SearchConstraint.IntRange(attributeCode, min, max) =>
-        valueBySemantic(spec, document, SearchFieldSemantic.IntAttribute(attributeCode)).map {
-          case Some(SearchValue.Integer(actual)) => rangeMatches(BigDecimal(actual), min.map(BigDecimal(_)), max.map(BigDecimal(_)))
-          case _ => false
-        }
-      case SearchConstraint.DecimalRange(attributeCode, min, max) =>
-        valueBySemantic(spec, document, SearchFieldSemantic.DecimalAttribute(attributeCode)).map {
+      case ResolvedSearchConstraint.Range(field, min, max, _) =>
+        valueByField(spec, document, field).map {
+          case Some(SearchValue.Integer(actual)) => rangeMatches(BigDecimal(actual), min, max)
           case Some(SearchValue.Decimal(actual)) => rangeMatches(actual, min, max)
           case _ => false
         }
-      case SearchConstraint.PriceRange(min, max) =>
-        valueBySemantic(spec, document, SearchFieldSemantic.PriceFrom).map {
-          case Some(SearchValue.Decimal(actual)) => rangeMatches(actual, min, max)
-          case _ => false
-        }
-      case SearchConstraint.DurationRange(min, max) =>
-        valueBySemantic(spec, document, SearchFieldSemantic.DurationMin).map {
-          case Some(SearchValue.Integer(actual)) => rangeMatches(BigDecimal(actual), min.map(BigDecimal(_)), max.map(BigDecimal(_)))
-          case _ => false
-        }
-      case SearchConstraint.NearUser =>
+      case ResolvedSearchConstraint.NearUser(_) =>
         Right(true)
     }
 
   def constraintBoostWeight(ranking: RankingSpec, constraint: SearchConstraint): Double =
-    constraint match {
-      case SearchConstraint.ServiceAny(_) | SearchConstraint.CategoryAny(_) =>
-        ranking.serviceBoostWeight
-      case SearchConstraint.EnumAttr(_, _) | SearchConstraint.BoolAttr(_, _) | SearchConstraint.IntRange(_, _, _) |
-          SearchConstraint.DecimalRange(_, _, _) | SearchConstraint.PriceRange(_, _) | SearchConstraint.DurationRange(_, _) =>
-        ranking.attributeBoostWeight
-      case SearchConstraint.NearUser =>
-        ranking.providerDistanceWeight
+    boostWeight(ranking, constraint match {
+      case SearchConstraint.ServiceAny(_) | SearchConstraint.CategoryAny(_) => SearchConstraintBoostRole.Service
+      case SearchConstraint.NearUser => SearchConstraintBoostRole.Distance
+      case _ => SearchConstraintBoostRole.Attribute
+    })
+
+  def constraintBoostWeight(spec: BeautySearchSpec, constraint: SearchConstraint): Either[QueryFailure, Double] =
+    spec.querySchema.resolve(constraint).map(resolved => boostWeight(spec.carouselSpec.ranking, resolved.boostRole))
+
+  private def boostWeight(ranking: RankingSpec, boostRole: SearchConstraintBoostRole): Double =
+    boostRole match {
+      case SearchConstraintBoostRole.Service => ranking.serviceBoostWeight
+      case SearchConstraintBoostRole.Attribute => ranking.attributeBoostWeight
+      case SearchConstraintBoostRole.Distance => ranking.providerDistanceWeight
     }
 
   def computeDistanceKm(
@@ -135,62 +140,10 @@ object SearchSpecSupport {
 
   def facetConstraint(
     spec: BeautySearchSpec,
-    facetField: FacetField,
+    facetField: FacetField[VariantSearchDocument],
     value: String,
-  ): Either[QueryFailure, SearchConstraint] = {
-    val field = spec.variantDocument.fieldByPath(facetField.path)
-    field.flatMap { resolvedField =>
-      resolvedField.semantic match {
-        case Some(SearchFieldSemantic.ServiceName) =>
-          Right(SearchConstraint.ServiceAny(Set(value)))
-        case Some(SearchFieldSemantic.CategoryName) =>
-          Right(SearchConstraint.CategoryAny(Set(value)))
-        case Some(SearchFieldSemantic.EnumAttribute(attributeCode)) =>
-          Right(SearchConstraint.EnumAttr(attributeCode, Set(value)))
-        case Some(SearchFieldSemantic.BooleanAttribute(attributeCode)) =>
-          value.toBooleanOption match {
-            case Some(boolValue) => Right(SearchConstraint.BoolAttr(attributeCode, boolValue))
-            case None => Left(QueryFailure.domain(s"Facet value '$value' is not a boolean for ${facetField.path}"))
-          }
-        case Some(SearchFieldSemantic.PriceFrom) =>
-          rangeConstraint(facetField, value, SearchConstraint.PriceRange.apply)
-        case Some(SearchFieldSemantic.DurationMin) =>
-          rangeConstraint(facetField, value, (min, max) => SearchConstraint.DurationRange(min.map(_.toInt), max.map(_.toInt)))
-        case Some(SearchFieldSemantic.IntAttribute(attributeCode)) =>
-          rangeConstraint(facetField, value, (min, max) => SearchConstraint.IntRange(attributeCode, min.map(_.toInt), max.map(_.toInt)))
-        case Some(SearchFieldSemantic.DecimalAttribute(attributeCode)) =>
-          rangeConstraint(facetField, value, (min, max) => SearchConstraint.DecimalRange(attributeCode, min, max))
-        case other =>
-          Left(QueryFailure.domain(s"Facet field '${facetField.path}' with semantic $other cannot be converted into a search constraint"))
-      }
-    }
-  }
-
-  private def rangeConstraint(
-    facetField: FacetField,
-    value: String,
-    build: (Option[BigDecimal], Option[BigDecimal]) => SearchConstraint,
   ): Either[QueryFailure, SearchConstraint] =
-    facetField.mode match {
-      case FacetFieldMode.Ranges(buckets) =>
-        buckets.find(_.key == value) match {
-          case Some(bucket) => Right(build(bucket.min, bucket.max))
-          case None => Left(QueryFailure.domain(s"Range bucket '$value' is not defined for facet '${facetField.path}'"))
-        }
-      case _ =>
-        Left(QueryFailure.domain(s"Facet '${facetField.path}' is not range-based"))
-    }
-
-  private def matchesTextSemantic(
-    spec: BeautySearchSpec,
-    document: VariantSearchDocument,
-    semantic: SearchFieldSemantic,
-    values: Set[String],
-  ): Either[QueryFailure, Boolean] =
-    valueBySemantic(spec, document, semantic).map {
-      case Some(value) => values.contains(value.render)
-      case None => false
-    }
+    spec.querySchema.facetConstraint(facetField, value)
 
   private def rangeMatches(value: BigDecimal, min: Option[BigDecimal], max: Option[BigDecimal]): Boolean = {
     val minOk = min.forall(bound => value >= bound)

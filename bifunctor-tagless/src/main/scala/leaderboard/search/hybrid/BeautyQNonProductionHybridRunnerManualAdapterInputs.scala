@@ -1,7 +1,7 @@
 package leaderboard.search.hybrid
 
 import leaderboard.model.MasterServiceOfferVariantId
-import leaderboard.search.document.VariantSearchDocument
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
 import leaderboard.search.document.VariantSearchDocumentSnapshotProvider
 import leaderboard.search.dsl.{EmbeddingSpec, SearchDocumentSpec}
 import leaderboard.search.embedding.EmbeddingClient
@@ -49,6 +49,7 @@ final case class BeautyQNonProductionHybridRunnerManualAdapterInputs(
       new QdrantSemanticCandidateSearch(
         embeddingClient = embeddingClient,
         qdrantSearchClient = qdrantSearchClient,
+        variantIdPayloadField = BeautyQVariantSearchDocumentSchema.Fields.variantId,
       )
 
     BeautyQNonProductionHybridRunnerManualInputs(

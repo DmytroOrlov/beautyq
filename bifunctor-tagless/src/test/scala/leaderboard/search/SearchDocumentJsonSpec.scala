@@ -57,7 +57,7 @@ final class SearchDocumentJsonSpec extends AnyWordSpec {
     "build flat payload JSON only for explicitly requested field paths" in {
       val document = testDocument(optional = Some("payload-value"))
 
-      val result = SearchDocumentJson.payload(documentSpec, List("title", "enumAttributes.coverage"), document)
+      val result = SearchDocumentJson.payload(documentSpec, List(titleField, coverageField), document)
 
       assert(result == Right(Map(
         "title" -> Json.fromString("Manicure"),
@@ -66,7 +66,12 @@ final class SearchDocumentJsonSpec extends AnyWordSpec {
     }
 
     "fail payload generation when a requested field path is absent" in {
-      val result = SearchDocumentJson.payload(documentSpec, List("title", "missing"), testDocument())
+      val missingField = SearchField[TestDocument](
+        path = "missing",
+        kind = SearchFieldKind.Keyword,
+        extract = _ => Some(SearchValue.Keyword("missing")),
+      )
+      val result = SearchDocumentJson.payload(documentSpec, List(titleField, missingField), testDocument())
 
       result match {
         case Left(QueryFailure.DomainFailure(message)) =>
@@ -77,7 +82,7 @@ final class SearchDocumentJsonSpec extends AnyWordSpec {
     }
 
     "omit requested payload fields when the field extractor returns None" in {
-      val result = SearchDocumentJson.payload(documentSpec, List("title", "optional"), testDocument(optional = None))
+      val result = SearchDocumentJson.payload(documentSpec, List(titleField, optionalField), testDocument(optional = None))
 
       assert(result == Right(Map("title" -> Json.fromString("Manicure"))))
     }
@@ -106,16 +111,33 @@ final class SearchDocumentJsonSpec extends AnyWordSpec {
       optional = optional,
     )
 
+  private val titleField: SearchField[TestDocument] =
+    SearchField(
+      path = "title",
+      kind = SearchFieldKind.Text,
+      extract = document => Some(SearchValue.Text(document.title)),
+    )
+
+  private val coverageField: SearchField[TestDocument] =
+    SearchField(
+      path = "enumAttributes.coverage",
+      kind = SearchFieldKind.Keyword,
+      extract = _ => Some(SearchValue.Keyword("gel")),
+    )
+
+  private val optionalField: SearchField[TestDocument] =
+    SearchField(
+      path = "optional",
+      kind = SearchFieldKind.Keyword,
+      extract = document => document.optional.map(SearchValue.Keyword.apply),
+    )
+
   private val documentSpec: SearchDocumentSpec[TestDocument] =
     SearchDocumentSpec(
       indexName = "test-document",
       id = _.id,
       fields = List(
-        SearchField(
-          path = "title",
-          kind = SearchFieldKind.Text,
-          extract = document => Some(SearchValue.Text(document.title)),
-        ),
+        titleField,
         SearchField(
           path = "tag",
           kind = SearchFieldKind.Keyword,
@@ -141,16 +163,8 @@ final class SearchDocumentJsonSpec extends AnyWordSpec {
           kind = SearchFieldKind.GeoPoint,
           extract = document => Some(SearchValue.GeoPoint(document.location)),
         ),
-        SearchField(
-          path = "enumAttributes.coverage",
-          kind = SearchFieldKind.Keyword,
-          extract = _ => Some(SearchValue.Keyword("gel")),
-        ),
-        SearchField(
-          path = "optional",
-          kind = SearchFieldKind.Keyword,
-          extract = document => document.optional.map(SearchValue.Keyword.apply),
-        ),
+        coverageField,
+        optionalField,
       ),
     )
 }

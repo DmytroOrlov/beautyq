@@ -52,7 +52,7 @@ final class QdrantSnapshotIndexingCompatibilityIntegrationSpec extends Leaderboa
           modelName = "compat-model",
           dimension = 3,
           distance = VectorDistance.Cosine,
-          sourceTextFieldPaths = Nil,
+          sourceTextFields = Nil,
         )
         val expectation = QdrantCollectionIdentity.compatibilityExpectation(embeddingSpec, vectorSearchSpec)
         val guard = new QdrantCollectionCompatibilityGuard(
@@ -105,7 +105,7 @@ final class QdrantSnapshotIndexingCompatibilityIntegrationSpec extends Leaderboa
           modelName = "compat-model",
           dimension = 3,
           distance = VectorDistance.Cosine,
-          sourceTextFieldPaths = Nil,
+          sourceTextFields = Nil,
         )
         val expectation = QdrantCollectionIdentity
           .compatibilityExpectation(embeddingSpec, vectorSearchSpec)

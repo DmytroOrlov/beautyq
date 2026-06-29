@@ -2,6 +2,7 @@ package leaderboard.search.interpreter
 
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
+import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.*
 import leaderboard.search.interpreter.SearchSpecSupport.ScoredDocument
 
@@ -150,7 +151,7 @@ object SearchResponseAssembler {
 
   private def facetValues(
     spec: BeautySearchSpec,
-    facetField: FacetField,
+    facetField: FacetField[VariantSearchDocument],
     scoredDocuments: List[ScoredDocument],
   ): Either[QueryFailure, List[BeautySearchFacetValue]] = {
     facetField.mode match {
@@ -159,7 +160,7 @@ object SearchResponseAssembler {
           case (acc, scoredDocument) =>
             for {
               current <- acc
-              value <- SearchSpecSupport.valueByPath(spec, scoredDocument.document, facetField.path)
+              value <- SearchSpecSupport.valueByField(spec, scoredDocument.document, facetField.field)
             } yield {
               value match {
                 case Some(found) =>
@@ -176,7 +177,7 @@ object SearchResponseAssembler {
           (bucket, acc) =>
             for {
               tail <- acc
-              count <- countBucket(spec, facetField.path, bucket, scoredDocuments)
+              count <- countBucket(spec, facetField.field, bucket, scoredDocuments)
             } yield {
               if (count == 0) tail else BeautySearchFacetValue(bucket.key, count) :: tail
             }
@@ -186,7 +187,7 @@ object SearchResponseAssembler {
 
   private def countBucket(
     spec: BeautySearchSpec,
-    path: String,
+    field: SearchField[VariantSearchDocument],
     bucket: FacetRangeBucket,
     scoredDocuments: List[ScoredDocument],
   ): Either[QueryFailure, Int] =
@@ -194,7 +195,7 @@ object SearchResponseAssembler {
       case (acc, scoredDocument) =>
         for {
           current <- acc
-          value <- SearchSpecSupport.valueByPath(spec, scoredDocument.document, path)
+          value <- SearchSpecSupport.valueByField(spec, scoredDocument.document, field)
         } yield {
           val matches = value.exists {
             case SearchValue.Integer(found) => rangeMatches(BigDecimal(found), bucket)
@@ -214,13 +215,13 @@ object SearchResponseAssembler {
   private def groupByField(
     spec: BeautySearchSpec,
     scoredDocuments: List[ScoredDocument],
-    path: String,
+    field: SearchField[VariantSearchDocument],
   ): Either[QueryFailure, Map[String, List[ScoredDocument]]] =
     scoredDocuments.foldLeft[Either[QueryFailure, Map[String, List[ScoredDocument]]]](Right(Map.empty)) {
       case (acc, scoredDocument) =>
         for {
           current <- acc
-          key <- SearchSpecSupport.groupValue(spec, scoredDocument.document, path)
+          key <- SearchSpecSupport.groupValue(spec, scoredDocument.document, field)
         } yield current.updatedWith(key) {
           case Some(existing) => Some(scoredDocument :: existing)
           case None => Some(List(scoredDocument))

@@ -187,7 +187,7 @@ final class QdrantSearchDocumentIndexerSpec extends AnyWordSpec {
       modelName = "fake-embedding",
       dimension = 3,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("title", "body"),
+      sourceTextFields = documentSpec.fields,
     )
 
   private val testDocument: TestSearchDocument =

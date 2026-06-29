@@ -279,7 +279,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
       modelName = "qp19-test-local-gate",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
     )
     val readinessConfig = QdrantCollectionReadinessConfig.derive(
       QdrantCollectionReadinessInput(

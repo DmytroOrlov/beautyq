@@ -3,8 +3,8 @@ package leaderboard.search.elasticsearch
 import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
+import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.*
-import leaderboard.search.interpreter.SearchSpecSupport
 
 object ElasticsearchSearchRequestInterpreter {
   def request(
@@ -51,13 +51,13 @@ object ElasticsearchSearchRequestInterpreter {
       aggName(facetField.path) -> facetAggregation(spec, facetField)
     }
     val groupAggs = List(
-      aggName(spec.carouselSpec.providerGroupField) -> termsAggregation(spec.carouselSpec.providerGroupField, spec.requestSpec.aggregationSize),
-      aggName(spec.carouselSpec.serviceIntentGroupField) -> termsAggregation(spec.carouselSpec.serviceIntentGroupField, spec.requestSpec.aggregationSize),
+      aggName(spec.carouselSpec.providerGroupField.path) -> termsAggregation(spec.carouselSpec.providerGroupField.path, spec.requestSpec.aggregationSize),
+      aggName(spec.carouselSpec.serviceIntentGroupField.path) -> termsAggregation(spec.carouselSpec.serviceIntentGroupField.path, spec.requestSpec.aggregationSize),
     )
     Json.obj((facetAggs ++ groupAggs).map { case (name, value) => name -> value }: _*)
   }
 
-  private def facetAggregation(spec: BeautySearchSpec, facetField: FacetField): Json =
+  private def facetAggregation(spec: BeautySearchSpec, facetField: FacetField[VariantSearchDocument]): Json =
     facetField.mode match {
       case FacetFieldMode.Terms =>
         termsAggregation(facetField.path, spec.requestSpec.aggregationSize)
@@ -87,15 +87,15 @@ object ElasticsearchSearchRequestInterpreter {
     )
 
   private def geoQuery(spec: BeautySearchSpec, input: UserSearchInput, baseQuery: Json): Json =
-    (input.userLat, input.userLon, spec.variantDocument.fieldsBySemantic.get(SearchFieldSemantic.Location)) match {
-      case (Some(lat), Some(lon), Some(field)) =>
+    (input.userLat, input.userLon) match {
+      case (Some(lat), Some(lon)) =>
         Json.obj(
           "function_score" -> Json.obj(
             "query" -> baseQuery,
             "functions" -> Json.arr(
               Json.obj(
                 "gauss" -> Json.obj(
-                  field.path -> Json.obj(
+                  spec.querySchema.location.path -> Json.obj(
                     "origin" -> Json.obj(
                       "lat" -> Json.fromBigDecimal(lat),
                       "lon" -> Json.fromBigDecimal(lon),
@@ -120,24 +120,19 @@ object ElasticsearchSearchRequestInterpreter {
     spec: BeautySearchSpec,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Json] =
+    spec.querySchema.resolve(constraint).flatMap(resolvedConstraintClause)
+
+  private def resolvedConstraintClause(
+    constraint: ResolvedSearchConstraint[VariantSearchDocument]
+  ): Either[QueryFailure, Json] =
     constraint match {
-      case SearchConstraint.ServiceAny(names) =>
-        termsClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.ServiceName).map(_.path), names)
-      case SearchConstraint.CategoryAny(names) =>
-        termsClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.CategoryName).map(_.path), names)
-      case SearchConstraint.EnumAttr(attributeCode, values) =>
-        termsClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.EnumAttribute(attributeCode)).map(_.path), values)
-      case SearchConstraint.BoolAttr(attributeCode, value) =>
-        termClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.BooleanAttribute(attributeCode)).map(_.path), Json.fromBoolean(value))
-      case SearchConstraint.IntRange(attributeCode, min, max) =>
-        rangeClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.IntAttribute(attributeCode)).map(_.path), min.map(BigDecimal(_)), max.map(BigDecimal(_)))
-      case SearchConstraint.DecimalRange(attributeCode, min, max) =>
-        rangeClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.DecimalAttribute(attributeCode)).map(_.path), min, max)
-      case SearchConstraint.PriceRange(min, max) =>
-        rangeClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.PriceFrom).map(_.path), min, max)
-      case SearchConstraint.DurationRange(min, max) =>
-        rangeClause(spec.variantDocument.fieldBySemantic(SearchFieldSemantic.DurationMin).map(_.path), min.map(BigDecimal(_)), max.map(BigDecimal(_)))
-      case SearchConstraint.NearUser =>
+      case ResolvedSearchConstraint.Terms(field, values, _) =>
+        termsClause(field.path, values)
+      case ResolvedSearchConstraint.BooleanTerm(field, value, _) =>
+        Right(termClause(field.path, Json.fromBoolean(value)))
+      case ResolvedSearchConstraint.Range(field, min, max, _) =>
+        Right(rangeClause(field.path, min, max))
+      case ResolvedSearchConstraint.NearUser(_) =>
         Right(Json.obj())
     }
 
@@ -146,43 +141,49 @@ object ElasticsearchSearchRequestInterpreter {
     ranking: RankingSpec,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Json] =
-    constraintClause(spec, constraint).map {
-      clause =>
+    for {
+      resolved <- spec.querySchema.resolve(constraint)
+      clause <- resolvedConstraintClause(resolved)
+    } yield {
         Json.obj(
           "constant_score" -> Json.obj(
             "filter" -> clause,
-            "boost" -> Json.fromDoubleOrNull(SearchSpecSupport.constraintBoostWeight(ranking, constraint)),
+            "boost" -> Json.fromDoubleOrNull(boostWeight(ranking, resolved.boostRole)),
           )
         )
     }
 
-  private def termClause(path: Either[QueryFailure, String], value: Json): Either[QueryFailure, Json] =
-    path.map(fieldPath => Json.obj("term" -> Json.obj(fieldPath -> value)))
+  private def boostWeight(ranking: RankingSpec, boostRole: SearchConstraintBoostRole): Double =
+    boostRole match {
+      case SearchConstraintBoostRole.Service => ranking.serviceBoostWeight
+      case SearchConstraintBoostRole.Attribute => ranking.attributeBoostWeight
+      case SearchConstraintBoostRole.Distance => ranking.providerDistanceWeight
+    }
 
-  private def termsClause(path: Either[QueryFailure, String], values: Set[String]): Either[QueryFailure, Json] =
-    path.map { fieldPath =>
-      if (values.size == 1) {
-        Json.obj("term" -> Json.obj(fieldPath -> Json.fromString(values.head)))
-      } else {
-        Json.obj("terms" -> Json.obj(fieldPath -> Json.arr(values.toList.sorted.map(Json.fromString): _*)))
-      }
+  private def termClause(path: String, value: Json): Json =
+    Json.obj("term" -> Json.obj(path -> value))
+
+  private def termsClause(path: String, values: Set[String]): Either[QueryFailure, Json] =
+    values.toList.sorted match {
+      case single :: Nil =>
+        Right(Json.obj("term" -> Json.obj(path -> Json.fromString(single))))
+      case sorted =>
+        Right(Json.obj("terms" -> Json.obj(path -> Json.arr(sorted.map(Json.fromString): _*))))
     }
 
   private def rangeClause(
-    path: Either[QueryFailure, String],
+    path: String,
     min: Option[BigDecimal],
     max: Option[BigDecimal],
-  ): Either[QueryFailure, Json] =
-    path.map { fieldPath =>
-      Json.obj(
-        "range" -> Json.obj(
-          fieldPath -> Json.obj(
-            min.map(value => "gte" -> Json.fromBigDecimal(value)).toList ++
-              max.map(value => "lte" -> Json.fromBigDecimal(value)).toList: _*
-          )
+  ): Json =
+    Json.obj(
+      "range" -> Json.obj(
+        path -> Json.obj(
+          min.map(value => "gte" -> Json.fromBigDecimal(value)).toList ++
+            max.map(value => "lte" -> Json.fromBigDecimal(value)).toList: _*
         )
       )
-    }
+    )
 
   private def boolQuery(filterClauses: List[Json], mustClauses: List[Json], shouldClauses: List[Json]): Json =
     val fields =

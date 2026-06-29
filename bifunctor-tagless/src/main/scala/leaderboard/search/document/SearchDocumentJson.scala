@@ -34,10 +34,16 @@ object SearchDocumentJson {
 
   def payload[A](
     documentSpec: SearchDocumentSpec[A],
-    fieldPaths: List[String],
+    fields: List[SearchField[A]],
     document: A,
   ): Either[QueryFailure, Map[String, Json]] =
-    payloadFields(documentSpec, fieldPaths).map { fields =>
+    fields.foldRight[Either[QueryFailure, Unit]](Right(())) {
+      (field, acc) =>
+        for {
+          _ <- acc
+          _ <- documentSpec.fieldByPath(field.path)
+        } yield ()
+    }.map { _ =>
       fields.foldLeft(Map.empty[String, Json]) {
         case (acc, field) =>
           field.extract(document) match {
@@ -47,7 +53,14 @@ object SearchDocumentJson {
       }
     }
 
-  private[search] def payloadFields[A](
+  private[search] def payloadByPaths[A](
+    documentSpec: SearchDocumentSpec[A],
+    fieldPaths: List[String],
+    document: A,
+  ): Either[QueryFailure, Map[String, Json]] =
+    payloadFields(documentSpec, fieldPaths).flatMap(payload(documentSpec, _, document))
+
+  private def payloadFields[A](
     documentSpec: SearchDocumentSpec[A],
     fieldPaths: List[String],
   ): Either[QueryFailure, List[SearchField[A]]] =
@@ -85,8 +98,10 @@ object SearchDocumentJson {
 
 final case class SearchDocumentPayloadSpec[A](
   documentSpec: SearchDocumentSpec[A],
-  fieldPaths: List[String],
+  fields: List[SearchField[A]],
 ) {
+  def fieldPaths: List[String] = fields.map(_.path)
+
   def payload(document: A): Either[QueryFailure, Map[String, Json]] =
-    SearchDocumentJson.payload(documentSpec, fieldPaths, document)
+    SearchDocumentJson.payload(documentSpec, fields, document)
 }

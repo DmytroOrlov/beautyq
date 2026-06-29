@@ -46,7 +46,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
     modelName = "local-llama-cpp-embedding",
     dimension = 1,
     distance = VectorDistance.Cosine,
-    sourceTextFieldPaths = List("serviceText", "attributeText", "allText", "categoryName"),
+    sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
   )
   private val vectorSearchSpecTemplate = VectorSearchSpec(
     collectionName = "placeholder",
@@ -79,7 +79,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
             ZIO.succeed(cancel(s"llama.cpp embedding endpoint ${embeddingConfig.baseUrl} returned an empty vector; canceling Qdrant semantic candidate eval"))
           case Right(_) =>
             val qdrantClient = new QdrantClient(portCfg.host, portCfg.port)
-            val semanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient))
+            val semanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient), leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId)
             val collectionName = s"semantic_eval_${UUID.randomUUID().toString.replace('-', '_')}"
             val collectionPath = s"/collections/$collectionName"
             val vectorSearchSpec = vectorSearchSpecTemplate.copy(collectionName = collectionName)

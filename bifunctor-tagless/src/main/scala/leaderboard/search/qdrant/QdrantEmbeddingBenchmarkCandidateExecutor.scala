@@ -2,8 +2,8 @@ package leaderboard.search.qdrant
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
-import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
+import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.semantic.SemanticCandidateHit
@@ -67,6 +67,7 @@ final class QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient: Qdra
     val semanticCandidateSearch = new QdrantSemanticCandidateSearch(
       embeddingClient,
       new QdrantClientSearchAdapter(qdrantClient),
+      BeautyQVariantSearchDocumentSchema.Fields.variantId,
     )
 
     ZIO.succeed(QdrantNonProductionExperimentComposition.build(
@@ -88,9 +89,16 @@ final case class QdrantEmbeddingBenchmarkExecutorConfig(
   topK: Int = 20,
   scoreThreshold: Option[Double] = None,
   distance: VectorDistance = VectorDistance.Cosine,
-  sourceTextFieldPaths: List[String] = List("serviceText", "attributeText", "allText", "categoryName"),
+  sourceTextFields: List[SearchField[VariantSearchDocument]] = List(
+    BeautyQVariantSearchDocumentSchema.Fields.serviceText,
+    BeautyQVariantSearchDocumentSchema.Fields.attributeText,
+    BeautyQVariantSearchDocumentSchema.Fields.allText,
+    BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+  ),
   cleanupCollections: Boolean = true,
-)
+) {
+  def sourceTextFieldPaths: List[String] = sourceTextFields.map(_.path)
+}
 
 final class QdrantEmbeddingBenchmarkQdrantCandidateExecutor(
   snapshotProvider: VariantSearchDocumentSnapshotProvider[IO],
@@ -184,7 +192,7 @@ object QdrantEmbeddingBenchmarkQdrantCandidateExecutor {
       modelName = candidate.modelName,
       dimension = candidate.vectorDimension,
       distance = config.distance,
-      sourceTextFieldPaths = config.sourceTextFieldPaths,
+      sourceTextFields = config.sourceTextFields,
     )
 
   def readinessConfig(

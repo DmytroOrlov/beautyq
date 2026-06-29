@@ -2,6 +2,7 @@ package leaderboard.search
 
 import io.circe.{Json, JsonObject}
 import leaderboard.model.QueryFailure
+import leaderboard.search.document.BeautyQVariantSearchDocumentSchema
 import leaderboard.search.dsl.VectorSearchSpec
 import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.qdrant.{QdrantCandidateHit, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateSearch}
@@ -42,7 +43,7 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
       val embeddingClient = new FakeEmbeddingClient(queryRef, Right(vector))
       val searchClient = new FakeQdrantSearchClient(pathRef, jsonRef, Right(hits))
 
-      val result = run(new QdrantSemanticCandidateSearch(embeddingClient, searchClient).search(queryText, spec))
+      val result = run(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId).search(queryText, spec))
 
       assert(runUio(queryRef.get).contains(queryText))
       assert(runUio(pathRef.get).contains("/collections/beauty-semantic/points/search"))
@@ -69,7 +70,7 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
         )
       )))
 
-      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient).search("query", spec))
+      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId).search("query", spec))
 
       assert(error.message.contains("Missing payload.variantId"))
       assert(error.message.contains("point-missing-variant-id"))
@@ -86,7 +87,7 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
       val embeddingClient = new ConstEmbeddingClient(failure)
       val searchClient = new ConstQdrantSearchClient(Right(Nil))
 
-      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient).search("query", spec))
+      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId).search("query", spec))
 
       assert(error == failure)
     }
@@ -102,7 +103,7 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
       val embeddingClient = new ConstEmbeddingClient(Vector(0.5, 0.4))
       val searchClient = new ConstQdrantSearchClient(Left(failure))
 
-      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient).search("query", spec))
+      val error = runFail(new QdrantSemanticCandidateSearch(embeddingClient, searchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId).search("query", spec))
 
       assert(error == failure)
     }

@@ -98,7 +98,7 @@ final class QdrantVariantDocumentIndexerSpec extends AnyWordSpec {
       modelName = "fake-embedding",
       dimension = 3,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = List("serviceText", "attributeText", "providerText"),
+      sourceTextFields = documentSpec.fields,
     )
 
   private final class FakeEmbeddingClient(

@@ -41,11 +41,15 @@ object QdrantDocumentPointBuilder {
 
   private def validatedPayloadFields[A](
     payloadSpec: SearchDocumentPayloadSpec[A]
-  ): List[SearchField[A]] =
-    SearchDocumentJson.payloadFields(payloadSpec.documentSpec, payloadSpec.fieldPaths) match {
-      case Right(fields) =>
-        fields
-      case Left(failure) =>
-        throw new IllegalArgumentException(failure.message)
+  ): List[SearchField[A]] = {
+    payloadSpec.fields.foreach { field =>
+      payloadSpec.documentSpec.fieldByPath(field.path) match {
+        case Right(_) =>
+          (): Unit
+        case Left(failure) =>
+          throw new IllegalArgumentException(failure.message)
+      }
     }
+    payloadSpec.fields
+  }
 }

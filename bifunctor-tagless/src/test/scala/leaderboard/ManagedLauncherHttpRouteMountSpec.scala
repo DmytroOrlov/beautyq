@@ -302,7 +302,7 @@ final class ManagedLauncherHttpRouteMountSpec
       make[SemanticCandidateBackend[IO]].from {
         (embeddingClient: EmbeddingClient, qdrantSearchClient: QdrantSearchClient) =>
           new QdrantSemanticCandidateBackend(
-            new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient),
+            new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId),
             routeVectorSpec,
           )
       }

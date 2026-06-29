@@ -2,7 +2,7 @@ package leaderboard.plugins
 
 import distage.ModuleDef
 import leaderboard.search.BeautySearchBackend
-import leaderboard.search.document.BeautySearchReadyCatalogDocuments
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.{BeautySearchSpec, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSearchBackend}
 import leaderboard.search.embedding.EmbeddingClient
@@ -49,7 +49,7 @@ object BeautySearchQdrantSupplementRuntimeBindingModules {
     make[SemanticCandidateBackend[IO]].from {
       (embeddingClient: EmbeddingClient, qdrantSearchClient: QdrantSearchClient) =>
         new QdrantSemanticCandidateBackend(
-          new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient),
+          new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient, BeautyQVariantSearchDocumentSchema.Fields.variantId),
           vectorSearchSpec,
         )
     }

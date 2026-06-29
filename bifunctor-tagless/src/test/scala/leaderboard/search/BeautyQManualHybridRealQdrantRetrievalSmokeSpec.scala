@@ -46,7 +46,7 @@ final class BeautyQManualHybridRealQdrantRetrievalSmokeSpec extends LeaderboardT
               modelName = "fake-embedding",
               dimension = embeddingDimension,
               distance = VectorDistance.Cosine,
-              sourceTextFieldPaths = Nil,
+              sourceTextFields = Nil,
             )
 
             val vectorSearchSpec = leaderboard.search.dsl.VectorSearchSpec(

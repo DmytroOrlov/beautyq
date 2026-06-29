@@ -4,8 +4,8 @@ import distage.Lifecycle
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.runtime.QueryFailureToThrowable
-import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
-import leaderboard.search.dsl.{BeautySearchSpec, EmbeddingSpec, VectorDistance, VectorSearchSpec}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
+import leaderboard.search.dsl.{BeautySearchSpec, EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
 import io.circe.Json
 import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedIndexInitializer}
 import leaderboard.search.embedding.EmbeddingClient
@@ -67,7 +67,14 @@ object BeautyQManagedLocalSearchBootstrapAction {
 object BeautyQManagedLocalSearchBootstrap {
   val EmbeddingPreflightOperationName: String = "beautyq-managed-local-embedding-preflight"
   val EmbeddingModelName: String = "local-llama-cpp-embedding"
-  val SourceTextFieldPaths: List[String] = List("serviceText", "attributeText", "allText", "categoryName")
+  val SourceTextFields: List[SearchField[VariantSearchDocument]] =
+    List(
+      BeautyQVariantSearchDocumentSchema.Fields.serviceText,
+      BeautyQVariantSearchDocumentSchema.Fields.attributeText,
+      BeautyQVariantSearchDocumentSchema.Fields.allText,
+      BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+    )
+  val SourceTextFieldPaths: List[String] = SourceTextFields.map(_.path)
 
   /**
    * Expected local managed BeautyQ Qdrant vector dimension. It matches the fixed local launcher
@@ -130,7 +137,7 @@ object BeautyQManagedLocalSearchBootstrap {
       modelName = EmbeddingModelName,
       dimension = dimension,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = SourceTextFieldPaths,
+      sourceTextFields = SourceTextFields,
     )
 
   def readinessConfig(vectorSearchSpec: VectorSearchSpec, dimension: Int): QdrantCollectionReadinessConfig = {

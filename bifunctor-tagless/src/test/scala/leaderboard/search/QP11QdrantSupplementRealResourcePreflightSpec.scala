@@ -167,7 +167,7 @@ final class QP11QdrantSupplementRealResourcePreflightSpec extends LeaderboardTes
           modelName = "qp11-preflight-model",
           dimension = 4,
           distance = VectorDistance.Cosine,
-          sourceTextFieldPaths = Nil,
+          sourceTextFields = Nil,
         )
         val realExpectation = QdrantCollectionIdentity.compatibilityExpectation(realEmbeddingSpec, realVectorSearchSpec)
         val checker          = new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
@@ -209,7 +209,7 @@ final class QP11QdrantSupplementRealResourcePreflightSpec extends LeaderboardTes
       modelName = "llama-cpp-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
-      sourceTextFieldPaths = Nil,
+      sourceTextFields = Nil,
     )
 
   private val vectorSearchSpec: VectorSearchSpec =

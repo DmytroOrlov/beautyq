@@ -27,6 +27,21 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
       assert(roles.take(staticFieldRoles.size) == staticFieldRoles)
     }
 
+    "expose schema-owned static field handles with existing paths and roles" in {
+      val fields = BeautyQVariantSearchDocumentSchema.Fields
+      val roles = fields.staticFields.map(FieldRole.from)
+
+      assert(roles == staticFieldRoles)
+      assert(fields.variantId.path == "variantId")
+      assert(fields.masterLocationId.path == "masterLocationId")
+      assert(fields.serviceId.path == "serviceId")
+      assert(fields.serviceName.path == "serviceName")
+      assert(fields.categoryName.path == "categoryName")
+      assert(fields.priceFrom.path == "priceFrom")
+      assert(fields.durationMin.path == "durationMin")
+      assert(fields.location.path == "location")
+    }
+
     "include every dynamic attribute field with expected roles" in {
       val roles = BeautyQVariantSearchDocumentSchema.documentSpec.fields.map(FieldRole.from)
       val dynamicRoles = AttributeDefinition.all.flatMap {
@@ -79,12 +94,59 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
       assert(roles.drop(staticFieldRoles.size) == dynamicRoles)
       assert(roles.map(_.path) == (staticFieldRoles ++ dynamicRoles).map(_.path))
     }
+
+    "expose dynamic attribute handles through schema-owned maps" in {
+      val fields = BeautyQVariantSearchDocumentSchema.Fields
+
+      AttributeDefinition.enumDefinitions.foreach { definition =>
+        fields.enumAttributesByCode.get(definition.code) match {
+          case Some(field) =>
+            assert(field.path == s"enumAttributes.${definition.code}")
+            assert(field.semantic.contains(SearchFieldSemantic.EnumAttribute(definition.code)))
+          case None =>
+            fail(s"Missing enum field handle for ${definition.code}")
+        }
+      }
+      AttributeDefinition.booleanDefinitions.foreach { definition =>
+        fields.booleanAttributesByCode.get(definition.code) match {
+          case Some(field) =>
+            assert(field.path == s"booleanAttributes.${definition.code}")
+            assert(field.semantic.contains(SearchFieldSemantic.BooleanAttribute(definition.code)))
+          case None =>
+            fail(s"Missing boolean field handle for ${definition.code}")
+        }
+      }
+      AttributeDefinition.intDefinitions.foreach { definition =>
+        fields.intAttributesByCode.get(definition.code) match {
+          case Some(field) =>
+            assert(field.path == s"intAttributes.${definition.code}")
+            assert(field.semantic.contains(SearchFieldSemantic.IntAttribute(definition.code)))
+          case None =>
+            fail(s"Missing int field handle for ${definition.code}")
+        }
+      }
+      AttributeDefinition.bigDecimalDefinitions.foreach { definition =>
+        fields.decimalAttributesByCode.get(definition.code) match {
+          case Some(field) =>
+            assert(field.path == s"bigDecimalAttributes.${definition.code}")
+            assert(field.semantic.contains(SearchFieldSemantic.DecimalAttribute(definition.code)))
+          case None =>
+            fail(s"Missing decimal field handle for ${definition.code}")
+        }
+      }
+    }
   }
 
   "BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec" should {
     "own exactly the Qdrant payload field paths" in {
       val payloadSpec = BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec
 
+      assert(payloadSpec.fields == List(
+        BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        BeautyQVariantSearchDocumentSchema.Fields.masterLocationId,
+        BeautyQVariantSearchDocumentSchema.Fields.serviceId,
+        BeautyQVariantSearchDocumentSchema.Fields.serviceName,
+      ))
       assert(payloadSpec.fieldPaths == List(
         "variantId",
         "masterLocationId",
@@ -104,6 +166,19 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
             fail(s"Expected Qdrant payload field path '$path' to exist in documentSpec")
         }
       }
+    }
+  }
+
+  "BeautyQVariantSearchDocumentSchema.querySchema" should {
+    "point at schema-owned field handles" in {
+      val fields = BeautyQVariantSearchDocumentSchema.Fields
+      val querySchema = BeautyQVariantSearchDocumentSchema.querySchema
+
+      assert(querySchema.serviceName == fields.serviceName)
+      assert(querySchema.categoryName == fields.categoryName)
+      assert(querySchema.priceFrom == fields.priceFrom)
+      assert(querySchema.durationMin == fields.durationMin)
+      assert(querySchema.location == fields.location)
     }
   }
 

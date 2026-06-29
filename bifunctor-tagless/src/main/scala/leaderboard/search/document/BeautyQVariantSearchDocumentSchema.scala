@@ -2,7 +2,7 @@ package leaderboard.search.document
 
 import leaderboard.model.*
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.dsl.{SearchDocumentSpec, SearchField, SearchFieldKind, SearchFieldSemantic, SearchGeoPoint, SearchValue}
+import leaderboard.search.dsl.*
 
 object BeautyQVariantSearchDocumentSchema {
   private val BuildOperationName = "build-variant-search-documents"
@@ -17,19 +17,39 @@ object BeautyQVariantSearchDocumentSchema {
     SearchDocumentSpec(
       indexName = "beautyq_variant_v1",
       id = _.variantId.toString,
-      fields = baseFields ++ dynamicAttributeFields,
+      fields = Fields.all,
     )
 
   lazy val qdrantPayloadSpec: SearchDocumentPayloadSpec[VariantSearchDocument] =
     SearchDocumentPayloadSpec(
       documentSpec = documentSpec,
-      fieldPaths = List(
-        "variantId",
-        "masterLocationId",
-        "serviceId",
-        "serviceName",
+      fields = List(
+        Fields.variantId,
+        Fields.masterLocationId,
+        Fields.serviceId,
+        Fields.serviceName,
       ),
     )
+
+  lazy val querySchema: SearchQuerySchema[VariantSearchDocument] =
+    SearchQuerySchema(
+      serviceName = Fields.serviceName,
+      categoryName = Fields.categoryName,
+      priceFrom = Fields.priceFrom,
+      durationMin = Fields.durationMin,
+      location = Fields.location,
+      enumAttribute = code => fieldByCode(Fields.enumAttributesByCode, "enum", code),
+      booleanAttribute = code => fieldByCode(Fields.booleanAttributesByCode, "boolean", code),
+      intAttribute = code => fieldByCode(Fields.intAttributesByCode, "int", code),
+      decimalAttribute = code => fieldByCode(Fields.decimalAttributesByCode, "decimal", code),
+    )
+
+  private def fieldByCode(
+    fields: Map[String, SearchField[VariantSearchDocument]],
+    kind: String,
+    code: String,
+  ): Either[QueryFailure, SearchField[VariantSearchDocument]] =
+    fields.get(code).toRight(QueryFailure.domain(s"Search $kind attribute '$code' is not defined for index '${documentSpec.indexName}'"))
 
   lazy val projection: SearchDocumentProjection[BeautySearchCatalogSnapshot, VariantSearchDocument] =
     SearchDocumentProjection(
@@ -213,8 +233,8 @@ object BeautyQVariantSearchDocumentSchema {
   private def normalizeText(parts: Iterable[String]): String =
     parts.iterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
 
-  private val baseFields: List[SearchField[VariantSearchDocument]] =
-    List(
+  object Fields {
+    val variantId: SearchField[VariantSearchDocument] =
       SearchField(
         path = "variantId",
         kind = SearchFieldKind.Keyword,
@@ -222,14 +242,16 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.VariantId),
         filterable = true,
         sortable = true,
-      ),
+      )
+    val masterServiceOfferId: SearchField[VariantSearchDocument] =
       SearchField(
         path = "masterServiceOfferId",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.masterServiceOfferId.toString)),
         semantic = Some(SearchFieldSemantic.MasterServiceOfferId),
         filterable = true,
-      ),
+      )
+    val masterLocationId: SearchField[VariantSearchDocument] =
       SearchField(
         path = "masterLocationId",
         kind = SearchFieldKind.Keyword,
@@ -237,14 +259,16 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.MasterLocationId),
         filterable = true,
         facetable = true,
-      ),
+      )
+    val masterId: SearchField[VariantSearchDocument] =
       SearchField(
         path = "masterId",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.masterId.toString)),
         semantic = Some(SearchFieldSemantic.MasterId),
         filterable = true,
-      ),
+      )
+    val serviceId: SearchField[VariantSearchDocument] =
       SearchField(
         path = "serviceId",
         kind = SearchFieldKind.Keyword,
@@ -252,7 +276,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.ServiceId),
         filterable = true,
         facetable = true,
-      ),
+      )
+    val serviceName: SearchField[VariantSearchDocument] =
       SearchField(
         path = "serviceName",
         kind = SearchFieldKind.Keyword,
@@ -260,7 +285,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.ServiceName),
         filterable = true,
         facetable = true,
-      ),
+      )
+    val categoryId: SearchField[VariantSearchDocument] =
       SearchField(
         path = "categoryId",
         kind = SearchFieldKind.Keyword,
@@ -268,7 +294,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.CategoryId),
         filterable = true,
         facetable = true,
-      ),
+      )
+    val categoryName: SearchField[VariantSearchDocument] =
       SearchField(
         path = "categoryName",
         kind = SearchFieldKind.Keyword,
@@ -276,32 +303,38 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.CategoryName),
         filterable = true,
         facetable = true,
-      ),
+      )
+    val masterName: SearchField[VariantSearchDocument] =
       SearchField(
         path = "masterName",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.masterName)),
-      ),
+      )
+    val locationName: SearchField[VariantSearchDocument] =
       SearchField(
         path = "locationName",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.locationName)),
-      ),
+      )
+    val address: SearchField[VariantSearchDocument] =
       SearchField(
         path = "address",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.address)),
-      ),
+      )
+    val lat: SearchField[VariantSearchDocument] =
       SearchField(
         path = "lat",
         kind = SearchFieldKind.Decimal,
         extract = document => Some(SearchValue.Decimal(document.lat)),
-      ),
+      )
+    val lon: SearchField[VariantSearchDocument] =
       SearchField(
         path = "lon",
         kind = SearchFieldKind.Decimal,
         extract = document => Some(SearchValue.Decimal(document.lon)),
-      ),
+      )
+    val priceFrom: SearchField[VariantSearchDocument] =
       SearchField(
         path = "priceFrom",
         kind = SearchFieldKind.Decimal,
@@ -310,7 +343,8 @@ object BeautyQVariantSearchDocumentSchema {
         filterable = true,
         facetable = true,
         sortable = true,
-      ),
+      )
+    val priceTo: SearchField[VariantSearchDocument] =
       SearchField(
         path = "priceTo",
         kind = SearchFieldKind.Decimal,
@@ -318,7 +352,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.PriceTo),
         filterable = true,
         sortable = true,
-      ),
+      )
+    val durationMin: SearchField[VariantSearchDocument] =
       SearchField(
         path = "durationMin",
         kind = SearchFieldKind.Integer,
@@ -327,14 +362,16 @@ object BeautyQVariantSearchDocumentSchema {
         filterable = true,
         facetable = true,
         sortable = true,
-      ),
+      )
+    val location: SearchField[VariantSearchDocument] =
       SearchField(
         path = "location",
         kind = SearchFieldKind.GeoPoint,
         extract = document => Some(SearchValue.GeoPoint(document.location)),
         semantic = Some(SearchFieldSemantic.Location),
         sortable = true,
-      ),
+      )
+    val allText: SearchField[VariantSearchDocument] =
       SearchField(
         path = "allText",
         kind = SearchFieldKind.Text,
@@ -342,7 +379,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.AllText),
         searchable = true,
         boost = 4.0,
-      ),
+      )
+    val serviceText: SearchField[VariantSearchDocument] =
       SearchField(
         path = "serviceText",
         kind = SearchFieldKind.Text,
@@ -350,7 +388,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.ServiceText),
         searchable = true,
         boost = 5.0,
-      ),
+      )
+    val attributeText: SearchField[VariantSearchDocument] =
       SearchField(
         path = "attributeText",
         kind = SearchFieldKind.Text,
@@ -358,7 +397,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.AttributeText),
         searchable = true,
         boost = 4.0,
-      ),
+      )
+    val providerText: SearchField[VariantSearchDocument] =
       SearchField(
         path = "providerText",
         kind = SearchFieldKind.Text,
@@ -366,7 +406,8 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.ProviderText),
         searchable = true,
         boost = 2.0,
-      ),
+      )
+    val locationText: SearchField[VariantSearchDocument] =
       SearchField(
         path = "locationText",
         kind = SearchFieldKind.Text,
@@ -374,14 +415,12 @@ object BeautyQVariantSearchDocumentSchema {
         semantic = Some(SearchFieldSemantic.LocationText),
         searchable = true,
         boost = 2.5,
-      ),
-    )
+      )
 
-  private val dynamicAttributeFields: List[SearchField[VariantSearchDocument]] =
-    AttributeDefinition.all.flatMap {
-      case definition: EnumAttributeDefinition[?] =>
-        List(
-          SearchField(
+    val enumAttributesByCode: Map[String, SearchField[VariantSearchDocument]] =
+      AttributeDefinition.enumDefinitions.map {
+        definition =>
+          definition.code -> SearchField[VariantSearchDocument](
             path = s"enumAttributes.${definition.code}",
             kind = SearchFieldKind.Keyword,
             extract = document => document.enumAttributes.get(definition.code).map(SearchValue.Keyword.apply),
@@ -389,10 +428,12 @@ object BeautyQVariantSearchDocumentSchema {
             filterable = true,
             facetable = true,
           )
-        )
-      case definition: BooleanAttributeDefinition =>
-        List(
-          SearchField(
+      }.toMap
+
+    val booleanAttributesByCode: Map[String, SearchField[VariantSearchDocument]] =
+      AttributeDefinition.booleanDefinitions.map {
+        definition =>
+          definition.code -> SearchField[VariantSearchDocument](
             path = s"booleanAttributes.${definition.code}",
             kind = SearchFieldKind.Boolean,
             extract = document => document.booleanAttributes.get(definition.code).map(SearchValue.Boolean.apply),
@@ -400,10 +441,12 @@ object BeautyQVariantSearchDocumentSchema {
             filterable = true,
             facetable = true,
           )
-        )
-      case definition: IntAttributeDefinition =>
-        List(
-          SearchField(
+      }.toMap
+
+    val intAttributesByCode: Map[String, SearchField[VariantSearchDocument]] =
+      AttributeDefinition.intDefinitions.map {
+        definition =>
+          definition.code -> SearchField[VariantSearchDocument](
             path = s"intAttributes.${definition.code}",
             kind = SearchFieldKind.Integer,
             extract = document => document.intAttributes.get(definition.code).map(SearchValue.Integer.apply),
@@ -412,10 +455,12 @@ object BeautyQVariantSearchDocumentSchema {
             facetable = true,
             sortable = true,
           )
-        )
-      case definition: BigDecimalAttributeDefinition =>
-        List(
-          SearchField(
+      }.toMap
+
+    val decimalAttributesByCode: Map[String, SearchField[VariantSearchDocument]] =
+      AttributeDefinition.bigDecimalDefinitions.map {
+        definition =>
+          definition.code -> SearchField[VariantSearchDocument](
             path = s"bigDecimalAttributes.${definition.code}",
             kind = SearchFieldKind.Decimal,
             extract = document => document.bigDecimalAttributes.get(definition.code).map(SearchValue.Decimal.apply),
@@ -424,6 +469,43 @@ object BeautyQVariantSearchDocumentSchema {
             facetable = true,
             sortable = true,
           )
-        )
-    }
+      }.toMap
+
+    val staticFields: List[SearchField[VariantSearchDocument]] =
+      List(
+        variantId,
+        masterServiceOfferId,
+        masterLocationId,
+        masterId,
+        serviceId,
+        serviceName,
+        categoryId,
+        categoryName,
+        masterName,
+        locationName,
+        address,
+        lat,
+        lon,
+        priceFrom,
+        priceTo,
+        durationMin,
+        location,
+        allText,
+        serviceText,
+        attributeText,
+        providerText,
+        locationText,
+      )
+
+    val dynamicAttributeFields: List[SearchField[VariantSearchDocument]] =
+      AttributeDefinition.all.flatMap {
+        case definition: EnumAttributeDefinition[?]       => enumAttributesByCode.get(definition.code).toList
+        case definition: BooleanAttributeDefinition       => booleanAttributesByCode.get(definition.code).toList
+        case definition: IntAttributeDefinition           => intAttributesByCode.get(definition.code).toList
+        case definition: BigDecimalAttributeDefinition    => decimalAttributesByCode.get(definition.code).toList
+      }
+
+    val all: List[SearchField[VariantSearchDocument]] =
+      staticFields ++ dynamicAttributeFields
+  }
 }

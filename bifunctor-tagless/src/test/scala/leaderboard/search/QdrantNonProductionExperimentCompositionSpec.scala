@@ -74,6 +74,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.1, 0.2, 0.3)),
           new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName, expectedHitId, 0.95),
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
         )
       )
 
@@ -95,6 +96,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new FailIfCalledEmbeddingClient,
           new FailIfCalledQdrantSearchClient,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
         ),
       )
     }
@@ -112,6 +114,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new FailIfCalledEmbeddingClient,
           new FailIfCalledQdrantSearchClient,
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
         ),
       )
 
@@ -121,6 +124,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ExpectingEmbeddingClient("explicit-call"),
           new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName, expectedHitId, 0.87),
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
         ),
       )
 
@@ -143,6 +147,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.1)),
           new ExpectingQdrantSearchClient(testReadinessConfig.collectionName, expectedHitId, 0.72),
+        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
         ),
       )
 
@@ -168,6 +173,7 @@ final class QdrantNonProductionExperimentCompositionSpec extends AnyWordSpec {
     semanticCandidateSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(
       new ConstEmbeddingClient(Vector(0.1)),
       new ExpectingQdrantSearchClient(testReadinessConfig.vectorSearchSpec.collectionName, UUID.randomUUID(), 0.0),
+    leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
     ),
   ): QdrantNonProductionExperimentComposition =
     QdrantNonProductionExperimentComposition.build(

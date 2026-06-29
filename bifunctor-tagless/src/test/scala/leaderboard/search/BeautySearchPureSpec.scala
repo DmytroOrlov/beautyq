@@ -3,7 +3,7 @@ package leaderboard.search
 import io.circe.{Json, JsonObject}
 import leaderboard.model.*
 import leaderboard.search.dsl.*
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.embedding.EmbeddingClient
@@ -92,7 +92,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         modelName = "test-model",
         dimension = 384,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = List("serviceName", "allText"),
+        sourceTextFields = List(
+          BeautyQVariantSearchDocumentSchema.Fields.serviceName,
+          BeautyQVariantSearchDocumentSchema.Fields.allText,
+        ),
       )
 
       assert(spec.vectorName == "variant-embedding")
@@ -120,7 +123,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         ),
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(hits)
+      val decoded = QdrantCandidateHitDecoder.decode(hits, BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded == Right(List(
         QdrantCandidateHit(secondVariantId, 0.25),
@@ -135,7 +138,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(hit))
+      val decoded = QdrantCandidateHitDecoder.decode(List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(_.message.contains("Missing payload.variantId")))
@@ -148,7 +151,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(hit))
+      val decoded = QdrantCandidateHitDecoder.decode(List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(_.message.contains("Invalid payload.variantId")))
@@ -161,7 +164,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(hit))
+      val decoded = QdrantCandidateHitDecoder.decode(List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
     }
@@ -178,7 +181,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.4,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(first, second))
+      val decoded = QdrantCandidateHitDecoder.decode(List(first, second), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(failure => failure.message.contains("first-missing-payload-variant-id")))
@@ -189,55 +192,58 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   "SearchEmbeddingTextExtractor" should {
     "extract source text from matching fields" in {
       val document = documents.head
-      val spec = BeautySearchSpecV1.spec.copy(
-        variantDocument = SearchDocumentSpec[VariantSearchDocument](
-          indexName = "synthetic-embedding",
-          id = _.variantId.toString,
-          fields = List(
-            SearchField[VariantSearchDocument](
-              path = "first",
-              kind = SearchFieldKind.Text,
-              extract = doc => Some(SearchValue.Text(doc.serviceName)),
-            ),
-            SearchField[VariantSearchDocument](
-              path = "second",
-              kind = SearchFieldKind.Text,
-              extract = doc => Some(SearchValue.Text(doc.categoryName)),
-            ),
-          ),
-        ),
-        embeddingSpec = Some(EmbeddingSpec[VariantSearchDocument](
-          vectorName = "variant-embedding",
-          modelName = "test-model",
-          dimension = 384,
-          distance = VectorDistance.Cosine,
-          sourceTextFieldPaths = List("first", "second"),
-        )),
+      val firstField = SearchField[VariantSearchDocument](
+        path = "first",
+        kind = SearchFieldKind.Text,
+        extract = doc => Some(SearchValue.Text(doc.serviceName)),
       )
-
-      val text = SearchEmbeddingTextExtractor.extract(spec.variantDocument, spec.embeddingSpec.get, document)
-      assert(text == s"${document.serviceName} ${document.categoryName}")
-    }
-
-    "ignore missing source text fields" in {
-      val document = documents.head
+      val secondField = SearchField[VariantSearchDocument](
+        path = "second",
+        kind = SearchFieldKind.Text,
+        extract = doc => Some(SearchValue.Text(doc.categoryName)),
+      )
       val documentSpec = SearchDocumentSpec[VariantSearchDocument](
-        indexName = "synthetic-embedding-missing",
+        indexName = "synthetic-embedding",
         id = _.variantId.toString,
-        fields = List(
-          SearchField[VariantSearchDocument](
-            path = "present",
-            kind = SearchFieldKind.Text,
-            extract = doc => Some(SearchValue.Text(doc.serviceName)),
-          ),
-        ),
+        fields = List(firstField, secondField),
       )
       val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
         vectorName = "variant-embedding",
         modelName = "test-model",
         dimension = 384,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = List("missing", "present", "also-missing"),
+        sourceTextFields = List(firstField, secondField),
+      )
+      val spec = BeautySearchSpecV1.spec.copy(
+        variantDocument = documentSpec,
+        embeddingSpec = Some(embeddingSpec),
+      )
+
+      val text = spec.embeddingSpec match {
+        case Some(value) => SearchEmbeddingTextExtractor.extract(spec.variantDocument, value, document)
+        case None        => fail("Expected embedding spec")
+      }
+      assert(text == s"${document.serviceName} ${document.categoryName}")
+    }
+
+    "extract configured source text fields" in {
+      val document = documents.head
+      val presentField = SearchField[VariantSearchDocument](
+        path = "present",
+        kind = SearchFieldKind.Text,
+        extract = doc => Some(SearchValue.Text(doc.serviceName)),
+      )
+      val documentSpec = SearchDocumentSpec[VariantSearchDocument](
+        indexName = "synthetic-embedding-missing",
+        id = _.variantId.toString,
+        fields = List(presentField),
+      )
+      val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
+        vectorName = "variant-embedding",
+        modelName = "test-model",
+        dimension = 384,
+        distance = VectorDistance.Cosine,
+        sourceTextFields = List(presentField),
       )
 
       val text = SearchEmbeddingTextExtractor.extract(documentSpec, embeddingSpec, document)
@@ -246,28 +252,27 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
     "ignore None extractor values" in {
       val document = documents.head
+      val emptyField = SearchField[VariantSearchDocument](
+        path = "empty",
+        kind = SearchFieldKind.Text,
+        extract = _ => None,
+      )
+      val presentField = SearchField[VariantSearchDocument](
+        path = "present",
+        kind = SearchFieldKind.Text,
+        extract = doc => Some(SearchValue.Text(doc.categoryName)),
+      )
       val documentSpec = SearchDocumentSpec[VariantSearchDocument](
         indexName = "synthetic-embedding-none",
         id = _.variantId.toString,
-        fields = List(
-          SearchField[VariantSearchDocument](
-            path = "empty",
-            kind = SearchFieldKind.Text,
-            extract = _ => None,
-          ),
-          SearchField[VariantSearchDocument](
-            path = "present",
-            kind = SearchFieldKind.Text,
-            extract = doc => Some(SearchValue.Text(doc.categoryName)),
-          ),
-        ),
+        fields = List(emptyField, presentField),
       )
       val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
         vectorName = "variant-embedding",
         modelName = "test-model",
         dimension = 384,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = List("empty", "present"),
+        sourceTextFields = List(emptyField, presentField),
       )
 
       val text = SearchEmbeddingTextExtractor.extract(documentSpec, embeddingSpec, document)
@@ -281,7 +286,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         modelName = "test-model",
         dimension = 384,
         distance = VectorDistance.Cosine,
-        sourceTextFieldPaths = List("serviceName", "categoryName"),
+        sourceTextFields = List(
+          BeautyQVariantSearchDocumentSchema.Fields.serviceName,
+          BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+        ),
       )
 
       val text = SearchEmbeddingTextExtractor.extract(BeautySearchSpecV1.spec.variantDocument, embeddingSpec, document)
@@ -740,7 +748,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val embeddingClient = new RecordingEmbeddingClient(embeddingQueryRef, vector)
       val qdrantClient = new RecordingQdrantSearchClient(qdrantPathRef, hits)
       val semantic = new QdrantSemanticCandidateBackend(
-        new QdrantSemanticCandidateSearch(embeddingClient, qdrantClient),
+        new QdrantSemanticCandidateSearch(embeddingClient, qdrantClient, BeautyQVariantSearchDocumentSchema.Fields.variantId),
         vectorSpec,
       )
       val lookup = new InMemoryVariantSearchDocumentLookup[IO](knownDocuments)
@@ -1035,43 +1043,43 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   "ElasticsearchSearchRequestInterpreter" should {
     "derive filters, searchable fields and facets from the provided spec" in {
+      val serviceNameField = SearchField[VariantSearchDocument](
+        path = "serviceName",
+        kind = SearchFieldKind.Keyword,
+        extract = document => Some(SearchValue.Keyword(document.serviceName)),
+        semantic = Some(SearchFieldSemantic.ServiceName),
+        filterable = true,
+        facetable = true,
+      )
+      val customTextField = SearchField[VariantSearchDocument](
+        path = "customText",
+        kind = SearchFieldKind.Text,
+        extract = document => Some(SearchValue.Text(document.serviceText)),
+        searchable = true,
+        boost = 7.0,
+      )
+      val providerKeyField = SearchField[VariantSearchDocument](
+        path = "providerKey",
+        kind = SearchFieldKind.Keyword,
+        extract = document => Some(SearchValue.Keyword(document.masterLocationId.toString)),
+        filterable = true,
+      )
+      val serviceKeyField = SearchField[VariantSearchDocument](
+        path = "serviceKey",
+        kind = SearchFieldKind.Keyword,
+        extract = document => Some(SearchValue.Keyword(document.serviceId.toString)),
+        filterable = true,
+      )
       val customSpec = BeautySearchSpec(
         variantDocument = SearchDocumentSpec(
           indexName = "custom",
           id = _.variantId.toString,
-          fields = List(
-            SearchField[VariantSearchDocument](
-              path = "serviceName",
-              kind = SearchFieldKind.Keyword,
-              extract = document => Some(SearchValue.Keyword(document.serviceName)),
-              semantic = Some(SearchFieldSemantic.ServiceName),
-              filterable = true,
-              facetable = true,
-            ),
-            SearchField[VariantSearchDocument](
-              path = "customText",
-              kind = SearchFieldKind.Text,
-              extract = document => Some(SearchValue.Text(document.serviceText)),
-              searchable = true,
-              boost = 7.0,
-            ),
-            SearchField[VariantSearchDocument](
-              path = "providerKey",
-              kind = SearchFieldKind.Keyword,
-              extract = document => Some(SearchValue.Keyword(document.masterLocationId.toString)),
-              filterable = true,
-            ),
-            SearchField[VariantSearchDocument](
-              path = "serviceKey",
-              kind = SearchFieldKind.Keyword,
-              extract = document => Some(SearchValue.Keyword(document.serviceId.toString)),
-              filterable = true,
-            ),
-          ),
+          fields = List(serviceNameField, customTextField, providerKeyField, serviceKeyField),
         ),
         synonyms = Nil,
-        carouselSpec = CarouselSpec(providerGroupField = "providerKey", serviceIntentGroupField = "serviceKey"),
-        facetSpec = FacetSpec(enabled = true, fields = List(FacetField("serviceName", FacetFieldMode.Terms))),
+        carouselSpec = CarouselSpec(providerGroupField = providerKeyField, serviceIntentGroupField = serviceKeyField),
+        facetSpec = FacetSpec(enabled = true, fields = List(FacetField(serviceNameField, FacetFieldMode.Terms))),
+        querySchema = querySchemaFor(serviceNameField),
       )
 
       val request = ElasticsearchSearchRequestInterpreter.request(
@@ -1099,23 +1107,23 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     }
 
     "use SearchFieldSemantic lookup instead of hardcoded paths for constraints" in {
+      val serviceNameField = SearchField[VariantSearchDocument](
+        path = "serviceName2",
+        kind = SearchFieldKind.Keyword,
+        extract = document => Some(SearchValue.Keyword(document.serviceName)),
+        semantic = Some(SearchFieldSemantic.ServiceName),
+        filterable = true,
+      )
       val syntheticSpec = BeautySearchSpec(
         variantDocument = SearchDocumentSpec(
           indexName = "custom-semantic",
           id = _.variantId.toString,
-          fields = List(
-            SearchField[VariantSearchDocument](
-              path = "serviceName2",
-              kind = SearchFieldKind.Keyword,
-              extract = document => Some(SearchValue.Keyword(document.serviceName)),
-              semantic = Some(SearchFieldSemantic.ServiceName),
-              filterable = true,
-            ),
-          ),
+          fields = List(serviceNameField),
         ),
         synonyms = Nil,
-        carouselSpec = CarouselSpec(),
+        carouselSpec = CarouselSpec(providerGroupField = serviceNameField, serviceIntentGroupField = serviceNameField),
         facetSpec = FacetSpec(enabled = false, fields = Nil),
+        querySchema = querySchemaFor(serviceNameField),
       )
 
       val request = ElasticsearchSearchRequestInterpreter.request(
@@ -1138,7 +1146,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     }
 
     "derive facets from FacetSpec and remove them when absent" in {
-      val syntheticFacet = FacetField("serviceName", FacetFieldMode.Terms, limit = 3)
+      val syntheticFacet = FacetField(BeautyQVariantSearchDocumentSchema.Fields.serviceName, FacetFieldMode.Terms, limit = 3)
       val specWithFacet = BeautySearchSpecV1.spec.copy(
         facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = BeautySearchSpecV1.spec.facetSpec.fields :+ syntheticFacet)
       )
@@ -1180,7 +1188,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
     "use requestSpec.aggregationSize for facet aggregations" in {
       val customSpec = BeautySearchSpecV1.spec.copy(
-        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = List(FacetField("serviceName", FacetFieldMode.Terms, limit = 3))),
+        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = List(FacetField(BeautyQVariantSearchDocumentSchema.Fields.serviceName, FacetFieldMode.Terms, limit = 3))),
         requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(aggregationSize = 11),
       )
 
@@ -1269,7 +1277,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         modelName = "synthetic-model",
         dimension = 384,
         distance = VectorDistance.Euclidean,
-        sourceTextFieldPaths = List("serviceName"),
+        sourceTextFields = List(BeautyQVariantSearchDocumentSchema.Fields.serviceName),
       )
 
       val json = QdrantJsonInterpreter.createCollectionJson(spec, embeddingSpec)
@@ -1394,6 +1402,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         ),
         carouselSpec = BeautySearchSpecV1.spec.carouselSpec,
         facetSpec = BeautySearchSpecV1.spec.facetSpec,
+        querySchema = BeautySearchSpecV1.spec.querySchema,
       )
 
       val syntheticParser = new BeautySearchIntentParser(syntheticSpec)
@@ -1983,6 +1992,22 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
       pathRef.set(Some(path)) *> ZIO.succeed(hits)
   }
+
+  private def querySchemaFor(serviceNameField: SearchField[VariantSearchDocument]): SearchQuerySchema[VariantSearchDocument] =
+    SearchQuerySchema(
+      serviceName = serviceNameField,
+      categoryName = serviceNameField,
+      priceFrom = serviceNameField,
+      durationMin = serviceNameField,
+      location = serviceNameField,
+      enumAttribute = missingAttributeField,
+      booleanAttribute = missingAttributeField,
+      intAttribute = missingAttributeField,
+      decimalAttribute = missingAttributeField,
+    )
+
+  private def missingAttributeField(code: String): Either[QueryFailure, SearchField[VariantSearchDocument]] =
+    Left(QueryFailure.domain(s"Missing synthetic attribute field '$code'"))
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     runZIO(effect)

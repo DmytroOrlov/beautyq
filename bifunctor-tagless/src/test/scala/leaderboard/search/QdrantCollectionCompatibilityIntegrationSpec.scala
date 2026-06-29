@@ -44,7 +44,7 @@ final class QdrantCollectionCompatibilityIntegrationSpec extends LeaderboardTest
           modelName = "compat-model",
           dimension = 3,
           distance = VectorDistance.Cosine,
-          sourceTextFieldPaths = Nil,
+          sourceTextFields = Nil,
         )
         val expectation = QdrantCollectionIdentity.compatibilityExpectation(embeddingSpec, vectorSearchSpec)
         val checker = new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
