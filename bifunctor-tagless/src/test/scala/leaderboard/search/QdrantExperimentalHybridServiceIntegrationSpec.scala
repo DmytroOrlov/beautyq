@@ -7,7 +7,7 @@ import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
+import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchIntentVocabulary, VectorDistance, VectorSearchSpec}
 import leaderboard.search.hybrid.ExperimentalBeautySearchService
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -44,7 +44,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
     case Left(error) => throw new RuntimeException(error.message)
   }
 
-  private val semanticSmokeSpec = BeautySearchSpecV1.spec.copy(synonyms = Nil)
+  private val semanticSmokeSpec = BeautySearchSpecV1.spec.copy(intentVocabulary = SearchIntentVocabulary(Nil))
   private val parser = new BeautySearchIntentParser(semanticSmokeSpec)
   private val embeddingSpecTemplate = EmbeddingSpec[VariantSearchDocument](
     vectorName = "llama-cpp-embedding",

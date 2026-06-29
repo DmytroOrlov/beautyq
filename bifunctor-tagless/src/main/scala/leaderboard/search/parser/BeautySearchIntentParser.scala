@@ -1,7 +1,7 @@
 package leaderboard.search.parser
 
 import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
-import leaderboard.search.dsl.{BeautySearchSpec, SearchConstraint, SearchSynonym, SynonymMatchMode}
+import leaderboard.search.dsl.{BeautySearchSpec, IntentMatchMode, SearchConstraint, SearchIntentRule}
 
 import java.util.Locale
 
@@ -13,21 +13,21 @@ final class BeautySearchIntentParser(spec: BeautySearchSpec) {
     val normalizedQuery = normalize(queryForMatching)
     val normalizedTokens = tokenize(normalizedQuery)
     val baseMatches = selectMatches(
-      synonyms = spec.synonyms.filter(_.requires.isEmpty),
+      rules = spec.intentVocabulary.rules.filter(_.requires.isEmpty),
       tokens = normalizedTokens,
       currentConstraints = Nil,
       occupied = Set.empty,
     )
 
     val contextualMatches = selectContextualMatches(
-      synonyms = spec.synonyms.filter(_.requires.nonEmpty),
+      rules = spec.intentVocabulary.rules.filter(_.requires.nonEmpty),
       tokens = normalizedTokens,
       selected = baseMatches,
     )
 
     val allMatches = (baseMatches ++ contextualMatches).sortBy(matchResult => (matchResult.start, matchResult.end))
-    val explicitConstraints = distinctConstraints(allMatches.flatMap(_.synonym.constraints) ++ budgetConstraint.toList)
-    val softBoosts = distinctConstraints(allMatches.flatMap(_.synonym.softBoosts))
+    val explicitConstraints = distinctConstraints(allMatches.flatMap(_.rule.constraints) ++ budgetConstraint.toList)
+    val softBoosts = distinctConstraints(allMatches.flatMap(_.rule.softBoosts))
     val occupiedPositions = allMatches.foldLeft(Set.empty[Int]) { (acc, next) =>
       acc ++ (next.start until next.end)
     }
@@ -82,7 +82,7 @@ object BeautySearchIntentParser {
     }
 
   private final case class MatchResult(
-    synonym: SearchSynonym,
+    rule: SearchIntentRule,
     phrase: String,
     start: Int,
     end: Int,
@@ -120,37 +120,37 @@ object BeautySearchIntentParser {
     value.split(' ').toList.map(_.trim).filter(_.nonEmpty)
 
   private def selectContextualMatches(
-    synonyms: List[SearchSynonym],
+    rules: List[SearchIntentRule],
     tokens: List[String],
     selected: List[MatchResult],
   ): List[MatchResult] = {
-    val currentConstraints = distinctConstraints(selected.flatMap(_.synonym.constraints))
+    val currentConstraints = distinctConstraints(selected.flatMap(_.rule.constraints))
     val occupied = selected.foldLeft(Set.empty[Int]) { (acc, next) =>
       acc ++ (next.start until next.end)
     }
-    val nextMatches = selectMatches(synonyms, tokens, currentConstraints, occupied)
+    val nextMatches = selectMatches(rules, tokens, currentConstraints, occupied)
     if (nextMatches.isEmpty) {
       Nil
     } else {
-      nextMatches ++ selectContextualMatches(synonyms, tokens, selected ++ nextMatches)
+      nextMatches ++ selectContextualMatches(rules, tokens, selected ++ nextMatches)
     }
   }
 
   private def selectMatches(
-    synonyms: List[SearchSynonym],
+    rules: List[SearchIntentRule],
     tokens: List[String],
     currentConstraints: List[SearchConstraint],
     occupied: Set[Int],
   ): List[MatchResult] = {
-    val candidates = synonyms.iterator
-      .filter { synonym =>
-        val requiresSatisfied = constraintsSatisfied(synonym.requires, currentConstraints)
-        val excludesSatisfied = synonym.excludes.nonEmpty && constraintsSatisfied(synonym.excludes, currentConstraints)
+    val candidates = rules.iterator
+      .filter { rule =>
+        val requiresSatisfied = constraintsSatisfied(rule.requires, currentConstraints)
+        val excludesSatisfied = rule.excludes.nonEmpty && constraintsSatisfied(rule.excludes, currentConstraints)
         requiresSatisfied && !excludesSatisfied
       }
-      .flatMap(synonym => synonym.tokens.iterator.flatMap(token => matchToken(synonym, token, tokens)))
+      .flatMap(rule => rule.tokens.iterator.flatMap(token => matchToken(rule, token, tokens)))
       .toList
-      .sortBy(candidate => (-candidate.length, candidate.start, -candidate.synonym.constraints.size))
+      .sortBy(candidate => (-candidate.length, candidate.start, -candidate.rule.constraints.size))
 
     candidates.foldLeft(List.empty[MatchResult]) {
       case (acc, candidate) =>
@@ -166,7 +166,7 @@ object BeautySearchIntentParser {
   }
 
   private def matchToken(
-    synonym: SearchSynonym,
+    rule: SearchIntentRule,
     rawToken: String,
     tokens: List[String],
   ): List[MatchResult] = {
@@ -175,13 +175,13 @@ object BeautySearchIntentParser {
     if (phraseTokens.isEmpty) {
       Nil
     } else {
-      synonym.matchMode match {
-        case SynonymMatchMode.Phrase =>
-          slidingMatches(synonym, rawToken, phraseTokens, tokens)
-        case SynonymMatchMode.Token =>
+      rule.matchMode match {
+        case IntentMatchMode.Phrase =>
+          slidingMatches(rule, rawToken, phraseTokens, tokens)
+        case IntentMatchMode.Token =>
           phraseTokens.flatMap { tokenValue =>
             tokens.zipWithIndex.collect {
-              case (candidate, index) if candidate == tokenValue => MatchResult(synonym, rawToken, index, index + 1)
+              case (candidate, index) if candidate == tokenValue => MatchResult(rule, rawToken, index, index + 1)
             }
           }
       }
@@ -189,7 +189,7 @@ object BeautySearchIntentParser {
   }
 
   private def slidingMatches(
-    synonym: SearchSynonym,
+    rule: SearchIntentRule,
     rawToken: String,
     phraseTokens: List[String],
     tokens: List[String],
@@ -199,7 +199,7 @@ object BeautySearchIntentParser {
     } else {
       tokens.sliding(phraseTokens.length).zipWithIndex.collect {
         case (candidateTokens, index) if candidateTokens == phraseTokens =>
-          MatchResult(synonym, rawToken, index, index + phraseTokens.length)
+          MatchResult(rule, rawToken, index, index + phraseTokens.length)
       }.toList
     }
   }

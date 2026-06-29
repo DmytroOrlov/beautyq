@@ -215,20 +215,59 @@ object SearchConstraint {
     } yield (attributeCode, min, max)
 }
 
-sealed trait SynonymMatchMode extends Product with Serializable
-object SynonymMatchMode {
-  case object Phrase extends SynonymMatchMode
-  case object Token extends SynonymMatchMode
+sealed trait IntentMatchMode extends Product with Serializable
+object IntentMatchMode {
+  case object Phrase extends IntentMatchMode
+  case object Token extends IntentMatchMode
 }
 
-final case class SearchSynonym(
-  tokens: Set[String],
-  constraints: List[SearchConstraint] = Nil,
-  softBoosts: List[SearchConstraint] = Nil,
-  boost: Double = 1.0,
-  matchMode: SynonymMatchMode = SynonymMatchMode.Phrase,
-  requires: List[SearchConstraint] = Nil,
-  excludes: List[SearchConstraint] = Nil,
+/** A single BeautyQ intent-vocabulary rule. These are structured intent aliases that map query phrases to
+  * hard service/category/attribute constraints, soft boosts, requires, and excludes; they are not lexical
+  * Elasticsearch analyzer synonyms. Lexical recall/tokenization/synonym filters remain an ES analyzer
+  * concern; structured service/category/attribute intent mapping is schema/data ownership.
+  */
+sealed trait SearchIntentRule extends Product with Serializable {
+  def tokens: Set[String]
+  def matchMode: IntentMatchMode
+  def requires: List[SearchConstraint]
+  def excludes: List[SearchConstraint]
+  def constraints: List[SearchConstraint]
+  def softBoosts: List[SearchConstraint]
+  def boost: Double
+}
+
+object SearchIntentRule {
+
+  /** A phrase that maps to structured intent: hard constraints and/or soft boosts, optionally gated by
+    * `requires`/`excludes`.
+    */
+  final case class StructuredAlias(
+    tokens: Set[String],
+    constraints: List[SearchConstraint],
+    softBoosts: List[SearchConstraint] = Nil,
+    boost: Double = 1.0,
+    matchMode: IntentMatchMode = IntentMatchMode.Phrase,
+    requires: List[SearchConstraint] = Nil,
+    excludes: List[SearchConstraint] = Nil,
+  ) extends SearchIntentRule
+
+  /** A residual-noise phrase that carries no constraints or boosts. It exists to consume query text (and
+    * optionally to be gated by contextual `requires`/`excludes`) without contributing intent.
+    */
+  final case class QueryNoisePhrase(
+    tokens: Set[String],
+    matchMode: IntentMatchMode = IntentMatchMode.Phrase,
+    requires: List[SearchConstraint] = Nil,
+    excludes: List[SearchConstraint] = Nil,
+  ) extends SearchIntentRule {
+    override val constraints: List[SearchConstraint] = Nil
+    override val softBoosts: List[SearchConstraint] = Nil
+    override val boost: Double = 1.0
+  }
+}
+
+final case class SearchIntentVocabulary(
+  rules: List[SearchIntentRule],
 )
 
 sealed trait FacetFieldMode extends Product with Serializable
@@ -393,7 +432,7 @@ final case class CarouselSpec[A](
 
 final case class BeautySearchSpec(
   variantDocument: SearchDocumentSpec[VariantSearchDocument],
-  synonyms: List[SearchSynonym],
+  intentVocabulary: SearchIntentVocabulary,
   carouselSpec: CarouselSpec[VariantSearchDocument],
   facetSpec: FacetSpec[VariantSearchDocument],
   requestSpec: SearchRequestSpec = SearchRequestSpec(),

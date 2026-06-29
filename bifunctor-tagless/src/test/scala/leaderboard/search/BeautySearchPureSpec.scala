@@ -1076,7 +1076,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           id = _.variantId.toString,
           fields = List(serviceNameField, customTextField, providerKeyField, serviceKeyField),
         ),
-        synonyms = Nil,
+        intentVocabulary = SearchIntentVocabulary(Nil),
         carouselSpec = CarouselSpec(providerGroupField = providerKeyField, serviceIntentGroupField = serviceKeyField),
         facetSpec = FacetSpec(enabled = true, fields = List(FacetField(serviceNameField, FacetFieldMode.Terms))),
         querySchema = querySchemaFor(serviceNameField),
@@ -1120,7 +1120,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           id = _.variantId.toString,
           fields = List(serviceNameField),
         ),
-        synonyms = Nil,
+        intentVocabulary = SearchIntentVocabulary(Nil),
         carouselSpec = CarouselSpec(providerGroupField = serviceNameField, serviceIntentGroupField = serviceNameField),
         facetSpec = FacetSpec(enabled = false, fields = Nil),
         querySchema = querySchemaFor(serviceNameField),
@@ -1392,13 +1392,15 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       }
     }
 
-    "use synonym dictionary data from the spec" in {
+    "use intent vocabulary data from the spec" in {
       val syntheticSpec = BeautySearchSpec(
         variantDocument = BeautySearchSpecV1.spec.variantDocument,
-        synonyms = BeautySearchSpecV1.spec.synonyms :+ SearchSynonym(
-          tokens = Set("synthetic keyword"),
-          constraints = List(SearchConstraint.ServiceAny(Set("Маникюр"))),
-          matchMode = SynonymMatchMode.Phrase,
+        intentVocabulary = BeautySearchSpecV1.spec.intentVocabulary.copy(
+          rules = BeautySearchSpecV1.spec.intentVocabulary.rules :+ SearchIntentRule.StructuredAlias(
+            tokens = Set("synthetic keyword"),
+            constraints = List(SearchConstraint.ServiceAny(Set("Маникюр"))),
+            matchMode = IntentMatchMode.Phrase,
+          )
         ),
         carouselSpec = BeautySearchSpecV1.spec.carouselSpec,
         facetSpec = BeautySearchSpecV1.spec.facetSpec,
