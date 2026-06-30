@@ -3,7 +3,7 @@ package leaderboard.search
 import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.BeautySearchSpecV1
-import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSearchBackend, ElasticsearchSearchRequestInterpreter}
+import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSearchBackend, ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
 
@@ -27,10 +27,20 @@ final class ElasticsearchSearchBackendSpec extends AnyWordSpec {
     }
 
   private def expectedRequest: Json =
-    ElasticsearchSearchRequestInterpreter.request(spec, input, intent) match {
+    ElasticsearchSearchRequestInterpreter.request(spec.runtimeSpec(Map.empty), elasticsearchInput(input, intent)) match {
       case Right(json)  => json
       case Left(failure) => fail(s"request interpreter failed unexpectedly: ${failure.message}")
     }
+
+  private def elasticsearchInput(input: UserSearchInput, intent: ParsedSearchIntent): ElasticsearchSearchInput =
+    ElasticsearchSearchInput(
+      remainingText = intent.remainingText,
+      explicitConstraints = intent.explicitConstraints,
+      softBoosts = intent.softBoosts,
+      userLat = input.userLat,
+      userLon = input.userLon,
+      limit = input.limit,
+    )
 
   private final class ExpectingElasticsearchJsonClient(
     expectedPath: String,

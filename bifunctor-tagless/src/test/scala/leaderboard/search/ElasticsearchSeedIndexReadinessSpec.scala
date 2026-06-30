@@ -40,8 +40,8 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
   private val subset = allDocuments.take(2)
   private val ready = BeautySearchReadyCatalogDocuments(source = "seed-resource-loader", documents = subset)
 
-  private val expectedMapping: Json = ElasticsearchMappingInterpreter.mapping(spec)
-  private val expectedBulkPayload: String = ElasticsearchIngestionInterpreter.bulkPayload(spec, ready.documents)
+  private val expectedMapping: Json = ElasticsearchMappingInterpreter.mapping(spec.variantDocument)
+  private val expectedBulkPayload: String = ElasticsearchIngestionInterpreter.bulkPayload(spec.variantDocument, ready.documents)
   private val expectedIndexName: String = spec.variantDocument.indexName
 
   "ElasticsearchSeedIndexReadiness" should {

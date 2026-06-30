@@ -3,7 +3,7 @@ package leaderboard.search
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchConstraint}
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.elasticsearch.ElasticsearchSearchRequestInterpreter
+import leaderboard.search.elasticsearch.{ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.seed.BeautyQSeedLoader
@@ -32,9 +32,10 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
       val request = orFail(
         "build ES request",
         ElasticsearchSearchRequestInterpreter.request(
-          BeautySearchSpecV1.spec,
-          UserSearchInput("маникюр under 50", None, None),
-          ParsedSearchIntent(
+          BeautySearchSpecV1.spec.runtimeSpec(Map.empty),
+          elasticsearchInput(
+            UserSearchInput("маникюр under 50", None, None),
+            ParsedSearchIntent(
             originalQuery = "маникюр under 50",
             normalizedTokens = List("маникюр"),
             explicitConstraints = List(
@@ -43,6 +44,7 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
             ),
             softBoosts = Nil,
             remainingText = "маникюр",
+          ),
           ),
         ),
       )
@@ -116,4 +118,14 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe(implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure())
+
+  private def elasticsearchInput(input: UserSearchInput, intent: ParsedSearchIntent): ElasticsearchSearchInput =
+    ElasticsearchSearchInput(
+      remainingText = intent.remainingText,
+      explicitConstraints = intent.explicitConstraints,
+      softBoosts = intent.softBoosts,
+      userLat = input.userLat,
+      userLon = input.userLon,
+      limit = input.limit,
+    )
 }

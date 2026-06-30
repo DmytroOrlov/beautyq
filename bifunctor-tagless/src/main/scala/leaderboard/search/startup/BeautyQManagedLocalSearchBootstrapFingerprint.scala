@@ -52,7 +52,7 @@ object BeautyQManagedLocalSearchBootstrapFingerprint {
         // explicit layered input here even though it is not part of the generic runtime spec.
         "elasticsearch" -> Json.obj(
           "indexName" -> spec.variantDocument.indexName.asJson,
-          "mapping" -> SearchRuntimeFingerprint.canonicalJson(ElasticsearchMappingInterpreter.mapping(spec)),
+          "mapping" -> SearchRuntimeFingerprint.canonicalJson(ElasticsearchMappingInterpreter.mapping(spec.variantDocument)),
         ),
         // The embedding endpoint is an external managed-bootstrap input, not a schema/runtime property.
         "managedBootstrap" -> Json.obj(

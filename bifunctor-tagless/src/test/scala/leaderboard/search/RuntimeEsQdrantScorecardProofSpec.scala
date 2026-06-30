@@ -9,7 +9,7 @@ import leaderboard.model.Category.CategoryId
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, SearchGeoPoint, VectorDistance, VectorSearchSpec}
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
+import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.eval.*
 import leaderboard.search.eval.M19IBeautyQComponentCombinationPolicyScaffold.ComponentCombinationPolicy
@@ -6842,10 +6842,10 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     documents: List[VariantSearchDocument],
   ): IO[QueryFailure, Unit] =
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       _ <- client.postNdjson(
              s"/${testSpec.variantDocument.indexName}/_bulk",
-             ElasticsearchIngestionInterpreter.bulkPayload(testSpec, documents),
+             BeautyQElasticsearchInterpreterAdapter.bulkPayload(testSpec, documents),
            )
       _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")
     } yield ()
@@ -6858,9 +6858,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     new BeautySearchBackend[IO] {
       override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
         for {
-          requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(testSpec, input, intent))
+          requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(testSpec, input, intent))
           rawResponse <- client.postJson(s"/${testSpec.variantDocument.indexName}/_search", requestJson)
-          response    <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(testSpec, input, intent, rawResponse))
+          response    <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.interpret(testSpec, input, intent, rawResponse))
         } yield response
     }
 
@@ -7076,9 +7076,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         intent: ParsedSearchIntent,
       ): IO[QueryFailure, List[LexicalDocumentHit[MasterServiceOfferVariantId]]] =
         for {
-          requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(testSpec, input, intent))
+          requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(testSpec, input, intent))
           rawResponse <- client.postJson(s"/${testSpec.variantDocument.indexName}/_search", requestJson)
-          hits        <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.documentHits(rawResponse))
+          hits        <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.documentHits(rawResponse))
         } yield hits
     }
 
@@ -7088,10 +7088,10 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     client: ElasticsearchTestClient,
   ): IO[QueryFailure, Unit] =
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       _ <- client.postNdjson(
              s"/${testSpec.variantDocument.indexName}/_bulk",
-             ElasticsearchIngestionInterpreter.bulkPayload(testSpec, sharedDocuments),
+             BeautyQElasticsearchInterpreterAdapter.bulkPayload(testSpec, sharedDocuments),
            )
       _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")
     } yield ()

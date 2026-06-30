@@ -4,7 +4,7 @@ import io.circe.{Json, JsonObject}
 import leaderboard.model.*
 import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter}
+import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalHybridRouteDecider, ExperimentalHybridRouteDiagnostics, ExperimentalHybridSearchBackend}
@@ -989,7 +989,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   "ElasticsearchMappingInterpreter" should {
     "derive nested mapping from the search document fields" in {
-      val mapping = ElasticsearchMappingInterpreter.mapping(BeautySearchSpecV1.spec)
+      val mapping = BeautyQElasticsearchInterpreterAdapter.mapping(BeautySearchSpecV1.spec)
       val cursor = mapping.hcursor
       assert(cursor.downField("mappings").downField("properties").downField("serviceName").get[String]("type") == Right("keyword"))
       assert(
@@ -1017,7 +1017,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         )
       )
 
-      val mapping = ElasticsearchMappingInterpreter.mapping(syntheticSpec)
+      val mapping = BeautyQElasticsearchInterpreterAdapter.mapping(syntheticSpec)
       assert(mapping.hcursor.downField("mappings").downField("properties").downField("testSyntheticKeyword").get[String]("type") == Right("keyword"))
     }
   }
@@ -1036,7 +1036,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         )
       )
 
-      val source = ElasticsearchIngestionInterpreter.sourceJson(syntheticSpec, documents.head)
+      val source = BeautyQElasticsearchInterpreterAdapter.sourceJson(syntheticSpec, documents.head)
       assert(source.hcursor.downField("testSyntheticKeyword").as[String] == Right("synthetic-value"))
     }
   }
@@ -1082,7 +1082,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         querySchema = querySchemaFor(serviceNameField),
       )
 
-      val request = ElasticsearchSearchRequestInterpreter.request(
+      val request = BeautyQElasticsearchInterpreterAdapter.request(
         customSpec,
         UserSearchInput("query", None, None),
         ParsedSearchIntent(
@@ -1126,7 +1126,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         querySchema = querySchemaFor(serviceNameField),
       )
 
-      val request = ElasticsearchSearchRequestInterpreter.request(
+      val request = BeautyQElasticsearchInterpreterAdapter.request(
         syntheticSpec,
         UserSearchInput("query", None, None),
         ParsedSearchIntent(
@@ -1156,11 +1156,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
       val input = UserSearchInput("query", None, None)
       val intent = ParsedSearchIntent("query", List("query"), Nil, Nil, "")
-      val withFacet = ElasticsearchSearchRequestInterpreter.request(specWithFacet, input, intent) match {
+      val withFacet = BeautyQElasticsearchInterpreterAdapter.request(specWithFacet, input, intent) match {
         case Right(j) => j
         case Left(e)  => fail(s"expected Right, got: $e")
       }
-      val withoutFacet = ElasticsearchSearchRequestInterpreter.request(specWithoutFacet, input, intent) match {
+      val withoutFacet = BeautyQElasticsearchInterpreterAdapter.request(specWithoutFacet, input, intent) match {
         case Right(j) => j
         case Left(e)  => fail(s"expected Right, got: $e")
       }
@@ -1174,7 +1174,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(hitWindowSize = 7)
       )
 
-      val request = ElasticsearchSearchRequestInterpreter.request(
+      val request = BeautyQElasticsearchInterpreterAdapter.request(
         customSpec,
         UserSearchInput("synthetic", None, None, limit = 1),
         ParsedSearchIntent("synthetic", List("synthetic"), Nil, Nil, "synthetic"),
@@ -1192,7 +1192,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(aggregationSize = 11),
       )
 
-      val request = ElasticsearchSearchRequestInterpreter.request(
+      val request = BeautyQElasticsearchInterpreterAdapter.request(
         customSpec,
         UserSearchInput("synthetic", None, None, limit = 1),
         ParsedSearchIntent("synthetic", List("synthetic"), Nil, Nil, "synthetic"),
@@ -1219,7 +1219,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(textOperator = TextOperator.Or),
       )
 
-      val request = ElasticsearchSearchRequestInterpreter.request(
+      val request = BeautyQElasticsearchInterpreterAdapter.request(
         customSpec,
         UserSearchInput("synthetic", None, None),
         ParsedSearchIntent("synthetic", List("synthetic"), Nil, Nil, "synthetic"),
@@ -1245,7 +1245,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         )
       )
 
-      val request = ElasticsearchSearchRequestInterpreter.request(
+      val request = BeautyQElasticsearchInterpreterAdapter.request(
         syntheticSpec,
         UserSearchInput("synthetic", None, None),
         ParsedSearchIntent(

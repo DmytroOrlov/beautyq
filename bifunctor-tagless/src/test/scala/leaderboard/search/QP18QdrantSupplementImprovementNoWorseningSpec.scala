@@ -19,7 +19,7 @@ import leaderboard.plugins.{
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter}
+import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.qdrant.{
   QdrantClient,
@@ -434,10 +434,10 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
     documents: List[VariantSearchDocument],
   ): IO[QueryFailure, Unit] =
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       _ <- client.postNdjson(
              s"/${testSpec.variantDocument.indexName}/_bulk",
-             ElasticsearchIngestionInterpreter.bulkPayload(testSpec, documents),
+             BeautyQElasticsearchInterpreterAdapter.bulkPayload(testSpec, documents),
            )
       _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")
     } yield ()

@@ -2,36 +2,42 @@ package leaderboard.search.elasticsearch
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.{ParsedSearchIntent, UserSearchInput}
-import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.*
 
+final case class ElasticsearchSearchInput(
+  remainingText: String,
+  explicitConstraints: List[SearchConstraint],
+  softBoosts: List[SearchConstraint],
+  userLat: Option[BigDecimal],
+  userLon: Option[BigDecimal],
+  limit: Int,
+)
+
 object ElasticsearchSearchRequestInterpreter {
-  def request(
-    spec: BeautySearchSpec,
-    input: UserSearchInput,
-    intent: ParsedSearchIntent,
+  def request[A](
+    runtimeSpec: SearchRuntimeSpec[A],
+    input: ElasticsearchSearchInput,
   ): Either[QueryFailure, Json] = {
     for {
-      filterClauses <- sequence(intent.explicitConstraints.map(constraintClause(spec, _)))
-      textClause = textQuery(spec, intent.remainingText)
-      softBoostClauses <- sequence(intent.softBoosts.map(softBoostClause(spec, spec.carouselSpec.ranking, _)))
+      filterClauses <- sequence(input.explicitConstraints.map(constraintClause(runtimeSpec, _)))
+      textClause = textQuery(runtimeSpec, input.remainingText)
+      softBoostClauses <- sequence(input.softBoosts.map(softBoostClause(runtimeSpec, runtimeSpec.carouselSpec.ranking, _)))
       baseQuery = boolQuery(filterClauses, textClause.toList, softBoostClauses)
-      query = geoQuery(spec, input, baseQuery)
+      query = geoQuery(runtimeSpec, input, baseQuery)
     } yield Json.obj(
       "track_total_hits" -> Json.fromBoolean(true),
-      "size" -> Json.fromInt(math.max(spec.requestSpec.hitWindowSize, input.limit)),
+      "size" -> Json.fromInt(math.max(runtimeSpec.requestSpec.hitWindowSize, input.limit)),
       "query" -> query,
-      "aggs" -> aggregations(spec),
+      "aggs" -> aggregations(runtimeSpec),
     )
   }
 
-  private def textQuery(spec: BeautySearchSpec, remainingText: String): Option[Json] = {
+  private def textQuery[A](runtimeSpec: SearchRuntimeSpec[A], remainingText: String): Option[Json] = {
     val query = remainingText.trim
     if (query.isEmpty) {
       None
     } else {
-      val fields = spec.variantDocument.fields
+      val fields = runtimeSpec.documentSpec.fields
         .filter(field => field.searchable)
         .map(field => s"${field.path}^${field.boost}")
       Some(
@@ -39,28 +45,28 @@ object ElasticsearchSearchRequestInterpreter {
           "multi_match" -> Json.obj(
             "query" -> Json.fromString(query),
             "fields" -> Json.arr(fields.map(Json.fromString): _*),
-            "operator" -> Json.fromString(spec.requestSpec.textOperator.value),
+            "operator" -> Json.fromString(runtimeSpec.requestSpec.textOperator.value),
           )
         )
       )
     }
   }
 
-  private def aggregations(spec: BeautySearchSpec): Json = {
-    val facetAggs = spec.facetSpec.fields.map { facetField =>
-      aggName(facetField.path) -> facetAggregation(spec, facetField)
+  private def aggregations[A](runtimeSpec: SearchRuntimeSpec[A]): Json = {
+    val facetAggs = runtimeSpec.facetSpec.fields.map { facetField =>
+      aggName(facetField.path) -> facetAggregation(runtimeSpec, facetField)
     }
     val groupAggs = List(
-      aggName(spec.carouselSpec.providerGroupField.path) -> termsAggregation(spec.carouselSpec.providerGroupField.path, spec.requestSpec.aggregationSize),
-      aggName(spec.carouselSpec.serviceIntentGroupField.path) -> termsAggregation(spec.carouselSpec.serviceIntentGroupField.path, spec.requestSpec.aggregationSize),
+      aggName(runtimeSpec.carouselSpec.providerGroupField.path) -> termsAggregation(runtimeSpec.carouselSpec.providerGroupField.path, runtimeSpec.requestSpec.aggregationSize),
+      aggName(runtimeSpec.carouselSpec.serviceIntentGroupField.path) -> termsAggregation(runtimeSpec.carouselSpec.serviceIntentGroupField.path, runtimeSpec.requestSpec.aggregationSize),
     )
     Json.obj((facetAggs ++ groupAggs).map { case (name, value) => name -> value }: _*)
   }
 
-  private def facetAggregation(spec: BeautySearchSpec, facetField: FacetField[VariantSearchDocument]): Json =
+  private def facetAggregation[A](runtimeSpec: SearchRuntimeSpec[A], facetField: FacetField[A]): Json =
     facetField.mode match {
       case FacetFieldMode.Terms =>
-        termsAggregation(facetField.path, spec.requestSpec.aggregationSize)
+        termsAggregation(facetField.path, runtimeSpec.requestSpec.aggregationSize)
       case FacetFieldMode.Ranges(buckets) =>
         Json.obj(
           "range" -> Json.obj(
@@ -86,7 +92,7 @@ object ElasticsearchSearchRequestInterpreter {
       )
     )
 
-  private def geoQuery(spec: BeautySearchSpec, input: UserSearchInput, baseQuery: Json): Json =
+  private def geoQuery[A](runtimeSpec: SearchRuntimeSpec[A], input: ElasticsearchSearchInput, baseQuery: Json): Json =
     (input.userLat, input.userLon) match {
       case (Some(lat), Some(lon)) =>
         Json.obj(
@@ -95,17 +101,17 @@ object ElasticsearchSearchRequestInterpreter {
             "functions" -> Json.arr(
               Json.obj(
                 "gauss" -> Json.obj(
-                  spec.querySchema.location.path -> Json.obj(
+                  runtimeSpec.querySchema.location.path -> Json.obj(
                     "origin" -> Json.obj(
                       "lat" -> Json.fromBigDecimal(lat),
                       "lon" -> Json.fromBigDecimal(lon),
                     ),
-                    "scale" -> Json.fromString(spec.requestSpec.geoDistanceScale),
-                    "offset" -> Json.fromString(spec.requestSpec.geoDistanceOffset),
-                    "decay" -> Json.fromDoubleOrNull(spec.requestSpec.geoDistanceDecay),
+                    "scale" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceScale),
+                    "offset" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceOffset),
+                    "decay" -> Json.fromDoubleOrNull(runtimeSpec.requestSpec.geoDistanceDecay),
                   )
                 ),
-                "weight" -> Json.fromDoubleOrNull(spec.carouselSpec.ranking.providerDistanceWeight),
+                "weight" -> Json.fromDoubleOrNull(runtimeSpec.carouselSpec.ranking.providerDistanceWeight),
               )
             ),
             "score_mode" -> Json.fromString("sum"),
@@ -117,13 +123,13 @@ object ElasticsearchSearchRequestInterpreter {
     }
 
   private def constraintClause(
-    spec: BeautySearchSpec,
+    runtimeSpec: SearchRuntimeSpec[?],
     constraint: SearchConstraint,
   ): Either[QueryFailure, Json] =
-    spec.querySchema.resolve(constraint).flatMap(resolvedConstraintClause)
+    runtimeSpec.querySchema.resolve(constraint).flatMap(resolvedConstraintClause)
 
-  private def resolvedConstraintClause(
-    constraint: ResolvedSearchConstraint[VariantSearchDocument]
+  private def resolvedConstraintClause[A](
+    constraint: ResolvedSearchConstraint[A]
   ): Either[QueryFailure, Json] =
     constraint match {
       case ResolvedSearchConstraint.Terms(field, values, _) =>
@@ -137,12 +143,12 @@ object ElasticsearchSearchRequestInterpreter {
     }
 
   private def softBoostClause(
-    spec: BeautySearchSpec,
+    runtimeSpec: SearchRuntimeSpec[?],
     ranking: RankingSpec,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Json] =
     for {
-      resolved <- spec.querySchema.resolve(constraint)
+      resolved <- runtimeSpec.querySchema.resolve(constraint)
       clause <- resolvedConstraintClause(resolved)
     } yield {
         Json.obj(

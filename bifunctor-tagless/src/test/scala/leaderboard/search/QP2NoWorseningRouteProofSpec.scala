@@ -11,7 +11,7 @@ import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, VectorDistance, VectorSearchSpec}
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchJsonClient, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
+import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchJsonClient}
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.hybrid.{ExperimentalHybridSearchBackend, QdrantVariantSupplementPolicy}
 import leaderboard.search.qdrant.{QdrantClient, QdrantCollectionReadinessConfig, QdrantCollectionReadinessInput, QdrantEmbeddingBenchmarkDefaultCompositionFactory, QdrantJsonInterpreter}
@@ -232,10 +232,10 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
     documents: List[VariantSearchDocument],
   ): IO[QueryFailure, Unit] =
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       _ <- client.postNdjson(
              s"/${testSpec.variantDocument.indexName}/_bulk",
-             ElasticsearchIngestionInterpreter.bulkPayload(testSpec, documents),
+             BeautyQElasticsearchInterpreterAdapter.bulkPayload(testSpec, documents),
            )
       _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")
     } yield ()
@@ -249,9 +249,9 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
     new BeautySearchBackend[IO] {
       override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
         for {
-          requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(testSpec, input, intent))
+          requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(testSpec, input, intent))
           rawResponse <- client.postJson(s"/${testSpec.variantDocument.indexName}/_search", requestJson)
-          response    <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(testSpec, input, intent, rawResponse))
+          response    <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.interpret(testSpec, input, intent, rawResponse))
         } yield response
     }
 

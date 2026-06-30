@@ -9,7 +9,7 @@ import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocumentBuilder}
 import leaderboard.search.BeautySearchEvalInventory
 import leaderboard.search.dsl.BeautySearchSpecV1
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
+import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import io.circe.syntax.*
 import leaderboard.search.eval.{BeautySearchEvalReportJson, BeautySearchEvalScorer, EngineEvalReportAssembly, EngineExpectedRole, EngineEvalReportJson}
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -564,7 +564,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     val indexName = s"${spec.variantDocument.indexName}_${UUID.randomUUID().toString.replace('-', '_')}"
     val testSpec = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       result <- use(client, testSpec).ensuring(client.deleteIndex(testSpec.variantDocument.indexName).either.unit)
     } yield result
   }
@@ -596,7 +596,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     for {
       snapshot <- loader.load()
       documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
-      payload = ElasticsearchIngestionInterpreter.bulkPayload(spec, documents)
+      payload = BeautyQElasticsearchInterpreterAdapter.bulkPayload(spec, documents)
       _ <- client.postNdjson(s"/${spec.variantDocument.indexName}/_bulk", payload)
       _ <- client.post(s"/${spec.variantDocument.indexName}/_refresh")
     } yield documents
@@ -611,9 +611,9 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     val parser = new BeautySearchIntentParser(spec)
     val intent = parser.parse(input)
     for {
-      requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(spec, input, intent))
+      requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(spec, input, intent))
       rawResponse <- client.postJson(s"/${spec.variantDocument.indexName}/_search", requestJson)
-      interpreted <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(spec, input, intent, rawResponse))
+      interpreted <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.interpret(spec, input, intent, rawResponse))
     } yield interpreted
   }
 
@@ -633,9 +633,9 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     val parser = new BeautySearchIntentParser(spec)
     val intent = parser.parse(input)
     for {
-      requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(spec, input, intent))
+      requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(spec, input, intent))
       rawResponse <- client.postJson(s"/${spec.variantDocument.indexName}/_search", requestJson)
-      interpreted <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.interpret(spec, input, intent, rawResponse))
+      interpreted <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.interpret(spec, input, intent, rawResponse))
       rawHits = rawResponse.hcursor.downField("hits").downField("total").as[Long].toOption.orElse(rawResponse.hcursor.downField("hits").downField("total").downField("value").as[Long].toOption)
     } yield SearchDebug(intent, requestJson, rawHits, interpreted)
   }

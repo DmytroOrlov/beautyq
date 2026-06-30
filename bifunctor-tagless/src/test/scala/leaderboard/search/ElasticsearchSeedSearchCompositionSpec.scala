@@ -188,7 +188,7 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
         locationText = "central studio main street 1 nails",
       )
 
-      val json = ElasticsearchIngestionInterpreter.sourceJson(spec, document)
+      val json = ElasticsearchIngestionInterpreter.sourceJson(spec.variantDocument, document)
 
       assert(json == Json.obj(
         "variantId" -> Json.fromString("00000000-0000-0000-0000-000000000101"),

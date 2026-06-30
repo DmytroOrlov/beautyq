@@ -8,7 +8,7 @@ import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, Mast
 import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
+import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.eval.*
 import leaderboard.search.eval.M19IBeautyQComponentCombinationPolicyScaffold.ComponentCombinationPolicy
@@ -227,9 +227,9 @@ final class DisabledRuntimeHybridExecutionEsQdrantProofSpec extends LeaderboardT
         intent: ParsedSearchIntent,
       ): IO[QueryFailure, List[LexicalDocumentHit[MasterServiceOfferVariantId]]] =
         for {
-          requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(testSpec, input, intent))
+          requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(testSpec, input, intent))
           rawResponse <- client.postJson(s"/${testSpec.variantDocument.indexName}/_search", requestJson)
-          hits        <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.documentHits(rawResponse))
+          hits        <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.documentHits(rawResponse))
         } yield hits
     }
 
@@ -239,10 +239,10 @@ final class DisabledRuntimeHybridExecutionEsQdrantProofSpec extends LeaderboardT
     client: ElasticsearchTestClient,
   ): IO[QueryFailure, Unit] =
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       _ <- client.postNdjson(
              s"/${testSpec.variantDocument.indexName}/_bulk",
-             ElasticsearchIngestionInterpreter.bulkPayload(testSpec, sharedDocuments),
+             BeautyQElasticsearchInterpreterAdapter.bulkPayload(testSpec, sharedDocuments),
            )
       _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")
     } yield ()

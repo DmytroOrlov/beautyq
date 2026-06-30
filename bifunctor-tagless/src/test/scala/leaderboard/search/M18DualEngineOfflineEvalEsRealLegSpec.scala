@@ -8,7 +8,7 @@ import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, Mast
 import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchGeoPoint}
-import leaderboard.search.elasticsearch.{ElasticsearchIngestionInterpreter, ElasticsearchMappingInterpreter, ElasticsearchSearchRequestInterpreter, ElasticsearchSearchResponseInterpreter}
+import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.eval.*
 import leaderboard.search.lexical.{LexicalDocumentBackend, LexicalDocumentHit}
 import zio.{IO, Runtime, Unsafe, ZIO}
@@ -77,9 +77,9 @@ final class M18DualEngineOfflineEvalEsRealLegSpec extends LeaderboardTest with P
         intent: ParsedSearchIntent,
       ): IO[QueryFailure, List[LexicalDocumentHit[MasterServiceOfferVariantId]]] =
         for {
-          requestJson <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(testSpec, input, intent))
+          requestJson <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.request(testSpec, input, intent))
           rawResponse <- client.postJson(s"/${testSpec.variantDocument.indexName}/_search", requestJson)
-          hits <- ZIO.fromEither(ElasticsearchSearchResponseInterpreter.documentHits(rawResponse))
+          hits <- ZIO.fromEither(BeautyQElasticsearchInterpreterAdapter.documentHits(rawResponse))
         } yield hits
     }
 
@@ -134,7 +134,7 @@ final class M18DualEngineOfflineEvalEsRealLegSpec extends LeaderboardTest with P
     val indexName = s"${spec.variantDocument.indexName}_m18a2_${UUID.randomUUID().toString.replace('-', '_')}"
     val testSpec = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
     for {
-      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", ElasticsearchMappingInterpreter.mapping(testSpec))
+      _ <- client.putJson(s"/${testSpec.variantDocument.indexName}", BeautyQElasticsearchInterpreterAdapter.mapping(testSpec))
       result <- use(client, testSpec).ensuring(client.deleteIndex(testSpec.variantDocument.indexName).either.unit)
     } yield result
   }
@@ -147,7 +147,7 @@ final class M18DualEngineOfflineEvalEsRealLegSpec extends LeaderboardTest with P
       syntheticDocument(variantId, "balayage haircut", "service_name"),
       syntheticDocument(otherVariantId, "manicure gel polish", "other"),
     )
-    val payload = ElasticsearchIngestionInterpreter.bulkPayload(testSpec, documents)
+    val payload = BeautyQElasticsearchInterpreterAdapter.bulkPayload(testSpec, documents)
     for {
       _ <- client.postNdjson(s"/${testSpec.variantDocument.indexName}/_bulk", payload)
       _ <- client.post(s"/${testSpec.variantDocument.indexName}/_refresh")

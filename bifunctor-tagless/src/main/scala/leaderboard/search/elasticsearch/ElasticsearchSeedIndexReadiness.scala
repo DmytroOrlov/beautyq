@@ -59,9 +59,9 @@ final class ElasticsearchSeedIndexInitializer(
         ZIO.unit
       }
       indexName = spec.variantDocument.indexName
-      mapping = ElasticsearchMappingInterpreter.mapping(spec)
+      mapping = ElasticsearchMappingInterpreter.mapping(spec.variantDocument)
       _ <- client.putJson(s"/$indexName", mapping)
-      payload = ElasticsearchIngestionInterpreter.bulkPayload(spec, ready.documents)
+      payload = ElasticsearchIngestionInterpreter.bulkPayload(spec.variantDocument, ready.documents)
       _ <- client.postNdjson(s"/$indexName/_bulk", payload)
       _ <- client.post(s"/$indexName/_refresh")
     } yield ElasticsearchSeedIndexReadiness(

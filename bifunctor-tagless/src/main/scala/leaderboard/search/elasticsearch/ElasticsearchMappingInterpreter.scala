@@ -1,11 +1,10 @@
 package leaderboard.search.elasticsearch
 
 import io.circe.{Json, JsonObject}
-import leaderboard.search.dsl.{BeautySearchSpec, SearchField, SearchFieldKind}
-import leaderboard.search.document.VariantSearchDocument
+import leaderboard.search.dsl.{SearchDocumentSpec, SearchField, SearchFieldKind}
 
 object ElasticsearchMappingInterpreter {
-  def mapping(spec: BeautySearchSpec): Json =
+  def mapping[A](documentSpec: SearchDocumentSpec[A]): Json =
     Json.obj(
       "settings" -> Json.obj(
         "index" -> Json.obj(
@@ -14,16 +13,16 @@ object ElasticsearchMappingInterpreter {
         )
       ),
       "mappings" -> Json.obj(
-        "properties" -> Json.fromJsonObject(properties(spec.variantDocument.fields))
+        "properties" -> Json.fromJsonObject(properties(documentSpec.fields))
       ),
     )
 
-  private def properties(fields: List[SearchField[VariantSearchDocument]]): JsonObject =
+  private def properties[A](fields: List[SearchField[A]]): JsonObject =
     fields.foldLeft(JsonObject.empty) { (acc, field) =>
       mergeObjects(acc, propertyTree(field.path.split('.').toList, fieldMapping(field)))
     }
 
-  private def fieldMapping(field: SearchField[VariantSearchDocument]): Json = {
+  private def fieldMapping[A](field: SearchField[A]): Json = {
     val base = field.kind match {
       case SearchFieldKind.Text =>
         Json.obj("type" -> Json.fromString("text"))

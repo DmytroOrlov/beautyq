@@ -2,9 +2,14 @@ package leaderboard.search
 
 import io.circe.Json
 import io.circe.syntax.*
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.Decoder
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchSearchResponseInterpreter
+import leaderboard.search.interpreter.SearchResponseAssembler
+import leaderboard.search.interpreter.SearchSpecSupport
+import leaderboard.search.interpreter.SearchSpecSupport.ScoredDocument
 import leaderboard.search.lexical.LexicalDocumentHit
 import leaderboard.search.dsl.BeautySearchSpecV1
 import org.scalatest.wordspec.AnyWordSpec
@@ -12,7 +17,23 @@ import org.scalatest.wordspec.AnyWordSpec
 import java.util.UUID
 
 final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
-  "ElasticsearchSearchResponseInterpreter.documentHits" should {
+  "ElasticsearchSearchResponseInterpreter.decodeDocumentHits" should {
+    "decode generic ES document hits without BeautyQ source types" in {
+      val response = searchResponseJson(
+        esHitJson(
+          source = GenericHitDocument("doc-1", "Fresh haircut").asJson,
+          score = Some(2.75),
+          matchedQueries = List("title"),
+        )
+      )
+
+      val result = ElasticsearchSearchResponseInterpreter.decodeDocumentHits[GenericHitDocument](response)
+
+      assert(result == Right(List(leaderboard.search.elasticsearch.ElasticsearchDocumentHit(2.75, GenericHitDocument("doc-1", "Fresh haircut"), List("title")))))
+    }
+  }
+
+  "ElasticsearchSearchResponseInterpreter.lexicalHits" should {
     "decode ES hits into generic lexical hits and preserve score, _source, and real matched query names as lexical diagnostics" in {
       val document = variantDocument()
       val response = searchResponseJson(
@@ -23,7 +44,7 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
         )
       )
 
-      val result = ElasticsearchSearchResponseInterpreter.documentHits(response)
+      val result = ElasticsearchSearchResponseInterpreter.lexicalHits(spec.variantDocument, response, _.variantId)
 
       assert(result == Right(List(LexicalDocumentHit(document.variantId, 4.25, List("serviceName", "attributeText")))))
     }
@@ -38,7 +59,7 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
         )
       )
 
-      val result = ElasticsearchSearchResponseInterpreter.documentHits(response)
+      val result = ElasticsearchSearchResponseInterpreter.lexicalHits(spec.variantDocument, response, _.variantId)
 
       assert(result == Right(List(LexicalDocumentHit(document.variantId, 0.0d, List("serviceName")))))
     }
@@ -54,7 +75,7 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
         )
       )
 
-      val result = ElasticsearchSearchResponseInterpreter.documentHits(response)
+      val result = ElasticsearchSearchResponseInterpreter.lexicalHits(spec.variantDocument, response, _.variantId)
 
       assert(result == Right(List(LexicalDocumentHit(document.variantId, 1.5d, List("matched_queries")))))
     }
@@ -68,7 +89,7 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
         )
       )
 
-      val result = ElasticsearchSearchResponseInterpreter.documentHits(response)
+      val result = ElasticsearchSearchResponseInterpreter.lexicalHits(spec.variantDocument, response, _.variantId)
 
       assert(result == Right(List(LexicalDocumentHit(document.variantId, 0.0d, Nil))))
     }
@@ -88,8 +109,8 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
         )
       )
 
-      val missingSource = ElasticsearchSearchResponseInterpreter.documentHits(missingSourceResponse)
-      val invalidSource = ElasticsearchSearchResponseInterpreter.documentHits(invalidSourceResponse)
+      val missingSource = ElasticsearchSearchResponseInterpreter.lexicalHits(spec.variantDocument, missingSourceResponse, _.variantId)
+      val invalidSource = ElasticsearchSearchResponseInterpreter.lexicalHits(spec.variantDocument, invalidSourceResponse, _.variantId)
 
       assert(missingSource.isLeft)
       assert(invalidSource.isLeft)
@@ -107,7 +128,18 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
         )
       )
 
-      val interpreted = ElasticsearchSearchResponseInterpreter.interpret(spec, input, intent, response)
+      val interpreted = for {
+        hits <- ElasticsearchSearchResponseInterpreter.decodeDocumentHits[VariantSearchDocument](response)
+        scoredDocuments = hits.map { hit =>
+          ScoredDocument(
+            document = hit.source,
+            textScore = hit.score,
+            boostScore = 0.0d,
+            distanceKm = SearchSpecSupport.computeDistanceKm(input, hit.source),
+          )
+        }
+        assembled <- SearchResponseAssembler.assemble(spec, input, intent, scoredDocuments)
+      } yield assembled
 
       interpreted match {
         case Right(projected) =>
@@ -184,4 +216,11 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
     )
 
   private def uuid(value: String): UUID = UUID.fromString(value)
+}
+
+final case class GenericHitDocument(id: String, title: String)
+
+object GenericHitDocument {
+  implicit val decoder: Decoder[GenericHitDocument] = deriveDecoder
+  implicit val encoder: io.circe.Encoder.AsObject[GenericHitDocument] = io.circe.generic.semiauto.deriveEncoder
 }
