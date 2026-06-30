@@ -36,6 +36,7 @@ val Deps = new {
   val tapirJsonCirce = "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % V.tapir
 
   val circeGeneric = "io.circe" %% "circe-generic" % V.circeGeneric
+  val circeParser  = "io.circe" %% "circe-parser" % V.circeGeneric
 
   val doobie         = "org.tpolecat" %% "doobie-core" % V.doobie
   val doobiePostgres = "org.tpolecat" %% "doobie-postgres" % V.doobie
@@ -94,10 +95,20 @@ lazy val `search-core` = project
   )))
   .dependsOn(`leaderboard-core`)
 
+lazy val `search-elasticsearch` = project
+  .in(file("search-elasticsearch"))
+  .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
+    Deps.circeParser,
+    Deps.zio,
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(`leaderboard-core`, `search-core`)
+
 lazy val `bifunctor-tagless` = project
   .in(file("bifunctor-tagless"))
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(`leaderboard-core`, `search-core`)
+  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
@@ -108,6 +119,7 @@ lazy val `distage-example` = project
   .aggregate(
     `leaderboard-core`,
     `search-core`,
+    `search-elasticsearch`,
     `bifunctor-tagless`,
     `graal-resources`,
   )
