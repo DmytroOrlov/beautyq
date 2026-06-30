@@ -15410,5 +15410,749 @@
         }
       }
     }
-  ]
+  ],
+  "queryRoleAuditV1": {
+    "generatedBy": "coordinator-step1-query-role-audit",
+    "sourceBundle": "beautyq-step1-query-role-source-truth-20260630-222818-20618.zip",
+    "notes": [
+      "Diagnostic classification only.",
+      "Coordinator-authored audit.",
+      "Does not change accepted query definitions or search behavior."
+    ],
+    "roleCounts": {
+      "attribute_filter": 45,
+      "broad_exploratory": 9,
+      "exact_vocabulary_like": 42,
+      "geo_location": 13,
+      "home_visit_or_group": 3,
+      "mixed_language": 7,
+      "negative_control": 1,
+      "outcome_language": 15,
+      "package_or_session_count": 6,
+      "parser_contract": 58,
+      "price_budget": 5,
+      "semantic_holdout": 15,
+      "service_category": 50
+    },
+    "queries": {
+      "q_nails_001": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_002": {
+        "roles": [
+          "mixed_language",
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_003": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_004": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_005": {
+        "roles": [
+          "price_budget",
+          "geo_location",
+          "broad_exploratory",
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_price_003": {
+        "roles": [
+          "price_budget",
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_006": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_007": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_008": {
+        "roles": [
+          "geo_location",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_009": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_010": {
+        "roles": [
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_011": {
+        "roles": [
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_nails_012": {
+        "roles": [
+          "geo_location",
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_001": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_002": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_003": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_004": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_005": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_006": {
+        "roles": [
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_007": {
+        "roles": [
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_lashes_008": {
+        "roles": [
+          "mixed_language",
+          "geo_location",
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_brows_001": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_brows_002": {
+        "roles": [
+          "geo_location",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_brows_003": {
+        "roles": [
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_brows_004": {
+        "roles": [
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_brows_005": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_brows_006": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_001": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_002": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_003": {
+        "roles": [
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_004": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_005": {
+        "roles": [
+          "package_or_session_count",
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_006": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_007": {
+        "roles": [
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_008": {
+        "roles": [
+          "mixed_language",
+          "geo_location",
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_009": {
+        "roles": [
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_hair_010": {
+        "roles": [
+          "price_budget",
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_pmu_001": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_pmu_002": {
+        "roles": [
+          "mixed_language",
+          "geo_location",
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_pmu_003": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_pmu_004": {
+        "roles": [
+          "broad_exploratory",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_pmu_005": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_pmu_006": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_001": {
+        "roles": [
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_002": {
+        "roles": [
+          "attribute_filter",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_003": {
+        "roles": [
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_004": {
+        "roles": [
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_005": {
+        "roles": [
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_006": {
+        "roles": [
+          "mixed_language",
+          "service_category",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_regression_review_later"
+      },
+      "q_face_007": {
+        "roles": [
+          "price_budget",
+          "package_or_session_count",
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_face_008": {
+        "roles": [
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_home_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "home_visit_or_group",
+          "package_or_session_count",
+          "attribute_filter"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_home_002": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "home_visit_or_group",
+          "package_or_session_count",
+          "broad_exploratory"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_broad_001": {
+        "roles": [
+          "geo_location",
+          "broad_exploratory"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_broad_regression_review_later"
+      },
+      "q_broad_002": {
+        "roles": [
+          "geo_location",
+          "broad_exploratory",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_broad_regression_review_later"
+      },
+      "q_broad_003": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "geo_location",
+          "broad_exploratory"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_broad_004": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "geo_location",
+          "broad_exploratory"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_broad_005": {
+        "roles": [
+          "price_budget",
+          "geo_location",
+          "broad_exploratory",
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_broad_006": {
+        "roles": [
+          "geo_location",
+          "broad_exploratory"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_broad_regression_review_later"
+      },
+      "q_noise_001": {
+        "roles": [
+          "service_category",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_noise_002": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_noise_003": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_noise_004": {
+        "roles": [
+          "service_category",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_noise_005": {
+        "roles": [
+          "mixed_language",
+          "negative_control",
+          "parser_contract",
+          "exact_vocabulary_like"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_negative_control"
+      },
+      "q_semantic_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_002": {
+        "roles": [
+          "mixed_language",
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": true,
+        "suggestedAction": "keep_as_parser_contract_add_holdout_pair_later"
+      },
+      "q_semantic_003": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "parser_contract"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_004": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_005": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_006": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_007": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_008": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "home_visit_or_group",
+          "package_or_session_count",
+          "attribute_filter"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_009": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_semantic_010": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "package_or_session_count",
+          "attribute_filter"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      }
+    },
+    "remaining": [
+      "Step 2: add ES/Qdrant coverage matrix report.",
+      "Step 3: add semantic holdout pairs or replacement plan for vocabulary-like queries.",
+      "Step 4: add dirty catalog robustness profiles."
+    ]
+  }
 }
