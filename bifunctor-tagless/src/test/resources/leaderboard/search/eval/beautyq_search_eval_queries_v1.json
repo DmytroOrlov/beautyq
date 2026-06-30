@@ -14836,7 +14836,8 @@
             }
           },
           "acceptableVariantIds": [
-            "01841fa0-4fa2-5c42-a2b5-c5614c978d12"
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "531faff3-d4fd-5143-b4d5-db068831e57c"
           ],
           "forbiddenVariantIds": [
             "01051aa3-95cb-5c3f-9691-582f2b145f38",
@@ -14865,7 +14866,8 @@
             "hasNoVariantMatching": "variantCarousel.required"
           },
           "acceptableProviderLocationIds": [
-            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
           ],
           "topK": {
             "requiredInTopK": 5,
