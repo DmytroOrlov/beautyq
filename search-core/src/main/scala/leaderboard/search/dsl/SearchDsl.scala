@@ -1,7 +1,5 @@
 package leaderboard.search.dsl
 
-import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
-import io.circe.syntax.*
 import leaderboard.model.QueryFailure
 
 sealed trait VectorDistance extends Product with Serializable
@@ -72,29 +70,8 @@ object SearchValue {
   }
 }
 
-sealed trait SearchFieldSemantic extends Product with Serializable
-object SearchFieldSemantic {
-  case object VariantId extends SearchFieldSemantic
-  case object MasterServiceOfferId extends SearchFieldSemantic
-  case object MasterLocationId extends SearchFieldSemantic
-  case object MasterId extends SearchFieldSemantic
-  case object ServiceId extends SearchFieldSemantic
-  case object ServiceName extends SearchFieldSemantic
-  case object CategoryId extends SearchFieldSemantic
-  case object CategoryName extends SearchFieldSemantic
-  case object PriceFrom extends SearchFieldSemantic
-  case object PriceTo extends SearchFieldSemantic
-  case object DurationMin extends SearchFieldSemantic
-  case object Location extends SearchFieldSemantic
-  case object AllText extends SearchFieldSemantic
-  case object ServiceText extends SearchFieldSemantic
-  case object AttributeText extends SearchFieldSemantic
-  case object ProviderText extends SearchFieldSemantic
-  case object LocationText extends SearchFieldSemantic
-  final case class EnumAttribute(attributeCode: String) extends SearchFieldSemantic
-  final case class BooleanAttribute(attributeCode: String) extends SearchFieldSemantic
-  final case class IntAttribute(attributeCode: String) extends SearchFieldSemantic
-  final case class DecimalAttribute(attributeCode: String) extends SearchFieldSemantic
+final case class SearchFieldSemantic(value: String) extends AnyVal {
+  override def toString: String = value
 }
 
 final case class SearchField[A](
@@ -319,92 +296,6 @@ final case class SearchDocumentSpec[A](
     fieldsBySemantic.get(semantic).toRight(QueryFailure.domain(s"Search semantic '$semantic' is not defined for index '$indexName'"))
 }
 
-sealed trait SearchConstraint extends Product with Serializable
-object SearchConstraint {
-  final case class ServiceAny(names: Set[String]) extends SearchConstraint
-  final case class CategoryAny(names: Set[String]) extends SearchConstraint
-  final case class EnumAttr(attributeCode: String, values: Set[String]) extends SearchConstraint
-  final case class BoolAttr(attributeCode: String, value: Boolean) extends SearchConstraint
-  final case class IntRange(attributeCode: String, min: Option[Int], max: Option[Int]) extends SearchConstraint
-  final case class DecimalRange(attributeCode: String, min: Option[BigDecimal], max: Option[BigDecimal]) extends SearchConstraint
-  final case class PriceRange(min: Option[BigDecimal], max: Option[BigDecimal]) extends SearchConstraint
-  final case class DurationRange(min: Option[Int], max: Option[Int]) extends SearchConstraint
-  case object NearUser extends SearchConstraint
-
-  implicit val codec: Codec[SearchConstraint] = Codec.from(
-    Decoder.instance {
-      cursor =>
-        cursor.get[String]("type").flatMap {
-          case "service_any" =>
-            cursor.get[Set[String]]("names").map(ServiceAny.apply)
-          case "category_any" =>
-            cursor.get[Set[String]]("names").map(CategoryAny.apply)
-          case "enum_attr" =>
-            for {
-              attributeCode <- cursor.get[String]("attributeCode")
-              values        <- cursor.get[Set[String]]("values")
-            } yield EnumAttr(attributeCode, values)
-          case "bool_attr" =>
-            for {
-              attributeCode <- cursor.get[String]("attributeCode")
-              value         <- cursor.get[Boolean]("value")
-            } yield BoolAttr(attributeCode, value)
-          case "int_range" =>
-            decodeRange[Int](cursor).map {
-              case (attributeCode, min, max) => IntRange(attributeCode, min, max)
-            }
-          case "decimal_range" =>
-            decodeRange[BigDecimal](cursor).map {
-              case (attributeCode, min, max) => DecimalRange(attributeCode, min, max)
-            }
-          case "price_range" =>
-            for {
-              min <- cursor.get[Option[BigDecimal]]("min")
-              max <- cursor.get[Option[BigDecimal]]("max")
-            } yield PriceRange(min, max)
-          case "duration_range" =>
-            for {
-              min <- cursor.get[Option[Int]]("min")
-              max <- cursor.get[Option[Int]]("max")
-            } yield DurationRange(min, max)
-          case "near_user" =>
-            Right(NearUser)
-          case other =>
-            Left(DecodingFailure(s"Unknown SearchConstraint type '$other'", cursor.history))
-        }
-    },
-    Encoder.instance {
-      case ServiceAny(names) =>
-        Json.obj("type" -> "service_any".asJson, "names" -> names.asJson)
-      case CategoryAny(names) =>
-        Json.obj("type" -> "category_any".asJson, "names" -> names.asJson)
-      case EnumAttr(attributeCode, values) =>
-        Json.obj("type" -> "enum_attr".asJson, "attributeCode" -> attributeCode.asJson, "values" -> values.asJson)
-      case BoolAttr(attributeCode, value) =>
-        Json.obj("type" -> "bool_attr".asJson, "attributeCode" -> attributeCode.asJson, "value" -> value.asJson)
-      case IntRange(attributeCode, min, max) =>
-        Json.obj("type" -> "int_range".asJson, "attributeCode" -> attributeCode.asJson, "min" -> min.asJson, "max" -> max.asJson)
-      case DecimalRange(attributeCode, min, max) =>
-        Json.obj("type" -> "decimal_range".asJson, "attributeCode" -> attributeCode.asJson, "min" -> min.asJson, "max" -> max.asJson)
-      case PriceRange(min, max) =>
-        Json.obj("type" -> "price_range".asJson, "min" -> min.asJson, "max" -> max.asJson)
-      case DurationRange(min, max) =>
-        Json.obj("type" -> "duration_range".asJson, "min" -> min.asJson, "max" -> max.asJson)
-      case NearUser =>
-        Json.obj("type" -> "near_user".asJson)
-    },
-  )
-
-  private def decodeRange[A: Decoder](
-    cursor: HCursor
-  ): Decoder.Result[(String, Option[A], Option[A])] =
-    for {
-      attributeCode <- cursor.get[String]("attributeCode")
-      min           <- cursor.get[Option[A]]("min")
-      max           <- cursor.get[Option[A]]("max")
-    } yield (attributeCode, min, max)
-}
-
 sealed trait IntentMatchMode extends Product with Serializable
 object IntentMatchMode {
   case object Phrase extends IntentMatchMode
@@ -416,13 +307,13 @@ object IntentMatchMode {
   * backend analyzer synonyms. Lexical recall/tokenization/synonym filters remain a backend analyzer
   * concern; structured service/category/attribute intent mapping is schema/data ownership.
   */
-sealed trait SearchIntentRule extends Product with Serializable {
+sealed trait SearchIntentRule[C] extends Product with Serializable {
   def tokens: Set[String]
   def matchMode: IntentMatchMode
-  def requires: List[SearchConstraint]
-  def excludes: List[SearchConstraint]
-  def constraints: List[SearchConstraint]
-  def softBoosts: List[SearchConstraint]
+  def requires: List[C]
+  def excludes: List[C]
+  def constraints: List[C]
+  def softBoosts: List[C]
   def boost: Double
 }
 
@@ -431,33 +322,33 @@ object SearchIntentRule {
   /** A phrase that maps to structured intent: hard constraints and/or soft boosts, optionally gated by
     * `requires`/`excludes`.
     */
-  final case class StructuredAlias(
+  final case class StructuredAlias[C](
     tokens: Set[String],
-    constraints: List[SearchConstraint],
-    softBoosts: List[SearchConstraint] = Nil,
+    constraints: List[C],
+    softBoosts: List[C] = Nil,
     boost: Double = 1.0,
     matchMode: IntentMatchMode = IntentMatchMode.Phrase,
-    requires: List[SearchConstraint] = Nil,
-    excludes: List[SearchConstraint] = Nil,
-  ) extends SearchIntentRule
+    requires: List[C] = Nil,
+    excludes: List[C] = Nil,
+  ) extends SearchIntentRule[C]
 
   /** A residual-noise phrase that carries no constraints or boosts. It exists to consume query text (and
     * optionally to be gated by contextual `requires`/`excludes`) without contributing intent.
     */
-  final case class QueryNoisePhrase(
+  final case class QueryNoisePhrase[C](
     tokens: Set[String],
     matchMode: IntentMatchMode = IntentMatchMode.Phrase,
-    requires: List[SearchConstraint] = Nil,
-    excludes: List[SearchConstraint] = Nil,
-  ) extends SearchIntentRule {
-    override val constraints: List[SearchConstraint] = Nil
-    override val softBoosts: List[SearchConstraint] = Nil
+    requires: List[C] = Nil,
+    excludes: List[C] = Nil,
+  ) extends SearchIntentRule[C] {
+    override val constraints: List[C] = Nil
+    override val softBoosts: List[C] = Nil
     override val boost: Double = 1.0
   }
 }
 
-final case class SearchIntentVocabulary(
-  rules: List[SearchIntentRule],
+final case class SearchIntentVocabulary[C](
+  rules: List[SearchIntentRule[C]],
 )
 
 sealed trait FacetFieldMode extends Product with Serializable
@@ -502,83 +393,32 @@ object ResolvedSearchConstraint {
   final case class Terms[A](field: SearchField[A], values: Set[String], boostRole: SearchConstraintBoostRole) extends ResolvedSearchConstraint[A]
   final case class BooleanTerm[A](field: SearchField[A], value: Boolean, boostRole: SearchConstraintBoostRole) extends ResolvedSearchConstraint[A]
   final case class Range[A](field: SearchField[A], min: Option[BigDecimal], max: Option[BigDecimal], boostRole: SearchConstraintBoostRole) extends ResolvedSearchConstraint[A]
-  final case class NearUser[A](field: SearchField[A]) extends ResolvedSearchConstraint[A] {
+  final case class GeoDistance[A](field: SearchField[A]) extends ResolvedSearchConstraint[A] {
     override val boostRole: SearchConstraintBoostRole = SearchConstraintBoostRole.Distance
   }
 }
 
-final case class SearchQuerySchema[A](
-  serviceName: SearchField[A],
-  categoryName: SearchField[A],
-  priceFrom: SearchField[A],
-  durationMin: SearchField[A],
-  location: SearchField[A],
-  enumAttribute: String => Either[QueryFailure, SearchField[A]],
-  booleanAttribute: String => Either[QueryFailure, SearchField[A]],
-  intAttribute: String => Either[QueryFailure, SearchField[A]],
-  decimalAttribute: String => Either[QueryFailure, SearchField[A]],
+type ResolvedQueryConstraint[A] = ResolvedSearchConstraint[A]
+val ResolvedQueryConstraint: ResolvedSearchConstraint.type = ResolvedSearchConstraint
+type QueryConstraintBoostRole = SearchConstraintBoostRole
+val QueryConstraintBoostRole: SearchConstraintBoostRole.type = SearchConstraintBoostRole
+
+final case class SearchQueryField[A](
+  name: String,
+  field: SearchField[A],
+)
+
+final case class SearchQuerySchema[A, C](
+  fields: List[SearchQueryField[A]],
+  geoScoringField: Option[SearchField[A]],
+  resolve: C => Either[QueryFailure, ResolvedSearchConstraint[A]],
+  facetConstraint: (FacetField[A], String) => Either[QueryFailure, C],
 ) {
-  def resolve(constraint: SearchConstraint): Either[QueryFailure, ResolvedSearchConstraint[A]] =
-    constraint match {
-      case SearchConstraint.ServiceAny(names) =>
-        Right(ResolvedSearchConstraint.Terms(serviceName, names, SearchConstraintBoostRole.Service))
-      case SearchConstraint.CategoryAny(names) =>
-        Right(ResolvedSearchConstraint.Terms(categoryName, names, SearchConstraintBoostRole.Service))
-      case SearchConstraint.EnumAttr(attributeCode, values) =>
-        enumAttribute(attributeCode).map(ResolvedSearchConstraint.Terms(_, values, SearchConstraintBoostRole.Attribute))
-      case SearchConstraint.BoolAttr(attributeCode, value) =>
-        booleanAttribute(attributeCode).map(ResolvedSearchConstraint.BooleanTerm(_, value, SearchConstraintBoostRole.Attribute))
-      case SearchConstraint.IntRange(attributeCode, min, max) =>
-        intAttribute(attributeCode).map(ResolvedSearchConstraint.Range(_, min.map(BigDecimal(_)), max.map(BigDecimal(_)), SearchConstraintBoostRole.Attribute))
-      case SearchConstraint.DecimalRange(attributeCode, min, max) =>
-        decimalAttribute(attributeCode).map(ResolvedSearchConstraint.Range(_, min, max, SearchConstraintBoostRole.Attribute))
-      case SearchConstraint.PriceRange(min, max) =>
-        Right(ResolvedSearchConstraint.Range(priceFrom, min, max, SearchConstraintBoostRole.Attribute))
-      case SearchConstraint.DurationRange(min, max) =>
-        Right(ResolvedSearchConstraint.Range(durationMin, min.map(BigDecimal(_)), max.map(BigDecimal(_)), SearchConstraintBoostRole.Attribute))
-      case SearchConstraint.NearUser =>
-        Right(ResolvedSearchConstraint.NearUser(location))
-    }
+  lazy val fieldsByName: Map[String, SearchField[A]] =
+    fields.iterator.map(entry => entry.name -> entry.field).toMap
 
-  def facetConstraint(facetField: FacetField[A], value: String): Either[QueryFailure, SearchConstraint] =
-    facetField.field.semantic match {
-      case Some(SearchFieldSemantic.ServiceName) =>
-        Right(SearchConstraint.ServiceAny(Set(value)))
-      case Some(SearchFieldSemantic.CategoryName) =>
-        Right(SearchConstraint.CategoryAny(Set(value)))
-      case Some(SearchFieldSemantic.EnumAttribute(attributeCode)) =>
-        Right(SearchConstraint.EnumAttr(attributeCode, Set(value)))
-      case Some(SearchFieldSemantic.BooleanAttribute(attributeCode)) =>
-        value.toBooleanOption match {
-          case Some(boolValue) => Right(SearchConstraint.BoolAttr(attributeCode, boolValue))
-          case None => Left(QueryFailure.domain(s"Facet value '$value' is not a boolean for ${facetField.path}"))
-        }
-      case Some(SearchFieldSemantic.PriceFrom) =>
-        rangeConstraint(facetField, value, SearchConstraint.PriceRange.apply)
-      case Some(SearchFieldSemantic.DurationMin) =>
-        rangeConstraint(facetField, value, (min, max) => SearchConstraint.DurationRange(min.map(_.toInt), max.map(_.toInt)))
-      case Some(SearchFieldSemantic.IntAttribute(attributeCode)) =>
-        rangeConstraint(facetField, value, (min, max) => SearchConstraint.IntRange(attributeCode, min.map(_.toInt), max.map(_.toInt)))
-      case Some(SearchFieldSemantic.DecimalAttribute(attributeCode)) =>
-        rangeConstraint(facetField, value, (min, max) => SearchConstraint.DecimalRange(attributeCode, min, max))
-      case other =>
-        Left(QueryFailure.domain(s"Facet field '${facetField.path}' with semantic $other cannot be converted into a search constraint"))
-    }
-
-  private def rangeConstraint(
-    facetField: FacetField[A],
-    value: String,
-    build: (Option[BigDecimal], Option[BigDecimal]) => SearchConstraint,
-  ): Either[QueryFailure, SearchConstraint] =
-    facetField.mode match {
-      case FacetFieldMode.Ranges(buckets) =>
-        buckets.find(_.key == value) match {
-          case Some(bucket) => Right(build(bucket.min, bucket.max))
-          case None => Left(QueryFailure.domain(s"Range bucket '$value' is not defined for facet '${facetField.path}'"))
-        }
-      case _ =>
-        Left(QueryFailure.domain(s"Facet '${facetField.path}' is not range-based"))
-    }
+  def field(name: String): Either[QueryFailure, SearchField[A]] =
+    fieldsByName.get(name).toRight(QueryFailure.domain(s"Search query field '$name' is not defined"))
 }
 
 sealed trait TextOperator extends Product with Serializable {

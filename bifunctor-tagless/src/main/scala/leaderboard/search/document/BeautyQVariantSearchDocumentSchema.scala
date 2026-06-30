@@ -5,6 +5,8 @@ import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Maste
 import leaderboard.search.dsl.*
 
 object BeautyQVariantSearchDocumentSchema {
+  import BeautyQSearchFieldSemantics.*
+
   private val BuildOperationName = "build-variant-search-documents"
 
   private val categoryNode                  = Categories.entity.node(_.id)
@@ -31,17 +33,18 @@ object BeautyQVariantSearchDocumentSchema {
       ),
     )
 
-  lazy val querySchema: SearchQuerySchema[VariantSearchDocument] =
+  lazy val querySchema: SearchQuerySchema[VariantSearchDocument, SearchConstraint] =
     SearchQuerySchema(
-      serviceName = Fields.serviceName,
-      categoryName = Fields.categoryName,
-      priceFrom = Fields.priceFrom,
-      durationMin = Fields.durationMin,
-      location = Fields.location,
-      enumAttribute = code => fieldByCode(Fields.enumAttributesByCode, "enum", code),
-      booleanAttribute = code => fieldByCode(Fields.booleanAttributesByCode, "boolean", code),
-      intAttribute = code => fieldByCode(Fields.intAttributesByCode, "int", code),
-      decimalAttribute = code => fieldByCode(Fields.decimalAttributesByCode, "decimal", code),
+      fields = List(
+        SearchQueryField("serviceName", Fields.serviceName),
+        SearchQueryField("categoryName", Fields.categoryName),
+        SearchQueryField("priceFrom", Fields.priceFrom),
+        SearchQueryField("durationMin", Fields.durationMin),
+        SearchQueryField("location", Fields.location),
+      ),
+      geoScoringField = Some(Fields.location),
+      resolve = beautyQResolveConstraint,
+      facetConstraint = beautyQFacetConstraint,
     )
 
   private def fieldByCode(
@@ -50,6 +53,73 @@ object BeautyQVariantSearchDocumentSchema {
     code: String,
   ): Either[QueryFailure, SearchField[VariantSearchDocument]] =
     fields.get(code).toRight(QueryFailure.domain(s"Search $kind attribute '$code' is not defined for index '${documentSpec.indexName}'"))
+
+  private def beautyQResolveConstraint(
+    constraint: SearchConstraint
+  ): Either[QueryFailure, ResolvedSearchConstraint[VariantSearchDocument]] =
+    constraint match {
+      case SearchConstraint.ServiceAny(names) =>
+        Right(ResolvedSearchConstraint.Terms(Fields.serviceName, names, SearchConstraintBoostRole.Service))
+      case SearchConstraint.CategoryAny(names) =>
+        Right(ResolvedSearchConstraint.Terms(Fields.categoryName, names, SearchConstraintBoostRole.Service))
+      case SearchConstraint.EnumAttr(attributeCode, values) =>
+        fieldByCode(Fields.enumAttributesByCode, "enum", attributeCode).map(ResolvedSearchConstraint.Terms(_, values, SearchConstraintBoostRole.Attribute))
+      case SearchConstraint.BoolAttr(attributeCode, value) =>
+        fieldByCode(Fields.booleanAttributesByCode, "boolean", attributeCode).map(ResolvedSearchConstraint.BooleanTerm(_, value, SearchConstraintBoostRole.Attribute))
+      case SearchConstraint.IntRange(attributeCode, min, max) =>
+        fieldByCode(Fields.intAttributesByCode, "int", attributeCode).map(ResolvedSearchConstraint.Range(_, min.map(BigDecimal(_)), max.map(BigDecimal(_)), SearchConstraintBoostRole.Attribute))
+      case SearchConstraint.DecimalRange(attributeCode, min, max) =>
+        fieldByCode(Fields.decimalAttributesByCode, "decimal", attributeCode).map(ResolvedSearchConstraint.Range(_, min, max, SearchConstraintBoostRole.Attribute))
+      case SearchConstraint.PriceRange(min, max) =>
+        Right(ResolvedSearchConstraint.Range(Fields.priceFrom, min, max, SearchConstraintBoostRole.Attribute))
+      case SearchConstraint.DurationRange(min, max) =>
+        Right(ResolvedSearchConstraint.Range(Fields.durationMin, min.map(BigDecimal(_)), max.map(BigDecimal(_)), SearchConstraintBoostRole.Attribute))
+      case SearchConstraint.NearUser =>
+        Right(ResolvedSearchConstraint.GeoDistance(Fields.location))
+    }
+
+  private def beautyQFacetConstraint(
+    facetField: FacetField[VariantSearchDocument],
+    value: String,
+  ): Either[QueryFailure, SearchConstraint] =
+    facetField.field.semantic match {
+      case Some(ServiceName) =>
+        Right(SearchConstraint.ServiceAny(Set(value)))
+      case Some(CategoryName) =>
+        Right(SearchConstraint.CategoryAny(Set(value)))
+      case Some(semantic) if semantic.value.startsWith("enumAttributes.") =>
+        Right(SearchConstraint.EnumAttr(semantic.value.stripPrefix("enumAttributes."), Set(value)))
+      case Some(semantic) if semantic.value.startsWith("booleanAttributes.") =>
+        value.toBooleanOption match {
+          case Some(boolValue) => Right(SearchConstraint.BoolAttr(semantic.value.stripPrefix("booleanAttributes."), boolValue))
+          case None => Left(QueryFailure.domain(s"Facet value '$value' is not a boolean for ${facetField.path}"))
+        }
+      case Some(PriceFrom) =>
+        rangeConstraint(facetField, value, SearchConstraint.PriceRange.apply)
+      case Some(DurationMin) =>
+        rangeConstraint(facetField, value, (min, max) => SearchConstraint.DurationRange(min.map(_.toInt), max.map(_.toInt)))
+      case Some(semantic) if semantic.value.startsWith("intAttributes.") =>
+        rangeConstraint(facetField, value, (min, max) => SearchConstraint.IntRange(semantic.value.stripPrefix("intAttributes."), min.map(_.toInt), max.map(_.toInt)))
+      case Some(semantic) if semantic.value.startsWith("bigDecimalAttributes.") =>
+        rangeConstraint(facetField, value, (min, max) => SearchConstraint.DecimalRange(semantic.value.stripPrefix("bigDecimalAttributes."), min, max))
+      case other =>
+        Left(QueryFailure.domain(s"Facet field '${facetField.path}' with semantic $other cannot be converted into a search constraint"))
+    }
+
+  private def rangeConstraint(
+    facetField: FacetField[VariantSearchDocument],
+    value: String,
+    build: (Option[BigDecimal], Option[BigDecimal]) => SearchConstraint,
+  ): Either[QueryFailure, SearchConstraint] =
+    facetField.mode match {
+      case FacetFieldMode.Ranges(buckets) =>
+        buckets.find(_.key == value) match {
+          case Some(bucket) => Right(build(bucket.min, bucket.max))
+          case None => Left(QueryFailure.domain(s"Range bucket '$value' is not defined for facet '${facetField.path}'"))
+        }
+      case _ =>
+        Left(QueryFailure.domain(s"Facet '${facetField.path}' is not range-based"))
+    }
 
   lazy val projection: SearchDocumentProjection[BeautySearchCatalogSnapshot, VariantSearchDocument] =
     SearchDocumentProjection(
@@ -238,7 +308,7 @@ object BeautyQVariantSearchDocumentSchema {
       SearchField.keywordRendered(
         _.variantId,
         _.toString,
-        semantic = Some(SearchFieldSemantic.VariantId),
+        semantic = Some(VariantId),
         filterable = true,
         sortable = true,
       )
@@ -246,14 +316,14 @@ object BeautyQVariantSearchDocumentSchema {
       SearchField.keywordRendered(
         _.masterServiceOfferId,
         _.toString,
-        semantic = Some(SearchFieldSemantic.MasterServiceOfferId),
+        semantic = Some(MasterServiceOfferId),
         filterable = true,
       )
     val masterLocationId: SearchField[VariantSearchDocument] =
       SearchField.keywordRendered(
         _.masterLocationId,
         _.toString,
-        semantic = Some(SearchFieldSemantic.MasterLocationId),
+        semantic = Some(MasterLocationId),
         filterable = true,
         facetable = true,
       )
@@ -261,21 +331,21 @@ object BeautyQVariantSearchDocumentSchema {
       SearchField.keywordRendered(
         _.masterId,
         _.toString,
-        semantic = Some(SearchFieldSemantic.MasterId),
+        semantic = Some(MasterId),
         filterable = true,
       )
     val serviceId: SearchField[VariantSearchDocument] =
       SearchField.keywordRendered(
         _.serviceId,
         _.toString,
-        semantic = Some(SearchFieldSemantic.ServiceId),
+        semantic = Some(ServiceId),
         filterable = true,
         facetable = true,
       )
     val serviceName: SearchField[VariantSearchDocument] =
       SearchField.keyword(
         _.serviceName,
-        semantic = Some(SearchFieldSemantic.ServiceName),
+        semantic = Some(ServiceName),
         filterable = true,
         facetable = true,
       )
@@ -283,14 +353,14 @@ object BeautyQVariantSearchDocumentSchema {
       SearchField.keywordRendered(
         _.categoryId,
         _.toString,
-        semantic = Some(SearchFieldSemantic.CategoryId),
+        semantic = Some(CategoryId),
         filterable = true,
         facetable = true,
       )
     val categoryName: SearchField[VariantSearchDocument] =
       SearchField.keyword(
         _.categoryName,
-        semantic = Some(SearchFieldSemantic.CategoryName),
+        semantic = Some(CategoryName),
         filterable = true,
         facetable = true,
       )
@@ -307,7 +377,7 @@ object BeautyQVariantSearchDocumentSchema {
     val priceFrom: SearchField[VariantSearchDocument] =
       SearchField.decimal(
         _.priceFrom,
-        semantic = Some(SearchFieldSemantic.PriceFrom),
+        semantic = Some(PriceFrom),
         filterable = true,
         facetable = true,
         sortable = true,
@@ -315,14 +385,14 @@ object BeautyQVariantSearchDocumentSchema {
     val priceTo: SearchField[VariantSearchDocument] =
       SearchField.decimal(
         _.priceTo,
-        semantic = Some(SearchFieldSemantic.PriceTo),
+        semantic = Some(PriceTo),
         filterable = true,
         sortable = true,
       )
     val durationMin: SearchField[VariantSearchDocument] =
       SearchField.integer(
         _.durationMin,
-        semantic = Some(SearchFieldSemantic.DurationMin),
+        semantic = Some(DurationMin),
         filterable = true,
         facetable = true,
         sortable = true,
@@ -330,41 +400,41 @@ object BeautyQVariantSearchDocumentSchema {
     val location: SearchField[VariantSearchDocument] =
       SearchField.geoPoint(
         _.location,
-        semantic = Some(SearchFieldSemantic.Location),
+        semantic = Some(Location),
         sortable = true,
       )
     val allText: SearchField[VariantSearchDocument] =
       SearchField.text(
         _.allText,
-        semantic = Some(SearchFieldSemantic.AllText),
+        semantic = Some(AllText),
         searchable = true,
         boost = 4.0,
       )
     val serviceText: SearchField[VariantSearchDocument] =
       SearchField.text(
         _.serviceText,
-        semantic = Some(SearchFieldSemantic.ServiceText),
+        semantic = Some(ServiceText),
         searchable = true,
         boost = 5.0,
       )
     val attributeText: SearchField[VariantSearchDocument] =
       SearchField.text(
         _.attributeText,
-        semantic = Some(SearchFieldSemantic.AttributeText),
+        semantic = Some(AttributeText),
         searchable = true,
         boost = 4.0,
       )
     val providerText: SearchField[VariantSearchDocument] =
       SearchField.text(
         _.providerText,
-        semantic = Some(SearchFieldSemantic.ProviderText),
+        semantic = Some(ProviderText),
         searchable = true,
         boost = 2.0,
       )
     val locationText: SearchField[VariantSearchDocument] =
       SearchField.text(
         _.locationText,
-        semantic = Some(SearchFieldSemantic.LocationText),
+        semantic = Some(LocationText),
         searchable = true,
         boost = 2.5,
       )
@@ -376,7 +446,7 @@ object BeautyQVariantSearchDocumentSchema {
             path = s"enumAttributes.${definition.code}",
             kind = SearchFieldKind.Keyword,
             extract = document => document.enumAttributes.get(definition.code).map(SearchValue.Keyword.apply),
-            semantic = Some(SearchFieldSemantic.EnumAttribute(definition.code)),
+            semantic = Some(EnumAttribute(definition.code)),
             filterable = true,
             facetable = true,
           )
@@ -389,7 +459,7 @@ object BeautyQVariantSearchDocumentSchema {
             path = s"booleanAttributes.${definition.code}",
             kind = SearchFieldKind.Boolean,
             extract = document => document.booleanAttributes.get(definition.code).map(SearchValue.Boolean.apply),
-            semantic = Some(SearchFieldSemantic.BooleanAttribute(definition.code)),
+            semantic = Some(BooleanAttribute(definition.code)),
             filterable = true,
             facetable = true,
           )
@@ -402,7 +472,7 @@ object BeautyQVariantSearchDocumentSchema {
             path = s"intAttributes.${definition.code}",
             kind = SearchFieldKind.Integer,
             extract = document => document.intAttributes.get(definition.code).map(SearchValue.Integer.apply),
-            semantic = Some(SearchFieldSemantic.IntAttribute(definition.code)),
+            semantic = Some(IntAttribute(definition.code)),
             filterable = true,
             facetable = true,
             sortable = true,
@@ -416,7 +486,7 @@ object BeautyQVariantSearchDocumentSchema {
             path = s"bigDecimalAttributes.${definition.code}",
             kind = SearchFieldKind.Decimal,
             extract = document => document.bigDecimalAttributes.get(definition.code).map(SearchValue.Decimal.apply),
-            semantic = Some(SearchFieldSemantic.DecimalAttribute(definition.code)),
+            semantic = Some(DecimalAttribute(definition.code)),
             filterable = true,
             facetable = true,
             sortable = true,

@@ -10,17 +10,17 @@ import leaderboard.search.document.{SearchDocumentPayloadSpec, VariantSearchDocu
   */
 final case class BeautySearchSpec(
   variantDocument: SearchDocumentSpec[VariantSearchDocument],
-  intentVocabulary: SearchIntentVocabulary,
+  intentVocabulary: SearchIntentVocabulary[SearchConstraint],
   carouselSpec: CarouselSpec[VariantSearchDocument],
   facetSpec: FacetSpec[VariantSearchDocument],
   requestSpec: SearchRequestSpec = SearchRequestSpec(),
-  querySchema: SearchQuerySchema[VariantSearchDocument],
+  querySchema: SearchQuerySchema[VariantSearchDocument, SearchConstraint],
   embeddingSpec: Option[EmbeddingSpec[VariantSearchDocument]] = None,
   vectorSearchSpec: Option[VectorSearchSpec] = None,
 ) {
   def runtimeSpec(
     payloadSpecs: Map[String, SearchDocumentPayloadSpec[VariantSearchDocument]]
-  ): SearchRuntimeSpec[VariantSearchDocument] =
+  ): SearchRuntimeSpec[VariantSearchDocument, SearchConstraint] =
     SearchRuntimeSpec(
       documentSpec = variantDocument,
       querySchema = querySchema,

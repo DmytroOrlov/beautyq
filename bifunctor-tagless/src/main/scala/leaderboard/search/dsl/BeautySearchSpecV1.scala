@@ -8,7 +8,7 @@ object BeautySearchSpecV1 {
 
   private val Fields = BeautyQVariantSearchDocumentSchema.Fields
 
-  lazy val runtimeSpec: SearchRuntimeSpec[VariantSearchDocument] =
+  lazy val runtimeSpec: SearchRuntimeSpec[VariantSearchDocument, SearchConstraint] =
     spec.runtimeSpec(
       Map(QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
     )

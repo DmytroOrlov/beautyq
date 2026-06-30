@@ -2,9 +2,9 @@ package leaderboard.search.dsl
 
 import leaderboard.search.document.SearchDocumentPayloadSpec
 
-final case class SearchRuntimeSpec[A](
+final case class SearchRuntimeSpec[A, C](
   documentSpec: SearchDocumentSpec[A],
-  querySchema: SearchQuerySchema[A],
+  querySchema: SearchQuerySchema[A, C],
   requestSpec: SearchRequestSpec,
   facetSpec: FacetSpec[A],
   carouselSpec: CarouselSpec[A],

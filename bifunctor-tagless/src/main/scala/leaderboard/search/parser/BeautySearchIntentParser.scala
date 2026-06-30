@@ -82,7 +82,7 @@ object BeautySearchIntentParser {
     }
 
   private final case class MatchResult(
-    rule: SearchIntentRule,
+    rule: SearchIntentRule[SearchConstraint],
     phrase: String,
     start: Int,
     end: Int,
@@ -120,7 +120,7 @@ object BeautySearchIntentParser {
     value.split(' ').toList.map(_.trim).filter(_.nonEmpty)
 
   private def selectContextualMatches(
-    rules: List[SearchIntentRule],
+    rules: List[SearchIntentRule[SearchConstraint]],
     tokens: List[String],
     selected: List[MatchResult],
   ): List[MatchResult] = {
@@ -137,7 +137,7 @@ object BeautySearchIntentParser {
   }
 
   private def selectMatches(
-    rules: List[SearchIntentRule],
+    rules: List[SearchIntentRule[SearchConstraint]],
     tokens: List[String],
     currentConstraints: List[SearchConstraint],
     occupied: Set[Int],
@@ -166,7 +166,7 @@ object BeautySearchIntentParser {
   }
 
   private def matchToken(
-    rule: SearchIntentRule,
+    rule: SearchIntentRule[SearchConstraint],
     rawToken: String,
     tokens: List[String],
   ): List[MatchResult] = {
@@ -189,7 +189,7 @@ object BeautySearchIntentParser {
   }
 
   private def slidingMatches(
-    rule: SearchIntentRule,
+    rule: SearchIntentRule[SearchConstraint],
     rawToken: String,
     phraseTokens: List[String],
     tokens: List[String],

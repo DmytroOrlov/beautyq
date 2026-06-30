@@ -99,7 +99,7 @@ object QdrantVariantSupplementPolicy {
   private final case class BeautyQSemanticSupplementEligibility(
     constraints: List[SearchConstraint],
     documentsById: Map[MasterServiceOfferVariantId, VariantSearchDocument],
-    runtimeSpec: SearchRuntimeSpec[VariantSearchDocument],
+    runtimeSpec: SearchRuntimeSpec[VariantSearchDocument, SearchConstraint],
   ) {
     def eligible(hit: SemanticCandidateHit): Boolean =
       constraints.isEmpty || documentsById.get(hit.variantId).exists { document =>

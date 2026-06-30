@@ -20,7 +20,7 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
 
   private def fingerprint(
     docs: List[ToyDoc] = documents,
-    spec: SearchRuntimeSpec[ToyDoc] = baseRuntimeSpec,
+    spec: SearchRuntimeSpec[ToyDoc, ToyConstraint] = baseRuntimeSpec,
     catalogSource: String = "toy-catalog",
     extra: JsonObject = JsonObject.empty,
   ): String =
@@ -28,7 +28,7 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
       SearchRuntimeFingerprint.inputs("toy-v1", catalogSource, docs, spec, extra)
     )
 
-  private def runtimeSection(spec: SearchRuntimeSpec[ToyDoc]): Json =
+  private def runtimeSection(spec: SearchRuntimeSpec[ToyDoc, ToyConstraint]): Json =
     SearchRuntimeFingerprint
       .inputs("toy-v1", "toy-catalog", documents, spec, JsonObject.empty)
       .hcursor
@@ -84,11 +84,19 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
 
     "change runtime schema inputs when a document field semantic changes" in {
       val changedFields = baseFields.map {
-        case field if field.path == nameField.path => field.copy(semantic = Some(SearchFieldSemantic.ServiceText))
+        case field if field.path == nameField.path => field.copy(semantic = Some(SearchFieldSemantic("toy.name.changed")))
         case field                                 => field
       }
       val changedSpec = baseRuntimeSpec.copy(documentSpec = documentSpec(changedFields))
       assert(runtimeSection(baseRuntimeSpec) != runtimeSection(changedSpec))
+    }
+
+    "render caller-supplied query field names rather than fixed domain names" in {
+      val querySchema = runtimeSection(baseRuntimeSpec).hcursor.downField("querySchema")
+
+      assert(querySchema.get[String]("nameAny") == Right(nameField.path))
+      assert(querySchema.get[String]("priceAny") == Right(priceField.path))
+      assert(querySchema.downField("serviceName").focus.isEmpty)
     }
 
     "change runtime schema inputs when the payload fields change" in {
@@ -137,12 +145,18 @@ object SearchRuntimeFingerprintSpec {
 
   final case class ToyDoc(id: String, name: String, price: BigDecimal)
 
+  sealed trait ToyConstraint
+  object ToyConstraint {
+    final case class NameAny(values: Set[String]) extends ToyConstraint
+    final case class PriceRange(min: Option[BigDecimal], max: Option[BigDecimal]) extends ToyConstraint
+  }
+
   val idField: SearchField[ToyDoc] =
     SearchField[ToyDoc](
       path = "id",
       kind = SearchFieldKind.Keyword,
       extract = document => Some(SearchValue.Keyword(document.id)),
-      semantic = Some(SearchFieldSemantic.VariantId),
+      semantic = Some(SearchFieldSemantic("toy.id")),
       filterable = true,
     )
   val nameField: SearchField[ToyDoc] =
@@ -150,7 +164,7 @@ object SearchRuntimeFingerprintSpec {
       path = "name",
       kind = SearchFieldKind.Text,
       extract = document => Some(SearchValue.Text(document.name)),
-      semantic = Some(SearchFieldSemantic.ServiceName),
+      semantic = Some(SearchFieldSemantic("toy.name")),
       searchable = true,
     )
   val priceField: SearchField[ToyDoc] =
@@ -158,7 +172,7 @@ object SearchRuntimeFingerprintSpec {
       path = "price",
       kind = SearchFieldKind.Decimal,
       extract = document => Some(SearchValue.Decimal(document.price)),
-      semantic = Some(SearchFieldSemantic.PriceFrom),
+      semantic = Some(SearchFieldSemantic("toy.price")),
       filterable = true,
       facetable = true,
     )
@@ -167,21 +181,21 @@ object SearchRuntimeFingerprintSpec {
       path = "category",
       kind = SearchFieldKind.Keyword,
       extract = _ => None,
-      semantic = Some(SearchFieldSemantic.CategoryName),
+      semantic = Some(SearchFieldSemantic("toy.category")),
     )
   val durationField: SearchField[ToyDoc] =
     SearchField[ToyDoc](
       path = "duration",
       kind = SearchFieldKind.Integer,
       extract = _ => None,
-      semantic = Some(SearchFieldSemantic.DurationMin),
+      semantic = Some(SearchFieldSemantic("toy.duration")),
     )
   val locationField: SearchField[ToyDoc] =
     SearchField[ToyDoc](
       path = "location",
       kind = SearchFieldKind.GeoPoint,
       extract = _ => None,
-      semantic = Some(SearchFieldSemantic.Location),
+      semantic = Some(SearchFieldSemantic("toy.location")),
     )
 
   val baseFields: List[SearchField[ToyDoc]] =
@@ -194,24 +208,21 @@ object SearchRuntimeFingerprintSpec {
       fields = fields,
     )
 
-  private def unsupportedAttribute(code: String): Either[QueryFailure, SearchField[ToyDoc]] =
-    Left(QueryFailure.domain(s"toy schema has no attribute '$code'"))
-
-  val querySchema: SearchQuerySchema[ToyDoc] =
-    SearchQuerySchema[ToyDoc](
-      serviceName = nameField,
-      categoryName = categoryField,
-      priceFrom = priceField,
-      durationMin = durationField,
-      location = locationField,
-      enumAttribute = unsupportedAttribute,
-      booleanAttribute = unsupportedAttribute,
-      intAttribute = unsupportedAttribute,
-      decimalAttribute = unsupportedAttribute,
+  val querySchema: SearchQuerySchema[ToyDoc, ToyConstraint] =
+    SearchQuerySchema[ToyDoc, ToyConstraint](
+      fields = List(SearchQueryField("nameAny", nameField), SearchQueryField("priceAny", priceField)),
+      geoScoringField = Some(locationField),
+      resolve = {
+        case ToyConstraint.NameAny(values) =>
+          Right(ResolvedSearchConstraint.Terms(nameField, values, SearchConstraintBoostRole.Service))
+        case ToyConstraint.PriceRange(min, max) =>
+          Right(ResolvedSearchConstraint.Range(priceField, min, max, SearchConstraintBoostRole.Attribute))
+      },
+      facetConstraint = (_, _) => Left(QueryFailure.domain("toy facets are not converted into constraints")),
     )
 
-  val baseRuntimeSpec: SearchRuntimeSpec[ToyDoc] =
-    SearchRuntimeSpec[ToyDoc](
+  val baseRuntimeSpec: SearchRuntimeSpec[ToyDoc, ToyConstraint] =
+    SearchRuntimeSpec[ToyDoc, ToyConstraint](
       documentSpec = documentSpec(baseFields),
       querySchema = querySchema,
       requestSpec = SearchRequestSpec(),

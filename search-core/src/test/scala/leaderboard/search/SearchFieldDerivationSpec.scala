@@ -119,10 +119,11 @@ final class SearchFieldDerivationSpec extends AnyWordSpec {
 
   "SearchField helpers" should {
     "preserve semantic, flags, boost, and analyzer arguments exactly" in {
+      val allTextSemantic = SearchFieldSemantic("toy.allText")
       val field: SearchField[ToyDoc] =
         SearchField.text(
           _.description,
-          semantic = Some(SearchFieldSemantic.AllText),
+          semantic = Some(allTextSemantic),
           searchable = true,
           filterable = true,
           facetable = true,
@@ -131,7 +132,7 @@ final class SearchFieldDerivationSpec extends AnyWordSpec {
           analyzer = Some("custom"),
         )
 
-      assert(field.semantic.contains(SearchFieldSemantic.AllText))
+      assert(field.semantic.contains(allTextSemantic))
       assert(field.searchable)
       assert(field.filterable)
       assert(field.facetable)

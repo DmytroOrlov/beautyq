@@ -2,11 +2,13 @@ package leaderboard.search
 
 import leaderboard.model.*
 import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument}
-import leaderboard.search.dsl.{SearchFieldKind, SearchFieldSemantic}
+import leaderboard.search.dsl.{BeautyQSearchFieldSemantics, SearchFieldKind, SearchFieldSemantic}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedLoader}
 import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
+  import BeautyQSearchFieldSemantics.*
+
   private val seed = loadSeedData()
 
   "BeautyQVariantSearchDocumentSchema.documentSpec" should {
@@ -49,7 +51,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
           List(FieldRole(
             path = s"enumAttributes.${definition.code}",
             kind = SearchFieldKind.Keyword,
-            semantic = Some(SearchFieldSemantic.EnumAttribute(definition.code)),
+            semantic = Some(EnumAttribute(definition.code)),
             searchable = false,
             filterable = true,
             facetable = true,
@@ -60,7 +62,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
           List(FieldRole(
             path = s"booleanAttributes.${definition.code}",
             kind = SearchFieldKind.Boolean,
-            semantic = Some(SearchFieldSemantic.BooleanAttribute(definition.code)),
+            semantic = Some(BooleanAttribute(definition.code)),
             searchable = false,
             filterable = true,
             facetable = true,
@@ -71,7 +73,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
           List(FieldRole(
             path = s"intAttributes.${definition.code}",
             kind = SearchFieldKind.Integer,
-            semantic = Some(SearchFieldSemantic.IntAttribute(definition.code)),
+            semantic = Some(IntAttribute(definition.code)),
             searchable = false,
             filterable = true,
             facetable = true,
@@ -82,7 +84,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
           List(FieldRole(
             path = s"bigDecimalAttributes.${definition.code}",
             kind = SearchFieldKind.Decimal,
-            semantic = Some(SearchFieldSemantic.DecimalAttribute(definition.code)),
+            semantic = Some(DecimalAttribute(definition.code)),
             searchable = false,
             filterable = true,
             facetable = true,
@@ -102,7 +104,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
         fields.enumAttributesByCode.get(definition.code) match {
           case Some(field) =>
             assert(field.path == s"enumAttributes.${definition.code}")
-            assert(field.semantic.contains(SearchFieldSemantic.EnumAttribute(definition.code)))
+            assert(field.semantic.contains(EnumAttribute(definition.code)))
           case None =>
             fail(s"Missing enum field handle for ${definition.code}")
         }
@@ -111,7 +113,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
         fields.booleanAttributesByCode.get(definition.code) match {
           case Some(field) =>
             assert(field.path == s"booleanAttributes.${definition.code}")
-            assert(field.semantic.contains(SearchFieldSemantic.BooleanAttribute(definition.code)))
+            assert(field.semantic.contains(BooleanAttribute(definition.code)))
           case None =>
             fail(s"Missing boolean field handle for ${definition.code}")
         }
@@ -120,7 +122,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
         fields.intAttributesByCode.get(definition.code) match {
           case Some(field) =>
             assert(field.path == s"intAttributes.${definition.code}")
-            assert(field.semantic.contains(SearchFieldSemantic.IntAttribute(definition.code)))
+            assert(field.semantic.contains(IntAttribute(definition.code)))
           case None =>
             fail(s"Missing int field handle for ${definition.code}")
         }
@@ -129,7 +131,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
         fields.decimalAttributesByCode.get(definition.code) match {
           case Some(field) =>
             assert(field.path == s"bigDecimalAttributes.${definition.code}")
-            assert(field.semantic.contains(SearchFieldSemantic.DecimalAttribute(definition.code)))
+            assert(field.semantic.contains(DecimalAttribute(definition.code)))
           case None =>
             fail(s"Missing decimal field handle for ${definition.code}")
         }
@@ -174,11 +176,11 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
       val fields = BeautyQVariantSearchDocumentSchema.Fields
       val querySchema = BeautyQVariantSearchDocumentSchema.querySchema
 
-      assert(querySchema.serviceName == fields.serviceName)
-      assert(querySchema.categoryName == fields.categoryName)
-      assert(querySchema.priceFrom == fields.priceFrom)
-      assert(querySchema.durationMin == fields.durationMin)
-      assert(querySchema.location == fields.location)
+      assert(querySchema.field("serviceName") == Right(fields.serviceName))
+      assert(querySchema.field("categoryName") == Right(fields.categoryName))
+      assert(querySchema.field("priceFrom") == Right(fields.priceFrom))
+      assert(querySchema.field("durationMin") == Right(fields.durationMin))
+      assert(querySchema.field("location") == Right(fields.location))
     }
   }
 
@@ -459,28 +461,28 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
 
   private val staticFieldRoles: List[FieldRole] =
     List(
-      FieldRole("variantId", SearchFieldKind.Keyword, Some(SearchFieldSemantic.VariantId), searchable = false, filterable = true, facetable = false, sortable = true, boost = 1.0),
-      FieldRole("masterServiceOfferId", SearchFieldKind.Keyword, Some(SearchFieldSemantic.MasterServiceOfferId), searchable = false, filterable = true, facetable = false, sortable = false, boost = 1.0),
-      FieldRole("masterLocationId", SearchFieldKind.Keyword, Some(SearchFieldSemantic.MasterLocationId), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
-      FieldRole("masterId", SearchFieldKind.Keyword, Some(SearchFieldSemantic.MasterId), searchable = false, filterable = true, facetable = false, sortable = false, boost = 1.0),
-      FieldRole("serviceId", SearchFieldKind.Keyword, Some(SearchFieldSemantic.ServiceId), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
-      FieldRole("serviceName", SearchFieldKind.Keyword, Some(SearchFieldSemantic.ServiceName), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
-      FieldRole("categoryId", SearchFieldKind.Keyword, Some(SearchFieldSemantic.CategoryId), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
-      FieldRole("categoryName", SearchFieldKind.Keyword, Some(SearchFieldSemantic.CategoryName), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
+      FieldRole("variantId", SearchFieldKind.Keyword, Some(VariantId), searchable = false, filterable = true, facetable = false, sortable = true, boost = 1.0),
+      FieldRole("masterServiceOfferId", SearchFieldKind.Keyword, Some(MasterServiceOfferId), searchable = false, filterable = true, facetable = false, sortable = false, boost = 1.0),
+      FieldRole("masterLocationId", SearchFieldKind.Keyword, Some(MasterLocationId), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
+      FieldRole("masterId", SearchFieldKind.Keyword, Some(MasterId), searchable = false, filterable = true, facetable = false, sortable = false, boost = 1.0),
+      FieldRole("serviceId", SearchFieldKind.Keyword, Some(ServiceId), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
+      FieldRole("serviceName", SearchFieldKind.Keyword, Some(ServiceName), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
+      FieldRole("categoryId", SearchFieldKind.Keyword, Some(CategoryId), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
+      FieldRole("categoryName", SearchFieldKind.Keyword, Some(CategoryName), searchable = false, filterable = true, facetable = true, sortable = false, boost = 1.0),
       FieldRole("masterName", SearchFieldKind.Keyword, None, searchable = false, filterable = false, facetable = false, sortable = false, boost = 1.0),
       FieldRole("locationName", SearchFieldKind.Keyword, None, searchable = false, filterable = false, facetable = false, sortable = false, boost = 1.0),
       FieldRole("address", SearchFieldKind.Keyword, None, searchable = false, filterable = false, facetable = false, sortable = false, boost = 1.0),
       FieldRole("lat", SearchFieldKind.Decimal, None, searchable = false, filterable = false, facetable = false, sortable = false, boost = 1.0),
       FieldRole("lon", SearchFieldKind.Decimal, None, searchable = false, filterable = false, facetable = false, sortable = false, boost = 1.0),
-      FieldRole("priceFrom", SearchFieldKind.Decimal, Some(SearchFieldSemantic.PriceFrom), searchable = false, filterable = true, facetable = true, sortable = true, boost = 1.0),
-      FieldRole("priceTo", SearchFieldKind.Decimal, Some(SearchFieldSemantic.PriceTo), searchable = false, filterable = true, facetable = false, sortable = true, boost = 1.0),
-      FieldRole("durationMin", SearchFieldKind.Integer, Some(SearchFieldSemantic.DurationMin), searchable = false, filterable = true, facetable = true, sortable = true, boost = 1.0),
-      FieldRole("location", SearchFieldKind.GeoPoint, Some(SearchFieldSemantic.Location), searchable = false, filterable = false, facetable = false, sortable = true, boost = 1.0),
-      FieldRole("allText", SearchFieldKind.Text, Some(SearchFieldSemantic.AllText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 4.0),
-      FieldRole("serviceText", SearchFieldKind.Text, Some(SearchFieldSemantic.ServiceText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 5.0),
-      FieldRole("attributeText", SearchFieldKind.Text, Some(SearchFieldSemantic.AttributeText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 4.0),
-      FieldRole("providerText", SearchFieldKind.Text, Some(SearchFieldSemantic.ProviderText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 2.0),
-      FieldRole("locationText", SearchFieldKind.Text, Some(SearchFieldSemantic.LocationText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 2.5),
+      FieldRole("priceFrom", SearchFieldKind.Decimal, Some(PriceFrom), searchable = false, filterable = true, facetable = true, sortable = true, boost = 1.0),
+      FieldRole("priceTo", SearchFieldKind.Decimal, Some(PriceTo), searchable = false, filterable = true, facetable = false, sortable = true, boost = 1.0),
+      FieldRole("durationMin", SearchFieldKind.Integer, Some(DurationMin), searchable = false, filterable = true, facetable = true, sortable = true, boost = 1.0),
+      FieldRole("location", SearchFieldKind.GeoPoint, Some(Location), searchable = false, filterable = false, facetable = false, sortable = true, boost = 1.0),
+      FieldRole("allText", SearchFieldKind.Text, Some(AllText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 4.0),
+      FieldRole("serviceText", SearchFieldKind.Text, Some(ServiceText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 5.0),
+      FieldRole("attributeText", SearchFieldKind.Text, Some(AttributeText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 4.0),
+      FieldRole("providerText", SearchFieldKind.Text, Some(ProviderText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 2.0),
+      FieldRole("locationText", SearchFieldKind.Text, Some(LocationText), searchable = true, filterable = false, facetable = false, sortable = false, boost = 2.5),
     )
 
   private final case class ExpectedText(

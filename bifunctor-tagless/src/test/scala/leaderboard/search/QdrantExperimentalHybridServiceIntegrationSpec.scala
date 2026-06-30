@@ -44,7 +44,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
     case Left(error) => throw new RuntimeException(error.message)
   }
 
-  private val semanticSmokeSpec = BeautySearchSpecV1.spec.copy(intentVocabulary = SearchIntentVocabulary(Nil))
+  private val semanticSmokeSpec = BeautySearchSpecV1.spec.copy(intentVocabulary = SearchIntentVocabulary[leaderboard.search.dsl.SearchConstraint](Nil))
   private val parser = new BeautySearchIntentParser(semanticSmokeSpec)
   private val embeddingSpecTemplate = EmbeddingSpec[VariantSearchDocument](
     vectorName = "llama-cpp-embedding",

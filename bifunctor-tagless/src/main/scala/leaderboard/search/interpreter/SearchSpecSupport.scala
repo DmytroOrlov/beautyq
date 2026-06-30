@@ -24,7 +24,7 @@ object SearchSpecSupport {
     valuesByPath(spec.runtimeSpec(Map.empty), document)
 
   def valuesByPath[A](
-    runtimeSpec: SearchRuntimeSpec[A],
+    runtimeSpec: SearchRuntimeSpec[A, ?],
     document: A,
   ): Map[String, SearchValue] =
     runtimeSpec.documentSpec.fields.flatMap(field => field.extract(document).map(field.path -> _)).toMap
@@ -37,7 +37,7 @@ object SearchSpecSupport {
     valueByPath(spec.runtimeSpec(Map.empty), document, path)
 
   def valueByPath[A](
-    runtimeSpec: SearchRuntimeSpec[A],
+    runtimeSpec: SearchRuntimeSpec[A, ?],
     document: A,
     path: String,
   ): Either[QueryFailure, Option[SearchValue]] =
@@ -51,7 +51,7 @@ object SearchSpecSupport {
     valueByField(spec.runtimeSpec(Map.empty), document, field)
 
   def valueByField[A](
-    runtimeSpec: SearchRuntimeSpec[A],
+    runtimeSpec: SearchRuntimeSpec[A, ?],
     document: A,
     field: SearchField[A],
   ): Either[QueryFailure, Option[SearchValue]] =
@@ -81,10 +81,10 @@ object SearchSpecSupport {
     document: VariantSearchDocument,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Boolean] =
-    matchesConstraint(spec.runtimeSpec(Map.empty), document, constraint)
+    spec.querySchema.resolve(constraint).flatMap(resolvedConstraintMatches(spec.runtimeSpec(Map.empty), document, _))
 
   def matchesConstraint[A](
-    runtimeSpec: SearchRuntimeSpec[A],
+    runtimeSpec: SearchRuntimeSpec[A, SearchConstraint],
     document: A,
     constraint: SearchConstraint,
   ): Either[QueryFailure, Boolean] =
@@ -98,7 +98,7 @@ object SearchSpecSupport {
     resolvedConstraintMatches(spec.runtimeSpec(Map.empty), document, constraint)
 
   def resolvedConstraintMatches[A](
-    runtimeSpec: SearchRuntimeSpec[A],
+    runtimeSpec: SearchRuntimeSpec[A, ?],
     document: A,
     constraint: ResolvedSearchConstraint[A],
   ): Either[QueryFailure, Boolean] =
@@ -119,7 +119,7 @@ object SearchSpecSupport {
           case Some(SearchValue.Decimal(actual)) => rangeMatches(actual, min, max)
           case _ => false
         }
-      case ResolvedSearchConstraint.NearUser(_) =>
+      case ResolvedSearchConstraint.GeoDistance(_) =>
         Right(true)
     }
 

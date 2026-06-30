@@ -15,21 +15,21 @@ final class BeautyQSearchIntentVocabularySpec extends AnyWordSpec {
   private val rules = BeautyQSearchIntentVocabulary.vocabulary.rules
   private val parser = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
 
-  private def ruleWithToken(token: String): SearchIntentRule =
+  private def ruleWithToken(token: String): SearchIntentRule[SearchConstraint] =
     rules.find(_.tokens.contains(token)).getOrElse(fail(s"No intent rule owns token '$token'"))
 
   private def parseConstraints(query: String): List[SearchConstraint] =
     parser.parse(UserSearchInput(query, None, None)).explicitConstraints
 
-  private def isStructuredAlias(rule: SearchIntentRule): Boolean =
+  private def isStructuredAlias(rule: SearchIntentRule[SearchConstraint]): Boolean =
     rule match {
-      case _: SearchIntentRule.StructuredAlias => true
+      case _: SearchIntentRule.StructuredAlias[?] => true
       case _ => false
     }
 
-  private def isQueryNoisePhrase(rule: SearchIntentRule): Boolean =
+  private def isQueryNoisePhrase(rule: SearchIntentRule[SearchConstraint]): Boolean =
     rule match {
-      case _: SearchIntentRule.QueryNoisePhrase => true
+      case _: SearchIntentRule.QueryNoisePhrase[?] => true
       case _ => false
     }
 
@@ -49,7 +49,7 @@ final class BeautyQSearchIntentVocabularySpec extends AnyWordSpec {
     }
 
     "give every structured alias at least one constraint, soft boost, require or exclude" in {
-      rules.collect { case alias: SearchIntentRule.StructuredAlias => alias }.foreach { alias =>
+      rules.collect { case alias: SearchIntentRule.StructuredAlias[?] => alias }.foreach { alias =>
         assert(
           alias.constraints.nonEmpty || alias.softBoosts.nonEmpty || alias.requires.nonEmpty || alias.excludes.nonEmpty,
           s"StructuredAlias ${alias.tokens} carries no intent",
@@ -58,7 +58,7 @@ final class BeautyQSearchIntentVocabularySpec extends AnyWordSpec {
     }
 
     "keep every query-noise phrase free of constraints and soft boosts" in {
-      rules.collect { case noise: SearchIntentRule.QueryNoisePhrase => noise }.foreach { noise =>
+      rules.collect { case noise: SearchIntentRule.QueryNoisePhrase[?] => noise }.foreach { noise =>
         assert(noise.constraints.isEmpty, s"QueryNoisePhrase ${noise.tokens} should have no constraints")
         assert(noise.softBoosts.isEmpty, s"QueryNoisePhrase ${noise.tokens} should have no soft boosts")
       }

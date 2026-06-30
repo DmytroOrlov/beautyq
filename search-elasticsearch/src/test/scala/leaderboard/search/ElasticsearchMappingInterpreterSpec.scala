@@ -52,27 +52,27 @@ object ToyElasticsearchSearchSpec {
   val body: SearchField[ToyElasticsearchDocument] =
     SearchField("body", SearchFieldKind.Text, document => Some(SearchValue.Text(document.body)), searchable = true, boost = 1.5)
   val serviceName: SearchField[ToyElasticsearchDocument] =
-    SearchField("serviceName", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.serviceName)), semantic = Some(SearchFieldSemantic.ServiceName), filterable = true, facetable = true)
+    SearchField("serviceName", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.serviceName)), semantic = Some(SearchFieldSemantic("toy.serviceName")), filterable = true, facetable = true)
   val categoryName: SearchField[ToyElasticsearchDocument] =
-    SearchField("categoryName", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.categoryName)), semantic = Some(SearchFieldSemantic.CategoryName), filterable = true, facetable = true)
+    SearchField("categoryName", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.categoryName)), semantic = Some(SearchFieldSemantic("toy.categoryName")), filterable = true, facetable = true)
   val priceFrom: SearchField[ToyElasticsearchDocument] =
-    SearchField("priceFrom", SearchFieldKind.Decimal, document => Some(SearchValue.Decimal(document.priceFrom)), semantic = Some(SearchFieldSemantic.PriceFrom), filterable = true, facetable = true)
+    SearchField("priceFrom", SearchFieldKind.Decimal, document => Some(SearchValue.Decimal(document.priceFrom)), semantic = Some(SearchFieldSemantic("toy.priceFrom")), filterable = true, facetable = true)
   val durationMin: SearchField[ToyElasticsearchDocument] =
-    SearchField("durationMin", SearchFieldKind.Integer, document => Some(SearchValue.Integer(document.durationMin)), semantic = Some(SearchFieldSemantic.DurationMin), filterable = true)
+    SearchField("durationMin", SearchFieldKind.Integer, document => Some(SearchValue.Integer(document.durationMin)), semantic = Some(SearchFieldSemantic("toy.durationMin")), filterable = true)
   val available: SearchField[ToyElasticsearchDocument] =
     SearchField("available", SearchFieldKind.Boolean, document => Some(SearchValue.Boolean(document.available)), filterable = true)
   val location: SearchField[ToyElasticsearchDocument] =
-    SearchField("location", SearchFieldKind.GeoPoint, document => Some(SearchValue.GeoPoint(document.location)), semantic = Some(SearchFieldSemantic.Location))
+    SearchField("location", SearchFieldKind.GeoPoint, document => Some(SearchValue.GeoPoint(document.location)), semantic = Some(SearchFieldSemantic("toy.location")))
   val providerId: SearchField[ToyElasticsearchDocument] =
     SearchField("providerId", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.providerId)), filterable = true)
   val serviceId: SearchField[ToyElasticsearchDocument] =
     SearchField("serviceId", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.serviceId)), filterable = true)
   val color: SearchField[ToyElasticsearchDocument] =
-    SearchField("attrs.color", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.color)), semantic = Some(SearchFieldSemantic.EnumAttribute("color")), filterable = true, facetable = true)
+    SearchField("attrs.color", SearchFieldKind.Keyword, document => Some(SearchValue.Keyword(document.color)), semantic = Some(SearchFieldSemantic("toy.attrs.color")), filterable = true, facetable = true)
   val level: SearchField[ToyElasticsearchDocument] =
-    SearchField("counts.level", SearchFieldKind.Integer, document => Some(SearchValue.Integer(document.level)), semantic = Some(SearchFieldSemantic.IntAttribute("level")), filterable = true)
+    SearchField("counts.level", SearchFieldKind.Integer, document => Some(SearchValue.Integer(document.level)), semantic = Some(SearchFieldSemantic("toy.counts.level")), filterable = true)
   val rating: SearchField[ToyElasticsearchDocument] =
-    SearchField("metrics.rating", SearchFieldKind.Decimal, document => Some(SearchValue.Decimal(document.rating)), semantic = Some(SearchFieldSemantic.DecimalAttribute("rating")), filterable = true)
+    SearchField("metrics.rating", SearchFieldKind.Decimal, document => Some(SearchValue.Decimal(document.rating)), semantic = Some(SearchFieldSemantic("toy.metrics.rating")), filterable = true)
 
   val documentSpec: SearchDocumentSpec[ToyElasticsearchDocument] =
     SearchDocumentSpec(
@@ -81,17 +81,20 @@ object ToyElasticsearchSearchSpec {
       fields = List(title, body, serviceName, categoryName, priceFrom, durationMin, available, location, providerId, serviceId, color, level, rating),
     )
 
-  val querySchema: SearchQuerySchema[ToyElasticsearchDocument] =
+  sealed trait ToyConstraint
+
+  val querySchema: SearchQuerySchema[ToyElasticsearchDocument, ToyConstraint] =
     SearchQuerySchema(
-      serviceName = serviceName,
-      categoryName = categoryName,
-      priceFrom = priceFrom,
-      durationMin = durationMin,
-      location = location,
-      enumAttribute = code => if (code == "color") Right(color) else Left(leaderboard.model.QueryFailure.domain(s"unknown enum $code")),
-      booleanAttribute = code => if (code == "available") Right(available) else Left(leaderboard.model.QueryFailure.domain(s"unknown boolean $code")),
-      intAttribute = code => if (code == "level") Right(level) else Left(leaderboard.model.QueryFailure.domain(s"unknown int $code")),
-      decimalAttribute = code => if (code == "rating") Right(rating) else Left(leaderboard.model.QueryFailure.domain(s"unknown decimal $code")),
+      fields = List(
+        SearchQueryField("serviceName", serviceName),
+        SearchQueryField("categoryName", categoryName),
+        SearchQueryField("priceFrom", priceFrom),
+        SearchQueryField("durationMin", durationMin),
+        SearchQueryField("location", location),
+      ),
+      geoScoringField = Some(location),
+      resolve = _ => Left(leaderboard.model.QueryFailure.domain("toy ES constraints are supplied pre-resolved")),
+      facetConstraint = (_, _) => Left(leaderboard.model.QueryFailure.domain("toy ES facets are not converted into constraints")),
     )
 
   val facetSpec: FacetSpec[ToyElasticsearchDocument] =
@@ -111,7 +114,7 @@ object ToyElasticsearchSearchSpec {
       ),
     )
 
-  val runtimeSpec: SearchRuntimeSpec[ToyElasticsearchDocument] =
+  val runtimeSpec: SearchRuntimeSpec[ToyElasticsearchDocument, ToyConstraint] =
     SearchRuntimeSpec(
       documentSpec = documentSpec,
       querySchema = querySchema,

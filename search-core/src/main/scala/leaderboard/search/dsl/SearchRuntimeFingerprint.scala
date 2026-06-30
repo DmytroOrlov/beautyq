@@ -26,11 +26,11 @@ object SearchRuntimeFingerprint {
     * catalog documents, and any extra/backend sections. Documents are sorted by `documentSpec.id` so the
     * input order does not affect the result.
     */
-  def inputs[A](
+  def inputs[A, C](
     fingerprintVersion: String,
     catalogSource: String,
     documents: List[A],
-    runtimeSpec: SearchRuntimeSpec[A],
+    runtimeSpec: SearchRuntimeSpec[A, C],
     extraSections: JsonObject,
   ): Json = {
     val base = JsonObject(
@@ -71,7 +71,7 @@ object SearchRuntimeFingerprint {
       ),
     )
 
-  private def runtimeJson[A](runtimeSpec: SearchRuntimeSpec[A]): Json =
+  private def runtimeJson[A, C](runtimeSpec: SearchRuntimeSpec[A, C]): Json =
     Json.obj(
       "document" -> Json.obj(
         "indexName" -> Json.fromString(runtimeSpec.documentSpec.indexName),
@@ -90,7 +90,7 @@ object SearchRuntimeFingerprint {
     Json.obj(
       "path" -> Json.fromString(field.path),
       "kind" -> Json.fromString(renderFieldKind(field.kind)),
-      "semantic" -> field.semantic.map(renderSemantic).asJson,
+      "semantic" -> field.semantic.map(_.value).asJson,
       "searchable" -> Json.fromBoolean(field.searchable),
       "filterable" -> Json.fromBoolean(field.filterable),
       "facetable" -> Json.fromBoolean(field.facetable),
@@ -103,13 +103,13 @@ object SearchRuntimeFingerprint {
     * attribute lookups) are not introspectable and are already represented through document field
     * semantics, facets, and payload fields, so they are deliberately not rendered here.
     */
-  private def querySchemaJson[A](schema: SearchQuerySchema[A]): Json =
-    Json.obj(
-      "serviceName" -> Json.fromString(schema.serviceName.path),
-      "categoryName" -> Json.fromString(schema.categoryName.path),
-      "priceFrom" -> Json.fromString(schema.priceFrom.path),
-      "durationMin" -> Json.fromString(schema.durationMin.path),
-      "location" -> Json.fromString(schema.location.path),
+  private def querySchemaJson[A, C](schema: SearchQuerySchema[A, C]): Json =
+    Json.fromJsonObject(
+      JsonObject.fromIterable(
+        schema.fields
+          .map(field => field.name -> Json.fromString(field.field.path))
+          .sortBy(_._1)
+      )
     )
 
   private def requestJson(request: SearchRequestSpec): Json =
@@ -210,31 +210,6 @@ object SearchRuntimeFingerprint {
       case SearchFieldKind.Decimal => "decimal"
       case SearchFieldKind.Boolean => "boolean"
       case SearchFieldKind.GeoPoint => "geo_point"
-    }
-
-  private def renderSemantic(semantic: SearchFieldSemantic): String =
-    semantic match {
-      case SearchFieldSemantic.VariantId => "variantId"
-      case SearchFieldSemantic.MasterServiceOfferId => "masterServiceOfferId"
-      case SearchFieldSemantic.MasterLocationId => "masterLocationId"
-      case SearchFieldSemantic.MasterId => "masterId"
-      case SearchFieldSemantic.ServiceId => "serviceId"
-      case SearchFieldSemantic.ServiceName => "serviceName"
-      case SearchFieldSemantic.CategoryId => "categoryId"
-      case SearchFieldSemantic.CategoryName => "categoryName"
-      case SearchFieldSemantic.PriceFrom => "priceFrom"
-      case SearchFieldSemantic.PriceTo => "priceTo"
-      case SearchFieldSemantic.DurationMin => "durationMin"
-      case SearchFieldSemantic.Location => "location"
-      case SearchFieldSemantic.AllText => "allText"
-      case SearchFieldSemantic.ServiceText => "serviceText"
-      case SearchFieldSemantic.AttributeText => "attributeText"
-      case SearchFieldSemantic.ProviderText => "providerText"
-      case SearchFieldSemantic.LocationText => "locationText"
-      case SearchFieldSemantic.EnumAttribute(attributeCode) => s"enumAttributes.$attributeCode"
-      case SearchFieldSemantic.BooleanAttribute(attributeCode) => s"booleanAttributes.$attributeCode"
-      case SearchFieldSemantic.IntAttribute(attributeCode) => s"intAttributes.$attributeCode"
-      case SearchFieldSemantic.DecimalAttribute(attributeCode) => s"bigDecimalAttributes.$attributeCode"
     }
 
   private def renderDistance(distance: VectorDistance): String =

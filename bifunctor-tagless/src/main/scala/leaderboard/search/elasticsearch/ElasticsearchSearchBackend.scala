@@ -19,7 +19,7 @@ final class ElasticsearchSearchBackend(
     intent: ParsedSearchIntent,
   ): IO[QueryFailure, BeautySearchResponse] =
     for {
-      request <- ZIO.fromEither(ElasticsearchSearchRequestInterpreter.request(spec.runtimeSpec(Map.empty), elasticsearchInput(input, intent)))
+      request <- ZIO.fromEither(elasticsearchInput(input, intent).flatMap(ElasticsearchSearchRequestInterpreter.request(spec.runtimeSpec(Map.empty), _)))
       rawResponse <- client.postJson(s"/${spec.variantDocument.indexName}/_search", request)
       response <- ZIO.fromEither(interpretResponse(input, intent, rawResponse))
     } yield response
@@ -27,15 +27,29 @@ final class ElasticsearchSearchBackend(
   private def elasticsearchInput(
     input: UserSearchInput,
     intent: ParsedSearchIntent,
-  ): ElasticsearchSearchInput =
-    ElasticsearchSearchInput(
-      remainingText = intent.remainingText,
-      explicitConstraints = intent.explicitConstraints,
-      softBoosts = intent.softBoosts,
-      userLat = input.userLat,
-      userLon = input.userLon,
-      limit = input.limit,
-    )
+  ): Either[QueryFailure, ElasticsearchSearchInput[VariantSearchDocument]] =
+    for {
+      explicitConstraints <- resolveConstraints(intent.explicitConstraints)
+      softBoosts <- resolveConstraints(intent.softBoosts)
+    } yield ElasticsearchSearchInput(
+        remainingText = intent.remainingText,
+        explicitConstraints = explicitConstraints,
+        softBoosts = softBoosts,
+        userLat = input.userLat,
+        userLon = input.userLon,
+        limit = input.limit,
+      )
+
+  private def resolveConstraints(
+    constraints: List[leaderboard.search.dsl.SearchConstraint]
+  ): Either[QueryFailure, List[leaderboard.search.dsl.ResolvedSearchConstraint[VariantSearchDocument]]] =
+    constraints.foldRight[Either[QueryFailure, List[leaderboard.search.dsl.ResolvedSearchConstraint[VariantSearchDocument]]]](Right(Nil)) {
+      (constraint, acc) =>
+        for {
+          head <- spec.querySchema.resolve(constraint)
+          tail <- acc
+        } yield head :: tail
+    }
 
   private def interpretResponse(
     input: UserSearchInput,

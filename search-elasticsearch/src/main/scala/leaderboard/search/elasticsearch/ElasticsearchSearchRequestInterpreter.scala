@@ -4,26 +4,26 @@ import io.circe.Json
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.*
 
-final case class ElasticsearchSearchInput(
+final case class ElasticsearchSearchInput[A](
   remainingText: String,
-  explicitConstraints: List[SearchConstraint],
-  softBoosts: List[SearchConstraint],
+  explicitConstraints: List[ResolvedQueryConstraint[A]],
+  softBoosts: List[ResolvedQueryConstraint[A]],
   userLat: Option[BigDecimal],
   userLon: Option[BigDecimal],
   limit: Int,
 )
 
 object ElasticsearchSearchRequestInterpreter {
-  def request[A](
-    runtimeSpec: SearchRuntimeSpec[A],
-    input: ElasticsearchSearchInput,
+  def request[A, C](
+    runtimeSpec: SearchRuntimeSpec[A, C],
+    input: ElasticsearchSearchInput[A],
   ): Either[QueryFailure, Json] = {
     for {
-      filterClauses <- sequence(input.explicitConstraints.map(constraintClause(runtimeSpec, _)))
+      filterClauses <- sequence(input.explicitConstraints.map(resolvedConstraintClause))
       textClause = textQuery(runtimeSpec, input.remainingText)
-      softBoostClauses <- sequence(input.softBoosts.map(softBoostClause(runtimeSpec, runtimeSpec.carouselSpec.ranking, _)))
+      softBoostClauses <- sequence(input.softBoosts.map(softBoostClause(runtimeSpec.carouselSpec.ranking, _)))
       baseQuery = boolQuery(filterClauses, textClause.toList, softBoostClauses)
-      query = geoQuery(runtimeSpec, input, baseQuery)
+      query <- geoQuery(runtimeSpec, input, baseQuery)
     } yield Json.obj(
       "track_total_hits" -> Json.fromBoolean(true),
       "size" -> Json.fromInt(math.max(runtimeSpec.requestSpec.hitWindowSize, input.limit)),
@@ -32,7 +32,7 @@ object ElasticsearchSearchRequestInterpreter {
     )
   }
 
-  private def textQuery[A](runtimeSpec: SearchRuntimeSpec[A], remainingText: String): Option[Json] = {
+  private def textQuery[A, C](runtimeSpec: SearchRuntimeSpec[A, C], remainingText: String): Option[Json] = {
     val query = remainingText.trim
     if (query.isEmpty) {
       None
@@ -52,7 +52,7 @@ object ElasticsearchSearchRequestInterpreter {
     }
   }
 
-  private def aggregations[A](runtimeSpec: SearchRuntimeSpec[A]): Json = {
+  private def aggregations[A, C](runtimeSpec: SearchRuntimeSpec[A, C]): Json = {
     val facetAggs = runtimeSpec.facetSpec.fields.map { facetField =>
       aggName(facetField.path) -> facetAggregation(runtimeSpec, facetField)
     }
@@ -63,7 +63,7 @@ object ElasticsearchSearchRequestInterpreter {
     Json.obj((facetAggs ++ groupAggs).map { case (name, value) => name -> value }: _*)
   }
 
-  private def facetAggregation[A](runtimeSpec: SearchRuntimeSpec[A], facetField: FacetField[A]): Json =
+  private def facetAggregation[A, C](runtimeSpec: SearchRuntimeSpec[A, C], facetField: FacetField[A]): Json =
     facetField.mode match {
       case FacetFieldMode.Terms =>
         termsAggregation(facetField.path, runtimeSpec.requestSpec.aggregationSize)
@@ -92,65 +92,63 @@ object ElasticsearchSearchRequestInterpreter {
       )
     )
 
-  private def geoQuery[A](runtimeSpec: SearchRuntimeSpec[A], input: ElasticsearchSearchInput, baseQuery: Json): Json =
+  private def geoQuery[A, C](runtimeSpec: SearchRuntimeSpec[A, C], input: ElasticsearchSearchInput[A], baseQuery: Json): Either[QueryFailure, Json] =
     (input.userLat, input.userLon) match {
       case (Some(lat), Some(lon)) =>
-        Json.obj(
-          "function_score" -> Json.obj(
-            "query" -> baseQuery,
-            "functions" -> Json.arr(
+        runtimeSpec.querySchema.geoScoringField match {
+          case Some(field) =>
+            Right(
               Json.obj(
-                "gauss" -> Json.obj(
-                  runtimeSpec.querySchema.location.path -> Json.obj(
-                    "origin" -> Json.obj(
-                      "lat" -> Json.fromBigDecimal(lat),
-                      "lon" -> Json.fromBigDecimal(lon),
-                    ),
-                    "scale" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceScale),
-                    "offset" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceOffset),
-                    "decay" -> Json.fromDoubleOrNull(runtimeSpec.requestSpec.geoDistanceDecay),
-                  )
-                ),
-                "weight" -> Json.fromDoubleOrNull(runtimeSpec.carouselSpec.ranking.providerDistanceWeight),
+                "function_score" -> Json.obj(
+                  "query" -> baseQuery,
+                  "functions" -> Json.arr(
+                    Json.obj(
+                      "gauss" -> Json.obj(
+                        field.path -> Json.obj(
+                          "origin" -> Json.obj(
+                            "lat" -> Json.fromBigDecimal(lat),
+                            "lon" -> Json.fromBigDecimal(lon),
+                          ),
+                          "scale" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceScale),
+                          "offset" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceOffset),
+                          "decay" -> Json.fromDoubleOrNull(runtimeSpec.requestSpec.geoDistanceDecay),
+                        )
+                      ),
+                      "weight" -> Json.fromDoubleOrNull(runtimeSpec.carouselSpec.ranking.providerDistanceWeight),
+                    )
+                  ),
+                  "score_mode" -> Json.fromString("sum"),
+                  "boost_mode" -> Json.fromString("sum"),
+                )
               )
-            ),
-            "score_mode" -> Json.fromString("sum"),
-            "boost_mode" -> Json.fromString("sum"),
-          )
-        )
+            )
+          case None =>
+            Left(QueryFailure.domain("Geo scoring field is not defined for search query schema"))
+        }
       case _ =>
-        baseQuery
+        Right(baseQuery)
     }
 
-  private def constraintClause(
-    runtimeSpec: SearchRuntimeSpec[?],
-    constraint: SearchConstraint,
-  ): Either[QueryFailure, Json] =
-    runtimeSpec.querySchema.resolve(constraint).flatMap(resolvedConstraintClause)
-
   private def resolvedConstraintClause[A](
-    constraint: ResolvedSearchConstraint[A]
+    constraint: ResolvedQueryConstraint[A]
   ): Either[QueryFailure, Json] =
     constraint match {
-      case ResolvedSearchConstraint.Terms(field, values, _) =>
+      case ResolvedQueryConstraint.Terms(field, values, _) =>
         termsClause(field.path, values)
-      case ResolvedSearchConstraint.BooleanTerm(field, value, _) =>
+      case ResolvedQueryConstraint.BooleanTerm(field, value, _) =>
         Right(termClause(field.path, Json.fromBoolean(value)))
-      case ResolvedSearchConstraint.Range(field, min, max, _) =>
+      case ResolvedQueryConstraint.Range(field, min, max, _) =>
         Right(rangeClause(field.path, min, max))
-      case ResolvedSearchConstraint.NearUser(_) =>
+      case ResolvedQueryConstraint.GeoDistance(_) =>
         Right(Json.obj())
     }
 
   private def softBoostClause(
-    runtimeSpec: SearchRuntimeSpec[?],
     ranking: RankingSpec,
-    constraint: SearchConstraint,
+    resolved: ResolvedQueryConstraint[?],
   ): Either[QueryFailure, Json] =
-    for {
-      resolved <- runtimeSpec.querySchema.resolve(constraint)
-      clause <- resolvedConstraintClause(resolved)
-    } yield {
+    resolvedConstraintClause(resolved).map {
+      clause =>
         Json.obj(
           "constant_score" -> Json.obj(
             "filter" -> clause,
@@ -159,11 +157,11 @@ object ElasticsearchSearchRequestInterpreter {
         )
     }
 
-  private def boostWeight(ranking: RankingSpec, boostRole: SearchConstraintBoostRole): Double =
+  private def boostWeight(ranking: RankingSpec, boostRole: QueryConstraintBoostRole): Double =
     boostRole match {
-      case SearchConstraintBoostRole.Service => ranking.serviceBoostWeight
-      case SearchConstraintBoostRole.Attribute => ranking.attributeBoostWeight
-      case SearchConstraintBoostRole.Distance => ranking.providerDistanceWeight
+      case QueryConstraintBoostRole.Service => ranking.serviceBoostWeight
+      case QueryConstraintBoostRole.Attribute => ranking.attributeBoostWeight
+      case QueryConstraintBoostRole.Distance => ranking.providerDistanceWeight
     }
 
   private def termClause(path: String, value: Json): Json =

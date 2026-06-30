@@ -21,6 +21,8 @@ import zio.{IO, Ref, Runtime, Unsafe, ZIO}
 import java.util.UUID
 
 final class BeautySearchPureSpec extends AnyWordSpec {
+  import BeautyQSearchFieldSemantics.*
+
   private val seedData = new BeautyQSeedLoader.ResourceLoader().load() match {
     case Right(value) => value
     case Left(error) => throw new RuntimeException(error.message)
@@ -1052,7 +1054,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         path = "serviceName",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.serviceName)),
-        semantic = Some(SearchFieldSemantic.ServiceName),
+        semantic = Some(ServiceName),
         filterable = true,
         facetable = true,
       )
@@ -1081,7 +1083,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           id = _.variantId.toString,
           fields = List(serviceNameField, customTextField, providerKeyField, serviceKeyField),
         ),
-        intentVocabulary = SearchIntentVocabulary(Nil),
+        intentVocabulary = SearchIntentVocabulary[SearchConstraint](Nil),
         carouselSpec = CarouselSpec(providerGroupField = providerKeyField, serviceIntentGroupField = serviceKeyField),
         facetSpec = FacetSpec(enabled = true, fields = List(FacetField(serviceNameField, FacetFieldMode.Terms))),
         querySchema = querySchemaFor(serviceNameField),
@@ -1116,7 +1118,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         path = "serviceName2",
         kind = SearchFieldKind.Keyword,
         extract = document => Some(SearchValue.Keyword(document.serviceName)),
-        semantic = Some(SearchFieldSemantic.ServiceName),
+        semantic = Some(ServiceName),
         filterable = true,
       )
       val syntheticSpec = BeautySearchSpec(
@@ -1125,7 +1127,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           id = _.variantId.toString,
           fields = List(serviceNameField),
         ),
-        intentVocabulary = SearchIntentVocabulary(Nil),
+        intentVocabulary = SearchIntentVocabulary[SearchConstraint](Nil),
         carouselSpec = CarouselSpec(providerGroupField = serviceNameField, serviceIntentGroupField = serviceNameField),
         facetSpec = FacetSpec(enabled = false, fields = Nil),
         querySchema = querySchemaFor(serviceNameField),
@@ -2000,21 +2002,18 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       pathRef.set(Some(path)) *> ZIO.succeed(hits)
   }
 
-  private def querySchemaFor(serviceNameField: SearchField[VariantSearchDocument]): SearchQuerySchema[VariantSearchDocument] =
+  private def querySchemaFor(serviceNameField: SearchField[VariantSearchDocument]): SearchQuerySchema[VariantSearchDocument, SearchConstraint] =
     SearchQuerySchema(
-      serviceName = serviceNameField,
-      categoryName = serviceNameField,
-      priceFrom = serviceNameField,
-      durationMin = serviceNameField,
-      location = serviceNameField,
-      enumAttribute = missingAttributeField,
-      booleanAttribute = missingAttributeField,
-      intAttribute = missingAttributeField,
-      decimalAttribute = missingAttributeField,
+      fields = List(SearchQueryField("serviceName", serviceNameField)),
+      geoScoringField = None,
+      resolve = {
+        case SearchConstraint.ServiceAny(names) =>
+          Right(ResolvedSearchConstraint.Terms(serviceNameField, names, SearchConstraintBoostRole.Service))
+        case other =>
+          Left(QueryFailure.domain(s"Unsupported synthetic constraint '$other'"))
+      },
+      facetConstraint = (_, value) => Right(SearchConstraint.ServiceAny(Set(value))),
     )
-
-  private def missingAttributeField(code: String): Either[QueryFailure, SearchField[VariantSearchDocument]] =
-    Left(QueryFailure.domain(s"Missing synthetic attribute field '$code'"))
 
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     runZIO(effect)

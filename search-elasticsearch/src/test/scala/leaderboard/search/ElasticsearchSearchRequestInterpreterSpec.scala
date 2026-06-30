@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import io.circe.Json
-import leaderboard.search.dsl.SearchConstraint
+import leaderboard.search.dsl.*
 import leaderboard.search.elasticsearch.{ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -23,9 +23,9 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
         ElasticsearchSearchInput(
           remainingText = "",
           explicitConstraints = List(
-            SearchConstraint.ServiceAny(Set("Haircut")),
-            SearchConstraint.EnumAttr("color", Set("red", "blue")),
-            SearchConstraint.BoolAttr("available", true),
+            ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.serviceName, Set("Haircut"), SearchConstraintBoostRole.Service),
+            ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.color, Set("red", "blue"), SearchConstraintBoostRole.Attribute),
+            ResolvedSearchConstraint.BooleanTerm(ToyElasticsearchSearchSpec.available, true, SearchConstraintBoostRole.Attribute),
           ),
           softBoosts = Nil,
           userLat = None,
@@ -49,11 +49,11 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
         ElasticsearchSearchInput(
           remainingText = "",
           explicitConstraints = List(
-            SearchConstraint.PriceRange(Some(BigDecimal(10)), Some(BigDecimal(30))),
-            SearchConstraint.DurationRange(None, Some(60)),
-            SearchConstraint.IntRange("level", Some(1), Some(3)),
-            SearchConstraint.DecimalRange("rating", Some(BigDecimal("4.0")), None),
-            SearchConstraint.NearUser,
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.priceFrom, Some(BigDecimal(10)), Some(BigDecimal(30)), SearchConstraintBoostRole.Attribute),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.durationMin, None, Some(BigDecimal(60)), SearchConstraintBoostRole.Attribute),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.level, Some(BigDecimal(1)), Some(BigDecimal(3)), SearchConstraintBoostRole.Attribute),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.rating, Some(BigDecimal("4.0")), None, SearchConstraintBoostRole.Attribute),
+            ResolvedSearchConstraint.GeoDistance(ToyElasticsearchSearchSpec.location),
           ),
           softBoosts = Nil,
           userLat = None,
@@ -90,7 +90,7 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
         ElasticsearchSearchInput(
           remainingText = "fresh",
           explicitConstraints = Nil,
-          softBoosts = List(SearchConstraint.ServiceAny(Set("Haircut"))),
+          softBoosts = List(ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.serviceName, Set("Haircut"), SearchConstraintBoostRole.Service)),
           userLat = Some(BigDecimal("52.52")),
           userLon = Some(BigDecimal("13.40")),
           limit = 9,
@@ -112,7 +112,7 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
     }
   }
 
-  private def requestOrFail(input: ElasticsearchSearchInput): Json =
+  private def requestOrFail(input: ElasticsearchSearchInput[ToyElasticsearchDocument]): Json =
     ElasticsearchSearchRequestInterpreter.request(ToyElasticsearchSearchSpec.runtimeSpec, input) match {
       case Right(value) => value
       case Left(error)  => fail(error.message)

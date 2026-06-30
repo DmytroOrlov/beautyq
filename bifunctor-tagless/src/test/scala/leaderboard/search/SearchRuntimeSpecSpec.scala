@@ -41,18 +41,14 @@ final class SearchRuntimeSpecSpec extends AnyWordSpec {
         id = _.id,
         fields = List(idField, nameField),
       )
-      val querySchema = SearchQuerySchema[ToyDocument](
-        serviceName = nameField,
-        categoryName = nameField,
-        priceFrom = idField,
-        durationMin = idField,
-        location = idField,
-        enumAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"enum $code")),
-        booleanAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"boolean $code")),
-        intAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"int $code")),
-        decimalAttribute = code => Left(leaderboard.model.QueryFailure.domain(s"decimal $code")),
+      sealed trait ToyConstraint
+      val querySchema = SearchQuerySchema[ToyDocument, ToyConstraint](
+        fields = List(SearchQueryField("name", nameField)),
+        geoScoringField = None,
+        resolve = _ => Left(leaderboard.model.QueryFailure.domain("toy constraint")),
+        facetConstraint = (_, _) => Left(leaderboard.model.QueryFailure.domain("toy facet")),
       )
-      val runtimeSpec = SearchRuntimeSpec[ToyDocument](
+      val runtimeSpec = SearchRuntimeSpec[ToyDocument, ToyConstraint](
         documentSpec = documentSpec,
         querySchema = querySchema,
         requestSpec = SearchRequestSpec(),

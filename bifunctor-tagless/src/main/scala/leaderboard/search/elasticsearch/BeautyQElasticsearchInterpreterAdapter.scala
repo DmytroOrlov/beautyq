@@ -4,7 +4,7 @@ import io.circe.Json
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.{BeautySearchResponse, ParsedSearchIntent, UserSearchInput}
 import leaderboard.search.document.VariantSearchDocument
-import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.dsl.{BeautySearchSpec, SearchConstraint}
 import leaderboard.search.interpreter.SearchResponseAssembler
 import leaderboard.search.interpreter.SearchSpecSupport
 import leaderboard.search.interpreter.SearchSpecSupport.ScoredDocument
@@ -27,24 +27,31 @@ object BeautyQElasticsearchInterpreterAdapter {
     ElasticsearchIngestionInterpreter.sourceJson(spec.variantDocument, document)
 
   def input(
+    spec: BeautySearchSpec,
     input: UserSearchInput,
     intent: ParsedSearchIntent,
-  ): ElasticsearchSearchInput =
-    ElasticsearchSearchInput(
-      remainingText = intent.remainingText,
-      explicitConstraints = intent.explicitConstraints,
-      softBoosts = intent.softBoosts,
-      userLat = input.userLat,
-      userLon = input.userLon,
-      limit = input.limit,
-    )
+  ): Either[QueryFailure, ElasticsearchSearchInput[VariantSearchDocument]] =
+    for {
+      explicitConstraints <- resolveConstraints(spec, intent.explicitConstraints)
+      softBoosts <- resolveConstraints(spec, intent.softBoosts)
+    } yield ElasticsearchSearchInput(
+        remainingText = intent.remainingText,
+        explicitConstraints = explicitConstraints,
+        softBoosts = softBoosts,
+        userLat = input.userLat,
+        userLon = input.userLon,
+        limit = input.limit,
+      )
 
   def request(
     spec: BeautySearchSpec,
     input: UserSearchInput,
     intent: ParsedSearchIntent,
   ): Either[QueryFailure, Json] =
-    ElasticsearchSearchRequestInterpreter.request(spec.runtimeSpec(Map.empty), BeautyQElasticsearchInterpreterAdapter.input(input, intent))
+    for {
+      resolvedInput <- BeautyQElasticsearchInterpreterAdapter.input(spec, input, intent)
+      request <- ElasticsearchSearchRequestInterpreter.request(spec.runtimeSpec(Map.empty), resolvedInput)
+    } yield request
 
   def interpret(
     spec: BeautySearchSpec,
@@ -74,4 +81,16 @@ object BeautyQElasticsearchInterpreterAdapter {
 
   private val specDocument =
     leaderboard.search.dsl.BeautySearchSpecV1.spec.variantDocument
+
+  private def resolveConstraints(
+    spec: BeautySearchSpec,
+    constraints: List[SearchConstraint],
+  ) =
+    constraints.foldRight[Either[QueryFailure, List[leaderboard.search.dsl.ResolvedSearchConstraint[VariantSearchDocument]]]](Right(Nil)) {
+      (constraint, acc) =>
+        for {
+          head <- spec.querySchema.resolve(constraint)
+          tail <- acc
+        } yield head :: tail
+    }
 }

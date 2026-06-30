@@ -3,7 +3,7 @@ package leaderboard.search
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchConstraint}
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.elasticsearch.{ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
+import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.seed.BeautyQSeedLoader
@@ -14,7 +14,7 @@ import java.util.UUID
 
 /** Budget/range queries are baseline + Elasticsearch-owned hard constraints. This spec proves the
   * [[SearchConstraint.PriceRange]] upper bound becomes an ES bool `filter` range clause over
-  * `SearchFieldSemantic.PriceFrom`, and that the pure in-memory rollback/regression backend drops
+  * the BeautyQ price field, and that the pure in-memory rollback/regression backend drops
   * above-threshold documents. No Qdrant / semantic path is involved.
   */
 final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
@@ -119,13 +119,6 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
   private def runIO[A](effect: IO[QueryFailure, A]): A =
     Unsafe.unsafe(implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure())
 
-  private def elasticsearchInput(input: UserSearchInput, intent: ParsedSearchIntent): ElasticsearchSearchInput =
-    ElasticsearchSearchInput(
-      remainingText = intent.remainingText,
-      explicitConstraints = intent.explicitConstraints,
-      softBoosts = intent.softBoosts,
-      userLat = input.userLat,
-      userLon = input.userLon,
-      limit = input.limit,
-    )
+  private def elasticsearchInput(input: UserSearchInput, intent: ParsedSearchIntent): ElasticsearchSearchInput[VariantSearchDocument] =
+    orFail("build ES input", BeautyQElasticsearchInterpreterAdapter.input(BeautySearchSpecV1.spec, input, intent))
 }

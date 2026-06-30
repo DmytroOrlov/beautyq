@@ -27,7 +27,7 @@ object BeautyQSearchIntentVocabulary {
   private val FaceCategory = "Косметология лица и уход"
   private val HairRemovalCategory = "Удаление волос"
 
-  val vocabulary: SearchIntentVocabulary =
+  val vocabulary: SearchIntentVocabulary[SearchConstraint] =
     SearchIntentVocabulary(
       rules = List(
         servicePhrase(Set(ManicureService, "маникюр", "манекюр"), ManicureService, Some("nail_service_type" -> "manicure")),
@@ -139,7 +139,7 @@ object BeautyQSearchIntentVocabulary {
     tokens: Set[String],
     serviceName: String,
     enumAttribute: Option[(String, String)],
-  ): SearchIntentRule.StructuredAlias =
+  ): SearchIntentRule.StructuredAlias[SearchConstraint] =
     alias(
       tokens,
       List(SearchConstraint.ServiceAny(Set(serviceName))) ++ enumAttribute.toList.map { case (code, value) => enumConstraint(code, value) },
@@ -150,7 +150,7 @@ object BeautyQSearchIntentVocabulary {
     constraints: List[SearchConstraint],
     softBoosts: List[SearchConstraint] = Nil,
     requires: List[SearchConstraint] = Nil,
-  ): SearchIntentRule.StructuredAlias =
+  ): SearchIntentRule.StructuredAlias[SearchConstraint] =
     SearchIntentRule.StructuredAlias(
       tokens = tokens,
       constraints = constraints,
@@ -161,7 +161,7 @@ object BeautyQSearchIntentVocabulary {
   private def noise(
     tokens: Set[String],
     requires: List[SearchConstraint] = Nil,
-  ): SearchIntentRule.QueryNoisePhrase =
+  ): SearchIntentRule.QueryNoisePhrase[SearchConstraint] =
     SearchIntentRule.QueryNoisePhrase(
       tokens = tokens,
       requires = requires,
