@@ -132,6 +132,18 @@ final class BeautyQSearchIntentVocabularySpec extends AnyWordSpec {
       assert(constraints.contains(SearchConstraint.BoolAttr("with_correction", true)))
     }
 
+    "produce lash_volume without an implied lash_service_type=extension for 'volume2_d Wandsbek lashes'" in {
+      val constraints = parseConstraints("volume2_d Wandsbek lashes")
+      assert(constraints.contains(SearchConstraint.EnumAttr("lash_volume", Set("volume2_d"))))
+      assert(!constraints.contains(SearchConstraint.EnumAttr("lash_service_type", Set("extension"))))
+    }
+
+    "produce lash_volume plus lash_service_type=extension for explicit extension wording 'volume2_d lashes extension'" in {
+      val constraints = parseConstraints("volume2_d lashes extension")
+      assert(constraints.contains(SearchConstraint.EnumAttr("lash_volume", Set("volume2_d"))))
+      assert(constraints.contains(SearchConstraint.EnumAttr("lash_service_type", Set("extension"))))
+    }
+
     "respect the face exclude behavior under a face_neck_decollete context" in {
       val constraints = parseConstraints("увлажнение лица face")
       assert(constraints.contains(SearchConstraint.EnumAttr("body_area", Set("face_neck_decollete"))))
