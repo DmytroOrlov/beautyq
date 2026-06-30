@@ -119,26 +119,19 @@ object SearchSpecSupport {
           case Some(SearchValue.Decimal(actual)) => rangeMatches(actual, min, max)
           case _ => false
         }
-      case ResolvedSearchConstraint.GeoDistance(_) =>
+      case ResolvedSearchConstraint.GeoDistance(_, _) =>
         Right(true)
     }
 
-  def constraintBoostWeight(ranking: RankingSpec, constraint: SearchConstraint): Double =
-    boostWeight(ranking, constraint match {
-      case SearchConstraint.ServiceAny(_) | SearchConstraint.CategoryAny(_) => SearchConstraintBoostRole.Service
-      case SearchConstraint.NearUser => SearchConstraintBoostRole.Distance
-      case _ => SearchConstraintBoostRole.Attribute
+  def constraintBoostWeight(ranking: RankingSpec, constraint: SearchConstraint): Either[QueryFailure, Double] =
+    ranking.boostWeight(constraint match {
+      case SearchConstraint.ServiceAny(_) | SearchConstraint.CategoryAny(_) => BeautyQSearchPresentation.BoostRoles.Service
+      case SearchConstraint.NearUser => BeautyQSearchPresentation.BoostRoles.ProviderDistance
+      case _ => BeautyQSearchPresentation.BoostRoles.Attribute
     })
 
   def constraintBoostWeight(spec: BeautySearchSpec, constraint: SearchConstraint): Either[QueryFailure, Double] =
-    spec.querySchema.resolve(constraint).map(resolved => boostWeight(spec.carouselSpec.ranking, resolved.boostRole))
-
-  private def boostWeight(ranking: RankingSpec, boostRole: SearchConstraintBoostRole): Double =
-    boostRole match {
-      case SearchConstraintBoostRole.Service => ranking.serviceBoostWeight
-      case SearchConstraintBoostRole.Attribute => ranking.attributeBoostWeight
-      case SearchConstraintBoostRole.Distance => ranking.providerDistanceWeight
-    }
+    spec.querySchema.resolve(constraint).flatMap(resolved => spec.carouselSpec.ranking.boostWeight(resolved.boostRole))
 
   def computeDistanceKm(
     input: UserSearchInput,

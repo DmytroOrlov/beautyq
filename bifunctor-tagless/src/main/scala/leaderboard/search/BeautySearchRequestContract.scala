@@ -1,12 +1,16 @@
 package leaderboard.search
 
-import leaderboard.search.dsl.BeautySearchSpecV1
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1}
 
 object BeautySearchRequestContract {
   final case class SemanticError(code: String, message: String)
 
   val MinLimit: Int = 1
-  val MaxLimit: Int = BeautySearchSpecV1.spec.carouselSpec.variantSize
+  val MaxLimit: Int =
+    BeautyQSearchPresentation.variantLimit(BeautySearchSpecV1.spec.carouselSpec).fold(
+      error => throw new IllegalStateException(error.message),
+      identity,
+    )
 
   val MinLatitude: BigDecimal  = BigDecimal(-90)
   val MaxLatitude: BigDecimal  = BigDecimal(90)

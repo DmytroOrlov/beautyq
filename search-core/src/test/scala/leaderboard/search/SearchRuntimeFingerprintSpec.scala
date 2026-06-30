@@ -99,6 +99,17 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
       assert(querySchema.downField("serviceName").focus.isEmpty)
     }
 
+    "render caller-supplied ranking and carousel names rather than fixed domain names" in {
+      val carousel = runtimeSection(baseRuntimeSpec).hcursor.downField("carousel")
+      val ranking = carousel.downField("ranking")
+
+      assert(carousel.get[Int]("mainSize") == Right(10))
+      assert(carousel.get[Int]("groupSize") == Right(5))
+      assert(carousel.get[String]("groupField") == Right(idField.path))
+      assert(ranking.get[Double]("textScore") == Right(1.0d))
+      assert(ranking.get[Double]("primaryBoost") == Right(2.0d))
+    }
+
     "change runtime schema inputs when the payload fields change" in {
       val changedSpec = baseRuntimeSpec.copy(
         payloadSpecs = Map(
@@ -150,6 +161,10 @@ object SearchRuntimeFingerprintSpec {
     final case class NameAny(values: Set[String]) extends ToyConstraint
     final case class PriceRange(min: Option[BigDecimal], max: Option[BigDecimal]) extends ToyConstraint
   }
+
+  val PrimaryRole: SearchBoostRole = SearchBoostRole("primary")
+  val SecondaryRole: SearchBoostRole = SearchBoostRole("secondary")
+  val GeoRole: SearchBoostRole = SearchBoostRole("geo")
 
   val idField: SearchField[ToyDoc] =
     SearchField[ToyDoc](
@@ -214,12 +229,20 @@ object SearchRuntimeFingerprintSpec {
       geoScoringField = Some(locationField),
       resolve = {
         case ToyConstraint.NameAny(values) =>
-          Right(ResolvedSearchConstraint.Terms(nameField, values, SearchConstraintBoostRole.Service))
+          Right(ResolvedSearchConstraint.Terms(nameField, values, PrimaryRole))
         case ToyConstraint.PriceRange(min, max) =>
-          Right(ResolvedSearchConstraint.Range(priceField, min, max, SearchConstraintBoostRole.Attribute))
+          Right(ResolvedSearchConstraint.Range(priceField, min, max, SecondaryRole))
       },
       facetConstraint = (_, _) => Left(QueryFailure.domain("toy facets are not converted into constraints")),
     )
+
+  val ranking: RankingSpec =
+    RankingSpec(List(
+      RankingWeight("textScore", 1.0),
+      RankingWeight("primaryBoost", 2.0, Set(PrimaryRole)),
+      RankingWeight("secondaryBoost", 1.5, Set(SecondaryRole)),
+      RankingWeight("geoBoost", 1.25, Set(GeoRole)),
+    ))
 
   val baseRuntimeSpec: SearchRuntimeSpec[ToyDoc, ToyConstraint] =
     SearchRuntimeSpec[ToyDoc, ToyConstraint](
@@ -242,8 +265,10 @@ object SearchRuntimeFingerprintSpec {
         ),
       ),
       carouselSpec = CarouselSpec[ToyDoc](
-        providerGroupField = idField,
-        serviceIntentGroupField = nameField,
+        limits = List(CarouselLimit("mainSize", 10), CarouselLimit("groupSize", 5)),
+        groups = List(CarouselGroup("groupField", idField)),
+        ranking = ranking,
+        geoScoringBoostRole = Some(GeoRole),
       ),
       payloadSpecs = Map(
         PayloadSpecName ->

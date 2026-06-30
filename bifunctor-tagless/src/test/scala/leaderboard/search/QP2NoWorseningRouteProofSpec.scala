@@ -10,7 +10,7 @@ import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, VectorDistance, VectorSearchSpec}
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchJsonClient}
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.hybrid.{ExperimentalHybridSearchBackend, QdrantVariantSupplementPolicy}
@@ -340,7 +340,10 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
         appendQueryEsResponse = appendEsResponse,
         noAppendQuerySupplementResponse = noAppendSupplementResponse,
         noAppendQueryEsResponse = noAppendEsResponse,
-        variantCap = math.min(appendQueryInput.limit, testSpec.carouselSpec.variantSize),
+        variantCap = math.min(
+          appendQueryInput.limit,
+          BeautyQSearchPresentation.variantLimit(testSpec.carouselSpec).fold(error => throw new RuntimeException(error.message), identity),
+        ),
         optInHttpStatus = optInHttpStatus,
       )
     ).ensuring(qdrantClient.deleteCollection(collectionPath).either.unit)

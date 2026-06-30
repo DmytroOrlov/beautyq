@@ -1,7 +1,7 @@
 package leaderboard.search.qdrant
 
 import leaderboard.search.*
-import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpec}
 import leaderboard.search.semantic.SemanticResponseProjector
 
 final class QdrantBeautySearchResponseProjector(
@@ -17,20 +17,25 @@ object QdrantCandidateResponseProjector {
     spec: BeautySearchSpec,
     input: UserSearchInput,
     assembly: QdrantCandidateAssembly,
-  ): BeautySearchResponse =
+  ): BeautySearchResponse = {
+    val variantLimit = BeautyQSearchPresentation.variantLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+    val providerLimit = BeautyQSearchPresentation.providerLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+    val serviceIntentLimit = BeautyQSearchPresentation.serviceIntentLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+
     BeautySearchResponse(
       variantCarousel = assembly.variantCandidates
-        .take(math.min(input.limit, spec.carouselSpec.variantSize))
+        .take(math.min(input.limit, variantLimit))
         .map(toVariantResult),
       providerCarousel = assembly.providerCandidates
-        .take(spec.carouselSpec.providerSize)
+        .take(providerLimit)
         .map(toProviderResult),
       serviceIntentCarousel = assembly.serviceCandidates
-        .take(spec.carouselSpec.serviceIntentSize)
+        .take(serviceIntentLimit)
         .map(toServiceIntentResult),
       facets = Nil,
       inferredFilters = Nil,
     )
+  }
 
   private def toVariantResult(candidate: QdrantVariantCandidate): VariantSearchResult = {
     val document = candidate.document

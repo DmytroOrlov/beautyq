@@ -7,6 +7,8 @@ import leaderboard.search.dsl.*
 import leaderboard.search.interpreter.SearchSpecSupport.ScoredDocument
 
 object SearchResponseAssembler {
+  private val Presentation = BeautyQSearchPresentation
+
   def assemble(
     spec: BeautySearchSpec,
     input: UserSearchInput,
@@ -15,14 +17,17 @@ object SearchResponseAssembler {
   ): Either[QueryFailure, BeautySearchResponse] = {
     val sortedDocuments = sortDocuments(scoredDocuments)
     for {
+      variantLimit <- Presentation.variantLimit(spec.carouselSpec)
+      providerLimit <- Presentation.providerLimit(spec.carouselSpec)
+      serviceIntentLimit <- Presentation.serviceIntentLimit(spec.carouselSpec)
       providerCarousel <- buildProviderCarousel(spec, sortedDocuments)
       serviceIntentCarousel <- buildServiceIntentCarousel(spec, sortedDocuments)
       facets <- buildFacets(spec, sortedDocuments)
       inferredFilters <- buildInferredFilters(spec, intent, facets, sortedDocuments.size)
     } yield BeautySearchResponse(
-      variantCarousel = sortedDocuments.take(math.min(input.limit, spec.carouselSpec.variantSize)).map(toVariantResult),
-      providerCarousel = providerCarousel.take(spec.carouselSpec.providerSize),
-      serviceIntentCarousel = serviceIntentCarousel.take(spec.carouselSpec.serviceIntentSize),
+      variantCarousel = sortedDocuments.take(math.min(input.limit, variantLimit)).map(toVariantResult),
+      providerCarousel = providerCarousel.take(providerLimit),
+      serviceIntentCarousel = serviceIntentCarousel.take(serviceIntentLimit),
       facets = facets,
       inferredFilters = inferredFilters,
     )
@@ -32,16 +37,21 @@ object SearchResponseAssembler {
     spec: BeautySearchSpec,
     scoredDocuments: List[ScoredDocument],
   ): Either[QueryFailure, List[ProviderSearchResult]] = {
-    groupByField(spec, scoredDocuments, spec.carouselSpec.providerGroupField).map {
-      grouped =>
+    for {
+      providerGroupField <- Presentation.providerGroupField(spec.carouselSpec)
+      textScoreWeight <- Presentation.textScoreWeight(spec.carouselSpec.ranking)
+      providerMatchingVariantCountWeight <- Presentation.providerMatchingVariantCountWeight(spec.carouselSpec.ranking)
+      providerDistanceWeight <- Presentation.providerDistanceWeight(spec.carouselSpec.ranking)
+      grouped <- groupByField(spec, scoredDocuments, providerGroupField)
+    } yield {
         grouped.values.toList
           .map { group =>
             val sorted = sortDocuments(group)
             val head = sorted.head
             val minDistance = group.flatMap(_.distanceKm).sorted.headOption
-            val groupScore = head.totalScore * spec.carouselSpec.ranking.textScoreWeight +
-              group.size.toDouble * spec.carouselSpec.ranking.providerMatchingVariantCountWeight +
-              minDistance.map(distance => proximityScore(distance) * spec.carouselSpec.ranking.providerDistanceWeight).getOrElse(0.0)
+            val groupScore = head.totalScore * textScoreWeight +
+              group.size.toDouble * providerMatchingVariantCountWeight +
+              minDistance.map(distance => proximityScore(distance) * providerDistanceWeight).getOrElse(0.0)
             ProviderSearchResult(
               masterId = head.document.masterId,
               masterName = head.document.masterName,
@@ -62,14 +72,18 @@ object SearchResponseAssembler {
     spec: BeautySearchSpec,
     scoredDocuments: List[ScoredDocument],
   ): Either[QueryFailure, List[ServiceIntentSearchResult]] = {
-    groupByField(spec, scoredDocuments, spec.carouselSpec.serviceIntentGroupField).map {
-      grouped =>
+    for {
+      serviceIntentGroupField <- Presentation.serviceIntentGroupField(spec.carouselSpec)
+      textScoreWeight <- Presentation.textScoreWeight(spec.carouselSpec.ranking)
+      serviceBoostWeight <- Presentation.serviceBoostWeight(spec.carouselSpec.ranking)
+      grouped <- groupByField(spec, scoredDocuments, serviceIntentGroupField)
+    } yield {
         grouped.values.toList
           .map { group =>
             val sorted = sortDocuments(group)
             val head = sorted.head
-            val groupScore = head.totalScore * spec.carouselSpec.ranking.textScoreWeight +
-              group.size.toDouble * spec.carouselSpec.ranking.serviceBoostWeight
+            val groupScore = head.totalScore * textScoreWeight +
+              group.size.toDouble * serviceBoostWeight
             ServiceIntentSearchResult(
               serviceId = head.document.serviceId,
               serviceName = head.document.serviceName,

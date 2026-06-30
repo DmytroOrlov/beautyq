@@ -16,19 +16,9 @@ object BeautySearchSpecV1 {
   lazy val spec: BeautySearchSpec = BeautySearchSpec(
     variantDocument = BeautyQVariantSearchDocumentSchema.documentSpec,
     intentVocabulary = BeautyQSearchIntentVocabulary.vocabulary,
-    carouselSpec = CarouselSpec(
-      variantSize = 10,
-      providerSize = 10,
-      serviceIntentSize = 10,
+    carouselSpec = BeautyQSearchPresentation.carouselSpec(
       providerGroupField = Fields.masterLocationId,
       serviceIntentGroupField = Fields.serviceId,
-      ranking = RankingSpec(
-        textScoreWeight = 1.0,
-        serviceBoostWeight = 2.0,
-        attributeBoostWeight = 1.5,
-        providerDistanceWeight = 1.25,
-        providerMatchingVariantCountWeight = 0.5,
-      ),
     ),
     facetSpec = FacetSpec(
       enabled = true,

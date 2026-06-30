@@ -3,7 +3,7 @@ package leaderboard.search.hybrid
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
-import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpec}
 import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateResponseProjector}
 import leaderboard.search.routing.SearchBackendRoute
 import leaderboard.search.semantic.{SemanticCandidateBackend, VariantSearchDocumentLookup}
@@ -44,7 +44,8 @@ final class ExperimentalHybridSearchBackend[F[+_, +_]: Error2](
                 executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
               )
               val esVariantIds = esResponse.variantCarousel.map(_.variantId).toSet
-              val variantCap = math.min(input.limit, spec.carouselSpec.variantSize)
+              val variantLimit = BeautyQSearchPresentation.variantLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+              val variantCap = math.min(input.limit, variantLimit)
               val capRoom = math.max(0, variantCap - esResponse.variantCarousel.size)
               val selectedHits = supplementPolicy.select(intent, esVariantIds, hits, documentsById, capRoom)
               val provenancePolicy = qdrantSupplementPolicyName(supplementPolicy)

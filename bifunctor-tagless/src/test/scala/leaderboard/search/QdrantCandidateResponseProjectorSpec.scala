@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import leaderboard.search.dsl.BeautySearchSpecV1
+import leaderboard.search.dsl.{BeautyQSearchPresentation, CarouselLimit, BeautySearchSpecV1}
 import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocumentBuilder}
 import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateAssembly, QdrantCandidateResponseProjector}
 import leaderboard.search.semantic.SemanticCandidateHit
@@ -127,9 +127,11 @@ final class QdrantCandidateResponseProjectorSpec extends AnyWordSpec {
       )
       val spec = BeautySearchSpecV1.spec.copy(
         carouselSpec = BeautySearchSpecV1.spec.carouselSpec.copy(
-          variantSize = 2,
-          providerSize = 1,
-          serviceIntentSize = 1,
+          limits = List(
+            CarouselLimit(BeautyQSearchPresentation.CarouselLimits.Variant, 2),
+            CarouselLimit(BeautyQSearchPresentation.CarouselLimits.Provider, 1),
+            CarouselLimit(BeautyQSearchPresentation.CarouselLimits.ServiceIntent, 1),
+          ),
         )
       )
 
@@ -140,11 +142,11 @@ final class QdrantCandidateResponseProjectorSpec extends AnyWordSpec {
       )
 
       assert(response.variantCarousel.size == 2)
-      assert(response.variantCarousel.size == math.min(3, spec.carouselSpec.variantSize))
+      assert(response.variantCarousel.size == math.min(3, BeautyQSearchPresentation.variantLimit(spec.carouselSpec).getOrElse(fail("expected variant limit"))))
       assert(response.providerCarousel.size == 1)
-      assert(response.providerCarousel.size == spec.carouselSpec.providerSize)
+      assert(response.providerCarousel.size == BeautyQSearchPresentation.providerLimit(spec.carouselSpec).getOrElse(fail("expected provider limit")))
       assert(response.serviceIntentCarousel.size == 1)
-      assert(response.serviceIntentCarousel.size == spec.carouselSpec.serviceIntentSize)
+      assert(response.serviceIntentCarousel.size == BeautyQSearchPresentation.serviceIntentLimit(spec.carouselSpec).getOrElse(fail("expected service-intent limit")))
       assert(response.facets.isEmpty)
       assert(response.inferredFilters.isEmpty)
       assert(response.variantCarousel.forall(_.distanceKm.isEmpty))

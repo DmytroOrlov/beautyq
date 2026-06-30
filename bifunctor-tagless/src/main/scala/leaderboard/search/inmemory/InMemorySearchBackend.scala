@@ -3,7 +3,7 @@ package leaderboard.search.inmemory
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
-import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpec}
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.interpreter.{SearchResponseAssembler, SearchSpecSupport}
 import leaderboard.search.interpreter.SearchSpecSupport.ScoredDocument
@@ -14,16 +14,24 @@ final class InMemorySearchBackend[F[+_, +_]: Error2](
 ) extends BeautySearchBackend[F] {
 
   override def search(input: UserSearchInput, intent: ParsedSearchIntent): F[QueryFailure, BeautySearchResponse] =
-    SearchResponseAssembler.assemble(spec, input, intent, filterAndScore(input, intent)) match {
-      case Right(value) => F.pure(value)
-      case Left(error) => F.fail(error)
+    filterAndScore(input, intent) match {
+      case Right(scoredDocuments) =>
+        SearchResponseAssembler.assemble(spec, input, intent, scoredDocuments) match {
+          case Right(value) => F.pure(value)
+          case Left(error) => F.fail(error)
+        }
+      case Left(error) =>
+        F.fail(error)
     }
 
   private def filterAndScore(
     input: UserSearchInput,
     intent: ParsedSearchIntent,
-  ): List[ScoredDocument] =
-    documents.flatMap { document =>
+  ): Either[QueryFailure, List[ScoredDocument]] =
+    for {
+      textScoreWeight <- BeautyQSearchPresentation.textScoreWeight(spec.carouselSpec.ranking)
+      providerDistanceWeight <- BeautyQSearchPresentation.providerDistanceWeight(spec.carouselSpec.ranking)
+    } yield documents.flatMap { document =>
       val explicitMatches = intent.explicitConstraints.foldLeft[Either[QueryFailure, Boolean]](Right(true)) {
         case (acc, constraint) =>
           for {
@@ -46,8 +54,8 @@ final class InMemorySearchBackend[F[+_, +_]: Error2](
             }
         }
         val distanceKm = SearchSpecSupport.computeDistanceKm(input, document)
-        val distanceBoost = distanceKm.map(distance => 1.0d / (1.0d + distance.toDouble) * spec.carouselSpec.ranking.providerDistanceWeight).getOrElse(0.0d)
-        val finalTextScore = textScore * spec.carouselSpec.ranking.textScoreWeight + distanceBoost
+        val distanceBoost = distanceKm.map(distance => 1.0d / (1.0d + distance.toDouble) * providerDistanceWeight).getOrElse(0.0d)
+        val finalTextScore = textScore * textScoreWeight + distanceBoost
         if (intent.remainingText.nonEmpty && textScore <= 0.0d && intent.explicitConstraints.isEmpty) {
           None
         } else {

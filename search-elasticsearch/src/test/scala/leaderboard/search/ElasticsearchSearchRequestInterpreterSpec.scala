@@ -23,9 +23,9 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
         ElasticsearchSearchInput(
           remainingText = "",
           explicitConstraints = List(
-            ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.serviceName, Set("Haircut"), SearchConstraintBoostRole.Service),
-            ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.color, Set("red", "blue"), SearchConstraintBoostRole.Attribute),
-            ResolvedSearchConstraint.BooleanTerm(ToyElasticsearchSearchSpec.available, true, SearchConstraintBoostRole.Attribute),
+            ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.serviceName, Set("Haircut"), ToyElasticsearchSearchSpec.PrimaryRole),
+            ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.color, Set("red", "blue"), ToyElasticsearchSearchSpec.SecondaryRole),
+            ResolvedSearchConstraint.BooleanTerm(ToyElasticsearchSearchSpec.available, true, ToyElasticsearchSearchSpec.SecondaryRole),
           ),
           softBoosts = Nil,
           userLat = None,
@@ -49,11 +49,11 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
         ElasticsearchSearchInput(
           remainingText = "",
           explicitConstraints = List(
-            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.priceFrom, Some(BigDecimal(10)), Some(BigDecimal(30)), SearchConstraintBoostRole.Attribute),
-            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.durationMin, None, Some(BigDecimal(60)), SearchConstraintBoostRole.Attribute),
-            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.level, Some(BigDecimal(1)), Some(BigDecimal(3)), SearchConstraintBoostRole.Attribute),
-            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.rating, Some(BigDecimal("4.0")), None, SearchConstraintBoostRole.Attribute),
-            ResolvedSearchConstraint.GeoDistance(ToyElasticsearchSearchSpec.location),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.priceFrom, Some(BigDecimal(10)), Some(BigDecimal(30)), ToyElasticsearchSearchSpec.SecondaryRole),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.durationMin, None, Some(BigDecimal(60)), ToyElasticsearchSearchSpec.SecondaryRole),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.level, Some(BigDecimal(1)), Some(BigDecimal(3)), ToyElasticsearchSearchSpec.SecondaryRole),
+            ResolvedSearchConstraint.Range(ToyElasticsearchSearchSpec.rating, Some(BigDecimal("4.0")), None, ToyElasticsearchSearchSpec.SecondaryRole),
+            ResolvedSearchConstraint.GeoDistance(ToyElasticsearchSearchSpec.location, ToyElasticsearchSearchSpec.GeoRole),
           ),
           softBoosts = Nil,
           userLat = None,
@@ -90,7 +90,7 @@ final class ElasticsearchSearchRequestInterpreterSpec extends AnyWordSpec {
         ElasticsearchSearchInput(
           remainingText = "fresh",
           explicitConstraints = Nil,
-          softBoosts = List(ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.serviceName, Set("Haircut"), SearchConstraintBoostRole.Service)),
+          softBoosts = List(ResolvedSearchConstraint.Terms(ToyElasticsearchSearchSpec.serviceName, Set("Haircut"), ToyElasticsearchSearchSpec.PrimaryRole)),
           userLat = Some(BigDecimal("52.52")),
           userLon = Some(BigDecimal("13.40")),
           limit = 9,

@@ -157,22 +157,19 @@ object SearchRuntimeFingerprint {
     )
 
   private def carouselJson[A](carousel: CarouselSpec[A]): Json =
-    Json.obj(
-      "variantSize" -> carousel.variantSize.asJson,
-      "providerSize" -> carousel.providerSize.asJson,
-      "serviceIntentSize" -> carousel.serviceIntentSize.asJson,
-      "providerGroupField" -> Json.fromString(carousel.providerGroupField.path),
-      "serviceIntentGroupField" -> Json.fromString(carousel.serviceIntentGroupField.path),
-      "ranking" -> rankingJson(carousel.ranking),
+    Json.fromJsonObject(
+      JsonObject.fromIterable(
+        carousel.limits.map(limit => limit.name -> limit.size.asJson) ++
+          carousel.groups.map(group => group.name -> Json.fromString(group.field.path)) ++
+          List("ranking" -> rankingJson(carousel.ranking))
+      )
     )
 
   private def rankingJson(ranking: RankingSpec): Json =
-    Json.obj(
-      "textScoreWeight" -> ranking.textScoreWeight.asJson,
-      "serviceBoostWeight" -> ranking.serviceBoostWeight.asJson,
-      "attributeBoostWeight" -> ranking.attributeBoostWeight.asJson,
-      "providerDistanceWeight" -> ranking.providerDistanceWeight.asJson,
-      "providerMatchingVariantCountWeight" -> ranking.providerMatchingVariantCountWeight.asJson,
+    Json.fromJsonObject(
+      JsonObject.fromIterable(
+        ranking.weights.map(weight => weight.name -> weight.value.asJson)
+      )
     )
 
   private def payloadsJson[A](payloadSpecs: Map[String, SearchDocumentPayloadSpec[A]]): Json =

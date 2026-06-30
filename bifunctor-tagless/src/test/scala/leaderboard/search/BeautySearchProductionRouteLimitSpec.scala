@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.api.BeautySearchApi
-import leaderboard.search.dsl.BeautySearchSpecV1
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.IO
 
@@ -83,7 +83,9 @@ final class BeautySearchProductionRouteLimitSpec extends AnyWordSpec with Beauty
     }
 
     "expose the source-backed carousel maximum through the request contract" in {
-      assert(BeautySearchRequestContract.MaxLimit == BeautySearchSpecV1.spec.carouselSpec.variantSize)
+      val variantLimit = BeautyQSearchPresentation.variantLimit(BeautySearchSpecV1.spec.carouselSpec).getOrElse(fail("expected variant limit"))
+
+      assert(BeautySearchRequestContract.MaxLimit == variantLimit)
     }
   }
 

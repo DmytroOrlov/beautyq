@@ -54,9 +54,9 @@ final class SearchRuntimeSpecSpec extends AnyWordSpec {
         requestSpec = SearchRequestSpec(),
         facetSpec = FacetSpec(enabled = false, fields = Nil),
         carouselSpec = CarouselSpec(
-          variantSize = 3,
-          providerGroupField = idField,
-          serviceIntentGroupField = nameField,
+          limits = List(CarouselLimit("mainSize", 3)),
+          groups = List(CarouselGroup("idGroup", idField), CarouselGroup("nameGroup", nameField)),
+          ranking = RankingSpec(List(RankingWeight("textScore", 1.0))),
         ),
         payloadSpecs = Map("payload" -> SearchDocumentPayloadSpec(documentSpec, List(idField))),
         embeddingSpec = None,

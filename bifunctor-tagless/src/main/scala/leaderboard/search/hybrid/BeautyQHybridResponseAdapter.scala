@@ -2,7 +2,7 @@ package leaderboard.search.hybrid
 
 import leaderboard.search.{BeautySearchResponse, ProviderSearchResult, ServiceIntentSearchResult, VariantSearchResult}
 import leaderboard.search.document.VariantSearchDocument
-import leaderboard.search.dsl.BeautySearchSpec
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpec}
 import leaderboard.search.UserSearchInput
 
 sealed trait BeautyQHybridDisplayScorePolicy
@@ -41,12 +41,17 @@ object BeautyQHybridResponseCarouselLimits {
   def fromSearchSpecAndInput(
     spec: BeautySearchSpec,
     input: UserSearchInput,
-  ): BeautyQHybridResponseCarouselLimits =
+  ): BeautyQHybridResponseCarouselLimits = {
+    val variantLimit = BeautyQSearchPresentation.variantLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+    val providerLimit = BeautyQSearchPresentation.providerLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+    val serviceIntentLimit = BeautyQSearchPresentation.serviceIntentLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+
     BeautyQHybridResponseCarouselLimits(
-      variantSize = math.min(input.limit, spec.carouselSpec.variantSize),
-      providerSize = spec.carouselSpec.providerSize,
-      serviceIntentSize = spec.carouselSpec.serviceIntentSize,
+      variantSize = math.min(input.limit, variantLimit),
+      providerSize = providerLimit,
+      serviceIntentSize = serviceIntentLimit,
     ).normalized
+  }
 }
 
 object BeautyQHybridResponseAdapter {

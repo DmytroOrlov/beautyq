@@ -8,7 +8,7 @@ import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, Mast
 import leaderboard.model.Category.CategoryId
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
-import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, SearchGeoPoint, VectorDistance, VectorSearchSpec}
+import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
 import leaderboard.search.eval.*
@@ -131,6 +131,12 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   )
 
   private val spec = BeautySearchSpecV1.spec
+
+  private def variantLimit(searchSpec: BeautySearchSpec): Int =
+    BeautyQSearchPresentation.variantLimit(searchSpec.carouselSpec).fold(
+      error => throw new RuntimeException(error.message),
+      identity,
+    )
 
   // ---- Y0C: canonical BeautyQ catalog seed + eval query suite (real-resource supplement proof). ----
   // The same canonical seed/eval inventory the ES integration + Qdrant hybrid integration specs use.
@@ -3173,7 +3179,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0c_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
@@ -3532,7 +3538,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0e_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
@@ -3830,7 +3836,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0g_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
@@ -4260,7 +4266,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0i_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
@@ -4557,7 +4563,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0h_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         if (qdrantConfigured && allEmbeddingsConfigured) {
           // ---- Both real resources reachable for both models: run Y0H. ----
@@ -4992,7 +4998,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0j_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
@@ -5448,7 +5454,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
         val indexName = s"${spec.variantDocument.indexName}_y0k_${UUID.randomUUID().toString.replace('-', '_')}"
         val testSpec  = spec.copy(variantDocument = spec.variantDocument.copy(indexName = indexName))
-        val cap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+        val cap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
         (embeddingProbe, qdrantConfigured) match {
           case (Right(vector), true) if vector.nonEmpty =>
@@ -5712,7 +5718,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val lexicalBackend   = esBeautyBackendFor(testSpec, esClient)
     val parser           = new BeautySearchIntentParser(testSpec)
     val docTextById      = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
-    val variantCap       = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+    val variantCap       = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
     (
       for {
@@ -6127,7 +6133,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val lexicalBackend = esBeautyBackendFor(testSpec, esClient)
     val parser = new BeautySearchIntentParser(testSpec)
     val docTextById = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
-    val variantCap = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+    val variantCap = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
     (
       for {
@@ -6254,7 +6260,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val lexicalBackend = esBeautyBackendFor(testSpec, esClient)
     val parser         = new BeautySearchIntentParser(testSpec)
     val docTextById    = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
-    val variantCap     = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+    val variantCap     = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
     def runOneModel(
       modelCandidate: Y0HModelCandidate,
@@ -6412,7 +6418,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val lexicalBackend = esBeautyBackendFor(testSpec, esClient)
     val parser         = new BeautySearchIntentParser(testSpec)
     val docTextById    = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
-    val variantCap     = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+    val variantCap     = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
     def runOneCandidate(candidate: Y0JTextCandidate): IO[QueryFailure, (List[Y0JRow], Y0JTextEnvironment)] = {
       val candidateDocuments = documents.map(candidate.transform)
@@ -6593,7 +6599,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     val lexicalBackend     = esBeautyBackendFor(testSpec, esClient)
     val parser             = new BeautySearchIntentParser(testSpec)
     val docTextById        = documents.iterator.map(doc => doc.variantId.toString -> doc).toMap
-    val variantCap         = math.min(UserSearchInput("", None, None).limit, testSpec.carouselSpec.variantSize)
+    val variantCap         = math.min(UserSearchInput("", None, None).limit, variantLimit(testSpec))
 
     def runOneQueryCandidate(
       queryCandidate: Y0KQueryCandidate,
@@ -6769,7 +6775,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           rows <- ZIO.foreach(esResponses) { case (query, esResponse, esLatencyNanos) =>
                     val input         = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
                     val intent        = parser.parse(input)
-                    val cap           = math.min(input.limit, testSpec.carouselSpec.variantSize)
+                    val cap           = math.min(input.limit, variantLimit(testSpec))
                     val acceptableIds = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet
                     for {
                       candidateTimed     <- timedLeg(composition.semanticBackend.candidates(input, intent))
@@ -6951,7 +6957,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         rows <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
                   val input  = UserSearchInput(query.query, Some(canonicalEvalSuite.testUserLocation.lat), Some(canonicalEvalSuite.testUserLocation.lon))
                   val intent = parser.parse(input)
-                  val cap    = math.min(input.limit, testSpec.carouselSpec.variantSize)
+                  val cap    = math.min(input.limit, variantLimit(testSpec))
                   val acceptableIds = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet
                   for {
                     esTimed <- timedLeg(lexicalBackend.search(input, intent))

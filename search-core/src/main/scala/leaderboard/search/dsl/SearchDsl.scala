@@ -379,29 +379,22 @@ final case class FacetSpec[A](
   inferredFilterMinCount: Int = 2,
 )
 
-sealed trait SearchConstraintBoostRole extends Product with Serializable
-object SearchConstraintBoostRole {
-  case object Service extends SearchConstraintBoostRole
-  case object Attribute extends SearchConstraintBoostRole
-  case object Distance extends SearchConstraintBoostRole
+final case class SearchBoostRole(value: String) extends AnyVal {
+  override def toString: String = value
 }
 
 sealed trait ResolvedSearchConstraint[A] extends Product with Serializable {
-  def boostRole: SearchConstraintBoostRole
+  def boostRole: SearchBoostRole
 }
 object ResolvedSearchConstraint {
-  final case class Terms[A](field: SearchField[A], values: Set[String], boostRole: SearchConstraintBoostRole) extends ResolvedSearchConstraint[A]
-  final case class BooleanTerm[A](field: SearchField[A], value: Boolean, boostRole: SearchConstraintBoostRole) extends ResolvedSearchConstraint[A]
-  final case class Range[A](field: SearchField[A], min: Option[BigDecimal], max: Option[BigDecimal], boostRole: SearchConstraintBoostRole) extends ResolvedSearchConstraint[A]
-  final case class GeoDistance[A](field: SearchField[A]) extends ResolvedSearchConstraint[A] {
-    override val boostRole: SearchConstraintBoostRole = SearchConstraintBoostRole.Distance
-  }
+  final case class Terms[A](field: SearchField[A], values: Set[String], boostRole: SearchBoostRole) extends ResolvedSearchConstraint[A]
+  final case class BooleanTerm[A](field: SearchField[A], value: Boolean, boostRole: SearchBoostRole) extends ResolvedSearchConstraint[A]
+  final case class Range[A](field: SearchField[A], min: Option[BigDecimal], max: Option[BigDecimal], boostRole: SearchBoostRole) extends ResolvedSearchConstraint[A]
+  final case class GeoDistance[A](field: SearchField[A], boostRole: SearchBoostRole) extends ResolvedSearchConstraint[A]
 }
 
 type ResolvedQueryConstraint[A] = ResolvedSearchConstraint[A]
 val ResolvedQueryConstraint: ResolvedSearchConstraint.type = ResolvedSearchConstraint
-type QueryConstraintBoostRole = SearchConstraintBoostRole
-val QueryConstraintBoostRole: SearchConstraintBoostRole.type = SearchConstraintBoostRole
 
 final case class SearchQueryField[A](
   name: String,
@@ -443,19 +436,53 @@ final case class SearchRequestSpec(
   geoDistanceDecay: Double = 0.5d,
 )
 
+final case class RankingWeight(
+  name: String,
+  value: Double,
+  boostRoles: Set[SearchBoostRole] = Set.empty,
+)
+
 final case class RankingSpec(
-  textScoreWeight: Double = 1.0,
-  serviceBoostWeight: Double = 2.0,
-  attributeBoostWeight: Double = 1.5,
-  providerDistanceWeight: Double = 1.0,
-  providerMatchingVariantCountWeight: Double = 1.0,
+  weights: List[RankingWeight],
+) {
+  lazy val weightsByName: Map[String, RankingWeight] =
+    weights.iterator.map(weight => weight.name -> weight).toMap
+
+  lazy val boostRoleWeights: Map[SearchBoostRole, RankingWeight] =
+    weights.flatMap(weight => weight.boostRoles.map(role => role -> weight)).toMap
+
+  def weight(name: String): Either[QueryFailure, Double] =
+    weightsByName.get(name).map(_.value).toRight(QueryFailure.domain(s"Ranking weight '$name' is not defined"))
+
+  def boostWeight(role: SearchBoostRole): Either[QueryFailure, Double] =
+    boostRoleWeights.get(role).map(_.value).toRight(QueryFailure.domain(s"Ranking boost role '${role.value}' is not defined"))
+}
+
+final case class CarouselLimit(
+  name: String,
+  size: Int,
+)
+
+final case class CarouselGroup[A](
+  name: String,
+  field: SearchField[A],
 )
 
 final case class CarouselSpec[A](
-  variantSize: Int = 10,
-  providerSize: Int = 10,
-  serviceIntentSize: Int = 10,
-  providerGroupField: SearchField[A],
-  serviceIntentGroupField: SearchField[A],
-  ranking: RankingSpec = RankingSpec(),
-)
+  limits: List[CarouselLimit],
+  groups: List[CarouselGroup[A]],
+  ranking: RankingSpec,
+  geoScoringBoostRole: Option[SearchBoostRole] = None,
+) {
+  lazy val limitsByName: Map[String, CarouselLimit] =
+    limits.iterator.map(limit => limit.name -> limit).toMap
+
+  lazy val groupsByName: Map[String, CarouselGroup[A]] =
+    groups.iterator.map(group => group.name -> group).toMap
+
+  def limit(name: String): Either[QueryFailure, Int] =
+    limitsByName.get(name).map(_.size).toRight(QueryFailure.domain(s"Carousel limit '$name' is not defined"))
+
+  def group(name: String): Either[QueryFailure, SearchField[A]] =
+    groupsByName.get(name).map(_.field).toRight(QueryFailure.domain(s"Carousel group '$name' is not defined"))
+}

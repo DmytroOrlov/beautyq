@@ -56,10 +56,9 @@ object ElasticsearchSearchRequestInterpreter {
     val facetAggs = runtimeSpec.facetSpec.fields.map { facetField =>
       aggName(facetField.path) -> facetAggregation(runtimeSpec, facetField)
     }
-    val groupAggs = List(
-      aggName(runtimeSpec.carouselSpec.providerGroupField.path) -> termsAggregation(runtimeSpec.carouselSpec.providerGroupField.path, runtimeSpec.requestSpec.aggregationSize),
-      aggName(runtimeSpec.carouselSpec.serviceIntentGroupField.path) -> termsAggregation(runtimeSpec.carouselSpec.serviceIntentGroupField.path, runtimeSpec.requestSpec.aggregationSize),
-    )
+    val groupAggs = runtimeSpec.carouselSpec.groups.map { group =>
+      aggName(group.field.path) -> termsAggregation(group.field.path, runtimeSpec.requestSpec.aggregationSize)
+    }
     Json.obj((facetAggs ++ groupAggs).map { case (name, value) => name -> value }: _*)
   }
 
@@ -97,29 +96,32 @@ object ElasticsearchSearchRequestInterpreter {
       case (Some(lat), Some(lon)) =>
         runtimeSpec.querySchema.geoScoringField match {
           case Some(field) =>
-            Right(
-              Json.obj(
-                "function_score" -> Json.obj(
-                  "query" -> baseQuery,
-                  "functions" -> Json.arr(
-                    Json.obj(
-                      "gauss" -> Json.obj(
-                        field.path -> Json.obj(
-                          "origin" -> Json.obj(
-                            "lat" -> Json.fromBigDecimal(lat),
-                            "lon" -> Json.fromBigDecimal(lon),
-                          ),
-                          "scale" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceScale),
-                          "offset" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceOffset),
-                          "decay" -> Json.fromDoubleOrNull(runtimeSpec.requestSpec.geoDistanceDecay),
-                        )
-                      ),
-                      "weight" -> Json.fromDoubleOrNull(runtimeSpec.carouselSpec.ranking.providerDistanceWeight),
-                    )
-                  ),
-                  "score_mode" -> Json.fromString("sum"),
-                  "boost_mode" -> Json.fromString("sum"),
-                )
+            for {
+              weight <- runtimeSpec.carouselSpec.geoScoringBoostRole match {
+                case Some(role) => runtimeSpec.carouselSpec.ranking.boostWeight(role)
+                case None => Right(1.0d)
+              }
+            } yield Json.obj(
+              "function_score" -> Json.obj(
+                "query" -> baseQuery,
+                "functions" -> Json.arr(
+                  Json.obj(
+                    "gauss" -> Json.obj(
+                      field.path -> Json.obj(
+                        "origin" -> Json.obj(
+                          "lat" -> Json.fromBigDecimal(lat),
+                          "lon" -> Json.fromBigDecimal(lon),
+                        ),
+                        "scale" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceScale),
+                        "offset" -> Json.fromString(runtimeSpec.requestSpec.geoDistanceOffset),
+                        "decay" -> Json.fromDoubleOrNull(runtimeSpec.requestSpec.geoDistanceDecay),
+                      )
+                    ),
+                    "weight" -> Json.fromDoubleOrNull(weight),
+                  )
+                ),
+                "score_mode" -> Json.fromString("sum"),
+                "boost_mode" -> Json.fromString("sum"),
               )
             )
           case None =>
@@ -139,7 +141,7 @@ object ElasticsearchSearchRequestInterpreter {
         Right(termClause(field.path, Json.fromBoolean(value)))
       case ResolvedQueryConstraint.Range(field, min, max, _) =>
         Right(rangeClause(field.path, min, max))
-      case ResolvedQueryConstraint.GeoDistance(_) =>
+      case ResolvedQueryConstraint.GeoDistance(_, _) =>
         Right(Json.obj())
     }
 
@@ -147,21 +149,16 @@ object ElasticsearchSearchRequestInterpreter {
     ranking: RankingSpec,
     resolved: ResolvedQueryConstraint[?],
   ): Either[QueryFailure, Json] =
-    resolvedConstraintClause(resolved).map {
-      clause =>
+    for {
+      clause <- resolvedConstraintClause(resolved)
+      boost <- ranking.boostWeight(resolved.boostRole)
+    } yield {
         Json.obj(
           "constant_score" -> Json.obj(
             "filter" -> clause,
-            "boost" -> Json.fromDoubleOrNull(boostWeight(ranking, resolved.boostRole)),
+            "boost" -> Json.fromDoubleOrNull(boost),
           )
         )
-    }
-
-  private def boostWeight(ranking: RankingSpec, boostRole: QueryConstraintBoostRole): Double =
-    boostRole match {
-      case QueryConstraintBoostRole.Service => ranking.serviceBoostWeight
-      case QueryConstraintBoostRole.Attribute => ranking.attributeBoostWeight
-      case QueryConstraintBoostRole.Distance => ranking.providerDistanceWeight
     }
 
   private def termClause(path: String, value: Json): Json =

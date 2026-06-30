@@ -40,6 +40,10 @@ final case class ToyElasticsearchDocument(
 )
 
 object ToyElasticsearchSearchSpec {
+  val PrimaryRole: SearchBoostRole = SearchBoostRole("primary")
+  val SecondaryRole: SearchBoostRole = SearchBoostRole("secondary")
+  val GeoRole: SearchBoostRole = SearchBoostRole("geo")
+
   val title: SearchField[ToyElasticsearchDocument] =
     SearchField(
       path = "title",
@@ -120,7 +124,16 @@ object ToyElasticsearchSearchSpec {
       querySchema = querySchema,
       requestSpec = SearchRequestSpec(hitWindowSize = 5, textOperator = TextOperator.Or, aggregationSize = 7, geoDistanceScale = "3km", geoDistanceOffset = "1km", geoDistanceDecay = 0.25d),
       facetSpec = facetSpec,
-      carouselSpec = CarouselSpec(providerGroupField = providerId, serviceIntentGroupField = serviceId, ranking = RankingSpec(providerDistanceWeight = 1.75)),
+      carouselSpec = CarouselSpec(
+        limits = List(CarouselLimit("mainSize", 10), CarouselLimit("groupSize", 5)),
+        groups = List(CarouselGroup("providerGroup", providerId), CarouselGroup("serviceGroup", serviceId)),
+        ranking = RankingSpec(List(
+          RankingWeight("primaryBoost", 2.0, Set(PrimaryRole)),
+          RankingWeight("secondaryBoost", 1.5, Set(SecondaryRole)),
+          RankingWeight("geoBoost", 1.75, Set(GeoRole)),
+        )),
+        geoScoringBoostRole = Some(GeoRole),
+      ),
       payloadSpecs = Map.empty,
       embeddingSpec = None,
       vectorSearchSpec = None,

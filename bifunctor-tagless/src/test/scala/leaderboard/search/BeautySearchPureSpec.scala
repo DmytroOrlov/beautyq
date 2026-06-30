@@ -1084,7 +1084,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           fields = List(serviceNameField, customTextField, providerKeyField, serviceKeyField),
         ),
         intentVocabulary = SearchIntentVocabulary[SearchConstraint](Nil),
-        carouselSpec = CarouselSpec(providerGroupField = providerKeyField, serviceIntentGroupField = serviceKeyField),
+        carouselSpec = BeautyQSearchPresentation.carouselSpec(
+          providerGroupField = providerKeyField,
+          serviceIntentGroupField = serviceKeyField,
+        ),
         facetSpec = FacetSpec(enabled = true, fields = List(FacetField(serviceNameField, FacetFieldMode.Terms))),
         querySchema = querySchemaFor(serviceNameField),
       )
@@ -1128,7 +1131,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
           fields = List(serviceNameField),
         ),
         intentVocabulary = SearchIntentVocabulary[SearchConstraint](Nil),
-        carouselSpec = CarouselSpec(providerGroupField = serviceNameField, serviceIntentGroupField = serviceNameField),
+        carouselSpec = BeautyQSearchPresentation.carouselSpec(
+          providerGroupField = serviceNameField,
+          serviceIntentGroupField = serviceNameField,
+        ),
         facetSpec = FacetSpec(enabled = false, fields = Nil),
         querySchema = querySchemaFor(serviceNameField),
       )
@@ -2008,7 +2014,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       geoScoringField = None,
       resolve = {
         case SearchConstraint.ServiceAny(names) =>
-          Right(ResolvedSearchConstraint.Terms(serviceNameField, names, SearchConstraintBoostRole.Service))
+          Right(ResolvedSearchConstraint.Terms(serviceNameField, names, BeautyQSearchPresentation.BoostRoles.Service))
         case other =>
           Left(QueryFailure.domain(s"Unsupported synthetic constraint '$other'"))
       },

@@ -29,13 +29,15 @@ final class SearchDslTypedFieldSpec extends AnyWordSpec {
     }
 
     "derive carousel group paths from typed fields" in {
-      val carouselSpec = CarouselSpec(
+      val carouselSpec = BeautyQSearchPresentation.carouselSpec(
         providerGroupField = fields.masterLocationId,
         serviceIntentGroupField = fields.serviceId,
       )
+      val providerGroupField = BeautyQSearchPresentation.providerGroupField(carouselSpec).getOrElse(fail("expected provider group field"))
+      val serviceIntentGroupField = BeautyQSearchPresentation.serviceIntentGroupField(carouselSpec).getOrElse(fail("expected service-intent group field"))
 
-      assert(carouselSpec.providerGroupField.path == "masterLocationId")
-      assert(carouselSpec.serviceIntentGroupField.path == "serviceId")
+      assert(providerGroupField.path == "masterLocationId")
+      assert(serviceIntentGroupField.path == "serviceId")
     }
 
     "derive SearchDocumentPayloadSpec fieldPaths from typed fields" in {
@@ -48,10 +50,10 @@ final class SearchDslTypedFieldSpec extends AnyWordSpec {
 
   "SearchQuerySchema.resolve" should {
     "resolve static constraints to schema-owned handles" in {
-      assert(resolve(SearchConstraint.ServiceAny(Set("Маникюр"))) == ResolvedSearchConstraint.Terms(fields.serviceName, Set("Маникюр"), SearchConstraintBoostRole.Service))
-      assert(resolve(SearchConstraint.CategoryAny(Set("Ногти"))) == ResolvedSearchConstraint.Terms(fields.categoryName, Set("Ногти"), SearchConstraintBoostRole.Service))
-      assert(resolve(SearchConstraint.PriceRange(Some(BigDecimal(10)), Some(BigDecimal(20)))) == ResolvedSearchConstraint.Range(fields.priceFrom, Some(BigDecimal(10)), Some(BigDecimal(20)), SearchConstraintBoostRole.Attribute))
-      assert(resolve(SearchConstraint.DurationRange(Some(30), Some(60))) == ResolvedSearchConstraint.Range(fields.durationMin, Some(BigDecimal(30)), Some(BigDecimal(60)), SearchConstraintBoostRole.Attribute))
+      assert(resolve(SearchConstraint.ServiceAny(Set("Маникюр"))) == ResolvedSearchConstraint.Terms(fields.serviceName, Set("Маникюр"), BeautyQSearchPresentation.BoostRoles.Service))
+      assert(resolve(SearchConstraint.CategoryAny(Set("Ногти"))) == ResolvedSearchConstraint.Terms(fields.categoryName, Set("Ногти"), BeautyQSearchPresentation.BoostRoles.Service))
+      assert(resolve(SearchConstraint.PriceRange(Some(BigDecimal(10)), Some(BigDecimal(20)))) == ResolvedSearchConstraint.Range(fields.priceFrom, Some(BigDecimal(10)), Some(BigDecimal(20)), BeautyQSearchPresentation.BoostRoles.Attribute))
+      assert(resolve(SearchConstraint.DurationRange(Some(30), Some(60))) == ResolvedSearchConstraint.Range(fields.durationMin, Some(BigDecimal(30)), Some(BigDecimal(60)), BeautyQSearchPresentation.BoostRoles.Attribute))
     }
 
     "resolve dynamic enum, bool, int, and decimal constraints through schema-owned maps" in {
@@ -62,25 +64,25 @@ final class SearchDslTypedFieldSpec extends AnyWordSpec {
 
       fields.enumAttributesByCode.get(enumDefinition.code) match {
         case Some(field) =>
-          assert(resolve(SearchConstraint.EnumAttr(enumDefinition.code, Set("value"))) == ResolvedSearchConstraint.Terms(field, Set("value"), SearchConstraintBoostRole.Attribute))
+          assert(resolve(SearchConstraint.EnumAttr(enumDefinition.code, Set("value"))) == ResolvedSearchConstraint.Terms(field, Set("value"), BeautyQSearchPresentation.BoostRoles.Attribute))
         case None =>
           fail(s"Missing enum field handle for ${enumDefinition.code}")
       }
       fields.booleanAttributesByCode.get(booleanDefinition.code) match {
         case Some(field) =>
-          assert(resolve(SearchConstraint.BoolAttr(booleanDefinition.code, value = true)) == ResolvedSearchConstraint.BooleanTerm(field, value = true, SearchConstraintBoostRole.Attribute))
+          assert(resolve(SearchConstraint.BoolAttr(booleanDefinition.code, value = true)) == ResolvedSearchConstraint.BooleanTerm(field, value = true, BeautyQSearchPresentation.BoostRoles.Attribute))
         case None =>
           fail(s"Missing boolean field handle for ${booleanDefinition.code}")
       }
       fields.intAttributesByCode.get(intDefinition.code) match {
         case Some(field) =>
-          assert(resolve(SearchConstraint.IntRange(intDefinition.code, Some(1), Some(3))) == ResolvedSearchConstraint.Range(field, Some(BigDecimal(1)), Some(BigDecimal(3)), SearchConstraintBoostRole.Attribute))
+          assert(resolve(SearchConstraint.IntRange(intDefinition.code, Some(1), Some(3))) == ResolvedSearchConstraint.Range(field, Some(BigDecimal(1)), Some(BigDecimal(3)), BeautyQSearchPresentation.BoostRoles.Attribute))
         case None =>
           fail(s"Missing int field handle for ${intDefinition.code}")
       }
       fields.decimalAttributesByCode.get(decimalDefinition.code) match {
         case Some(field) =>
-          assert(resolve(SearchConstraint.DecimalRange(decimalDefinition.code, Some(BigDecimal("1.5")), Some(BigDecimal("3.5")))) == ResolvedSearchConstraint.Range(field, Some(BigDecimal("1.5")), Some(BigDecimal("3.5")), SearchConstraintBoostRole.Attribute))
+          assert(resolve(SearchConstraint.DecimalRange(decimalDefinition.code, Some(BigDecimal("1.5")), Some(BigDecimal("3.5")))) == ResolvedSearchConstraint.Range(field, Some(BigDecimal("1.5")), Some(BigDecimal("3.5")), BeautyQSearchPresentation.BoostRoles.Attribute))
         case None =>
           fail(s"Missing decimal field handle for ${decimalDefinition.code}")
       }
