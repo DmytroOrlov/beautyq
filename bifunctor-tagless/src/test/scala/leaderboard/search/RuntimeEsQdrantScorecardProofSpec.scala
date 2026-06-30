@@ -622,6 +622,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     y0dTightenedAppendedUnacceptableIds: Set[String],
     y0dTightenedRecallImproved: Boolean,
     y0dTightenedSemanticHarm: Boolean,
+    // ---- Y0F source-level coverage fields (measurement-only; no production change). ----
+    // Raw Qdrant candidate ids (before append filtering), and ES/Qdrant accepted-hit coverage
+    // derived purely from the existing acceptableIds / esVariantIds / qdrantCandidates inputs.
+    qdrantCandidateIds: List[String],
+    esAcceptedIds: Set[String],
+    qdrantAcceptedIds: Set[String],
+    qdrantOnlyCandidateIds: Set[String],
+    qdrantOnlyAcceptedIds: Set[String],
+    qdrantOnlyUnacceptableIds: Set[String],
+    qdrantDuplicateAcceptedIds: Set[String],
   )
 
   // The expected hair-colouring variant (balayage). Both legs may retrieve it. Used as the expected
@@ -3244,6 +3254,35 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 !row.y0dTightenedRecallImproved || row.recallImproved,
                 s"Y0D: tightened recall-gain must imply route recall-gain for ${row.queryId}@${row.thresholdLabel}",
               )
+              // ---- Y0F coverage-matrix invariants (source-level ES-vs-Qdrant evidence). ----
+              assert(
+                row.qdrantCandidateIds.size <= y0cTopK,
+                s"Y0F: raw Qdrant candidate count must never exceed topK ($y0cTopK) for ${row.queryId}@${row.thresholdLabel}, got ${row.qdrantCandidateIds.size}",
+              )
+              assert(
+                row.qdrantAcceptedIds.subsetOf(row.acceptableIds),
+                s"Y0F: qdrantAcceptedIds must be a subset of acceptableIds for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                row.esAcceptedIds.subsetOf(row.acceptableIds),
+                s"Y0F: esAcceptedIds must be a subset of acceptableIds for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                row.qdrantOnlyAcceptedIds.subsetOf(row.qdrantAcceptedIds),
+                s"Y0F: qdrantOnlyAcceptedIds must be a subset of qdrantAcceptedIds for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                row.qdrantDuplicateAcceptedIds.subsetOf(row.qdrantAcceptedIds),
+                s"Y0F: qdrantDuplicateAcceptedIds must be a subset of qdrantAcceptedIds for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                row.appendedAcceptableIds.subsetOf(row.qdrantOnlyAcceptedIds),
+                s"Y0F: appendedAcceptableIds must be a subset of qdrantOnlyAcceptedIds for ${row.queryId}@${row.thresholdLabel}",
+              )
+              assert(
+                row.appendedUnacceptableIds.subsetOf(row.qdrantOnlyUnacceptableIds),
+                s"Y0F: appendedUnacceptableIds must be a subset of qdrantOnlyUnacceptableIds for ${row.queryId}@${row.thresholdLabel}",
+              )
               (): Unit
             }
 
@@ -3280,6 +3319,47 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                   s"allDuplicate=$allDuplicate, noUsableCandidates=$noUsable, " +
                   s"helpedTop=${helped.take(8).mkString("[", ",", "]")}, hurtTop=${hurt.take(8).mkString("[", ",", "]")}",
               )
+            }
+
+            // ---- Y0F: independent source-level ES-vs-Qdrant coverage matrix (per threshold). ----
+            // Unlike the append/recall/harm evidence above (which is policy/cap-shaped), this section
+            // answers source-level questions directly from esAcceptedIds/qdrantAcceptedIds: did ES hit,
+            // did Qdrant hit, did both, did neither, and did Qdrant merely duplicate/agree with ES.
+            val y0fCoverageBuckets: List[(String, Y0FCoverageBucket)] = y0cThresholdCandidates.map { candidate =>
+              candidate.label -> computeY0FCoverageBucket(rows.filter(_.thresholdLabel == candidate.label))
+            }
+            // Partition invariant: every query falls into exactly one of the four ES/Qdrant hit buckets.
+            y0fCoverageBuckets.foreach { case (label, bucket) =>
+              assert(
+                bucket.bothAcceptedHitQueries + bucket.esOnlyAcceptedHitQueries +
+                  bucket.qdrantOnlyAcceptedHitQueries + bucket.bothMissQueries == bucket.queryCount,
+                s"Y0F: coverage bucket partition must hold for threshold=$label, got both=${bucket.bothAcceptedHitQueries} " +
+                  s"esOnly=${bucket.esOnlyAcceptedHitQueries} qdrantOnly=${bucket.qdrantOnlyAcceptedHitQueries} " +
+                  s"bothMiss=${bucket.bothMissQueries} queryCount=${bucket.queryCount}",
+              )
+              (): Unit
+            }
+            val y0fCoverageEvidence: String =
+              "Y0F_COVERAGE_MATRIX:\n" +
+                y0fCoverageBuckets.map { case (label, bucket) => "  " + formatY0FCoverageBucket(label, bucket) }.mkString("\n")
+
+            // ---- Y0F role-aware coverage rollup (threshold=0.62 only), keyed off queryRoleAuditV1. ----
+            val y0fRoleAwareEvidence: String = loadQueryRoleAuditRoles() match {
+              case Some(rolesByQueryId) =>
+                val targetLabel  = y0cThresholdCandidates.find(_.scoreThreshold.contains(0.62)).map(_.label).getOrElse("0.62")
+                val targetRows   = rows.filter(_.thresholdLabel == targetLabel)
+                val minimumRoles = List("semantic_holdout", "parser_contract", "exact_vocabulary_like", "attribute_filter", "broad_exploratory", "negative_control")
+                val lines = minimumRoles.map { role =>
+                  val roleRows = targetRows.filter(r => rolesByQueryId.getOrElse(r.queryId, Set.empty).contains(role))
+                  val bucket   = computeY0FCoverageBucket(roleRows)
+                  s"  role=$role: queryCount=${bucket.queryCount}, esAcceptedHitQueries=${bucket.esAcceptedHitQueries}, " +
+                    s"qdrantAcceptedHitQueries=${bucket.qdrantAcceptedHitQueries}, bothAcceptedHitQueries=${bucket.bothAcceptedHitQueries}, " +
+                    s"bothMissQueries=${bucket.bothMissQueries}, qdrantOnlyAcceptedCandidateQueries=${bucket.qdrantOnlyAcceptedCandidateQueries}, " +
+                    s"qdrantDuplicateAgreementQueries=${bucket.qdrantDuplicateAgreementQueries}"
+                }
+                s"Y0F_COVERAGE_BY_QUERY_ROLE threshold=$targetLabel:\n" + lines.mkString("\n")
+              case None =>
+                "ROLE_AWARE_COVERAGE_SKIPPED=requires_eval_loader_or_model_change"
             }
 
             // ---- Y0D: per-threshold BEFORE (route cap=10) vs AFTER (tightened append-cap-of-1). ----
@@ -3386,7 +3466,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                 s"DEFAULT_ROUTER_SELECTS_SUPPLEMENT=false\n" +
                 s"PER_LEG_LATENCY_RECORDED=$latencyOk\n" +
                 s"ROUTE_INVARIANTS nonVariantFieldsPreserved=${rows.forall(r => r.providerCarouselUnchanged && r.serviceIntentCarouselUnchanged && r.facetsUnchanged && r.inferredFiltersUnchanged)} " +
-                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}"
+                s"esPrefixPreserved=${rows.forall(_.esPrefixPreserved)} esOrderPreserved=${rows.forall(_.esOrderPreserved)}\n" +
+                s"$y0fCoverageEvidence\n" +
+                s"$y0fRoleAwareEvidence"
             }
             println(y0cEvidenceLog)
 
@@ -6985,6 +7067,106 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       .ensuring(esClient.deleteIndex(testSpec.variantDocument.indexName).either.unit)
   }
 
+  // ---- Y0F: source-level ES-vs-Qdrant coverage matrix (measurement-only; test-local). ----
+
+  /** Per-threshold (or per-role) rollup of independent ES-vs-Qdrant accepted-hit coverage. */
+  private final case class Y0FCoverageBucket(
+    queryCount: Int,
+    esAcceptedHitQueries: Int,
+    qdrantAcceptedHitQueries: Int,
+    bothAcceptedHitQueries: Int,
+    esOnlyAcceptedHitQueries: Int,
+    qdrantOnlyAcceptedHitQueries: Int,
+    bothMissQueries: Int,
+    qdrantDuplicateAgreementQueries: Int,
+    qdrantDuplicateOnlyAgreementQueries: Int,
+    qdrantOnlyAcceptedCandidateQueries: Int,
+    qdrantOnlyUnacceptableCandidateQueries: Int,
+    appendedAcceptedQueries: Int,
+    appendedUnacceptableQueries: Int,
+    qdrantDuplicateAgreementTop: List[String],
+    qdrantOnlyAcceptedCandidateTop: List[String],
+    qdrantOnlyAcceptedButNotAppendedTop: List[String],
+    bothMissTop: List[String],
+    qdrantOnlyUnacceptableCandidateTop: List[String],
+  )
+
+  /** Build a [[Y0FCoverageBucket]] from a list of (same-threshold-or-role) Y0C diagnostic rows. */
+  private def computeY0FCoverageBucket(labelRows: List[Y0CSupplementRow]): Y0FCoverageBucket = {
+    val esHit       = labelRows.filter(_.esAcceptedIds.nonEmpty)
+    val qdrantHit   = labelRows.filter(_.qdrantAcceptedIds.nonEmpty)
+    val bothHit     = labelRows.filter(r => r.esAcceptedIds.nonEmpty && r.qdrantAcceptedIds.nonEmpty)
+    val esOnlyHit   = labelRows.filter(r => r.esAcceptedIds.nonEmpty && r.qdrantAcceptedIds.isEmpty)
+    val qdrantOnlyHit = labelRows.filter(r => r.qdrantAcceptedIds.nonEmpty && r.esAcceptedIds.isEmpty)
+    val bothMiss    = labelRows.filter(r => r.esAcceptedIds.isEmpty && r.qdrantAcceptedIds.isEmpty)
+    val duplicateAgreement = labelRows.filter(_.qdrantDuplicateAcceptedIds.nonEmpty)
+    val duplicateOnlyAgreement = labelRows.filter(r =>
+      r.qdrantAcceptedIds.nonEmpty && r.qdrantOnlyAcceptedIds.isEmpty && r.qdrantDuplicateAcceptedIds.nonEmpty
+    )
+    val qdrantOnlyAcceptedCandidate     = labelRows.filter(_.qdrantOnlyAcceptedIds.nonEmpty)
+    val qdrantOnlyUnacceptableCandidate = labelRows.filter(_.qdrantOnlyUnacceptableIds.nonEmpty)
+    val appendedAccepted     = labelRows.filter(_.appendedAcceptableIds.nonEmpty)
+    val appendedUnacceptable = labelRows.filter(_.appendedUnacceptableIds.nonEmpty)
+    val qdrantOnlyAcceptedButNotAppended =
+      labelRows.filter(r => r.qdrantOnlyAcceptedIds.nonEmpty && r.appendedAcceptableIds.isEmpty)
+    Y0FCoverageBucket(
+      queryCount = labelRows.size,
+      esAcceptedHitQueries = esHit.size,
+      qdrantAcceptedHitQueries = qdrantHit.size,
+      bothAcceptedHitQueries = bothHit.size,
+      esOnlyAcceptedHitQueries = esOnlyHit.size,
+      qdrantOnlyAcceptedHitQueries = qdrantOnlyHit.size,
+      bothMissQueries = bothMiss.size,
+      qdrantDuplicateAgreementQueries = duplicateAgreement.size,
+      qdrantDuplicateOnlyAgreementQueries = duplicateOnlyAgreement.size,
+      qdrantOnlyAcceptedCandidateQueries = qdrantOnlyAcceptedCandidate.size,
+      qdrantOnlyUnacceptableCandidateQueries = qdrantOnlyUnacceptableCandidate.size,
+      appendedAcceptedQueries = appendedAccepted.size,
+      appendedUnacceptableQueries = appendedUnacceptable.size,
+      qdrantDuplicateAgreementTop = duplicateAgreement.map(_.queryId).take(15),
+      qdrantOnlyAcceptedCandidateTop = qdrantOnlyAcceptedCandidate.map(_.queryId).take(15),
+      qdrantOnlyAcceptedButNotAppendedTop = qdrantOnlyAcceptedButNotAppended.map(_.queryId).take(15),
+      bothMissTop = bothMiss.map(_.queryId).take(15),
+      qdrantOnlyUnacceptableCandidateTop = qdrantOnlyUnacceptableCandidate.map(_.queryId).take(15),
+    )
+  }
+
+  /** Render one threshold/role line of the Y0F coverage matrix evidence. */
+  private def formatY0FCoverageBucket(label: String, bucket: Y0FCoverageBucket): String =
+    s"threshold=$label: queryCount=${bucket.queryCount}, esAcceptedHitQueries=${bucket.esAcceptedHitQueries}, " +
+      s"qdrantAcceptedHitQueries=${bucket.qdrantAcceptedHitQueries}, bothAcceptedHitQueries=${bucket.bothAcceptedHitQueries}, " +
+      s"esOnlyAcceptedHitQueries=${bucket.esOnlyAcceptedHitQueries}, qdrantOnlyAcceptedHitQueries=${bucket.qdrantOnlyAcceptedHitQueries}, " +
+      s"bothMissQueries=${bucket.bothMissQueries}, qdrantDuplicateAgreementQueries=${bucket.qdrantDuplicateAgreementQueries}, " +
+      s"qdrantDuplicateOnlyAgreementQueries=${bucket.qdrantDuplicateOnlyAgreementQueries}, " +
+      s"qdrantOnlyAcceptedCandidateQueries=${bucket.qdrantOnlyAcceptedCandidateQueries}, " +
+      s"qdrantOnlyUnacceptableCandidateQueries=${bucket.qdrantOnlyUnacceptableCandidateQueries}, " +
+      s"appendedAcceptedQueries=${bucket.appendedAcceptedQueries}, appendedUnacceptableQueries=${bucket.appendedUnacceptableQueries}, " +
+      s"qdrantDuplicateAgreementTop=${bucket.qdrantDuplicateAgreementTop.mkString("[", ",", "]")}, " +
+      s"qdrantOnlyAcceptedCandidateTop=${bucket.qdrantOnlyAcceptedCandidateTop.mkString("[", ",", "]")}, " +
+      s"qdrantOnlyAcceptedButNotAppendedTop=${bucket.qdrantOnlyAcceptedButNotAppendedTop.mkString("[", ",", "]")}, " +
+      s"bothMissTop=${bucket.bothMissTop.mkString("[", ",", "]")}, " +
+      s"qdrantOnlyUnacceptableCandidateTop=${bucket.qdrantOnlyUnacceptableCandidateTop.mkString("[", ",", "]")}"
+
+  /**
+   * Read the coordinator-authored `queryRoleAuditV1.queries[*].roles` map directly from the existing
+   * accepted query JSON (the same file [[BeautySearchEvalLoader]] reads), purely test-local and
+   * read-only. Returns `None` (never throws) if the file/field is missing or malformed, so role-aware
+   * coverage degrades to `ROLE_AWARE_COVERAGE_SKIPPED` rather than failing the whole measurement.
+   */
+  private def loadQueryRoleAuditRoles(): Option[Map[String, Set[String]]] = {
+    import io.circe.parser.parse as parseJson
+    scala.util.Try {
+      val raw  = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("beautyq_search_eval_queries_v1.json")), java.nio.charset.StandardCharsets.UTF_8)
+      val json = parseJson(raw).toOption.get
+      val queriesObj = json.hcursor.downField("queryRoleAuditV1").downField("queries").focus.get.asObject.get
+      queriesObj.toMap.flatMap { case (queryId, value) =>
+        value.hcursor.downField("roles").focus.flatMap(_.asArray).map { roles =>
+          queryId -> roles.flatMap(_.asString).toSet
+        }
+      }
+    }.toOption
+  }
+
   /** Y0C: compute a single per-query × per-threshold supplement diagnostic row from real responses. */
   private def evaluateY0CRow(
     query: leaderboard.search.eval.BeautySearchEvalQuery,
@@ -7032,6 +7214,14 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       appended.sortBy(id => -scoreByVariant.getOrElse(id, Double.NegativeInfinity)).take(1)
     val y0dTightenedAcceptable   = y0dTightenedAppendedIds.toSet.intersect(acceptableIds)
     val y0dTightenedUnacceptable = y0dTightenedAppendedIds.toSet.diff(acceptableIds)
+
+    // ---- Y0F: source-level ES-vs-Qdrant coverage (independent of append/cap policy). ----
+    val esAcceptedIds              = esSet.intersect(acceptableIds)
+    val qdrantAcceptedIds          = candidateSet.intersect(acceptableIds)
+    val qdrantOnlyAcceptedIds      = qdrantOnly.intersect(acceptableIds)
+    val qdrantOnlyUnacceptableIds  = qdrantOnly.diff(acceptableIds)
+    val qdrantDuplicateAcceptedIds = qdrantAcceptedIds.intersect(esSet)
+
     Y0CSupplementRow(
       queryId = query.id,
       queryText = query.query,
@@ -7064,6 +7254,13 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       y0dTightenedAppendedUnacceptableIds = y0dTightenedUnacceptable,
       y0dTightenedRecallImproved = y0dTightenedAcceptable.nonEmpty,
       y0dTightenedSemanticHarm = y0dTightenedUnacceptable.nonEmpty,
+      qdrantCandidateIds = qdrantCandidateIds,
+      esAcceptedIds = esAcceptedIds,
+      qdrantAcceptedIds = qdrantAcceptedIds,
+      qdrantOnlyCandidateIds = qdrantOnly,
+      qdrantOnlyAcceptedIds = qdrantOnlyAcceptedIds,
+      qdrantOnlyUnacceptableIds = qdrantOnlyUnacceptableIds,
+      qdrantDuplicateAcceptedIds = qdrantDuplicateAcceptedIds,
     )
   }
 
