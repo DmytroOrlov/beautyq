@@ -1,21 +1,25 @@
 package leaderboard.search.qdrant
 
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.{SearchField, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
-import zio.{IO, ZIO}
+import zio.IO
 
 final class QdrantSemanticCandidateSearch(
   embeddingClient: EmbeddingClient,
   qdrantSearchClient: QdrantSearchClient,
   variantIdPayloadField: SearchField[VariantSearchDocument],
 ) {
+  private val documentSearch =
+    new QdrantSemanticDocumentSearch[VariantSearchDocument, MasterServiceOfferVariantId](
+      embeddingClient,
+      qdrantSearchClient,
+      variantIdPayloadField,
+    )
+
   def search(queryText: String, spec: VectorSearchSpec): IO[QueryFailure, List[QdrantCandidateHit]] =
-    for {
-      vector <- embeddingClient.embed(queryText)
-      requestJson = QdrantJsonInterpreter.searchRequestJson(spec, vector.toList)
-      hits <- qdrantSearchClient.search(s"/collections/${spec.collectionName}/points/search", requestJson)
-      decoded <- ZIO.fromEither(QdrantCandidateHitDecoder.decode(hits, variantIdPayloadField))
-    } yield decoded
+    documentSearch.search(queryText, spec).map { hits =>
+      hits.map(hit => QdrantCandidateHit(variantId = hit.documentId, score = hit.score))
+    }
 }

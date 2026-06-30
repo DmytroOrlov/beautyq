@@ -11,9 +11,9 @@ import leaderboard.search.hybrid.{ExperimentalBeautySearchService, ExperimentalH
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
-import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHit, QdrantCandidateHitDecoder, QdrantCandidateResponseProjector, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
+import leaderboard.search.qdrant.{QdrantCandidateAssembler, QdrantCandidateHitDecoder, QdrantCandidateResponseProjector, QdrantJsonInterpreter, QdrantSearchClient, QdrantSearchHit, QdrantSemanticCandidateBackend, QdrantSemanticCandidateSearch}
 import leaderboard.search.routing.{SearchBackendRoute, SearchBackendRouter, SearchRoutingMetadata, SearchRoutingReason, SearchRoutingSignal}
-import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, SemanticCandidateHit, VariantSearchDocumentLookup}
+import leaderboard.search.semantic.{InMemoryVariantSearchDocumentLookup, SemanticCandidateBackend, SemanticCandidateHit, SemanticDocumentHit, VariantSearchDocumentLookup}
 import leaderboard.seed.BeautyQSeedLoader
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Ref, Runtime, Unsafe, ZIO}
@@ -108,27 +108,32 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
   "Qdrant candidate hit decoder" should {
     "decode payload.variantId into candidate hits, preserving order and score" in {
-      val firstVariantId = documents(0).variantId
-      val secondVariantId = documents(1).variantId
-      val hits = List(
-        QdrantSearchHit(
-          id = UUID.randomUUID().toString,
-          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(secondVariantId.toString))),
-          score = 0.25,
-        ),
-        QdrantSearchHit(
-          id = UUID.randomUUID().toString,
-          payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(firstVariantId.toString))),
-          score = 0.75,
-        ),
-      )
+      documents.take(2) match {
+        case List(firstDocument, secondDocument) =>
+          val firstVariantId = firstDocument.variantId
+          val secondVariantId = secondDocument.variantId
+          val hits = List(
+            QdrantSearchHit(
+              id = UUID.randomUUID().toString,
+              payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(secondVariantId.toString))),
+              score = 0.25,
+            ),
+            QdrantSearchHit(
+              id = UUID.randomUUID().toString,
+              payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(firstVariantId.toString))),
+              score = 0.75,
+            ),
+          )
 
-      val decoded = QdrantCandidateHitDecoder.decode(hits, BeautyQVariantSearchDocumentSchema.Fields.variantId)
+          val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](hits, BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
-      assert(decoded == Right(List(
-        QdrantCandidateHit(secondVariantId, 0.25),
-        QdrantCandidateHit(firstVariantId, 0.75),
-      )))
+          assert(decoded == Right(List(
+            SemanticDocumentHit(secondVariantId, 0.25),
+            SemanticDocumentHit(firstVariantId, 0.75),
+          )))
+        case other =>
+          fail(s"Expected at least 2 documents, got ${other.size}")
+      }
     }
 
     "fail when payload.variantId is missing" in {
@@ -138,7 +143,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(_.message.contains("Missing payload.variantId")))
@@ -151,7 +156,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(_.message.contains("Invalid payload.variantId")))
@@ -164,7 +169,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
     }
@@ -181,7 +186,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.4,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode(List(first, second), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(first, second), BeautyQVariantSearchDocumentSchema.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(failure => failure.message.contains("first-missing-payload-variant-id")))

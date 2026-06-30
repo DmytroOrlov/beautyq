@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import io.circe.{Json, JsonObject}
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
 import leaderboard.search.dsl.{SearchField, SearchFieldKind, SearchValue, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
@@ -104,13 +104,13 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
         kind = SearchFieldKind.Keyword,
         extract = _ => Some(SearchValue.Keyword("unused")),
       )
-      val missing = QdrantCandidateHitDecoder.decode(
+      val missing = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](
         hits = List(QdrantSearchHit(id = "point-custom-missing", payload = JsonObject.empty, score = 0.1)),
-        variantIdPayloadField = customIdField,
+        documentIdPayloadField = customIdField,
       )
-      val invalid = QdrantCandidateHitDecoder.decode(
+      val invalid = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](
         hits = List(QdrantSearchHit(id = "point-custom-invalid", payload = JsonObject.fromMap(Map("ids.variant" -> Json.fromString("bad"))), score = 0.1)),
-        variantIdPayloadField = customIdField,
+        documentIdPayloadField = customIdField,
       )
 
       assert(missing.left.exists(_.message.contains("Missing payload.ids.variant")))
