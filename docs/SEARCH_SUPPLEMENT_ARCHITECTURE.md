@@ -24,13 +24,13 @@ request
 
 * owns lexical precision
 * owns hard constraints
-* owns facets/provider/service/filter/inferred components
+* owns baseline response components such as facets, filters, inferred filters, and grouped/carousel sections
 * owns default route behavior
-* owns natural-language budget/range expressions (`under 3k`, `under 3000`, `below 3000`, `up to 3000`,
-  `маникюр under 50`): the domain parser/DSL turns them into a hard `SearchConstraint.PriceRange` upper
-  bound and Elasticsearch applies it as a `priceFrom` range filter. The supplement/Qdrant path never owns
-  price budgets or any hard price constraint. Model/domain onboarding should include budget examples in
-  the eval query set.
+* owns hard constraints resolved through app query schema; in BeautyQ, natural-language budget
+  expressions (`under 3k`, `under 3000`, `below 3000`, `up to 3000`, `маникюр under 50`) are
+  resolved by the BeautyQ query schema into hard filter constraints and applied by Elasticsearch as
+  range filters. The supplement/Qdrant path never owns hard constraints. Domain onboarding should
+  include constraint/budget examples in the eval query set.
 
 ### Supplement backend
 
@@ -58,18 +58,18 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 
 ## BeautyQ concrete example
 
-* ES baseline
-* Qdrant supplement
-* `ExplicitConstraintsFilterPlusTop1`
-* local managed launcher selects the supplement route with `./launcher -u scene:managed :leaderboard`
-* local managed startup prepares the BeautyQ data the route reads (SQL/Postgres seed, Elasticsearch
+* ES baseline; Qdrant supplement; `ExplicitConstraintsFilterPlusTop1`
+* Baseline and supplement inputs are shaped by schema/runtime metadata: `SearchRuntimeSpec`,
+  `SearchDocumentSpec`, and `SearchDocumentPayloadSpec` owned by `BeautyQVariantSearchDocumentSchema`.
+* Local managed launcher selects the supplement route with `./launcher -u scene:managed :leaderboard`.
+* Local managed startup prepares the BeautyQ data the route reads (SQL/Postgres seed, Elasticsearch
   baseline index, Qdrant supplement collection/vectors) before serving — no user-facing activation env
-  flag, and without any by-hand Qdrant collection-creation or indexing step
-* repeated local starts still run embedding preflight, then skip ES/Qdrant rebuild/indexing only when the
+  flag, and without any by-hand Qdrant collection-creation or indexing step.
+* Repeated local starts still run embedding preflight, then skip ES/Qdrant rebuild/indexing only when the
   managed bootstrap fingerprint matches and the ES/Qdrant resources are present and compatible; changed
-  inputs or missing/incompatible resources force rebuild or fail before bind
-* 4 queries, 1 improved, 3 unchanged, 0 worsened
-* details live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`
+  inputs or missing/incompatible resources force rebuild or fail before bind.
+* 4 queries, 1 improved, 3 unchanged, 0 worsened.
+* Details live in `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`.
 
 ## Non-goals
 

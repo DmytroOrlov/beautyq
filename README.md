@@ -67,4 +67,14 @@ curl -sS -X POST 'http://localhost:8080/beauty-search' \
 
 Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_no_append`, `qdrantSupplement.contribution` is `none`, `qdrantSupplement.appendedVariantIds` is empty, and `origins` is only `["es_baseline"]`.
 
-The rest of the repository remains the upstream distage example with multiple implementation variants under `bifunctor-tagless`, `monofunctor-tagless`, and `monomorphic-cats`.
+## Module map
+
+| Module | Responsibility |
+|---|---|
+| `leaderboard-core` | generic failure types (`QueryFailure` and siblings) |
+| `search-core` | generic search framework: fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
+| `search-elasticsearch` | reusable ES client/interpreter code (mapping, ingestion, request, response); no BeautyQ-specific logic |
+| `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code; no BeautyQ-specific logic |
+| `bifunctor-tagless` | BeautyQ app-side schemas, adapters, backends, routes, startup/plugin wiring, eval/benchmark code, and concrete embedding infrastructure |
+
+The repository also contains upstream distage example implementation variants under `monofunctor-tagless` and `monomorphic-cats`.

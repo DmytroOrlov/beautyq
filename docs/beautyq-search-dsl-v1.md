@@ -1,165 +1,265 @@
-# BeautyQ Search DSL V1
+# BeautyQ Search Architecture
 
-## Goal
+## Overview
 
-BeautyQ search V1 describes search semantics as immutable Scala values and interprets that data structure into multiple backends:
+BeautyQ search describes search semantics as immutable Scala values and interprets that data
+structure into multiple backends. The architecture is now model-first and schema-owned: repo entity
+metadata, document field ownership, payload specs, intent vocabulary, and runtime configuration all
+derive from typed handles and schema objects rather than from a single monolithic spec.
 
-- Postgres catalog snapshot -> flattened search documents
-- Elasticsearch mapping
-- Elasticsearch bulk ingestion payload
-- Elasticsearch search request
-- Elasticsearch search response -> UI response
-- pure in-memory search backend for regression tests
+ES remains the primary baseline. Qdrant is a constrained local/test supplement only. There is no
+fallback, fusion, or rerank. External route/API JSON contracts, ES request/source/mapping behavior,
+and Qdrant payload shape are preserved.
 
-The single source of truth is `leaderboard.search.dsl.BeautySearchSpec`.
+## Layer map
 
-## Packages
+```
+repo model graph                         BeautyQRepoGraph, typed RepoEntity/RepoField nodes,
+                                         Mirror-derived entity metadata
+        │
+        ▼
+catalog snapshot loading                 BeautySearchCatalogSnapshotLoader.FromRepositories,
+                                         seed-scoped loading, preorder traversal,
+                                         root exclusion, deduplication
+        │
+        ▼
+schema-owned document projection         SearchDocumentProjection,
+                                         BeautyQVariantSearchDocumentSchema.project
+        │
+        ▼
+SearchDocumentSpec / SearchField         BeautyQVariantSearchDocumentSchema.Fields,
+handles                                  selector-derived static fields,
+                                         explicit dynamic/computed fields
+        │
+        ▼
+intent vocabulary                        SearchIntentVocabulary, SearchIntentRule,
+                                         IntentMatchMode, StructuredAlias,
+                                         QueryNoisePhrase, BeautyQSearchIntentVocabulary
+        │
+        ▼
+SearchRuntimeSpec                        aggregates doc schema, query schema,
+                                         request/facet/carousel config, payload specs,
+                                         embedding config, vector config, runtime metadata;
+                                         BeautySearchSpecV1.runtimeSpec wires app-side config
+        │
+        ▼
+generic ES interpreter                   consumes SearchDocumentSpec / SearchRuntimeSpec /
+                                         resolved constraints; app-side adapter:
+                                         BeautyQElasticsearchInterpreterAdapter
+        │
+        ▼
+generic Qdrant interpreter               generic over document/id/payload specs; BeautyQ
+                                         wrappers map generic hits back to existing shapes
+        │
+        ▼
+BeautyQ app-side adapters                query schema resolution, hybrid policy, response
+                                         assembly, route/API models, startup wiring
+```
 
-- `leaderboard.search.dsl`: DSL model, canonical `BeautySearchSpecV1`
-- `leaderboard.search.document`: flattened `VariantSearchDocument`, snapshot loaders, builder
-- `leaderboard.search.parser`: pure query intent parser driven by DSL synonyms
-- `leaderboard.search.interpreter`: backend-agnostic support and response assembly
-- `leaderboard.search.elasticsearch`: ES mapping / ingestion / request / response interpreters
-- `leaderboard.search.inmemory`: pure in-memory backend
-- `leaderboard.search.eval`: eval JSON loader and scorer
+## Module ownership
 
-## Core Model
+| Module | Owns |
+|---|---|
+| `leaderboard-core` | generic failure types such as `QueryFailure` |
+| `search-core` | generic fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
+| `search-elasticsearch` | reusable ES client/interpreter code |
+| `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code |
+| `bifunctor-tagless` | BeautyQ app-side schemas, adapters, backends, routes, startup/plugin wiring, eval/benchmark code, concrete embedding infrastructure |
 
-`BeautySearchSpec` contains:
+Generic modules (`search-core`, `search-elasticsearch`, `search-qdrant`) must not know BeautyQ
+names or app types.
 
-- `SearchDocumentSpec[VariantSearchDocument]`
-- `SearchSynonym` dictionary
-- `CarouselSpec`
-- `FacetSpec`
-- `SearchRequestSpec`
+## Ownership table
 
-`SearchDocumentSpec.fields` carry the information interpreters need:
+Where to add or change each kind of search concern:
 
-- field path
-- field kind
-- extraction from `VariantSearchDocument`
-- semantic tag where needed
-- searchable / filterable / facetable / sortable flags
-- boosts
+| Concern | Owner |
+|---|---|
+| new repo entity / source / relation | model class + `RepoEntity` / `RepoField` + `BeautyQRepoGraph` |
+| new document field (static/selector-derived) | `BeautyQVariantSearchDocumentSchema.Fields` + document spec |
+| new dynamic or computed field | explicit computed/dynamic field in `BeautyQVariantSearchDocumentSchema` |
+| new intent phrase or rule | `BeautyQSearchIntentVocabulary` |
+| new query constraint mapping | BeautyQ query schema resolution |
+| new payload field | schema-owned `SearchDocumentPayloadSpec` |
+| new carousel / ranking / presentation name or default | `BeautyQSearchPresentation` |
+| new generic backend behavior | `search-core` runtime metadata + generic interpreter |
+| new BeautyQ-specific route / response behavior | app-side adapter / backend / assembler in `bifunctor-tagless` |
 
-This keeps Elasticsearch and in-memory implementations driven by the same metadata.
+## BeautySearchSpec / BeautySearchSpecV1
 
-`SearchRequestSpec` carries backend request behavior that should stay spec-driven rather than hidden inside Elasticsearch code:
+`BeautySearchSpec` and `BeautySearchSpecV1` are **app-side wiring and compatibility aggregates**.
+They are not the single source of truth for all search metadata:
 
-- `hitWindowSize`
-- `textOperator`
-- `aggregationSize`
-- `geoDistanceScale`
-- `geoDistanceOffset`
-- `geoDistanceDecay`
+- `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into the generic
+  `SearchRuntimeSpec`.
+- Document field ownership belongs to `BeautyQVariantSearchDocumentSchema.Fields`, not to
+  `BeautySearchSpecV1`.
+- Projection is owned by `BeautyQVariantSearchDocumentSchema.project` (via `SearchDocumentProjection`);
+  `VariantSearchDocumentBuilder` is a compatibility adapter only.
+- Generic ES and Qdrant interpreters consume `SearchDocumentSpec` / `SearchRuntimeSpec` / resolved
+  constraints. BeautyQ-specific ES compatibility lives in `BeautyQElasticsearchInterpreterAdapter`.
 
-`ElasticsearchSearchRequestInterpreter` must read those values from the spec and should not encode BeautyQ semantics in local constants.
+## Repo / data loading
 
-## Search Document
+Repo/data loading is model-first. Scala case-class models drive repo entity metadata through
+Mirror-derived metadata. Repo field metadata is selector-derived through typed `RepoField` handles.
+The BeautyQ catalog graph is declared in `BeautyQRepoGraph` through typed entity nodes, value
+sources, and relations.
 
-`VariantSearchDocument` is a flattened search read model for `MasterServiceOfferVariant`.
+`BeautySearchCatalogSnapshotLoader.FromRepositories` and seed-scoped loading go through the shared
+repo graph/loading layer. Existing loading behavior is preserved: preorder category traversal, root
+exclusion, stable parent/child ordering, first-occurrence deduplication, seed-scoped
+missing-entity messages, and search projection semantics.
 
-It includes:
+## Schema-owned document projection
 
-- identifiers for variant / offer / master / location / service / category
-- display fields needed in search responses
-- geo point and numeric search fields
-- typed attribute maps
-- denormalized text fields for search
+`SearchDocumentProjection` is the projection layer between loaded catalog snapshots and indexed
+documents. `BeautyQVariantSearchDocumentSchema` owns BeautyQ variant projection and the
+`SearchDocumentSpec`. The production seed-catalog path uses
+`BeautyQVariantSearchDocumentSchema.project`.
 
-`VariantSearchDocumentBuilder` is pure and does not silently drop rows. Broken joins fail with `QueryFailure.DomainFailure`.
+`VariantSearchDocumentBuilder` remains present as a compatibility adapter only.
 
-## Canonical Spec
+## Document field ownership
 
-`BeautySearchSpecV1` defines:
+`BeautyQVariantSearchDocumentSchema.Fields` owns BeautyQ document field handles:
 
-- core text fields: `allText`, `serviceText`, `attributeText`, `providerText`, `locationText`
-- filter and facet fields for ids, names, numeric values, geo point
-- dynamic attribute fields generated from `AttributeDefinition.all`
-- deterministic synonym dictionary for the first milestone query set
+- Static direct fields use selector-derived `SearchField` helpers.
+- Dynamic/computed fields remain explicit.
+- External ES/Qdrant field names are derived path views, not independent string ownership.
 
-If a backend needs a new field or rule, it must be added here first.
+`SearchDocumentSpec.fields` carry the information interpreters need: field path, field kind,
+extraction, semantic tag, searchable/filterable/facetable/sortable flags, and boosts.
 
-## Parser
+## Intent vocabulary
 
-`BeautySearchIntentParser` is pure and deterministic.
+The intent parser is no longer described as being driven by a synonym dictionary. Structured intent
+vocabulary replaces that model:
 
-It:
+- `SearchIntentVocabulary` — generic vocabulary interface
+- `SearchIntentRule` — individual matching rule
+- `IntentMatchMode` — how rules match
+- `StructuredAlias` — structured alias entry
+- `QueryNoisePhrase` — noise phrase entry
+- `BeautyQSearchIntentVocabulary` — BeautyQ intent rules
 
-- normalizes query text
-- applies longest-match synonym resolution
-- converts matched dictionary items into `SearchConstraint`s and soft boosts
-- leaves unmatched text as residual full-text input
+`BeautySearchIntentParser` is pure and deterministic. It normalizes query text, applies
+longest-match rule resolution, converts matched vocabulary items into `SearchConstraint`s and soft
+boosts, and leaves unmatched text as residual full-text input. Domain knowledge stays in the
+vocabulary, not in the parser algorithm.
 
-Domain knowledge stays in the synonym dictionary, not in the parser algorithm.
+Do not call this "DSL synonyms" or reference a `SearchSynonym dictionary` as current architecture.
 
-## Interpreters
+## SearchRuntimeSpec and fingerprint
 
-### Elasticsearch
+`SearchRuntimeSpec` is the generic runtime truth. It aggregates document schema, query schema,
+request/facet/carousel config, payload specs, embedding config, vector config, and runtime
+metadata. `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into generic runtime
+metadata.
 
-- `ElasticsearchMappingInterpreter`: derives mapping from `SearchDocumentSpec.fields`
-- `ElasticsearchIngestionInterpreter`: builds `_bulk` NDJSON from the same spec
-- `ElasticsearchSearchRequestInterpreter`: builds bool query, boosts, facets, and grouping aggregations from spec metadata, parsed intent, and `SearchRequestSpec`
-- `ElasticsearchSearchResponseInterpreter`: decodes hits and delegates carousel / facet / inferred-filter assembly to shared logic
+`SearchRuntimeFingerprint` derives from runtime schema/config and includes: document field
+metadata, query schema mappings, request config, facets, carousel, ranking, payload paths,
+embedding source fields, vector config, layered extra sections, and behavior-affecting presentation
+metadata such as `geoScoringBoostRole`. Managed local bootstrap uses runtime-derived fingerprint
+inputs.
 
-The Elasticsearch interpreters must remain mechanical. If a search behavior affects request shape, field selection, aggregation sizing, or geo scoring knobs, the value belongs in the DSL/spec first rather than in an interpreter-local branch or constant.
+## Qdrant payload ownership
 
-### In-memory
+Generic `SearchDocumentPayloadSpec` derives explicit payload maps from schema-owned field paths.
+BeautyQ Qdrant payload contract remains exactly: `variantId`, `masterLocationId`, `serviceId`,
+`serviceName`. `QdrantDocumentPointBuilder.fromPayloadSpec` is generic. The BeautyQ Qdrant point
+builder is a thin adapter.
 
-`InMemorySearchBackend` is now a rollback/regression/pure backend.
-It is not an in-memory Elasticsearch and must not be treated as an ES scoring/order/analyzer oracle.
+## Carousel / ranking / presentation metadata
 
-Each engine (Elasticsearch, Qdrant) should be designed from its own primitives/capabilities:
-mappings/analyzers for ES, embedding/text/vectors for Qdrant.
-Product response projection adapts engine-native results into `BeautySearchResponse`.
+`search-core` has generic `SearchBoostRole`, named `RankingWeight`, named `CarouselLimit`, named
+`CarouselGroup`, generic `CarouselSpec`, and generic `RankingSpec`.
 
-This is the main regression harness for search semantics.
+BeautyQ presentation names and defaults live app-side in `BeautyQSearchPresentation`:
 
-## Shared Response Assembly
+- roles: `service`, `attribute`, `providerDistance`
+- limits: `variantSize`, `providerSize`, `serviceIntentSize`
+- groups: `providerGroupField`, `serviceIntentGroupField`
+- ranking defaults: `textScoreWeight = 1.0`, `serviceBoostWeight = 2.0`,
+  `attributeBoostWeight = 1.5`, `providerDistanceWeight = 1.25`,
+  `providerMatchingVariantCountWeight = 0.5`
 
-`SearchResponseAssembler` builds the final `BeautySearchResponse` from scored documents and spec metadata:
+## Generic ES standard
 
-- `variantCarousel`
-- `providerCarousel`
-- `serviceIntentCarousel`
-- `facets`
-- `inferredFilters`
+ES mapping, ingestion, request, and response interpreters consume generic
+`SearchDocumentSpec` / `SearchRuntimeSpec` / resolved constraints. BeautyQ-specific ES
+compatibility lives in `BeautyQElasticsearchInterpreterAdapter`. Generic ES code must not know
+BeautyQ names or app types.
 
-Grouping and ranking use `CarouselSpec` and `RankingSpec`, not backend-local rules.
+ES remains primary/default. The `ElasticsearchSearchRequestInterpreter` reads behavior-affecting
+values from the spec and does not encode BeautyQ semantics in local constants.
 
-## Test Strategy
+## Generic Qdrant standard
 
-Pure tests cover:
+Qdrant semantic hit decoding, search, and indexing are generic over document/id/payload specs.
+BeautyQ Qdrant wrappers map generic semantic hits back to existing BeautyQ shapes. Qdrant
+supplement policy remains app-side for BeautyQ business eligibility. Qdrant is a constrained
+local/test supplement only; it is not a fallback, not fusion, not rerank, and not the
+production/default route.
 
-- dynamic field generation from `AttributeDefinition.all`
-- document builder failures on broken joins
-- mapping derivation from spec
-- request derivation from spec
-- parser behavior for the first milestone queries
-- in-memory regression against eval subset
+## External contract preservation
 
-Docker-backed Elasticsearch integration tests cover:
+The following contracts are preserved and must not be claimed changed unless a future task
+explicitly changes them:
 
-- mapping creation
-- ingestion count
-- first milestone eval subset
-- response shape with exactly three carousels
+- Route/API JSON shape is unchanged.
+- `SearchConstraint` JSON type strings are unchanged.
+- ES request/source/mapping behavior is unchanged.
+- Qdrant payload shape (`variantId`, `masterLocationId`, `serviceId`, `serviceName`) is unchanged.
 
-The ES integration suite uses a seed-scoped Postgres snapshot loader so tests stay deterministic even when the shared managed Postgres instance contains unrelated rows from other suites.
+## Testing standard
 
-## Current Eval Coverage
+Focused proof tests cover:
 
-* **Total eval queries**: 64. `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` own the current detailed eval/gate counts; this doc does not duplicate them.
-* Two queries (`q_broad_004`, `q_broad_006`) are intentionally non-lexical and fall outside the ES V1 lexical contract described below. They are candidates for the Qdrant supplement candidate source, not a Qdrant-only retrieval path.
+- repo graph loading behavior (entity nodes, value sources, relations, traversal, deduplication)
+- schema-owned projection (snapshot → document field derivation)
+- document JSON and source JSON roundtrip
+- payload derivation from schema-owned `SearchDocumentPayloadSpec`
+- typed field handle resolution
+- query schema resolution
+- intent vocabulary and parser behavior locks
+- runtime spec and fingerprint sensitivity (field/config changes trigger fingerprint change)
+- generic ES module boundary tests (no BeautyQ names in generic ES code)
+- generic Qdrant module boundary tests (no BeautyQ names in generic Qdrant code)
+- app-side BeautyQ adapter behavior
 
-## Qdrant Supplement Candidate Eval
+Tests are not restricted to pure/in-memory plus ES integration only. Real-resource tests cover
+repo graph loading, seed-scoped snapshot loaders, ES interpreter integration, and Qdrant
+indexing/search integration as appropriate.
 
-The two intentionally non-lexical eval queries can be exercised through a separate Qdrant supplement candidate run, consistent with the supplement contract in `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`: Qdrant is a constrained candidate source only, not a Qdrant-only retrieval path.
+## ES V1 lexical boundary
 
-* `q_broad_004`: surfaced as a Qdrant supplement candidate
-* `q_broad_006`: surfaced as a Qdrant supplement candidate
+ES V1 covers:
 
-This run was manual and environment-gated:
+- direct service queries
+- known multilingual structured aliases
+- enum/boolean/int/decimal attribute queries
+- known typo/noise cleanup
+- exact commercial intent phrases
+- facets, filters, grouping, and deterministic carousels
+
+ES V1 does not cover:
+
+- broad beauty intent without a stable service/entity signal
+- conversational discovery queries
+- semantic similarity outside structured intent vocabulary support
+- unseen paraphrases that require embeddings
+
+`q_broad_004` and `q_broad_006` remain outside the ES V1 lexical contract. They are candidates
+for the Qdrant supplement candidate source, not a Qdrant-only retrieval path.
+
+## Current eval coverage
+
+- **Total eval queries**: 64. `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and
+  `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` own the current detailed eval/gate counts.
+- `q_broad_004`, `q_broad_006`: intentionally non-lexical; Qdrant supplement candidates only.
+
+Qdrant supplement candidate eval (manual, environment-gated):
 
 ```bash
 LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
@@ -167,62 +267,29 @@ LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
   'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
 ```
 
-The local embedding server remains a manual prerequisite for this eval path. It is not part of normal test execution and is not a production runtime dependency.
+## Combined architecture status
 
-## ES V1 Lexical Boundary
+Per `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`:
 
-ES V1 is intended to cover:
+- Elasticsearch V1 remains the deterministic lexical/filter/facet baseline and owns default route behavior.
+- Qdrant is a constrained supplement candidate source only: it may append at most one candidate by
+  default and must not remove/reorder ES baseline ids.
+- There is no Qdrant-only search, no fallback, no score fusion, and no rerank.
 
-* direct service queries
-* known multilingual synonyms
-* enum/boolean/int/decimal attribute queries
-* known typo/noise cleanup
-* exact commercial intent phrases
-* facets, filters, grouping, and deterministic carousels
-
-ES V1 should not be forced to cover:
-
-* broad beauty intent without a stable service/entity signal
-* conversational discovery queries
-* semantic similarity without dictionary support
-* unseen paraphrases that require embeddings
-
-`q_broad_004` and `q_broad_006` remain outside the ES V1 lexical contract. They are covered by the separate Qdrant supplement candidate eval (candidate-source only, not a Qdrant-only retrieval path) and are not treated as failed lexical coverage work.
-
-## Combined Architecture Status
-
-Current backend roles are intentionally separate, per `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`:
-
-* Elasticsearch V1 remains the deterministic lexical/filter/facet baseline and owns default route behavior.
-* Qdrant is a constrained supplement candidate source only: it may append at most one candidate by default and must not remove/reorder ES baseline ids.
-* There is no Qdrant-only search, no fallback, no score fusion, and no rerank.
-
-### Coverage Rules
-
-New coverage should continue to follow this rule:
-1. Add pure/in-memory test first.
-2. Then add Elasticsearch integration test in a separate patch.
-3. Production changes should be limited to narrow `BeautySearchSpecV1` dictionary/spec data unless a real spec-driven interpreter bug is found.
-
-## B-lite EngineEval Model
+## B-lite EngineEval model
 
 Full API and metric semantics in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
-The pure `EngineEval` comparison model is implemented for B-lite ES-native + Qdrant-native eval:
+The pure `EngineEval` comparison model covers B-lite ES-native and Qdrant-native eval:
 
-* `EngineEval.scala`: `EngineEvalEngine` (Elasticsearch, Qdrant, SimulatedHybrid), `EngineEvalQueryClass`, `EngineExpectedRole`, `EngineEvalResult`, `EngineEvalComparisonMetrics`, `EngineEvalComparisonMetrics.from(...)`.
-* `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.
+- `EngineEval.scala`: `EngineEvalEngine`, `EngineEvalQueryClass`, `EngineExpectedRole`,
+  `EngineEvalResult`, `EngineEvalComparisonMetrics`, `EngineEvalComparisonMetrics.from(...)`.
+- `EngineEvalSpec.scala`: pure metric semantics including duplicate-id behavior.
 
-Key semantics:
+Key semantics: `EngineEvalQueryClass` is taxonomy metadata, not a current input to
+`EngineEvalComparisonMetrics.from(...)`. `EngineExpectedRole` drives first-pass metrics. Metrics
+count distinct variant ids by default. `qdrantNoiseCount` counts distinct Qdrant ids only when
+expected role is `QdrantShouldStaySilent`.
 
-* `EngineEvalQueryClass` is taxonomy metadata for future eval inventory classification; it is not currently an input to `EngineEvalComparisonMetrics.from(...)`.
-* `EngineExpectedRole` drives first-pass metrics.
-* Metrics count distinct variant ids by default.
-* `qdrantNoiseCount` counts distinct Qdrant ids only when expected role is `QdrantShouldStaySilent`; otherwise it is 0.
-* Focused result reported: last reported focused verification was green.
-
-ES-native and Qdrant-native engines should each be designed from their own primitives:
-
-* Elasticsearch: mappings, analyzers, bool/filter/range/geo queries, aggregations/facets, scoring/boosting, pagination/search_after.
-* Qdrant: embedding text, model identity, dimension, distance, topK, scoreThreshold, payload filters.
-* Product response assembly is a projection over engine-native results. Engines must not be forced to mimic the current in-memory backend.
+ES-native and Qdrant-native engines are each designed from their own primitives. Product response
+assembly is a projection over engine-native results.

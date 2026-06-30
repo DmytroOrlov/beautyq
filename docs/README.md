@@ -8,14 +8,20 @@
 * `SEARCH_DOMAIN_ONBOARDING.md` — how to start a new domain without repeating the BeautyQ loop.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
 
+## BeautyQ search architecture
+
+* `beautyq-search-dsl-v1.md` — current BeautyQ search architecture and runtime doc: layer map,
+  module ownership, repo graph loading, schema-owned document projection, SearchDocumentSpec /
+  SearchField handles, intent vocabulary, SearchRuntimeSpec / fingerprint, generic ES/Qdrant
+  interpreters, BeautyQ app-side adapters, and testing standard.
+
+## Coordinator workflow
+
+* `local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`
+
 ## Reusable templates
 
 * `SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`
-
-## Domain-specific references
-
-* `beautyq-search-dsl-v1.md`
-* `local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`
 
 ## Removed historical layers
 
