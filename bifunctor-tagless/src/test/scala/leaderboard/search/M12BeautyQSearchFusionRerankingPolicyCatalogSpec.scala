@@ -64,17 +64,17 @@ final class M12BeautyQSearchFusionRerankingPolicyCatalogSpec extends AnyWordSpec
 
   "M12BeautyQSearchFusionRerankingPolicyCatalog inputs" should {
 
-    "consume the accepted M12A input scaffold and still total 64 rows" in {
+    "consume the accepted M12A input scaffold and still total 74 rows" in {
       val summary = M12BeautyQSearchFusionRerankingPolicyCatalog.DefaultSummary
       val scaffold = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
 
-      assert(scaffold.fusionRerankingInputRows == 64)
-      assert(summary.consumedInputRowCount == 64)
+      assert(scaffold.fusionRerankingInputRows == 74)
+      assert(summary.consumedInputRowCount == 74)
       assert(summary.consumedM12InputScaffoldVerdict == "m12_fusion_reranking_input_scaffold_ready_schema_only")
       assert(
         summary.consumedM12InputScaffoldVerdict == M12BeautyQSearchFusionRerankingInputScaffold.Verdict,
       )
-      assert(metricValue(summary.metrics, "consumed_input_row_count") == "64")
+      assert(metricValue(summary.metrics, "consumed_input_row_count") == "74")
     }
   }
 
@@ -153,20 +153,20 @@ final class M12BeautyQSearchFusionRerankingPolicyCatalogSpec extends AnyWordSpec
     "produce the M12 policy-plan counts the catalog requires" in {
       val summary = M12BeautyQSearchFusionRerankingPolicyCatalog.DefaultSummary
 
-      assert(summary.esBaselineRows == 14)
+      assert(summary.esBaselineRows == 15)
       assert(summary.qdrantBaselineRows == 1)
-      assert(summary.combinedExperimentRows == 48)
+      assert(summary.combinedExperimentRows == 57)
       assert(summary.acceptedNegativeControlExclusionRows == 1)
       assert(summary.manualOrNoOpRows == 0)
       assert(summary.executablePolicyRows == 0)
       assert(summary.realScoredOrRerankedRows == 0)
       assert(
         summary.esBaselineRows + summary.qdrantBaselineRows + summary.combinedExperimentRows +
-          summary.acceptedNegativeControlExclusionRows + summary.manualOrNoOpRows == 64,
+          summary.acceptedNegativeControlExclusionRows + summary.manualOrNoOpRows == 74,
       )
-      assert(metricValue(summary.metrics, "es_baseline_rows") == "14")
+      assert(metricValue(summary.metrics, "es_baseline_rows") == "15")
       assert(metricValue(summary.metrics, "qdrant_baseline_rows") == "1")
-      assert(metricValue(summary.metrics, "combined_experiment_rows") == "48")
+      assert(metricValue(summary.metrics, "combined_experiment_rows") == "57")
       assert(metricValue(summary.metrics, "accepted_negative_control_exclusion_rows") == "1")
       assert(metricValue(summary.metrics, "manual_or_no_op_rows") == "0")
       assert(metricValue(summary.metrics, "executable_policy_rows") == "0")
@@ -287,9 +287,9 @@ final class M12BeautyQSearchFusionRerankingPolicyCatalogSpec extends AnyWordSpec
       assert(rendered.contains("consumed_m12a_input_scaffold_verdict: m12_fusion_reranking_input_scaffold_ready_schema_only"))
       assert(rendered.contains("consumed_m11b_result_schema_verdict: m11_candidate_generation_result_schema_ready"))
       assert(rendered.contains("consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready"))
-      assert(rendered.contains("es_baseline_rows: 14"))
+      assert(rendered.contains("es_baseline_rows: 15"))
       assert(rendered.contains("qdrant_baseline_rows: 1"))
-      assert(rendered.contains("combined_experiment_rows: 48"))
+      assert(rendered.contains("combined_experiment_rows: 57"))
       assert(rendered.contains("accepted_negative_control_exclusion_rows: 1"))
       assert(rendered.contains("manual_or_no_op_rows: 0"))
       assert(rendered.contains("executable_policy_rows: 0"))
@@ -380,38 +380,45 @@ final class M12BeautyQSearchFusionRerankingExperimentPlanSpec extends AnyWordSpe
     "reranking_output:",
   )
 
+  private def planGroupCount(
+    counts: List[(M12BeautyQSearchFusionRerankingExperimentPlanGroup, Int)],
+    group: M12BeautyQSearchFusionRerankingExperimentPlanGroup,
+  ): Int =
+    counts.collectFirst { case (`group`, count) => count }
+      .getOrElse(fail(s"Missing M12 plan group count: ${group.render}"))
+
   "M12BeautyQSearchFusionRerankingExperimentPlan inputs" should {
 
-    "consume the accepted M12A input scaffold and M12 policy catalog and still total 64 rows" in {
+    "consume the accepted M12A input scaffold and M12 policy catalog and still total 74 rows" in {
       val summary = M12BeautyQSearchFusionRerankingExperimentPlan.DefaultSummary
       val scaffold = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
       val catalog = M12BeautyQSearchFusionRerankingPolicyCatalog.DefaultSummary
 
-      assert(scaffold.fusionRerankingInputRows == 64)
-      assert(catalog.consumedInputRowCount == 64)
-      assert(summary.consumedInputRowCount == 64)
+      assert(scaffold.fusionRerankingInputRows == 74)
+      assert(catalog.consumedInputRowCount == 74)
+      assert(summary.consumedInputRowCount == 74)
       assert(summary.consumedM12InputScaffoldVerdict ==
         "m12_fusion_reranking_input_scaffold_ready_schema_only")
       assert(summary.consumedM12PolicyCatalogVerdict ==
         "m12_fusion_reranking_policy_catalog_ready_schema_only")
-      assert(metricValue(summary.metrics, "consumed_m12a_input_rows") == "64")
-      assert(metricValue(summary.metrics, "consumed_input_row_count") == "64")
+      assert(metricValue(summary.metrics, "consumed_m12a_input_rows") == "74")
+      assert(metricValue(summary.metrics, "consumed_input_row_count") == "74")
     }
 
-    "preserve the M12A counts: backend candidate 63, executable 0, real result 0, pending 111, combined pair 48, negative control 1" in {
+    "preserve the M12A counts: backend candidate 73, executable 0, real result 0, pending 130, combined pair 57, negative control 1" in {
       val summary = M12BeautyQSearchFusionRerankingExperimentPlan.DefaultSummary
 
-      assert(summary.consumedM12ABackendCandidateRows == 63)
+      assert(summary.consumedM12ABackendCandidateRows == 73)
       assert(summary.consumedM12AExecutableRows == 0)
       assert(summary.consumedM12ARealCandidateResultRows == 0)
-      assert(summary.consumedM12APendingNotExecutedResultLegRows == 111)
-      assert(summary.consumedM12ACombinedComparisonPairPlaceholders == 48)
+      assert(summary.consumedM12APendingNotExecutedResultLegRows == 130)
+      assert(summary.consumedM12ACombinedComparisonPairPlaceholders == 57)
       assert(summary.consumedM12AAcceptedNegativeControlExclusions == 1)
-      assert(metricValue(summary.metrics, "consumed_m12a_backend_candidate_rows") == "63")
+      assert(metricValue(summary.metrics, "consumed_m12a_backend_candidate_rows") == "73")
       assert(metricValue(summary.metrics, "consumed_m12a_executable_rows") == "0")
       assert(metricValue(summary.metrics, "consumed_m12a_real_candidate_result_rows") == "0")
-      assert(metricValue(summary.metrics, "consumed_m12a_pending_not_executed_result_leg_rows") == "111")
-      assert(metricValue(summary.metrics, "consumed_m12a_combined_comparison_pair_placeholders") == "48")
+      assert(metricValue(summary.metrics, "consumed_m12a_pending_not_executed_result_leg_rows") == "130")
+      assert(metricValue(summary.metrics, "consumed_m12a_combined_comparison_pair_placeholders") == "57")
       assert(metricValue(summary.metrics, "consumed_m12a_accepted_negative_control_exclusions") == "1")
     }
   }
@@ -421,8 +428,8 @@ final class M12BeautyQSearchFusionRerankingExperimentPlanSpec extends AnyWordSpe
     "produce one plan row per consumed M12A input envelope" in {
       val rows = M12BeautyQSearchFusionRerankingExperimentPlan.PlanRows
 
-      assert(rows.size == 64)
-      assert(rows.map(_.queryId).distinct.size == 64)
+      assert(rows.size == 74)
+      assert(rows.map(_.queryId).distinct.size == 74)
       assert(
         rows.map(_.queryId) ==
           M12BeautyQSearchFusionRerankingInputScaffold.InputEnvelopes.map(_.queryId),
@@ -435,29 +442,28 @@ final class M12BeautyQSearchFusionRerankingExperimentPlanSpec extends AnyWordSpe
 
   "M12BeautyQSearchFusionRerankingExperimentPlan group counts" should {
 
-    "derive es_baseline=14, qdrant_baseline=1, combined=48, accepted_negative_control=1, manual_or_no_op=0" in {
+    "derive es_baseline=15, qdrant_baseline=1, combined=57, accepted_negative_control=1, manual_or_no_op=0" in {
       val summary = M12BeautyQSearchFusionRerankingExperimentPlan.DefaultSummary
-      val byGroup = summary.planGroupCounts.toMap
 
-      assert(summary.esBaselineRows == 14)
+      assert(summary.esBaselineRows == 15)
       assert(summary.qdrantBaselineRows == 1)
-      assert(summary.combinedExperimentRows == 48)
+      assert(summary.combinedExperimentRows == 57)
       assert(summary.acceptedNegativeControlExclusionRows == 1)
       assert(summary.manualOrNoOpRows == 0)
-      assert(byGroup(M12BeautyQSearchFusionRerankingExperimentPlanGroup.EsBaselinePlan) == 14)
-      assert(byGroup(M12BeautyQSearchFusionRerankingExperimentPlanGroup.QdrantBaselinePlan) == 1)
-      assert(byGroup(M12BeautyQSearchFusionRerankingExperimentPlanGroup.CombinedExperimentPlan) == 48)
+      assert(planGroupCount(summary.planGroupCounts, M12BeautyQSearchFusionRerankingExperimentPlanGroup.EsBaselinePlan) == 15)
+      assert(planGroupCount(summary.planGroupCounts, M12BeautyQSearchFusionRerankingExperimentPlanGroup.QdrantBaselinePlan) == 1)
+      assert(planGroupCount(summary.planGroupCounts, M12BeautyQSearchFusionRerankingExperimentPlanGroup.CombinedExperimentPlan) == 57)
       assert(
-        byGroup(M12BeautyQSearchFusionRerankingExperimentPlanGroup.AcceptedNegativeControlExclusionPlan) == 1,
+        planGroupCount(summary.planGroupCounts, M12BeautyQSearchFusionRerankingExperimentPlanGroup.AcceptedNegativeControlExclusionPlan) == 1,
       )
-      assert(byGroup(M12BeautyQSearchFusionRerankingExperimentPlanGroup.ManualOrNoOpPlan) == 0)
+      assert(planGroupCount(summary.planGroupCounts, M12BeautyQSearchFusionRerankingExperimentPlanGroup.ManualOrNoOpPlan) == 0)
       assert(
         summary.esBaselineRows + summary.qdrantBaselineRows + summary.combinedExperimentRows +
-          summary.acceptedNegativeControlExclusionRows + summary.manualOrNoOpRows == 64,
+          summary.acceptedNegativeControlExclusionRows + summary.manualOrNoOpRows == 74,
       )
-      assert(metricValue(summary.metrics, "es_baseline_rows") == "14")
+      assert(metricValue(summary.metrics, "es_baseline_rows") == "15")
       assert(metricValue(summary.metrics, "qdrant_baseline_rows") == "1")
-      assert(metricValue(summary.metrics, "combined_experiment_rows") == "48")
+      assert(metricValue(summary.metrics, "combined_experiment_rows") == "57")
       assert(metricValue(summary.metrics, "accepted_negative_control_exclusion_rows") == "1")
       assert(metricValue(summary.metrics, "manual_or_no_op_rows") == "0")
     }
@@ -513,7 +519,6 @@ final class M12BeautyQSearchFusionRerankingExperimentPlanSpec extends AnyWordSpe
 
     "give accepted negative-control and manual/no-op rows no backend candidate policy" in {
       val summary = M12BeautyQSearchFusionRerankingExperimentPlan.DefaultSummary
-      val exclusion = summary.planGroupCounts.toMap
 
       // Manual/no-op has 0 rows by current data; the catalog-level policy assignment for it is `Nil`.
       assert(
@@ -525,7 +530,8 @@ final class M12BeautyQSearchFusionRerankingExperimentPlanSpec extends AnyWordSpe
       val negativeControl = M12BeautyQSearchFusionRerankingExperimentPlan.PlanRows.filter(_.planGroup ==
         M12BeautyQSearchFusionRerankingExperimentPlanGroup.AcceptedNegativeControlExclusionPlan)
 
-      assert(negativeControl.size == exclusion(
+      assert(negativeControl.size == planGroupCount(
+        summary.planGroupCounts,
         M12BeautyQSearchFusionRerankingExperimentPlanGroup.AcceptedNegativeControlExclusionPlan,
       ))
       negativeControl.foreach { row =>
@@ -697,9 +703,9 @@ final class M12BeautyQSearchFusionRerankingExperimentPlanSpec extends AnyWordSpe
       assert(rendered.contains("consumed_m12_policy_catalog_verdict: m12_fusion_reranking_policy_catalog_ready_schema_only"))
       assert(rendered.contains("consumed_m11b_result_schema_verdict: m11_candidate_generation_result_schema_ready"))
       assert(rendered.contains("consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready"))
-      assert(rendered.contains("es_baseline_rows: 14"))
+      assert(rendered.contains("es_baseline_rows: 15"))
       assert(rendered.contains("qdrant_baseline_rows: 1"))
-      assert(rendered.contains("combined_experiment_rows: 48"))
+      assert(rendered.contains("combined_experiment_rows: 57"))
       assert(rendered.contains("accepted_negative_control_exclusion_rows: 1"))
       assert(rendered.contains("manual_or_no_op_rows: 0"))
       assert(rendered.contains("executable_policy_rows: 0"))

@@ -1,11 +1,11 @@
 package leaderboard.search.eval
 
-/** M10 full 64-query offline classification mapping over the accepted BeautyQ eval dataset.
+/** M10 full accepted-query offline classification mapping over the accepted BeautyQ eval dataset.
   *
   * This expands the representative M10 classification foundation to the complete accepted eval dataset:
   * every query id in [[M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds]] gets exactly one
   * classification row, derived offline from deterministic explicit signals. The three accepted M9 anchors
-  * keep their accepted classifications. The remaining 61 non-anchor static/placeholder rows are classified using the
+  * keep their accepted classifications. The remaining non-anchor static/placeholder rows are classified using the
   * same total, pure [[M10BeautyQSearchQueryClassification.classify]] function over hand-derived offline
   * signals.
   *
@@ -114,6 +114,17 @@ object M10BeautyQSearchFullQueryClassification {
       // lifting = accepted noisy/ambiguous anchor, kept as an accepted negative-control exclusion
       // rather than an unresolved manual-review row.
       negativeControl("q_noise_005", "lifting", Ambiguous),                        // accepted negative control
+      // Semantic seed-grounded additions.
+      in("q_semantic_001", "хочу чтобы кожа выглядела свежей и напитанной перед событием", Service, Attribute),
+      in("q_semantic_002", "лицо шея декольте anti age уход", Attribute),
+      in("q_semantic_003", "убрать пушок над губой без лазера", Service, Attribute),
+      in("q_semantic_004", "аккуратные брови чтобы не рисовать карандашом", Service, Attribute),
+      in("q_semantic_005", "ресницы выглядят натурально но заметнее", Service, Attribute),
+      in("q_semantic_006", "обновить нарощенные ресницы не полный сет", Service, Attribute),
+      in("q_semantic_007", "снять старый гель и привести ногти в порядок", Service, Attribute),
+      in("q_semantic_008", "домашний уход для подруг небольшой компанией", Service, Attribute),
+      in("q_semantic_009", "перманент чтобы губы были ярче без ежедневной помады", Service, Attribute),
+      in("q_semantic_010", "быстро убрать волосы в подмышках курсом", Service, Attribute),
     )
   }
 
@@ -138,7 +149,7 @@ object M10BeautyQSearchFullQueryClassification {
     }
 
   /** Offline strategy intent counts in the full-coverage intent order; intents with no rows report
-    * zero. The full 64-query dataset also exercises the accepted negative-control exclusion intent.
+    * zero. The accepted dataset also exercises the accepted negative-control exclusion intent.
     */
   val StrategyIntentCounts: List[(M10BeautyQSearchOfflineRetrievalStrategyIntent, Int)] =
     M10BeautyQSearchOfflineRetrievalStrategyIntent.fullCoverageStableOrder.map { intent =>

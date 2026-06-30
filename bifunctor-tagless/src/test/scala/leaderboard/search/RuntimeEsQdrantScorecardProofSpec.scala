@@ -141,7 +141,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // ---- Y0C: canonical BeautyQ catalog seed + eval query suite (real-resource supplement proof). ----
   // The same canonical seed/eval inventory the ES integration + Qdrant hybrid integration specs use.
   // Y0C loads the FULL canonical catalog (every seeded variant) and the FULL canonical eval query
-  // set (63 queries) from beautyq_search_eval_queries_v1.json, NOT the synthetic K2 fixture above.
+  // set (74 queries) from beautyq_search_eval_queries_v1.json, NOT the synthetic K2 fixture above.
   private val canonicalSeed = new BeautyQSeedLoader.ResourceLoader().load() match {
     case Right(value) => value
     case Left(error)  => throw new RuntimeException(error.message)
@@ -416,7 +416,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // larger embedding model — served on its own llama.cpp endpoint, indexed into its own Qdrant
   // collection (separate dimension, never shared/fused with the small model's collection) —
   // recovers q_lashes_008 under the SAME zero-harm gate while still preserving q_broad_006. This
-  // is a bounded 2 model x 2 gate measurement over the same 63 canonical queries at the Y0E
+  // is a bounded 2 model x 2 gate measurement over the same 74 canonical queries at the Y0E
   // baseline_current source fields and scoreThreshold 0.62. Measurement only: no policy change, no
   // route switch, no default enablement, no score fusion across the two collections.
   private val y0hScoreThreshold: Double = 0.62
@@ -1713,7 +1713,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           // ambiguous) on the K2-extended 16-document / topK=3 fixture (Qdrant cannot return the
           // whole collection for any query; topK=3 << 16). Three of the six queries
           // (q_nails_001_ingredient_attribute, q_nails_003_filter_heavy, q_noise_005_ambiguous) are
-          // canonical-backed on text + QueryClass + acceptableVariantIds from the canonical 63-query
+          // canonical-backed on text + QueryClass + acceptableVariantIds from the canonical 74-query
           // dataset (source-confirmed: lines 164-167, 606-609, 13731-13736 of
           // beautyq_search_eval_queries_v1.json). The expected ids for these three queries are the
           // canonical acceptableVariantIds (q_nails_001: 2 ids, q_nails_003: 2 ids, q_noise_005: 4
@@ -3074,7 +3074,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
    * Drives the new [[ExperimentalHybridSearchBackend]] route (route fixed to
    * `SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement`) against REAL Elasticsearch + REAL
    * Qdrant + REAL embedding over the FULL canonical catalog (every seeded variant) and the FULL
-   * canonical eval query set (63 queries) from [[BeautySearchEvalInventory]]. For each canonical query
+   * canonical eval query set (74 queries) from [[BeautySearchEvalInventory]]. For each canonical query
    * it compares the ES-only `BeautySearchResponse` against the ES+Qdrant-supplement
    * `BeautySearchResponse` and measures, per route-local Qdrant `scoreThreshold` candidate (baseline
    * None plus the L3 measurement-promising 0.60 / 0.62), exactly where Qdrant appends useful variants
@@ -4015,7 +4015,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             }
 
             // ---- Y0G honest aggregate gates. ----
-            // The number of constraints the parser produced across the 63 queries.
+            // The number of constraints the parser produced across the accepted canonical queries.
             val totalSupportedConstraintTypes: Set[String] = rows.flatMap(_.supportedConstraintTypes).toSet
             val totalUnsupportedConstraintTypes: Set[String] = rows.flatMap(_.unsupportedConstraintTypes).toSet
             // The Y0G spec asserts supported constraint types must be a non-empty subset of the
@@ -4033,9 +4033,9 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               totalUnsupportedConstraintTypes.subsetOf(Set("NearUser")),
               s"Y0G: the only unsupported constraint type in this patch must be NearUser (recorded but not used as a gate), got $totalUnsupportedConstraintTypes",
             )
-            // 63 queries × 3 gates = 189 rows; per-row invariants already checked above.
+            // One row per accepted canonical query x gate candidate; per-row invariants already checked above.
             assert(rows.size == canonicalEvalSuite.queries.size * y0gGateCandidates.size,
-              s"Y0G must produce exactly 189 rows (63 queries × 3 gate candidates), got ${rows.size}")
+              s"Y0G must produce one row per canonical query x gate candidate, got ${rows.size}")
             // The route's qdrant-only set is captured once per query; re-derived identically per
             // gate (same qdrant candidate list, same esSet) — so the qdrantOnlyIds are stable
             // across the three gates for any given query.
@@ -4053,7 +4053,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             // it's present and matches the route's natural append semantics.
             assert(
               y0eBaselineReferenceEvidence.queryCount == canonicalEvalSuite.queries.size,
-              s"Y0G: Y0E baseline reference must cover all 63 canonical queries, got ${y0eBaselineReferenceEvidence.queryCount}",
+              s"Y0G: Y0E baseline reference must cover all 74 canonical queries, got ${y0eBaselineReferenceEvidence.queryCount}",
             )
             // Honest Y0G decision (measurement-only language; never production-ready / never Y1).
             val y0gDecision: String =
@@ -4140,7 +4140,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             }
 
           // Y0G CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real
-          // Qdrant + real embedding. The 63 canonical queries × 3 parser/intent-aligned gate
+          // Qdrant + real embedding. The 74 canonical queries × 3 parser/intent-aligned gate
           // candidates produced 189 diagnostic rows; ES prefix/order preserved and
           // provider/service/facets/inferredFilters unchanged for every row; the default router
           // still never selects the supplement route. This is measurement evidence only: no
@@ -4195,7 +4195,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     * activation. If real resources are unavailable, Y0I is honestly resource-gated (cancelled).
     */
   "Y0I recover lost recall under zero-harm Qdrant supplement gate (scope y0i_recover_lost_recall)" should {
-    "compare four Y0I gate candidates against Y0G filter_plus_top1_baseline across all 63 canonical eval queries at scoreThreshold 0.62 — measurement evidence only, no default route change, no policy selection" in {
+    "compare four Y0I gate candidates against Y0G filter_plus_top1_baseline across all 74 canonical eval queries at scoreThreshold 0.62 — measurement evidence only, no default route change, no policy selection" in {
       (
         esPortCfg: ElasticsearchPortCfg,
         qdrantPortCfg: QdrantPortCfg,
@@ -4481,7 +4481,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     * preserved by that gate. Y0H measures whether a LARGER embedding model — served on its own
     * llama.cpp endpoint, indexed into its own Qdrant collection (own dimension, never shared/fused
     * with the small model's collection) — changes that outcome, crossed with exactly two gates
-    * (`route_append_all`, `explicit_constraints_filter_plus_top1`) over the same 63 canonical
+    * (`route_append_all`, `explicit_constraints_filter_plus_top1`) over the same 74 canonical
     * queries at the Y0E baseline_current source fields and scoreThreshold 0.62.
     *
     * Measurement / proof ONLY: no new response layer, no score fusion across the two collections,
@@ -4490,7 +4490,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     * unavailable or returns an empty probe vector, Y0H is honestly resource-gated (cancelled).
     */
   "Y0H embedding-model-axis measurement under the Y0G zero-harm gate (scope y0h_embedding_model_axis)" should {
-    "compare a small and a large embedding model across route_append_all and explicit_constraints_filter_plus_top1 over all 63 canonical eval queries at scoreThreshold 0.62 — measurement evidence only, no default route change, no policy selection" in {
+    "compare a small and a large embedding model across route_append_all and explicit_constraints_filter_plus_top1 over all 74 canonical eval queries at scoreThreshold 0.62 — measurement evidence only, no default route change, no policy selection" in {
       (
         esPortCfg: ElasticsearchPortCfg,
         qdrantPortCfg: QdrantPortCfg,
@@ -4729,7 +4729,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
           }
 
         // Y0H CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real Qdrant
-        // + two real embedding endpoints (small/large), each in its own collection. 63 canonical
+        // + two real embedding endpoints (small/large), each in its own collection. 74 canonical
         // queries x 2 model candidates x 2 gate candidates produced diagnostic rows; ES prefix/order
         // preserved and provider/service/facets/inferredFilters unchanged for every row; the default
         // router still never selects the supplement route. Measurement evidence only.
@@ -4774,7 +4774,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // q_broad_006 preserved. Y0J measures the next axis: does enriching the embedded TEXT itself with
   // deterministic key-value attribute tokens change the outcome? Four text candidates, each indexed
   // into its OWN Qdrant collection (never fused, never shared), crossed with the same two Y0G gates
-  // (route_append_all, explicit_constraints_filter_plus_top1) over all 63 canonical queries at
+  // (route_append_all, explicit_constraints_filter_plus_top1) over all 74 canonical queries at
   // scoreThreshold 0.62 using the SAME small/current embedding endpoint for every candidate (no
   // 0.6B-vs-4B repeat here — that axis was Y0H's). Measurement only: no policy change, no route
   // switch, no default enablement, no score fusion across collections.
@@ -4927,7 +4927,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   )
 
   "Y0J query/document semantic text redesign measurement under the Y0G zero-harm gate (scope y0j_semantic_text_redesign)" should {
-    "compare four test-local semantic text candidates across route_append_all and explicit_constraints_filter_plus_top1 over all 63 canonical eval queries at scoreThreshold 0.62 using the small/current embedding endpoint — measurement evidence only, no default route change, no policy selection" in {
+    "compare four test-local semantic text candidates across route_append_all and explicit_constraints_filter_plus_top1 over all 74 canonical eval queries at scoreThreshold 0.62 using the small/current embedding endpoint — measurement evidence only, no default route change, no policy selection" in {
       (
         esPortCfg: ElasticsearchPortCfg,
         qdrantPortCfg: QdrantPortCfg,
@@ -5159,7 +5159,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             }
 
           // Y0J CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real Qdrant +
-          // real embedding for all four semantic text candidates, each in its own collection. 63
+          // real embedding for all four semantic text candidates, each in its own collection. 74
           // canonical queries x 4 text candidates x 2 gate candidates produced diagnostic rows; ES
           // prefix/order preserved and provider/service/facets/inferredFilters unchanged for every row;
           // the default router still never selects the supplement route. Measurement evidence only.
@@ -5207,7 +5207,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // ONLY what Qdrant sees; ES is untouched. Five query-text candidates, ONE real Qdrant collection
   // (current baseline document text + current baseline embedding source fields — query-side
   // measurement, not a document/source-field axis), crossed with the same two Y0G gates
-  // (route_append_all, explicit_constraints_filter_plus_top1) over all 63 canonical queries at
+  // (route_append_all, explicit_constraints_filter_plus_top1) over all 74 canonical queries at
   // scoreThreshold 0.62 using the same small/current embedding endpoint (no 0.6B-vs-4B repeat here —
   // that axis was Y0H's). Measurement only: no policy change, no route switch, no default
   // enablement, no score fusion, no reranking, no production query tags.
@@ -5383,7 +5383,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   )
 
   "Y0K query-side semantic representation measurement under the Y0G zero-harm gate (scope y0k_query_text_transform_supplement)" should {
-    "compare five test-local query-text candidates across route_append_all and explicit_constraints_filter_plus_top1 over all 63 canonical eval queries at scoreThreshold 0.62 using the small/current embedding endpoint — measurement evidence only, no default route change, no policy selection" in {
+    "compare five test-local query-text candidates across route_append_all and explicit_constraints_filter_plus_top1 over all 74 canonical eval queries at scoreThreshold 0.62 using the small/current embedding endpoint — measurement evidence only, no default route change, no policy selection" in {
       (
         esPortCfg: ElasticsearchPortCfg,
         qdrantPortCfg: QdrantPortCfg,
@@ -5628,7 +5628,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
           // Y0K CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real Qdrant +
           // real embedding for all five query-text candidates against the single baseline Qdrant
-          // collection. 63 canonical queries x 5 query-text candidates x 2 gate candidates produced
+          // collection. 74 canonical queries x 5 query-text candidates x 2 gate candidates produced
           // diagnostic rows; ES prefix/order preserved and provider/service/facets/inferredFilters
           // unchanged for every row; the default router still never selects the supplement route.
           // Measurement evidence only.

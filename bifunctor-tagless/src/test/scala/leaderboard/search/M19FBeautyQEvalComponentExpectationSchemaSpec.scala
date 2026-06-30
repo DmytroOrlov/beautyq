@@ -12,7 +12,7 @@ import scala.util.Using
 
 final class M19FBeautyQEvalComponentExpectationSchemaSpec extends AnyWordSpec {
 
-  "M19F component-expectation schema over the checked-in 64-query dataset" should {
+  "M19F component-expectation schema over the checked-in 74-query dataset" should {
 
     "still decode with the existing narrow decoder (tolerant, no regression)" in {
       val narrow = decodeQueries(loadCheckedInDataset())(BeautyQEvalQueryJson.decoder.decodeJson)

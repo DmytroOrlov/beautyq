@@ -16,6 +16,13 @@ final class M19CBeautyQResponseComponentTaxonomySpec extends AnyWordSpec {
 
   private val allComponents = BeautyResponseComponentId.stableOrder
 
+  private def responseFact(
+    componentId: BeautyResponseComponentId,
+  ): M19CBeautyQResponseComponentTaxonomy.ResponseComponentFact =
+    M19CBeautyQResponseComponentTaxonomy.ResponseComponentFacts
+      .find(_.componentId == componentId)
+      .getOrElse(fail(s"Missing response component fact: ${componentId.render}"))
+
   "M19CBeautyQResponseComponentTaxonomy.ResponseComponentFacts" should {
 
     "list every source-confirmed response component from BeautySearchResponse" in {
@@ -45,28 +52,22 @@ final class M19CBeautyQResponseComponentTaxonomySpec extends AnyWordSpec {
     }
 
     "treat ES as the ES-candidate evidence source for the three carousels" in {
-      val byId = M19CBeautyQResponseComponentTaxonomy.ResponseComponentFacts.map(f => f.componentId -> f).toMap
-
-      assert(byId(BeautyResponseComponentId.VariantCarousel).esEvidence == ComponentEvidence.BackendCandidateEvidence)
-      assert(byId(BeautyResponseComponentId.ProviderCarousel).esEvidence == ComponentEvidence.BackendCandidateEvidence)
-      assert(byId(BeautyResponseComponentId.ServiceIntentCarousel).esEvidence == ComponentEvidence.BackendCandidateEvidence)
+      assert(responseFact(BeautyResponseComponentId.VariantCarousel).esEvidence == ComponentEvidence.BackendCandidateEvidence)
+      assert(responseFact(BeautyResponseComponentId.ProviderCarousel).esEvidence == ComponentEvidence.BackendCandidateEvidence)
+      assert(responseFact(BeautyResponseComponentId.ServiceIntentCarousel).esEvidence == ComponentEvidence.BackendCandidateEvidence)
     }
 
     "treat Qdrant as candidate-level evidence only for the two grouped carousels" in {
-      val byId = M19CBeautyQResponseComponentTaxonomy.ResponseComponentFacts.map(f => f.componentId -> f).toMap
-
-      assert(byId(BeautyResponseComponentId.VariantCarousel).qdrantEvidence == ComponentEvidence.BackendCandidateEvidence)
-      assert(byId(BeautyResponseComponentId.ProviderCarousel).qdrantEvidence == ComponentEvidence.CandidateLevelOnly)
-      assert(byId(BeautyResponseComponentId.ServiceIntentCarousel).qdrantEvidence == ComponentEvidence.CandidateLevelOnly)
+      assert(responseFact(BeautyResponseComponentId.VariantCarousel).qdrantEvidence == ComponentEvidence.BackendCandidateEvidence)
+      assert(responseFact(BeautyResponseComponentId.ProviderCarousel).qdrantEvidence == ComponentEvidence.CandidateLevelOnly)
+      assert(responseFact(BeautyResponseComponentId.ServiceIntentCarousel).qdrantEvidence == ComponentEvidence.CandidateLevelOnly)
     }
 
     "record that Qdrant does not produce facets or inferred filters in the listed source files" in {
-      val byId = M19CBeautyQResponseComponentTaxonomy.ResponseComponentFacts.map(f => f.componentId -> f).toMap
-
-      assert(byId(BeautyResponseComponentId.Facets).qdrantEvidence == ComponentEvidence.NotApplicable)
-      assert(byId(BeautyResponseComponentId.InferredFilters).qdrantEvidence == ComponentEvidence.NotApplicable)
-      assert(byId(BeautyResponseComponentId.Facets).candidateLevelOnly)
-      assert(byId(BeautyResponseComponentId.InferredFilters).candidateLevelOnly)
+      assert(responseFact(BeautyResponseComponentId.Facets).qdrantEvidence == ComponentEvidence.NotApplicable)
+      assert(responseFact(BeautyResponseComponentId.InferredFilters).qdrantEvidence == ComponentEvidence.NotApplicable)
+      assert(responseFact(BeautyResponseComponentId.Facets).candidateLevelOnly)
+      assert(responseFact(BeautyResponseComponentId.InferredFilters).candidateLevelOnly)
     }
 
     "raise at least one open policy question per component and never claim a policy choice" in {
@@ -178,7 +179,7 @@ final class M19CBeautyQResponseComponentTaxonomySpec extends AnyWordSpec {
       val queries = loadEvalQueries()
 
       assert(queries.nonEmpty)
-      assert(queries.size == 64)
+      assert(queries.size == 74)
     }
 
     "report a known carousels expectation for every query and no facets/inferredFilters expectations" in {

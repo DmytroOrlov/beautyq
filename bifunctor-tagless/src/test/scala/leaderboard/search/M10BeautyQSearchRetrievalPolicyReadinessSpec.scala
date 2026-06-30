@@ -3,6 +3,7 @@ package leaderboard.search
 import leaderboard.search.eval.{
   M10BeautyQSearchFullQueryClassification,
   M10BeautyQSearchM11CandidateGenerationInputGroup,
+  M10BeautyQSearchM11InputRow,
   M10BeautyQSearchOfflineRetrievalStrategyIntent,
   M10BeautyQSearchQueryCategory,
   M10BeautyQSearchRetrievalPolicyReadiness,
@@ -36,35 +37,34 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
 
   "M10BeautyQSearchRetrievalPolicyReadiness inputs" should {
 
-    "consume the hardened M10B coverage and still total 64 rows" in {
+    "consume the hardened M10B coverage and still total 74 rows" in {
       val rows = M10BeautyQSearchRetrievalPolicyReadiness.InputRows
 
-      assert(M10BeautyQSearchFullQueryClassification.FullResults.size == 64)
-      assert(rows.size == 64)
-      assert(rows.map(_.queryId).distinct.size == 64)
+      assert(M10BeautyQSearchFullQueryClassification.FullResults.size == 74)
+      assert(rows.size == 74)
+      assert(rows.map(_.queryId).distinct.size == 74)
       assert(rows.map(_.queryId) == M10BeautyQSearchFullQueryClassification.FullDecisions.map(_.queryId))
     }
 
-    "have M11 input group counts that sum to 64 and match the expected distribution" in {
+    "have M11 input group counts that sum to 74 and match the expected distribution" in {
       val counts = M10BeautyQSearchRetrievalPolicyReadiness.InputGroupCounts
-      val byGroup = counts.toMap
 
-      assert(counts.map(_._2).sum == 64)
+      assert(counts.map(_._2).sum == 74)
       M10BeautyQSearchM11CandidateGenerationInputGroup.stableOrder.foreach { group =>
         assert(counts.exists(_._1 == group), s"input group not reported: ${group.render}")
       }
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 14)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 48)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
+      assert(inputGroupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 15)
+      assert(inputGroupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
+      assert(inputGroupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 57)
+      assert(inputGroupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
+      assert(inputGroupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
+      assert(inputGroupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
     }
 
-    "count exactly 63 backend candidate-generation study inputs, 1 negative control, 0 unresolved manual review" in {
+    "count exactly 73 backend candidate-generation study inputs, 1 negative control, 0 unresolved manual review" in {
       val summary = M10BeautyQSearchRetrievalPolicyReadiness.DefaultSummary
 
-      assert(summary.backendCandidateGenerationInputCount == 63)
+      assert(summary.backendCandidateGenerationInputCount == 73)
       assert(summary.acceptedNegativeControlExclusionInputCount == 1)
       assert(summary.unresolvedManualReviewInputCount == 0)
       assert(summary.noOpNoiseInputCount == 0)
@@ -116,12 +116,11 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
 
     "map representative anchor rows to their expected M11 input groups" in {
       val anchors = M10BeautyQSearchRetrievalPolicyReadiness.DefaultSummary.anchorRows
-      val byId = anchors.map(row => row.queryId -> row).toMap
 
       assert(anchors.map(_.queryId) == List("q_nails_001", "q_nails_003", "q_noise_005"))
-      assert(byId("q_nails_001").inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput)
-      assert(byId("q_nails_003").inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput)
-      assert(byId("q_noise_005").inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput)
+      assert(inputRow(anchors, "q_nails_001").inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput)
+      assert(inputRow(anchors, "q_nails_003").inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput)
+      assert(inputRow(anchors, "q_noise_005").inputGroup == M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput)
     }
   }
 
@@ -251,6 +250,21 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
     metrics.find(_.name == name) match {
       case Some(metric) => metric.value
       case None         => fail(s"missing readiness metric $name")
+    }
+
+  private def inputGroupCount(
+    counts: List[(M10BeautyQSearchM11CandidateGenerationInputGroup, Int)],
+    group: M10BeautyQSearchM11CandidateGenerationInputGroup,
+  ): Int =
+    counts.find(_._1 == group) match {
+      case Some((_, count)) => count
+      case None            => fail(s"missing input group count ${group.render}")
+    }
+
+  private def inputRow(rows: List[M10BeautyQSearchM11InputRow], queryId: String): M10BeautyQSearchM11InputRow =
+    rows.find(_.queryId == queryId) match {
+      case Some(row) => row
+      case None      => fail(s"missing anchor row $queryId")
     }
 
   private def section(contents: String, heading: String): String = {

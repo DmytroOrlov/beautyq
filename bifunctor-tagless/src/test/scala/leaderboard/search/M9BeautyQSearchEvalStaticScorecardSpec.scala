@@ -16,15 +16,15 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
 
   "M9BeautyQSearchEvalStaticScorecard" should {
 
-    "consume all 64 static rows and accept all rows through the static runner" in {
+    "consume all 74 static rows and accept all rows through the static runner" in {
       val summary = M9BeautyQSearchEvalStaticScorecard.DefaultSummary
 
-      assert(summary.datasetQueryCount == 64)
-      assert(summary.mappedRowCount == 64)
-      assert(summary.staticRunnerAcceptedRowCount == 64)
-      assert(metricValue(summary.metrics, "dataset_query_count") == "64")
-      assert(metricValue(summary.metrics, "mapped_row_count") == "64")
-      assert(metricValue(summary.metrics, "static_runner_accepted_row_count") == "64")
+      assert(summary.datasetQueryCount == 74)
+      assert(summary.mappedRowCount == 74)
+      assert(summary.staticRunnerAcceptedRowCount == 74)
+      assert(metricValue(summary.metrics, "dataset_query_count") == "74")
+      assert(metricValue(summary.metrics, "mapped_row_count") == "74")
+      assert(metricValue(summary.metrics, "static_runner_accepted_row_count") == "74")
     }
 
     "preserve manual static source and unknown serving mode attribution only" in {
@@ -44,9 +44,9 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
       val summary = M9BeautyQSearchEvalStaticScorecard.DefaultSummary
 
       assert(summary.representativeAnchorRowCount == 3)
-      assert(summary.placeholderOnlyRowCount == 61)
+      assert(summary.placeholderOnlyRowCount == 71)
       assert(metricValue(summary.metrics, "representative_anchor_row_count") == "3")
-      assert(metricValue(summary.metrics, "placeholder_only_row_count") == "61")
+      assert(metricValue(summary.metrics, "placeholder_only_row_count") == "71")
     }
 
     "record zero real backend evidence and no real backend call requirement" in {
@@ -97,11 +97,11 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
       val rendered = M9BeautyQSearchEvalStaticScorecard.MarkdownArtifact.contents
 
       assert(!summary.fullJsonParsingImplemented)
-      assert(summary.full63QueryStaticExpansionImplemented)
+      assert(summary.fullAcceptedQueryStaticExpansionImplemented)
       assert(metricValue(summary.metrics, "full_json_parsing_implemented") == "false")
-      assert(metricValue(summary.metrics, "full_64_query_static_expansion_implemented") == "true")
+      assert(metricValue(summary.metrics, "full_74_query_static_expansion_implemented") == "true")
       assert(rendered.contains("Full JSON parsing remains intentionally deferred"))
-      assert(rendered.contains("64-query static-row expansion is implemented"))
+      assert(rendered.contains("74-query static-row expansion is implemented"))
     }
 
     "render byte-for-byte stable checked-in artifact" in {

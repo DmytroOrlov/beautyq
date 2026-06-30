@@ -35,17 +35,24 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
     "execution ready",
   )
 
+  private def groupCount(
+    counts: List[(M10BeautyQSearchM11CandidateGenerationInputGroup, Int)],
+    group: M10BeautyQSearchM11CandidateGenerationInputGroup,
+  ): Int =
+    counts.collectFirst { case (`group`, count) => count }
+      .getOrElse(fail(s"Missing M11 input group count: ${group.render}"))
+
   "M11BeautyQSearchCandidateGenerationInputSkeleton inputs" should {
 
-    "consume the accepted M10C readiness and still total 64 rows" in {
+    "consume the accepted M10C readiness and still total 74 rows" in {
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
 
-      assert(M10BeautyQSearchRetrievalPolicyReadiness.InputRows.size == 64)
-      assert(shapes.size == 64)
-      assert(shapes.map(_.queryId).distinct.size == 64)
+      assert(M10BeautyQSearchRetrievalPolicyReadiness.InputRows.size == 74)
+      assert(shapes.size == 74)
+      assert(shapes.map(_.queryId).distinct.size == 74)
       assert(shapes.map(_.queryId) == M10BeautyQSearchRetrievalPolicyReadiness.InputRows.map(_.queryId))
-      assert(summary.totalQueryCount == 64)
+      assert(summary.totalQueryCount == 74)
       assert(
         summary.consumedM10ReadinessVerdict ==
           "m11_candidate_generation_inputs_ready_with_negative_control_exclusion",
@@ -53,53 +60,54 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
       assert(summary.rowGroupCounts == M10BeautyQSearchRetrievalPolicyReadiness.InputGroupCounts)
     }
 
-    "preserve M11 row-group counts that sum to 64 and match the accepted distribution" in {
+    "preserve M11 row-group counts that sum to 74 and match the accepted distribution" in {
       val counts = M11BeautyQSearchCandidateGenerationInputSkeleton.RowGroupCounts
-      val byGroup = counts.toMap
 
-      assert(counts.map(_._2).sum == 64)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 14)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 48)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
-      assert(byGroup(M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
+      assert(counts.map(_._2).sum == 74)
+      assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 15)
+      assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
+      assert(
+        groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 57,
+      )
+      assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
+      assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
+      assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
 
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
-      assert(summary.esOnlyRowCount == 14)
+      assert(summary.esOnlyRowCount == 15)
       assert(summary.qdrantOnlyRowCount == 1)
-      assert(summary.combinedComparisonRowCount == 48)
+      assert(summary.combinedComparisonRowCount == 57)
       assert(summary.acceptedNegativeControlExclusionRowCount == 1)
       assert(summary.manualReviewBlockedRowCount == 0)
       assert(summary.noOpNoiseRowCount == 0)
     }
 
-    "derive an ES request-leg count of 62 (14 ES-only + 48 combined ES legs)" in {
+    "derive an ES request-leg count of 72 (15 ES-only + 57 combined ES legs)" in {
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
 
-      assert(summary.esRequestLegRowCount == 62)
-      assert(shapes.count(_.hasEsLeg) == 62)
+      assert(summary.esRequestLegRowCount == 72)
+      assert(shapes.count(_.hasEsLeg) == 72)
       assert(shapes.count(_.hasEsLeg) == summary.esOnlyRowCount + summary.combinedComparisonRowCount)
-      assert(metricValue(summary.metrics, "es_request_leg_row_count") == "62")
+      assert(metricValue(summary.metrics, "es_request_leg_row_count") == "72")
     }
 
-    "derive a Qdrant request-leg count of 49 (1 Qdrant-only + 48 combined Qdrant legs)" in {
+    "derive a Qdrant request-leg count of 58 (1 Qdrant-only + 57 combined Qdrant legs)" in {
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
 
-      assert(summary.qdrantRequestLegRowCount == 49)
-      assert(shapes.count(_.hasQdrantLeg) == 49)
+      assert(summary.qdrantRequestLegRowCount == 58)
+      assert(shapes.count(_.hasQdrantLeg) == 58)
       assert(shapes.count(_.hasQdrantLeg) == summary.qdrantOnlyRowCount + summary.combinedComparisonRowCount)
-      assert(metricValue(summary.metrics, "qdrant_request_leg_row_count") == "49")
+      assert(metricValue(summary.metrics, "qdrant_request_leg_row_count") == "58")
     }
 
-    "derive a combined comparison pair count of 48" in {
+    "derive a combined comparison pair count of 57" in {
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
 
-      assert(summary.combinedComparisonPairRowCount == 48)
-      assert(shapes.count(_.isCombinedComparison) == 48)
+      assert(summary.combinedComparisonPairRowCount == 57)
+      assert(shapes.count(_.isCombinedComparison) == 57)
       shapes.filter(_.isCombinedComparison).foreach { shape =>
         assert(shape.hasEsLeg && shape.hasQdrantLeg, s"combined shape missing a leg: ${shape.queryId}")
         assert(
@@ -109,7 +117,7 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
           ),
         )
       }
-      assert(metricValue(summary.metrics, "combined_comparison_pair_row_count") == "48")
+      assert(metricValue(summary.metrics, "combined_comparison_pair_row_count") == "57")
     }
 
     "keep accepted negative-control exclusions out of every backend request leg" in {
@@ -292,7 +300,7 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
       assert(rendered.contains("## Noise-probe request shapes"))
       assert(rendered.contains("## Metrics"))
       assert(rendered.contains("## Boundary"))
-      assert(rendered.contains("total_query_count: 64"))
+      assert(rendered.contains("total_query_count: 74"))
       assert(rendered.contains("consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion"))
       assert(rendered.contains("offline study inputs"))
       assert(rendered.contains("not production routes"))

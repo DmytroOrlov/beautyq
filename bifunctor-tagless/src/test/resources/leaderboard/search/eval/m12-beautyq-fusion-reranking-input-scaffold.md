@@ -16,17 +16,17 @@ approval, and not actual execution readiness.
 - verdict: m12_fusion_reranking_input_scaffold_ready_schema_only
 - consumed_m11b_result_schema_verdict: m11_candidate_generation_result_schema_ready
 - consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready
-- consumed_result_row_count: 64
+- consumed_result_row_count: 74
 - consumed_matrix_row_count: 20
 - consumed_matrix_accepted_row_count: 8
 - consumed_matrix_denied_row_count: 12
 - consumed_matrix_skipped_row_count: 0
-- fusion_reranking_input_rows: 64
-- fusion_reranking_backend_candidate_rows: 63
+- fusion_reranking_input_rows: 74
+- fusion_reranking_backend_candidate_rows: 73
 - fusion_reranking_executable_rows: 0
 - real_candidate_result_rows: 0
-- pending_not_executed_result_leg_rows: 111
-- combined_comparison_pair_placeholders: 48
+- pending_not_executed_result_leg_rows: 130
+- combined_comparison_pair_placeholders: 57
 - accepted_negative_control_exclusions: 1
 - m12_fusion_reranking_input_scaffold_ready: true
 
@@ -37,9 +37,9 @@ pending/not-executed candidate legs; the exclusion groups carry no fusion/rerank
 
 | m12_input_group | count |
 |---|---|
-| es_only_placeholder_input | 14 |
+| es_only_placeholder_input | 15 |
 | qdrant_only_placeholder_input | 1 |
-| combined_comparison_placeholder_input | 48 |
+| combined_comparison_placeholder_input | 57 |
 | accepted_negative_control_exclusion_input | 1 |
 | manual_or_no_op_exclusion_input | 0 |
 
@@ -51,10 +51,10 @@ legs; the sum is the total pending/not-executed result-leg rows.
 
 | metric | value |
 |---|---|
-| es_pending_result_leg_placeholder_rows | 62 |
-| qdrant_pending_result_leg_placeholder_rows | 49 |
-| pending_not_executed_result_leg_rows | 111 |
-| combined_comparison_pair_placeholders | 48 |
+| es_pending_result_leg_placeholder_rows | 72 |
+| qdrant_pending_result_leg_placeholder_rows | 58 |
+| pending_not_executed_result_leg_rows | 130 |
+| combined_comparison_pair_placeholders | 57 |
 
 ## Representative anchors
 
@@ -81,25 +81,25 @@ negative-control exclusion with no fusion/reranking input legs.
 |---|---|
 | consumed_m11b_result_schema_verdict | m11_candidate_generation_result_schema_ready |
 | consumed_m11c_boundary_failure_matrix_verdict | m11_candidate_generation_boundary_failure_matrix_ready |
-| consumed_result_row_count | 64 |
+| consumed_result_row_count | 74 |
 | consumed_matrix_row_count | 20 |
 | consumed_matrix_accepted_row_count | 8 |
 | consumed_matrix_denied_row_count | 12 |
 | consumed_matrix_skipped_row_count | 0 |
-| input_group_count_sum | 64 |
-| es_only_placeholder_input_rows | 14 |
+| input_group_count_sum | 74 |
+| es_only_placeholder_input_rows | 15 |
 | qdrant_only_placeholder_input_rows | 1 |
-| combined_comparison_placeholder_input_rows | 48 |
+| combined_comparison_placeholder_input_rows | 57 |
 | accepted_negative_control_exclusion_input_rows | 1 |
 | manual_or_no_op_exclusion_input_rows | 0 |
-| fusion_reranking_input_rows | 64 |
-| fusion_reranking_backend_candidate_rows | 63 |
+| fusion_reranking_input_rows | 74 |
+| fusion_reranking_backend_candidate_rows | 73 |
 | fusion_reranking_executable_rows | 0 |
 | real_candidate_result_rows | 0 |
-| pending_not_executed_result_leg_rows | 111 |
-| es_pending_result_leg_placeholder_rows | 62 |
-| qdrant_pending_result_leg_placeholder_rows | 49 |
-| combined_comparison_pair_placeholders | 48 |
+| pending_not_executed_result_leg_rows | 130 |
+| es_pending_result_leg_placeholder_rows | 72 |
+| qdrant_pending_result_leg_placeholder_rows | 58 |
+| combined_comparison_pair_placeholders | 57 |
 | accepted_negative_control_exclusions | 1 |
 | m12_fusion_reranking_input_scaffold_ready | true |
 | m12_inputs_are_schema_only_not_scoring | true |

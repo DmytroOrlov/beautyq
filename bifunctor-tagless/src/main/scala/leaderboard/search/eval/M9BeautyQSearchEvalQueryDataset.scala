@@ -43,12 +43,12 @@ object M9BeautyQSearchEvalQueryDataset {
     M9BeautyQSearchEvalQueryDatasetMetadata(
       version = 1,
       datasetId = "wandsbek_hamburg_beauty_services_seed_ready",
-      queryCount = 64,
+      queryCount = 74,
       languageCounts = M9BeautyQSearchEvalQueryDatasetLanguageCounts(
-        ru = 31,
+        ru = 40,
         en = 22,
         de = 6,
-        mixed = 5,
+        mixed = 6,
       ),
       targetCarousels = List(
         "variantCarousel",

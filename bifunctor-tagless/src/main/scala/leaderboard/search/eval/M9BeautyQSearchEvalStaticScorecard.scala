@@ -28,7 +28,7 @@ final case class M9BeautyQSearchEvalStaticScorecardSummary(
   productionActivationApproval: Boolean,
   routePluginDiHttpInvolved: Boolean,
   fullJsonParsingImplemented: Boolean,
-  full63QueryStaticExpansionImplemented: Boolean,
+  fullAcceptedQueryStaticExpansionImplemented: Boolean,
   realBackendCallRequired: Boolean,
   verdict: String,
   metrics: List[M9BeautyQSearchEvalStaticScorecardMetric],
@@ -87,7 +87,7 @@ object M9BeautyQSearchEvalStaticScorecard {
       productionActivationApproval = input.metadata.boundary.qdrantProductionActivationApproved,
       routePluginDiHttpInvolved = input.staticRowsResult.summary.routePluginDiHttpSourceInvolved,
       fullJsonParsingImplemented = input.staticRowsResult.summary.fullJsonParsingImplemented,
-      full63QueryStaticExpansionImplemented = input.staticRowsResult.summary.full63QueryExpansionImplemented,
+      fullAcceptedQueryStaticExpansionImplemented = input.staticRowsResult.summary.fullAcceptedQueryExpansionImplemented,
       realBackendCallRequired = input.staticRowsResult.summary.realBackendCallRequired,
       verdict = VerdictDatasetStaticRowsReady,
       metrics = Nil,
@@ -113,7 +113,7 @@ object M9BeautyQSearchEvalStaticScorecard {
       metric("production_activation_approval", summary.productionActivationApproval.toString),
       metric("route_plugin_di_http_involved", summary.routePluginDiHttpInvolved.toString),
       metric("full_json_parsing_implemented", summary.fullJsonParsingImplemented.toString),
-      metric("full_64_query_static_expansion_implemented", summary.full63QueryStaticExpansionImplemented.toString),
+      metric("full_74_query_static_expansion_implemented", summary.fullAcceptedQueryStaticExpansionImplemented.toString),
       metric("real_backend_call_required", summary.realBackendCallRequired.toString),
       metric("verdict", summary.verdict),
     )
@@ -163,7 +163,7 @@ object M9BeautyQSearchEvalStaticScorecardRenderer {
     line(builder, "")
     line(builder, "- No real ES or Qdrant backend call is required or represented.")
     line(builder, "- No route, plugin, DI, or HTTP source is involved.")
-    line(builder, "- Full JSON parsing remains intentionally deferred; the 64-query static-row expansion is implemented.")
+    line(builder, "- Full JSON parsing remains intentionally deferred; the 74-query static-row expansion is implemented.")
     line(builder, "- Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.")
 
     builder.result()

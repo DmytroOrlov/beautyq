@@ -24,7 +24,7 @@ import scala.util.Using
 
 final class M19HBeautyQComponentCoverageEvidenceReportSpec extends AnyWordSpec {
 
-  "M19H component coverage evidence over the checked-in 64-query dataset" should {
+  "M19H component coverage evidence over the checked-in 74-query dataset" should {
 
     "expose provider grouping field coverage as source-confirmed masterLocationId" in {
       val evidence = buildEvidence()

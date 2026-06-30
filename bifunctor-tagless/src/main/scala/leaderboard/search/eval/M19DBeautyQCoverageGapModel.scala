@@ -15,7 +15,7 @@ import leaderboard.search.eval.M19CBeautyQResponseComponentTaxonomy.{
  * which `expected.*` JSON keys are present and which `inform*` flags are derivable.
  *
  * M19D aggregates that per-query evidence into a coverage-gap view: for each response
- * component, how many of the listed 64 eval queries can inform policy from their JSON
+ * component, how many of the listed 74 eval queries can inform policy from their JSON
  * expectations (not from candidate ids alone), how many are unknown, and which
  * component-level policy questions must therefore remain `NeedsMoreEvidence` until
  * the JSON grows new fields or until a separate ES-aggregation evidence surface is

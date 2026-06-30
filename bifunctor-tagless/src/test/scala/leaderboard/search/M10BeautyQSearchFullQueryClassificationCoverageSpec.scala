@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import leaderboard.search.eval.{
+  M10BeautyQSearchFullClassificationCoverageAnchorRow,
   M10BeautyQSearchFullClassificationCoverageMetric,
   M10BeautyQSearchFullQueryClassification,
   M10BeautyQSearchFullQueryClassificationCoverageScorecard,
@@ -36,9 +37,9 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       val ids = M10BeautyQSearchFullQueryClassification.FullResults.map(_.queryId)
       val expected = M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds
 
-      assert(expected.size == 64)
-      assert(ids.size == 64)
-      assert(ids.distinct.size == 64)
+      assert(expected.size == 74)
+      assert(ids.size == 74)
+      assert(ids.distinct.size == 74)
       assert(ids.toSet == expected.toSet)
       // Exactly-once: every dataset id resolves to a single classification result.
       expected.foreach { id =>
@@ -47,39 +48,37 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       }
     }
 
-    "have category counts that sum to 64 and match the accepted distribution" in {
+    "have category counts that sum to 74 and match the accepted distribution" in {
       val counts = M10BeautyQSearchFullQueryClassification.CategoryCounts
-      val byCategory = counts.toMap
 
-      assert(counts.map(_._2).sum == 64)
+      assert(counts.map(_._2).sum == 74)
       M10BeautyQSearchQueryCategory.stableOrder.foreach { category =>
         assert(counts.exists(_._1 == category), s"category not reported: ${category.render}")
       }
-      assert(byCategory(M10BeautyQSearchQueryCategory.ProviderLookup) == 0)
-      assert(byCategory(M10BeautyQSearchQueryCategory.ServiceIntent) == 7)
-      assert(byCategory(M10BeautyQSearchQueryCategory.AttributeFilterIntent) == 5)
-      assert(byCategory(M10BeautyQSearchQueryCategory.LocationIntent) == 1)
-      assert(byCategory(M10BeautyQSearchQueryCategory.PriceBudgetIntent) == 1)
-      assert(byCategory(M10BeautyQSearchQueryCategory.AvailabilityTimeIntent) == 0)
-      assert(byCategory(M10BeautyQSearchQueryCategory.ComparisonExplorationIntent) == 1)
-      assert(byCategory(M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent) == 1)
-      assert(byCategory(M10BeautyQSearchQueryCategory.MixedIntent) == 48)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.ProviderLookup) == 0)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.ServiceIntent) == 7)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.AttributeFilterIntent) == 6)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.LocationIntent) == 1)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.PriceBudgetIntent) == 1)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.AvailabilityTimeIntent) == 0)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.ComparisonExplorationIntent) == 1)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent) == 1)
+      assert(categoryCount(counts, M10BeautyQSearchQueryCategory.MixedIntent) == 57)
     }
 
-    "have strategy intent counts that sum to 64 and match the accepted distribution" in {
+    "have strategy intent counts that sum to 74 and match the accepted distribution" in {
       val counts = M10BeautyQSearchFullQueryClassification.StrategyIntentCounts
-      val byIntent = counts.toMap
 
-      assert(counts.map(_._2).sum == 64)
+      assert(counts.map(_._2).sum == 74)
       M10BeautyQSearchOfflineRetrievalStrategyIntent.fullCoverageStableOrder.foreach { intent =>
         assert(counts.exists(_._1 == intent), s"strategy intent not reported: ${intent.render}")
       }
-      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval) == 14)
-      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval) == 1)
-      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison) == 48)
-      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked) == 0)
-      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise) == 0)
-      assert(byIntent(M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded) == 1)
+      assert(strategyIntentCount(counts, M10BeautyQSearchOfflineRetrievalStrategyIntent.EsOnlyCandidateRetrieval) == 15)
+      assert(strategyIntentCount(counts, M10BeautyQSearchOfflineRetrievalStrategyIntent.QdrantOnlyCandidateRetrieval) == 1)
+      assert(strategyIntentCount(counts, M10BeautyQSearchOfflineRetrievalStrategyIntent.CombinedEsQdrantComparison) == 57)
+      assert(strategyIntentCount(counts, M10BeautyQSearchOfflineRetrievalStrategyIntent.ManualReviewBlocked) == 0)
+      assert(strategyIntentCount(counts, M10BeautyQSearchOfflineRetrievalStrategyIntent.NoOpNoise) == 0)
+      assert(strategyIntentCount(counts, M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded) == 1)
     }
 
     "classify q_noise_004 = gel removal as a beauty-domain mixed-intent candidate study input" in {
@@ -153,12 +152,12 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       assert(!nails001.isNoise)
     }
 
-    "count exactly 63 backend candidate study inputs and 1 accepted negative-control exclusion" in {
+    "count exactly 73 backend candidate study inputs and 1 accepted negative-control exclusion" in {
       val backend = M10BeautyQSearchFullQueryClassification.FullDecisions
         .count(_.strategyIntent.isBackendCandidateRetrievalIntent)
       val negativeControls = M10BeautyQSearchFullQueryClassification.AcceptedNegativeControlQueryIds.size
 
-      assert(backend == 63)
+      assert(backend == 73)
       assert(negativeControls == 1)
     }
 
@@ -207,18 +206,18 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
     "report semantic readiness counts including negative-control exclusion and unresolved manual review" in {
       val summary = M10BeautyQSearchFullQueryClassificationCoverageScorecard.DefaultSummary
 
-      assert(summary.totalQueryCount == 64)
-      assert(summary.mappedRowCount == 64)
-      assert(summary.mixedIntentCount == 48)
+      assert(summary.totalQueryCount == 74)
+      assert(summary.mappedRowCount == 74)
+      assert(summary.mixedIntentCount == 57)
       assert(summary.noisyRowCount == 1)
       assert(summary.unresolvedManualReviewRowCount == 0)
       assert(summary.acceptedNegativeControlExclusionCount == 1)
       assert(summary.noOpRowCount == 0)
-      assert(summary.backendCandidateStudyIntentCount == 63)
+      assert(summary.backendCandidateStudyIntentCount == 73)
       assert(summary.acceptedNegativeControlRows == List("q_noise_005"))
       assert(summary.unresolvedManualReviewRows.isEmpty)
-      assert(summary.categoryCounts.map(_._2).sum == 64)
-      assert(summary.strategyIntentCounts.map(_._2).sum == 64)
+      assert(summary.categoryCounts.map(_._2).sum == 74)
+      assert(summary.strategyIntentCounts.map(_._2).sum == 74)
     }
 
     "prove M11 backend candidate inputs are ready via negative-control exclusion, not blocked by manual review" in {
@@ -227,11 +226,11 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       assert(summary.m11BackendCandidateInputsReady)
       assert(summary.unresolvedManualReviewRowCount == 0)
       assert(summary.acceptedNegativeControlExclusionCount == 1)
-      assert(summary.backendCandidateStudyIntentCount == 63)
+      assert(summary.backendCandidateStudyIntentCount == 73)
       assert(metricValue(summary.metrics, "m11_backend_candidate_inputs_ready") == "true")
       assert(metricValue(summary.metrics, "unresolved_manual_review_row_count") == "0")
       assert(metricValue(summary.metrics, "accepted_negative_control_exclusion_count") == "1")
-      assert(metricValue(summary.metrics, "backend_candidate_study_intent_count") == "63")
+      assert(metricValue(summary.metrics, "backend_candidate_study_intent_count") == "73")
     }
 
     "expose semantic metric keys exactly and drop the aggregate manual_review_row_count proxy" in {
@@ -242,9 +241,9 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       assert(keys.contains("accepted_negative_control_exclusion_count"))
       assert(keys.contains("m11_backend_candidate_inputs_ready"))
       assert(!keys.contains("manual_review_row_count"))
-      assert(metricValue(summary.metrics, "total_query_count") == "64")
-      assert(metricValue(summary.metrics, "mapped_row_count") == "64")
-      assert(metricValue(summary.metrics, "mixed_intent_count") == "48")
+      assert(metricValue(summary.metrics, "total_query_count") == "74")
+      assert(metricValue(summary.metrics, "mapped_row_count") == "74")
+      assert(metricValue(summary.metrics, "mixed_intent_count") == "57")
       assert(metricValue(summary.metrics, "noisy_row_count") == "1")
       assert(metricValue(summary.metrics, "no_op_row_count") == "0")
     }
@@ -254,12 +253,11 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       val ids = summary.anchorRows.map(_.queryId)
 
       assert(ids == List("q_nails_001", "q_nails_003", "q_noise_005"))
-      val byId = summary.anchorRows.map(row => row.queryId -> row).toMap
-      assert(byId("q_nails_001").category == M10BeautyQSearchQueryCategory.MixedIntent)
-      assert(byId("q_nails_003").category == M10BeautyQSearchQueryCategory.AttributeFilterIntent)
-      assert(byId("q_noise_005").category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
+      assert(anchorRow(summary.anchorRows, "q_nails_001").category == M10BeautyQSearchQueryCategory.MixedIntent)
+      assert(anchorRow(summary.anchorRows, "q_nails_003").category == M10BeautyQSearchQueryCategory.AttributeFilterIntent)
+      assert(anchorRow(summary.anchorRows, "q_noise_005").category == M10BeautyQSearchQueryCategory.NoisyAmbiguousNonBeautyIntent)
       assert(
-        byId("q_noise_005").strategyIntent ==
+        anchorRow(summary.anchorRows, "q_noise_005").strategyIntent ==
           M10BeautyQSearchOfflineRetrievalStrategyIntent.AcceptedNegativeControlExcluded,
       )
     }
@@ -354,6 +352,33 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
     metrics.find(_.name == name) match {
       case Some(metric) => metric.value
       case None         => fail(s"missing scorecard metric $name")
+    }
+
+  private def categoryCount(
+    counts: List[(M10BeautyQSearchQueryCategory, Int)],
+    category: M10BeautyQSearchQueryCategory,
+  ): Int =
+    counts.find(_._1 == category) match {
+      case Some((_, count)) => count
+      case None            => fail(s"missing category count ${category.render}")
+    }
+
+  private def strategyIntentCount(
+    counts: List[(M10BeautyQSearchOfflineRetrievalStrategyIntent, Int)],
+    intent: M10BeautyQSearchOfflineRetrievalStrategyIntent,
+  ): Int =
+    counts.find(_._1 == intent) match {
+      case Some((_, count)) => count
+      case None             => fail(s"missing strategy intent count ${intent.render}")
+    }
+
+  private def anchorRow(
+    rows: List[M10BeautyQSearchFullClassificationCoverageAnchorRow],
+    queryId: String,
+  ): M10BeautyQSearchFullClassificationCoverageAnchorRow =
+    rows.find(_.queryId == queryId) match {
+      case Some(row) => row
+      case None      => fail(s"missing anchor row $queryId")
     }
 
   /** Extract a `##`-delimited section body so row lists are asserted within their own section. */

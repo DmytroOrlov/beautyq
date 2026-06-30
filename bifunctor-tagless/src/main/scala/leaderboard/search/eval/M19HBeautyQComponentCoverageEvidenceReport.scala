@@ -11,7 +11,7 @@ import leaderboard.search.eval.M19FBeautyQEvalComponentExpectationSchema.{
  * M19H: pure offline/eval coverage evidence over the now-populated component expectations.
  *
  * M19F made the eval dataset *capable of carrying* component-level expectations and gave a
- * tolerant decoder + tri-state coverage view. M19G then populated the checked-in 64-query BeautyQ
+ * tolerant decoder + tri-state coverage view. M19G then populated the checked-in 74-query BeautyQ
  * dataset with the source-confirmed grouping fields:
  *   - provider carousel       : `expectedGroupingField = "masterLocationId"`
  *                               (BeautySearchSpecV1.carouselSpec.providerGroupField);

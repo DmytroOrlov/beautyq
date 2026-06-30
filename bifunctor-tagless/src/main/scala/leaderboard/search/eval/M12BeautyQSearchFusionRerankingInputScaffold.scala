@@ -162,7 +162,7 @@ final case class M12BeautyQSearchFusionRerankingInputScaffoldSummary(
   *
   * This is pure offline eval/planning scaffolding only. It consumes the accepted M11B result schema
   * ([[M11BeautyQSearchCandidateGenerationResultSchema]]) and the accepted M11C boundary/failure matrix
-  * ([[M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix]]) — including their verdicts, the 64-row
+  * ([[M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix]]) — including their verdicts, the accepted-row
   * total, and the standing boundary — and derives one schema-only input envelope per accepted M11B result
   * row. It defines experiment input shapes only, never fusion/reranking execution: it implements no
   * scoring, fusion, reranking, candidate retrieval, fallback, telemetry, or backend execution. It never
@@ -251,11 +251,11 @@ object M12BeautyQSearchFusionRerankingInputScaffold {
     val anchorEnvelopes = AnchorQueryIds.flatMap(inputEnvelopeFor)
     val noiseProbeEnvelopes = NoiseProbeQueryIds.flatMap(inputEnvelopeFor)
 
-    // The scaffold is ready when it consumes the accepted 64-row M11B schema and the ready 20-row M11C
+    // The scaffold is ready when it consumes the accepted M11B schema and the ready 20-row M11C
     // matrix, every envelope forwards only pending/not-executed legs, no input is executable, and no real
     // candidate result row exists.
     val m12FusionRerankingInputScaffoldReady =
-      M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary.totalRowCount == 64 &&
+      M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary.totalRowCount == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount &&
         matrixSummary.m11BoundaryFailureMatrixReady &&
         InputEnvelopes.nonEmpty &&
         InputEnvelopes.forall(_.allLegsPendingNotExecuted) &&

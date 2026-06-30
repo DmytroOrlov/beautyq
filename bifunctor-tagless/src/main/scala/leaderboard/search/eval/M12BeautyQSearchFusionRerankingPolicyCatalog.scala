@@ -209,21 +209,21 @@ object M12BeautyQSearchFusionRerankingPolicyCatalog {
     val realScoredOrRerankedRows = 0
 
     // The catalog is ready when its policy names are unique, every policy is non-executable, the
-    // consumed M12A input scaffold totals 64, and the backend baseline / combined experiment /
+    // consumed M12A input scaffold totals the accepted dataset, and the backend baseline / combined experiment /
     // exclusion plan counts are well-formed.
     val m12FusionRerankingPolicyCatalogReady =
-      Policies.map(_.render).distinct.size == PolicyCount &&
+        Policies.map(_.render).distinct.size == PolicyCount &&
         Policies.forall(!_.isExecutable) &&
-        consumedInputRowCount == 64 &&
-        esBaselineRows == 14 &&
+        consumedInputRowCount == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount &&
+        esBaselineRows == 15 &&
         qdrantBaselineRows == 1 &&
-        combinedExperimentRows == 48 &&
+        combinedExperimentRows == 57 &&
         acceptedNegativeControlExclusionRows == 1 &&
         manualOrNoOpRows == 0 &&
         executablePolicyRows == 0 &&
         realScoredOrRerankedRows == 0 &&
         esBaselineRows + qdrantBaselineRows + combinedExperimentRows +
-          acceptedNegativeControlExclusionRows + manualOrNoOpRows == 64
+          acceptedNegativeControlExclusionRows + manualOrNoOpRows == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount
 
     val summaryWithoutMetrics = M12BeautyQSearchFusionRerankingPolicyCatalogSummary(
       datasetId = M9BeautyQSearchEvalQueryDataset.Metadata.datasetId,

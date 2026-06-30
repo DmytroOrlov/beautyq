@@ -29,8 +29,8 @@ final class M9BeautyQSearchEvalQueryDatasetStaticRowsSpec extends AnyWordSpec {
       result match {
         case Right(staticRun) =>
           assert(staticRun.report.rows.map(_.queryId) == M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds)
-          assert(staticRun.qualityGateSummary.totalRows == 64)
-          assert(staticRun.qualityGateSummary.warningRows == 64)
+          assert(staticRun.qualityGateSummary.totalRows == 74)
+          assert(staticRun.qualityGateSummary.warningRows == 74)
           assert(staticRun.qualityGateSummary.failedRows == 0)
           assert(staticRun.qualityGateSummary.qualityGateDecision == "static_dataset_mapping_only")
           assert(staticRun.markdownArtifact.contents == M9OfflineEvalReportRenderer.renderMarkdown(staticRun.report))
@@ -56,21 +56,21 @@ final class M9BeautyQSearchEvalQueryDatasetStaticRowsSpec extends AnyWordSpec {
       val notes = result.staticRunInput.notes.mkString("\n")
 
       assert(result.summary.datasetId == "wandsbek_hamburg_beauty_services_seed_ready")
-      assert(result.summary.fullDatasetQueryCount == 64)
-      assert(result.summary.mappedRowCount == 64)
+      assert(result.summary.fullDatasetQueryCount == 74)
+      assert(result.summary.mappedRowCount == 74)
       assert(result.summary.representativeQueryIds == List("q_nails_001", "q_nails_003", "q_noise_005"))
-      assert(result.summary.full63QueryExpansionImplemented)
+      assert(result.summary.fullAcceptedQueryExpansionImplemented)
       assert(notes.contains("version=1"))
-      assert(notes.contains("full_query_count=64"))
-      assert(notes.contains("ru=31, en=22, de=6, mixed=5"))
+      assert(notes.contains("full_query_count=74"))
+      assert(notes.contains("ru=40, en=22, de=6, mixed=6"))
       assert(notes.contains("variantCarousel, providerCarousel, serviceIntentCarousel"))
-      assert(notes.contains("Full 64-query static-row expansion implemented"))
+      assert(notes.contains("Full 74-query static-row expansion implemented"))
     }
 
     "keep deterministic row count, manual source attribution, and unknown serving mode" in {
       val input = M9BeautyQSearchEvalQueryDatasetStaticRows.DefaultResult.staticRunInput
 
-      assert(input.rows.size == 64)
+      assert(input.rows.size == 74)
       assert(input.rows.forall(_.servingMode == ServingMode.Unknown))
       assert(input.rows.forall(_.candidateSource == CandidateSource.Manual))
       assert(input.rows.forall(_.regressionStatus == "unknown"))
@@ -127,20 +127,20 @@ final class M9BeautyQSearchEvalQueryDatasetStaticRowsSpec extends AnyWordSpec {
       val missingAnchors = M9BeautyQSearchEvalQueryDatasetStaticRows.RequiredResourceAnchors.filterNot(resourceText.contains)
       val summary = M9BeautyQSearchEvalQueryDatasetStaticRows.DefaultResult.summary
 
-      assert(M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds.size == 64)
+      assert(M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds.size == 74)
       assert(M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds.distinct == M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds)
       assert(queryIdsInResource == M9BeautyQSearchEvalQueryDatasetStaticRows.StaticQueryIds)
       assert(missingAnchors == Nil)
       assert(!summary.fullJsonParsingImplemented)
-      assert(summary.full63QueryExpansionImplemented)
-      assert(M9BeautyQSearchEvalQueryDatasetStaticRows.RequiredResourceAnchors.contains("\"queryCount\": 64"))
+      assert(summary.fullAcceptedQueryExpansionImplemented)
+      assert(M9BeautyQSearchEvalQueryDatasetStaticRows.RequiredResourceAnchors.contains("\"queryCount\": 74"))
     }
 
     "mark full JSON parsing as deferred while full static-row expansion is implemented" in {
       val input = M9BeautyQSearchEvalQueryDatasetStaticRows.DefaultResult.staticRunInput
       val warningsAndNotes = (input.warnings ++ input.notes).mkString("\n")
 
-      assert(warningsAndNotes.contains("Full 64-query static-row expansion implemented: mapped_row_count=64; full_dataset_query_count=64"))
+      assert(warningsAndNotes.contains("Full 74-query static-row expansion implemented: mapped_row_count=74; full_dataset_query_count=74"))
       assert(warningsAndNotes.contains("Rows are static placeholders/fixture anchors only"))
       assert(warningsAndNotes.contains("No JSON parser/dependency is used"))
     }

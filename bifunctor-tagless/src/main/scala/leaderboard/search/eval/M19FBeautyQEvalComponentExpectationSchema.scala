@@ -26,7 +26,7 @@ import io.circe.{Decoder, Json}
  * Boundaries:
  *   - pure data only; no DI, no effects, no backend calls, no HTTP, no plugin, no production
  *     `/beauty-search` route;
- *   - the decoder is tolerant: the existing checked-in 64-query JSON still decodes; absent fields
+ *   - the decoder is tolerant: the existing checked-in 74-query JSON still decodes; absent fields
  *     stay `None` / `AbsentFromDataset`, never false evidence;
  *   - synthetic fixture JSON may carry the new fields to prove decoding and coverage propagation;
  *   - this is an offline/eval-only surface. It does not choose a hybrid policy, does not claim a

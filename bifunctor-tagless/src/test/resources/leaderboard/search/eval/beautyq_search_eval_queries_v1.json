@@ -34,31 +34,31 @@
     }
   ],
   "summary": {
-    "queryCount": 64,
+    "queryCount": 74,
     "languages": {
       "de": 6,
       "en": 22,
-      "mixed": 5,
-      "ru": 31
+      "mixed": 6,
+      "ru": 40
     },
     "queryTypes": {
       "ambiguous": 2,
-      "attribute": 24,
-      "attribute_heavy": 11,
+      "attribute": 25,
+      "attribute_heavy": 13,
       "broad": 9,
-      "conversational": 5,
+      "conversational": 14,
       "direct": 19,
       "english": 14,
       "german": 7,
-      "hard_negative": 7,
-      "home_visit": 2,
+      "hard_negative": 10,
+      "home_visit": 3,
       "location": 3,
-      "mixed_language": 4,
+      "mixed_language": 5,
       "multi_intent": 1,
       "negative_attribute": 1,
-      "numeric": 3,
+      "numeric": 5,
       "price": 5,
-      "synonym": 9,
+      "synonym": 13,
       "technical_token": 1,
       "typo": 2
     },
@@ -14160,6 +14160,1229 @@
               "categoryName": "Ресницы, брови и permanent make-up",
               "matchingVariantCount": 2
             }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_001",
+      "query": "хочу чтобы кожа выглядела свежей и напитанной перед событием",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find facial care that makes skin look fresh and hydrated before an event.",
+      "notes": [
+        "Seed-backed semantic paraphrase for facial care hydration/classic/aquafacial variants; no exact service or attribute token is required in the user text.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ],
+            "enumAttributes": {
+              "facial_treatment_type": [
+                "hydration",
+                "classic",
+                "aquafacial"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Маникюр"
+            ]
+          },
+          "acceptableVariantIds": [
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Маникюр"
+            ]
+          },
+          "acceptableServiceIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_002",
+      "query": "лицо шея декольте anti age уход",
+      "language": "mixed",
+      "queryTypes": [
+        "mixed_language",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find anti-aging facial care for face, neck, and decollete.",
+      "notes": [
+        "Seed-backed mixed RU/EN query for anti-aging facial care with body_area=face_neck_decollete.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ],
+            "enumAttributes": {
+              "facial_treatment_type": [
+                "anti_aging"
+              ],
+              "body_area": [
+                "face_neck_decollete"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_003",
+      "query": "убрать пушок над губой без лазера",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "hard_negative",
+        "attribute"
+      ],
+      "userIntent": "Find non-laser upper-lip hair removal.",
+      "notes": [
+        "Seed-backed semantic wording for upper_lip hair removal; `без лазера` is represented conservatively as non-laser acceptable methods without changing parser behavior.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ],
+            "enumAttributes": {
+              "body_area": [
+                "upper_lip"
+              ],
+              "hair_removal_method": [
+                "wax",
+                "sugaring"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ],
+            "enumAttributes": {
+              "hair_removal_method": [
+                "laser"
+              ],
+              "pmu_area": [
+                "lips"
+              ]
+            }
+          },
+          "acceptableVariantIds": [
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "forbiddenVariantIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Удаление волос"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ]
+          },
+          "acceptableServiceIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_004",
+      "query": "аккуратные брови чтобы не рисовать карандашом",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find brow services that make brows look neat without daily pencil drawing.",
+      "notes": [
+        "Seed-backed semantic goal for brow shaping, tinting, henna, and lamination variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Брови"
+            ],
+            "enumAttributes": {
+              "brow_service_type": [
+                "shaping",
+                "tinting",
+                "henna",
+                "lamination"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Ресницы",
+              "Маникюр"
+            ]
+          },
+          "acceptableVariantIds": [
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Брови"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Ресницы",
+              "Маникюр"
+            ]
+          },
+          "acceptableServiceIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_005",
+      "query": "ресницы выглядят натурально но заметнее",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find natural-looking but more visible lashes, especially classic 1D extensions.",
+      "notes": [
+        "Seed-backed semantic paraphrase for classic1_d lash extension variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ],
+            "enumAttributes": {
+              "lash_service_type": [
+                "extension"
+              ],
+              "lash_volume": [
+                "classic1_d"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Маникюр"
+            ]
+          },
+          "acceptableVariantIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Маникюр"
+            ]
+          },
+          "acceptableServiceIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_006",
+      "query": "обновить нарощенные ресницы не полный сет",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "hard_negative"
+      ],
+      "userIntent": "Find lash refill/correction rather than a full extension set.",
+      "notes": [
+        "Seed-backed semantic paraphrase for lash refill/correction; hard-negative boundary is full-set lash extension.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ],
+            "enumAttributes": {
+              "lash_service_type": [
+                "refill"
+              ]
+            },
+            "booleanAttributes": {
+              "with_correction": true
+            }
+          },
+          "preferred": {
+            "duration": {
+              "max": 90
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Наращивание и моделирование ногтей",
+              "Брови"
+            ],
+            "enumAttributes": {
+              "lash_service_type": [
+                "extension"
+              ]
+            }
+          },
+          "acceptableVariantIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12"
+          ],
+          "forbiddenVariantIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Наращивание и моделирование ногтей",
+              "Брови"
+            ]
+          },
+          "acceptableServiceIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_007",
+      "query": "снять старый гель и привести ногти в порядок",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "hard_negative"
+      ],
+      "userIntent": "Find nail gel removal with nail care/manicure context.",
+      "notes": [
+        "Seed-backed semantic combination of removal and nail-care intent; hard-negative boundary is hair removal.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Маникюр",
+              "Наращивание и моделирование ногтей"
+            ],
+            "booleanAttributes": {
+              "with_removal": true
+            }
+          },
+          "preferred": {
+            "enumAttributes": {
+              "nail_service_type": [
+                "manicure",
+                "removal"
+              ],
+              "nail_coating_type": [
+                "gel",
+                "shellac"
+              ]
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "acceptableVariantIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Маникюр",
+              "Наращивание и моделирование ногтей"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ногти, маникюр и педикюр"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "acceptableServiceIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_008",
+      "query": "домашний уход для подруг небольшой компанией",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "home_visit",
+        "numeric"
+      ],
+      "userIntent": "Find home-visit facial care for a small group of friends.",
+      "notes": [
+        "Seed-backed semantic phrase for home_visit_surcharge and max_clients mini-group variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Выездной уход и мини-группы"
+            ],
+            "intAttributes": {
+              "max_clients": {
+                "min": 2
+              }
+            }
+          },
+          "preferred": {
+            "bigDecimalAttributes": {
+              "home_visit_surcharge": {
+                "min": 1
+              }
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Косметология лица",
+              "Удаление волос"
+            ]
+          },
+          "acceptableVariantIds": [
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d",
+            "a301a5de-c6e2-5b54-89af-1ab82c51745f"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Выездной уход и мини-группы"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Косметология лица",
+              "Удаление волос"
+            ]
+          },
+          "acceptableServiceIds": [
+            "51b23898-5baf-5a7a-8a00-52868181b650"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_009",
+      "query": "перманент чтобы губы были ярче без ежедневной помады",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find permanent make-up for brighter lips without daily lipstick.",
+      "notes": [
+        "Seed-backed outcome wording for PMU lips variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ],
+            "enumAttributes": {
+              "pmu_area": [
+                "lips"
+              ]
+            }
+          },
+          "preferred": {
+            "booleanAttributes": {
+              "with_correction": true
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос"
+            ],
+            "enumAttributes": {
+              "body_area": [
+                "upper_lip"
+              ]
+            }
+          },
+          "acceptableVariantIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "acceptableServiceIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_semantic_010",
+      "query": "быстро убрать волосы в подмышках курсом",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "numeric",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find armpit hair removal with a course/package of sessions.",
+      "notes": [
+        "Seed-backed semantic phrase for armpits hair removal, especially the session_count package variant.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ],
+            "enumAttributes": {
+              "body_area": [
+                "armpits"
+              ]
+            }
+          },
+          "preferred": {
+            "intAttributes": {
+              "session_count": {
+                "min": 6
+              }
+            },
+            "bigDecimalAttributes": {
+              "fixed_discount_amount": {
+                "min": 1
+              }
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Косметология лица",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Удаление волос"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Косметология лица",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
           ],
           "topK": {
             "requiredInTopK": 3,
