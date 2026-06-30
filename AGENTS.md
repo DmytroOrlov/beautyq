@@ -17,6 +17,15 @@
 * Use task-named docs and directly touched source/spec/resource files. Do not read broad plugin/route/DI/http files unless a failure, explicit conflict, or the task scope requires it.
 * Do not create, read, or write explicit absolute scratch/device paths such as `/tmp`, `/var/tmp`, `/private/tmp`, `/dev`, or `/dev/null` for repo work, validation, or artifacts. Keep temporary files, generated artifacts, and one-off helper outputs inside the repo working tree unless the user explicitly provides another path.
 
+## Ownership and abstraction
+
+* Put behavior where its source of truth lives; do not hard-code one app/domain into reusable layers.
+* For framework, DSL, runtime, interpreter, or adapter work, name the generic boundary and the app-specific boundary before editing.
+* Keep app-specific names, defaults, policies, and compatibility shims at the edge unless the task explicitly changes the generic contract.
+* Prove reusable code with neutral fixtures or contract tests; app examples alone do not prove a generic boundary.
+* If preserving behavior requires domain names in a reusable layer, stop and report the boundary conflict.
+* Prefer small explicit adapters over broad "generic" code that secretly knows one domain.
+
 ## Verification
 
 Labels:
