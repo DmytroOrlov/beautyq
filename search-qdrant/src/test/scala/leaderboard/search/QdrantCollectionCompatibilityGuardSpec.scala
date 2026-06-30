@@ -62,7 +62,7 @@ final class QdrantCollectionCompatibilityGuardSpec extends AnyWordSpec {
       error match {
         case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
           assert(message.contains(s"collection ${expectation.collectionName}"))
-          assert(message.contains("VectorNameMismatch(expected=variant-embedding, observed=other-vector)"))
+          assert(message.contains("VectorNameMismatch(expected=document-embedding, observed=other-vector)"))
         case other =>
           fail(s"Expected qdrant-collection-compatibility failure, got $other")
       }
@@ -82,11 +82,11 @@ final class QdrantCollectionCompatibilityGuardSpec extends AnyWordSpec {
       error match {
         case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
           assert(message.contains("qdrant-collection-compatibility failed"))
-          assert(message.contains("CollectionNameMismatch(expected=beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine, observed=other_collection)"))
-          assert(message.contains("VectorNameMismatch(expected=variant-embedding, observed=other-vector)"))
+          assert(message.contains("CollectionNameMismatch(expected=generic_document_v1_local_generic_embedding_document_embedding_1024_cosine, observed=other_collection)"))
+          assert(message.contains("VectorNameMismatch(expected=document-embedding, observed=other-vector)"))
           assert(message.contains("DimensionMismatch(expected=1024, observed=768)"))
           assert(message.contains("DistanceMismatch(expected=Cosine, observed=Dot)"))
-          assert(message.contains("EmbeddingModelMismatch(expected=llama-cpp-embedding, observed=other-model)"))
+          assert(message.contains("EmbeddingModelMismatch(expected=generic-embedding, observed=other-model)"))
         case other =>
           fail(s"Expected qdrant-collection-compatibility failure, got $other")
       }
@@ -116,7 +116,7 @@ final class QdrantCollectionCompatibilityGuardSpec extends AnyWordSpec {
 
       error match {
         case QueryFailure.OperationFailure("qdrant-collection-compatibility", message) =>
-          assert(message.contains("EmbeddingModelMismatch(expected=llama-cpp-embedding, observed=other-embedding-model)"))
+          assert(message.contains("EmbeddingModelMismatch(expected=generic-embedding, observed=other-embedding-model)"))
         case other =>
           fail(s"Expected qdrant-collection-compatibility failure, got $other")
       }
@@ -157,11 +157,11 @@ final class QdrantCollectionCompatibilityGuardSpec extends AnyWordSpec {
 
   private val expectation =
     QdrantCollectionCompatibilityExpectation(
-      collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine",
-      vectorName = "variant-embedding",
+      collectionName = "generic_document_v1_local_generic_embedding_document_embedding_1024_cosine",
+      vectorName = "document-embedding",
       expectedDimension = 1024,
       expectedDistance = VectorDistance.Cosine,
-      embeddingModelName = "llama-cpp-embedding",
+      embeddingModelName = "generic-embedding",
     )
 
   private def guard(client: QdrantCollectionInfoClient): QdrantCollectionCompatibilityGuard =
@@ -210,6 +210,6 @@ final class QdrantCollectionCompatibilityGuardSpec extends AnyWordSpec {
 
   private def runFail[A](effect: IO[QueryFailure, A]): QueryFailure =
     Unsafe.unsafe { implicit unsafe =>
-      Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(sys.error("expected failure"))
+      Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(fail("expected failure"))
     }
 }

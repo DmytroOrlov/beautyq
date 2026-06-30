@@ -11,7 +11,7 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
       val second = identityInput.renderedCollectionName
 
       assert(first == second)
-      assert(first == "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine")
+      assert(first == "generic_document_v1_local_generic_embedding_document_embedding_1024_cosine")
     }
 
     "change rendered collection name when embedding model changes" in {
@@ -35,11 +35,11 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
     "normalize unsafe model vector and purpose characters" in {
       val rendered = identityInput.copy(
         purpose = "Local / Exp!",
-        embeddingModelName = "LLaMA.cpp Embedding@Q8_0",
-        vectorName = "Variant-Embedding:Text",
+        embeddingModelName = "Generic Embedding@Q8_0",
+        vectorName = "Document-Embedding:Text",
       ).renderedCollectionName
 
-      assert(rendered == "beauty_variant_v1_local_exp_llama_cpp_embedding_q8_0_variant_embedding_text_1024_cosine")
+      assert(rendered == "generic_document_v1_local_exp_generic_embedding_q8_0_document_embedding_text_1024_cosine")
       assert(rendered.forall(character => character.isLower || character.isDigit || character == '_'))
     }
 
@@ -47,11 +47,11 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
       val expected = QdrantCollectionIdentity.compatibilityExpectation(embeddingSpec, vectorSearchSpec)
 
       assert(expected == QdrantCollectionCompatibilityExpectation(
-        collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine",
-        vectorName = "variant-embedding",
+        collectionName = "generic_document_v1_local_generic_embedding_document_embedding_1024_cosine",
+        vectorName = "document-embedding",
         expectedDimension = 1024,
         expectedDistance = VectorDistance.Cosine,
-        embeddingModelName = "llama-cpp-embedding",
+        embeddingModelName = "generic-embedding",
       ))
     }
 
@@ -70,7 +70,7 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
     "fail compatibility for vector name mismatch" in {
       val result = QdrantCollectionIdentity.checkCompatibility(expectation, observedConfig.copy(vectorName = "other-vector"))
 
-      assert(result == Left(List(QdrantCollectionCompatibilityMismatch.VectorNameMismatch("variant-embedding", "other-vector"))))
+      assert(result == Left(List(QdrantCollectionCompatibilityMismatch.VectorNameMismatch("document-embedding", "other-vector"))))
     }
 
     "fail compatibility for distance mismatch" in {
@@ -88,7 +88,7 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
     "fail compatibility for observed embedding model mismatch" in {
       val result = QdrantCollectionIdentity.checkCompatibility(expectation, observedConfig.copy(embeddingModelName = Some("other-model")))
 
-      assert(result == Left(List(QdrantCollectionCompatibilityMismatch.EmbeddingModelMismatch("llama-cpp-embedding", "other-model"))))
+      assert(result == Left(List(QdrantCollectionCompatibilityMismatch.EmbeddingModelMismatch("generic-embedding", "other-model"))))
     }
 
     "not require observed embedding model metadata from Qdrant vector config" in {
@@ -100,19 +100,19 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
 
   private val identityInput: QdrantCollectionIdentityInput =
     QdrantCollectionIdentityInput(
-      domainName = "beauty_variant",
+      domainName = "generic_document",
       searchSpecVersion = "v1",
       purpose = "local",
-      embeddingModelName = "llama-cpp-embedding",
-      vectorName = "variant-embedding",
+      embeddingModelName = "generic-embedding",
+      vectorName = "document-embedding",
       vectorDimension = 1024,
       distance = VectorDistance.Cosine,
     )
 
   private val embeddingSpec: EmbeddingSpec[Any] =
     EmbeddingSpec[Any](
-      vectorName = "variant-embedding",
-      modelName = "llama-cpp-embedding",
+      vectorName = "document-embedding",
+      modelName = "generic-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
       sourceTextFields = Nil,
@@ -121,7 +121,7 @@ final class QdrantCollectionIdentitySpec extends AnyWordSpec {
   private val vectorSearchSpec: VectorSearchSpec =
     VectorSearchSpec(
       collectionName = identityInput.renderedCollectionName,
-      vectorName = "variant-embedding",
+      vectorName = "document-embedding",
       topK = 20,
       scoreThreshold = Some(0.2),
     )

@@ -126,7 +126,7 @@ final class QdrantSemanticDocumentSearchSpec extends AnyWordSpec {
 
   private def runFail[A](effect: IO[QueryFailure, A]): QueryFailure =
     Unsafe.unsafe { implicit unsafe =>
-      Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(sys.error("expected failure"))
+      Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(fail("expected failure"))
     }
 
   private type UIO[A] = zio.UIO[A]

@@ -126,11 +126,11 @@ final class QdrantCollectionCompatibilityValidatorSpec extends AnyWordSpec {
 
   private val expectation =
     QdrantCollectionCompatibilityExpectation(
-      collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine",
-      vectorName = "variant-embedding",
+      collectionName = "generic_document_v1_local_generic_embedding_document_embedding_1024_cosine",
+      vectorName = "document-embedding",
       expectedDimension = 1024,
       expectedDistance = VectorDistance.Cosine,
-      embeddingModelName = "llama-cpp-embedding",
+      embeddingModelName = "generic-embedding",
     )
 
   private def collectionInfoJson(

@@ -13,7 +13,7 @@ final class QdrantJsonInterpreterSpec extends AnyWordSpec {
 
       assert(result == Json.obj(
         "vectors" -> Json.obj(
-          "variant-embedding" -> Json.obj(
+          "document-embedding" -> Json.obj(
             "size" -> 1024.asJson,
             "distance" -> "Cosine".asJson,
           )
@@ -27,35 +27,35 @@ final class QdrantJsonInterpreterSpec extends AnyWordSpec {
         embeddingSpec,
         io.circe.JsonObject(
           "managedBootstrapFingerprint" -> "abc123".asJson,
-          "managedBootstrapFingerprintVersion" -> "beautyq-managed-local-search-bootstrap-fingerprint-v2".asJson,
+          "managedBootstrapFingerprintVersion" -> "generic-bootstrap-fingerprint-v1".asJson,
         ),
       )
 
       assert(result == Json.obj(
         "vectors" -> Json.obj(
-          "variant-embedding" -> Json.obj(
+          "document-embedding" -> Json.obj(
             "size" -> 1024.asJson,
             "distance" -> "Cosine".asJson,
           )
         ),
         "metadata" -> Json.obj(
           "managedBootstrapFingerprint" -> "abc123".asJson,
-          "managedBootstrapFingerprintVersion" -> "beautyq-managed-local-search-bootstrap-fingerprint-v2".asJson,
+          "managedBootstrapFingerprintVersion" -> "generic-bootstrap-fingerprint-v1".asJson,
         ),
       ))
     }
   }
 
   private val vectorSpec = VectorSearchSpec(
-    collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine",
-    vectorName = "variant-embedding",
+    collectionName = "generic_document_v1_local_generic_embedding_document_embedding_1024_cosine",
+    vectorName = "document-embedding",
     topK = 10,
     scoreThreshold = None,
   )
 
   private val embeddingSpec = EmbeddingSpec[Any](
-    vectorName = "variant-embedding",
-    modelName = "local-llama-cpp-embedding",
+    vectorName = "document-embedding",
+    modelName = "local-generic-embedding",
     dimension = 1024,
     distance = VectorDistance.Cosine,
     sourceTextFields = Nil,

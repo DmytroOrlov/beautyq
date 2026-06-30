@@ -13,7 +13,7 @@ final class QdrantCollectionReadinessConfigSpec extends AnyWordSpec {
 
       assert(first.collectionName == second.collectionName)
       assert(first.collectionName == expected)
-      assert(first.collectionName == "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine")
+      assert(first.collectionName == "generic_document_v1_local_generic_embedding_document_embedding_1024_cosine")
     }
 
     "set VectorSearchSpec collectionName to derived collectionName" in {
@@ -64,11 +64,11 @@ final class QdrantCollectionReadinessConfigSpec extends AnyWordSpec {
     "normalize purpose suffix through existing identity renderer" in {
       val config = QdrantCollectionReadinessConfig.derive(readinessInput.copy(purpose = "Local / Exp!"))
 
-      assert(config.collectionName == "beauty_variant_v1_local_exp_llama_cpp_embedding_variant_embedding_1024_cosine")
+      assert(config.collectionName == "generic_document_v1_local_exp_generic_embedding_document_embedding_1024_cosine")
       assert(config.collectionName.forall(character => character.isLower || character.isDigit || character == '_'))
     }
 
-    "derive without Qdrant or llama calls" in {
+    "derive without Qdrant or embedding calls" in {
       val config = QdrantCollectionReadinessConfig.derive(readinessInput)
 
       assert(config.vectorSearchSpec.topK == vectorSearchSpec.topK)
@@ -80,7 +80,7 @@ final class QdrantCollectionReadinessConfigSpec extends AnyWordSpec {
   private val embeddingSpec: EmbeddingSpec[Any] =
     EmbeddingSpec[Any](
       vectorName = "embedding-spec-vector-name-is-not-identity-source",
-      modelName = "llama-cpp-embedding",
+      modelName = "generic-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
       sourceTextFields = Nil,
@@ -89,14 +89,14 @@ final class QdrantCollectionReadinessConfigSpec extends AnyWordSpec {
   private val vectorSearchSpec: VectorSearchSpec =
     VectorSearchSpec(
       collectionName = "placeholder_collection",
-      vectorName = "variant-embedding",
+      vectorName = "document-embedding",
       topK = 20,
       scoreThreshold = Some(0.2),
     )
 
   private val readinessInput: QdrantCollectionReadinessInput =
     QdrantCollectionReadinessInput(
-      domainName = "beauty_variant",
+      domainName = "generic_document",
       searchSpecVersion = "v1",
       purpose = "local",
       embeddingSpec = embeddingSpec,

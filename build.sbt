@@ -105,10 +105,20 @@ lazy val `search-elasticsearch` = project
   )))
   .dependsOn(`leaderboard-core`, `search-core`)
 
+lazy val `search-qdrant` = project
+  .in(file("search-qdrant"))
+  .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
+    Deps.circeParser,
+    Deps.zio,
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(`leaderboard-core`, `search-core`)
+
 lazy val `bifunctor-tagless` = project
   .in(file("bifunctor-tagless"))
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`)
+  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
@@ -120,6 +130,7 @@ lazy val `distage-example` = project
     `leaderboard-core`,
     `search-core`,
     `search-elasticsearch`,
+    `search-qdrant`,
     `bifunctor-tagless`,
     `graal-resources`,
   )

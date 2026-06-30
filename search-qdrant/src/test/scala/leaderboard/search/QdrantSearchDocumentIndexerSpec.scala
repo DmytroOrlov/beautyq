@@ -32,7 +32,7 @@ final class QdrantSearchDocumentIndexerSpec extends AnyWordSpec {
       )
 
       val result = run(indexer.upsertDocument("generic-semantic", document))
-      val point = runUio(jsonRef.get).getOrElse(sys.error("expected point json")).hcursor.downField("points").downArray
+      val point = runUio(jsonRef.get).getOrElse(fail("expected point json")).hcursor.downField("points").downArray
       val payload = point.downField("payload")
 
       assert(runUio(textRef.get).contains("Generic search title Reusable semantic body"))
@@ -61,7 +61,7 @@ final class QdrantSearchDocumentIndexerSpec extends AnyWordSpec {
 
       run(indexer.upsertDocument("generic-semantic", document))
 
-      val point = runUio(jsonRef.get).getOrElse(sys.error("expected point json")).hcursor.downField("points").downArray
+      val point = runUio(jsonRef.get).getOrElse(fail("expected point json")).hcursor.downField("points").downArray
       assert(point.downField("id").as[Long] == Right(42L))
     }
 
@@ -226,7 +226,7 @@ final class QdrantSearchDocumentIndexerSpec extends AnyWordSpec {
 
   private def runFail[A](effect: IO[QueryFailure, A]): QueryFailure =
     Unsafe.unsafe { implicit unsafe =>
-      Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(sys.error("expected failure"))
+      Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(fail("expected failure"))
     }
 
   private type UIO[A] = zio.UIO[A]

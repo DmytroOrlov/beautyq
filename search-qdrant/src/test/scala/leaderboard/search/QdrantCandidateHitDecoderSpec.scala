@@ -8,7 +8,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class QdrantCandidateHitDecoderSpec extends AnyWordSpec {
   "QdrantCandidateHitDecoder" should {
-    "decode non-BeautyQ document ids into semantic document hits and preserve hit order and scores" in {
+    "decode generic document ids into semantic document hits and preserve hit order and scores" in {
       val hits = List(
         QdrantSearchHit("point-1", JsonObject.fromMap(Map("documentKey" -> Json.fromString("doc-2"))), 0.42),
         QdrantSearchHit("point-2", JsonObject.fromMap(Map("documentKey" -> Json.fromString("doc-1"))), 0.91),
