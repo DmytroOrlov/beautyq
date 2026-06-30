@@ -10,7 +10,7 @@ final class SearchRuntimeSpecSpec extends AnyWordSpec {
       val runtimeSpec = BeautySearchSpecV1.runtimeSpec
       val searchSpec = BeautySearchSpecV1.spec
       val qdrantPayloadSpec = runtimeSpec.payloadSpecs
-        .get(SearchRuntimeSpec.QdrantPayloadSpecName)
+        .get(BeautySearchSpecV1.QdrantPayloadSpecName)
         .getOrElse(fail("expected qdrant payload spec"))
 
       assert(runtimeSpec.documentSpec == BeautyQVariantSearchDocumentSchema.documentSpec)
@@ -62,14 +62,14 @@ final class SearchRuntimeSpecSpec extends AnyWordSpec {
           providerGroupField = idField,
           serviceIntentGroupField = nameField,
         ),
-        payloadSpecs = Map(SearchRuntimeSpec.QdrantPayloadSpecName -> SearchDocumentPayloadSpec(documentSpec, List(idField))),
+        payloadSpecs = Map("payload" -> SearchDocumentPayloadSpec(documentSpec, List(idField))),
         embeddingSpec = None,
         vectorSearchSpec = None,
       )
 
       assert(runtimeSpec.documentSpec.indexName == "toy")
       assert(runtimeSpec.documentSpec.id(ToyDocument("toy-1", "Synthetic")) == "toy-1")
-      assert(runtimeSpec.payloadSpecs.keySet == Set(SearchRuntimeSpec.QdrantPayloadSpecName))
+      assert(runtimeSpec.payloadSpecs.keySet == Set("payload"))
     }
   }
 }

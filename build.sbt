@@ -82,9 +82,22 @@ inThisBuild(
   )
 )
 
+lazy val `leaderboard-core` = project
+  .in(file("leaderboard-core"))
+  .pipe(lightweightSettings(Nil))
+
+lazy val `search-core` = project
+  .in(file("search-core"))
+  .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(`leaderboard-core`)
+
 lazy val `bifunctor-tagless` = project
   .in(file("bifunctor-tagless"))
-  .pipe(sharedSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
+  .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
+  .dependsOn(`leaderboard-core`, `search-core`)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
@@ -93,15 +106,17 @@ lazy val `graal-resources` = project
 lazy val `distage-example` = project
   .in(file("."))
   .aggregate(
+    `leaderboard-core`,
+    `search-core`,
     `bifunctor-tagless`,
     `graal-resources`,
   )
   .enablePlugins(GraalVMNativeImagePlugin, UniversalPlugin)
 
-def sharedSettings(additionalDeps: Seq[ModuleID])(project: Project): Project = {
+def lightweightSettings(additionalDeps: Seq[ModuleID])(project: Project): Project = {
   project
     .settings(
-      libraryDependencies ++= Deps.CoreDeps ++ additionalDeps,
+      libraryDependencies ++= additionalDeps,
       libraryDependencies ++= {
         if (scalaVersion.value.startsWith("2")) {
           Seq(compilerPlugin(Deps.kindProjector))
@@ -136,6 +151,12 @@ def sharedSettings(additionalDeps: Seq[ModuleID])(project: Project): Project = {
         s"-Xmacro-settings:git-described-version=${git.gitDescribedVersion.value.getOrElse("")}",
         s"-Xmacro-settings:git-head-commit=${git.gitHeadCommit.value.getOrElse("")}",
       ),
+    )
+}
+
+def appSettings(additionalDeps: Seq[ModuleID])(project: Project): Project = {
+  lightweightSettings(Deps.CoreDeps ++ additionalDeps)(project)
+    .settings(
       GraalVMNativeImage / mainClass := Some("leaderboard.GenericLauncher"),
       graalVMNativeImageOptions ++= Seq(
         "--no-fallback",

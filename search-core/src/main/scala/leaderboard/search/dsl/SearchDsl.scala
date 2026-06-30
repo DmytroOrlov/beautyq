@@ -411,9 +411,9 @@ object IntentMatchMode {
   case object Token extends IntentMatchMode
 }
 
-/** A single BeautyQ intent-vocabulary rule. These are structured intent aliases that map query phrases to
+/** A single search intent-vocabulary rule. These are structured intent aliases that map query phrases to
   * hard service/category/attribute constraints, soft boosts, requires, and excludes; they are not lexical
-  * Elasticsearch analyzer synonyms. Lexical recall/tokenization/synonym filters remain an ES analyzer
+  * backend analyzer synonyms. Lexical recall/tokenization/synonym filters remain a backend analyzer
   * concern; structured service/category/attribute intent mapping is schema/data ownership.
   */
 sealed trait SearchIntentRule extends Product with Serializable {

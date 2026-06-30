@@ -91,10 +91,10 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
       assert(runtimeSection(baseRuntimeSpec) != runtimeSection(changedSpec))
     }
 
-    "change runtime schema inputs when the qdrant payload fields change" in {
+    "change runtime schema inputs when the payload fields change" in {
       val changedSpec = baseRuntimeSpec.copy(
         payloadSpecs = Map(
-          SearchRuntimeSpec.QdrantPayloadSpecName ->
+          PayloadSpecName ->
             SearchDocumentPayloadSpec(documentSpec(baseFields), List(idField))
         )
       )
@@ -133,6 +133,8 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
 }
 
 object SearchRuntimeFingerprintSpec {
+  private val PayloadSpecName: String = "toy-vector"
+
   final case class ToyDoc(id: String, name: String, price: BigDecimal)
 
   val idField: SearchField[ToyDoc] =
@@ -233,7 +235,7 @@ object SearchRuntimeFingerprintSpec {
         serviceIntentGroupField = nameField,
       ),
       payloadSpecs = Map(
-        SearchRuntimeSpec.QdrantPayloadSpecName ->
+        PayloadSpecName ->
           SearchDocumentPayloadSpec(documentSpec(baseFields), List(idField, nameField))
       ),
       embeddingSpec = Some(EmbeddingSpec[ToyDoc]("toy-vector", "toy-model", 8, VectorDistance.Cosine, List(nameField))),

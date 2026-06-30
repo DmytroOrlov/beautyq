@@ -12,8 +12,8 @@ final case class SemanticSupplementWindow(capRoom: Int)
   *   - semantic candidates already present in the lexical prefix (per `sameDocument`) are removed;
   *   - at most `window.capRoom` semantic candidates are appended.
   *
-  * This is the generic search core; it carries no BeautyQ/app/Qdrant types. App-specific eligibility and
-  * adapting (ES/Qdrant id types, business constraints) live in the caller's facade.
+  * This is the generic search core; it carries no app/backend types. App-specific eligibility and
+  * adapting (backend id types, business constraints) live in the caller's facade.
   */
 trait SemanticSupplementPolicy[A] {
   def select(

@@ -13,7 +13,7 @@ import java.security.MessageDigest
   * [[SearchDocumentSpec]] fields, and the runtime/schema sections are derived from a
   * [[SearchRuntimeSpec]] (document fields, query schema, request/facet/carousel config, payload field
   * paths, embedding source field paths, and vector config). Nothing here is specific to any concrete
-  * document domain; backend-specific or externally-supplied inputs (e.g. an Elasticsearch mapping or an
+  * document domain; backend-specific or externally-supplied inputs (e.g. an index mapping or an
   * embedding endpoint label) are layered in through `extraSections`.
   *
   * The string renderers below render typed metadata (`SearchFieldKind`, `SearchFieldSemantic`,

@@ -12,7 +12,3 @@ final case class SearchRuntimeSpec[A](
   embeddingSpec: Option[EmbeddingSpec[A]],
   vectorSearchSpec: Option[VectorSearchSpec],
 )
-
-object SearchRuntimeSpec {
-  val QdrantPayloadSpecName: String = "qdrant"
-}

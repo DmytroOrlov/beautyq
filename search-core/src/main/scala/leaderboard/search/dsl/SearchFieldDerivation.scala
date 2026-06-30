@@ -5,7 +5,7 @@ import scala.quoted.*
 /** Compile-time extraction of a selected field label from a direct field selector, owned by the search
   * DSL so it stays independently movable to a future search-core module.
   *
-  * This deliberately does not reuse `leaderboard.repo.RepoFieldMacro`: the search DSL must not depend on
+  * This deliberately does not reuse repository field derivation: the search DSL must not depend on
   * repo internals. It mirrors the same narrow selector shape (`_.fieldName`) and rejects anything else at
   * compile time, with no runtime reflection.
   */

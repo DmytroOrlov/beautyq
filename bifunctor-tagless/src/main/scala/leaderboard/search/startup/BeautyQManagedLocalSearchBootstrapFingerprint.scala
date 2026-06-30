@@ -35,7 +35,7 @@ object BeautyQManagedLocalSearchBootstrapFingerprint {
     val runtimeSpec =
       spec
         .runtimeSpec(
-          Map(SearchRuntimeSpec.QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+          Map(BeautySearchSpecV1.QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
         )
         .copy(
           embeddingSpec = Some(embeddingSpec),

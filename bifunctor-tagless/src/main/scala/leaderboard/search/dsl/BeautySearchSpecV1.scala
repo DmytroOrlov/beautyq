@@ -4,11 +4,13 @@ import leaderboard.model.*
 import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
 
 object BeautySearchSpecV1 {
+  val QdrantPayloadSpecName: String = "qdrant"
+
   private val Fields = BeautyQVariantSearchDocumentSchema.Fields
 
   lazy val runtimeSpec: SearchRuntimeSpec[VariantSearchDocument] =
     spec.runtimeSpec(
-      Map(SearchRuntimeSpec.QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+      Map(QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
     )
 
   lazy val spec: BeautySearchSpec = BeautySearchSpec(
