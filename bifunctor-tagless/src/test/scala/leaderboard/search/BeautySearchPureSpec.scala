@@ -1654,6 +1654,31 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   }
 
   "InMemorySearchBackend" should {
+    "fail closed when a matching soft boost has no configured boost weight" in {
+      val baseRanking = BeautySearchSpecV1.spec.carouselSpec.ranking
+      val brokenRanking = RankingSpec(
+        baseRanking.weights.filterNot(_.name == BeautyQSearchPresentation.RankingWeights.ServiceBoost)
+      )
+      val brokenSpec = BeautySearchSpecV1.spec.copy(
+        carouselSpec = BeautySearchSpecV1.spec.carouselSpec.copy(ranking = brokenRanking)
+      )
+      val matchingServiceName = documents.head.serviceName
+      val backend = new InMemorySearchBackend[IO](brokenSpec, documents)
+      val intent = ParsedSearchIntent(
+        originalQuery = "synthetic missing boost weight",
+        normalizedTokens = Nil,
+        explicitConstraints = Nil,
+        softBoosts = List(SearchConstraint.ServiceAny(Set(matchingServiceName))),
+        remainingText = "",
+      )
+
+      val result = runIO(backend.search(UserSearchInput("synthetic missing boost weight", None, None), intent).either)
+      result match {
+        case Left(failure) => assert(failure.message.contains("Ranking boost role 'service' is not defined"))
+        case Right(response) => fail(s"Expected QueryFailure for missing soft boost weight, got $response")
+      }
+    }
+
     "return acceptable variant, provider and service ids for the first milestone eval subset" in {
       val backend = new InMemorySearchBackend[IO](BeautySearchSpecV1.spec, documents)
       val service = new BeautySearchService.Impl[IO](parser, backend)

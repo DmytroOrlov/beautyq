@@ -108,6 +108,23 @@ final class SearchRuntimeFingerprintSpec extends AnyWordSpec {
       assert(carousel.get[String]("groupField") == Right(idField.path))
       assert(ranking.get[Double]("textScore") == Right(1.0d))
       assert(ranking.get[Double]("primaryBoost") == Right(2.0d))
+      assert(carousel.get[String]("geoScoringBoostRole") == Right(GeoRole.value))
+    }
+
+    "change runtime section and fingerprint when the geo scoring boost role changes" in {
+      val changedSpec = baseRuntimeSpec.copy(
+        carouselSpec = baseRuntimeSpec.carouselSpec.copy(geoScoringBoostRole = Some(SearchBoostRole("geo-v2")))
+      )
+      assert(runtimeSection(baseRuntimeSpec) != runtimeSection(changedSpec))
+      assert(fingerprint() != fingerprint(spec = changedSpec))
+    }
+
+    "change runtime section and fingerprint when the geo scoring boost role is removed" in {
+      val changedSpec = baseRuntimeSpec.copy(
+        carouselSpec = baseRuntimeSpec.carouselSpec.copy(geoScoringBoostRole = None)
+      )
+      assert(runtimeSection(baseRuntimeSpec) != runtimeSection(changedSpec))
+      assert(fingerprint() != fingerprint(spec = changedSpec))
     }
 
     "change runtime schema inputs when the payload fields change" in {

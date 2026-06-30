@@ -42,14 +42,12 @@ object BeautyQHybridResponseCarouselLimits {
     spec: BeautySearchSpec,
     input: UserSearchInput,
   ): BeautyQHybridResponseCarouselLimits = {
-    val variantLimit = BeautyQSearchPresentation.variantLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
-    val providerLimit = BeautyQSearchPresentation.providerLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
-    val serviceIntentLimit = BeautyQSearchPresentation.serviceIntentLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+    val limits = BeautyQSearchPresentation.requireCarouselLimitValues(spec.carouselSpec)
 
     BeautyQHybridResponseCarouselLimits(
-      variantSize = math.min(input.limit, variantLimit),
-      providerSize = providerLimit,
-      serviceIntentSize = serviceIntentLimit,
+      variantSize = math.min(input.limit, limits.variantSize),
+      providerSize = limits.providerSize,
+      serviceIntentSize = limits.serviceIntentSize,
     ).normalized
   }
 }

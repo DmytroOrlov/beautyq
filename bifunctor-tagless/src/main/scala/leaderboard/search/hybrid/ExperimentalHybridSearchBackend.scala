@@ -44,7 +44,7 @@ final class ExperimentalHybridSearchBackend[F[+_, +_]: Error2](
                 executionMode = BeautySearchExecutionMode.EsPlusQdrantSupplement,
               )
               val esVariantIds = esResponse.variantCarousel.map(_.variantId).toSet
-              val variantLimit = BeautyQSearchPresentation.variantLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+              val variantLimit = BeautyQSearchPresentation.requireVariantLimit(spec.carouselSpec)
               val variantCap = math.min(input.limit, variantLimit)
               val capRoom = math.max(0, variantCap - esResponse.variantCarousel.size)
               val selectedHits = supplementPolicy.select(intent, esVariantIds, hits, documentsById, capRoom)

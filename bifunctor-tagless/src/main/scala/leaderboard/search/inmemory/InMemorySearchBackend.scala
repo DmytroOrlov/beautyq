@@ -31,28 +31,29 @@ final class InMemorySearchBackend[F[+_, +_]: Error2](
     for {
       textScoreWeight <- BeautyQSearchPresentation.textScoreWeight(spec.carouselSpec.ranking)
       providerDistanceWeight <- BeautyQSearchPresentation.providerDistanceWeight(spec.carouselSpec.ranking)
-    } yield documents.flatMap { document =>
-      val explicitMatches = intent.explicitConstraints.foldLeft[Either[QueryFailure, Boolean]](Right(true)) {
-        case (acc, constraint) =>
-          for {
-            alreadyMatches <- acc
-            nextMatches <- SearchSpecSupport.matchesConstraint(spec, document, constraint)
-          } yield alreadyMatches && nextMatches
-      }
+      scored <- sequence(documents.map(scoreDocument(input, intent, textScoreWeight, providerDistanceWeight, _)))
+    } yield scored.flatten
 
-      explicitMatches.toOption.filter(identity).flatMap { _ =>
+  private def scoreDocument(
+    input: UserSearchInput,
+    intent: ParsedSearchIntent,
+    textScoreWeight: Double,
+    providerDistanceWeight: Double,
+    document: VariantSearchDocument,
+  ): Either[QueryFailure, Option[ScoredDocument]] = {
+    val explicitMatches = intent.explicitConstraints.foldLeft[Either[QueryFailure, Boolean]](Right(true)) {
+      case (acc, constraint) =>
+        for {
+          alreadyMatches <- acc
+          nextMatches <- SearchSpecSupport.matchesConstraint(spec, document, constraint)
+        } yield alreadyMatches && nextMatches
+    }
+
+    if (!explicitMatches.toOption.exists(identity)) {
+      Right(None)
+    } else {
+      softBoostScore(document, intent).map { boostScore =>
         val textScore = SearchSpecSupport.textScore(spec, document, intent.remainingText)
-        val softBoostScore = intent.softBoosts.foldLeft(0.0d) {
-          (score, constraint) =>
-            SearchSpecSupport.matchesConstraint(spec, document, constraint) match {
-              case Right(true) =>
-                SearchSpecSupport.constraintBoostWeight(spec, constraint) match {
-                  case Right(weight) => score + weight * 0.5d
-                  case Left(_) => score
-                }
-              case _ => score
-            }
-        }
         val distanceKm = SearchSpecSupport.computeDistanceKm(input, document)
         val distanceBoost = distanceKm.map(distance => 1.0d / (1.0d + distance.toDouble) * providerDistanceWeight).getOrElse(0.0d)
         val finalTextScore = textScore * textScoreWeight + distanceBoost
@@ -63,11 +64,35 @@ final class InMemorySearchBackend[F[+_, +_]: Error2](
             ScoredDocument(
               document = document,
               textScore = finalTextScore,
-              boostScore = softBoostScore,
+              boostScore = boostScore,
               distanceKm = distanceKm,
             )
           )
         }
       }
+    }
+  }
+
+  private def softBoostScore(
+    document: VariantSearchDocument,
+    intent: ParsedSearchIntent,
+  ): Either[QueryFailure, Double] =
+    intent.softBoosts.foldLeft[Either[QueryFailure, Double]](Right(0.0d)) {
+      case (acc, constraint) =>
+        for {
+          score <- acc
+          matches <- SearchSpecSupport.matchesConstraint(spec, document, constraint)
+          next <- if (matches) SearchSpecSupport.constraintBoostWeight(spec, constraint).map(weight => score + weight * 0.5d)
+                  else Right(score)
+        } yield next
+    }
+
+  private def sequence[A](values: List[Either[QueryFailure, A]]): Either[QueryFailure, List[A]] =
+    values.foldRight[Either[QueryFailure, List[A]]](Right(Nil)) {
+      case (value, acc) =>
+        for {
+          tail <- acc
+          head <- value
+        } yield head :: tail
     }
 }

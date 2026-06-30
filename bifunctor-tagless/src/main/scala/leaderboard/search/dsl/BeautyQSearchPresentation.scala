@@ -55,6 +55,12 @@ object BeautyQSearchPresentation {
       geoScoringBoostRole = Some(BoostRoles.ProviderDistance),
     )
 
+  final case class BeautyQCarouselLimitValues(
+    variantSize: Int,
+    providerSize: Int,
+    serviceIntentSize: Int,
+  )
+
   def variantLimit(carousel: CarouselSpec[VariantSearchDocument]): Either[QueryFailure, Int] =
     carousel.limit(CarouselLimits.Variant)
 
@@ -63,6 +69,35 @@ object BeautyQSearchPresentation {
 
   def serviceIntentLimit(carousel: CarouselSpec[VariantSearchDocument]): Either[QueryFailure, Int] =
     carousel.limit(CarouselLimits.ServiceIntent)
+
+  def carouselLimitValues(
+    carousel: CarouselSpec[VariantSearchDocument]
+  ): Either[QueryFailure, BeautyQCarouselLimitValues] =
+    for {
+      variant <- variantLimit(carousel)
+      provider <- providerLimit(carousel)
+      serviceIntent <- serviceIntentLimit(carousel)
+    } yield BeautyQCarouselLimitValues(
+      variantSize = variant,
+      providerSize = provider,
+      serviceIntentSize = serviceIntent,
+    )
+
+  /** Explicit, centralized unsafe read of the statically-configured BeautyQ carousel limits.
+    *
+    * The BeautyQ carousel config is a compile-time/static invariant owned by [[carouselSpec]]; a missing
+    * named limit is a configuration error, not a per-request failure. This is the single place that turns
+    * that static invariant into an exception, so call sites do not repeat inline unsafe reads.
+    */
+  def requireCarouselLimitValues(
+    carousel: CarouselSpec[VariantSearchDocument]
+  ): BeautyQCarouselLimitValues =
+    carouselLimitValues(carousel).fold(error => throw new IllegalStateException(error.message), identity)
+
+  def requireVariantLimit(
+    carousel: CarouselSpec[VariantSearchDocument]
+  ): Int =
+    requireCarouselLimitValues(carousel).variantSize
 
   def providerGroupField(carousel: CarouselSpec[VariantSearchDocument]): Either[QueryFailure, SearchField[VariantSearchDocument]] =
     carousel.group(CarouselGroups.Provider)

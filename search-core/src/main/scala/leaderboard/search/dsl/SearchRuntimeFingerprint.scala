@@ -161,7 +161,10 @@ object SearchRuntimeFingerprint {
       JsonObject.fromIterable(
         carousel.limits.map(limit => limit.name -> limit.size.asJson) ++
           carousel.groups.map(group => group.name -> Json.fromString(group.field.path)) ++
-          List("ranking" -> rankingJson(carousel.ranking))
+          List(
+            "ranking" -> rankingJson(carousel.ranking),
+            "geoScoringBoostRole" -> carousel.geoScoringBoostRole.map(_.value).asJson,
+          )
       )
     )
 

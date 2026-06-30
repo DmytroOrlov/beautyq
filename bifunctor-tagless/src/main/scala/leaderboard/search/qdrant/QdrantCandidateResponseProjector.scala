@@ -18,19 +18,17 @@ object QdrantCandidateResponseProjector {
     input: UserSearchInput,
     assembly: QdrantCandidateAssembly,
   ): BeautySearchResponse = {
-    val variantLimit = BeautyQSearchPresentation.variantLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
-    val providerLimit = BeautyQSearchPresentation.providerLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
-    val serviceIntentLimit = BeautyQSearchPresentation.serviceIntentLimit(spec.carouselSpec).fold(error => throw new IllegalStateException(error.message), identity)
+    val limits = BeautyQSearchPresentation.requireCarouselLimitValues(spec.carouselSpec)
 
     BeautySearchResponse(
       variantCarousel = assembly.variantCandidates
-        .take(math.min(input.limit, variantLimit))
+        .take(math.min(input.limit, limits.variantSize))
         .map(toVariantResult),
       providerCarousel = assembly.providerCandidates
-        .take(providerLimit)
+        .take(limits.providerSize)
         .map(toProviderResult),
       serviceIntentCarousel = assembly.serviceCandidates
-        .take(serviceIntentLimit)
+        .take(limits.serviceIntentSize)
         .map(toServiceIntentResult),
       facets = Nil,
       inferredFilters = Nil,

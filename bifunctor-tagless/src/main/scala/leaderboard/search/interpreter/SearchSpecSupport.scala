@@ -123,13 +123,6 @@ object SearchSpecSupport {
         Right(true)
     }
 
-  def constraintBoostWeight(ranking: RankingSpec, constraint: SearchConstraint): Either[QueryFailure, Double] =
-    ranking.boostWeight(constraint match {
-      case SearchConstraint.ServiceAny(_) | SearchConstraint.CategoryAny(_) => BeautyQSearchPresentation.BoostRoles.Service
-      case SearchConstraint.NearUser => BeautyQSearchPresentation.BoostRoles.ProviderDistance
-      case _ => BeautyQSearchPresentation.BoostRoles.Attribute
-    })
-
   def constraintBoostWeight(spec: BeautySearchSpec, constraint: SearchConstraint): Either[QueryFailure, Double] =
     spec.querySchema.resolve(constraint).flatMap(resolved => spec.carouselSpec.ranking.boostWeight(resolved.boostRole))
 

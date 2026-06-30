@@ -7,10 +7,7 @@ object BeautySearchRequestContract {
 
   val MinLimit: Int = 1
   val MaxLimit: Int =
-    BeautyQSearchPresentation.variantLimit(BeautySearchSpecV1.spec.carouselSpec).fold(
-      error => throw new IllegalStateException(error.message),
-      identity,
-    )
+    BeautyQSearchPresentation.requireVariantLimit(BeautySearchSpecV1.spec.carouselSpec)
 
   val MinLatitude: BigDecimal  = BigDecimal(-90)
   val MaxLatitude: BigDecimal  = BigDecimal(90)
