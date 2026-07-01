@@ -1354,12 +1354,10 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         ),
         "ресницы классика" -> List(
           SearchConstraint.ServiceAny(Set("Ресницы")),
-          SearchConstraint.EnumAttr("lash_service_type", Set("extension")),
           SearchConstraint.EnumAttr("lash_volume", Set("classic1_d")),
         ),
         "ресницы 2д" -> List(
           SearchConstraint.ServiceAny(Set("Ресницы")),
-          SearchConstraint.EnumAttr("lash_service_type", Set("extension")),
           SearchConstraint.EnumAttr("lash_volume", Set("volume2_d")),
         ),
         "брови хна" -> List(
