@@ -52,16 +52,16 @@ final class M11BeautyQSearchCandidateGenerationBoundaryFailureMatrixSpec extends
 
   "M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix inputs" should {
 
-    "consume the accepted M11B result schema and still total 74 result rows" in {
+    "consume the accepted M11B result schema and still total 75 result rows" in {
       val summary = M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix.DefaultSummary
 
-      assert(M11BeautyQSearchCandidateGenerationResultSchema.ResultRows.size == 74)
-      assert(summary.consumedResultRowCount == 74)
+      assert(M11BeautyQSearchCandidateGenerationResultSchema.ResultRows.size == 75)
+      assert(summary.consumedResultRowCount == 75)
       assert(summary.consumedM11ResultSchemaVerdict == "m11_candidate_generation_result_schema_ready")
       assert(
         summary.consumedM11ResultSchemaVerdict == M11BeautyQSearchCandidateGenerationResultSchema.Verdict,
       )
-      assert(metricValue(summary.metrics, "consumed_result_row_count") == "74")
+      assert(metricValue(summary.metrics, "consumed_result_row_count") == "75")
     }
 
     "carry a deterministic 20-row matrix whose decisions match their groups" in {
@@ -307,7 +307,7 @@ final class M11BeautyQSearchCandidateGenerationBoundaryFailureMatrixSpec extends
       assert(rendered.contains("## Metrics"))
       assert(rendered.contains("## Boundary summary"))
       assert(rendered.contains("consumed_m11_result_schema_verdict: m11_candidate_generation_result_schema_ready"))
-      assert(rendered.contains("consumed_result_row_count: 74"))
+      assert(rendered.contains("consumed_result_row_count: 75"))
       assert(rendered.contains("matrix_row_count: 20"))
       assert(rendered.contains("boundary/failure matrix only"))
       assert(rendered.contains("not backend execution"))

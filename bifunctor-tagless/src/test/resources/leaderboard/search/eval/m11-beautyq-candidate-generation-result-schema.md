@@ -14,10 +14,10 @@ activation, not serving approval, and not actual execution readiness.
 - verdict: m11_candidate_generation_result_schema_ready
 - consumed_m11_request_skeleton_verdict: m11_candidate_generation_input_skeleton_ready
 - consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion
-- total_row_count: 74
-- es_result_leg_placeholder_count: 72
-- qdrant_result_leg_placeholder_count: 58
-- combined_comparison_pair_placeholder_count: 57
+- total_row_count: 75
+- es_result_leg_placeholder_count: 73
+- qdrant_result_leg_placeholder_count: 59
+- combined_comparison_pair_placeholder_count: 58
 - accepted_negative_control_exclusion_row_count: 1
 - m11_candidate_generation_result_schema_ready: true
 
@@ -30,7 +30,7 @@ pending/not-executed result legs; the excluded/skipped dispositions carry no bac
 |---|---|
 | es_only_pending_not_executed | 15 |
 | qdrant_only_pending_not_executed | 1 |
-| combined_comparison_pending_not_executed | 57 |
+| combined_comparison_pending_not_executed | 58 |
 | accepted_negative_control_excluded | 1 |
 | manual_review_excluded | 0 |
 | no_op_noise_skipped | 0 |
@@ -42,9 +42,9 @@ rows + combined-comparison ES legs; Qdrant legs = Qdrant-only rows + combined-co
 
 | metric | value |
 |---|---|
-| es_result_leg_placeholder_count | 72 |
-| qdrant_result_leg_placeholder_count | 58 |
-| combined_comparison_pair_placeholder_count | 57 |
+| es_result_leg_placeholder_count | 73 |
+| qdrant_result_leg_placeholder_count | 59 |
+| combined_comparison_pair_placeholder_count | 58 |
 
 ## Representative anchors
 
@@ -69,20 +69,20 @@ with no backend result legs.
 
 | metric | value |
 |---|---|
-| total_row_count | 74 |
+| total_row_count | 75 |
 | consumed_m11_request_skeleton_verdict | m11_candidate_generation_input_skeleton_ready |
 | consumed_m10_readiness_verdict | m11_candidate_generation_inputs_ready_with_negative_control_exclusion |
-| disposition_count_sum | 74 |
-| row_group_count_sum | 74 |
+| disposition_count_sum | 75 |
+| row_group_count_sum | 75 |
 | es_only_row_count | 15 |
 | qdrant_only_row_count | 1 |
-| combined_comparison_row_count | 57 |
+| combined_comparison_row_count | 58 |
 | accepted_negative_control_exclusion_row_count | 1 |
 | manual_review_blocked_row_count | 0 |
 | no_op_noise_row_count | 0 |
-| es_result_leg_placeholder_count | 72 |
-| qdrant_result_leg_placeholder_count | 58 |
-| combined_comparison_pair_placeholder_count | 57 |
+| es_result_leg_placeholder_count | 73 |
+| qdrant_result_leg_placeholder_count | 59 |
+| combined_comparison_pair_placeholder_count | 58 |
 | m11_candidate_generation_result_schema_ready | true |
 | m11_result_rows_are_saved_report_shapes_not_backend_execution | true |
 | m11_result_rows_are_offline_report_shapes_not_production_routes | true |

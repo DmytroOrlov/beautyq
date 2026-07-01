@@ -13,11 +13,11 @@ This scorecard is a dataset/static readiness contract over checked-in BeautyQ ev
 
 | metric | value |
 |---|---|
-| dataset_query_count | 74 |
-| mapped_row_count | 74 |
-| static_runner_accepted_row_count | 74 |
+| dataset_query_count | 75 |
+| mapped_row_count | 75 |
+| static_runner_accepted_row_count | 75 |
 | representative_anchor_row_count | 3 |
-| placeholder_only_row_count | 71 |
+| placeholder_only_row_count | 72 |
 | candidate_source | manual |
 | serving_mode | unknown |
 | manual_static_only | true |

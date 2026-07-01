@@ -192,9 +192,9 @@ final case class M12BeautyQSearchFusionRerankingExperimentPlanSummary(
   * outputs, or reranking outputs.
   *
   * The plan preserves the M12A counts (accepted input rows, backend candidate placeholder rows, 0
-  * executable rows, 0 real candidate result rows, 130 pending/not-executed result-leg rows, 57
+  * executable rows, 0 real candidate result rows, 132 pending/not-executed result-leg rows, 58
   * combined comparison pair placeholders, 1 accepted negative-control exclusion) and derives
-  * policy-plan counts (15 ES baseline rows, 1 Qdrant baseline row, 57 combined experiment rows, 1
+  * policy-plan counts (15 ES baseline rows, 1 Qdrant baseline row, 58 combined experiment rows, 1
   * accepted negative-control exclusion row, 0 manual/no-op rows, 0 executable policy rows, 0 real
   * scored/reranked rows). Combined experiment plan rows list the three future combined placeholder
   * policies (union, intersection, tie-breaker), every one non-executable and placeholder-only. A
@@ -299,7 +299,7 @@ object M12BeautyQSearchFusionRerankingExperimentPlan {
         PlanRows.size == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount &&
         esBaselineRows == 15 &&
         qdrantBaselineRows == 1 &&
-        combinedExperimentRows == 57 &&
+        combinedExperimentRows == 58 &&
         acceptedNegativeControlExclusionRows == 1 &&
         manualOrNoOpRows == 0 &&
         executablePolicyRows == 0 &&

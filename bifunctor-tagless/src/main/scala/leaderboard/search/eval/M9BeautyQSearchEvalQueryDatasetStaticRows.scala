@@ -109,11 +109,12 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       "q_semantic_008",
       "q_semantic_009",
       "q_semantic_010",
+      "q_holdout_pmu_lips_001",
     )
 
   val RequiredResourceAnchors: List[String] =
     List(
-      "\"queryCount\": 74",
+      "\"queryCount\": 75",
       "\"acceptableVariantIds\"",
       "\"acceptableProviderLocationIds\"",
       "\"acceptableServiceIds\"",
@@ -358,7 +359,7 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       s"Language counts: ru=${metadata.languageCounts.ru}, en=${metadata.languageCounts.en}, de=${metadata.languageCounts.de}, mixed=${metadata.languageCounts.mixed}.",
       s"Target carousels carried from dataset metadata: ${metadata.targetCarousels.mkString(", ")}.",
       s"Representative static rows mapped: ${summary.representativeQueryIds.mkString(", ")}.",
-      s"Full 74-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
+      s"Full 75-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
       "This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.",
       "Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.",
     )

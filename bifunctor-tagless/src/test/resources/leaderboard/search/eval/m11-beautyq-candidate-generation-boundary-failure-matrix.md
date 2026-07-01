@@ -14,7 +14,7 @@ readiness, not route activation, not serving approval, and not actual execution 
 - dataset_id: wandsbek_hamburg_beauty_services_seed_ready
 - verdict: m11_candidate_generation_boundary_failure_matrix_ready
 - consumed_m11_result_schema_verdict: m11_candidate_generation_result_schema_ready
-- consumed_result_row_count: 74
+- consumed_result_row_count: 75
 - matrix_row_count: 20
 - accepted_row_count: 8
 - denied_row_count: 12
@@ -101,7 +101,7 @@ Any fabricated candidate id, score, rank, provider id, or backend response.
 | metric | value |
 |---|---|
 | consumed_m11_result_schema_verdict | m11_candidate_generation_result_schema_ready |
-| consumed_result_row_count | 74 |
+| consumed_result_row_count | 75 |
 | matrix_row_count | 20 |
 | accepted_row_count | 8 |
 | denied_row_count | 12 |

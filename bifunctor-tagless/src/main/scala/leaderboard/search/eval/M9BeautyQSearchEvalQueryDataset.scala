@@ -43,9 +43,9 @@ object M9BeautyQSearchEvalQueryDataset {
     M9BeautyQSearchEvalQueryDatasetMetadata(
       version = 1,
       datasetId = "wandsbek_hamburg_beauty_services_seed_ready",
-      queryCount = 74,
+      queryCount = 75,
       languageCounts = M9BeautyQSearchEvalQueryDatasetLanguageCounts(
-        ru = 40,
+        ru = 41,
         en = 22,
         de = 6,
         mixed = 6,

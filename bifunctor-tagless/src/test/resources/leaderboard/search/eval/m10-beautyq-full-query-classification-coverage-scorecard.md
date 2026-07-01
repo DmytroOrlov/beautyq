@@ -1,6 +1,6 @@
 # M10 BeautyQ Full Query Classification Coverage Scorecard
 
-Offline classification coverage report over the full accepted 74-query BeautyQ eval dataset. This is an
+Offline classification coverage report over the full accepted 75-query BeautyQ eval dataset. This is an
 offline planning/eval artifact only: it is not backend quality evidence, not production readiness, not route
 activation, and not serving approval. `strategy_intent` values are offline study intents only and are NOT
 production routes; offline strategy intent is distinct from production routing.
@@ -9,14 +9,14 @@ production routes; offline strategy intent is distinct from production routing.
 
 - dataset_id: wandsbek_hamburg_beauty_services_seed_ready
 - verdict: full_query_classification_coverage_ready_with_negative_control_exclusion
-- total_query_count: 74
-- mapped_row_count: 74
-- mixed_intent_count: 57
+- total_query_count: 75
+- mapped_row_count: 75
+- mixed_intent_count: 58
 - noisy_row_count: 1
 - unresolved_manual_review_row_count: 0
 - accepted_negative_control_exclusion_count: 1
 - no_op_row_count: 0
-- backend_candidate_study_intent_count: 73
+- backend_candidate_study_intent_count: 74
 - m11_backend_candidate_inputs_ready: true
 
 ## Category counts
@@ -31,7 +31,7 @@ production routes; offline strategy intent is distinct from production routing.
 | availability_time_intent | 0 |
 | comparison_exploration_intent | 1 |
 | noisy_ambiguous_non_beauty_intent | 1 |
-| mixed_intent | 57 |
+| mixed_intent | 58 |
 
 ## Offline strategy intent counts
 
@@ -41,7 +41,7 @@ These are offline study intents only, not production routes.
 |---|---|
 | es_only_candidate_retrieval | 15 |
 | qdrant_only_candidate_retrieval | 1 |
-| combined_es_qdrant_comparison | 57 |
+| combined_es_qdrant_comparison | 58 |
 | manual_review_blocked | 0 |
 | no_op_noise | 0 |
 | accepted_negative_control_excluded | 1 |
@@ -70,16 +70,16 @@ Rows still requiring future manual resolution; empty for the accepted dataset.
 
 | metric | value |
 |---|---|
-| total_query_count | 74 |
-| mapped_row_count | 74 |
-| category_count_sum | 74 |
-| strategy_intent_count_sum | 74 |
-| mixed_intent_count | 57 |
+| total_query_count | 75 |
+| mapped_row_count | 75 |
+| category_count_sum | 75 |
+| strategy_intent_count_sum | 75 |
+| mixed_intent_count | 58 |
 | noisy_row_count | 1 |
 | unresolved_manual_review_row_count | 0 |
 | accepted_negative_control_exclusion_count | 1 |
 | no_op_row_count | 0 |
-| backend_candidate_study_intent_count | 73 |
+| backend_candidate_study_intent_count | 74 |
 | m11_backend_candidate_inputs_ready | true |
 | offline_strategy_intent_is_not_production_routing | true |
 | default_beauty_search_es_backed | true |

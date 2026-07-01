@@ -125,6 +125,8 @@ object M10BeautyQSearchFullQueryClassification {
       in("q_semantic_008", "домашний уход для подруг небольшой компанией", Service, Attribute),
       in("q_semantic_009", "перманент чтобы губы были ярче без ежедневной помады", Service, Attribute),
       in("q_semantic_010", "быстро убрать волосы в подмышках курсом", Service, Attribute),
+      // Materialized semantic holdout pilot.
+      in("q_holdout_pmu_lips_001", "губы ярче чтобы не красить каждый день", Service, Attribute),
     )
   }
 

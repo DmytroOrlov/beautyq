@@ -24,11 +24,11 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 
 ## Notes
 
-- Dataset fixture: wandsbek_hamburg_beauty_services_seed_ready; version=1; full_query_count=74.
-- Language counts: ru=40, en=22, de=6, mixed=6.
+- Dataset fixture: wandsbek_hamburg_beauty_services_seed_ready; version=1; full_query_count=75.
+- Language counts: ru=41, en=22, de=6, mixed=6.
 - Target carousels carried from dataset metadata: variantCarousel, providerCarousel, serviceIntentCarousel.
 - Representative static rows mapped: q_nails_001, q_nails_003, q_noise_005.
-- Full 74-query static-row expansion implemented: mapped_row_count=74; full_dataset_query_count=74.
+- Full 75-query static-row expansion implemented: mapped_row_count=75; full_dataset_query_count=75.
 - This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.
 - Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.
 
@@ -46,7 +46,7 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 | failure_count | 0 |
 | quality_gate_decision | static_dataset_mapping_only |
 | recall@k | not_measured |
-| top_k_overlap | mapped_rows=74;full_dataset_queries=74 |
+| top_k_overlap | mapped_rows=75;full_dataset_queries=75 |
 
 ## Query Rows
 
@@ -126,3 +126,4 @@ This artifact is a saved offline-eval format/rendering record. Backend execution
 | q_semantic_008 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_semantic_009 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
 | q_semantic_010 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |
+| q_holdout_pmu_lips_001 | category | unknown | manual | - | regression_pass_fail=unknown; quality_gate_decision=static_dataset_placeholder_only | unknown | Static dataset fixture placeholder only; top_k_result_ids are intentionally empty and are not backend retrieval results., No ES, Qdrant, route, plugin, DI, HTTP, hybrid, fusion, or reranking execution is represented. |

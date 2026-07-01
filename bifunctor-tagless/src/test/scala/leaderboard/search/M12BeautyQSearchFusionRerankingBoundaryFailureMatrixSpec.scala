@@ -72,16 +72,16 @@ final class M12BeautyQSearchFusionRerankingBoundaryFailureMatrixSpec extends Any
         "m12_fusion_reranking_policy_catalog_ready_schema_only")
     }
 
-    "consume the accepted M12B experiment-plan schema and still total 74 plan rows" in {
+    "consume the accepted M12B experiment-plan schema and still total 75 plan rows" in {
       val summary = M12BeautyQSearchFusionRerankingBoundaryFailureMatrix.DefaultSummary
 
       assert(summary.consumedM12ExperimentPlanVerdict == "m12_fusion_reranking_experiment_plan_ready_schema_only")
       assert(
         summary.consumedM12ExperimentPlanVerdict == M12BeautyQSearchFusionRerankingExperimentPlan.Verdict,
       )
-      assert(summary.consumedExperimentPlanRowCount == 74)
-      assert(M12BeautyQSearchFusionRerankingExperimentPlan.PlanRows.size == 74)
-      assert(metricValue(summary.metrics, "consumed_experiment_plan_row_count") == "74")
+      assert(summary.consumedExperimentPlanRowCount == 75)
+      assert(M12BeautyQSearchFusionRerankingExperimentPlan.PlanRows.size == 75)
+      assert(metricValue(summary.metrics, "consumed_experiment_plan_row_count") == "75")
     }
 
     "preserve the M12B catalog names as stable, unique, non-executable policies" in {
@@ -422,7 +422,7 @@ final class M12BeautyQSearchFusionRerankingBoundaryFailureMatrixSpec extends Any
       assert(rendered.contains("## Boundary summary"))
       assert(rendered.contains("consumed_m12b_policy_catalog_verdict: m12_fusion_reranking_policy_catalog_ready_schema_only"))
       assert(rendered.contains("consumed_m12b_experiment_plan_verdict: m12_fusion_reranking_experiment_plan_ready_schema_only"))
-      assert(rendered.contains("consumed_experiment_plan_row_count: 74"))
+      assert(rendered.contains("consumed_experiment_plan_row_count: 75"))
       assert(rendered.contains("matrix_row_count: 38"))
       assert(rendered.contains("boundary/failure matrix only"))
       assert(rendered.contains("NOT scoring"))

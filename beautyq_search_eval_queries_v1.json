@@ -34,19 +34,19 @@
     }
   ],
   "summary": {
-    "queryCount": 74,
+    "queryCount": 75,
     "languages": {
       "de": 6,
       "en": 22,
       "mixed": 6,
-      "ru": 40
+      "ru": 41
     },
     "queryTypes": {
       "ambiguous": 2,
       "attribute": 25,
       "attribute_heavy": 13,
       "broad": 9,
-      "conversational": 14,
+      "conversational": 15,
       "direct": 19,
       "english": 14,
       "german": 7,
@@ -58,7 +58,7 @@
       "negative_attribute": 1,
       "numeric": 5,
       "price": 5,
-      "synonym": 13,
+      "synonym": 14,
       "technical_token": 1,
       "typo": 2
     },
@@ -15409,6 +15409,298 @@
           "top10ForbiddenPenalty": -2
         }
       }
+    },
+    {
+      "id": "q_holdout_pmu_lips_001",
+      "query": "губы ярче чтобы не красить каждый день",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find permanent lip color so the user does not need daily lipstick.",
+      "notes": "Materialized semantic holdout pilot for permanent lips anchor q_pmu_001; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ],
+            "enumAttributes": {
+              "pmu_area": [
+                "lips"
+              ]
+            }
+          },
+          "preferred": {
+            "booleanAttributes": {
+              "with_correction": true
+            },
+            "bigDecimalAttributes": {
+              "deposit_amount": {
+                "min": 50
+              }
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос"
+            ],
+            "enumAttributes": {
+              "body_area": [
+                "upper_lip"
+              ]
+            }
+          },
+          "acceptableVariantIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 320,
+              "priceTo": 320,
+              "durationMin": 170,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "pmu_area": "lips"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 70
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "priceFrom": 340,
+              "priceTo": 340,
+              "durationMin": 180,
+              "distanceKmFromTestUser": 0.36,
+              "enumAttributes": {
+                "pmu_area": "lips"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 70
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "ec3d69b8-6519-5e26-b78e-31ab71458047",
+              "masterName": "Beauty Life Concept",
+              "masterLocationId": "bc9f055b-d655-5bcc-ba72-1848bb295002",
+              "locationName": "Beauty Life Concept Wandsbek",
+              "priceFrom": 330,
+              "priceTo": 330,
+              "durationMin": 180,
+              "distanceKmFromTestUser": 0.72,
+              "enumAttributes": {
+                "pmu_area": "lips"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 80
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "b5ec4ac7-c364-512b-ab12-5e19d523284e",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "priceFrom": 310,
+              "priceTo": 310,
+              "durationMin": 160,
+              "distanceKmFromTestUser": 1.11,
+              "enumAttributes": {
+                "pmu_area": "lips"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 70
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6"
+              ]
+            },
+            {
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "address": "Wandsbeker Marktstraße 73, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.36,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3"
+              ]
+            },
+            {
+              "masterId": "ec3d69b8-6519-5e26-b78e-31ab71458047",
+              "masterName": "Beauty Life Concept",
+              "masterLocationId": "bc9f055b-d655-5bcc-ba72-1848bb295002",
+              "locationName": "Beauty Life Concept Wandsbek",
+              "address": "Wandsbeker Chaussee 230, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.72,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "d7396477-8242-5086-9b6e-b60eeadcf3fc"
+              ]
+            },
+            {
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "address": "Wandsbeker Chaussee 176, 22089 Hamburg",
+              "distanceKmFromTestUser": 1.11,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "acceptableServiceIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 4
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
     }
   ],
   "queryRoleAuditV1": {
@@ -15427,12 +15719,12 @@
       "home_visit_or_group": 3,
       "mixed_language": 7,
       "negative_control": 1,
-      "outcome_language": 15,
+      "outcome_language": 16,
       "package_or_session_count": 6,
       "parser_contract": 58,
       "price_budget": 5,
-      "semantic_holdout": 15,
-      "service_category": 50
+      "semantic_holdout": 16,
+      "service_category": 51
     },
     "queries": {
       "q_nails_001": {
@@ -16147,6 +16439,15 @@
         ],
         "holdoutNeeded": false,
         "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_pmu_lips_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
       }
     },
     "remaining": [
@@ -16156,7 +16457,7 @@
     ],
     "semanticHoldoutPlanV1": {
       "generatedBy": "coordinator-step3-semantic-holdout-plan",
-      "mode": "plan_only_no_query_rows_added",
+      "mode": "partially_materialized_1_of_15_as_accepted_rows",
       "notes": [
         "Plan-only metadata for future semantic holdout additions.",
         "Does not change accepted query definitions or search behavior.",
@@ -16253,7 +16554,8 @@
           "language": "ru",
           "reason": "Outcome-language holdout for direct `перманент губы` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_pmu_004",
@@ -16300,7 +16602,8 @@
           "expectedSource": "clone_expected_from_anchor_query",
           "materializeLater": true
         }
-      ]
+      ],
+      "materializedQueryCount": 1
     }
   }
 }

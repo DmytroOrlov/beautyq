@@ -19,11 +19,11 @@ readiness, not route activation, and not serving approval.
 - consumed_m12a_input_scaffold_verdict: m12_fusion_reranking_input_scaffold_ready_schema_only
 - consumed_m11b_result_schema_verdict: m11_candidate_generation_result_schema_ready
 - consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready
-- consumed_input_row_count: 74
+- consumed_input_row_count: 75
 - policy_count: 6
 - es_baseline_rows: 15
 - qdrant_baseline_rows: 1
-- combined_experiment_rows: 57
+- combined_experiment_rows: 58
 - accepted_negative_control_exclusion_rows: 1
 - manual_or_no_op_rows: 0
 - executable_policy_rows: 0
@@ -57,7 +57,7 @@ all. No row is executable and no real scored/reranked result is produced.
 |---|---|
 | es_baseline_rows | 15 |
 | qdrant_baseline_rows | 1 |
-| combined_experiment_rows | 57 |
+| combined_experiment_rows | 58 |
 | accepted_negative_control_exclusion_rows | 1 |
 | manual_or_no_op_rows | 0 |
 | executable_policy_rows | 0 |
@@ -83,7 +83,7 @@ policy and no real scored/reranked output.
 | consumed_m12a_input_scaffold_verdict | m12_fusion_reranking_input_scaffold_ready_schema_only |
 | consumed_m11b_result_schema_verdict | m11_candidate_generation_result_schema_ready |
 | consumed_m11c_boundary_failure_matrix_verdict | m11_candidate_generation_boundary_failure_matrix_ready |
-| consumed_input_row_count | 74 |
+| consumed_input_row_count | 75 |
 | policy_count | 6 |
 | policy_names_unique | 6 |
 | policy_backend_baseline_count | 2 |
@@ -91,12 +91,12 @@ policy and no real scored/reranked output.
 | policy_exclusion_count | 1 |
 | es_baseline_rows | 15 |
 | qdrant_baseline_rows | 1 |
-| combined_experiment_rows | 57 |
+| combined_experiment_rows | 58 |
 | accepted_negative_control_exclusion_rows | 1 |
 | manual_or_no_op_rows | 0 |
 | executable_policy_rows | 0 |
 | real_scored_or_reranked_rows | 0 |
-| policy_plan_count_sum | 74 |
+| policy_plan_count_sum | 75 |
 | m12_fusion_reranking_policy_catalog_ready | true |
 | m12_catalog_is_schema_only_not_scoring | true |
 | m12_catalog_is_schema_only_not_fusion | true |
