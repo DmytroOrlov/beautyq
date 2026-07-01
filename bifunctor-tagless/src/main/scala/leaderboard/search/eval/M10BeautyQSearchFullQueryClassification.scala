@@ -127,6 +127,21 @@ object M10BeautyQSearchFullQueryClassification {
       in("q_semantic_010", "быстро убрать волосы в подмышках курсом", Service, Attribute),
       // Materialized semantic holdout pilot.
       in("q_holdout_pmu_lips_001", "губы ярче чтобы не красить каждый день", Service, Attribute),
+      // Materialized remaining semantic holdout additions.
+      in("q_holdout_lashes_2d_wandsbek_001", "хочу 2д ресницы в Вандсбеке", Service, Attribute, Location),
+      in("q_holdout_lashes_2d_natural_001", "ресницы пообъемнее но без мега объема", Service, Attribute),
+      in("q_holdout_lashes_classic_001", "натуральные ресницы классический эффект", Service, Attribute),
+      in("q_holdout_face_aquafacial_001", "глубоко очистить и освежить лицо без инъекций", Service, Attribute),
+      in("q_holdout_face_bb_glow_001", "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа", Service, Attribute),
+      in("q_holdout_face_anti_age_decollete_001", "уход чтобы лицо шея и декольте выглядели моложе", Service, Attribute),
+      in("q_holdout_face_anti_age_decollete_002", "хочу омолодить лицо и зону декольте без операции", Service, Attribute),
+      in("q_holdout_hair_armpits_laser_001", "убрать волосы под мышками надолго курсом", Service, Attribute),
+      in("q_holdout_hair_armpits_laser_course_001", "курс чтобы подмышки дольше оставались гладкими", Service, Attribute),
+      in("q_holdout_pmu_powder_brows_001", "брови с мягким пудровым эффектом надолго", Service, Attribute),
+      in("q_holdout_brows_lamination_wandsbek_001", "уложить брови надолго рядом с Wandsbek", Service, Attribute, Location),
+      in("q_holdout_brows_henna_001", "окрасить брови хной чтобы держалось дольше", Service, Attribute),
+      in("q_holdout_nails_shellac_refresh_001", "снять старый shellac и сделать новый аккуратный маникюр", Service, Attribute),
+      in("q_holdout_nails_gel_correction_design_001", "обновить гелевые ногти и добавить небольшой дизайн", Service, Attribute),
     )
   }
 

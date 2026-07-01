@@ -69,19 +69,19 @@ final class M12BeautyQSearchFusionRerankingInputScaffoldSpec extends AnyWordSpec
 
   "M12BeautyQSearchFusionRerankingInputScaffold inputs" should {
 
-    "consume the accepted M11B result schema and still total 75 rows" in {
+    "consume the accepted M11B result schema and still total 89 rows" in {
       val envelopes = M12BeautyQSearchFusionRerankingInputScaffold.InputEnvelopes
       val rows = M11BeautyQSearchCandidateGenerationResultSchema.ResultRows
       val summary = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
 
-      assert(rows.size == 75)
-      assert(envelopes.size == 75)
-      assert(envelopes.map(_.queryId).distinct.size == 75)
+      assert(rows.size == 89)
+      assert(envelopes.size == 89)
+      assert(envelopes.map(_.queryId).distinct.size == 89)
       assert(envelopes.map(_.queryId) == rows.map(_.queryId))
-      assert(summary.fusionRerankingInputRows == 75)
-      assert(summary.consumedResultRowCount == 75)
+      assert(summary.fusionRerankingInputRows == 89)
+      assert(summary.consumedResultRowCount == 89)
       assert(summary.consumedM11ResultSchemaVerdict == "m11_candidate_generation_result_schema_ready")
-      assert(metricValue(summary.metrics, "consumed_result_row_count") == "75")
+      assert(metricValue(summary.metrics, "consumed_result_row_count") == "89")
     }
 
     "consume the accepted M11C boundary/failure matrix with 20 rows, 8 accepted, 12 denied, 0 skipped" in {
@@ -104,34 +104,34 @@ final class M12BeautyQSearchFusionRerankingInputScaffoldSpec extends AnyWordSpec
       assert(metricValue(summary.metrics, "consumed_matrix_skipped_row_count") == "0")
     }
 
-    "derive M12 input group counts that sum to 75" in {
+    "derive M12 input group counts that sum to 89" in {
       val summary = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
 
-      assert(summary.inputGroupCounts.map(_._2).sum == 75)
+      assert(summary.inputGroupCounts.map(_._2).sum == 89)
       assert(inputGroupCount(summary.inputGroupCounts, M12BeautyQSearchFusionRerankingInputGroup.EsOnlyPlaceholderInput) == 15)
       assert(inputGroupCount(summary.inputGroupCounts, M12BeautyQSearchFusionRerankingInputGroup.QdrantOnlyPlaceholderInput) == 1)
-      assert(inputGroupCount(summary.inputGroupCounts, M12BeautyQSearchFusionRerankingInputGroup.CombinedComparisonPlaceholderInput) == 58)
+      assert(inputGroupCount(summary.inputGroupCounts, M12BeautyQSearchFusionRerankingInputGroup.CombinedComparisonPlaceholderInput) == 72)
       assert(inputGroupCount(summary.inputGroupCounts, M12BeautyQSearchFusionRerankingInputGroup.AcceptedNegativeControlExclusionInput) == 1)
       assert(inputGroupCount(summary.inputGroupCounts, M12BeautyQSearchFusionRerankingInputGroup.ManualOrNoOpExclusionInput) == 0)
-      assert(metricValue(summary.metrics, "input_group_count_sum") == "75")
+      assert(metricValue(summary.metrics, "input_group_count_sum") == "89")
       assert(metricValue(summary.metrics, "es_only_placeholder_input_rows") == "15")
       assert(metricValue(summary.metrics, "qdrant_only_placeholder_input_rows") == "1")
-      assert(metricValue(summary.metrics, "combined_comparison_placeholder_input_rows") == "58")
+      assert(metricValue(summary.metrics, "combined_comparison_placeholder_input_rows") == "72")
       assert(metricValue(summary.metrics, "accepted_negative_control_exclusion_input_rows") == "1")
       assert(metricValue(summary.metrics, "manual_or_no_op_exclusion_input_rows") == "0")
     }
 
-    "derive a backend candidate placeholder row count of 74" in {
+    "derive a backend candidate placeholder row count of 88" in {
       val summary = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
       val envelopes = M12BeautyQSearchFusionRerankingInputScaffold.InputEnvelopes
 
-      assert(summary.fusionRerankingBackendCandidateRows == 74)
-      assert(envelopes.count(_.hasAnyBackendCandidateLeg) == 74)
+      assert(summary.fusionRerankingBackendCandidateRows == 88)
+      assert(envelopes.count(_.hasAnyBackendCandidateLeg) == 88)
       assert(
         summary.fusionRerankingBackendCandidateRows ==
-          15 + 1 + 58,
+          15 + 1 + 72,
       )
-      assert(metricValue(summary.metrics, "fusion_reranking_backend_candidate_rows") == "74")
+      assert(metricValue(summary.metrics, "fusion_reranking_backend_candidate_rows") == "88")
     }
 
     "derive an executable fusion/reranking row count of 0" in {
@@ -150,26 +150,26 @@ final class M12BeautyQSearchFusionRerankingInputScaffoldSpec extends AnyWordSpec
       assert(metricValue(summary.metrics, "real_candidate_result_rows") == "0")
     }
 
-    "derive a pending/not-executed result-leg row count of 132" in {
+    "derive a pending/not-executed result-leg row count of 160" in {
       val summary = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
       val envelopes = M12BeautyQSearchFusionRerankingInputScaffold.InputEnvelopes
 
-      assert(summary.pendingNotExecutedResultLegRows == 132)
-      assert(envelopes.map(_.pendingResultLegs.size).sum == 132)
-      assert(summary.esPendingResultLegPlaceholderRows == 73)
-      assert(summary.qdrantPendingResultLegPlaceholderRows == 59)
-      assert(summary.esPendingResultLegPlaceholderRows + summary.qdrantPendingResultLegPlaceholderRows == 132)
-      assert(metricValue(summary.metrics, "pending_not_executed_result_leg_rows") == "132")
-      assert(metricValue(summary.metrics, "es_pending_result_leg_placeholder_rows") == "73")
-      assert(metricValue(summary.metrics, "qdrant_pending_result_leg_placeholder_rows") == "59")
+      assert(summary.pendingNotExecutedResultLegRows == 160)
+      assert(envelopes.map(_.pendingResultLegs.size).sum == 160)
+      assert(summary.esPendingResultLegPlaceholderRows == 87)
+      assert(summary.qdrantPendingResultLegPlaceholderRows == 73)
+      assert(summary.esPendingResultLegPlaceholderRows + summary.qdrantPendingResultLegPlaceholderRows == 160)
+      assert(metricValue(summary.metrics, "pending_not_executed_result_leg_rows") == "160")
+      assert(metricValue(summary.metrics, "es_pending_result_leg_placeholder_rows") == "87")
+      assert(metricValue(summary.metrics, "qdrant_pending_result_leg_placeholder_rows") == "73")
     }
 
-    "derive a combined comparison pair placeholder count of 58 with separate ES and Qdrant legs" in {
+    "derive a combined comparison pair placeholder count of 72 with separate ES and Qdrant legs" in {
       val summary = M12BeautyQSearchFusionRerankingInputScaffold.DefaultSummary
       val envelopes = M12BeautyQSearchFusionRerankingInputScaffold.InputEnvelopes
 
-      assert(summary.combinedComparisonPairPlaceholders == 58)
-      assert(envelopes.count(_.isCombinedComparison) == 58)
+      assert(summary.combinedComparisonPairPlaceholders == 72)
+      assert(envelopes.count(_.isCombinedComparison) == 72)
       envelopes.filter(_.isCombinedComparison).foreach { envelope =>
         assert(envelope.hasEsPendingLeg && envelope.hasQdrantPendingLeg)
         assert(envelope.pendingResultLegs.size == 2)
@@ -179,7 +179,7 @@ final class M12BeautyQSearchFusionRerankingInputScaffoldSpec extends AnyWordSpec
         ))
         assert(envelope.allLegsPendingNotExecuted)
       }
-      assert(metricValue(summary.metrics, "combined_comparison_pair_placeholders") == "58")
+      assert(metricValue(summary.metrics, "combined_comparison_pair_placeholders") == "72")
     }
 
     "derive an accepted negative-control exclusion count of 1 with no input legs" in {
@@ -364,12 +364,12 @@ final class M12BeautyQSearchFusionRerankingInputScaffoldSpec extends AnyWordSpec
       assert(rendered.contains("## Noise-probe input envelopes"))
       assert(rendered.contains("## Metrics"))
       assert(rendered.contains("## Boundary summary"))
-      assert(rendered.contains("fusion_reranking_input_rows: 75"))
-      assert(rendered.contains("fusion_reranking_backend_candidate_rows: 74"))
+      assert(rendered.contains("fusion_reranking_input_rows: 89"))
+      assert(rendered.contains("fusion_reranking_backend_candidate_rows: 88"))
       assert(rendered.contains("fusion_reranking_executable_rows: 0"))
       assert(rendered.contains("real_candidate_result_rows: 0"))
-      assert(rendered.contains("pending_not_executed_result_leg_rows: 132"))
-      assert(rendered.contains("combined_comparison_pair_placeholders: 58"))
+      assert(rendered.contains("pending_not_executed_result_leg_rows: 160"))
+      assert(rendered.contains("combined_comparison_pair_placeholders: 72"))
       assert(rendered.contains("accepted_negative_control_exclusions: 1"))
       assert(rendered.contains("consumed_m11b_result_schema_verdict: m11_candidate_generation_result_schema_ready"))
       assert(rendered.contains("consumed_m11c_boundary_failure_matrix_verdict: m11_candidate_generation_boundary_failure_matrix_ready"))

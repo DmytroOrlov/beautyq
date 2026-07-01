@@ -57,7 +57,7 @@ final class EngineEvalQueryClassSpec extends AnyWordSpec {
   "EngineEvalQueryClass.fromQueryTypes" should {
 
     "cover every current BeautySearch eval inventory query type" in {
-      assert(BeautySearchEvalInventory.evalSuite.queries.size == 75)
+      assert(BeautySearchEvalInventory.evalSuite.queries.size == 89)
 
       BeautySearchEvalInventory.evalSuite.queries.foreach { query =>
         EngineEvalQueryClass.fromQueryTypes(query.queryTypes) match {

@@ -44,15 +44,15 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
 
   "M11BeautyQSearchCandidateGenerationInputSkeleton inputs" should {
 
-    "consume the accepted M10C readiness and still total 75 rows" in {
+    "consume the accepted M10C readiness and still total 89 rows" in {
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
 
-      assert(M10BeautyQSearchRetrievalPolicyReadiness.InputRows.size == 75)
-      assert(shapes.size == 75)
-      assert(shapes.map(_.queryId).distinct.size == 75)
+      assert(M10BeautyQSearchRetrievalPolicyReadiness.InputRows.size == 89)
+      assert(shapes.size == 89)
+      assert(shapes.map(_.queryId).distinct.size == 89)
       assert(shapes.map(_.queryId) == M10BeautyQSearchRetrievalPolicyReadiness.InputRows.map(_.queryId))
-      assert(summary.totalQueryCount == 75)
+      assert(summary.totalQueryCount == 89)
       assert(
         summary.consumedM10ReadinessVerdict ==
           "m11_candidate_generation_inputs_ready_with_negative_control_exclusion",
@@ -60,14 +60,14 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
       assert(summary.rowGroupCounts == M10BeautyQSearchRetrievalPolicyReadiness.InputGroupCounts)
     }
 
-    "preserve M11 row-group counts that sum to 75 and match the accepted distribution" in {
+    "preserve M11 row-group counts that sum to 89 and match the accepted distribution" in {
       val counts = M11BeautyQSearchCandidateGenerationInputSkeleton.RowGroupCounts
 
-      assert(counts.map(_._2).sum == 75)
+      assert(counts.map(_._2).sum == 89)
       assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 15)
       assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
       assert(
-        groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 58,
+        groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 72,
       )
       assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1)
       assert(groupCount(counts, M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
@@ -76,38 +76,38 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       assert(summary.esOnlyRowCount == 15)
       assert(summary.qdrantOnlyRowCount == 1)
-      assert(summary.combinedComparisonRowCount == 58)
+      assert(summary.combinedComparisonRowCount == 72)
       assert(summary.acceptedNegativeControlExclusionRowCount == 1)
       assert(summary.manualReviewBlockedRowCount == 0)
       assert(summary.noOpNoiseRowCount == 0)
     }
 
-    "derive an ES request-leg count of 73 (15 ES-only + 58 combined ES legs)" in {
+    "derive an ES request-leg count of 87 (15 ES-only + 72 combined ES legs)" in {
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
 
-      assert(summary.esRequestLegRowCount == 73)
-      assert(shapes.count(_.hasEsLeg) == 73)
+      assert(summary.esRequestLegRowCount == 87)
+      assert(shapes.count(_.hasEsLeg) == 87)
       assert(shapes.count(_.hasEsLeg) == summary.esOnlyRowCount + summary.combinedComparisonRowCount)
-      assert(metricValue(summary.metrics, "es_request_leg_row_count") == "73")
+      assert(metricValue(summary.metrics, "es_request_leg_row_count") == "87")
     }
 
-    "derive a Qdrant request-leg count of 59 (1 Qdrant-only + 58 combined Qdrant legs)" in {
+    "derive a Qdrant request-leg count of 73 (1 Qdrant-only + 72 combined Qdrant legs)" in {
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
 
-      assert(summary.qdrantRequestLegRowCount == 59)
-      assert(shapes.count(_.hasQdrantLeg) == 59)
+      assert(summary.qdrantRequestLegRowCount == 73)
+      assert(shapes.count(_.hasQdrantLeg) == 73)
       assert(shapes.count(_.hasQdrantLeg) == summary.qdrantOnlyRowCount + summary.combinedComparisonRowCount)
-      assert(metricValue(summary.metrics, "qdrant_request_leg_row_count") == "59")
+      assert(metricValue(summary.metrics, "qdrant_request_leg_row_count") == "73")
     }
 
-    "derive a combined comparison pair count of 58" in {
+    "derive a combined comparison pair count of 72" in {
       val summary = M11BeautyQSearchCandidateGenerationInputSkeleton.DefaultSummary
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
 
-      assert(summary.combinedComparisonPairRowCount == 58)
-      assert(shapes.count(_.isCombinedComparison) == 58)
+      assert(summary.combinedComparisonPairRowCount == 72)
+      assert(shapes.count(_.isCombinedComparison) == 72)
       shapes.filter(_.isCombinedComparison).foreach { shape =>
         assert(shape.hasEsLeg && shape.hasQdrantLeg, s"combined shape missing a leg: ${shape.queryId}")
         assert(
@@ -117,7 +117,7 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
           ),
         )
       }
-      assert(metricValue(summary.metrics, "combined_comparison_pair_row_count") == "58")
+      assert(metricValue(summary.metrics, "combined_comparison_pair_row_count") == "72")
     }
 
     "keep accepted negative-control exclusions out of every backend request leg" in {
@@ -300,7 +300,7 @@ final class M11BeautyQSearchCandidateGenerationInputSkeletonSpec extends AnyWord
       assert(rendered.contains("## Noise-probe request shapes"))
       assert(rendered.contains("## Metrics"))
       assert(rendered.contains("## Boundary"))
-      assert(rendered.contains("total_query_count: 75"))
+      assert(rendered.contains("total_query_count: 89"))
       assert(rendered.contains("consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion"))
       assert(rendered.contains("offline study inputs"))
       assert(rendered.contains("not production routes"))

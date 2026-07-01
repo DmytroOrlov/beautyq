@@ -16,15 +16,15 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
 
   "M9BeautyQSearchEvalStaticScorecard" should {
 
-    "consume all 75 static rows and accept all rows through the static runner" in {
+    "consume all 89 static rows and accept all rows through the static runner" in {
       val summary = M9BeautyQSearchEvalStaticScorecard.DefaultSummary
 
-      assert(summary.datasetQueryCount == 75)
-      assert(summary.mappedRowCount == 75)
-      assert(summary.staticRunnerAcceptedRowCount == 75)
-      assert(metricValue(summary.metrics, "dataset_query_count") == "75")
-      assert(metricValue(summary.metrics, "mapped_row_count") == "75")
-      assert(metricValue(summary.metrics, "static_runner_accepted_row_count") == "75")
+      assert(summary.datasetQueryCount == 89)
+      assert(summary.mappedRowCount == 89)
+      assert(summary.staticRunnerAcceptedRowCount == 89)
+      assert(metricValue(summary.metrics, "dataset_query_count") == "89")
+      assert(metricValue(summary.metrics, "mapped_row_count") == "89")
+      assert(metricValue(summary.metrics, "static_runner_accepted_row_count") == "89")
     }
 
     "preserve manual static source and unknown serving mode attribution only" in {
@@ -44,9 +44,9 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
       val summary = M9BeautyQSearchEvalStaticScorecard.DefaultSummary
 
       assert(summary.representativeAnchorRowCount == 3)
-      assert(summary.placeholderOnlyRowCount == 72)
+      assert(summary.placeholderOnlyRowCount == 86)
       assert(metricValue(summary.metrics, "representative_anchor_row_count") == "3")
-      assert(metricValue(summary.metrics, "placeholder_only_row_count") == "72")
+      assert(metricValue(summary.metrics, "placeholder_only_row_count") == "86")
     }
 
     "record zero real backend evidence and no real backend call requirement" in {

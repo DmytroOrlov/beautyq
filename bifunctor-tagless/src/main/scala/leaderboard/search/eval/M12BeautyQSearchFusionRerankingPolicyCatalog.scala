@@ -217,7 +217,7 @@ object M12BeautyQSearchFusionRerankingPolicyCatalog {
         consumedInputRowCount == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount &&
         esBaselineRows == 15 &&
         qdrantBaselineRows == 1 &&
-        combinedExperimentRows == 58 &&
+        combinedExperimentRows == 72 &&
         acceptedNegativeControlExclusionRows == 1 &&
         manualOrNoOpRows == 0 &&
         executablePolicyRows == 0 &&

@@ -219,10 +219,10 @@ final case class M12BeautyQSearchFusionRerankingSavedOutputSchemaSummary(
   * manual/no-op rows stay explicitly supported even though their current count is zero.
   *
   * The schema preserves the M12B plan counts (accepted saved-output rows: ES baseline placeholder, 1 Qdrant
-  * baseline placeholder, 58 combined placeholder, 1 accepted negative-control exclusion, 0 manual/no-op, 0
+  * baseline placeholder, 72 combined placeholder, 1 accepted negative-control exclusion, 0 manual/no-op, 0
   * executable, 0 real scored/reranked) and the M12C matrix counts (38 rows, 9 accepted, 29 denied, 0
-  * skipped). It derives saved-output metrics (74 placeholder rows, 1 excluded row, 0 executable rows, 0
-  * real scored/reranked rows, 0 fabricated candidate payload rows, 58 combined placeholder rows, 1
+  * skipped). It derives saved-output metrics (88 placeholder rows, 1 excluded row, 0 executable rows, 0
+  * real scored/reranked rows, 0 fabricated candidate payload rows, 72 combined placeholder rows, 1
   * accepted negative-control row).
   *
   * The readiness it reports is M12 *saved-output schema* readiness only. It claims no scoring readiness, no
@@ -327,10 +327,10 @@ object M12BeautyQSearchFusionRerankingSavedOutputSchema {
         savedOutputRowCount == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount &&
         esBaselinePlaceholderOutputRows == 15 &&
         qdrantBaselinePlaceholderOutputRows == 1 &&
-        combinedPlaceholderOutputRows == 58 &&
+        combinedPlaceholderOutputRows == 72 &&
         acceptedNegativeControlOutputRows == 1 &&
         manualOrNoOpOutputRows == 0 &&
-        placeholderOutputRows == 74 &&
+        placeholderOutputRows == 88 &&
         excludedOutputRows == 1 &&
         placeholderOutputRows + excludedOutputRows == M9BeautyQSearchEvalQueryDataset.Metadata.queryCount &&
         esBaselinePlaceholderOutputRows + qdrantBaselinePlaceholderOutputRows +

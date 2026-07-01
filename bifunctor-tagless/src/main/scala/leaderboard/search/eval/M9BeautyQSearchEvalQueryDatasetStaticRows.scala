@@ -110,11 +110,25 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       "q_semantic_009",
       "q_semantic_010",
       "q_holdout_pmu_lips_001",
+      "q_holdout_lashes_2d_wandsbek_001",
+      "q_holdout_lashes_2d_natural_001",
+      "q_holdout_lashes_classic_001",
+      "q_holdout_face_aquafacial_001",
+      "q_holdout_face_bb_glow_001",
+      "q_holdout_face_anti_age_decollete_001",
+      "q_holdout_face_anti_age_decollete_002",
+      "q_holdout_hair_armpits_laser_001",
+      "q_holdout_hair_armpits_laser_course_001",
+      "q_holdout_pmu_powder_brows_001",
+      "q_holdout_brows_lamination_wandsbek_001",
+      "q_holdout_brows_henna_001",
+      "q_holdout_nails_shellac_refresh_001",
+      "q_holdout_nails_gel_correction_design_001",
     )
 
   val RequiredResourceAnchors: List[String] =
     List(
-      "\"queryCount\": 75",
+      "\"queryCount\": 89",
       "\"acceptableVariantIds\"",
       "\"acceptableProviderLocationIds\"",
       "\"acceptableServiceIds\"",
@@ -359,7 +373,7 @@ object M9BeautyQSearchEvalQueryDatasetStaticRows {
       s"Language counts: ru=${metadata.languageCounts.ru}, en=${metadata.languageCounts.en}, de=${metadata.languageCounts.de}, mixed=${metadata.languageCounts.mixed}.",
       s"Target carousels carried from dataset metadata: ${metadata.targetCarousels.mkString(", ")}.",
       s"Representative static rows mapped: ${summary.representativeQueryIds.mkString(", ")}.",
-      s"Full 75-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
+      s"Full 89-query static-row expansion implemented: mapped_row_count=${summary.mappedRowCount}; full_dataset_query_count=${summary.fullDatasetQueryCount}.",
       "This slice uses a checked-in static query-id list validated against bounded resource anchors instead of parsing the complete JSON.",
       "Default /beauty-search remains ES-backed; Qdrant production activation remains not approved.",
     )

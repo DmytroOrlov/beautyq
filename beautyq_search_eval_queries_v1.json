@@ -34,31 +34,31 @@
     }
   ],
   "summary": {
-    "queryCount": 75,
+    "queryCount": 89,
     "languages": {
       "de": 6,
       "en": 22,
-      "mixed": 6,
-      "ru": 41
+      "mixed": 7,
+      "ru": 54
     },
     "queryTypes": {
       "ambiguous": 2,
       "attribute": 25,
-      "attribute_heavy": 13,
+      "attribute_heavy": 20,
       "broad": 9,
-      "conversational": 15,
+      "conversational": 29,
       "direct": 19,
       "english": 14,
       "german": 7,
       "hard_negative": 10,
       "home_visit": 3,
-      "location": 3,
-      "mixed_language": 5,
+      "location": 5,
+      "mixed_language": 6,
       "multi_intent": 1,
       "negative_attribute": 1,
       "numeric": 5,
       "price": 5,
-      "synonym": 14,
+      "synonym": 26,
       "technical_token": 1,
       "typo": 2
     },
@@ -15701,6 +15701,2858 @@
           "top10ForbiddenPenalty": -2
         }
       }
+    },
+    {
+      "id": "q_holdout_lashes_2d_wandsbek_001",
+      "query": "хочу 2д ресницы в Вандсбеке",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "location",
+        "synonym"
+      ],
+      "userIntent": "Find 2D lash service near Wandsbek in user-language phrasing.",
+      "notes": "Materialized semantic holdout for technical-token anchor q_lashes_008; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ],
+            "enumAttributes": {
+              "lash_volume": [
+                "volume2_d"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Маникюр"
+            ]
+          },
+          "acceptableVariantIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 55,
+              "priceTo": 55,
+              "durationMin": 75,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "lash_service_type": "refill",
+                "lash_volume": "volume2_d"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "507552fc-58b8-5614-844f-4e0f95acec1c",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 105,
+              "priceTo": 105,
+              "durationMin": 140,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "lash_service_type": "extension",
+                "lash_volume": "volume2_d"
+              },
+              "booleanAttributes": {
+                "with_removal": false,
+                "with_correction": false
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "priceFrom": 99,
+              "priceTo": 99,
+              "durationMin": 120,
+              "distanceKmFromTestUser": 1.11,
+              "enumAttributes": {
+                "lash_service_type": "extension",
+                "lash_volume": "volume2_d"
+              },
+              "booleanAttributes": {
+                "with_removal": false
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 2,
+              "sampleMatchingVariantIds": [
+                "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+                "507552fc-58b8-5614-844f-4e0f95acec1c"
+              ]
+            },
+            {
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "address": "Wandsbeker Chaussee 176, 22089 Hamburg",
+              "distanceKmFromTestUser": 1.11,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Маникюр"
+            ]
+          },
+          "acceptableServiceIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 3
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_lashes_2d_natural_001",
+      "query": "ресницы пообъемнее но без мега объема",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find noticeable but not mega-volume 2D lash result in user-language phrasing.",
+      "notes": "Materialized semantic holdout for direct 2D lash anchor q_lashes_002; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ],
+            "enumAttributes": {
+              "lash_service_type": [
+                "extension"
+              ],
+              "lash_volume": [
+                "volume2_d"
+              ]
+            }
+          },
+          "preferred": {
+            "price": {
+              "max": 110
+            },
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Наращивание и моделирование ногтей"
+            ]
+          },
+          "acceptableVariantIds": [
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "507552fc-58b8-5614-844f-4e0f95acec1c",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 105,
+              "priceTo": 105,
+              "durationMin": 140,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "lash_service_type": "extension",
+                "lash_volume": "volume2_d"
+              },
+              "booleanAttributes": {
+                "with_removal": false,
+                "with_correction": false
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "priceFrom": 99,
+              "priceTo": 99,
+              "durationMin": 120,
+              "distanceKmFromTestUser": 1.11,
+              "enumAttributes": {
+                "lash_service_type": "extension",
+                "lash_volume": "volume2_d"
+              },
+              "booleanAttributes": {
+                "with_removal": false
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "507552fc-58b8-5614-844f-4e0f95acec1c"
+              ]
+            },
+            {
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "address": "Wandsbeker Chaussee 176, 22089 Hamburg",
+              "distanceKmFromTestUser": 1.11,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Наращивание и моделирование ногтей"
+            ]
+          },
+          "acceptableServiceIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 2
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_lashes_classic_001",
+      "query": "натуральные ресницы классический эффект",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find natural classic lash effect in user-language phrasing.",
+      "notes": "Materialized semantic holdout for classic lash anchor q_lashes_001; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ],
+            "enumAttributes": {
+              "lash_service_type": [
+                "extension"
+              ],
+              "lash_volume": [
+                "classic1_d"
+              ]
+            }
+          },
+          "preferred": {
+            "price": {
+              "max": 90
+            },
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Маникюр"
+            ]
+          },
+          "acceptableVariantIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "01051aa3-95cb-5c3f-9691-582f2b145f38",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "4859385e-0655-5047-96f1-cf4d2dda475f",
+              "masterName": "Lilly’s Beauty",
+              "masterLocationId": "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+              "locationName": "Lilly’s Beauty Wandsbek",
+              "priceFrom": 80,
+              "priceTo": 80,
+              "durationMin": 120,
+              "distanceKmFromTestUser": 0.11,
+              "enumAttributes": {
+                "lash_service_type": "extension",
+                "lash_volume": "classic1_d"
+              },
+              "booleanAttributes": {
+                "with_removal": false
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 85,
+              "priceTo": 85,
+              "durationMin": 120,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "lash_service_type": "extension",
+                "lash_volume": "classic1_d"
+              },
+              "booleanAttributes": {
+                "with_removal": false,
+                "with_correction": false
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "4859385e-0655-5047-96f1-cf4d2dda475f",
+              "masterName": "Lilly’s Beauty",
+              "masterLocationId": "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+              "locationName": "Lilly’s Beauty Wandsbek",
+              "address": "Wandsbeker Marktstraße 25, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.11,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "01051aa3-95cb-5c3f-9691-582f2b145f38"
+              ]
+            },
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Ресницы"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Маникюр"
+            ]
+          },
+          "acceptableServiceIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+              "serviceName": "Ресницы",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 2
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_aquafacial_001",
+      "query": "глубоко очистить и освежить лицо без инъекций",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find non-injection facial cleansing/freshening treatment in outcome-language phrasing.",
+      "notes": "Materialized semantic holdout for aquafacial anchor q_face_001; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ],
+            "enumAttributes": {
+              "facial_treatment_type": [
+                "aquafacial"
+              ],
+              "body_area": [
+                "face"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Маникюр"
+            ]
+          },
+          "acceptableVariantIds": [
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "f018b7f8-1997-596f-8c32-414d6cf8f538",
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "priceFrom": 89,
+              "priceTo": 89,
+              "durationMin": 75,
+              "distanceKmFromTestUser": 1.11,
+              "enumAttributes": {
+                "facial_treatment_type": "aquafacial",
+                "body_area": "face"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 1
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6949a701-4c50-5fc3-9d72-3718de487ded",
+              "masterName": "Mira Beauty",
+              "masterLocationId": "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+              "locationName": "Mira Beauty Wandsbek",
+              "address": "Wandsbeker Chaussee 176, 22089 Hamburg",
+              "distanceKmFromTestUser": 1.11,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "f018b7f8-1997-596f-8c32-414d6cf8f538"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Маникюр"
+            ]
+          },
+          "acceptableServiceIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "categoryId": "ee6edda9-8181-568b-b29f-2bcdb0f756ae",
+              "categoryName": "Косметология лица и уход",
+              "matchingVariantCount": 1
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_bb_glow_001",
+      "query": "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find face tone-evening treatment without daily makeup in outcome-language phrasing.",
+      "notes": "Materialized semantic holdout for BB glow anchor q_face_004; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ],
+            "enumAttributes": {
+              "facial_treatment_type": [
+                "bb_glow"
+              ],
+              "body_area": [
+                "face"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Permanent Make-Up",
+              "Брови"
+            ]
+          },
+          "acceptableVariantIds": [
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "priceFrom": 95,
+              "priceTo": 95,
+              "durationMin": 75,
+              "distanceKmFromTestUser": 0.06,
+              "enumAttributes": {
+                "facial_treatment_type": "bb_glow",
+                "body_area": "face"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 1
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "address": "Wandsbeker Königstraße 8, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.06,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Permanent Make-Up",
+              "Брови"
+            ]
+          },
+          "acceptableServiceIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "categoryId": "ee6edda9-8181-568b-b29f-2bcdb0f756ae",
+              "categoryName": "Косметология лица и уход",
+              "matchingVariantCount": 1
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_anti_age_decollete_001",
+      "query": "уход чтобы лицо шея и декольте выглядели моложе",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find anti-aging care for face, neck, and décolleté in user-language phrasing.",
+      "notes": "Materialized semantic holdout for anti-aging face/neck/décolleté anchor q_face_005; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ],
+            "enumAttributes": {
+              "facial_treatment_type": [
+                "anti_aging"
+              ],
+              "body_area": [
+                "face_neck_decollete"
+              ]
+            }
+          },
+          "preferred": {
+            "durationMin": {
+              "max": 100
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "priceFrom": 135,
+              "priceTo": 135,
+              "durationMin": 90,
+              "distanceKmFromTestUser": 0.06,
+              "enumAttributes": {
+                "facial_treatment_type": "anti_aging",
+                "body_area": "face_neck_decollete"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 1
+              },
+              "bigDecimalAttributes": {
+                "fixed_discount_amount": 15
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "e90bad04-997a-51a1-9a15-6b9404025def",
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "masterId": "ec3d69b8-6519-5e26-b78e-31ab71458047",
+              "masterName": "Beauty Life Concept",
+              "masterLocationId": "bc9f055b-d655-5bcc-ba72-1848bb295002",
+              "locationName": "Beauty Life Concept Wandsbek",
+              "priceFrom": 149,
+              "priceTo": 149,
+              "durationMin": 90,
+              "distanceKmFromTestUser": 0.72,
+              "enumAttributes": {
+                "facial_treatment_type": "anti_aging",
+                "body_area": "face_neck_decollete"
+              },
+              "booleanAttributes": {}
+            }
+          ],
+          "forbiddenVariantIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "address": "Wandsbeker Königstraße 8, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.06,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "c276df41-547e-5ef0-ab00-9464ec45c0e1"
+              ]
+            },
+            {
+              "masterId": "ec3d69b8-6519-5e26-b78e-31ab71458047",
+              "masterName": "Beauty Life Concept",
+              "masterLocationId": "bc9f055b-d655-5bcc-ba72-1848bb295002",
+              "locationName": "Beauty Life Concept Wandsbek",
+              "address": "Wandsbeker Chaussee 230, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.72,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "e90bad04-997a-51a1-9a15-6b9404025def"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+              "serviceName": "Косметология лица",
+              "categoryId": "ee6edda9-8181-568b-b29f-2bcdb0f756ae",
+              "categoryName": "Косметология лица и уход",
+              "matchingVariantCount": 2
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_anti_age_decollete_002",
+      "query": "хочу омолодить лицо и зону декольте без операции",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find non-surgical rejuvenation for face and décolleté in outcome-language phrasing.",
+      "notes": "Materialized semantic holdout for attribute-heavy semantic anchor q_semantic_002; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ],
+            "enumAttributes": {
+              "facial_treatment_type": [
+                "anti_aging"
+              ],
+              "body_area": [
+                "face_neck_decollete"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Косметология лица"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Косметология лица и уход"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_hair_armpits_laser_001",
+      "query": "убрать волосы под мышками надолго курсом",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find longer-lasting armpit hair removal course in outcome-language phrasing.",
+      "notes": "Materialized semantic holdout for laser armpits anchor q_hair_004; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ],
+            "enumAttributes": {
+              "hair_removal_method": [
+                "laser"
+              ],
+              "body_area": [
+                "armpits"
+              ]
+            }
+          },
+          "preferred": {
+            "intAttributes": {
+              "session_count": {
+                "min": 1
+              }
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Ресницы",
+              "Косметология лица"
+            ]
+          },
+          "acceptableVariantIds": [
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "priceFrom": 39,
+              "priceTo": 39,
+              "durationMin": 25,
+              "distanceKmFromTestUser": 0.06,
+              "enumAttributes": {
+                "hair_removal_method": "laser",
+                "body_area": "armpits"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 1
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "priceFrom": 249,
+              "priceTo": 249,
+              "durationMin": 45,
+              "distanceKmFromTestUser": 0.06,
+              "enumAttributes": {
+                "hair_removal_method": "laser",
+                "body_area": "armpits"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 6
+              },
+              "bigDecimalAttributes": {
+                "fixed_discount_amount": 45
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "masterId": "80401066-eb0e-5a48-b6f3-c6ed9799d2fc",
+              "masterName": "Kosmetik by Rima",
+              "masterLocationId": "b406eed9-c42c-5f5b-9aca-e5a5742741f7",
+              "locationName": "Kosmetik by Rima Wandsbek",
+              "priceFrom": 49,
+              "priceTo": 49,
+              "durationMin": 25,
+              "distanceKmFromTestUser": 0.66,
+              "enumAttributes": {
+                "hair_removal_method": "laser",
+                "body_area": "armpits"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 1
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "address": "Wandsbeker Königstraße 8, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.06,
+              "matchingVariantCount": 2,
+              "sampleMatchingVariantIds": [
+                "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+                "cb9843b3-3f6a-5dda-bd74-d79084476f94"
+              ]
+            },
+            {
+              "masterId": "80401066-eb0e-5a48-b6f3-c6ed9799d2fc",
+              "masterName": "Kosmetik by Rima",
+              "masterLocationId": "b406eed9-c42c-5f5b-9aca-e5a5742741f7",
+              "locationName": "Kosmetik by Rima Wandsbek",
+              "address": "Wandsbeker Marktstraße 146, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.66,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "a5a90236-d10c-5021-9dd7-cc56367a3b19"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Удаление волос"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Ресницы",
+              "Косметология лица"
+            ]
+          },
+          "acceptableServiceIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "categoryId": "877ea49e-6600-564f-983e-e319025b8ad0",
+              "categoryName": "Удаление волос",
+              "matchingVariantCount": 3
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_hair_armpits_laser_course_001",
+      "query": "курс чтобы подмышки дольше оставались гладкими",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find a course for longer-lasting smooth armpits in outcome-language phrasing.",
+      "notes": "Materialized semantic holdout for six-session laser armpits anchor q_hair_005; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ],
+            "enumAttributes": {
+              "hair_removal_method": [
+                "laser"
+              ],
+              "body_area": [
+                "armpits"
+              ]
+            },
+            "intAttributes": {
+              "session_count": {
+                "min": 6
+              }
+            }
+          },
+          "preferred": {
+            "bigDecimalAttributes": {
+              "fixed_discount_amount": {
+                "min": 1
+              }
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Косметология лица",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "priceFrom": 249,
+              "priceTo": 249,
+              "durationMin": 45,
+              "distanceKmFromTestUser": 0.06,
+              "enumAttributes": {
+                "hair_removal_method": "laser",
+                "body_area": "armpits"
+              },
+              "booleanAttributes": {},
+              "intAttributes": {
+                "session_count": 6
+              },
+              "bigDecimalAttributes": {
+                "fixed_discount_amount": 45
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "address": "Wandsbeker Königstraße 8, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.06,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "cb9843b3-3f6a-5dda-bd74-d79084476f94"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Удаление волос"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Удаление волос"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Косметология лица",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+              "serviceName": "Удаление волос",
+              "categoryId": "877ea49e-6600-564f-983e-e319025b8ad0",
+              "categoryName": "Удаление волос",
+              "matchingVariantCount": 1
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_pmu_powder_brows_001",
+      "query": "брови с мягким пудровым эффектом надолго",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find longer-lasting soft powder brow PMU effect in user-language phrasing.",
+      "notes": "Materialized semantic holdout for powder brows anchor q_pmu_004; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ],
+            "enumAttributes": {
+              "pmu_area": [
+                "brows"
+              ]
+            }
+          },
+          "preferred": {
+            "booleanAttributes": {
+              "with_correction": true
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "priceFrom": 280,
+              "priceTo": 280,
+              "durationMin": 150,
+              "distanceKmFromTestUser": 0.06,
+              "enumAttributes": {
+                "pmu_area": "brows"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 50
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "e52e0840-34dc-559b-8512-0dba9d4130c3",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 290,
+              "priceTo": 290,
+              "durationMin": 150,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "pmu_area": "brows"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 50
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "priceFrom": 290,
+              "priceTo": 290,
+              "durationMin": 150,
+              "distanceKmFromTestUser": 0.36,
+              "enumAttributes": {
+                "pmu_area": "brows"
+              },
+              "booleanAttributes": {
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "deposit_amount": 60
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "0fa3add1-3f12-53dd-aed7-a7b8b29aa3db",
+              "masterName": "Lavi Beauty",
+              "masterLocationId": "1ef18ddc-5518-5775-9298-1ceb23043c60",
+              "locationName": "Lavi Beauty Wandsbek",
+              "address": "Wandsbeker Königstraße 8, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.06,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "c3bf48ba-6b81-5447-b6eb-c6320def9ed4"
+              ]
+            },
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "e52e0840-34dc-559b-8512-0dba9d4130c3"
+              ]
+            },
+            {
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "address": "Wandsbeker Marktstraße 73, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.36,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Permanent Make-Up"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "5fc44f25-2cbb-56e3-a336-41b10a63569b",
+              "serviceName": "Permanent Make-Up",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 3
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_brows_lamination_wandsbek_001",
+      "query": "уложить брови надолго рядом с Wandsbek",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "location",
+        "synonym"
+      ],
+      "userIntent": "Find longer-lasting brow styling/lamination near Wandsbek in user-language phrasing.",
+      "notes": "Materialized semantic holdout for brow lamination Wandsbek anchor q_brows_002; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Брови"
+            ],
+            "enumAttributes": {
+              "brow_service_type": [
+                "lamination"
+              ]
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Ресницы",
+              "Permanent Make-Up"
+            ]
+          },
+          "acceptableVariantIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+              "serviceId": "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+              "serviceName": "Брови",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 42,
+              "priceTo": 42,
+              "durationMin": 45,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "brow_service_type": "lamination"
+              },
+              "booleanAttributes": {
+                "with_tinting": true,
+                "with_correction": false
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+              "serviceId": "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+              "serviceName": "Брови",
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "priceFrom": 55,
+              "priceTo": 55,
+              "durationMin": 60,
+              "distanceKmFromTestUser": 0.36,
+              "enumAttributes": {
+                "brow_service_type": "lamination"
+              },
+              "booleanAttributes": {
+                "with_tinting": true,
+                "with_correction": false
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7"
+              ]
+            },
+            {
+              "masterId": "30d2597c-ea0c-5f02-897f-61b92a6c0fc0",
+              "masterName": "Kolibri",
+              "masterLocationId": "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+              "locationName": "Kolibri Beauty Wandsbek",
+              "address": "Wandsbeker Marktstraße 73, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.36,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Брови"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Ресницы",
+              "Permanent Make-Up"
+            ]
+          },
+          "acceptableServiceIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+              "serviceName": "Брови",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 2
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_brows_henna_001",
+      "query": "окрасить брови хной чтобы держалось дольше",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find henna brow tinting that lasts longer in user-language phrasing.",
+      "notes": "Materialized semantic holdout for henna brows anchor q_brows_005; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Брови"
+            ],
+            "enumAttributes": {
+              "brow_service_type": [
+                "henna"
+              ]
+            },
+            "booleanAttributes": {
+              "with_tinting": true
+            }
+          },
+          "preferred": {
+            "booleanAttributes": {
+              "with_correction": true
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Permanent Make-Up",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+              "serviceId": "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+              "serviceName": "Брови",
+              "masterId": "8f964855-102f-5c99-9b2e-257bd05e4e49",
+              "masterName": "Beauty de Luxe",
+              "masterLocationId": "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+              "locationName": "Beauty de Luxe Wandsbek",
+              "priceFrom": 39,
+              "priceTo": 39,
+              "durationMin": 40,
+              "distanceKmFromTestUser": 0.35,
+              "enumAttributes": {
+                "brow_service_type": "henna"
+              },
+              "booleanAttributes": {
+                "with_tinting": true,
+                "with_correction": true
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "8f964855-102f-5c99-9b2e-257bd05e4e49",
+              "masterName": "Beauty de Luxe",
+              "masterLocationId": "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+              "locationName": "Beauty de Luxe Wandsbek",
+              "address": "Schloßstraße 82, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.35,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Брови"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ресницы, брови и permanent make-up"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Permanent Make-Up",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+              "serviceName": "Брови",
+              "categoryId": "9d44c82f-2255-55de-a18a-3252e4549e92",
+              "categoryName": "Ресницы, брови и permanent make-up",
+              "matchingVariantCount": 1
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_nails_shellac_refresh_001",
+      "query": "снять старый shellac и сделать новый аккуратный маникюр",
+      "language": "mixed",
+      "queryTypes": [
+        "mixed_language",
+        "conversational",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find shellac removal and new manicure in mixed user-language phrasing.",
+      "notes": "Materialized semantic holdout for shellac remove-and-renew anchor q_nails_003; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Маникюр"
+            ],
+            "enumAttributes": {
+              "nail_service_type": [
+                "manicure"
+              ],
+              "nail_coating_type": [
+                "shellac"
+              ]
+            },
+            "booleanAttributes": {
+              "with_removal": true
+            }
+          },
+          "preferred": {
+            "nearUser": true
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "798c4326-e081-59a9-b659-98671f1fd656",
+              "serviceId": "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+              "serviceName": "Маникюр",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 45,
+              "priceTo": 45,
+              "durationMin": 60,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "nail_service_type": "manicure",
+                "nail_coating_type": "shellac"
+              },
+              "booleanAttributes": {
+                "with_removal": true,
+                "with_design": true
+              },
+              "bigDecimalAttributes": {
+                "materials_surcharge": 8
+              }
+            },
+            {
+              "masterServiceOfferVariantId": "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+              "serviceId": "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+              "serviceName": "Маникюр",
+              "masterId": "8f964855-102f-5c99-9b2e-257bd05e4e49",
+              "masterName": "Beauty de Luxe",
+              "masterLocationId": "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+              "locationName": "Beauty de Luxe Wandsbek",
+              "priceFrom": 48,
+              "priceTo": 48,
+              "durationMin": 70,
+              "distanceKmFromTestUser": 0.35,
+              "enumAttributes": {
+                "nail_service_type": "manicure",
+                "nail_coating_type": "shellac"
+              },
+              "booleanAttributes": {
+                "with_removal": true,
+                "with_design": true
+              },
+              "bigDecimalAttributes": {
+                "materials_surcharge": 6
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "798c4326-e081-59a9-b659-98671f1fd656"
+              ]
+            },
+            {
+              "masterId": "8f964855-102f-5c99-9b2e-257bd05e4e49",
+              "masterName": "Beauty de Luxe",
+              "masterLocationId": "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+              "locationName": "Beauty de Luxe Wandsbek",
+              "address": "Schloßstraße 82, 22041 Hamburg",
+              "distanceKmFromTestUser": 0.35,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Маникюр"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ногти, маникюр и педикюр"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Удаление волос",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+              "serviceName": "Маникюр",
+              "categoryId": "e1558eb7-8f7d-5b71-844d-71cc37a192e8",
+              "categoryName": "Ногти, маникюр и педикюр",
+              "matchingVariantCount": 2
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
+    },
+    {
+      "id": "q_holdout_nails_gel_correction_design_001",
+      "query": "обновить гелевые ногти и добавить небольшой дизайн",
+      "language": "ru",
+      "queryTypes": [
+        "conversational",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find gel nail refresh/correction with small design in user-language phrasing.",
+      "notes": "Materialized semantic holdout for gel nail correction/design anchor q_nails_010; expected/scoring cloned from anchor.",
+      "expected": {
+        "variantCarousel": {
+          "target": "MasterServiceOfferVariant",
+          "required": {
+            "servicesAny": [
+              "Наращивание и моделирование ногтей"
+            ],
+            "enumAttributes": {
+              "nail_service_type": [
+                "refill"
+              ],
+              "nail_coating_type": [
+                "gel"
+              ]
+            },
+            "booleanAttributes": {
+              "with_correction": true,
+              "with_design": true
+            }
+          },
+          "preferred": {
+            "intAttributes": {
+              "included_corrections_count": {
+                "min": 1
+              }
+            },
+            "bigDecimalAttributes": {
+              "materials_surcharge": {
+                "min": 1
+              }
+            }
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Ресницы"
+            ]
+          },
+          "acceptableVariantIds": [
+            "51cc8284-3879-5bdb-8780-7b43e47f1251"
+          ],
+          "sampleAcceptableVariants": [
+            {
+              "masterServiceOfferVariantId": "51cc8284-3879-5bdb-8780-7b43e47f1251",
+              "serviceId": "9587c0ce-951e-5dae-8dae-a522e189567b",
+              "serviceName": "Наращивание и моделирование ногтей",
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "priceFrom": 50,
+              "priceTo": 50,
+              "durationMin": 90,
+              "distanceKmFromTestUser": 0.31,
+              "enumAttributes": {
+                "nail_service_type": "refill",
+                "nail_coating_type": "gel"
+              },
+              "booleanAttributes": {
+                "with_removal": false,
+                "with_design": true,
+                "with_correction": true
+              },
+              "intAttributes": {
+                "included_corrections_count": 1
+              },
+              "bigDecimalAttributes": {
+                "materials_surcharge": 8
+              }
+            }
+          ],
+          "forbiddenVariantIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "preferredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "providerCarousel": {
+          "target": "MasterLocation",
+          "expectedGroupingField": "masterLocationId",
+          "required": {
+            "hasAtLeastOneVariantMatching": "variantCarousel.required",
+            "nearUser": true
+          },
+          "preferred": {
+            "shorterDistance": true,
+            "moreMatchingVariants": true
+          },
+          "forbidden": {
+            "hasNoVariantMatching": "variantCarousel.required"
+          },
+          "acceptableProviderLocationIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "sampleAcceptableProviders": [
+            {
+              "masterId": "6bbb7472-d382-541e-a007-c842ebf3c25b",
+              "masterName": "Studio Manana",
+              "masterLocationId": "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+              "locationName": "Studio Manana Wandsbek",
+              "address": "Wandsbeker Chaussee 303, 22089 Hamburg",
+              "distanceKmFromTestUser": 0.31,
+              "matchingVariantCount": 1,
+              "sampleMatchingVariantIds": [
+                "51cc8284-3879-5bdb-8780-7b43e47f1251"
+              ]
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 5,
+            "forbiddenNotInTopK": 10
+          }
+        },
+        "serviceIntentCarousel": {
+          "target": "Service",
+          "expectedGroupingField": "serviceId",
+          "required": {
+            "servicesAny": [
+              "Наращивание и моделирование ногтей"
+            ]
+          },
+          "preferred": {
+            "categoriesAny": [
+              "Ногти, маникюр и педикюр"
+            ]
+          },
+          "forbidden": {
+            "servicesAny": [
+              "Брови",
+              "Ресницы"
+            ]
+          },
+          "acceptableServiceIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "sampleAcceptableServices": [
+            {
+              "serviceId": "9587c0ce-951e-5dae-8dae-a522e189567b",
+              "serviceName": "Наращивание и моделирование ногтей",
+              "categoryId": "e1558eb7-8f7d-5b71-844d-71cc37a192e8",
+              "categoryName": "Ногти, маникюр и педикюр",
+              "matchingVariantCount": 1
+            }
+          ],
+          "topK": {
+            "requiredInTopK": 3,
+            "forbiddenNotInTopK": 10
+          }
+        }
+      },
+      "scoring": {
+        "variantCarousel": {
+          "top1RequiredWeight": 5,
+          "top3RequiredWeight": 3,
+          "top5PreferredWeight": 1,
+          "top10ForbiddenPenalty": -5
+        },
+        "providerCarousel": {
+          "top3RequiredWeight": 3,
+          "distancePreferenceWeight": 1,
+          "top10ForbiddenPenalty": -3
+        },
+        "serviceIntentCarousel": {
+          "top3RequiredWeight": 2,
+          "top10ForbiddenPenalty": -2
+        }
+      }
     }
   ],
   "queryRoleAuditV1": {
@@ -15712,19 +18564,19 @@
       "Does not change accepted query definitions or search behavior."
     ],
     "roleCounts": {
-      "attribute_filter": 45,
-      "broad_exploratory": 9,
-      "exact_vocabulary_like": 42,
-      "geo_location": 13,
-      "home_visit_or_group": 3,
-      "mixed_language": 7,
-      "negative_control": 1,
-      "outcome_language": 16,
-      "package_or_session_count": 6,
+      "attribute_filter": 55,
+      "service_category": 65,
       "parser_contract": 58,
+      "exact_vocabulary_like": 42,
+      "mixed_language": 8,
       "price_budget": 5,
-      "semantic_holdout": 16,
-      "service_category": 51
+      "geo_location": 15,
+      "broad_exploratory": 9,
+      "package_or_session_count": 8,
+      "semantic_holdout": 30,
+      "outcome_language": 30,
+      "home_visit_or_group": 3,
+      "negative_control": 1
     },
     "queries": {
       "q_nails_001": {
@@ -16448,16 +19300,153 @@
         ],
         "holdoutNeeded": false,
         "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_lashes_2d_wandsbek_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "geo_location",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_lashes_2d_natural_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_lashes_classic_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_face_aquafacial_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_face_bb_glow_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_face_anti_age_decollete_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_face_anti_age_decollete_002": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_hair_armpits_laser_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "package_or_session_count",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_hair_armpits_laser_course_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "package_or_session_count",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_pmu_powder_brows_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_brows_lamination_wandsbek_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "geo_location",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_brows_henna_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_nails_shellac_refresh_001": {
+        "roles": [
+          "mixed_language",
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
+      },
+      "q_holdout_nails_gel_correction_design_001": {
+        "roles": [
+          "semantic_holdout",
+          "outcome_language",
+          "attribute_filter",
+          "service_category"
+        ],
+        "holdoutNeeded": false,
+        "suggestedAction": "keep_as_semantic_holdout"
       }
     },
-    "remaining": [
-      "Step 2: add ES/Qdrant coverage matrix report.",
-      "Step 3: add semantic holdout pairs or replacement plan for vocabulary-like queries.",
-      "Step 4: add dirty catalog robustness profiles."
-    ],
+    "remaining": [],
     "semanticHoldoutPlanV1": {
       "generatedBy": "coordinator-step3-semantic-holdout-plan",
-      "mode": "partially_materialized_1_of_15_as_accepted_rows",
+      "mode": "materialized_all_15_as_accepted_rows",
       "notes": [
         "Plan-only metadata for future semantic holdout additions.",
         "Does not change accepted query definitions or search behavior.",
@@ -16473,7 +19462,8 @@
           "language": "ru",
           "reason": "Semantic holdout for technical token query `volume2_d Wandsbek lashes`.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_lashes_002",
@@ -16482,7 +19472,8 @@
           "language": "ru",
           "reason": "Semantic holdout for direct vocabulary-like `ресницы 2д`.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_lashes_001",
@@ -16491,7 +19482,8 @@
           "language": "ru",
           "reason": "Semantic holdout for direct vocabulary-like `ресницы классика`.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_face_001",
@@ -16500,7 +19492,8 @@
           "language": "ru",
           "reason": "Outcome-language holdout for direct `aquafacial` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_face_004",
@@ -16509,7 +19502,8 @@
           "language": "ru",
           "reason": "Outcome-language holdout for direct `bb glow` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_face_005",
@@ -16518,7 +19512,8 @@
           "language": "ru",
           "reason": "Semantic holdout for attribute-heavy anti-aging face/neck/decollete query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_semantic_002",
@@ -16527,7 +19522,8 @@
           "language": "ru",
           "reason": "`q_semantic_002` is named semantic but remains attribute-heavy and vocabulary-like.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_hair_004",
@@ -16536,7 +19532,8 @@
           "language": "ru",
           "reason": "Outcome-language holdout for direct `laser hair removal armpits` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_hair_005",
@@ -16545,7 +19542,8 @@
           "language": "ru",
           "reason": "Outcome-language holdout for attribute-heavy laser/armpits/session-count query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_pmu_001",
@@ -16564,7 +19562,8 @@
           "language": "ru",
           "reason": "Semantic holdout for direct `powder brows` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_brows_002",
@@ -16573,7 +19572,8 @@
           "language": "ru",
           "reason": "Semantic holdout for direct `brow lamination Wandsbek` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_brows_005",
@@ -16582,7 +19582,8 @@
           "language": "ru",
           "reason": "Semantic holdout for direct `брови хна` query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_nails_003",
@@ -16591,7 +19592,8 @@
           "language": "mixed",
           "reason": "Semantic holdout for German/attribute-heavy shellac removal and renewal query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         },
         {
           "anchorQueryId": "q_nails_010",
@@ -16600,10 +19602,11 @@
           "language": "ru",
           "reason": "Semantic holdout for attribute-heavy gel nail correction with design query.",
           "expectedSource": "clone_expected_from_anchor_query",
-          "materializeLater": true
+          "materializeLater": false,
+          "materializedAsAcceptedQuery": true
         }
       ],
-      "materializedQueryCount": 1
+      "materializedQueryCount": 15
     }
   }
 }

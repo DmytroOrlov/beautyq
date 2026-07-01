@@ -235,9 +235,9 @@ final class M19DBeautyQCoverageGapModelSpec extends AnyWordSpec {
       val queries = loadEvalQueries()
       val model   = buildModel(queries)
 
-      assert(queries.size == 75)
-      assert(model.totalQueryCount == 75)
-      assert(model.queryRows.size == 75)
+      assert(queries.size == 89)
+      assert(model.totalQueryCount == 89)
+      assert(model.queryRows.size == 89)
     }
 
     "report zero source-confirmed facets or inferred-filters coverage over the full dataset" in {
@@ -248,14 +248,14 @@ final class M19DBeautyQCoverageGapModelSpec extends AnyWordSpec {
       val inferred = gapFor(model, BeautyResponseComponentId.InferredFilters)
 
       assert(facets.sourceConfirmedQueryCount == 0)
-      assert(facets.fieldAbsentInSourceCount == 75)
+      assert(facets.fieldAbsentInSourceCount == 89)
       assert(facets.policyBlocked)
       assert(inferred.sourceConfirmedQueryCount == 0)
-      assert(inferred.fieldAbsentInSourceCount == 75)
+      assert(inferred.fieldAbsentInSourceCount == 89)
       assert(inferred.policyBlocked)
     }
 
-    "report the full 75-query set as source-confirmed for the three carousels" in {
+    "report the full 89-query set as source-confirmed for the three carousels" in {
       val queries = loadEvalQueries()
       val model   = buildModel(queries)
 
@@ -265,7 +265,7 @@ final class M19DBeautyQCoverageGapModelSpec extends AnyWordSpec {
         BeautyResponseComponentId.ServiceIntentCarousel,
       ).foreach { componentId =>
         val gap = gapFor(model, componentId)
-        assert(gap.sourceConfirmedQueryCount == 75, s"${componentId.render} should be SourceConfirmed for all 75 queries")
+        assert(gap.sourceConfirmedQueryCount == 89, s"${componentId.render} should be SourceConfirmed for all 89 queries")
         assert(gap.notInformedByQueryCount == 0)
         assert(gap.fieldAbsentInSourceCount == 0)
       }

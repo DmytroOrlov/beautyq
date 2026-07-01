@@ -71,16 +71,16 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
 
   "M11BeautyQSearchCandidateGenerationResultSchema inputs" should {
 
-    "consume the accepted M11A request skeleton and still total 75 rows" in {
+    "consume the accepted M11A request skeleton and still total 89 rows" in {
       val rows = M11BeautyQSearchCandidateGenerationResultSchema.ResultRows
       val shapes = M11BeautyQSearchCandidateGenerationInputSkeleton.RequestShapes
       val summary = M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary
 
-      assert(shapes.size == 75)
-      assert(rows.size == 75)
-      assert(rows.map(_.queryId).distinct.size == 75)
+      assert(shapes.size == 89)
+      assert(rows.size == 89)
+      assert(rows.map(_.queryId).distinct.size == 89)
       assert(rows.map(_.queryId) == shapes.map(_.queryId))
-      assert(summary.totalRowCount == 75)
+      assert(summary.totalRowCount == 89)
       assert(summary.consumedM11RequestSkeletonVerdict == "m11_candidate_generation_input_skeleton_ready")
       assert(
         summary.consumedM10ReadinessVerdict ==
@@ -89,14 +89,14 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       assert(summary.rowGroupCounts == M11BeautyQSearchCandidateGenerationInputSkeleton.RowGroupCounts)
     }
 
-    "preserve M11A row-group counts and derive result disposition counts that sum to 75" in {
+    "preserve M11A row-group counts and derive result disposition counts that sum to 89" in {
       val summary = M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary
 
-      assert(summary.rowGroupCounts.map(_._2).sum == 75)
+      assert(summary.rowGroupCounts.map(_._2).sum == 89)
       assert(groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.EsCandidateGenerationStudyInput) == 15)
       assert(groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.QdrantCandidateGenerationStudyInput) == 1)
       assert(
-        groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 58,
+        groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.CombinedEsQdrantComparisonStudyInput) == 72,
       )
       assert(
         groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.AcceptedNegativeControlExclusionInput) == 1,
@@ -104,11 +104,11 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       assert(groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.ManualReviewBlockedInput) == 0)
       assert(groupCount(summary.rowGroupCounts, M10BeautyQSearchM11CandidateGenerationInputGroup.NoOpNoiseInput) == 0)
 
-      assert(summary.dispositionCounts.map(_._2).sum == 75)
+      assert(summary.dispositionCounts.map(_._2).sum == 89)
       assert(dispositionCount(summary.dispositionCounts, M11BeautyQSearchCandidateGenerationResultDisposition.EsOnlyPending) == 15)
       assert(dispositionCount(summary.dispositionCounts, M11BeautyQSearchCandidateGenerationResultDisposition.QdrantOnlyPending) == 1)
       assert(
-        dispositionCount(summary.dispositionCounts, M11BeautyQSearchCandidateGenerationResultDisposition.CombinedComparisonPending) == 58,
+        dispositionCount(summary.dispositionCounts, M11BeautyQSearchCandidateGenerationResultDisposition.CombinedComparisonPending) == 72,
       )
       assert(
         dispositionCount(summary.dispositionCounts, M11BeautyQSearchCandidateGenerationResultDisposition.AcceptedNegativeControlExcluded) == 1,
@@ -118,38 +118,38 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
 
       assert(summary.esOnlyRowCount == 15)
       assert(summary.qdrantOnlyRowCount == 1)
-      assert(summary.combinedComparisonRowCount == 58)
+      assert(summary.combinedComparisonRowCount == 72)
       assert(summary.acceptedNegativeControlExclusionRowCount == 1)
       assert(summary.manualReviewBlockedRowCount == 0)
       assert(summary.noOpNoiseRowCount == 0)
     }
 
-    "derive an ES pending/not-executed result-leg placeholder count of 73" in {
+    "derive an ES pending/not-executed result-leg placeholder count of 87" in {
       val summary = M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary
       val rows = M11BeautyQSearchCandidateGenerationResultSchema.ResultRows
 
-      assert(summary.esResultLegPlaceholderCount == 73)
-      assert(rows.count(_.hasEsResultLeg) == 73)
+      assert(summary.esResultLegPlaceholderCount == 87)
+      assert(rows.count(_.hasEsResultLeg) == 87)
       assert(rows.count(_.hasEsResultLeg) == summary.esOnlyRowCount + summary.combinedComparisonRowCount)
-      assert(metricValue(summary.metrics, "es_result_leg_placeholder_count") == "73")
+      assert(metricValue(summary.metrics, "es_result_leg_placeholder_count") == "87")
     }
 
-    "derive a Qdrant pending/not-executed result-leg placeholder count of 59" in {
+    "derive a Qdrant pending/not-executed result-leg placeholder count of 73" in {
       val summary = M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary
       val rows = M11BeautyQSearchCandidateGenerationResultSchema.ResultRows
 
-      assert(summary.qdrantResultLegPlaceholderCount == 59)
-      assert(rows.count(_.hasQdrantResultLeg) == 59)
+      assert(summary.qdrantResultLegPlaceholderCount == 73)
+      assert(rows.count(_.hasQdrantResultLeg) == 73)
       assert(rows.count(_.hasQdrantResultLeg) == summary.qdrantOnlyRowCount + summary.combinedComparisonRowCount)
-      assert(metricValue(summary.metrics, "qdrant_result_leg_placeholder_count") == "59")
+      assert(metricValue(summary.metrics, "qdrant_result_leg_placeholder_count") == "73")
     }
 
-    "derive a combined comparison pair placeholder count of 58 with separate ES and Qdrant legs" in {
+    "derive a combined comparison pair placeholder count of 72 with separate ES and Qdrant legs" in {
       val summary = M11BeautyQSearchCandidateGenerationResultSchema.DefaultSummary
       val rows = M11BeautyQSearchCandidateGenerationResultSchema.ResultRows
 
-      assert(summary.combinedComparisonPairPlaceholderCount == 58)
-      assert(rows.count(_.isCombinedComparison) == 58)
+      assert(summary.combinedComparisonPairPlaceholderCount == 72)
+      assert(rows.count(_.isCombinedComparison) == 72)
       rows.filter(_.isCombinedComparison).foreach { row =>
         assert(row.hasEsResultLeg && row.hasQdrantResultLeg, s"combined row missing a leg: ${row.queryId}")
         assert(row.resultLegs.size == 2)
@@ -159,7 +159,7 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
         ))
         assert(row.allLegsPendingNotExecuted)
       }
-      assert(metricValue(summary.metrics, "combined_comparison_pair_placeholder_count") == "58")
+      assert(metricValue(summary.metrics, "combined_comparison_pair_placeholder_count") == "72")
     }
 
     "render every backend result leg as a pending/not-executed placeholder, never an execution" in {
@@ -369,7 +369,7 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       assert(rendered.contains("## Noise-probe result rows"))
       assert(rendered.contains("## Metrics"))
       assert(rendered.contains("## Boundary"))
-      assert(rendered.contains("total_row_count: 75"))
+      assert(rendered.contains("total_row_count: 89"))
       assert(rendered.contains("consumed_m11_request_skeleton_verdict: m11_candidate_generation_input_skeleton_ready"))
       assert(rendered.contains("consumed_m10_readiness_verdict: m11_candidate_generation_inputs_ready_with_negative_control_exclusion"))
       assert(rendered.contains("saved report"))
