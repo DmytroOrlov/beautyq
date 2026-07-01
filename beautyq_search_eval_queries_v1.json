@@ -16153,6 +16153,154 @@
       "Step 2: add ES/Qdrant coverage matrix report.",
       "Step 3: add semantic holdout pairs or replacement plan for vocabulary-like queries.",
       "Step 4: add dirty catalog robustness profiles."
-    ]
+    ],
+    "semanticHoldoutPlanV1": {
+      "generatedBy": "coordinator-step3-semantic-holdout-plan",
+      "mode": "plan_only_no_query_rows_added",
+      "notes": [
+        "Plan-only metadata for future semantic holdout additions.",
+        "Does not change accepted query definitions or search behavior.",
+        "Existing parser-contract queries remain in the canonical regression set.",
+        "Future patch may materialize selected planned queries as accepted rows after downstream 74-row scaffolds are updated."
+      ],
+      "plannedQueryCount": 15,
+      "plannedQueries": [
+        {
+          "anchorQueryId": "q_lashes_008",
+          "plannedQueryId": "q_holdout_lashes_2d_wandsbek_001",
+          "plannedQueryText": "хочу 2д ресницы в Вандсбеке",
+          "language": "ru",
+          "reason": "Semantic holdout for technical token query `volume2_d Wandsbek lashes`.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_lashes_002",
+          "plannedQueryId": "q_holdout_lashes_2d_natural_001",
+          "plannedQueryText": "ресницы пообъемнее но без мега объема",
+          "language": "ru",
+          "reason": "Semantic holdout for direct vocabulary-like `ресницы 2д`.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_lashes_001",
+          "plannedQueryId": "q_holdout_lashes_classic_001",
+          "plannedQueryText": "натуральные ресницы классический эффект",
+          "language": "ru",
+          "reason": "Semantic holdout for direct vocabulary-like `ресницы классика`.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_face_001",
+          "plannedQueryId": "q_holdout_face_aquafacial_001",
+          "plannedQueryText": "глубоко очистить и освежить лицо без инъекций",
+          "language": "ru",
+          "reason": "Outcome-language holdout for direct `aquafacial` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_face_004",
+          "plannedQueryId": "q_holdout_face_bb_glow_001",
+          "plannedQueryText": "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа",
+          "language": "ru",
+          "reason": "Outcome-language holdout for direct `bb glow` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_face_005",
+          "plannedQueryId": "q_holdout_face_anti_age_decollete_001",
+          "plannedQueryText": "уход чтобы лицо шея и декольте выглядели моложе",
+          "language": "ru",
+          "reason": "Semantic holdout for attribute-heavy anti-aging face/neck/decollete query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_semantic_002",
+          "plannedQueryId": "q_holdout_face_anti_age_decollete_002",
+          "plannedQueryText": "хочу омолодить лицо и зону декольте без операции",
+          "language": "ru",
+          "reason": "`q_semantic_002` is named semantic but remains attribute-heavy and vocabulary-like.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_hair_004",
+          "plannedQueryId": "q_holdout_hair_armpits_laser_001",
+          "plannedQueryText": "убрать волосы под мышками надолго курсом",
+          "language": "ru",
+          "reason": "Outcome-language holdout for direct `laser hair removal armpits` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_hair_005",
+          "plannedQueryId": "q_holdout_hair_armpits_laser_course_001",
+          "plannedQueryText": "курс чтобы подмышки дольше оставались гладкими",
+          "language": "ru",
+          "reason": "Outcome-language holdout for attribute-heavy laser/armpits/session-count query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_pmu_001",
+          "plannedQueryId": "q_holdout_pmu_lips_001",
+          "plannedQueryText": "губы ярче чтобы не красить каждый день",
+          "language": "ru",
+          "reason": "Outcome-language holdout for direct `перманент губы` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_pmu_004",
+          "plannedQueryId": "q_holdout_pmu_powder_brows_001",
+          "plannedQueryText": "брови с мягким пудровым эффектом надолго",
+          "language": "ru",
+          "reason": "Semantic holdout for direct `powder brows` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_brows_002",
+          "plannedQueryId": "q_holdout_brows_lamination_wandsbek_001",
+          "plannedQueryText": "уложить брови надолго рядом с Wandsbek",
+          "language": "ru",
+          "reason": "Semantic holdout for direct `brow lamination Wandsbek` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_brows_005",
+          "plannedQueryId": "q_holdout_brows_henna_001",
+          "plannedQueryText": "окрасить брови хной чтобы держалось дольше",
+          "language": "ru",
+          "reason": "Semantic holdout for direct `брови хна` query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_nails_003",
+          "plannedQueryId": "q_holdout_nails_shellac_refresh_001",
+          "plannedQueryText": "снять старый shellac и сделать новый аккуратный маникюр",
+          "language": "mixed",
+          "reason": "Semantic holdout for German/attribute-heavy shellac removal and renewal query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        },
+        {
+          "anchorQueryId": "q_nails_010",
+          "plannedQueryId": "q_holdout_nails_gel_correction_design_001",
+          "plannedQueryText": "обновить гелевые ногти и добавить небольшой дизайн",
+          "language": "ru",
+          "reason": "Semantic holdout for attribute-heavy gel nail correction with design query.",
+          "expectedSource": "clone_expected_from_anchor_query",
+          "materializeLater": true
+        }
+      ]
+    }
   }
 }
