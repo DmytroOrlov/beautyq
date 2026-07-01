@@ -84,11 +84,9 @@ inThisBuild(
 )
 
 lazy val `leaderboard-core` = project
-  .in(file("leaderboard-core"))
   .pipe(lightweightSettings(Nil))
 
 lazy val `search-core` = project
-  .in(file("search-core"))
   .pipe(lightweightSettings(Seq(
     Deps.circeGeneric,
     Deps.scalatest % Test,
@@ -96,7 +94,6 @@ lazy val `search-core` = project
   .dependsOn(`leaderboard-core`)
 
 lazy val `search-elasticsearch` = project
-  .in(file("search-elasticsearch"))
   .pipe(lightweightSettings(Seq(
     Deps.circeGeneric,
     Deps.circeParser,
@@ -106,7 +103,6 @@ lazy val `search-elasticsearch` = project
   .dependsOn(`leaderboard-core`, `search-core`)
 
 lazy val `search-qdrant` = project
-  .in(file("search-qdrant"))
   .pipe(lightweightSettings(Seq(
     Deps.circeGeneric,
     Deps.circeParser,
@@ -116,7 +112,6 @@ lazy val `search-qdrant` = project
   .dependsOn(`leaderboard-core`, `search-core`)
 
 lazy val `bifunctor-tagless` = project
-  .in(file("bifunctor-tagless"))
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
   .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`)
 
