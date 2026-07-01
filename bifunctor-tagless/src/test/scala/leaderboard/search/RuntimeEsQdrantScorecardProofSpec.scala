@@ -3472,6 +3472,82 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
             }
             println(y0cEvidenceLog)
 
+            // ---- Y0R: deterministic dirty-catalog robustness profiles (measurement-only, threshold=0.62 only). ----
+            // Built test-locally from the already-loaded canonical `documents`; never mutates the real
+            // seed/repositories/catalog loader/schema/production projection. Structural/invariant errors
+            // (wrong changed-count, variant id churn, query-count drift, broken partition invariant) fail
+            // the test; worse coverage than the clean catalog does NOT, since this is measurement-only.
+            val dirtyProfiles    = buildY0RDirtyCatalogProfiles(documents)
+            val cleanVariantIds  = documents.map(_.variantId.toString).toSet
+            assert(documents.size == 66, s"Y0R: clean canonical catalog size must remain 66, got ${documents.size}")
+            dirtyProfiles.foreach {
+              profile =>
+                assert(
+                  profile.documents.size == documents.size,
+                  s"Y0R: ${profile.name} must have the same document count as the clean catalog, got ${profile.documents.size} vs ${documents.size}",
+                )
+                val profileVariantIds = profile.documents.map(_.variantId.toString)
+                assert(
+                  profileVariantIds.toSet == cleanVariantIds,
+                  s"Y0R: ${profile.name} must preserve the same variant id set as the clean catalog",
+                )
+                assert(
+                  profileVariantIds.size == profileVariantIds.toSet.size,
+                  s"Y0R: ${profile.name} must not create duplicate variant ids",
+                )
+                assert(
+                  profile.changedVariantIds.size == profile.expectedChangedCount,
+                  s"Y0R: ${profile.name} must change exactly ${profile.expectedChangedCount} documents, got ${profile.changedVariantIds.size}",
+                )
+                (): Unit
+            }
+
+            val y0r062Candidate  = List(y0cThresholdCandidates.find(_.label == "0.62").getOrElse(Y0CThresholdCandidate("0.62", Some(0.62))))
+            val cleanBucketAt062 = y0fCoverageBuckets.find(_._1 == "0.62").map(_._2).getOrElse(computeY0FCoverageBucket(rows.filter(_.thresholdLabel == "0.62")))
+
+            val dirtyProfileEvidence = dirtyProfiles.map {
+              profile =>
+                val profileIndexName = s"${spec.variantDocument.indexName}_y0r_${profile.name}_${UUID.randomUUID().toString.replace('-', '_')}"
+                val profileSpec      = spec.copy(variantDocument = spec.variantDocument.copy(indexName = profileIndexName))
+                val profileRows = unsafeRun(
+                  runY0CSupplementProof(esClient, profileSpec, qdrantClient, embeddingClient, vector.length, profile.documents, y0r062Candidate)
+                )
+                assert(
+                  profileRows.map(_.queryId).toSet == expectedQueryIds,
+                  s"Y0R: ${profile.name} must cover every canonical query at threshold 0.62, missing=${expectedQueryIds.diff(profileRows.map(_.queryId).toSet)}",
+                )
+                val bucket = computeY0FCoverageBucket(profileRows)
+                assert(
+                  bucket.bothAcceptedHitQueries + bucket.esOnlyAcceptedHitQueries +
+                    bucket.qdrantOnlyAcceptedHitQueries + bucket.bothMissQueries == bucket.queryCount,
+                  s"Y0R: coverage bucket partition must hold for ${profile.name}, got both=${bucket.bothAcceptedHitQueries} " +
+                    s"esOnly=${bucket.esOnlyAcceptedHitQueries} qdrantOnly=${bucket.qdrantOnlyAcceptedHitQueries} " +
+                    s"bothMiss=${bucket.bothMissQueries} queryCount=${bucket.queryCount}",
+                )
+                s"  profile=${profile.name}: changedVariants=${profile.changedVariantIds.size}/${profile.documents.size}, " +
+                  s"queryCount=${bucket.queryCount}, esAcceptedHitQueries=${bucket.esAcceptedHitQueries}, " +
+                  s"qdrantAcceptedHitQueries=${bucket.qdrantAcceptedHitQueries}, bothAcceptedHitQueries=${bucket.bothAcceptedHitQueries}, " +
+                  s"esOnlyAcceptedHitQueries=${bucket.esOnlyAcceptedHitQueries}, qdrantOnlyAcceptedHitQueries=${bucket.qdrantOnlyAcceptedHitQueries}, " +
+                  s"bothMissQueries=${bucket.bothMissQueries}, qdrantDuplicateAgreementQueries=${bucket.qdrantDuplicateAgreementQueries}, " +
+                  s"qdrantOnlyAcceptedCandidateQueries=${bucket.qdrantOnlyAcceptedCandidateQueries}, " +
+                  s"qdrantOnlyUnacceptableCandidateQueries=${bucket.qdrantOnlyUnacceptableCandidateQueries}, " +
+                  s"deltaEsAcceptedHitQueries=${bucket.esAcceptedHitQueries - cleanBucketAt062.esAcceptedHitQueries}, " +
+                  s"deltaQdrantAcceptedHitQueries=${bucket.qdrantAcceptedHitQueries - cleanBucketAt062.qdrantAcceptedHitQueries}, " +
+                  s"deltaBothMissQueries=${bucket.bothMissQueries - cleanBucketAt062.bothMissQueries}, " +
+                  s"deltaQdrantOnlyAcceptedCandidateQueries=${bucket.qdrantOnlyAcceptedCandidateQueries - cleanBucketAt062.qdrantOnlyAcceptedCandidateQueries}"
+            }
+
+            val y0rEvidenceLog: String =
+              "Y0R_DIRTY_CATALOG_ROBUSTNESS threshold=0.62:\n" +
+                s"  clean: queryCount=${cleanBucketAt062.queryCount}, esAcceptedHitQueries=${cleanBucketAt062.esAcceptedHitQueries}, " +
+                s"qdrantAcceptedHitQueries=${cleanBucketAt062.qdrantAcceptedHitQueries}, bothAcceptedHitQueries=${cleanBucketAt062.bothAcceptedHitQueries}, " +
+                s"esOnlyAcceptedHitQueries=${cleanBucketAt062.esOnlyAcceptedHitQueries}, qdrantOnlyAcceptedHitQueries=${cleanBucketAt062.qdrantOnlyAcceptedHitQueries}, " +
+                s"bothMissQueries=${cleanBucketAt062.bothMissQueries}, qdrantDuplicateAgreementQueries=${cleanBucketAt062.qdrantDuplicateAgreementQueries}, " +
+                s"qdrantOnlyAcceptedCandidateQueries=${cleanBucketAt062.qdrantOnlyAcceptedCandidateQueries}, " +
+                s"qdrantOnlyUnacceptableCandidateQueries=${cleanBucketAt062.qdrantOnlyUnacceptableCandidateQueries}\n" +
+                dirtyProfileEvidence.mkString("\n")
+            println(y0rEvidenceLog)
+
           // Y0C CLEARED-FOR-MEASUREMENT: the full canonical run completed with real ES + real Qdrant +
           // real embedding. ES-only vs ES+Qdrant-supplement responses were measured for every canonical
           // query at scoreThreshold candidates None/0.60/0.62 through the source-confirmed Y0A route.
@@ -6974,6 +7050,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     embeddingClient: LlamaCppEmbeddingClient,
     vectorDimension: Int,
     documents: List[VariantSearchDocument],
+    thresholdCandidates: List[Y0CThresholdCandidate] = y0cThresholdCandidates,
   ): IO[QueryFailure, List[Y0CSupplementRow]] = {
     val embeddingSpec = EmbeddingSpec[VariantSearchDocument](
       vectorName = "llama-cpp-embedding",
@@ -7017,7 +7094,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         _                  <- qdrantClient.createCollection(collectionPath, createJson)
         _                  <- baselineComposition.indexSnapshot()
         // Build one route per threshold candidate over the SAME indexed collection.
-        candidateBackends  <- ZIO.foreach(y0cThresholdCandidates) { candidate =>
+        candidateBackends  <- ZIO.foreach(thresholdCandidates) { candidate =>
                                 val candidateReadiness = readiness(candidate.scoreThreshold)
                                 compositionFactory
                                   .build(candidateReadiness, embeddingClient, snapshotProvider, embeddingSpec)
@@ -7146,6 +7223,172 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       s"qdrantOnlyAcceptedButNotAppendedTop=${bucket.qdrantOnlyAcceptedButNotAppendedTop.mkString("[", ",", "]")}, " +
       s"bothMissTop=${bucket.bothMissTop.mkString("[", ",", "]")}, " +
       s"qdrantOnlyUnacceptableCandidateTop=${bucket.qdrantOnlyUnacceptableCandidateTop.mkString("[", ",", "]")}"
+
+  // ---- Y0R: deterministic dirty-catalog robustness profiles (measurement-only; test-local). ----
+  // Corrupts a deterministic subset of the already-loaded canonical VariantSearchDocument list (by
+  // sorted variantId.toString) to measure ES-vs-Qdrant coverage under noisy/incomplete catalog data.
+  // Never touches the real seed, repositories, catalog loader, schema, or production projection; the
+  // recompute helpers below mirror BeautyQVariantSearchDocumentSchema's normalizeText/humanize/token
+  // style purely so the test-local documents stay internally consistent (allText/attributeText in
+  // sync with the corrupted fields), not to change production behavior.
+
+  private final case class Y0RDirtyCatalogProfile(
+    name: String,
+    documents: List[VariantSearchDocument],
+    changedVariantIds: Set[String],
+    expectedChangedCount: Int,
+    notes: List[String],
+  )
+
+  private val y0rEnumRemovalPriority: List[String] = List(
+    "lash_volume",
+    "body_area",
+    "hair_removal_method",
+    "facial_treatment_type",
+    "pmu_area",
+    "brow_service_type",
+    "nail_coating_type",
+    "nail_service_type",
+    "lash_service_type",
+  )
+
+  private val y0rDirtyNameTexts: List[String] = List(
+    "glow ritual",
+    "fresh look session",
+    "beauty refresh",
+    "studio favourite",
+    "soft glam care",
+    "urban beauty moment",
+    "pflege ritual",
+    "zarter look",
+    "красивый результат",
+    "аккуратный уход",
+  )
+
+  private val y0rDirtyMixedTexts: List[String] = List(
+    "beauty refresh pflege",
+    "glow уход session",
+    "soft look hamburg",
+    "аккуратный pflege moment",
+    "fresh skin studio",
+    "wandsbek beauty ritual",
+    "pflege glow результат",
+    "urban care frisch",
+  )
+
+  private def y0rDirtyNameText(index: Int): String = y0rDirtyNameTexts(index % y0rDirtyNameTexts.size)
+  private def y0rDirtyMixedText(index: Int): String = y0rDirtyMixedTexts(index % y0rDirtyMixedTexts.size)
+
+  /** Mirrors [[BeautyQVariantSearchDocumentSchema]]'s private `normalizeText` (trim, drop empty, join). */
+  private def y0rNormalizeText(parts: Iterable[String]): String =
+    parts.iterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
+
+  /** Mirrors [[BeautyQVariantSearchDocumentSchema]]'s private `humanize` (underscore -> space). */
+  private def y0rHumanize(value: String): String =
+    value.replace('_', ' ')
+
+  /** Recomputes `attributeText` from a document's current attribute maps, using the same token style
+    * as the production projection: enum: code, value, humanized code, humanized value; boolean/int:
+    * code, humanized code, value.toString; decimal: code, humanized code, value.toString.
+    */
+  private def y0rAttributeText(document: VariantSearchDocument): String = {
+    val enumTokens = document.enumAttributes.toList.flatMap {
+      case (code, value) => List(code, value, y0rHumanize(code), y0rHumanize(value))
+    }
+    val booleanTokens = document.booleanAttributes.toList.flatMap {
+      case (code, value) => List(code, y0rHumanize(code), value.toString)
+    }
+    val intTokens = document.intAttributes.toList.flatMap {
+      case (code, value) => List(code, y0rHumanize(code), value.toString)
+    }
+    val decimalTokens = document.bigDecimalAttributes.toList.flatMap {
+      case (code, value) => List(code, y0rHumanize(code), value.toString)
+    }
+    y0rNormalizeText(enumTokens ++ booleanTokens ++ intTokens ++ decimalTokens)
+  }
+
+  /** Removes the first enum attribute (by [[y0rEnumRemovalPriority]]) present on `document`, then
+    * recomputes `attributeText`/`allText`. Identity/filter fields (variantId, serviceId, categoryId,
+    * masterId, masterLocationId, serviceName, categoryName, boolean/int/decimal attributes, prices,
+    * duration, geo fields) are untouched. Returns `document` unchanged if no priority key is present.
+    */
+  private def y0rRemoveOneEnumAttribute(document: VariantSearchDocument): VariantSearchDocument =
+    y0rEnumRemovalPriority.find(document.enumAttributes.contains) match {
+      case Some(key) =>
+        val stripped         = document.copy(enumAttributes = document.enumAttributes - key)
+        val newAttributeText = y0rAttributeText(stripped)
+        val newAllText       = y0rNormalizeText(List(stripped.serviceText, newAttributeText, stripped.providerText, stripped.locationText))
+        stripped.copy(attributeText = newAttributeText, allText = newAllText)
+      case None =>
+        document
+    }
+
+  /** Builds the three deterministic dirty-catalog robustness profiles (`dirty_names_20`,
+    * `dirty_attrs_20`, `dirty_mixed_40`) from the already-loaded canonical catalog. Selection is by
+    * sorted `variantId.toString` (no randomness); each profile has the same document count and variant
+    * id set as the clean catalog, differing only in the corrupted searchable-text/attribute fields of
+    * the selected prefix.
+    */
+  private def buildY0RDirtyCatalogProfiles(documents: List[VariantSearchDocument]): List[Y0RDirtyCatalogProfile] = {
+    val sorted = documents.sortBy(_.variantId.toString)
+
+    val namesTargetCount = 13
+    val attrsTargetCount = 13
+    val mixedTargetCount = 26
+
+    def changedIds(before: List[VariantSearchDocument], after: List[VariantSearchDocument]): Set[String] =
+      before.zip(after).collect { case (b, a) if b != a => a.variantId.toString }.toSet
+
+    val namesTargets   = sorted.take(namesTargetCount).map(_.variantId.toString).toSet
+    val namesDocuments = sorted.zipWithIndex.map {
+      case (doc, idx) =>
+        if (namesTargets.contains(doc.variantId.toString)) {
+          val newServiceText = y0rDirtyNameText(idx)
+          val newAllText     = y0rNormalizeText(List(newServiceText, doc.attributeText, doc.providerText, doc.locationText))
+          doc.copy(serviceText = newServiceText, allText = newAllText)
+        } else doc
+    }
+
+    val attrsTargets   = sorted.take(attrsTargetCount).map(_.variantId.toString).toSet
+    val attrsDocuments = sorted.map {
+      doc => if (attrsTargets.contains(doc.variantId.toString)) y0rRemoveOneEnumAttribute(doc) else doc
+    }
+
+    val mixedTargets   = sorted.take(mixedTargetCount).map(_.variantId.toString).toSet
+    val mixedDocuments = sorted.zipWithIndex.map {
+      case (doc, idx) =>
+        if (mixedTargets.contains(doc.variantId.toString)) {
+          val stripped       = y0rRemoveOneEnumAttribute(doc)
+          val newServiceText = y0rDirtyMixedText(idx)
+          val newAllText     = y0rNormalizeText(List(newServiceText, stripped.attributeText, stripped.providerText, stripped.locationText))
+          stripped.copy(serviceText = newServiceText, allText = newAllText)
+        } else doc
+    }
+
+    List(
+      Y0RDirtyCatalogProfile(
+        name = "dirty_names_20",
+        documents = namesDocuments,
+        changedVariantIds = changedIds(sorted, namesDocuments),
+        expectedChangedCount = namesTargetCount,
+        notes = List("serviceText replaced with deterministic marketing/noisy text; allText recomputed; attributeText and identity/filter fields unchanged"),
+      ),
+      Y0RDirtyCatalogProfile(
+        name = "dirty_attrs_20",
+        documents = attrsDocuments,
+        changedVariantIds = changedIds(sorted, attrsDocuments),
+        expectedChangedCount = attrsTargetCount,
+        notes = List("one enum attribute removed by fixed priority list; attributeText and allText recomputed; serviceText and identity fields unchanged"),
+      ),
+      Y0RDirtyCatalogProfile(
+        name = "dirty_mixed_40",
+        documents = mixedDocuments,
+        changedVariantIds = changedIds(sorted, mixedDocuments),
+        expectedChangedCount = mixedTargetCount,
+        notes = List("serviceText replaced with mixed-language noisy text AND one enum attribute removed; attributeText and allText recomputed"),
+      ),
+    )
+  }
 
   /**
    * Read the coordinator-authored `queryRoleAuditV1.queries[*].roles` map directly from the existing

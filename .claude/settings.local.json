@@ -5,7 +5,8 @@
       "Bash(git status --short)",
       "Bash(git diff --check)",
       "Bash(echo \"exit=$?\")",
-      "Bash(echo \"--- check exit: $? ---\")"
+      "Bash(echo \"--- check exit: $? ---\")",
+      "Bash(git status *)"
     ],
     "deny": [
       "Bash(git push *)",
