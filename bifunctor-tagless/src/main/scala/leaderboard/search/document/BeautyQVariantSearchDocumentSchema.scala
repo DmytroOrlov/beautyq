@@ -1,7 +1,8 @@
 package leaderboard.search.document
 
 import leaderboard.model.*
-import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.BeautyQCatalogGraph
+import leaderboard.repo.ServiceVariantSchemas
 import leaderboard.search.dsl.*
 
 object BeautyQVariantSearchDocumentSchema {
@@ -10,11 +11,11 @@ object BeautyQVariantSearchDocumentSchema {
 
   private val BuildOperationName = "build-variant-search-documents"
 
-  private val categoryNode                  = Categories.entity.node(_.id)
-  private val serviceNode                   = Services.entity.node(_.id)
-  private val masterNode                    = Masters.entity.node(_.id)
-  private val masterLocationNode            = MasterLocations.entity.node(_.id)
-  private val masterServiceOfferNode        = MasterServiceOffers.entity.node(_.id)
+  private val categoryNode                  = BeautyQCatalogGraph.Nodes.category
+  private val serviceNode                   = BeautyQCatalogGraph.Nodes.service
+  private val masterNode                    = BeautyQCatalogGraph.Nodes.master
+  private val masterLocationNode            = BeautyQCatalogGraph.Nodes.masterLocation
+  private val masterServiceOfferNode        = BeautyQCatalogGraph.Nodes.masterServiceOffer
 
   lazy val documentSpec: SearchDocumentSpec[VariantSearchDocument] =
     SearchDocumentSpec(

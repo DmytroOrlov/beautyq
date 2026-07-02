@@ -91,6 +91,63 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
     }
   }
 
+  "CatalogEntity.derived" should {
+    "derive the category node key label and column from the conventional id field" in {
+      val derivedEntity = CatalogEntity.derived(Categories.entity)
+      assert(derivedEntity.node.key.label == "id")
+      assert(derivedEntity.node.key.column == "id")
+    }
+
+    "derive the same category node metadata as an explicit entity.node(_.id)" in {
+      val derivedEntity = CatalogEntity.derived(Categories.entity)
+      val explicitNode  = Categories.entity.node(_.id)
+      assert(derivedEntity.node.entity == explicitNode.entity)
+      assert(derivedEntity.node.key.label == explicitNode.key.label)
+      assert(derivedEntity.node.key.column == explicitNode.key.column)
+    }
+  }
+
+  "BeautyQCatalogGraph.Nodes" should {
+    "expose the category node key field label and column" in {
+      assert(BeautyQCatalogGraph.Nodes.category.key.label == "id")
+      assert(BeautyQCatalogGraph.Nodes.category.key.column == "id")
+    }
+
+    "expose the serviceVariantSchema value source key field, kept explicit" in {
+      assert(BeautyQCatalogGraph.Nodes.serviceVariantSchema.keyField.label == "serviceId")
+    }
+  }
+
+  "BeautyQCatalogGraph.graph" should {
+    "declare the catalog under the name \"beautyq\"" in {
+      assert(BeautyQCatalogGraph.graph[IO].name == "beautyq")
+    }
+
+    "list the declared roots/edges in domain declaration order, with real key labels" in {
+      assert(
+        BeautyQCatalogGraph.graph[IO].steps.map(_.summary) ==
+          Vector(
+            "root:category:tree:parentId",
+            "many:category->service:categoryId",
+            "value:service->serviceVariantSchema:serviceId",
+            "root:master:all",
+            "many:master->masterLocation:masterId",
+            "many:master->masterServiceOffer:masterId",
+            "many:masterServiceOffer->masterServiceOfferVariant:masterServiceOfferId",
+          )
+      )
+    }
+
+    "declare the category root as a real, tree-loaded step keyed by parentId" in {
+      assert(BeautyQCatalogGraph.graph[IO].steps.head == CatalogStep.Root("category", RootLoading.Tree, Some("parentId")))
+    }
+
+    "declare the master root as a real, all-loaded step" in {
+      val masterRootStep = BeautyQCatalogGraph.graph[IO].steps.collectFirst { case step @ CatalogStep.Root("master", _, _) => step }
+      assert(masterRootStep.contains(CatalogStep.Root("master", RootLoading.All, None)))
+    }
+  }
+
   "ServiceVariantSchema value source" should {
     "be represented separately from the physical item row source" in {
       val source = ServiceVariantSchemas.valueSource

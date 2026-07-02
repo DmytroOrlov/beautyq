@@ -47,6 +47,16 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
     new StubMasterServiceOfferVariants,
   )
 
+  private val repositories = BeautyQCatalogGraph.Repositories[IO](
+    new StubCategories,
+    new StubServices,
+    new StubServiceVariantSchemas,
+    new StubMasters,
+    new StubMasterLocations,
+    new StubMasterServiceOffers,
+    new StubMasterServiceOfferVariants,
+  )
+
   "BeautyQ graph loader" should {
     val snapshot = runIO(loader.load())
 
@@ -67,6 +77,52 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
       assert(snapshot.masterLocations == List(location))
       assert(snapshot.masterServiceOffers == List(offerA, offerB))
       assert(snapshot.masterServiceOfferVariants == List(variantA, variantB))
+    }
+
+    "expose unchanged relation metadata on BeautyQRepoGraph" in {
+      val graph = new BeautyQRepoGraph[IO](
+        new StubCategories,
+        new StubServices,
+        new StubServiceVariantSchemas,
+        new StubMasters,
+        new StubMasterLocations,
+        new StubMasterServiceOffers,
+        new StubMasterServiceOfferVariants,
+      )
+      assert(graph.categoryServices.foreignKey.label == "categoryId")
+      assert(graph.serviceSchemas.valueKey.label == "serviceId")
+      assert(graph.offerVariants.foreignKey.label == "masterServiceOfferId")
+    }
+
+    "declare category -> service as a many edge keyed by categoryId, straight from the chain declaration" in {
+      val declaration = BeautyQCatalogGraph.graph[IO]
+      val relation     = declaration.categoryServices(repositories)
+      assert(relation.foreignKey.label == "categoryId")
+    }
+
+    "declare service -> serviceVariantSchema as a value edge keyed by serviceId, straight from the chain declaration" in {
+      val declaration = BeautyQCatalogGraph.graph[IO]
+      val relation     = declaration.serviceSchemas(repositories)
+      assert(relation.valueKey.label == "serviceId")
+    }
+
+    "declare masterServiceOffer -> masterServiceOfferVariant as a many edge keyed by masterServiceOfferId, straight from the chain declaration" in {
+      val declaration = BeautyQCatalogGraph.graph[IO]
+      val relation     = declaration.offerVariants(repositories)
+      assert(relation.foreignKey.label == "masterServiceOfferId")
+    }
+
+    "select a materialized relation factory by its exact type via TupleSelect" in {
+      import BeautyQCatalogGraph.Evidence.given
+
+      val materialized =
+        catalog("beautyq")
+          .branch[Category]
+          .child[Service](_.categoryId)
+          .materialize[IO, BeautyQCatalogGraph.Repositories[IO]](identity)
+
+      val factory = materialized.relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasMany[IO, Category, CategoryId, Service, ServiceId]]
+      assert(factory(repositories).foreignKey.label == "categoryId")
     }
 
     "produce a snapshot the document schema can fully project" in {
