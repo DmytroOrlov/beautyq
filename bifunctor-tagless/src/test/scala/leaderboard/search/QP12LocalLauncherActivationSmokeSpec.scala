@@ -11,6 +11,7 @@ import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
+  BeautySearchQdrantSupplementActivationModuleSelector,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
 import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, VariantSearchDocument}
@@ -208,13 +209,13 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   // ============================================================================================
 
   private def esOnlyRollbackModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
 
   private def notReadyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
 
   private def readyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
 
   // ============================================================================================
   // Real-server smoke helper: serve a single request through a real local Ember server/client.

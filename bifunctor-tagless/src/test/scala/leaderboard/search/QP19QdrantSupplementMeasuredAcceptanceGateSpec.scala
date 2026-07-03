@@ -13,6 +13,7 @@ import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus
 import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
+  BeautySearchQdrantSupplementActivationModuleSelector,
   BeautySearchQdrantSupplementActivationPreflightCommand,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
@@ -331,7 +332,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
           checker,
         )
         esJsonClient = new ElasticsearchJsonClientAdapter(esClient)
-        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback), defaultRouteSpec), esJsonClient)
+        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback), defaultRouteSpec), esJsonClient)
         rollbackApis = esOnlyApis(moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue), rollbackRouteSpec), esJsonClient)
         readyProbe = runtimeBoundProbe(
           moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue), readyRouteSpec),
@@ -539,7 +540,7 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
   )
 
   private def explicitModule(operatorValue: String): ModuleDef =
-    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(Some(operatorValue)) match {
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleForOperatorValue(Some(operatorValue)) match {
       case Right(module) => module
       case Left(error)   => fail(s"expected valid activation value '$operatorValue', got ${error.message}")
     }

@@ -11,6 +11,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationConfig
+import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -57,7 +58,7 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
 
   "BeautySearchQdrantSupplementActivation.moduleFor" should {
     "select EsOnlyRollback's module for an absent operator value, with no Qdrant semantic backend or document lookup bound at all" in {
-      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
+      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
       assert(apis.size == 1)
       assert(apis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
 
@@ -66,13 +67,13 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
     }
 
     "leave malformed-request behavior unchanged (400) for an absent operator value" in {
-      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
+      val apis     = esOnlyApis(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
       val response = runIO(observeRoute(apis, postJson("/beauty-search", malformedRequestBody)))
       assert(response.status == Status.BadRequest)
     }
 
     "select the same module for an absent operator value as for the explicit es-only-rollback operator value" in {
-      val absentApis   = esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
+      val absentApis   = esOnlyApis(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback))
       val explicitApis = esOnlyApis(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue))
       assert(absentApis.size == explicitApis.size)
       assert(absentApis.collect { case api: BeautySearchApi[IO] => api }.size == 1)
@@ -192,7 +193,7 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
   private val emptyEsResponse: BeautySearchResponse = BeautySearchResponse(Nil, Nil, Nil, Nil, Nil)
 
   private def explicitModule(operatorValue: String): ModuleDef =
-    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(Some(operatorValue)) match {
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleForOperatorValue(Some(operatorValue)) match {
       case Right(module) => module
       case Left(error)   => fail(s"expected valid activation value '$operatorValue', got ${error.message}")
     }

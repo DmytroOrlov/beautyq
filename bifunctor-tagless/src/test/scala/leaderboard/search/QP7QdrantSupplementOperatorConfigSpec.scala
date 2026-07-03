@@ -11,6 +11,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollback, QdrantSupplementNotReady, QdrantSupplementReady}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationConfig
+import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -31,7 +32,7 @@ import java.util.UUID
  *   - absent/unset operator config selects the safe default (`EsOnlyRollback`);
  *   - explicit operator values select the matching activation state;
  *   - an unrecognized operator value fails closed (never selects `QdrantSupplementReady`);
- *   - the selected activation maps through the existing `BeautySearchQdrantSupplementActivation.moduleFor(...)`;
+ *   - the selected activation maps through the existing `BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(...)`;
  *   - default config-selected behavior remains ES-only, with no Qdrant semantic backend / document
  *     lookup binding required;
  *   - not-ready stays a 503 kill-switch; ready stays capped at `ExplicitConstraintsFilterPlusTop1`,
@@ -135,7 +136,7 @@ final class QP7QdrantSupplementOperatorConfigSpec extends AnyWordSpec with HttpC
   }
 
   private def moduleForOperatorValueOrFail(operatorValue: Option[String]): ModuleDef =
-    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(operatorValue) match {
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleForOperatorValue(operatorValue) match {
       case Right(module) => module
       case Left(failure)  => fail(s"expected a selected module, got failure: ${failure.message}")
     }

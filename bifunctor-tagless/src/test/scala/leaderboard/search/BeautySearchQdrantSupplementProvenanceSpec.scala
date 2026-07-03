@@ -12,6 +12,7 @@ import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationConfig
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
+import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightCommand
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus.ReadyToEnable
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
@@ -340,13 +341,13 @@ final class BeautySearchQdrantSupplementProvenanceSpec
   }
 
   private def defaultModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
 
   private def notReadyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
 
   private def readyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
 
   private def moduleWithTestSpec(selectedModule: ModuleDef, testSpec: BeautySearchSpec): Module =
     selectedModule.overriddenBy(new ModuleDef {

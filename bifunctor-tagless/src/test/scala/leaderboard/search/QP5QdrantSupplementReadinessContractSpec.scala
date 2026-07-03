@@ -7,6 +7,7 @@ import izumi.distage.model.plan.Roots
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{QdrantSupplementNotReady, QdrantSupplementReady}
+import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.qdrant.{
@@ -195,7 +196,7 @@ final class QP5QdrantSupplementReadinessContractSpec extends AnyWordSpec {
   // selection; the QP5 readiness contract is a separate source that must justify selecting Ready.
   // ============================================================================================
 
-  "BeautySearchQdrantSupplementActivation.moduleFor(QdrantSupplementReady / QdrantSupplementNotReady)" should {
+  "BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(QdrantSupplementReady / QdrantSupplementNotReady)" should {
     "select the supplement backend from only its lexical/semantic/document-lookup collaborators -- no QP5 readiness/compatibility binding is required or supplied" in {
       List(QdrantSupplementNotReady, QdrantSupplementReady).foreach { activation =>
         // Building the module's `BeautySearchBackend[IO]` root succeeds while supplying ONLY the
@@ -396,7 +397,7 @@ final class QP5QdrantSupplementReadinessContractSpec extends AnyWordSpec {
     fixture: SupplementFixture,
   ): BeautySearchBackend[IO] = {
     val module = new ModuleDef {
-      include(BeautySearchQdrantSupplementActivation.moduleFor(activation))
+      include(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(activation))
       make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(fixture.lexicalBackend)
       make[SemanticCandidateBackend[IO]].fromValue(fixture.semanticBackend)
       make[VariantSearchDocumentLookup[IO]].fromValue(fixture.documentLookup)

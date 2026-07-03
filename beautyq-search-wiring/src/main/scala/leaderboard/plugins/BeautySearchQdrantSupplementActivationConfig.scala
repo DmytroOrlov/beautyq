@@ -1,6 +1,5 @@
 package leaderboard.plugins
 
-import distage.ModuleDef
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollback, QdrantSupplementNotReady, QdrantSupplementReady}
 
@@ -14,10 +13,12 @@ import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollbac
 //   - `Some("qdrant-supplement-ready")`               -> `QdrantSupplementReady`
 //   - any other `Some(value)`                        -> `Left(QueryFailure)`, never `QdrantSupplementReady`
 //
-// This is a pure parser/selector only. It does not read HOCON/env/CLI itself, perform Qdrant
-// readiness HTTP calls or lifecycle checks, or change the default `/beauty-search` route. Selecting
+// This is a pure parser only. It does not read HOCON/env/CLI itself, perform Qdrant readiness HTTP
+// calls or lifecycle checks, or change the default `/beauty-search` route. Selecting
 // `QdrantSupplementReady` requires an explicit, correctly-spelled operator value; there is no automatic
-// or inferred readiness selection.
+// or inferred readiness selection. Route/module selection composing this parser with a
+// `distage.ModuleDef` mapping lives outside the parser, in
+// `BeautySearchQdrantSupplementActivationModuleSelector` in `bifunctor-tagless`.
 object BeautySearchQdrantSupplementActivationConfig {
   val EsOnlyRollbackOperatorValue: String           = "es-only-rollback"
   val QdrantSupplementNotReadyOperatorValue: String = "qdrant-supplement-not-ready"
@@ -36,8 +37,4 @@ object BeautySearchQdrantSupplementActivationConfig {
             s"$EsOnlyRollbackOperatorValue, $QdrantSupplementNotReadyOperatorValue, $QdrantSupplementReadyOperatorValue."
         ))
     }
-
-  // Convenience selector composing the parser with the existing activation -> module mapping.
-  def moduleForOperatorValue(operatorValue: Option[String]): Either[QueryFailure, ModuleDef] =
-    fromOperatorValue(operatorValue).map(BeautySearchQdrantSupplementActivation.moduleFor)
 }

@@ -10,6 +10,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollback, QdrantSupplementNotReady, QdrantSupplementReady}
+import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.{EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -388,7 +389,7 @@ final class QP6NoWorseningRouteMatrixSpec extends AnyWordSpec with HttpContractT
 
   private def esOnlyApis(): Set[HttpApi[IO]] = {
     val module = new ModuleDef {
-      include(BeautySearchQdrantSupplementActivation.moduleFor(EsOnlyRollback))
+      include(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(EsOnlyRollback))
       make[Async[Task]].fromValue(Async[Task])
       make[ApisProbe].from {
         (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
@@ -409,7 +410,7 @@ final class QP6NoWorseningRouteMatrixSpec extends AnyWordSpec with HttpContractT
     fixture: SupplementFixture,
   ): Set[HttpApi[IO]] = {
     val module = new ModuleDef {
-      include(BeautySearchQdrantSupplementActivation.moduleFor(activation))
+      include(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(activation))
       make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(fixture.lexicalBackend)
       make[SemanticCandidateBackend[IO]].fromValue(fixture.semanticBackend)

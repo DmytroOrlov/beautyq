@@ -11,6 +11,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollback, QdrantSupplementNotReady, QdrantSupplementReady}
+import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -49,7 +50,7 @@ final class QP4QdrantSupplementActivationSpec extends AnyWordSpec with HttpContr
   // semantic backend / document-lookup binding required in the focused module proof.
   // ============================================================================================
 
-  "BeautySearchQdrantSupplementActivation.moduleFor(EsOnlyRollback)" should {
+  "BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(EsOnlyRollback)" should {
     "select the same ES-backed route shape as the default route -- exactly one BeautySearchApi, no Qdrant binding needed -- and serve 200 OK" in {
       val apis = esOnlyApis()
       assert(apis.size == 1)
@@ -112,7 +113,7 @@ final class QP4QdrantSupplementActivationSpec extends AnyWordSpec with HttpContr
   // Requirement 5: the ready supplement path uses ExplicitConstraintsFilterPlusTop1, not AppendAll.
   // ============================================================================================
 
-  "BeautySearchQdrantSupplementActivation.moduleFor(QdrantSupplementReady)" should {
+  "BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(QdrantSupplementReady)" should {
     "use ExplicitConstraintsFilterPlusTop1 (append at most one survivor), even when several Qdrant-only candidates would otherwise all be eligible" in {
       val apis     = supplementApis(QdrantSupplementReady, threeAppendFixture)
       val response = runIO(observeRoute(apis, postJson("/beauty-search", validRequestBody)))
@@ -246,7 +247,7 @@ final class QP4QdrantSupplementActivationSpec extends AnyWordSpec with HttpContr
 
   private def esOnlyApis(): Set[HttpApi[IO]] = {
     val module = new ModuleDef {
-      include(BeautySearchQdrantSupplementActivation.moduleFor(EsOnlyRollback))
+      include(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(EsOnlyRollback))
       make[Async[Task]].fromValue(Async[Task])
       make[ApisProbe].from {
         (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>
@@ -267,7 +268,7 @@ final class QP4QdrantSupplementActivationSpec extends AnyWordSpec with HttpContr
     fixture: SupplementFixture,
   ): Set[HttpApi[IO]] = {
     val module = new ModuleDef {
-      include(BeautySearchQdrantSupplementActivation.moduleFor(activation))
+      include(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(activation))
       make[Async[Task]].fromValue(Async[Task])
       make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(fixture.lexicalBackend)
       make[SemanticCandidateBackend[IO]].fromValue(fixture.semanticBackend)

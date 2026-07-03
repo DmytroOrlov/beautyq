@@ -9,6 +9,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivation,
+  BeautySearchQdrantSupplementActivationModuleSelector,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
 import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, VariantSearchDocument}
@@ -125,13 +126,13 @@ final class QP13QdrantSupplementRuntimeBindingsSpec extends AnyWordSpec with Htt
   // ============================================================================================
 
   private def readyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementReady)
 
   private def notReadyModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady)
 
   private def esOnlyRollbackModule: ModuleDef =
-    BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)
 
   private def serve(apis: Set[HttpApi[IO]], body: String): ObservedResponse =
     runIO(observe(combineApis(apis.toSeq*), postJson("/beauty-search", body)))

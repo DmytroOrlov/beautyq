@@ -13,6 +13,7 @@ import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus
 import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
+  BeautySearchQdrantSupplementActivationModuleSelector,
   BeautySearchQdrantSupplementActivationPreflightCommand,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
@@ -112,7 +113,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
 
   "QP18 control behavior on the local launcher/route harness" should {
     "keep default and rollback ES-backed, keep not-ready at 503 with no fallback, and fail closed on invalid activation" in {
-      val defaultResponse  = serve(esOnlyApis(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)), broadComplementProbeQuery.input)
+      val defaultResponse  = serve(esOnlyApis(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback)), broadComplementProbeQuery.input)
       val rollbackResponse = serve(esOnlyApis(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue)), broadComplementProbeQuery.input)
       assert(defaultResponse.status == Status.Ok, s"default launcher selection must remain ES-backed (200), got ${defaultResponse.status}")
       assert(rollbackResponse.status == Status.Ok, s"es-only-rollback must remain ES-backed (200), got ${rollbackResponse.status}")
@@ -246,7 +247,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
           checker,
         )
         esJsonClient = new ElasticsearchJsonClientAdapter(esClient)
-        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivation.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback), defaultRouteSpec), esJsonClient)
+        defaultApis = esOnlyApis(moduleWithTestSpec(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(BeautySearchQdrantSupplementActivation.EsOnlyRollback), defaultRouteSpec), esJsonClient)
         rollbackApis = esOnlyApis(moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.EsOnlyRollbackOperatorValue), rollbackRouteSpec), esJsonClient)
         readyProbe = runtimeBoundProbe(
           moduleWithTestSpec(explicitModule(BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue), readyRouteSpec),
@@ -347,7 +348,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
   )
 
   private def explicitModule(operatorValue: String): ModuleDef =
-    BeautySearchQdrantSupplementActivationConfig.moduleForOperatorValue(Some(operatorValue)) match {
+    BeautySearchQdrantSupplementActivationModuleSelector.moduleForOperatorValue(Some(operatorValue)) match {
       case Right(module) => module
       case Left(error)   => fail(s"expected valid activation value '$operatorValue', got ${error.message}")
     }

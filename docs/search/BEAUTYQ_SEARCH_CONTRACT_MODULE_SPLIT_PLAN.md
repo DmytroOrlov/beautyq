@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 10a (first `beautyq-search-wiring` slice) and Phase 8c (`BeautyQSearchDomainContract` thin aggregate) recorded. `BeautySearchServingGate` lives in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates existing catalog/document/intent/runtime/response contract slices but is explicitly not a full `SearchDomainSpec` (no evaluation section, no generic `SearchDomainSpec[...]` value yet); `BeautySearchApi`, plugin/route modules, launcher modules, clients, bootstrap/seed code, and materialization remain in `bifunctor-tagless` pending deeper wiring/plugin movement.
+Status: Phase 10b (Qdrant supplement activation/preflight policy slice) recorded, alongside Phase 10a (first `beautyq-search-wiring` slice) and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates existing catalog/document/intent/runtime/response contract slices but is explicitly not a full `SearchDomainSpec` (no evaluation section, no generic `SearchDomainSpec[...]` value yet); `BeautySearchApi`, route/plugin modules (including the new `BeautySearchQdrantSupplementActivationModuleSelector`), launcher modules, clients, bootstrap/seed code, and materialization remain in `bifunctor-tagless` pending deeper wiring/plugin movement.
 
 ## Non-negotiable premise
 
@@ -814,6 +814,43 @@ still pass unchanged.
 Build changes: none - `build.sbt` was not touched. No behavior change: this
 is a pure aggregation of existing values, with no repository/materialization/
 ES/Qdrant/client/route/runtime code moved or imported.
+
+## Phase 10b record: Qdrant supplement activation/preflight policy split into beautyq-search-wiring
+
+This slice splits the Qdrant supplement activation/preflight policy from
+route/module selection, so the pure policy can live in `beautyq-search-wiring`
+while the route wiring stays in `bifunctor-tagless`:
+
+- Qdrant supplement activation state (`BeautySearchQdrantSupplementActivation`),
+  operator-value config parsing (`BeautySearchQdrantSupplementActivationConfig`),
+  pure preflight policy (`BeautySearchQdrantSupplementActivationPreflight`),
+  the read-only real-resource preflight command
+  (`BeautySearchQdrantSupplementActivationPreflightCommand`), and operator-facing
+  diagnostics formatting (`BeautySearchQdrantSupplementActivationDiagnostics`)
+  all moved into `beautyq-search-wiring`.
+- Package preserved as `leaderboard.plugins` throughout.
+- Route `distage.ModuleDef` selection remains in `bifunctor-tagless`, in a new
+  `BeautySearchQdrantSupplementActivationModuleSelector` (`moduleFor`,
+  `moduleForOperatorValue`), which composes the moved pure state/config with
+  `BeautySearchRouteModules` and `BeautySearchServingGate` - both of which
+  stay in `bifunctor-tagless`.
+- `beautyq-search-wiring` still does not depend on `bifunctor-tagless`.
+- No route modules were moved (`BeautySearchRouteModules` stays in
+  `bifunctor-tagless`).
+- No plugin modules were moved (`BeautySearchPluginModules`,
+  `BeautySearchLocalQdrantSupplementLauncherModule`,
+  `BeautySearchQdrantSupplementRuntimeBindingModules` stay in
+  `bifunctor-tagless`).
+- No HTTP/tapir handlers were moved.
+- No ES/Qdrant concrete clients were moved.
+- No bootstrap/startup/seed/repository/materialization/projection code was
+  moved.
+- No production route activation, fallback, fusion, rerank, or behavior
+  change.
+- Deeper route/plugin movement remains pending: `BeautySearchApi`,
+  `BeautySearchRouteModules`, `BeautySearchPluginModules`, launcher/runtime
+  binding modules, and HTTP/tapir wiring all still depend on app/http/parser/
+  backend/client/seed surfaces that stay in `bifunctor-tagless` for now.
 
 ## Migration phases
 
