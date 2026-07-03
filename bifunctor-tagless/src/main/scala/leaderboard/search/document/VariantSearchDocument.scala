@@ -19,14 +19,48 @@ final case class BeautySearchCatalogSnapshot(
 
 object BeautySearchCatalogSnapshot {
   def fromSeedData(seed: BeautyQSeedData): BeautySearchCatalogSnapshot =
+    fromMaterializationSnapshot(
+      BeautyQSearchCatalogSnapshot(
+        categories                 = seed.categories,
+        services                   = seed.services,
+        serviceVariantSchemas      = seed.serviceVariantSchemas,
+        masters                    = seed.masters,
+        masterLocations            = seed.masterLocations,
+        masterServiceOffers        = seed.masterServiceOffers,
+        masterServiceOfferVariants = seed.masterServiceOfferVariants,
+      )
+    )
+
+  /** Converts a materialization-owned [[BeautyQSearchCatalogSnapshot]] into
+    * the legacy shape for existing callers.
+    */
+  def fromMaterializationSnapshot(
+    snapshot: BeautyQSearchCatalogSnapshot
+  ): BeautySearchCatalogSnapshot =
     BeautySearchCatalogSnapshot(
-      categories = seed.categories,
-      services = seed.services,
-      serviceVariantSchemas = seed.serviceVariantSchemas,
-      masters = seed.masters,
-      masterLocations = seed.masterLocations,
-      masterServiceOffers = seed.masterServiceOffers,
-      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+      categories                 = snapshot.categories,
+      services                   = snapshot.services,
+      serviceVariantSchemas      = snapshot.serviceVariantSchemas,
+      masters                    = snapshot.masters,
+      masterLocations            = snapshot.masterLocations,
+      masterServiceOffers        = snapshot.masterServiceOffers,
+      masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
+    )
+
+  /** Converts the legacy snapshot into the materialization-owned shape, for
+    * callers that need to hand data to `beautyq-search-materialization` APIs.
+    */
+  def toMaterializationSnapshot(
+    snapshot: BeautySearchCatalogSnapshot
+  ): BeautyQSearchCatalogSnapshot =
+    BeautyQSearchCatalogSnapshot(
+      categories                 = snapshot.categories,
+      services                   = snapshot.services,
+      serviceVariantSchemas      = snapshot.serviceVariantSchemas,
+      masters                    = snapshot.masters,
+      masterLocations            = snapshot.masterLocations,
+      masterServiceOffers        = snapshot.masterServiceOffers,
+      masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
     )
 }
 
@@ -73,21 +107,8 @@ object BeautySearchCatalogSnapshotLoader {
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
         snapshot <- delegate.load()
-      } yield fromMaterializationSnapshot(snapshot)
+      } yield BeautySearchCatalogSnapshot.fromMaterializationSnapshot(snapshot)
   }
-
-  private def fromMaterializationSnapshot(
-    snapshot: BeautyQSearchCatalogSnapshot
-  ): BeautySearchCatalogSnapshot =
-    BeautySearchCatalogSnapshot(
-      categories                 = snapshot.categories,
-      services                   = snapshot.services,
-      serviceVariantSchemas      = snapshot.serviceVariantSchemas,
-      masters                    = snapshot.masters,
-      masterLocations            = snapshot.masterLocations,
-      masterServiceOffers        = snapshot.masterServiceOffers,
-      masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
-    )
 
   /** Compatibility facade over the materialization-owned, seed-free
     * [[BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories]] in
@@ -126,7 +147,7 @@ object BeautySearchCatalogSnapshotLoader {
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
         snapshot <- delegate.load()
-      } yield fromMaterializationSnapshot(snapshot)
+      } yield BeautySearchCatalogSnapshot.fromMaterializationSnapshot(snapshot)
   }
 
   private def seedScopeFromSeedData(seed: BeautyQSeedData): BeautyQSearchCatalogSeedScope =

@@ -26,6 +26,24 @@ object BeautyQVariantSearchDocumentMaterialization {
   private val masterLocationNode     = BeautyQCatalogGraph.Nodes.masterLocation
   private val masterServiceOfferNode = BeautyQCatalogGraph.Nodes.masterServiceOffer
 
+  /** Projects a materialization-owned [[BeautyQSearchCatalogSnapshot]]
+    * directly. Delegates to the seven-list `project` overload below, kept
+    * for source compatibility with existing callers that already have the
+    * lists unpacked.
+    */
+  def project(
+    snapshot: BeautyQSearchCatalogSnapshot
+  ): Either[QueryFailure, List[VariantSearchDocument]] =
+    project(
+      categories                 = snapshot.categories,
+      services                   = snapshot.services,
+      serviceVariantSchemas      = snapshot.serviceVariantSchemas,
+      masters                    = snapshot.masters,
+      masterLocations            = snapshot.masterLocations,
+      masterServiceOffers        = snapshot.masterServiceOffers,
+      masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
+    )
+
   def project(
     categories: List[Category],
     services: List[Service],

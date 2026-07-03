@@ -30,13 +30,5 @@ object BeautyQVariantSearchDocumentSchema {
     )
 
   def project(snapshot: BeautySearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] =
-    BeautyQVariantSearchDocumentMaterialization.project(
-      categories = snapshot.categories,
-      services = snapshot.services,
-      serviceVariantSchemas = snapshot.serviceVariantSchemas,
-      masters = snapshot.masters,
-      masterLocations = snapshot.masterLocations,
-      masterServiceOffers = snapshot.masterServiceOffers,
-      masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
-    )
+    BeautyQVariantSearchDocumentMaterialization.project(BeautySearchCatalogSnapshot.toMaterializationSnapshot(snapshot))
 }
