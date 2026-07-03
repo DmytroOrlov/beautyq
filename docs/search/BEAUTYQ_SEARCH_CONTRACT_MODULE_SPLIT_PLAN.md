@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 8d (static/offline evaluation contract slice) recorded, alongside Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` now aggregates catalog/document/intent/runtime/response *and* evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`, no generic `SearchDomainSpec[...]` value); `BeautySearchApi`, route/plugin modules (including `BeautySearchQdrantSupplementActivationModuleSelector`), launcher modules, clients, bootstrap/seed code, JSON/resource parsing, the eval runtime harness/backend runners, and materialization remain in `bifunctor-tagless` pending deeper movement.
+Status: Phase 7b (BeautyQ variant document projection engine slice) recorded, alongside Phase 8d (static/offline evaluation contract slice), Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautyQVariantSearchDocumentMaterialization` (the actual projection engine) now lives in `beautyq-search-materialization`, alongside `BeautyQCatalogGraph`; `BeautyQVariantSearchDocumentSchema` in `bifunctor-tagless` is now a thin compatibility facade delegating to it. `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates catalog/document/intent/runtime/response/evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`); `BeautySearchApi`, route/plugin modules, launcher modules, clients, bootstrap/seed code (including `BeautySearchCatalogSnapshot`/`fromSeedData`/`SeedScopedFromRepositories`), JSON/resource parsing, the eval runtime harness/backend runners, and repositories remain in `bifunctor-tagless` pending deeper movement.
 
 ## Non-negotiable premise
 
@@ -953,6 +953,76 @@ compiled cleanly in `beautyq-search-contract` on the first attempt with the
 module's existing dependencies.
 
 Deeper evaluation harness / full `SearchDomainSpec` assembly remains pending.
+
+## Phase 7b record: BeautyQ variant document projection engine extracted into beautyq-search-materialization
+
+Continues Phase 7's catalog-materialization slice with the document side:
+the actual row-projection engine (previously inline in
+`bifunctor-tagless`'s `BeautyQVariantSearchDocumentSchema`) moved next to
+`BeautyQCatalogGraph` in `beautyq-search-materialization`, leaving
+`BeautyQVariantSearchDocumentSchema` as a thin compatibility facade.
+
+Moved, package preserved (`leaderboard.search.document`):
+
+- `beautyq-search-materialization/src/main/scala/leaderboard/search/document/SearchDocumentProjection.scala`
+  (from `bifunctor-tagless`) - the generic join/index/invariant-check
+  projection helper, unchanged.
+
+Added: `beautyq-search-materialization/src/main/scala/leaderboard/search/document/BeautyQVariantSearchDocumentMaterialization.scala`
+- owns the actual BeautyQ projection engine: `BeautyQCatalogGraph.Nodes`
+  handles (category/service/master/masterLocation/masterServiceOffer),
+  `project(categories, services, serviceVariantSchemas, masters,
+  masterLocations, masterServiceOffers, masterServiceOfferVariants)`,
+  `buildDocument`, `validateAgainstSchema`, `makeAttributeTokens`,
+  `humanize`, `normalizeText` - copied verbatim from
+  `BeautyQVariantSearchDocumentSchema.project`/`buildDocument`/etc, with
+  `project` taking plain lists instead of the seed-coupled
+  `BeautySearchCatalogSnapshot` (so this engine has no seed dependency).
+  Source ordering, first-occurrence dedup, missing-entity messages, the
+  cross-master invariant failure message, the schema-validation error
+  message, enum/boolean/int/decimal attribute projection, `humanize`,
+  `normalizeText`, text field construction order, and every
+  `VariantSearchDocument` field value are unchanged.
+
+`bifunctor-tagless`'s `BeautyQVariantSearchDocumentSchema.scala` edited to a
+thin facade: still exposes `Fields`, `documentSpec`, `qdrantPayloadSpec`,
+`querySchema`, `projection`, and `project(snapshot: BeautySearchCatalogSnapshot)`
+unchanged in signature, but `project` now only unpacks the snapshot's seven
+lists and delegates to `BeautyQVariantSearchDocumentMaterialization.project(...)`.
+The direct `BeautyQCatalogGraph`/`ServiceVariantSchemas` imports and all the
+node-handle/`buildDocument`/`validateAgainstSchema`/`makeAttributeTokens`/
+`humanize`/`normalizeText` code were removed from this file - moved, not
+duplicated.
+
+Not moved (seed-coupled, stay in `bifunctor-tagless`'s `VariantSearchDocument.scala`,
+which was not edited): `BeautySearchCatalogSnapshot` (including `fromSeedData`),
+`VariantSearchDocumentBuilder`, `BeautySearchCatalogSnapshotLoader`
+(`FromRepositories` and `SeedScopedFromRepositories`) - these depend on
+`leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}`, and seed code stays
+in `bifunctor-tagless` for this patch. `VariantSearchDocumentSnapshotProvider.scala`
+was likewise not touched.
+
+Build changes: none - `build.sbt` was not touched.
+`beautyq-search-materialization` already depended on `beautyqSearchContract`
+(for `VariantSearchDocument`, transitively `search-core`'s `SearchGeoPoint`/
+`SearchDocumentSpec`), `beautyqSearchRepositories`, `repoCore`, and
+`beautyqModel`, which covered every symbol both moved/new files use.
+
+No seed/bootstrap/startup code moved. No routes/plugins/API/http/tapir
+moved. No ES/Qdrant clients or interpreters moved. No repository code moved.
+No production route activation, fallback, fusion, rerank, telemetry, or
+behavior change - the projection engine is a verbatim copy with an adapted
+(list-based instead of snapshot-based) parameter shape, and the facade's
+public signatures are unchanged.
+
+Tests: no test file needed editing - package preservation meant existing
+`BeautyQVariantSearchDocumentSchemaSpec` (19 cases), `BeautyQRepoGraphLoaderSpec`
+(10 cases), `VariantSearchDocumentSnapshotProviderSpec` (4 cases),
+`BeautySearchReadyCatalogDocumentsSpec` (4 cases), and
+`ManagedLocalSearchBootstrapSpec` (2 cases) all still resolve the facade
+unchanged and pass unchanged.
+
+Deeper seed/snapshot/loader extraction remains pending.
 
 ## Migration phases
 
