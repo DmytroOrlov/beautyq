@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 5 recorded. The BeautyQ catalog topology section lives in `beautyq-search-contract`; document/intent/runtime/response/evaluation contract content and repositories/materialization have not moved yet.
+Status: Phase 6 recorded. BeautyQ repositories live in `beautyq-search-repositories`; document/intent/runtime/response/evaluation contract content and materialization have not moved yet.
 
 ## Non-negotiable premise
 
@@ -352,6 +352,85 @@ or `F`/repositories type required. Existing `RepoFieldRelationSpec` (19
 cases) and `BeautyQRepoGraphLoaderSpec` (10 cases) needed no changes -
 neither referenced the relocated `declaration` symbol directly - and both
 still pass unchanged.
+
+## Phase 6 record: BeautyQ repositories moved into beautyq-search-repositories
+
+A first Phase 6 attempt stopped at preflight: every non-trivial repository
+file imports `leaderboard.sql.SQL` and `leaderboard.runtime.QueryFailureToThrowable`,
+both of which lived in `bifunctor-tagless` outside `leaderboard.repo`, so
+moving repositories without them would force a forbidden/cyclic
+`beautyq-search-repositories -> bifunctor-tagless` edge. A second attempt
+found `QueryFailureToThrowable` is *not* repository-scoped: it's also used by
+`leaderboard.search.startup.BeautyQManagedLocalSearchBootstrap` (ES/Qdrant
+search bootstrap) and `leaderboard.seed.BeautyQSeedInserter` (seed
+orchestration) - both explicitly out of this split's repository/materialization
+boundary - so it stopped again rather than misfile a cross-cutting helper
+under a repositories-only module.
+
+**Ownership decision** (this patch): `leaderboard.runtime.QueryFailureToThrowable`
+moved to `leaderboard-core` - it only ever depended on `izumi.functional.bio.Error2`
+(external) and `leaderboard.model.QueryFailure`, which `leaderboard-core`
+already owns, so this is a natural home for a cross-cutting `QueryFailure`
+bridge, not a new dependency edge. `leaderboard.sql.SQL` moved to
+`beautyq-search-repositories` - its only repo-local dependency is the same
+`QueryFailure`, and every one of its consumers is a repository file also
+moving in this patch.
+
+Moved, package preserved (`leaderboard.repo` / `leaderboard.sql` /
+`leaderboard.runtime`):
+
+- `leaderboard-core/src/main/scala/leaderboard/runtime/QueryFailureToThrowable.scala`
+  (from `bifunctor-tagless`) - cross-cutting `QueryFailure`-to-`Throwable`
+  bridge, API/behavior unchanged.
+- `beautyq-search-repositories/src/main/scala/leaderboard/sql/SQL.scala`
+  (from `bifunctor-tagless`) - the doobie/BIO SQL executor abstraction,
+  API/behavior unchanged.
+- `beautyq-search-repositories/src/main/scala/leaderboard/repo/`: `Categories.scala`,
+  `Services.scala`, `Masters.scala`, `MasterLocations.scala`,
+  `MasterServiceOffers.scala`, `MasterServiceOfferVariants.scala`,
+  `MasterServiceOfferVariantAttributesRepository.scala`,
+  `ServiceVariantSchemas.scala`, `Ladder.scala`, `Profiles.scala` - all
+  BeautyQ repository/data-access companions, each independently verified to
+  import no materialization/search-document/ES/Qdrant/HTTP code.
+- `package.scala` (the `leaderboard.repo` package object, `rootCategoryIdSqlLiteral`)
+  moved with `Categories.scala`, its only consumer, per the package-object
+  rule: a package can have only one package object on a shared classpath, and
+  this was the only `leaderboard.repo` package object anywhere in the repo
+  (verified by search - `repo-core`'s generic files are plain objects/classes,
+  never a package object), so moving it does not split or duplicate anything.
+
+Not moved (materialization/contract-consumer, stays in `bifunctor-tagless`):
+`BeautyQCatalogGraph.scala` in full - `Repositories`, `Evidence`, `Graph`,
+`Relations`, `Nodes` all still live there, since they wire the moved
+repositories to the moved catalog declaration and are explicitly out of this
+phase's scope. `VariantSearchDocument.scala`, ES/Qdrant code, routes, and seed
+data were untouched.
+
+Tests: none moved. Every consumer of the moved repositories in
+`bifunctor-tagless`'s test tree (`RepoFieldRelationSpec`,
+`BeautyQRepoGraphLoaderSpec`, HTTP contract suites, seed/search integration
+specs, etc.) references them by the same preserved package name, so they
+resolve the moved classes via the new `bifunctor-tagless -> beautyqSearchRepositories`
+project dependency with no import changes and needed no edits.
+
+Build changes:
+
+- `leaderboard-core` gained `Deps.distageCore` (for `izumi.functional.bio.Error2`,
+  used by the relocated `QueryFailureToThrowable`) - the same minimal generic
+  dependency `repo-core` already uses for the same reason.
+- `beautyqSearchRepositories` gained `Deps.distageCore` (`distage.Lifecycle`,
+  `izumi.functional.bio`), `Deps.doobie` + `Deps.doobiePostgres` (repository
+  SQL/doobie code), `Deps.catsCore` (`cats.data.NonEmptyList`), and
+  `Deps.logstageSlf4j` (`logstage.LogIO2`) - all pre-existing dependency
+  aliases already used elsewhere in the repo for the same libraries, and
+  `dependsOn(leaderboard-core, repoCore, beautyqModel)`.
+- `bifunctor-tagless` gained `dependsOn(beautyqSearchRepositories)`.
+
+No cycle: `leaderboard-core` and `beautyqSearchRepositories` do not depend
+back on `bifunctor-tagless`, `beautyqSearchMaterialization`,
+`beautyqSearchWiring`, `search-elasticsearch`, or `search-qdrant`. No
+compatibility export was needed - package names were preserved throughout, so
+no consumer needed an import change.
 
 ## Migration phases
 

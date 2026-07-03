@@ -84,7 +84,9 @@ inThisBuild(
 )
 
 lazy val `leaderboard-core` = project
-  .pipe(lightweightSettings(Nil))
+  .pipe(lightweightSettings(Seq(
+    Deps.distageCore,
+  )))
 
 lazy val `search-core` = project
   .pipe(lightweightSettings(Seq(
@@ -151,8 +153,14 @@ lazy val beautyqSearchContract = project
 lazy val beautyqSearchRepositories = project
   .in(file("beautyq-search-repositories"))
   .settings(name := "beautyq-search-repositories")
-  .pipe(lightweightSettings(Nil))
-  .dependsOn(repoCore, beautyqModel)
+  .pipe(lightweightSettings(Seq(
+    Deps.distageCore,
+    Deps.doobie,
+    Deps.doobiePostgres,
+    Deps.catsCore,
+    Deps.logstageSlf4j,
+  )))
+  .dependsOn(`leaderboard-core`, repoCore, beautyqModel)
 
 lazy val beautyqSearchMaterialization = project
   .in(file("beautyq-search-materialization"))
@@ -168,7 +176,7 @@ lazy val beautyqSearchWiring = project
 
 lazy val `bifunctor-tagless` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel, beautyqSearchContract)
+  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel, beautyqSearchContract, beautyqSearchRepositories)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
