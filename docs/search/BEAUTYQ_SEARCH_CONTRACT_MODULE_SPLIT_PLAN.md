@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 8b (document/runtime/response contract slice) recorded. The pure `VariantSearchDocument` model, `BeautyQVariantSearchDocumentContract` (document/query schema declarations), `BeautySearchSpec`/`BeautySearchSpecV1`/`BeautyQSearchPresentation` live in `beautyq-search-contract`; full `SearchDomainSpec`, evaluation content, and ES/Qdrant interpreter migration have not moved yet.
+Status: Phase 9a (Qdrant/semantic consumer migration slice) recorded. Qdrant/hybrid consumer code reads `BeautyQVariantSearchDocumentContract` directly instead of the `bifunctor-tagless` compatibility schema object; full `SearchDomainSpec`, evaluation content, ES interpreter migration, and response assembler migration have not moved yet.
 
 ## Non-negotiable premise
 
@@ -639,6 +639,43 @@ pass unchanged.
 No cycle: `beautyqSearchContract` still has no dependency on
 `bifunctor-tagless`, repositories, materialization, ES/Qdrant, HTTP/app,
 wiring, clients, or routes.
+
+## Phase 9a record: Qdrant/semantic consumers migrated to BeautyQVariantSearchDocumentContract
+
+A consumer-migration-only slice of Phase 9 ("migrate interpreters to
+contract slices"): no files moved, no `search-qdrant` (generic interpreter)
+edits, no ES interpreter edits, no response assembler edits, no
+materialization/projection edits. Three `bifunctor-tagless` Qdrant/hybrid
+consumers that only ever read the contract-shaped members of
+`BeautyQVariantSearchDocumentSchema` (never `projection`/`project`/
+`buildDocument`) were migrated to read `BeautyQVariantSearchDocumentContract`
+(in `beautyq-search-contract`) directly instead:
+
+- `leaderboard.search.qdrant.QdrantVariantDocumentPointBuilder` - now uses
+  `BeautyQVariantSearchDocumentContract.qdrantPayloadSpec` and
+  `.documentSpec.id(document)`.
+- `leaderboard.search.qdrant.QdrantEmbeddingBenchmarkCandidateExecutor` - now
+  uses `BeautyQVariantSearchDocumentContract.Fields.{variantId, serviceText,
+  attributeText, allText, categoryName}`.
+- `leaderboard.search.hybrid.BeautyQNonProductionHybridRunnerManualAdapterInputs` -
+  now uses `BeautyQVariantSearchDocumentContract.Fields.variantId`.
+
+`BeautyQVariantSearchDocumentSchema` itself was not edited - it remains the
+materialization/projection compatibility surface in `bifunctor-tagless`
+(`projection`/`project`/`buildDocument`/validation/text-building), still
+delegating its contract-shaped members from `BeautyQVariantSearchDocumentContract`
+for the consumers that still go through it. No behavior changed: each
+replacement reads the exact same underlying values (the schema's delegating
+`val`/`lazy val` already forwarded to the contract object 1:1), so payload
+JSON, point IDs, embedding source fields, and hybrid wiring are byte-for-byte
+identical to before.
+
+Not migrated in this slice (Phase 9 remainder): ES interpreter, response
+assembler, generic `search-qdrant` builders (which already consume generic
+`SearchDocumentPayloadSpec`/`SearchDocumentSpec`, not BeautyQ-specific
+types), and any other `bifunctor-tagless` code still reading
+`BeautyQVariantSearchDocumentSchema`. No production route activation and no
+Qdrant/ES/hybrid runtime behavior change.
 
 ## Migration phases
 

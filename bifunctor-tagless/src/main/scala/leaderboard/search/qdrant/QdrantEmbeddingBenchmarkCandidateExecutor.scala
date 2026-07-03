@@ -2,7 +2,7 @@ package leaderboard.search.qdrant
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
 import leaderboard.search.eval.BeautySearchEvalQuery
@@ -67,7 +67,7 @@ final class QdrantEmbeddingBenchmarkDefaultCompositionFactory(qdrantClient: Qdra
     val semanticCandidateSearch = new QdrantSemanticCandidateSearch(
       embeddingClient,
       new QdrantClientSearchAdapter(qdrantClient),
-      BeautyQVariantSearchDocumentSchema.Fields.variantId,
+      BeautyQVariantSearchDocumentContract.Fields.variantId,
     )
 
     ZIO.succeed(QdrantNonProductionExperimentComposition.build(
@@ -90,10 +90,10 @@ final case class QdrantEmbeddingBenchmarkExecutorConfig(
   scoreThreshold: Option[Double] = None,
   distance: VectorDistance = VectorDistance.Cosine,
   sourceTextFields: List[SearchField[VariantSearchDocument]] = List(
-    BeautyQVariantSearchDocumentSchema.Fields.serviceText,
-    BeautyQVariantSearchDocumentSchema.Fields.attributeText,
-    BeautyQVariantSearchDocumentSchema.Fields.allText,
-    BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+    BeautyQVariantSearchDocumentContract.Fields.serviceText,
+    BeautyQVariantSearchDocumentContract.Fields.attributeText,
+    BeautyQVariantSearchDocumentContract.Fields.allText,
+    BeautyQVariantSearchDocumentContract.Fields.categoryName,
   ),
   cleanupCollections: Boolean = true,
 ) {
