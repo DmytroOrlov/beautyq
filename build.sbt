@@ -146,9 +146,10 @@ lazy val beautyqSearchContract = project
   .in(file("beautyq-search-contract"))
   .settings(name := "beautyq-search-contract")
   .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
     Deps.scalatest % Test,
   )))
-  .dependsOn(searchContractCore, beautyqModel, repoCore)
+  .dependsOn(searchContractCore, beautyqModel, repoCore, `search-core`)
 
 lazy val beautyqSearchRepositories = project
   .in(file("beautyq-search-repositories"))

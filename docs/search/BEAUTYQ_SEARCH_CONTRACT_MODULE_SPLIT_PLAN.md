@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 7 (catalog-materialization slice) recorded. `BeautyQCatalogGraph`'s catalog materialization wiring lives in `beautyq-search-materialization`; BeautyQ document materialization, document/intent/runtime/response/evaluation contract content, and ES/Qdrant/wiring have not moved yet.
+Status: Phase 8a (intent/field-semantics contract slice) recorded. `SearchConstraint`, `BeautyQSearchIntentVocabulary`, and `BeautyQSearchFieldSemantics` live in `beautyq-search-contract`; full `SearchDomainSpec`, document schema/presentation/runtime/evaluation content, and BeautyQ document materialization have not moved yet.
 
 ## Non-negotiable premise
 
@@ -478,6 +478,66 @@ anywhere. No compatibility export was needed.
 
 No cycle: `beautyqSearchMaterialization` does not depend back on
 `bifunctor-tagless`, ES/Qdrant, HTTP/app, wiring, clients, or routes.
+
+## Phase 8a record: intent/field-semantics contract slice moved into beautyq-search-contract
+
+This slice moves only three pure BeautyQ intent/constraint/field-semantics
+files - not full `SearchDomainSpec`, and not document/presentation/runtime/
+evaluation content. Source inspection confirmed those remain entangled with
+non-contract code: `BeautySearchSpec.scala`/`BeautySearchSpecV1.scala` import
+`VariantSearchDocument`, `BeautyQSearchPresentation.scala` imports
+`VariantSearchDocument` and holds response helper methods,
+`BeautyQVariantSearchDocumentSchema.scala` mixes contract-shaped
+`documentSpec`/`qdrantPayloadSpec`/`querySchema` with
+`projection`/`project`/`buildDocument` and imports `BeautyQCatalogGraph` plus
+`ServiceVariantSchemas`, and `VariantSearchDocument.scala` mixes the document
+model with `BeautySearchCatalogSnapshot`, repo-backed loaders, and
+seed-scoped loaders. None of those moved.
+
+Moved, package preserved (`leaderboard.search.dsl`):
+
+- `beautyq-search-contract/src/main/scala/leaderboard/search/dsl/SearchConstraint.scala`
+  (from `bifunctor-tagless`) - the `SearchConstraint` ADT (`ServiceAny`,
+  `CategoryAny`, `EnumAttr`, `BoolAttr`, `IntRange`, `DecimalRange`,
+  `PriceRange`, `DurationRange`, `NearUser`) and its circe codec. Only
+  imports circe.
+- `beautyq-search-contract/src/main/scala/leaderboard/search/dsl/BeautyQSearchIntentVocabulary.scala`
+  (from `bifunctor-tagless`) - the pure BeautyQ intent vocabulary (structured
+  aliases and noise phrases over `SearchIntentVocabulary[SearchConstraint]`).
+  No imports at all - it resolves `SearchIntentVocabulary`/`SearchIntentRule`
+  (generic search DSL types, `search-core`) and `SearchConstraint` (moved
+  above) via same-package resolution, since all three share package
+  `leaderboard.search.dsl` across modules.
+- `beautyq-search-contract/src/main/scala/leaderboard/search/dsl/BeautyQSearchFieldSemantics.scala`
+  (from `bifunctor-tagless`) - pure BeautyQ field-semantic name constants
+  over generic `SearchFieldSemantic` (`search-core`), same same-package
+  resolution.
+
+Tests: added `BeautyQIntentContractSpec.scala` (8 cases) in
+`beautyq-search-contract` proving the vocabulary is non-empty and contains
+known BeautyQ tokens (`"маникюр"`, `"lashes"`), `SearchConstraint` round-trips
+`ServiceAny`/`EnumAttr`/`PriceRange`/`NearUser` through its circe codec, and
+`BeautyQSearchFieldSemantics` derives the expected `enumAttributes.x`/
+`booleanAttributes.x` paths - all without any repository or materialization
+dependency in scope.
+
+Build changes: `beautyqSearchContract` gained `dependsOn(search-core)` -
+`BeautyQSearchIntentVocabulary`/`BeautyQSearchFieldSemantics` use
+`SearchIntentVocabulary`/`SearchIntentRule`/`SearchFieldSemantic`, generic
+search DSL types owned by `search-core` - and `Deps.circeGeneric` (main
+scope) for `SearchConstraint`'s manual circe codec, the same alias
+`beautyqModel` already uses for the same reason. No compatibility export was
+needed - package names were preserved, so the many existing
+`bifunctor-tagless` consumers of these three files (parser, hybrid policy,
+response assembler, document schema, eval schema, and their tests) needed no
+import changes; they resolve them via the existing
+`bifunctor-tagless -> beautyqSearchContract` dependency.
+
+No cycle: `search-core` depends only on `leaderboard-core`, so it does not
+depend back on `beautyqSearchContract`, `bifunctor-tagless`, repositories, or
+materialization. `beautyqSearchContract` still has no dependency on
+`bifunctor-tagless`, repositories, materialization, ES/Qdrant, HTTP/app,
+wiring, clients, or routes.
 
 ## Migration phases
 
