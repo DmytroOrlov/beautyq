@@ -1,20 +1,20 @@
 package leaderboard.search.dsl
 
 import leaderboard.model.*
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, VariantSearchDocument}
 
 object BeautySearchSpecV1 {
   val QdrantPayloadSpecName: String = "qdrant"
 
-  private val Fields = BeautyQVariantSearchDocumentSchema.Fields
+  private val Fields = BeautyQVariantSearchDocumentContract.Fields
 
   lazy val runtimeSpec: SearchRuntimeSpec[VariantSearchDocument, SearchConstraint] =
     spec.runtimeSpec(
-      Map(QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+      Map(QdrantPayloadSpecName -> BeautyQVariantSearchDocumentContract.qdrantPayloadSpec)
     )
 
   lazy val spec: BeautySearchSpec = BeautySearchSpec(
-    variantDocument = BeautyQVariantSearchDocumentSchema.documentSpec,
+    variantDocument = BeautyQVariantSearchDocumentContract.documentSpec,
     intentVocabulary = BeautyQSearchIntentVocabulary.vocabulary,
     carouselSpec = BeautyQSearchPresentation.carouselSpec(
       providerGroupField = Fields.masterLocationId,
@@ -34,7 +34,7 @@ object BeautySearchSpecV1 {
       geoDistanceOffset = "0km",
       geoDistanceDecay = 0.5d,
     ),
-    querySchema = BeautyQVariantSearchDocumentSchema.querySchema,
+    querySchema = BeautyQVariantSearchDocumentContract.querySchema,
   )
 
   private val facetFields: List[FacetField[VariantSearchDocument]] =

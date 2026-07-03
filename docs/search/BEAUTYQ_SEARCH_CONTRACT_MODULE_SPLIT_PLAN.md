@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 8a (intent/field-semantics contract slice) recorded. `SearchConstraint`, `BeautyQSearchIntentVocabulary`, and `BeautyQSearchFieldSemantics` live in `beautyq-search-contract`; full `SearchDomainSpec`, document schema/presentation/runtime/evaluation content, and BeautyQ document materialization have not moved yet.
+Status: Phase 8b (document/runtime/response contract slice) recorded. The pure `VariantSearchDocument` model, `BeautyQVariantSearchDocumentContract` (document/query schema declarations), `BeautySearchSpec`/`BeautySearchSpecV1`/`BeautyQSearchPresentation` live in `beautyq-search-contract`; full `SearchDomainSpec`, evaluation content, and ES/Qdrant interpreter migration have not moved yet.
 
 ## Non-negotiable premise
 
@@ -110,6 +110,17 @@ beautyq-search-contract + beautyq-search-materialization + search-elasticsearch 
   -> beautyq-search-wiring
   -> app-http
 ```
+
+Note (added Phase 8a/8b): `search-core` is an **existing** generic search
+DSL/runtime-spec module (not one of the 10 new BeautyQ split modules listed
+above) that already housed `SearchIntentVocabulary`, `SearchIntentRule`,
+`SearchFieldSemantic`, `SearchField`, `SearchDocumentSpec`, `SearchQuerySchema`,
+`SearchRuntimeSpec`, and related generic types before this split began.
+`beautyq-search-contract` may depend on it - and does, since Phase 8a - for
+those generic types; `search-core` itself depends only on `leaderboard-core`,
+so this does not introduce any dependency on `bifunctor-tagless`,
+repositories, materialization, ES/Qdrant, HTTP/app, wiring, clients, or
+routes.
 
 ## Forbidden dependencies
 
@@ -536,6 +547,96 @@ import changes; they resolve them via the existing
 No cycle: `search-core` depends only on `leaderboard-core`, so it does not
 depend back on `beautyqSearchContract`, `bifunctor-tagless`, repositories, or
 materialization. `beautyqSearchContract` still has no dependency on
+`bifunctor-tagless`, repositories, materialization, ES/Qdrant, HTTP/app,
+wiring, clients, or routes.
+
+## Phase 8b record: document/runtime/response contract slice moved into beautyq-search-contract
+
+This slice moves the pure BeautyQ document model and document/query contract
+declarations, plus the BeautyQ runtime-spec/presentation aggregates built on
+top of them - still not full `SearchDomainSpec`, and still not evaluation
+content or ES/Qdrant interpreters (Phase 9). Source inspection confirmed
+`VariantSearchDocument.scala` and `BeautyQVariantSearchDocumentSchema.scala`
+each mixed pure contract shape with repo-backed/seed-scoped materialization,
+so each was split rather than moved whole.
+
+**New file, not a duplicate object** - naming rule followed: the existing
+`leaderboard.repo`/materialization-facing object name
+`BeautyQVariantSearchDocumentSchema` stays exactly where it was
+(`bifunctor-tagless`), so every existing consumer (~40 production/test files
+across parser, hybrid policy, response assembler, eval schema, benchmark
+executors, and their tests) keeps compiling with zero import changes. The
+contract-owned declarations moved into a **new**, differently-named object,
+`BeautyQVariantSearchDocumentContract`, and the old object now delegates to
+it - there is exactly one `BeautyQVariantSearchDocumentSchema` object on the
+classpath, in `bifunctor-tagless`.
+
+Moved/created, package preserved (`leaderboard.search.document` /
+`leaderboard.search.dsl`):
+
+- `beautyq-search-contract/src/main/scala/leaderboard/search/document/VariantSearchDocument.scala`
+  (new file, split out of `bifunctor-tagless`'s `VariantSearchDocument.scala`)
+  - the pure `VariantSearchDocument` case class and its circe codecs only.
+  `BeautySearchCatalogSnapshot`, `VariantSearchDocumentBuilder`, and
+  `BeautySearchCatalogSnapshotLoader` (`FromRepositories`,
+  `SeedScopedFromRepositories`) stayed in `bifunctor-tagless`'s
+  `VariantSearchDocument.scala`, which was edited to drop only the moved
+  case class/companion - they depend on `BeautyQCatalogGraph`,
+  `GraphLoading`, repo companions, and `leaderboard.seed.BeautyQSeedData`/
+  `BeautyQSeedReady`, none of which belong in the contract.
+- `beautyq-search-contract/src/main/scala/leaderboard/search/document/BeautyQVariantSearchDocumentContract.scala`
+  (new file) - `Fields` (all `SearchField[VariantSearchDocument]`
+  declarations), `documentSpec`, `qdrantPayloadSpec`, `querySchema`, and the
+  constraint/facet resolution helpers `querySchema` needs
+  (`beautyQResolveConstraint`, `beautyQFacetConstraint`, `rangeConstraint`,
+  `fieldByCode`) - split out of `bifunctor-tagless`'s
+  `BeautyQVariantSearchDocumentSchema.scala`. Imports only `leaderboard.model`
+  (beautyq-model), `leaderboard.search.dsl` (search-core generics +
+  `SearchConstraint`/`BeautyQSearchFieldSemantics`/`BeautyQSearchPresentation`,
+  all now in this same module). No `BeautyQCatalogGraph`, `ServiceVariantSchemas`,
+  repositories, materialization, seed, ES/Qdrant, HTTP/app, clients, or
+  routes.
+- `beautyq-search-contract/src/main/scala/leaderboard/search/dsl/BeautyQSearchPresentation.scala`,
+  `BeautySearchSpec.scala`, `BeautySearchSpecV1.scala` (moved from
+  `bifunctor-tagless`) - response/carousel/ranking presentation helpers and
+  the BeautyQ runtime-spec aggregates. `BeautySearchSpecV1.scala` was edited
+  to reference `BeautyQVariantSearchDocumentContract` (`Fields`,
+  `documentSpec`, `qdrantPayloadSpec`, `querySchema`) instead of
+  `BeautyQVariantSearchDocumentSchema`, since it now lives in the contract
+  module and must not depend on `bifunctor-tagless`.
+
+`bifunctor-tagless`'s `BeautyQVariantSearchDocumentSchema.scala` now only
+keeps `Repositories`-adjacent materialization: node handles from
+`BeautyQCatalogGraph.Nodes`, `projection`/`project`/`buildDocument`/
+`validateAgainstSchema`/`makeAttributeTokens`/`humanize`/`normalizeText`, plus
+delegating vals (`val Fields = BeautyQVariantSearchDocumentContract.Fields`,
+`lazy val documentSpec = BeautyQVariantSearchDocumentContract.documentSpec`,
+etc.) for source compatibility - exactly the shape this phase's task
+description specified.
+
+Build changes: none. `beautyqSearchContract` already depended on
+`search-core`, `searchContractCore`, `beautyqModel`, and `repoCore` (from
+Phases 4/5/8a), which covers every symbol the moved/new files use; no new
+dependency edge was needed, and `bifunctor-tagless` already depended on
+`beautyqSearchContract` (from Phase 5), so every existing consumer resolves
+the moved symbols with zero import changes.
+
+Tests: added `BeautyQDocumentContractSpec.scala` (9 cases) in
+`beautyq-search-contract` proving `VariantSearchDocument` constructs with
+representative values; `documentSpec`/`qdrantPayloadSpec` declare the
+expected index/paths; `querySchema.resolve` resolves `ServiceAny` to a terms
+constraint on `serviceName`, `PriceRange` to a range constraint on
+`priceFrom`, and `NearUser` to a geo-distance constraint on `location`;
+`BeautySearchSpecV1.runtimeSpec.payloadSpecs` carries the Qdrant payload
+spec; and `BeautyQSearchPresentation.carouselSpec` exposes provider/service-
+intent groups built from contract fields - all without any repository or
+materialization dependency in scope. Existing
+`BeautyQVariantSearchDocumentSchemaSpec` (19 cases), `SearchRuntimeSpecSpec`
+(2 cases), `ElasticsearchBudgetRangeRequestSpec` (2 cases), and
+`BeautySearchBudgetIntentParserSpec` (9 cases) needed no changes and still
+pass unchanged.
+
+No cycle: `beautyqSearchContract` still has no dependency on
 `bifunctor-tagless`, repositories, materialization, ES/Qdrant, HTTP/app,
 wiring, clients, or routes.
 
