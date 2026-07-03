@@ -172,12 +172,14 @@ lazy val beautyqSearchMaterialization = project
 lazy val beautyqSearchWiring = project
   .in(file("beautyq-search-wiring"))
   .settings(name := "beautyq-search-wiring")
-  .pipe(lightweightSettings(Nil))
+  .pipe(lightweightSettings(Seq(
+    Deps.scalatest % Test,
+  )))
   .dependsOn(beautyqSearchContract, beautyqSearchMaterialization, `search-elasticsearch`, `search-qdrant`)
 
 lazy val `bifunctor-tagless` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel, beautyqSearchContract, beautyqSearchRepositories, beautyqSearchMaterialization)
+  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel, beautyqSearchContract, beautyqSearchRepositories, beautyqSearchMaterialization, beautyqSearchWiring)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))

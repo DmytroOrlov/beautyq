@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 9b (Qdrant managed-local/runtime/startup consumer migration slice) recorded. Remaining main Qdrant managed-local/runtime/startup consumers read `BeautyQVariantSearchDocumentContract` directly; ES interpreter and response assembler needed no patch (already contract-backed since Phase 8b); full `SearchDomainSpec`, evaluation content, and Phase 10 wiring have not moved yet.
+Status: Phase 10a (first `beautyq-search-wiring` slice) recorded. `BeautySearchServingGate` lives in `beautyq-search-wiring`; `BeautySearchApi`, plugin/route modules, launcher modules, clients, bootstrap/seed code, and materialization remain in `bifunctor-tagless` pending deeper wiring/plugin movement.
 
 ## Non-negotiable premise
 
@@ -715,6 +715,49 @@ already forwarded from the contract object, so Qdrant collection bindings,
 fingerprint inputs, and managed-bootstrap source-text field paths are
 byte-for-byte identical to before. No production route activation. Phase 10
 (wiring module assembly) remains separate and untouched.
+
+## Phase 10a record: BeautySearchServingGate moved into beautyq-search-wiring
+
+First `beautyq-search-wiring` slice: `BeautySearchServingGate` - a narrow,
+disabled-by-default runtime serving gate (`enabled`/`servingReady` ->
+`rejectsServing`) with zero imports, no HTTP/tapir/client/repository/
+materialization dependency, and no production activation logic - moved from
+`bifunctor-tagless` into `beautyq-search-wiring`, package preserved
+(`leaderboard.api`):
+
+- `beautyq-search-wiring/src/main/scala/leaderboard/api/BeautySearchServingGate.scala`
+  (from `bifunctor-tagless`).
+
+Not moved (still `bifunctor-tagless`, per this phase's scope):
+`BeautySearchApi`, `BeautySearchPluginModules`, `BeautySearchRouteModules`,
+`BeautySearchLocalQdrantSupplementLauncherModule`,
+`BeautySearchQdrantSupplementActivation`, `BeautySearchCatalogBackendModules`,
+`BeautySearchQdrantSupplementRuntimeBindingModules`, ES/Qdrant clients,
+bootstrap/startup code, seed code, parser/backend/service code, and
+repositories/materialization/projection - all still depend on app/http/
+tapir/client/seed surfaces that stay in `bifunctor-tagless` for now. Deeper
+plugin/route/module movement remains pending until those surfaces have their
+own dedicated slices.
+
+Build changes: `beautyqSearchWiring` gained `Deps.scalatest % Test` (for the
+new spec) - no HTTP/tapir/client/repository/materialization dependency was
+added, since the moved file needs none. `bifunctor-tagless` gained
+`dependsOn(beautyqSearchWiring)`.
+
+No cycle: `beautyqSearchWiring` depends only on `beautyqSearchContract`,
+`beautyqSearchMaterialization`, `search-elasticsearch`, `search-qdrant` -
+none of which depend on `bifunctor-tagless` - so it does not depend back on
+`bifunctor-tagless`. The placeholder
+`leaderboard.beautyq.search.wiring.ModulePlaceholder` was removed since the
+module now has real source.
+
+Tests: added `BeautySearchServingGateSpec.scala` (7 cases) in
+`beautyq-search-wiring` covering `disabled`/`enabledNotReady`/`enabledReady`
+and all four direct `enabled`/`servingReady` combinations. Package preserved
+meant zero import changes anywhere in `bifunctor-tagless` (`BeautySearchApi`,
+route/plugin/launcher modules, and their tests all still resolve
+`leaderboard.api.BeautySearchServingGate` unchanged via the new project
+dependency). No production route/fallback/fusion/rerank behavior changed.
 
 ## Migration phases
 
