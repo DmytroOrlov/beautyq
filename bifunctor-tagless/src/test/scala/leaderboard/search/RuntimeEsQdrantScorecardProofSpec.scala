@@ -3281,7 +3281,8 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
               )
               assert(
                 row.appendedUnacceptableIds.subsetOf(row.qdrantOnlyUnacceptableIds),
-                s"Y0F: appendedUnacceptableIds must be a subset of qdrantOnlyUnacceptableIds for ${row.queryId}@${row.thresholdLabel}",
+                s"Y0F: appendedUnacceptableIds must be a subset of qdrantOnlyUnacceptableIds for ${row.queryId}@${row.thresholdLabel}\n" +
+                  formatY0FRowDiagnostic(row),
               )
               (): Unit
             }
@@ -7223,6 +7224,33 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
       s"qdrantOnlyAcceptedButNotAppendedTop=${bucket.qdrantOnlyAcceptedButNotAppendedTop.mkString("[", ",", "]")}, " +
       s"bothMissTop=${bucket.bothMissTop.mkString("[", ",", "]")}, " +
       s"qdrantOnlyUnacceptableCandidateTop=${bucket.qdrantOnlyUnacceptableCandidateTop.mkString("[", ",", "]")}"
+
+  /** Render a full row-level diagnostic for a Y0F appended-unacceptable invariant failure. */
+  private def formatY0FRowDiagnostic(row: Y0CSupplementRow): String = {
+    val unexplainedAppendedUnacceptable = row.appendedUnacceptableIds.diff(row.qdrantOnlyUnacceptableIds)
+    List(
+      s"  queryId=${row.queryId}",
+      s"  queryText=${row.queryText}",
+      s"  queryTypes=${row.queryTypes.sorted.mkString("[", ",", "]")}",
+      s"  thresholdLabel=${row.thresholdLabel}",
+      s"  acceptableIds=${row.acceptableIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  esVariantIds(ordered)=${row.esVariantIds.mkString("[", ",", "]")}",
+      s"  supplementVariantIds(ordered)=${row.supplementVariantIds.mkString("[", ",", "]")}",
+      s"  appendedQdrantOnlyIds(route-order)=${row.appendedQdrantOnlyIds.mkString("[", ",", "]")}",
+      s"  appendedAcceptableIds=${row.appendedAcceptableIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  appendedUnacceptableIds=${row.appendedUnacceptableIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  qdrantCandidateIds(route-order)=${row.qdrantCandidateIds.mkString("[", ",", "]")}",
+      s"  qdrantAcceptedIds=${row.qdrantAcceptedIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  qdrantOnlyCandidateIds=${row.qdrantOnlyCandidateIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  qdrantOnlyAcceptedIds=${row.qdrantOnlyAcceptedIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  qdrantOnlyUnacceptableIds=${row.qdrantOnlyUnacceptableIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  qdrantDuplicateAcceptedIds=${row.qdrantDuplicateAcceptedIds.toList.sorted.mkString("[", ",", "]")}",
+      s"  duplicateQdrantSkipped=${row.duplicateQdrantSkipped.toList.sorted.mkString("[", ",", "]")}",
+      s"  appendedScores(route-order)=${row.appendedScores.map { case (id, score) => s"$id=$score" }.mkString("[", ",", "]")}",
+      s"  appendedUnacceptableSharingQueryText=${row.appendedUnacceptableSharingQueryText.toList.sorted.mkString("[", ",", "]")}",
+      s"  appendedUnacceptableIds.diff(qdrantOnlyUnacceptableIds)=${unexplainedAppendedUnacceptable.toList.sorted.mkString("[", ",", "]")}",
+    ).mkString("\n")
+  }
 
   // ---- Y0R: deterministic dirty-catalog robustness profiles (measurement-only; test-local). ----
   // Corrupts a deterministic subset of the already-loaded canonical VariantSearchDocument list (by
