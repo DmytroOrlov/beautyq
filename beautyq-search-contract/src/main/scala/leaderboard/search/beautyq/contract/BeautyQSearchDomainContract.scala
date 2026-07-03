@@ -53,6 +53,13 @@ object BeautyQSearchDomainContract {
   /** Evaluation declarations now exist in `beautyq-search-contract`. */
   val evaluationDeclared: Boolean = true
 
-  /** This aggregate is not a generic `SearchDomainSpec[...]` value. */
-  val fullSearchDomainSpecDeclared: Boolean = false
+  /** Explicit, testable record of what still blocks a full
+    * `SearchDomainSpec[...]` assembly. See [[BeautyQSearchDomainSpecReadiness]].
+    */
+  val searchDomainSpecReadiness: BeautyQSearchDomainSpecReadiness = BeautyQSearchDomainSpecReadiness.current
+
+  /** This aggregate is not a generic `SearchDomainSpec[...]` value - backed by
+    * the non-empty pending decisions in [[searchDomainSpecReadiness]].
+    */
+  val fullSearchDomainSpecDeclared: Boolean = searchDomainSpecReadiness.fullSearchDomainSpecDeclared
 }

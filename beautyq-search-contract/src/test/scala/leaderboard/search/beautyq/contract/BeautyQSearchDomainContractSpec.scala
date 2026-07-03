@@ -78,6 +78,41 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
     }
 
+    "record catalog and evaluation as the ready readiness sections" in {
+      assert(BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections == List("catalog", "evaluation"))
+    }
+
+    "record the exact pending decision ids" in {
+      assert(
+        BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
+          List(
+            "document-result-unit",
+            "intent-languages",
+            "document-field-kind-mapping",
+            "runtime-capabilities",
+            "response-policy",
+          )
+      )
+    }
+
+    "record the exact pending decision sections" in {
+      assert(
+        BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.section) ==
+          List("document", "intent", "document", "runtime", "response")
+      )
+    }
+
+    "derive fullSearchDomainSpecDeclared from the readiness value" in {
+      assert(
+        BeautyQSearchDomainContract.fullSearchDomainSpecDeclared ==
+          BeautyQSearchDomainContract.searchDomainSpecReadiness.fullSearchDomainSpecDeclared
+      )
+    }
+
+    "keep fullSearchDomainSpecDeclared false via non-empty pending decisions" in {
+      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
+    }
+
     "be fully usable from values available in beautyq-search-contract alone, with no repository/materialization/client construction" in {
       // Every assertion above reads a plain value already owned by this module;
       // none of them require constructing a repository, materializer, ES/Qdrant
