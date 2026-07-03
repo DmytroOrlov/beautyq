@@ -100,7 +100,7 @@ lazy val `search-elasticsearch` = project
     Deps.zio,
     Deps.scalatest % Test,
   )))
-  .dependsOn(`leaderboard-core`, `search-core`)
+  .dependsOn(`leaderboard-core`, `search-core`, searchContractCore)
 
 lazy val `search-qdrant` = project
   .pipe(lightweightSettings(Seq(
@@ -109,7 +109,51 @@ lazy val `search-qdrant` = project
     Deps.zio,
     Deps.scalatest % Test,
   )))
-  .dependsOn(`leaderboard-core`, `search-core`)
+  .dependsOn(`leaderboard-core`, `search-core`, searchContractCore)
+
+// --- BeautyQ search module skeletons (Phase 2 of docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md) ---
+// Module shells only: no existing implementation code has been moved into them yet.
+// See the plan doc's "Target 10-module split" / "Dependency DAG" sections for the intended
+// ownership and dependency boundaries these projects will grow into.
+
+lazy val repoCore = project
+  .in(file("repo-core"))
+  .settings(name := "repo-core")
+  .pipe(lightweightSettings(Nil))
+
+lazy val searchContractCore = project
+  .in(file("search-contract-core"))
+  .settings(name := "search-contract-core")
+  .pipe(lightweightSettings(Nil))
+
+lazy val beautyqModel = project
+  .in(file("beautyq-model"))
+  .settings(name := "beautyq-model")
+  .pipe(lightweightSettings(Nil))
+
+lazy val beautyqSearchContract = project
+  .in(file("beautyq-search-contract"))
+  .settings(name := "beautyq-search-contract")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(searchContractCore, beautyqModel)
+
+lazy val beautyqSearchRepositories = project
+  .in(file("beautyq-search-repositories"))
+  .settings(name := "beautyq-search-repositories")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(repoCore, beautyqModel)
+
+lazy val beautyqSearchMaterialization = project
+  .in(file("beautyq-search-materialization"))
+  .settings(name := "beautyq-search-materialization")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(beautyqSearchContract, beautyqSearchRepositories, repoCore, beautyqModel)
+
+lazy val beautyqSearchWiring = project
+  .in(file("beautyq-search-wiring"))
+  .settings(name := "beautyq-search-wiring")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(beautyqSearchContract, beautyqSearchMaterialization, `search-elasticsearch`, `search-qdrant`)
 
 lazy val `bifunctor-tagless` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
@@ -126,6 +170,13 @@ lazy val `distage-example` = project
     `search-core`,
     `search-elasticsearch`,
     `search-qdrant`,
+    repoCore,
+    searchContractCore,
+    beautyqModel,
+    beautyqSearchContract,
+    beautyqSearchRepositories,
+    beautyqSearchMaterialization,
+    beautyqSearchWiring,
     `bifunctor-tagless`,
     `graal-resources`,
   )

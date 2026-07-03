@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 0 — docs/architecture freeze. No Scala/build behavior changes in this patch.
+Status: Phase 2 recorded. Module skeletons exist in build.sbt; implementation code has not been moved into them yet.
 
 ## Non-negotiable premise
 
@@ -132,6 +132,30 @@ Rules:
 - Do not delete compatibility because it "looks ugly".
 - Delete only after usage audit and focused compile/tests.
 - Compatibility wrappers are allowed temporarily but must not be described as contract.
+
+## Phase 2 record: exact sbt project ids
+
+Module shells were added to `build.sbt` with camelCase sbt project ids (per
+`lazy val` identifier) and hyphenated `name :=` / base-directory conventions,
+deviating from this repo's existing style of backtick-quoted hyphenated
+`lazy val` identifiers (e.g. `` `search-elasticsearch` ``). No behavior or
+existing dependency wiring changed beyond adding the new module dependency
+edges below; `search-elasticsearch` and `search-qdrant` gained a
+`searchContractCore` dependency per the DAG.
+
+| sbt project id | base directory | published name |
+|---|---|---|
+| `repoCore` | `repo-core/` | `repo-core` |
+| `searchContractCore` | `search-contract-core/` | `search-contract-core` |
+| `beautyqModel` | `beautyq-model/` | `beautyq-model` |
+| `beautyqSearchContract` | `beautyq-search-contract/` | `beautyq-search-contract` |
+| `beautyqSearchRepositories` | `beautyq-search-repositories/` | `beautyq-search-repositories` |
+| `beautyqSearchMaterialization` | `beautyq-search-materialization/` | `beautyq-search-materialization` |
+| `beautyqSearchWiring` | `beautyq-search-wiring/` | `beautyq-search-wiring` |
+
+Each module contains a single boring placeholder object
+(`leaderboard.<package>.ModulePlaceholder`) only so the module has a source
+root; no domain code was moved or added.
 
 ## Migration phases
 
