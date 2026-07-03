@@ -7029,6 +7029,20 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
         } yield response
     }
 
+  // ---- Y0F: fixed test-local backends replaying already-captured real ES/Qdrant evidence. ----
+  // Used only to drive ExperimentalHybridSearchBackend for a Y0C row without a second, independent
+  // (and potentially disagreeing) live ES/Qdrant call for that same row.
+
+  private final class FixedBeautySearchBackend(response: BeautySearchResponse) extends BeautySearchBackend[IO] {
+    override def search(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, BeautySearchResponse] =
+      ZIO.succeed(response)
+  }
+
+  private final class FixedSemanticCandidateBackend(hits: List[SemanticCandidateHit]) extends SemanticCandidateBackend[IO] {
+    override def candidates(input: UserSearchInput, intent: ParsedSearchIntent): IO[QueryFailure, List[SemanticCandidateHit]] =
+      ZIO.succeed(hits)
+  }
+
   /** Y0C: measure wall-clock nanos for an executed leg using the real monotonic clock. */
   private def timedLeg[A](effect: IO[QueryFailure, A]): IO[QueryFailure, (A, Long)] =
     for {
@@ -7104,14 +7118,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                                       embeddingSpec = Some(embeddingSpec),
                                       vectorSearchSpec = Some(candidateReadiness.vectorSearchSpec),
                                     )
-                                    val route = new ExperimentalHybridSearchBackend[IO](
-                                      experimentSpec,
-                                      lexicalBackend,
-                                      (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
-                                      composition.semanticBackend,
-                                      lookup,
-                                    )
-                                    (candidate, composition.semanticBackend, route)
+                                    (candidate, composition.semanticBackend, experimentSpec)
                                   }
                               }
         rows <- ZIO.foreach(canonicalEvalSuite.queries) { query =>
@@ -7121,10 +7128,24 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
                   val acceptableIds = query.expectedVariantCarousel.acceptableVariantIds.map(_.toString).toSet
                   for {
                     esTimed <- timedLeg(lexicalBackend.search(input, intent))
-                    perThreshold <- ZIO.foreach(candidateBackends) { case (candidate, semanticBackend, route) =>
+                    perThreshold <- ZIO.foreach(candidateBackends) { case (candidate, semanticBackend, experimentSpec) =>
                                       for {
-                                        candidateTimed     <- timedLeg(semanticBackend.candidates(input, intent))
-                                        supplementResponse <- route.search(input, intent)
+                                        candidateTimed <- timedLeg(semanticBackend.candidates(input, intent))
+                                        // Y0F: drive the route against the SAME captured ES response and Qdrant
+                                        // candidates that evaluateY0CRow measures below — a fresh live call to
+                                        // either backend here could disagree with the already-captured evidence
+                                        // (e.g. non-deterministic Qdrant ranking) and produce a route-appended id
+                                        // absent from qdrantCandidates, surfacing as a NaN appendedScores entry.
+                                        fixedLexicalBackend  = new FixedBeautySearchBackend(esTimed._1)
+                                        fixedSemanticBackend = new FixedSemanticCandidateBackend(candidateTimed._1)
+                                        fixedRoute = new ExperimentalHybridSearchBackend[IO](
+                                          experimentSpec,
+                                          fixedLexicalBackend,
+                                          (_, _) => SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement,
+                                          fixedSemanticBackend,
+                                          lookup,
+                                        )
+                                        supplementResponse <- fixedRoute.search(input, intent)
                                       } yield evaluateY0CRow(
                                         query = query,
                                         thresholdLabel = candidate.label,
