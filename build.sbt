@@ -129,7 +129,9 @@ lazy val repoCore = project
 lazy val searchContractCore = project
   .in(file("search-contract-core"))
   .settings(name := "search-contract-core")
-  .pipe(lightweightSettings(Nil))
+  .pipe(lightweightSettings(Seq(
+    Deps.scalatest % Test,
+  )))
 
 lazy val beautyqModel = project
   .in(file("beautyq-model"))

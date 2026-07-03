@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 3 recorded. Generic repo/catalog core moved into `repo-core`; BeautyQ-specific repo companions and materialization code have not been moved yet.
+Status: Phase 4 recorded. Generic `search-contract-core` ADTs exist; BeautyQ catalog/document/intent/runtime/response/evaluation contract content has not been moved into `beautyq-search-contract` yet.
 
 ## Non-negotiable premise
 
@@ -195,6 +195,46 @@ generic); test scope gained `Deps.zio % Test` and `Deps.scalatest % Test` for
 the moved spec. `bifunctor-tagless` gained `dependsOn(repoCore)`. No
 compatibility export was needed - the package name was preserved, so no
 imports elsewhere needed changes.
+
+## Phase 4 record: generic search-contract-core ADTs added
+
+Created in `search-contract-core/src/main/scala/leaderboard/search/contract/`
+(package `leaderboard.search.contract`, dropping the Phase 2 placeholder's
+`.core` suffix per this phase's package guidance):
+
+- `SearchDomainSpec.scala` — `SearchDomainId`, `SearchLanguage`,
+  `SearchVocabularyId`, `SearchBackendId`; `CatalogSection[Catalog]`;
+  `SearchVocabulary`/`SearchVocabularyGroup`/`NoiseControl`/`IntentSection`;
+  `DocumentSection[Document, ResultUnit]`;
+  `GroupingPolicy`/`CarouselPolicy`/`FacetResponsePolicy`/`InferredFilterPolicy`/
+  `PresentationMetadata`/`DebugPolicy`/`ResponseSection`;
+  `EvalQueryRole`/`EvalBackendExpectation`/`EvalScorecardConfig`/
+  `EvalProductionRoutingEffect`/`EvalSection`; the top-level
+  `SearchDomainSpec[Catalog, Document, ResultUnit]`.
+- `SearchField.scala` — `SearchFieldName`, `SearchFieldKind` (Text, Keyword,
+  Facet, Numeric, Range, Geo, SemanticText), `SearchField`.
+- `SearchRuntimeDeclaration.scala` — `SearchBackendKind` (Elasticsearch,
+  Qdrant, InMemory), `SearchBackendCapabilities`, `SearchRuntimeDeclaration`,
+  `RuntimeSection`.
+
+All types are pure data (case classes/enums); no clients, effects, HTTP,
+ES/Qdrant concrete classes, repository loaders, materialization code, or
+BeautyQ model imports. `EvalSection.productionRoutingEffect` is typed as the
+single-inhabitant `EvalProductionRoutingEffect` (not a boolean flag), so an
+evaluation declaration can never claim to activate production routing.
+
+Test: `SearchDomainSpecSpec.scala` builds a minimal generic
+`SearchDomainSpec` from fixture types only (no BeautyQ values), and checks
+section data preservation, declarative ES+Qdrant runtime declarations, and
+the eval non-production-routing marker.
+
+Build changes: `searchContractCore` gained `Deps.scalatest % Test` only (no
+main-scope dependency added, no new dependency edges). It remains standalone:
+no `repoCore`, no BeautyQ/ES/Qdrant/HTTP/app module dependency, matching the
+documented DAG (`search-contract-core` has no edge to `repo-core`).
+
+The Phase 2 placeholder `leaderboard.search.contract.core.ModulePlaceholder`
+was removed since the module now has real source.
 
 ## Migration phases
 
