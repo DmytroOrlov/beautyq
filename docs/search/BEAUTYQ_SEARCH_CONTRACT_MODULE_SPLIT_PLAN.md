@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 2 recorded. Module skeletons exist in build.sbt; implementation code has not been moved into them yet.
+Status: Phase 3 recorded. Generic repo/catalog core moved into `repo-core`; BeautyQ-specific repo companions and materialization code have not been moved yet.
 
 ## Non-negotiable premise
 
@@ -156,6 +156,45 @@ edges below; `search-elasticsearch` and `search-qdrant` gained a
 Each module contains a single boring placeholder object
 (`leaderboard.<package>.ModulePlaceholder`) only so the module has a source
 root; no domain code was moved or added.
+
+## Phase 3 record: generic repo/catalog core moved
+
+Moved from `bifunctor-tagless/src/main/scala/leaderboard/repo/` to
+`repo-core/src/main/scala/leaderboard/repo/`, package name preserved
+(`leaderboard.repo`):
+
+- `RepoEntity.scala` (`RepoEntity`, `RepoField`, `EntityNode` construction)
+- `RepoGraph.scala` (`EntityNode`, `Relation`, `GraphLoading`, the catalog
+  declaration DSL, `CatalogEntity`/`CatalogValue` evidence, materialization,
+  `TupleSelect`)
+- `RepoNaming.scala` (`RepoNamingStrategy`)
+- `RepoOp.scala` (`RepoOp` load-shape wrappers)
+- `CatalogEntityDerivation.scala` (`CatalogEntity.derived` macro helper)
+
+`GraphLoadingSpec.scala` (purely generic, no BeautyQ dependency) moved with
+them to `repo-core/src/test/scala/leaderboard/repo/`. `RepoFieldRelationSpec`
+and `BeautyQRepoGraphLoaderSpec` stayed in `bifunctor-tagless` since they
+exercise BeautyQ-specific repos (`Categories`, `Services`,
+`BeautyQCatalogGraph`, etc.).
+
+The placeholder `leaderboard.repo.core.ModulePlaceholder` (Phase 2 skeleton)
+was removed since `repo-core` now has real source.
+
+Not moved (BeautyQ-specific repo companions, stay in `bifunctor-tagless`):
+`Categories.scala`, `Services.scala`, `Masters.scala`, `MasterLocations.scala`,
+`MasterServiceOffers.scala`, `MasterServiceOfferVariants.scala`,
+`MasterServiceOfferVariantAttributesRepository.scala`, `Ladder.scala`,
+`Profiles.scala`, `ServiceVariantSchemas.scala`, `BeautyQCatalogGraph.scala`,
+and `package.scala` (defines `rootCategoryIdSqlLiteral`, which references the
+BeautyQ `Category` model).
+
+Build changes: `repoCore` gained `Deps.distageCore` (for
+`izumi.functional.bio`, already used by the moved `GraphLoading`/`RepoOp`
+code) and a `dependsOn(leaderboard-core)` (for `QueryFailure`, already
+generic); test scope gained `Deps.zio % Test` and `Deps.scalatest % Test` for
+the moved spec. `bifunctor-tagless` gained `dependsOn(repoCore)`. No
+compatibility export was needed - the package name was preserved, so no
+imports elsewhere needed changes.
 
 ## Migration phases
 
