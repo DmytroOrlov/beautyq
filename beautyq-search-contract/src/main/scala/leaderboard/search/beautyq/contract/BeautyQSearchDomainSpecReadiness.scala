@@ -28,13 +28,9 @@ object BeautyQSearchDomainSpecReadiness {
       readySections = List(
         "catalog",
         "evaluation",
+        "document-result-unit",
       ),
       pendingDecisions = List(
-        BeautyQSearchDomainSpecPendingDecision(
-          id = "document-result-unit",
-          section = "document",
-          reason = "DocumentSection requires a ResultUnit descriptor, but BeautyQ has not declared one yet.",
-        ),
         BeautyQSearchDomainSpecPendingDecision(
           id = "intent-languages",
           section = "intent",

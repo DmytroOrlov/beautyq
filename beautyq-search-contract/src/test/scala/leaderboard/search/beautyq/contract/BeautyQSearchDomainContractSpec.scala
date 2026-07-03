@@ -1,7 +1,7 @@
 package leaderboard.search.beautyq.contract
 
 import leaderboard.search.document.BeautyQVariantSearchDocumentContract
-import leaderboard.search.dsl.{BeautyQSearchIntentVocabulary, BeautySearchSpecV1}
+import leaderboard.search.dsl.{BeautyQSearchIntentVocabulary, BeautyQSearchPresentation, BeautySearchSpecV1}
 import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
@@ -78,15 +78,33 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
     }
 
-    "record catalog and evaluation as the ready readiness sections" in {
-      assert(BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections == List("catalog", "evaluation"))
+    "reference the same result unit as BeautyQSearchResultUnitContract" in {
+      assert(BeautyQSearchDomainContract.resultUnit eq BeautyQSearchResultUnitContract.variant)
+    }
+
+    "declare the exact BeautyQ variant result unit values" in {
+      assert(BeautyQSearchDomainContract.resultUnit.id == "variant")
+      assert(BeautyQSearchDomainContract.resultUnit.label == "BeautyQ variant result")
+      assert(BeautyQSearchDomainContract.resultUnit.documentIndexName == "beautyq_variant_v1")
+      assert(BeautyQSearchDomainContract.resultUnit.carouselLimitName == "variantSize")
+    }
+
+    "match the result unit descriptor against the existing contract owners" in {
+      assert(BeautyQSearchDomainContract.resultUnit.documentIndexName == BeautyQVariantSearchDocumentContract.documentSpec.indexName)
+      assert(BeautyQSearchDomainContract.resultUnit.carouselLimitName == BeautyQSearchPresentation.CarouselLimits.Variant)
+    }
+
+    "record catalog, evaluation, and document-result-unit as the ready readiness sections" in {
+      assert(
+        BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections ==
+          List("catalog", "evaluation", "document-result-unit")
+      )
     }
 
     "record the exact pending decision ids" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
           List(
-            "document-result-unit",
             "intent-languages",
             "document-field-kind-mapping",
             "runtime-capabilities",
@@ -98,7 +116,7 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
     "record the exact pending decision sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.section) ==
-          List("document", "intent", "document", "runtime", "response")
+          List("intent", "document", "runtime", "response")
       )
     }
 

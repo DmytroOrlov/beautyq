@@ -126,4 +126,11 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
       assert(BeautyQSearchPresentation.serviceIntentGroupField(carousel) == Right(fields.serviceId))
     }
   }
+
+  "BeautyQSearchResultUnitContract.variant" should {
+    "point at the current document index and variant carousel limit" in {
+      assert(BeautyQSearchResultUnitContract.variant.documentIndexName == BeautyQVariantSearchDocumentContract.documentSpec.indexName)
+      assert(BeautyQSearchResultUnitContract.variant.carouselLimitName == BeautyQSearchPresentation.CarouselLimits.Variant)
+    }
+  }
 }

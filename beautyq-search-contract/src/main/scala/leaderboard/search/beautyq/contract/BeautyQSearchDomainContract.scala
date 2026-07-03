@@ -50,6 +50,9 @@ object BeautyQSearchDomainContract {
 
   val evaluation = BeautyQSearchEvaluationContract.section
 
+  /** The BeautyQ variant result-unit descriptor `DocumentSection` requires. */
+  val resultUnit = BeautyQSearchResultUnitContract.variant
+
   /** Evaluation declarations now exist in `beautyq-search-contract`. */
   val evaluationDeclared: Boolean = true
 
