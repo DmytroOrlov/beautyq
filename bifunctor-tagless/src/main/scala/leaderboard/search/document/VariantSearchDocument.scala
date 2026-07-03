@@ -2,7 +2,7 @@ package leaderboard.search.document
 
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}
 
 import scala.annotation.unused
@@ -44,7 +44,7 @@ object BeautySearchCatalogSnapshotLoader {
   /** Compatibility facade over the materialization-owned, seed-free
     * [[BeautyQSearchCatalogSnapshotLoader.FromRepositories]] in
     * `beautyq-search-materialization`, which owns the actual traversal
-    * (order, dedup) via `leaderboard.repo.BeautyQCatalogGraph`/[[GraphLoading]].
+    * (order, dedup) via `leaderboard.repo.BeautyQCatalogGraph`/`leaderboard.repo.GraphLoading`.
     * This class only adapts the materialization loader's
     * [[BeautyQSearchCatalogSnapshot]] result into the legacy
     * [[BeautySearchCatalogSnapshot]] shape for existing callers.
@@ -89,9 +89,15 @@ object BeautySearchCatalogSnapshotLoader {
       masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
     )
 
-  /** Loads exactly the seed-scoped catalog through the shared repo operation
-    * layer, failing with the canonical missing-entity message when a seed item
-    * is absent.
+  /** Compatibility facade over the materialization-owned, seed-free
+    * [[BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories]] in
+    * `beautyq-search-materialization`, which owns the actual seed-scoped
+    * repo loading (same `GraphLoading.seedRequired`/`seedValues` calls,
+    * model names, id selectors, and missing-entity messages). This class
+    * only converts `BeautyQSeedData` into a seed-free
+    * [[BeautyQSearchCatalogSeedScope]] and adapts the materialization
+    * loader's [[BeautyQSearchCatalogSnapshot]] result into the legacy
+    * [[BeautySearchCatalogSnapshot]] shape for existing callers.
     */
   final class SeedScopedFromRepositories[F[+_, +_]: Error2](
     @unused seedReady: BeautyQSeedReady,
@@ -105,23 +111,31 @@ object BeautySearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautySearchCatalogSnapshotLoader[F] {
 
+    private val delegate =
+      new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[F](
+        seedScope                  = seedScopeFromSeedData(seed),
+        categories                 = categories,
+        services                   = services,
+        serviceVariantSchemas      = serviceVariantSchemas,
+        masters                    = masters,
+        masterLocations            = masterLocations,
+        masterServiceOffers        = masterServiceOffers,
+        masterServiceOfferVariants = masterServiceOfferVariants,
+      )
+
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.seedRequired(seed.nonRootCategories, Categories.entity.modelName, (_: Category).id, Categories.byId(categories))
-        loadedServices   <- GraphLoading.seedRequired(seed.services, Services.entity.modelName, (_: Service).id, Services.byId(services))
-        loadedSchemas    <- GraphLoading.seedValues(seed.services.map(_.id), ServiceVariantSchemas.byService(serviceVariantSchemas))
-        loadedMasters    <- GraphLoading.seedRequired(seed.masters, Masters.entity.modelName, (_: Master).id, Masters.byId(masters))
-        loadedLocations  <- GraphLoading.seedRequired(seed.masterLocations, MasterLocations.entity.modelName, (_: MasterLocation).id, MasterLocations.byId(masterLocations))
-        loadedOffers     <- GraphLoading.seedRequired(seed.masterServiceOffers, MasterServiceOffers.entity.modelName, (_: MasterServiceOffer).id, MasterServiceOffers.byId(masterServiceOffers))
-        loadedVariants   <- GraphLoading.seedRequired(seed.masterServiceOfferVariants, MasterServiceOfferVariants.entity.modelName, (_: MasterServiceOfferVariant).id, MasterServiceOfferVariants.byId(masterServiceOfferVariants))
-      } yield BeautySearchCatalogSnapshot(
-        categories                 = loadedCategories,
-        services                   = loadedServices,
-        serviceVariantSchemas      = loadedSchemas,
-        masters                    = loadedMasters,
-        masterLocations            = loadedLocations,
-        masterServiceOffers        = loadedOffers,
-        masterServiceOfferVariants = loadedVariants,
-      )
+        snapshot <- delegate.load()
+      } yield fromMaterializationSnapshot(snapshot)
   }
+
+  private def seedScopeFromSeedData(seed: BeautyQSeedData): BeautyQSearchCatalogSeedScope =
+    BeautyQSearchCatalogSeedScope(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
 }
