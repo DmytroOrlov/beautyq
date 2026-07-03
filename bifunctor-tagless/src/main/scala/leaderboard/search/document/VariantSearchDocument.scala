@@ -2,7 +2,7 @@ package leaderboard.search.document
 
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.{Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}
 
 import scala.annotation.unused
@@ -41,13 +41,13 @@ trait BeautySearchCatalogSnapshotLoader[F[_, _]] {
 
 object BeautySearchCatalogSnapshotLoader {
 
-  /** Loads the full BeautyQ catalog by traversing the model-first catalog
-    * graph.
-    *
-    * The traversal order, ordering guarantees and first-occurrence dedup are
-    * defined by [[BeautyQCatalogGraph]] (structure) and [[GraphLoading]]
-    * (generic interpreter); this loader only orchestrates the relations and
-    * assembles the snapshot.
+  /** Compatibility facade over the materialization-owned, seed-free
+    * [[BeautyQSearchCatalogSnapshotLoader.FromRepositories]] in
+    * `beautyq-search-materialization`, which owns the actual traversal
+    * (order, dedup) via `leaderboard.repo.BeautyQCatalogGraph`/[[GraphLoading]].
+    * This class only adapts the materialization loader's
+    * [[BeautyQSearchCatalogSnapshot]] result into the legacy
+    * [[BeautySearchCatalogSnapshot]] shape for existing callers.
     */
   final class FromRepositories[F[+_, +_]: Error2](
     categories: Categories[F],
@@ -59,8 +59,8 @@ object BeautySearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautySearchCatalogSnapshotLoader[F] {
 
-    private val relations = new BeautyQCatalogGraph.Relations[F](
-      BeautyQCatalogGraph.Repositories(
+    private val delegate =
+      new BeautyQSearchCatalogSnapshotLoader.FromRepositories[F](
         categories                 = categories,
         services                   = services,
         serviceVariantSchemas      = serviceVariantSchemas,
@@ -69,27 +69,25 @@ object BeautySearchCatalogSnapshotLoader {
         masterServiceOffers        = masterServiceOffers,
         masterServiceOfferVariants = masterServiceOfferVariants,
       )
-    )
 
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.selfTreeFrom(relations.categoryTree, Category.rootCategoryId)
-        loadedServices   <- GraphLoading.manyFor(relations.categoryServices, loadedCategories)
-        loadedSchemas    <- GraphLoading.valueFor(relations.serviceSchemas, loadedServices)
-        loadedMasters    <- GraphLoading.allOf(relations.allMasters)
-        loadedLocations  <- GraphLoading.manyFor(relations.masterLocationsByMaster, loadedMasters)
-        loadedOffers     <- GraphLoading.manyFor(relations.masterOffersByMaster, loadedMasters)
-        loadedVariants   <- GraphLoading.manyFor(relations.offerVariants, loadedOffers)
-      } yield BeautySearchCatalogSnapshot(
-        categories                 = loadedCategories,
-        services                   = GraphLoading.distinctByKey(loadedServices)(_.id),
-        serviceVariantSchemas      = GraphLoading.distinctByKey(loadedSchemas)(_.serviceId),
-        masters                    = GraphLoading.distinctByKey(loadedMasters)(_.id),
-        masterLocations            = GraphLoading.distinctByKey(loadedLocations)(_.id),
-        masterServiceOffers        = GraphLoading.distinctByKey(loadedOffers)(_.id),
-        masterServiceOfferVariants = GraphLoading.distinctByKey(loadedVariants)(_.id),
-      )
+        snapshot <- delegate.load()
+      } yield fromMaterializationSnapshot(snapshot)
   }
+
+  private def fromMaterializationSnapshot(
+    snapshot: BeautyQSearchCatalogSnapshot
+  ): BeautySearchCatalogSnapshot =
+    BeautySearchCatalogSnapshot(
+      categories                 = snapshot.categories,
+      services                   = snapshot.services,
+      serviceVariantSchemas      = snapshot.serviceVariantSchemas,
+      masters                    = snapshot.masters,
+      masterLocations            = snapshot.masterLocations,
+      masterServiceOffers        = snapshot.masterServiceOffers,
+      masterServiceOfferVariants = snapshot.masterServiceOfferVariants,
+    )
 
   /** Loads exactly the seed-scoped catalog through the shared repo operation
     * layer, failing with the canonical missing-entity message when a seed item
