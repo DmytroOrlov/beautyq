@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 10a (first `beautyq-search-wiring` slice) recorded. `BeautySearchServingGate` lives in `beautyq-search-wiring`; `BeautySearchApi`, plugin/route modules, launcher modules, clients, bootstrap/seed code, and materialization remain in `bifunctor-tagless` pending deeper wiring/plugin movement.
+Status: Phase 10a (first `beautyq-search-wiring` slice) and Phase 8c (`BeautyQSearchDomainContract` thin aggregate) recorded. `BeautySearchServingGate` lives in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates existing catalog/document/intent/runtime/response contract slices but is explicitly not a full `SearchDomainSpec` (no evaluation section, no generic `SearchDomainSpec[...]` value yet); `BeautySearchApi`, plugin/route modules, launcher modules, clients, bootstrap/seed code, and materialization remain in `bifunctor-tagless` pending deeper wiring/plugin movement.
 
 ## Non-negotiable premise
 
@@ -759,6 +759,62 @@ route/plugin/launcher modules, and their tests all still resolve
 `leaderboard.api.BeautySearchServingGate` unchanged via the new project
 dependency). No production route/fallback/fusion/rerank behavior changed.
 
+## Phase 8c record: BeautyQSearchDomainContract thin aggregate added
+
+By Phase 8b, `beautyq-search-contract` held several independently-owned
+slices (catalog topology, document/query contract, intent vocabulary, and
+the BeautyQ runtime/search spec + presentation) with no single place that
+read them together - the catalog declaration in particular was visually
+isolated from its siblings. This slice adds one coordinator-readable
+aggregate object, `BeautyQSearchDomainContract`, that gathers references to
+the sections that already exist. It adds no new contract content of its own
+- every value is a direct `eq`-identical reference to an already-owned
+section:
+
+- `beautyq-search-contract/src/main/scala/leaderboard/search/beautyq/contract/BeautyQSearchDomainContract.scala`
+  (new file) - `domainId` ("beautyq"), `label` (states explicitly it is not a
+  complete `SearchDomainSpec`), `catalog` (-> `BeautyQCatalogSection.section`,
+  itself wrapping `BeautyQCatalogDeclaration.declaration` unchanged),
+  `document`/`qdrantPayload`/`query` (-> `BeautyQVariantSearchDocumentContract`),
+  `intent` (-> `BeautyQSearchIntentVocabulary.vocabulary`), `searchSpec`/
+  `runtime` (-> `BeautySearchSpecV1.spec`/`.runtimeSpec`), `carousel`/`facets`
+  (-> `BeautySearchSpecV1.spec.carouselSpec`/`.facetSpec`),
+  `evaluationDeclared = false`, `fullSearchDomainSpecDeclared = false`.
+
+**Explicitly not a full `SearchDomainSpec`**: named `BeautyQSearchDomainContract`,
+not `BeautyQSearchDomainSpec` - no generic `search-contract-core`
+`SearchDomainSpec[...]` value is constructed here, and none was required to
+express this aggregate. The current BeautyQ slices are still expressed
+through `search-core`'s `SearchDocumentSpec`/`SearchQuerySchema`/
+`SearchRuntimeSpec`/`CarouselSpec`/`FacetSpec` ADTs, not the generic
+`search-contract-core` ones, and no evaluation section has moved into
+`beautyq-search-contract` yet - both `evaluationDeclared` and
+`fullSearchDomainSpecDeclared` are `false` by construction, asserted
+directly rather than left to a comment. `BeautyQCatalogDeclaration` itself
+was not touched; the aggregate only references it (via
+`BeautyQCatalogSection`), it does not redeclare or wrap it a second time.
+
+Imports are limited to `leaderboard.search.document` and
+`leaderboard.search.dsl` (plus same-package references to
+`BeautyQCatalogDeclaration`/`BeautyQCatalogSection`) - no
+`leaderboard.repo.BeautyQCatalogGraph`, `BeautyQVariantSearchDocumentSchema`,
+`BeautySearchCatalogSnapshot`, repositories, materialization, seed, ES/Qdrant
+clients, HTTP/tapir routes, or bootstrap/wiring runtime services.
+
+Tests: added `BeautyQSearchDomainContractSpec.scala` (15 cases) in
+`beautyq-search-contract` asserting `domainId`, the `label` wording, `eq`-identity
+of every aggregated value against its source section (including the same
+seven catalog topology summaries `BeautyQCatalogDeclarationSpec` already
+asserts), both `false` flags, and that the aggregate is fully usable without
+constructing any repository/materializer/client. Existing
+`BeautyQCatalogDeclarationSpec` (11 cases), `BeautyQDocumentContractSpec` (9
+cases), and `BeautyQIntentContractSpec` (8 cases) needed no changes and
+still pass unchanged.
+
+Build changes: none - `build.sbt` was not touched. No behavior change: this
+is a pure aggregation of existing values, with no repository/materialization/
+ES/Qdrant/client/route/runtime code moved or imported.
+
 ## Migration phases
 
 - **Phase 0** — docs/architecture freeze. Add this plan. No Scala/build behavior changes.
@@ -769,7 +825,7 @@ dependency). No production route/fallback/fusion/rerank behavior changed.
 - **Phase 5** — move BeautyQ catalog section. Move pure catalog section into `beautyq-search-contract`. Label it as catalog section, not full contract.
 - **Phase 6** — move BeautyQ repositories. Move repo companions and dependency bundles into `beautyq-search-repositories`.
 - **Phase 7** — move materialization. Move repo-backed catalog/document materializers into `beautyq-search-materialization`.
-- **Phase 8** — fill full BeautyQ `SearchDomainSpec`. Add document/intent/runtime/response/evaluation sections. Still no client/runtime behavior changes unless explicitly scoped.
+- **Phase 8** — fill BeautyQ contract slices and eventually the full `SearchDomainSpec`. Add document/intent/runtime/response/evaluation sections. Still no client/runtime behavior changes unless explicitly scoped.
 - **Phase 9** — migrate interpreters to contract slices. ES reads document/runtime/intent sections. Qdrant reads semantic/runtime/payload sections. Response assembler reads response/document sections. One interpreter function per patch.
 - **Phase 10** — wiring module. Compose contract + repos + materializers + backend interpreters.
 - **Phase 11** — delete legacy wrappers. Delete old facades only after usages reach zero.
