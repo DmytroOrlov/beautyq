@@ -79,19 +79,11 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
       assert(snapshot.masterServiceOfferVariants == List(variantA, variantB))
     }
 
-    "expose unchanged relation metadata on BeautyQRepoGraph" in {
-      val graph = new BeautyQRepoGraph[IO](
-        new StubCategories,
-        new StubServices,
-        new StubServiceVariantSchemas,
-        new StubMasters,
-        new StubMasterLocations,
-        new StubMasterServiceOffers,
-        new StubMasterServiceOfferVariants,
-      )
-      assert(graph.categoryServices.foreignKey.label == "categoryId")
-      assert(graph.serviceSchemas.valueKey.label == "serviceId")
-      assert(graph.offerVariants.foreignKey.label == "masterServiceOfferId")
+    "expose unchanged relation metadata via BeautyQCatalogGraph.Relations" in {
+      val relations = new BeautyQCatalogGraph.Relations[IO](repositories)
+      assert(relations.categoryServices.foreignKey.label == "categoryId")
+      assert(relations.serviceSchemas.valueKey.label == "serviceId")
+      assert(relations.offerVariants.foreignKey.label == "masterServiceOfferId")
     }
 
     "declare category -> service as a many edge keyed by categoryId, straight from the chain declaration" in {

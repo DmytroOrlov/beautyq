@@ -46,9 +46,8 @@ object BeautyQCatalogGraph {
 
   /** Typed graph nodes for the BeautyQ catalog entities. Used only by
     * [[Evidence]] (to build [[CatalogEntity]]/[[CatalogValue]] instances) and
-    * by external callers that predate this facade
-    * (`BeautyQRepoGraph`, `BeautyQVariantSearchDocumentSchema`). The pure
-    * [[BeautyQCatalogDeclaration.declaration]] never references these.
+    * by external callers such as `BeautyQVariantSearchDocumentSchema`. The
+    * pure [[BeautyQCatalogDeclaration.declaration]] never references these.
     */
   object Nodes {
     val category: EntityNode[Category, CategoryId] =
@@ -71,9 +70,6 @@ object BeautyQCatalogGraph {
 
     val masterServiceOffer: EntityNode[MasterServiceOffer, MasterServiceOfferId] =
       MasterServiceOffers.entity.node(_.id)
-
-    val masterServiceOfferVariant: EntityNode[MasterServiceOfferVariant, MasterServiceOfferVariantId] =
-      MasterServiceOfferVariants.entity.node(_.id)
   }
 
   /** The repositories needed to wire the BeautyQ catalog relations for a

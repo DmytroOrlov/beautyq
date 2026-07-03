@@ -4,7 +4,7 @@ import io.circe.{Codec, Decoder, Encoder, HCursor}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{BeautyQRepoGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.model.Category.CategoryId
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedReady}
@@ -141,12 +141,13 @@ trait BeautySearchCatalogSnapshotLoader[F[_, _]] {
 
 object BeautySearchCatalogSnapshotLoader {
 
-  /** Loads the full BeautyQ catalog by traversing the model-first repo graph.
+  /** Loads the full BeautyQ catalog by traversing the model-first catalog
+    * graph.
     *
     * The traversal order, ordering guarantees and first-occurrence dedup are
-    * defined by [[BeautyQRepoGraph]] (structure) and [[GraphLoading]] (generic
-    * interpreter); this loader only orchestrates the relations and assembles
-    * the snapshot.
+    * defined by [[BeautyQCatalogGraph]] (structure) and [[GraphLoading]]
+    * (generic interpreter); this loader only orchestrates the relations and
+    * assembles the snapshot.
     */
   final class FromRepositories[F[+_, +_]: Error2](
     categories: Categories[F],
@@ -158,25 +159,27 @@ object BeautySearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautySearchCatalogSnapshotLoader[F] {
 
-    private val graph = new BeautyQRepoGraph[F](
-      categories,
-      services,
-      serviceVariantSchemas,
-      masters,
-      masterLocations,
-      masterServiceOffers,
-      masterServiceOfferVariants,
+    private val relations = new BeautyQCatalogGraph.Relations[F](
+      BeautyQCatalogGraph.Repositories(
+        categories                 = categories,
+        services                   = services,
+        serviceVariantSchemas      = serviceVariantSchemas,
+        masters                    = masters,
+        masterLocations            = masterLocations,
+        masterServiceOffers        = masterServiceOffers,
+        masterServiceOfferVariants = masterServiceOfferVariants,
+      )
     )
 
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.selfTreeFrom(graph.categoryTree, Category.rootCategoryId)
-        loadedServices   <- GraphLoading.manyFor(graph.categoryServices, loadedCategories)
-        loadedSchemas    <- GraphLoading.valueFor(graph.serviceSchemas, loadedServices)
-        loadedMasters    <- GraphLoading.allOf(graph.allMasters)
-        loadedLocations  <- GraphLoading.manyFor(graph.masterLocationsByMaster, loadedMasters)
-        loadedOffers     <- GraphLoading.manyFor(graph.masterOffersByMaster, loadedMasters)
-        loadedVariants   <- GraphLoading.manyFor(graph.offerVariants, loadedOffers)
+        loadedCategories <- GraphLoading.selfTreeFrom(relations.categoryTree, Category.rootCategoryId)
+        loadedServices   <- GraphLoading.manyFor(relations.categoryServices, loadedCategories)
+        loadedSchemas    <- GraphLoading.valueFor(relations.serviceSchemas, loadedServices)
+        loadedMasters    <- GraphLoading.allOf(relations.allMasters)
+        loadedLocations  <- GraphLoading.manyFor(relations.masterLocationsByMaster, loadedMasters)
+        loadedOffers     <- GraphLoading.manyFor(relations.masterOffersByMaster, loadedMasters)
+        loadedVariants   <- GraphLoading.manyFor(relations.offerVariants, loadedOffers)
       } yield BeautySearchCatalogSnapshot(
         categories                 = loadedCategories,
         services                   = GraphLoading.distinctByKey(loadedServices)(_.id),
@@ -204,25 +207,15 @@ object BeautySearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautySearchCatalogSnapshotLoader[F] {
 
-    private val graph = new BeautyQRepoGraph[F](
-      categories,
-      services,
-      serviceVariantSchemas,
-      masters,
-      masterLocations,
-      masterServiceOffers,
-      masterServiceOfferVariants,
-    )
-
     override def load(): F[QueryFailure, BeautySearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.seedRequired(seed.nonRootCategories, graph.categoryEntity.modelName, (_: Category).id, graph.categoryById)
-        loadedServices   <- GraphLoading.seedRequired(seed.services, graph.serviceEntity.modelName, (_: Service).id, graph.serviceById)
-        loadedSchemas    <- GraphLoading.seedValues(seed.services.map(_.id), graph.schemaByService)
-        loadedMasters    <- GraphLoading.seedRequired(seed.masters, graph.masterEntity.modelName, (_: Master).id, graph.masterById)
-        loadedLocations  <- GraphLoading.seedRequired(seed.masterLocations, graph.masterLocationEntity.modelName, (_: MasterLocation).id, graph.masterLocationById)
-        loadedOffers     <- GraphLoading.seedRequired(seed.masterServiceOffers, graph.masterServiceOfferEntity.modelName, (_: MasterServiceOffer).id, graph.masterServiceOfferById)
-        loadedVariants   <- GraphLoading.seedRequired(seed.masterServiceOfferVariants, graph.masterServiceOfferVariantEntity.modelName, (_: MasterServiceOfferVariant).id, graph.masterServiceOfferVariantById)
+        loadedCategories <- GraphLoading.seedRequired(seed.nonRootCategories, Categories.entity.modelName, (_: Category).id, Categories.byId(categories))
+        loadedServices   <- GraphLoading.seedRequired(seed.services, Services.entity.modelName, (_: Service).id, Services.byId(services))
+        loadedSchemas    <- GraphLoading.seedValues(seed.services.map(_.id), ServiceVariantSchemas.byService(serviceVariantSchemas))
+        loadedMasters    <- GraphLoading.seedRequired(seed.masters, Masters.entity.modelName, (_: Master).id, Masters.byId(masters))
+        loadedLocations  <- GraphLoading.seedRequired(seed.masterLocations, MasterLocations.entity.modelName, (_: MasterLocation).id, MasterLocations.byId(masterLocations))
+        loadedOffers     <- GraphLoading.seedRequired(seed.masterServiceOffers, MasterServiceOffers.entity.modelName, (_: MasterServiceOffer).id, MasterServiceOffers.byId(masterServiceOffers))
+        loadedVariants   <- GraphLoading.seedRequired(seed.masterServiceOfferVariants, MasterServiceOfferVariants.entity.modelName, (_: MasterServiceOfferVariant).id, MasterServiceOfferVariants.byId(masterServiceOfferVariants))
       } yield BeautySearchCatalogSnapshot(
         categories                 = loadedCategories,
         services                   = loadedServices,
