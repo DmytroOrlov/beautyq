@@ -17,6 +17,7 @@ Use this as the BeautyQ entry point. It records the current route truth and poin
 * `docs/SEARCH_DOMAIN_ONBOARDING.md`
 * `docs/DISTAGE_HTTP_TESTING.md`
 * `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`
+* `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — target BeautyQ search contract/module split and anti-scope-drift rules
 
 ## QP24 stop-state
 
@@ -51,7 +52,7 @@ Future query additions should use a bounded materialization prompt:
 * do not tune ES/Qdrant, parser, vocabulary, seed data, routes, or production
   search behavior;
 * stop if runtime relevance fails;
-* produce a review bundle for coordinator review.
+* produce a review bundle only when the coordinator explicitly requests one.
 
 The current 89-query dataset keeps the original parser/regression queries and
 adds 15 materialized semantic holdout queries. The holdouts make the eval set

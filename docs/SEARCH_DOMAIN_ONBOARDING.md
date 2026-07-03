@@ -79,33 +79,29 @@ Good:
 
 ## Current reusable architecture
 
-New contributors and new domains should be aware of the following layers (full detail in
-`docs/beautyq-search-dsl-v1.md`):
+New domains should use the measured-gate method from this doc. New domain architecture and module
+boundaries should follow `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — it defines
+the target search-contract/module split, dependency DAG, and forbidden dependencies.
 
-* **Repo graph / model-first loading** — repo entity metadata derives from Scala case-class models
-  through Mirror-derived metadata; repo field metadata is selector-derived through typed `RepoField`
-  handles; catalog graph is declared in a domain-specific repo graph class (`BeautyQRepoGraph` for
-  BeautyQ).
-* **Schema-owned document projection** — `SearchDocumentProjection` / domain schema class (e.g.
-  `BeautyQVariantSearchDocumentSchema`) owns projection and `SearchDocumentSpec`; field handles live
-  in the schema's `Fields` object.
-* **SearchRuntimeSpec / fingerprint** — `SearchRuntimeSpec` is the generic runtime truth aggregating
-  doc schema, query schema, request/facet/carousel config, payload specs, embedding/vector config, and
-  runtime metadata. `SearchRuntimeFingerprint` derives from runtime schema/config and gates
-  managed bootstrap reuse.
+Do not start a new domain by copying `BeautyQRepoGraph` or `bifunctor-tagless` app-side ownership.
+`BeautyQRepoGraph` and `BeautyQCatalogGraph` are legacy/current BeautyQ implementation surfaces
+(full detail in `docs/beautyq-search-dsl-v1.md`), not the target pattern for a new domain.
+
+Generic, reusable layers that a new domain may build on:
+
 * **Generic ES / Qdrant modules** — `search-elasticsearch` and `search-qdrant` are reusable and
   contain no domain-specific logic. Generic interpreters consume `SearchDocumentSpec` /
   `SearchRuntimeSpec` / resolved constraints.
-* **BeautyQ app-side adapters** — domain query schema resolution, intent vocabulary, ES adapter,
-  Qdrant wrapper/backend, hybrid policy, response assembly, routes, and startup wiring belong in
-  `bifunctor-tagless`. Generic modules must stay domain-free.
+* **Generic search-core primitives** — `SearchRuntimeSpec` aggregation and fingerprinting, generic
+  field/document spec types.
 
 When starting a new domain: reuse the method and generic modules, not BeautyQ thresholds, query
-text, or app-side adapter classes.
+text, `BeautyQRepoGraph`/`BeautyQCatalogGraph` ownership, or app-side adapter classes.
 
 ## Links
 
-* `docs/beautyq-search-dsl-v1.md`
+* `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — target module split and boundaries for new domains
+* `docs/beautyq-search-dsl-v1.md` — current/legacy BeautyQ implementation notes
 * `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`
 * `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`

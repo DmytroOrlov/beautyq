@@ -111,10 +111,11 @@ After an accepted review / closed patch **A**, respond in this order:
 4. Provide the model recommendation for **B** as a coordinator note outside the prompt.
 5. Provide exactly two unconditional downstream follow-up options after **B**: **C** and **D**.
 6. Provide exactly one recommendation between **C** and **D**.
-7. Provide one combined post-**B** bundle script with exact labeled sections:
-   - `current result review`
-   - `next option 1 source truth`
-   - `next option 2 source truth`
+7. A combined post-**B** bundle script (with labeled sections `current result review`,
+   `next option 1 source truth`, `next option 2 source truth`) is optional coordinator evidence
+   capture, not a mandatory step for every accepted patch. Provide it only when the coordinator or
+   user needs captured evidence for the next source-truth check; otherwise state the next
+   options' source-truth status inline.
 
 Mandatory review and verification are plumbing, not downstream options.
 
@@ -284,6 +285,19 @@ Bundles are coordinator evidence capture only. After reading a bundle, the coord
 
 If anchors are still missing after review for the selected task, request a focused supplemental bundle and stop.
 
+## 6.0 Delegated-agent bundle restriction
+
+Delegated agents must not create review bundles, zip archives, or grep-report archives by default. Delegated patch prompts should request focused validation and concise reporting only. Review bundles are allowed only when the user/coordinator explicitly requests evidence capture for that task.
+
+Clarifications:
+
+- Source-truth bundles (section 6.1–6.3) may still be requested by the coordinator when anchors are missing — that is coordinator-run evidence gathering, not a delegated-agent action.
+- Coordinator-owned bundle scripts are not default delegated patch closeout; see the softened step 7 in 3.1.
+- Full `sbt test` remains forbidden for delegated agents unless explicitly requested (section 3.2).
+- No `FULL GREEN` claim from focused checks (section 3.2/3.3) — this applies whether or not a bundle was captured.
+
+This does not remove the bundle section below; bundle scripts remain available as optional coordinator evidence capture.
+
 ## 6.1 Bundle scripts must be read-only
 
 Allowed:
@@ -309,7 +323,7 @@ Do not include full `target`, generated build output, screenshots, stale numbere
 
 ## 6.2 Required bundle shape
 
-User-facing bundle scripts must:
+When explicitly requested, user-facing bundle scripts must:
 
 - create a repo-local `.review-bundles/beautyq-<topic>-<timestamp>-$RANDOM` workspace;
 - use `BASE`, `WORK`, and `BUNDLE_ID`;
@@ -322,7 +336,7 @@ User-facing bundle scripts must:
 - run `cpf "$ZIP"`;
 - print `echo "$ZIP"`.
 
-Patch-review bundles must include:
+When explicitly requested, patch-review bundles must include:
 
 - `git diff --binary HEAD --`;
 - `git diff --binary --cached`;

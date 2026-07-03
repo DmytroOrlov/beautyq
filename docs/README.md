@@ -7,13 +7,20 @@
 * `SEARCH_SUPPLEMENT_ARCHITECTURE.md` — reusable baseline-plus-supplement architecture.
 * `SEARCH_DOMAIN_ONBOARDING.md` — how to start a new domain without repeating the BeautyQ loop.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
+* `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — target BeautyQ search contract/module split and anti-scope-drift rules.
+
+## Target search contract/module split
+
+* `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — target BeautyQ search contract/module split and anti-scope-drift rules.
 
 ## BeautyQ search architecture
 
-* `beautyq-search-dsl-v1.md` — current BeautyQ search architecture and runtime doc: layer map,
+* `beautyq-search-dsl-v1.md` — current/legacy BeautyQ search implementation notes: layer map,
   module ownership, repo graph loading, schema-owned document projection, SearchDocumentSpec /
   SearchField handles, intent vocabulary, SearchRuntimeSpec / fingerprint, generic ES/Qdrant
-  interpreters, BeautyQ app-side adapters, and testing standard.
+  interpreters, BeautyQ app-side adapters, and testing standard. This is current implementation
+  state, not the target module split plan — see
+  `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for target ownership.
 
 ## Coordinator workflow
 

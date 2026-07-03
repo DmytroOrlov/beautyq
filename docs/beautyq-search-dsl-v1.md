@@ -1,5 +1,9 @@
 # BeautyQ Search Architecture
 
+> This document describes the current BeautyQ search implementation state before the planned
+> search-contract/module split. Target ownership, module boundaries, and anti-scope-drift rules
+> are defined in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+
 ## Overview
 
 BeautyQ search describes search semantics as immutable Scala values and interprets that data
@@ -56,9 +60,13 @@ BeautyQ app-side adapters                query schema resolution, hybrid policy,
                                          assembly, route/API models, startup wiring
 ```
 
-## Module ownership
+## Module ownership (current physical modules)
 
-| Module | Owns |
+This is the **current physical module layout**, not the target module split. The target 10-module
+split, dependency DAG, and forbidden dependencies are defined in
+`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+
+| Module | Owns (current) |
 |---|---|
 | `leaderboard-core` | generic failure types such as `QueryFailure` |
 | `search-core` | generic fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
@@ -69,13 +77,13 @@ BeautyQ app-side adapters                query schema resolution, hybrid policy,
 Generic modules (`search-core`, `search-elasticsearch`, `search-qdrant`) must not know BeautyQ
 names or app types.
 
-## Ownership table
+## Ownership table (current locations)
 
-Where to add or change each kind of search concern:
+Where each kind of search concern currently lives:
 
-| Concern | Owner |
+| Concern | Current location |
 |---|---|
-| new repo entity / source / relation | model class + `RepoEntity` / `RepoField` + `BeautyQRepoGraph` |
+| new repo entity / source / relation | model class + `RepoEntity` / `RepoField` + `BeautyQRepoGraph` (current/legacy compatibility surface) |
 | new document field (static/selector-derived) | `BeautyQVariantSearchDocumentSchema.Fields` + document spec |
 | new dynamic or computed field | explicit computed/dynamic field in `BeautyQVariantSearchDocumentSchema` |
 | new intent phrase or rule | `BeautyQSearchIntentVocabulary` |
@@ -83,7 +91,10 @@ Where to add or change each kind of search concern:
 | new payload field | schema-owned `SearchDocumentPayloadSpec` |
 | new carousel / ranking / presentation name or default | `BeautyQSearchPresentation` |
 | new generic backend behavior | `search-core` runtime metadata + generic interpreter |
-| new BeautyQ-specific route / response behavior | app-side adapter / backend / assembler in `bifunctor-tagless` |
+| new BeautyQ-specific route / response behavior | app-side adapter / backend / assembler in `bifunctor-tagless` (current/legacy compatibility surface) |
+
+Current legacy locations remain until migration phases remove them.
+New target ownership must follow `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
 
 ## BeautySearchSpec / BeautySearchSpecV1
 
@@ -103,8 +114,11 @@ They are not the single source of truth for all search metadata:
 
 Repo/data loading is model-first. Scala case-class models drive repo entity metadata through
 Mirror-derived metadata. Repo field metadata is selector-derived through typed `RepoField` handles.
-The BeautyQ catalog graph is declared in `BeautyQRepoGraph` through typed entity nodes, value
-sources, and relations.
+The BeautyQ catalog graph is currently declared in `BeautyQRepoGraph` through typed entity nodes,
+value sources, and relations. `BeautyQRepoGraph` is a current/legacy compatibility surface, not the
+future declaration owner — see the legacy compatibility retirement matrix in
+`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for its target replacement and removal
+conditions.
 
 `BeautySearchCatalogSnapshotLoader.FromRepositories` and seed-scoped loading go through the shared
 repo graph/loading layer. Existing loading behavior is preserved: preorder category traversal, root
@@ -152,10 +166,12 @@ Do not call this "DSL synonyms" or reference a `SearchSynonym dictionary` as cur
 
 ## SearchRuntimeSpec and fingerprint
 
-`SearchRuntimeSpec` is the generic runtime truth. It aggregates document schema, query schema,
-request/facet/carousel config, payload specs, embedding config, vector config, and runtime
-metadata. `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into generic runtime
-metadata.
+`SearchRuntimeSpec` is the current runtime/fingerprint aggregation. It aggregates document schema,
+query schema, request/facet/carousel config, payload specs, embedding config, vector config, and
+runtime metadata. `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into generic
+runtime metadata. `SearchRuntimeSpec` is not the full target search contract — the eventual full
+`SearchDomainSpec` target (catalog/document/intent/runtime/response/evaluation sections) is
+defined by `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
 
 `SearchRuntimeFingerprint` derives from runtime schema/config and includes: document field
 metadata, query schema mappings, request config, facets, carousel, ranking, payload paths,
@@ -255,8 +271,8 @@ for the Qdrant supplement candidate source, not a Qdrant-only retrieval path.
 
 ## Current eval coverage
 
-- **Total eval queries**: 64. `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and
-  `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` own the current detailed eval/gate counts.
+- Current eval query counts are owned by `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and
+  checked-in eval resources.
 - `q_broad_004`, `q_broad_006`: intentionally non-lexical; Qdrant supplement candidates only.
 
 Qdrant supplement candidate eval (manual, environment-gated):

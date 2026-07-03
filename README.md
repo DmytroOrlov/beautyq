@@ -12,6 +12,7 @@ Start here:
 * `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for current BeautyQ route truth and stop-state
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for the locked BeautyQ local/test Qdrant supplement gate
 * `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline-plus-supplement architecture
+* `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for the target BeautyQ search contract/module split and anti-scope-drift rules
 
 Current BeautyQ route truth:
 
@@ -68,6 +69,10 @@ curl -sS -X POST 'http://localhost:8080/beauty-search' \
 Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_no_append`, `qdrantSupplement.contribution` is `none`, `qdrantSupplement.appendedVariantIds` is empty, and `origins` is only `["es_baseline"]`.
 
 ## Module map
+
+This is the current physical module map before the planned BeautyQ search-contract/module split.
+Target BeautyQ search ownership and module boundaries are defined in
+`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
 
 | Module | Responsibility |
 |---|---|
