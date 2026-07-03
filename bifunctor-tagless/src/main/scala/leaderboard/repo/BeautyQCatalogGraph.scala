@@ -2,6 +2,7 @@ package leaderboard.repo
 
 import leaderboard.model.Category.CategoryId
 import leaderboard.model.{Category, Master, MasterId, MasterLocation, MasterLocationId, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId, Service, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
+import leaderboard.search.beautyq.contract.BeautyQCatalogDeclaration
 
 /** Central BeautyQ catalog graph facade.
   *
@@ -18,21 +19,9 @@ import leaderboard.model.{Category, Master, MasterId, MasterLocation, MasterLoca
   */
 object BeautyQCatalogGraph {
 
-  val declaration =
-    catalog("beautyq")
-      .branch[Category]
-      .rootTree(_.parentId)
-      .child[Service](_.categoryId)
-      .branch[Service]
-      .value[ServiceVariantSchema](_.serviceId)
-      .branch[Master]
-      .rootAll
-      .child[MasterLocation](_.masterId)
-      .child[MasterServiceOffer](_.masterId)
-      .branch[MasterServiceOffer]
-      .child[MasterServiceOfferVariant](_.masterServiceOfferId)
-
-  /** Materializes the business-owned [[BeautyQCatalogDeclaration.declaration]]
+  /** Materializes [[BeautyQCatalogDeclaration.declaration]]
+   * (the pure BeautyQ catalog topology section, owned by
+   * `beautyq-search-contract` - not the complete BeautyQ search contract)
    * against a concrete effect type `F`, using [[Evidence]] to supply the
    * BeautyQ-specific repositories and loaders the declaration itself never
    * mentions.
@@ -40,7 +29,7 @@ object BeautyQCatalogGraph {
   def graph[F[_, _]]: Graph[F] = {
     import Evidence.given
 
-    BeautyQCatalogGraph.declaration
+    BeautyQCatalogDeclaration.declaration
       .materialize[F, Repositories[F]](Graph.fromDeclaration)
   }
 

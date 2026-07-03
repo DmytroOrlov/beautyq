@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 5 prerequisite recorded. BeautyQ model types moved into `beautyq-model`; BeautyQ catalog/document/intent/runtime/response/evaluation contract content has not been moved into `beautyq-search-contract` yet.
+Status: Phase 5 recorded. The BeautyQ catalog topology section lives in `beautyq-search-contract`; document/intent/runtime/response/evaluation contract content and repositories/materialization have not moved yet.
 
 ## Non-negotiable premise
 
@@ -88,6 +88,10 @@ Arrows mean "may depend on".
 repo-core
   -> beautyq-search-repositories
   -> beautyq-search-materialization
+  -> beautyq-search-contract   # added Phase 5: the pure catalog declaration
+                                # is built with repo-core's generic catalog
+                                # DSL (`catalog`, `.branch`, `.rootTree`,
+                                # `.child`/`.value`), not re-derived locally.
 
 search-contract-core
   -> beautyq-search-contract
@@ -285,6 +289,69 @@ model types' circe codecs - the same dependency `search-core` already uses
 generically) and no other dependency. `bifunctor-tagless` gained
 `dependsOn(beautyqModel)`. No compatibility export was needed - the package
 name was preserved, so no imports elsewhere needed changes.
+
+## Phase 5 record: BeautyQ catalog topology section moved into beautyq-search-contract
+
+**Explicitly not the full BeautyQ search contract** - this is the catalog
+topology section only: which BeautyQ types exist and how they join (roots,
+self-trees, has-many/has-value edges). Document, intent, runtime, response,
+and evaluation sections do not exist yet. `BeautyQSearchCatalogSection.label`
+states this in code (`"catalog topology section, not complete search
+contract"`) so the scope claim is assertable, not just a comment.
+
+Moved: the pure `val declaration = catalog("beautyq")...` chain, previously
+inlined in `bifunctor-tagless`'s `leaderboard.repo.BeautyQCatalogGraph`
+(package `leaderboard.repo`), into a new file and a new package:
+
+- `beautyq-search-contract/src/main/scala/leaderboard/search/beautyq/contract/BeautyQCatalogDeclaration.scala`,
+  package `leaderboard.search.beautyq.contract` (not `leaderboard.repo` -
+  this is a genuinely new contract-owned home, not a relocation-in-place, so
+  there was no broad-churn reason to preserve the old package).
+
+Added (not moved - new code): `BeautyQSearchCatalogSection.scala` in the same
+package, wrapping the declaration in `search-contract-core`'s generic
+`CatalogSection[Catalog]` ADT (`BeautyQCatalogSection.catalogTopology` /
+`.section`), plus the `label` constant above.
+
+`BeautyQCatalogGraph.scala` (still in `bifunctor-tagless`, still owning all
+repository/materialization/evidence wiring - `Repositories`, `Evidence`,
+`Graph`, `Relations`, `Nodes`) now imports
+`leaderboard.search.beautyq.contract.BeautyQCatalogDeclaration` and
+materializes `BeautyQCatalogDeclaration.declaration` instead of a
+locally-defined value. Its doc comments already referenced
+`BeautyQCatalogDeclaration.declaration` (written ahead of this move), so no
+comment rewrite was needed beyond noting the new module boundary.
+
+Build changes:
+
+- `beautyqSearchContract` gained `dependsOn(repoCore)` - the catalog
+  declaration is built with `repo-core`'s generic catalog DSL (`catalog`,
+  `.branch`, `.rootTree`/`.rootAll`, `.child`/`.value`), so this contract
+  module needs the DSL, not just the ADTs in `search-contract-core`. This is
+  a direct edge the original DAG sketch did not spell out; the DAG above now
+  shows it explicitly. `beautyqSearchContract` still depends on nothing else
+  (no `bifunctor-tagless`, no repositories/materialization/wiring, no ES/Qdrant,
+  no HTTP/app) - `repoCore` itself has no such dependencies either, so this
+  does not smuggle in anything forbidden.
+- `beautyqSearchContract` gained `Deps.scalatest % Test` for the new spec.
+- `bifunctor-tagless` gained `dependsOn(beautyqSearchContract)` -
+  temporary, per this phase's instructions, so `BeautyQCatalogGraph` can
+  import the moved declaration until repositories/materialization/wiring
+  move in later phases and take over that consumption.
+
+No cycle: `repoCore` and `beautyqSearchContract` do not depend back on
+`bifunctor-tagless`, `beautyq-search-repositories`, or
+`beautyq-search-materialization`.
+
+Tests: added `BeautyQCatalogDeclarationSpec.scala` in `beautyq-search-contract`
+(11 cases) asserting the declaration's `.name`/`.steps` match the same
+catalog topology previously asserted only via post-materialization
+`BeautyQCatalogGraph.graph[IO].steps` in `bifunctor-tagless` - proving the
+topology is fully expressed pre-materialization, with no repository loader
+or `F`/repositories type required. Existing `RepoFieldRelationSpec` (19
+cases) and `BeautyQRepoGraphLoaderSpec` (10 cases) needed no changes -
+neither referenced the relocated `declaration` symbol directly - and both
+still pass unchanged.
 
 ## Migration phases
 
