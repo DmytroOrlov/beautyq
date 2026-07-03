@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 7b (BeautyQ variant document projection engine slice) recorded, alongside Phase 8d (static/offline evaluation contract slice), Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautyQVariantSearchDocumentMaterialization` (the actual projection engine) now lives in `beautyq-search-materialization`, alongside `BeautyQCatalogGraph`; `BeautyQVariantSearchDocumentSchema` in `bifunctor-tagless` is now a thin compatibility facade delegating to it. `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates catalog/document/intent/runtime/response/evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`); `BeautySearchApi`, route/plugin modules, launcher modules, clients, bootstrap/seed code (including `BeautySearchCatalogSnapshot`/`fromSeedData`/`SeedScopedFromRepositories`), JSON/resource parsing, the eval runtime harness/backend runners, and repositories remain in `bifunctor-tagless` pending deeper movement.
+Status: Phase 7b (BeautyQ variant document projection engine slice) and Phase 7c (BeautyQ catalog snapshot loaders slice) recorded, alongside Phase 8d (static/offline evaluation contract slice), Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautyQVariantSearchDocumentMaterialization` (the actual projection engine) now lives in `beautyq-search-materialization`, alongside `BeautyQCatalogGraph`; `BeautyQVariantSearchDocumentSchema` in `bifunctor-tagless` is now a thin compatibility facade delegating to it. The actual full-catalog and seed-scoped repo-backed snapshot loading algorithms (`BeautyQSearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories`, over the seed-free `BeautyQSearchCatalogSnapshot`/`BeautyQSearchCatalogSeedScope`) now live in `beautyq-search-materialization` too; legacy `BeautySearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories` in `bifunctor-tagless` are now compatibility facades delegating to them, while legacy `BeautySearchCatalogSnapshot`/`fromSeedData` and `BeautyQSeedData`/`BeautyQSeedLoader`/`BeautyQSeedInserter`/`BeautyQSeedReady` still remain in `bifunctor-tagless`. `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates catalog/document/intent/runtime/response/evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`); `BeautySearchApi`, route/plugin modules, launcher modules, clients, bootstrap/seed code, JSON/resource parsing, the eval runtime harness/backend runners, and repositories remain in `bifunctor-tagless` pending deeper movement.
 
 ## Non-negotiable premise
 
@@ -1023,6 +1023,43 @@ Tests: no test file needed editing - package preservation meant existing
 unchanged and pass unchanged.
 
 Deeper seed/snapshot/loader extraction remains pending.
+
+## Phase 7c record: BeautyQ catalog snapshot loaders moved into beautyq-search-materialization
+
+Follow-up to Phase 7b, covering the snapshot-loading side left pending
+there: `BeautyQSearchCatalogSnapshot` was added in
+`beautyq-search-materialization` as the seed-free materialization-owned
+snapshot type, and `BeautyQSearchCatalogSnapshotLoader.FromRepositories` was
+added there as the real full-catalog repo-backed snapshot loader; legacy
+`BeautySearchCatalogSnapshotLoader.FromRepositories` in `bifunctor-tagless`
+is now a compatibility facade delegating to the materialization loader and
+converting back to legacy `BeautySearchCatalogSnapshot`.
+
+`BeautyQSearchCatalogSeedScope` was added in `beautyq-search-materialization`
+as a seed-free scope type for seed-scoped loading, and
+`BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories` was added
+there as the real seed-scoped repo-backed snapshot loader. Legacy
+`BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories` in
+`bifunctor-tagless` keeps its old constructor signature, including
+`BeautyQSeedReady` and `BeautyQSeedData`, but now adapts `BeautyQSeedData` to
+`BeautyQSearchCatalogSeedScope`, delegates to the materialization loader, and
+converts back to legacy `BeautySearchCatalogSnapshot`.
+
+`BeautySearchCatalogSnapshot` and `BeautySearchCatalogSnapshot.fromSeedData`
+still remain in `bifunctor-tagless`, as do `BeautyQSeedData`,
+`BeautyQSeedLoader`, `BeautyQSeedInserter`, and `BeautyQSeedReady`.
+`beautyq-search-materialization` still has no `leaderboard.seed` dependency.
+
+No build changes, and no routes/plugin modules/launchers/HTTP/Tapir code/
+bootstrap/startup code/ES/Qdrant clients/production policy/document
+projection behavior/seed data loading behavior/production routing changes
+were made.
+
+Focused verification for this slice: `sbt beautyqSearchMaterialization/compile`,
+`sbt bifunctor-tagless/compile`, `sbt bifunctor-tagless/testOnly *BeautyQRepoGraphLoaderSpec`,
+`sbt bifunctor-tagless/testOnly *BeautyQVariantSearchDocumentSchemaSpec`, and
+`sbt bifunctor-tagless/testOnly *VariantSearchDocumentSnapshotProviderSpec` -
+not a full `sbt test` run.
 
 ## Migration phases
 
