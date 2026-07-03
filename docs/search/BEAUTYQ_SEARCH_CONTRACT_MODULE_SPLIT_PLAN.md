@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 6 recorded. BeautyQ repositories live in `beautyq-search-repositories`; document/intent/runtime/response/evaluation contract content and materialization have not moved yet.
+Status: Phase 7 (catalog-materialization slice) recorded. `BeautyQCatalogGraph`'s catalog materialization wiring lives in `beautyq-search-materialization`; BeautyQ document materialization, document/intent/runtime/response/evaluation contract content, and ES/Qdrant/wiring have not moved yet.
 
 ## Non-negotiable premise
 
@@ -431,6 +431,53 @@ back on `bifunctor-tagless`, `beautyqSearchMaterialization`,
 `beautyqSearchWiring`, `search-elasticsearch`, or `search-qdrant`. No
 compatibility export was needed - package names were preserved throughout, so
 no consumer needed an import change.
+
+## Phase 7 record: catalog-materialization slice moved into beautyq-search-materialization
+
+This slice moves only the BeautyQ **catalog** materialization boundary -
+`BeautyQCatalogGraph.scala` (`Repositories`, `Evidence`, `Graph`, `Relations`,
+`Nodes`, `graph[F]`) - not document materialization. Source inspection
+confirmed the document side is not a pure materialization move and would mix
+this phase with later contract work: `BeautyQVariantSearchDocumentSchema.scala`
+mixes `documentSpec`/`qdrantPayloadSpec`/`querySchema`/`projection`/`project`/
+`buildDocument` and depends on `leaderboard.search.dsl` BeautyQ search
+semantics, and `VariantSearchDocument.scala` has seed-scoped loader pieces
+depending on `leaderboard.seed.BeautyQSeedData`/`BeautyQSeedReady`. Document
+materialization remains pending for a dedicated later slice.
+
+Moved, package preserved (`leaderboard.repo`):
+
+- `beautyq-search-materialization/src/main/scala/leaderboard/repo/BeautyQCatalogGraph.scala`
+  (from `bifunctor-tagless`) - `Repositories[F]` (the repo dependency bundle),
+  `Evidence` (`CatalogEntity`/`CatalogValue`/`CatalogRootTree`/`CatalogRootAll`/
+  `CatalogMany`/`CatalogValueEdge` given instances wiring BeautyQ repositories
+  to the generic catalog DSL), `Graph[F]`/`Graph.fromDeclaration` (the
+  materialized, BeautyQ-named relation bundle), `Nodes` (typed graph nodes for
+  external callers such as `BeautyQVariantSearchDocumentSchema`), `Relations[F]`
+  (eager relation wrapper against a concrete `Repositories[F]`), and `graph[F]`
+  (materializes `BeautyQCatalogDeclaration.declaration`, already living in
+  `beautyq-search-contract`, against `Evidence`).
+
+Not moved: `BeautyQVariantSearchDocumentSchema.scala`, `VariantSearchDocument.scala`,
+`SearchDocumentProjection.scala`, `VariantSearchDocumentSnapshotProvider.scala`,
+`BeautySearchReadyCatalogDocuments.scala`, seed files, ES/Qdrant code,
+plugin/wiring/route code - all still in `bifunctor-tagless`, consuming the
+moved `BeautyQCatalogGraph` via the new project dependency below.
+
+Build changes: no new library dependency was needed -
+`beautyqSearchMaterialization`'s existing `dependsOn(beautyqSearchContract,
+beautyqSearchRepositories, repoCore, beautyqModel)` already covered every
+symbol `BeautyQCatalogGraph.scala` uses (BeautyQ model types, BeautyQ repo
+companions, the generic catalog DSL/evidence typeclasses, and
+`BeautyQCatalogDeclaration`). `bifunctor-tagless` gained
+`dependsOn(beautyqSearchMaterialization)` so its existing consumers
+(`RepoFieldRelationSpec`, `BeautyQRepoGraphLoaderSpec`,
+`BeautyQVariantSearchDocumentSchema.scala`, etc.) resolve
+`leaderboard.repo.BeautyQCatalogGraph` unchanged - no import edits needed
+anywhere. No compatibility export was needed.
+
+No cycle: `beautyqSearchMaterialization` does not depend back on
+`bifunctor-tagless`, ES/Qdrant, HTTP/app, wiring, clients, or routes.
 
 ## Migration phases
 
