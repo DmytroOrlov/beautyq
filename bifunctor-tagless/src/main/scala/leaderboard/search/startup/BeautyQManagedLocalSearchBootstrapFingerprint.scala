@@ -2,7 +2,7 @@ package leaderboard.search.startup
 
 import io.circe.syntax.*
 import io.circe.{Json, JsonObject}
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchReadyCatalogDocuments, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautySearchReadyCatalogDocuments, VariantSearchDocument}
 import leaderboard.search.dsl.*
 import leaderboard.search.elasticsearch.ElasticsearchMappingInterpreter
 
@@ -35,7 +35,7 @@ object BeautyQManagedLocalSearchBootstrapFingerprint {
     val runtimeSpec =
       spec
         .runtimeSpec(
-          Map(BeautySearchSpecV1.QdrantPayloadSpecName -> BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+          Map(BeautySearchSpecV1.QdrantPayloadSpecName -> BeautyQVariantSearchDocumentContract.qdrantPayloadSpec)
         )
         .copy(
           embeddingSpec = Some(embeddingSpec),

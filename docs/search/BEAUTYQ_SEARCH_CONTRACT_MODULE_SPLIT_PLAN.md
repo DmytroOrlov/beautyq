@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 9a (Qdrant/semantic consumer migration slice) recorded. Qdrant/hybrid consumer code reads `BeautyQVariantSearchDocumentContract` directly instead of the `bifunctor-tagless` compatibility schema object; full `SearchDomainSpec`, evaluation content, ES interpreter migration, and response assembler migration have not moved yet.
+Status: Phase 9b (Qdrant managed-local/runtime/startup consumer migration slice) recorded. Remaining main Qdrant managed-local/runtime/startup consumers read `BeautyQVariantSearchDocumentContract` directly; ES interpreter and response assembler needed no patch (already contract-backed since Phase 8b); full `SearchDomainSpec`, evaluation content, and Phase 10 wiring have not moved yet.
 
 ## Non-negotiable premise
 
@@ -676,6 +676,45 @@ assembler, generic `search-qdrant` builders (which already consume generic
 types), and any other `bifunctor-tagless` code still reading
 `BeautyQVariantSearchDocumentSchema`. No production route activation and no
 Qdrant/ES/hybrid runtime behavior change.
+
+## Phase 9b record: remaining Qdrant managed-local/runtime/startup consumers migrated
+
+Continues the Phase 9 consumer-migration-only slice, covering the three
+remaining main-source Qdrant managed-local/runtime/startup consumers that
+only ever read contract-shaped members of `BeautyQVariantSearchDocumentSchema`:
+
+- `leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingModules` -
+  now uses `BeautyQVariantSearchDocumentContract.Fields.variantId` when
+  constructing `QdrantSemanticCandidateSearch`.
+- `leaderboard.search.startup.BeautyQManagedLocalSearchBootstrapFingerprint` -
+  now uses `BeautyQVariantSearchDocumentContract.qdrantPayloadSpec` in the
+  runtime-spec payload map it fingerprints.
+- `leaderboard.search.startup.BeautyQManagedLocalSearchBootstrap` - its
+  `SourceTextFields`/`SourceTextFieldPaths` now derive from
+  `BeautyQVariantSearchDocumentContract.Fields.{serviceText, attributeText,
+  allText, categoryName}`, values exactly equivalent to before.
+
+Source-truth check confirmed no ES interpreter patch and no response
+assembler patch were needed in this slice: both were already contract-backed
+as of Phase 8b (they consume `BeautySearchSpecV1`/`BeautyQSearchPresentation`,
+already living in `beautyq-search-contract`), not
+`BeautyQVariantSearchDocumentSchema` directly.
+
+Intentionally not migrated (materialization/projection surface, not contract
+consumers): `BeautySearchCatalogBackendModules.scala` and
+`bifunctor-tagless`'s `VariantSearchDocument.scala` (its
+`BeautySearchCatalogSnapshotLoader`/`VariantSearchDocumentBuilder`), plus
+`BeautyQVariantSearchDocumentSchema`'s own `projection`/`project`/
+`buildDocument`/seed refs - all still read the compatibility schema object,
+as intended.
+
+No files moved, no test edits needed (compile proved no test imported the
+old schema symbols touched here), no behavior change: each replacement reads
+the identical underlying value the schema's delegating `val`/`lazy val`
+already forwarded from the contract object, so Qdrant collection bindings,
+fingerprint inputs, and managed-bootstrap source-text field paths are
+byte-for-byte identical to before. No production route activation. Phase 10
+(wiring module assembly) remains separate and untouched.
 
 ## Migration phases
 

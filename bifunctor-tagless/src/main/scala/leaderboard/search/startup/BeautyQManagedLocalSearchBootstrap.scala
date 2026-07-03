@@ -4,7 +4,7 @@ import distage.Lifecycle
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.runtime.QueryFailureToThrowable
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpec, EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
 import io.circe.Json
 import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedIndexInitializer}
@@ -69,10 +69,10 @@ object BeautyQManagedLocalSearchBootstrap {
   val EmbeddingModelName: String = "local-llama-cpp-embedding"
   val SourceTextFields: List[SearchField[VariantSearchDocument]] =
     List(
-      BeautyQVariantSearchDocumentSchema.Fields.serviceText,
-      BeautyQVariantSearchDocumentSchema.Fields.attributeText,
-      BeautyQVariantSearchDocumentSchema.Fields.allText,
-      BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+      BeautyQVariantSearchDocumentContract.Fields.serviceText,
+      BeautyQVariantSearchDocumentContract.Fields.attributeText,
+      BeautyQVariantSearchDocumentContract.Fields.allText,
+      BeautyQVariantSearchDocumentContract.Fields.categoryName,
     )
   val SourceTextFieldPaths: List[String] = SourceTextFields.map(_.path)
 
