@@ -66,8 +66,12 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.facets eq BeautySearchSpecV1.spec.facetSpec)
     }
 
-    "declare no evaluation section yet" in {
-      assert(BeautyQSearchDomainContract.evaluationDeclared == false)
+    "reference the same evaluation section as BeautyQSearchEvaluationContract" in {
+      assert(BeautyQSearchDomainContract.evaluation eq BeautyQSearchEvaluationContract.section)
+    }
+
+    "declare that an evaluation section now exists" in {
+      assert(BeautyQSearchDomainContract.evaluationDeclared == true)
     }
 
     "declare no full SearchDomainSpec value yet" in {

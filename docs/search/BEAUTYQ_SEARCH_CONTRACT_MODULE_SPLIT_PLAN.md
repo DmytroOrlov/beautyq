@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 10b (Qdrant supplement activation/preflight policy slice) recorded, alongside Phase 10a (first `beautyq-search-wiring` slice) and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates existing catalog/document/intent/runtime/response contract slices but is explicitly not a full `SearchDomainSpec` (no evaluation section, no generic `SearchDomainSpec[...]` value yet); `BeautySearchApi`, route/plugin modules (including the new `BeautySearchQdrantSupplementActivationModuleSelector`), launcher modules, clients, bootstrap/seed code, and materialization remain in `bifunctor-tagless` pending deeper wiring/plugin movement.
+Status: Phase 8d (static/offline evaluation contract slice) recorded, alongside Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` now aggregates catalog/document/intent/runtime/response *and* evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`, no generic `SearchDomainSpec[...]` value); `BeautySearchApi`, route/plugin modules (including `BeautySearchQdrantSupplementActivationModuleSelector`), launcher modules, clients, bootstrap/seed code, JSON/resource parsing, the eval runtime harness/backend runners, and materialization remain in `bifunctor-tagless` pending deeper movement.
 
 ## Non-negotiable premise
 
@@ -851,6 +851,108 @@ while the route wiring stays in `bifunctor-tagless`:
   `BeautySearchRouteModules`, `BeautySearchPluginModules`, launcher/runtime
   binding modules, and HTTP/tapir wiring all still depend on app/http/parser/
   backend/client/seed surfaces that stay in `bifunctor-tagless` for now.
+
+## Phase 8d record: static/offline evaluation contract section extracted
+
+This slice moves the pure static/offline BeautyQ evaluation declarations
+(M8/M9/M10 offline planning/eval contracts) into `beautyq-search-contract`
+and adds a `BeautyQSearchEvaluationContract` aggregate wired into
+`BeautyQSearchDomainContract.evaluation` as a generic `EvalSection` - the
+first BeautyQ contract slice expressed directly through `search-contract-core`
+ADTs rather than `search-core` ones.
+
+Moved, package preserved (`leaderboard.search.eval`), objects/classes/enums
+not renamed:
+
+- `M8M9EvalContracts.scala` - shared M8 telemetry-schema-plan and M9
+  offline-eval enums/value types (`ServingMode`, `CandidateSource`,
+  `FusionPolicy`, `RerankerPolicy`, `QueryClass`, `OfflineEvalMetricName`,
+  etc.).
+- `M9BeautyQSearchEvalQueryDataset.scala` - the 89-query BeautyQ seed eval
+  dataset metadata (`datasetId = "wandsbek_hamburg_beauty_services_seed_ready"`,
+  `queryCount = 89`).
+- `M9BeautyQSearchEvalQueryDatasetStaticRows.scala` - the checked-in 89
+  static query ids and their static-row mapping (`StaticQueryIds`,
+  `DefaultResult`).
+- `M9BeautyQSearchEvalStaticScorecard.scala` - static/offline dataset
+  readiness scorecard and markdown renderer.
+- `M9OfflineEvalSavedReport.scala` - the saved offline-eval report shape and
+  markdown renderer.
+- `M9OfflineEvalStaticRunner.scala` - the pure static-run validator/summarizer.
+- `M9OfflineEvalStaticFixtures.scala` - canonical M9 static fixture rows and
+  example artifacts.
+- `M10BeautyQSearchQueryClassification.scala` - offline query
+  category/signal classification.
+- `M10BeautyQSearchFullQueryClassification.scala` - full 89-query offline
+  classification mapping.
+- `M10BeautyQSearchOfflineRoutingPolicy.scala` - offline strategy-intent
+  mapping and the `M10BeautyQSearchOfflineRoutingBoundary.Standing` value
+  (every production-activation/execution/behavior-change field `false`).
+- `M10BeautyQSearchFullQueryClassificationCoverageScorecard.scala` - offline
+  classification/routing-intent coverage scorecard over all 89 rows.
+
+Each file was independently verified to import nothing beyond sibling
+`leaderboard.search.eval` symbols before moving - no HTTP/tapir/routes,
+clients, repositories, materialization, seed, bootstrap, ES/Qdrant concrete
+clients, ZIO, doobie, Postgres, Docker, or runtime backends anywhere in this
+slice.
+
+Added: `beautyq-search-contract/src/main/scala/leaderboard/search/beautyq/contract/BeautyQSearchEvaluationContract.scala`
+- references the moved static declarations (`datasetMetadata`, `staticRows`,
+  `staticScorecard`, `fullClassificationCoverage`, `offlineRoutingBoundary`)
+  and builds `section: EvalSection` (from `search-contract-core`):
+  `acceptedQueryRoles` (Golden/Negative/Exploratory), `negativeControls` (from
+  `M10BeautyQSearchFullQueryClassification.AcceptedNegativeControlQueryIds`),
+  `backendExpectations` (ES + Qdrant, both `expectedMinRecall = None`),
+  `scorecard` (static-scorecard + full-classification-coverage metric names,
+  deduplicated), and `productionRoutingEffect = EvalProductionRoutingEffect.None`
+  - the single-inhabitant marker type, not a boolean, so this can never be
+  constructed claiming otherwise.
+
+`BeautyQSearchDomainContract.scala` updated:
+
+- `val evaluation = BeautyQSearchEvaluationContract.section` added.
+- `evaluationDeclared` changed from `false` to `true`.
+- `fullSearchDomainSpecDeclared` stays `false` - no generic
+  `SearchDomainSpec[...]` value exists yet, and this slice does not add one
+  even though the evaluation section is now expressed through the generic
+  `EvalSection` ADT: catalog/document/intent/runtime/response are still
+  `search-core`-shaped, so a full `SearchDomainSpec[Catalog, Document,
+  ResultUnit]` assembly remains future work.
+- The label continues to state the aggregate is not a complete
+  `SearchDomainSpec`.
+
+Tests: added `BeautyQSearchEvaluationContractSpec.scala` (9 cases) covering
+the 89-query dataset metadata, static-row/full-classification-coverage row
+counts matching that 89, the static scorecard never claiming production
+activation approval, every offline-routing-boundary claim-bearing field
+being `false`, `section.productionRoutingEffect == EvalProductionRoutingEffect.None`,
+ES+Qdrant backend expectations with no recall claim, representative scorecard
+metric names, and that no full `SearchDomainSpec` is declared. Updated
+`BeautyQSearchDomainContractSpec.scala`: the old `evaluationDeclared == false`
+assertion became `true` plus a new `evaluation eq BeautyQSearchEvaluationContract.section`
+identity assertion; `fullSearchDomainSpecDeclared == false` kept unchanged.
+
+Not moved in this slice: JSON/resource parsing (the checked-in
+`beautyq_search_eval_queries_v1.json` resource itself, and any parser for
+it), the eval runtime harness / real-backend runners, ES/Qdrant concrete
+clients, routes/plugins/API/http/tapir, and bootstrap/startup/seed/
+repositories/materialization/projection - all remain in `bifunctor-tagless`.
+No production route activation, fallback, fusion, rerank, telemetry, or
+Qdrant production approval was introduced. Existing eval tests
+(`M9OfflineEvalStaticRunnerSpec`, `M9OfflineEvalStaticFixturesSpec`,
+`M9BeautyQSearchEvalQueryDatasetSpec`, `M9BeautyQSearchEvalQueryDatasetStaticRowsSpec`,
+`M9BeautyQSearchEvalStaticScorecardSpec`, `M10BeautyQSearchQueryClassificationSpec`,
+`M10BeautyQSearchOfflineRoutingPolicySpec`,
+`M10BeautyQSearchFullQueryClassificationCoverageSpec`) needed zero import
+changes - package preservation made that unnecessary - and all still pass
+unchanged.
+
+Build changes: none - `build.sbt` was not touched. All 11 moved files
+compiled cleanly in `beautyq-search-contract` on the first attempt with the
+module's existing dependencies.
+
+Deeper evaluation harness / full `SearchDomainSpec` assembly remains pending.
 
 ## Migration phases
 
