@@ -136,7 +136,9 @@ lazy val searchContractCore = project
 lazy val beautyqModel = project
   .in(file("beautyq-model"))
   .settings(name := "beautyq-model")
-  .pipe(lightweightSettings(Nil))
+  .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
+  )))
 
 lazy val beautyqSearchContract = project
   .in(file("beautyq-search-contract"))
@@ -164,7 +166,7 @@ lazy val beautyqSearchWiring = project
 
 lazy val `bifunctor-tagless` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore)
+  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))

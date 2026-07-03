@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 4 recorded. Generic `search-contract-core` ADTs exist; BeautyQ catalog/document/intent/runtime/response/evaluation contract content has not been moved into `beautyq-search-contract` yet.
+Status: Phase 5 prerequisite recorded. BeautyQ model types moved into `beautyq-model`; BeautyQ catalog/document/intent/runtime/response/evaluation contract content has not been moved into `beautyq-search-contract` yet.
 
 ## Non-negotiable premise
 
@@ -235,6 +235,56 @@ documented DAG (`search-contract-core` has no edge to `repo-core`).
 
 The Phase 2 placeholder `leaderboard.search.contract.core.ModulePlaceholder`
 was removed since the module now has real source.
+
+## Phase 5 prerequisite record: BeautyQ model moved into beautyq-model
+
+Moving the BeautyQ catalog section into `beautyq-search-contract` would have
+forced it to depend on `bifunctor-tagless` (the only place the BeautyQ model
+types lived), reintroducing the monolith boundary the split is meant to
+remove. This prerequisite step moves the model out first.
+
+Moved from `bifunctor-tagless/src/main/scala/leaderboard/model/` to
+`beautyq-model/src/main/scala/leaderboard/model/`, package name preserved
+(`leaderboard.model`). The entire package moved as one unit rather than a
+per-file subset: `leaderboard.model`'s `package.scala` is a Scala package
+object, and a package can have only one package object on the classpath, so
+splitting it across two modules that share a classpath (`bifunctor-tagless`
+depends on `beautyq-model`) is not possible without a duplicate-class
+conflict. Every file in the package was inspected and confirmed pure
+model/data with no repository, materialization, search, or runtime import:
+
+- `package.scala` — `UserId`/`ServiceId`/`MasterId`/`MasterLocationId`/
+  `MasterServiceOfferId`/`MasterServiceOfferVariantId`/`Score`/`AttributeMap`
+  type aliases; `Category`, `Service`, `Master`, `MasterServiceOffer`,
+  `MasterLocation` case classes + circe codecs; `Category.rootCategoryId`.
+- `AttributeDefinition.scala` — attribute definition ADT and the full BeautyQ
+  attribute registry (int/decimal/boolean/enum definitions).
+- `AttributeMap.scala` — generic attribute value map + `AttributeValueName`.
+- `CodedEnumValue.scala` — `CodedEnumValue` + all coded enum types (nail/hair/
+  lash/brow/pmu/facial/body attribute value enums).
+- `MasterServiceOfferVariant.scala` — the variant model, its validation, and
+  circe codec.
+- `MasterServiceOfferVariantAttributes.scala` — variant attribute bag +
+  `MasterServiceOfferVariantValidationError`.
+- `ServiceVariantSchema.scala` — schema/item model + validation error.
+- `UserProfile.scala` — `UserProfile`/`RankedProfile` + circe codecs.
+
+Not moved: `Categories.scala`, `Services.scala`, `Masters.scala`,
+`MasterLocations.scala`, `MasterServiceOffers.scala`,
+`MasterServiceOfferVariants.scala`, `MasterServiceOfferVariantAttributesRepository.scala`,
+`ServiceVariantSchemas.scala`, `BeautyQCatalogGraph.scala`, `Ladder.scala`,
+`Profiles.scala`, and `leaderboard.repo`'s `package.scala` — all repository/
+data-access/catalog-declaration code, staying in `bifunctor-tagless` per this
+phase's scope. Tests `AttributeDefinitionSpec` and `CodedEnumValueSpec`
+(under `leaderboard.attributes`) stayed in `bifunctor-tagless` too: they
+extend `LeaderboardTest`/`VariantTestFixtures`, `bifunctor-tagless`-local
+distage-testkit fixtures, not purely generic tests.
+
+Build changes: `beautyqModel` gained `Deps.circeGeneric` (main scope, for the
+model types' circe codecs - the same dependency `search-core` already uses
+generically) and no other dependency. `bifunctor-tagless` gained
+`dependsOn(beautyqModel)`. No compatibility export was needed - the package
+name was preserved, so no imports elsewhere needed changes.
 
 ## Migration phases
 
