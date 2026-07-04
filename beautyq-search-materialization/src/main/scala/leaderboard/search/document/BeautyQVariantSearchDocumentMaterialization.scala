@@ -11,11 +11,9 @@ import leaderboard.search.dsl.SearchGeoPoint
   *
   * This owns the actual materialization logic - node handles from
   * [[BeautyQCatalogGraph]], joins, schema validation, and text
-  * normalization/token building - that
-  * `leaderboard.search.document.BeautyQVariantSearchDocumentSchema` (in
-  * `bifunctor-tagless`) delegates to for source compatibility. It needs
-  * [[BeautyQCatalogGraph]] and [[ServiceVariantSchemas]] and therefore cannot
-  * live in the pure contract module.
+  * normalization/token building. It needs [[BeautyQCatalogGraph]] and
+  * [[ServiceVariantSchemas]] and therefore cannot live in the pure contract
+  * module.
   */
 object BeautyQVariantSearchDocumentMaterialization {
   private val BuildOperationName = "build-variant-search-documents"

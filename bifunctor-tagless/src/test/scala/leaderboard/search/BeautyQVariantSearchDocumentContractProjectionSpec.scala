@@ -1,12 +1,12 @@
 package leaderboard.search
 
 import leaderboard.model.*
-import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentMaterialization, BeautySearchCatalogSnapshot, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchFieldSemantics, SearchFieldKind, SearchFieldSemantic}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedLoader}
 import org.scalatest.wordspec.AnyWordSpec
 
-final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
+final class BeautyQVariantSearchDocumentContractProjectionSpec extends AnyWordSpec {
   import BeautyQSearchFieldSemantics.*
 
   private val seed = loadSeedData()
@@ -210,7 +210,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
 
     "preserve projected text fields for a deterministic seed document" in {
-      val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seed)
+      val snapshot = materializationSnapshot(seed)
       val document = projectSeedDocuments() match {
         case first :: _ => first
         case Nil        => fail("Expected seed projection to produce documents")
@@ -335,26 +335,35 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
   }
 
-  private def project(snapshot: BeautySearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] =
-    BeautyQVariantSearchDocumentMaterialization.project(
-      BeautySearchCatalogSnapshot.toMaterializationSnapshot(snapshot)
+  private def materializationSnapshot(seed: BeautyQSeedData): BeautyQSearchCatalogSnapshot =
+    BeautyQSearchCatalogSnapshot(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      serviceVariantSchemas      = seed.serviceVariantSchemas,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
     )
 
+  private def project(snapshot: BeautyQSearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] =
+    BeautyQVariantSearchDocumentMaterialization.project(snapshot)
+
   private def projectSeedDocuments(): List[VariantSearchDocument] =
-    project(BeautySearchCatalogSnapshot.fromSeedData(seed)) match {
+    project(materializationSnapshot(seed)) match {
       case Right(value) => value
       case Left(error)  => fail(s"Expected seed projection to succeed, got: ${error.message}")
     }
 
-  private def firstVariantSnapshot(): (BeautySearchCatalogSnapshot, MasterServiceOfferVariant) = {
-    val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seed)
+  private def firstVariantSnapshot(): (BeautyQSearchCatalogSnapshot, MasterServiceOfferVariant) = {
+    val snapshot = materializationSnapshot(seed)
     snapshot.masterServiceOfferVariants match {
       case variant :: _ => (snapshot.copy(masterServiceOfferVariants = List(variant)), variant)
       case Nil          => fail("Expected seed to contain variants")
     }
   }
 
-  private def firstVariantOfferSnapshot(): (BeautySearchCatalogSnapshot, MasterServiceOfferVariant, MasterServiceOffer) = {
+  private def firstVariantOfferSnapshot(): (BeautyQSearchCatalogSnapshot, MasterServiceOfferVariant, MasterServiceOffer) = {
     val (snapshot, variant) = firstVariantSnapshot()
     val offer = snapshot.masterServiceOffers.find(_.id == variant.masterServiceOfferId) match {
       case Some(value) => value
@@ -363,7 +372,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     (snapshot, variant, offer)
   }
 
-  private def firstVariantServiceSnapshot(): (BeautySearchCatalogSnapshot, MasterServiceOfferVariant, Service) = {
+  private def firstVariantServiceSnapshot(): (BeautyQSearchCatalogSnapshot, MasterServiceOfferVariant, Service) = {
     val (snapshot, variant, offer) = firstVariantOfferSnapshot()
     val service = snapshot.services.find(_.id == offer.serviceId) match {
       case Some(value) => value
@@ -372,7 +381,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     (snapshot, variant, service)
   }
 
-  private def assertProjectFails(snapshot: BeautySearchCatalogSnapshot, expectedMessage: String): Unit =
+  private def assertProjectFails(snapshot: BeautyQSearchCatalogSnapshot, expectedMessage: String): Unit =
     project(snapshot) match {
       case Left(failure) =>
         assert(failure.message == expectedMessage)
@@ -390,7 +399,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
       case Nil       => fail("Expected seed to contain variants")
     }
 
-  private def expectedText(snapshot: BeautySearchCatalogSnapshot, document: VariantSearchDocument): ExpectedText = {
+  private def expectedText(snapshot: BeautyQSearchCatalogSnapshot, document: VariantSearchDocument): ExpectedText = {
     val variant = snapshot.masterServiceOfferVariants.find(_.id == document.variantId) match {
       case Some(value) => value
       case None        => fail(s"Expected variant ${document.variantId} to exist")

@@ -3,7 +3,7 @@ package leaderboard.plugins
 import distage.{ModuleDef, TagKK}
 import izumi.functional.bio.Error2
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautyQVariantSearchDocumentMaterialization, BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1}
 import leaderboard.search.elasticsearch.{
   ElasticsearchJsonClient,
@@ -24,7 +24,7 @@ import leaderboard.search.qdrant.{
 }
 import leaderboard.search.semantic.SemanticCandidateBackend
 import leaderboard.search.{BeautySearchBackend, BeautySearchService}
-import leaderboard.seed.BeautyQSeedLoader
+import leaderboard.seed.{BeautyQSeedData, BeautyQSeedLoader}
 import zio.{IO, Runtime, Unsafe}
 
 object BeautySearchCatalogBackendModules {
@@ -141,9 +141,20 @@ object BeautySearchCatalogBackendFactory {
   def fromSeedLoader(loader: BeautyQSeedLoader): Either[QueryFailure, BeautySearchReadyCatalogDocuments] =
     for {
       seed <- loader.load()
-      documents <- BeautyQVariantSearchDocumentMaterialization.project(BeautySearchCatalogSnapshot.toMaterializationSnapshot(BeautySearchCatalogSnapshot.fromSeedData(seed)))
+      documents <- BeautyQVariantSearchDocumentMaterialization.project(materializationSnapshotFromSeedData(seed))
       ready <- BeautySearchReadyCatalogDocuments.from(SeedResourceLoaderSource, documents)
     } yield ready
+
+  private def materializationSnapshotFromSeedData(seed: BeautyQSeedData): BeautyQSearchCatalogSnapshot =
+    BeautyQSearchCatalogSnapshot(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      serviceVariantSchemas      = seed.serviceVariantSchemas,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
 
   def backend[F[+_, +_]: Error2](
     spec: BeautySearchSpec,

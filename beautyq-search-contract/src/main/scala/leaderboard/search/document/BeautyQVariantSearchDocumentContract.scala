@@ -8,12 +8,12 @@ import leaderboard.search.dsl.*
   * constraint/facet resolution helpers `querySchema` needs. This is a
   * contract declaration only - no repository, materialization, seed, ES/Qdrant
   * client, or projection code lives here. `leaderboard.repo.BeautyQCatalogGraph`
-  * still owns repo-backed catalog graph/materialization wiring.
-  * `leaderboard.search.document.BeautyQVariantSearchDocumentSchema` in
-  * `bifunctor-tagless` owns projection from `BeautySearchCatalogSnapshot`
-  * into `VariantSearchDocument` values and delegates its contract-shaped
-  * members (`Fields`, `documentSpec`, `qdrantPayloadSpec`, `querySchema`)
-  * here.
+  * still owns repo-backed catalog graph/materialization wiring, and
+  * `leaderboard.search.document.BeautyQVariantSearchDocumentMaterialization`
+  * in `beautyq-search-materialization` owns projection from
+  * `BeautyQSearchCatalogSnapshot` into `VariantSearchDocument` values,
+  * built on the contract-shaped members (`Fields`, `documentSpec`,
+  * `qdrantPayloadSpec`, `querySchema`) declared here.
   */
 object BeautyQVariantSearchDocumentContract {
   import BeautyQSearchFieldSemantics.*

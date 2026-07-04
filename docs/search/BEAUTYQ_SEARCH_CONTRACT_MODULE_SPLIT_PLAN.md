@@ -1043,6 +1043,44 @@ in `RuntimeEsQdrantScorecardProofSpec.scala` were also corrected to name
 No projection output, repo traversal, seed/bootstrap behavior, route
 behavior, runtime behavior, or test intent changed; `build.sbt` untouched.
 
+## Phase 13 record: legacy snapshot/loader compatibility APIs deleted
+
+Deleted the remaining legacy snapshot/loader compatibility APIs from
+`bifunctor-tagless`: `BeautySearchCatalogSnapshot`,
+`BeautySearchCatalogSnapshotLoader` (`FromRepositories` and
+`SeedScopedFromRepositories`), and `VariantSearchDocumentBuilder` were all
+already gone or removed, and the now-empty
+`VariantSearchDocument.scala` file itself was deleted.
+
+Production `BeautySearchCatalogBackendFactory.fromSeedLoader` in
+`BeautySearchCatalogBackendModules.scala` now builds a
+`BeautyQSearchCatalogSnapshot` directly from `BeautyQSeedData` (via a
+private `materializationSnapshotFromSeedData` helper) and calls
+`BeautyQVariantSearchDocumentMaterialization.project` on it directly,
+without the legacy snapshot adapter.
+
+The former `BeautyQVariantSearchDocumentSchemaSpec.scala` (a legacy
+`BeautySearchCatalogSnapshot`/`toMaterializationSnapshot` conversion proof)
+was renamed and migrated to
+`BeautyQVariantSearchDocumentContractProjectionSpec.scala`, using a local
+`materializationSnapshot` helper that builds a `BeautyQSearchCatalogSnapshot`
+directly and projects it via `BeautyQVariantSearchDocumentMaterialization.project`;
+all expected documents, assertion messages, ids, paths, and failure messages
+are unchanged.
+
+`BeautyQSearchCatalogSnapshot`, `BeautyQSearchCatalogSeedScope`,
+`BeautyQSearchCatalogSnapshotLoader`, `BeautyQCatalogGraph`, and
+`BeautyQVariantSearchDocumentMaterialization` remain in
+`beautyq-search-materialization`, unedited except for stale-comment cleanup
+in `BeautyQCatalogGraph.scala` and `BeautyQVariantSearchDocumentMaterialization.scala`
+that no longer name the deleted `BeautyQVariantSearchDocumentSchema`.
+`BeautyQVariantSearchDocumentContract.scala` in `beautyq-search-contract`
+received the same kind of comment-only correction; its behavior did not
+change.
+
+No projection output, document fields, repo traversal, seed/bootstrap
+behavior, route behavior, or runtime behavior changed; `build.sbt` untouched.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

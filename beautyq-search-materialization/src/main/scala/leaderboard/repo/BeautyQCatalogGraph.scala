@@ -35,8 +35,10 @@ object BeautyQCatalogGraph {
 
   /** Typed graph nodes for the BeautyQ catalog entities. Used only by
     * [[Evidence]] (to build [[CatalogEntity]]/[[CatalogValue]] instances) and
-    * by external callers such as `BeautyQVariantSearchDocumentSchema`. The
-    * pure [[BeautyQCatalogDeclaration.declaration]] never references these.
+    * by external callers such as
+    * `leaderboard.search.document.BeautyQVariantSearchDocumentMaterialization`.
+    * The pure [[BeautyQCatalogDeclaration.declaration]] never references
+    * these.
     */
   object Nodes {
     val category: EntityNode[Category, CategoryId] =

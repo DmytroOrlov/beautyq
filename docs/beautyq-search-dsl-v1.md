@@ -22,7 +22,7 @@ repo model graph                         BeautyQRepoGraph, typed RepoEntity/Repo
                                          Mirror-derived entity metadata
         │
         ▼
-catalog snapshot loading                 BeautySearchCatalogSnapshotLoader.FromRepositories,
+catalog snapshot loading                 BeautyQSearchCatalogSnapshotLoader.FromRepositories,
                                          seed-scoped loading, preorder traversal,
                                          root exclusion, deduplication
         │
@@ -107,9 +107,9 @@ They are not the single source of truth for all search metadata:
   `beautyq-search-contract`), not to `BeautySearchSpecV1`.
 - Projection is owned by `BeautyQVariantSearchDocumentMaterialization.project` (via
   `SearchDocumentProjection`) in `beautyq-search-materialization`, which projects into the
-  contract-shaped `documentSpec` owned by `BeautyQVariantSearchDocumentContract`;
-  `VariantSearchDocumentBuilder` in `bifunctor-tagless` is only a compatibility adapter that delegates
-  directly to it.
+  contract-shaped `documentSpec` owned by `BeautyQVariantSearchDocumentContract`.
+  Production code (`BeautySearchCatalogBackendFactory.fromSeedLoader` in `bifunctor-tagless`)
+  calls it directly on a `BeautyQSearchCatalogSnapshot` built from seed data.
 - Generic ES and Qdrant interpreters consume `SearchDocumentSpec` / `SearchRuntimeSpec` / resolved
   constraints. BeautyQ-specific ES compatibility lives in `BeautyQElasticsearchInterpreterAdapter`.
 
@@ -123,7 +123,7 @@ future declaration owner — see the legacy compatibility retirement matrix in
 `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for its target replacement and removal
 conditions.
 
-`BeautySearchCatalogSnapshotLoader.FromRepositories` and seed-scoped loading go through the shared
+`BeautyQSearchCatalogSnapshotLoader.FromRepositories` and seed-scoped loading go through the shared
 repo graph/loading layer. Existing loading behavior is preserved: preorder category traversal, root
 exclusion, stable parent/child ordering, first-occurrence deduplication, seed-scoped
 missing-entity messages, and search projection semantics.
@@ -133,14 +133,14 @@ missing-entity messages, and search projection semantics.
 `SearchDocumentProjection` is the projection layer between loaded catalog snapshots and indexed
 documents. `BeautyQVariantSearchDocumentMaterialization` in `beautyq-search-materialization` owns
 BeautyQ variant projection; the contract-shaped `SearchDocumentSpec` it projects into is owned by
-`BeautyQVariantSearchDocumentContract`. The production seed-catalog path uses
-`BeautyQVariantSearchDocumentMaterialization.project` directly (via
-`BeautySearchCatalogSnapshot.toMaterializationSnapshot`). The former
-`BeautyQVariantSearchDocumentSchema` compatibility facade in `bifunctor-tagless` has been deleted; its
-last callers now call the materialization projection engine directly.
-
-`VariantSearchDocumentBuilder` remains present in `bifunctor-tagless` as a compatibility adapter
-only, delegating directly to `BeautyQVariantSearchDocumentMaterialization.project`.
+`BeautyQVariantSearchDocumentContract`. The production seed-catalog path
+(`BeautySearchCatalogBackendFactory.fromSeedLoader`) builds a
+`BeautyQSearchCatalogSnapshot` directly from seed data and calls
+`BeautyQVariantSearchDocumentMaterialization.project` on it directly, with no legacy
+snapshot/loader/builder compatibility adapter in between. The former
+`BeautyQVariantSearchDocumentSchema` compatibility facade, `VariantSearchDocumentBuilder`,
+`BeautySearchCatalogSnapshot`, and `BeautySearchCatalogSnapshotLoader` have all been deleted
+from `bifunctor-tagless`.
 
 ## Document field ownership
 
