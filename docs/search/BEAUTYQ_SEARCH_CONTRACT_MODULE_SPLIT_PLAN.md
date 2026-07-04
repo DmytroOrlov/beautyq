@@ -912,6 +912,38 @@ clients, and seed/bootstrap/startup code all remain in `bifunctor-tagless`,
 untouched. No production route activation, fallback, fusion, rerank, default
 route, or Qdrant opt-in behavior changed; `build.sbt` untouched.
 
+## Phase 10d record: Qdrant supplement runtime-binding and launcher plans extracted
+
+Continues Phase 10c: pure descriptions of the Qdrant supplement runtime
+bindings and the managed-local launcher defaults moved into
+`beautyq-search-wiring`, package `leaderboard.plugins`:
+
+- `BeautySearchQdrantSupplementRuntimeBindingPlan` (`vectorSearchSpec`,
+  `lexicalBackendBindingName = "qdrantSupplementLexicalElasticsearch"`,
+  `variantIdField = BeautyQVariantSearchDocumentContract.Fields.variantId`).
+- `BeautySearchLocalQdrantSupplementLauncherPlan` (`vectorSearchSpec`,
+  `servingGate`, `runtimeBindingPlan`), with `VectorSpec` and `default`
+  carrying the exact unchanged managed-local vector spec/serving-gate values.
+
+`BeautySearchQdrantSupplementRuntimeBindingModules` remains in
+`bifunctor-tagless` as the `RuntimeBindingPlan -> ModuleDef` interpreter: its
+new `supplementRuntimeBindings(plan)` overload binds the same four runtime
+bindings as before, and the existing `supplementRuntimeBindings(vectorSearchSpec)`
+delegates to it via `fromVectorSearchSpec`.
+
+`BeautySearchLocalQdrantSupplementLauncherModule` remains in
+`bifunctor-tagless` as the `LauncherPlan -> ModuleDef`/client/bootstrap
+interpreter: its new `managedLocal(plan)` assembles the same includes/bindings
+as before, and existing `VectorSpec`/`managedLocalDefault` delegate to it
+(`DefaultPlan`/`managedLocal(DefaultPlan)`), unchanged in signature and
+behavior.
+
+`BeautySearchApi`, `BeautySearchRouteModules`, `BeautySearchPluginModules`,
+route handlers, HTTP/Tapir, clients, and seed/bootstrap/startup code all
+remain in `bifunctor-tagless`, untouched. No production route activation,
+default route, fallback, fusion, rerank, Qdrant opt-in, client, seed,
+bootstrap, or runtime behavior changed; `build.sbt` untouched.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

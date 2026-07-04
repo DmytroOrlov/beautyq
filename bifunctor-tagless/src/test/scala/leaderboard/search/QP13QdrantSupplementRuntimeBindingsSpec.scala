@@ -11,6 +11,7 @@ import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationModuleSelector,
   BeautySearchQdrantSupplementRuntimeBindingModules,
+  BeautySearchQdrantSupplementRuntimeBindingPlan,
 }
 import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, VariantSearchDocument}
 import leaderboard.search.dsl.{SearchGeoPoint, VectorSearchSpec}
@@ -169,7 +170,11 @@ final class QP13QdrantSupplementRuntimeBindingsSpec extends AnyWordSpec with Htt
   private def runtimeBoundApis(selectedModule: ModuleDef, leaves: LeafDoubles): Set[HttpApi[IO]] = {
     val module = new ModuleDef {
       include(selectedModule)
-      include(BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(testVectorSearchSpec))
+      include(
+        BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(
+          BeautySearchQdrantSupplementRuntimeBindingPlan.fromVectorSearchSpec(testVectorSearchSpec)
+        )
+      )
       make[Async[Task]].fromValue(Async[Task])
       make[ApisProbe].from {
         (beautySearchApi: BeautySearchApi[IO], allHttpApis: Set[HttpApi[IO]]) =>

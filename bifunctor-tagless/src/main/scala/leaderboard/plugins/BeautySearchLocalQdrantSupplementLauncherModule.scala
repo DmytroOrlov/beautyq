@@ -1,7 +1,6 @@
 package leaderboard.plugins
 
 import distage.{ModuleDef, Scene}
-import leaderboard.api.BeautySearchServingGate
 import leaderboard.config.QdrantPortCfg
 import leaderboard.search.document.BeautySearchReadyCatalogDocuments
 import leaderboard.search.dsl.{BeautySearchSpec, VectorSearchSpec}
@@ -14,19 +13,21 @@ import zio.IO
 
 object BeautySearchLocalQdrantSupplementLauncherModule {
   val VectorSpec: VectorSearchSpec =
-    VectorSearchSpec(
-      collectionName = "beauty_variant_v1_local_llama_cpp_embedding_variant_embedding_1024_cosine",
-      vectorName = "variant-embedding",
-      topK = 100,
-      scoreThreshold = None,
-    )
+    BeautySearchLocalQdrantSupplementLauncherPlan.VectorSpec
 
-  def managedLocalDefault: ModuleDef = new ModuleDef {
+  val DefaultPlan: BeautySearchLocalQdrantSupplementLauncherPlan =
+    BeautySearchLocalQdrantSupplementLauncherPlan.default
+
+  def managedLocalDefault: ModuleDef = managedLocal(DefaultPlan)
+
+  // `LauncherPlan -> ModuleDef`/client/bootstrap interpreter: assembles the same includes/bindings as
+  // before, driven by the plan instead of hardcoded values.
+  def managedLocal(plan: BeautySearchLocalQdrantSupplementLauncherPlan): ModuleDef = new ModuleDef {
     tag(Scene.Managed)
 
     include(ElasticsearchClientModules.portConfigured)
-    include(BeautySearchRouteModules.apiQdrantVariantSupplementExplicitOptIn(BeautySearchServingGate.enabledReady))
-    include(BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(VectorSpec))
+    include(BeautySearchRouteModules.apiQdrantVariantSupplementExplicitOptIn(plan.servingGate))
+    include(BeautySearchQdrantSupplementRuntimeBindingModules.supplementRuntimeBindings(plan.runtimeBindingPlan))
 
     make[EmbeddingClient].from {
       (config: LlamaCppEmbeddingClientConfig) =>
@@ -62,7 +63,7 @@ object BeautySearchLocalQdrantSupplementLauncherModule {
           embeddingClient,
           spec,
           catalog,
-          VectorSpec,
+          plan.vectorSearchSpec,
           embeddingConfig.baseUrl,
           log,
         )

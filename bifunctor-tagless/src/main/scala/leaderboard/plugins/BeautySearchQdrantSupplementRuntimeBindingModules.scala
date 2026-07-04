@@ -2,7 +2,7 @@ package leaderboard.plugins
 
 import distage.ModuleDef
 import leaderboard.search.BeautySearchBackend
-import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautySearchReadyCatalogDocuments}
+import leaderboard.search.document.BeautySearchReadyCatalogDocuments
 import leaderboard.search.dsl.{BeautySearchSpec, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSearchBackend}
 import leaderboard.search.embedding.EmbeddingClient
@@ -38,9 +38,15 @@ import zio.IO
 // own documentation states. It is NOT included by `LeaderboardPlugin` default modules, so absent
 // env / `es-only-rollback` graphs never gain a Qdrant edge.
 object BeautySearchQdrantSupplementRuntimeBindingModules {
-  def supplementRuntimeBindings(vectorSearchSpec: VectorSearchSpec): ModuleDef = new ModuleDef {
+  // Convenience selector composing the pure vector-spec -> plan conversion with the plan interpreter.
+  def supplementRuntimeBindings(vectorSearchSpec: VectorSearchSpec): ModuleDef =
+    supplementRuntimeBindings(BeautySearchQdrantSupplementRuntimeBindingPlan.fromVectorSearchSpec(vectorSearchSpec))
+
+  // `RuntimeBindingPlan -> ModuleDef` interpreter: binds the same four runtime bindings the plan
+  // describes.
+  def supplementRuntimeBindings(plan: BeautySearchQdrantSupplementRuntimeBindingPlan): ModuleDef = new ModuleDef {
     // Lexical leg: the qualified ES-backed Beauty search backend.
-    make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").from {
+    make[BeautySearchBackend[IO]].named(plan.lexicalBackendBindingName).from {
       (spec: BeautySearchSpec, client: ElasticsearchJsonClient) =>
         new ElasticsearchSearchBackend(spec, client)
     }
@@ -49,8 +55,8 @@ object BeautySearchQdrantSupplementRuntimeBindingModules {
     make[SemanticCandidateBackend[IO]].from {
       (embeddingClient: EmbeddingClient, qdrantSearchClient: QdrantSearchClient) =>
         new QdrantSemanticCandidateBackend(
-          new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient, BeautyQVariantSearchDocumentContract.Fields.variantId),
-          vectorSearchSpec,
+          new QdrantSemanticCandidateSearch(embeddingClient, qdrantSearchClient, plan.variantIdField),
+          plan.vectorSearchSpec,
         )
     }
 
