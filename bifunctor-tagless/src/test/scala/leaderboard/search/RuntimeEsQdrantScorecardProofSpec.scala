@@ -7,7 +7,7 @@ import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
 import leaderboard.model.Category.CategoryId
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
@@ -25,6 +25,7 @@ import leaderboard.seed.{BeautyQSeedLoader, BeautyQSeedReady}
 import zio.{IO, Runtime, Unsafe, ZIO}
 
 import java.util.UUID
+import scala.annotation.unused
 
 /**
  * H: expand the runtime ES-vs-Qdrant scorecard from the redesigned J 3-query methodology slice to a
@@ -4955,7 +4956,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   }
 
   /** Y0J: join non-empty, trimmed text parts with a single space (test-local stand-in for the
-   * production `normalizeText`, which is private to `VariantSearchDocumentBuilder`). */
+   * production `normalizeText`, which is private to `BeautyQVariantSearchDocumentMaterialization`). */
   private def y0jJoin(parts: String*): String = parts.iterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
 
   private final case class Y0JTextCandidate(
@@ -6974,7 +6975,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
 
   /** Y0C: load the full canonical catalog of variant documents from the real seed-scoped repositories. */
   private def loadCanonicalCatalogDocuments(
-    seedReady: BeautyQSeedReady,
+    @unused seedReady: BeautyQSeedReady,
     categories: Categories[IO],
     services: Services[IO],
     serviceVariantSchemas: ServiceVariantSchemas[IO],
@@ -6983,9 +6984,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     masterServiceOffers: MasterServiceOffers[IO],
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
-    val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
-      seedReady,
-      canonicalSeed,
+    val seedScope = BeautyQSearchCatalogSeedScope(
+      categories                 = canonicalSeed.categories,
+      services                   = canonicalSeed.services,
+      masters                    = canonicalSeed.masters,
+      masterLocations            = canonicalSeed.masterLocations,
+      masterServiceOffers        = canonicalSeed.masterServiceOffers,
+      masterServiceOfferVariants = canonicalSeed.masterServiceOfferVariants,
+    )
+    val loader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedScope,
       categories,
       services,
       serviceVariantSchemas,
@@ -6996,7 +7004,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     )
     for {
       snapshot  <- loader.load()
-      documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
+      documents <- ZIO.fromEither(BeautyQVariantSearchDocumentMaterialization.project(snapshot))
     } yield documents
   }
 
@@ -7277,7 +7285,7 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // Corrupts a deterministic subset of the already-loaded canonical VariantSearchDocument list (by
   // sorted variantId.toString) to measure ES-vs-Qdrant coverage under noisy/incomplete catalog data.
   // Never touches the real seed, repositories, catalog loader, schema, or production projection; the
-  // recompute helpers below mirror BeautyQVariantSearchDocumentSchema's normalizeText/humanize/token
+  // recompute helpers below mirror BeautyQVariantSearchDocumentMaterialization's normalizeText/humanize/token
   // style purely so the test-local documents stay internally consistent (allText/attributeText in
   // sync with the corrupted fields), not to change production behavior.
 
@@ -7328,11 +7336,11 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   private def y0rDirtyNameText(index: Int): String = y0rDirtyNameTexts(index % y0rDirtyNameTexts.size)
   private def y0rDirtyMixedText(index: Int): String = y0rDirtyMixedTexts(index % y0rDirtyMixedTexts.size)
 
-  /** Mirrors [[BeautyQVariantSearchDocumentSchema]]'s private `normalizeText` (trim, drop empty, join). */
+  /** Mirrors [[BeautyQVariantSearchDocumentMaterialization]]'s private `normalizeText` (trim, drop empty, join). */
   private def y0rNormalizeText(parts: Iterable[String]): String =
     parts.iterator.map(_.trim).filter(_.nonEmpty).mkString(" ")
 
-  /** Mirrors [[BeautyQVariantSearchDocumentSchema]]'s private `humanize` (underscore -> space). */
+  /** Mirrors [[BeautyQVariantSearchDocumentMaterialization]]'s private `humanize` (underscore -> space). */
   private def y0rHumanize(value: String): String =
     value.replace('_', ' ')
 

@@ -9,7 +9,7 @@ import leaderboard.api.{BeautySearchApi, HttpApi}
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchRouteModules
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch._
 import leaderboard.seed.BeautyQSeedLoader
@@ -22,8 +22,16 @@ final class ElasticsearchAppStartServingGateSpec extends AnyWordSpec with Beauty
   private val spec = BeautySearchSpecV1.spec
 
   private val seedData = loadSeedData()
-  private val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seedData)
-  private val allDocuments = VariantSearchDocumentBuilder.build(snapshot) match {
+  private val snapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = seedData.categories,
+    services                   = seedData.services,
+    serviceVariantSchemas      = seedData.serviceVariantSchemas,
+    masters                    = seedData.masters,
+    masterLocations            = seedData.masterLocations,
+    masterServiceOffers        = seedData.masterServiceOffers,
+    masterServiceOfferVariants = seedData.masterServiceOfferVariants,
+  )
+  private val allDocuments = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
     case Right(value) => value
     case Left(error)  => throw new RuntimeException(error.message)
   }

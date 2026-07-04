@@ -2,7 +2,7 @@ package leaderboard.search
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{
   ElasticsearchIngestionInterpreter,
@@ -32,8 +32,16 @@ final class ElasticsearchSeedIndexReadinessSpec extends AnyWordSpec {
   private val spec = BeautySearchSpecV1.spec
 
   private val seedData = loadSeedData()
-  private val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seedData)
-  private val allDocuments = VariantSearchDocumentBuilder.build(snapshot) match {
+  private val snapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = seedData.categories,
+    services                   = seedData.services,
+    serviceVariantSchemas      = seedData.serviceVariantSchemas,
+    masters                    = seedData.masters,
+    masterLocations            = seedData.masterLocations,
+    masterServiceOffers        = seedData.masterServiceOffers,
+    masterServiceOfferVariants = seedData.masterServiceOfferVariants,
+  )
+  private val allDocuments = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
     case Right(value) => value
     case Left(error)  => throw new RuntimeException(error.message)
   }

@@ -992,6 +992,57 @@ remain legacy snapshot-loader compatibility APIs in `bifunctor-tagless`.
 No projection output, validation, document fields, tokens, snapshot loading,
 or runtime behavior changed; `build.sbt` untouched.
 
+## Phase 12c record: builder/snapshot test consumers migrated to materialization APIs
+
+Migrated the remaining test-only consumers of legacy builder/snapshot
+compatibility APIs in `bifunctor-tagless` to materialization-owned APIs
+directly, across 22 test files:
+
+- Seed-data document-building consumers (16 files) now build a
+  `BeautyQSearchCatalogSnapshot` from the seed's seven lists directly and
+  call `BeautyQVariantSearchDocumentMaterialization.project(...)`, instead of
+  `BeautySearchCatalogSnapshot.fromSeedData(...)` +
+  `VariantSearchDocumentBuilder.build(...)`.
+- Seed-scoped repo-loader consumers (5 files:
+  `BeautySearchElasticsearchIntegrationSpec.scala`,
+  `QdrantEmbeddingBenchmarkLiveCandidateSupport.scala`,
+  `QdrantSemanticCandidateEvalSpec.scala`,
+  `QdrantExperimentalHybridServiceIntegrationSpec.scala`,
+  `RuntimeEsQdrantScorecardProofSpec.scala`) now construct a
+  `BeautyQSearchCatalogSeedScope` (omitting `serviceVariantSchemas`, which
+  the seed-scoped loading algorithm reads through repositories, not a
+  seed-supplied list) and call
+  `BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories`, instead of
+  the legacy `BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories`.
+- The full-catalog repo-loader consumer (`BeautyQRepoGraphLoaderSpec.scala`)
+  now uses `BeautyQSearchCatalogSnapshotLoader.FromRepositories` directly,
+  with `BeautyQVariantSearchDocumentMaterialization.project` called on the
+  materialization-owned snapshot without a legacy conversion step.
+- `BeautySearchPureSpec.scala`'s `VariantSearchDocumentBuilder`-titled block
+  (testing broken-join projection failure, not builder compatibility
+  behavior) was rewritten to test `BeautyQVariantSearchDocumentMaterialization.project`
+  directly.
+
+After this migration, `VariantSearchDocumentBuilder` had zero real Scala
+usages outside its own definition, so the `VariantSearchDocumentBuilder`
+object was deleted from `VariantSearchDocument.scala`. `BeautySearchCatalogSnapshot`
+and `BeautySearchCatalogSnapshotLoader` were not deleted or narrowed - both
+remain in `bifunctor-tagless` as legacy compatibility APIs.
+`BeautyQVariantSearchDocumentSchemaSpec.scala` still proves the legacy
+`BeautySearchCatalogSnapshot`/`toMaterializationSnapshot` compatibility path,
+while production `VariantSearchDocument.scala` and
+`BeautySearchCatalogBackendModules.scala` keep the legacy snapshot/loader
+compatibility APIs alive. `BeautyQVariantSearchDocumentMaterialization`, `SearchDocumentProjection`,
+`BeautyQSearchCatalogSnapshot`, `BeautyQSearchCatalogSnapshotLoader`,
+`BeautyQSearchCatalogSeedScope`, and `BeautyQCatalogGraph` remain in
+`beautyq-search-materialization`, unedited. Stale test comments referencing
+the deleted `BeautyQVariantSearchDocumentSchema`/`VariantSearchDocumentBuilder`
+in `RuntimeEsQdrantScorecardProofSpec.scala` were also corrected to name
+`BeautyQVariantSearchDocumentMaterialization`.
+
+No projection output, repo traversal, seed/bootstrap behavior, route
+behavior, runtime behavior, or test intent changed; `build.sbt` untouched.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

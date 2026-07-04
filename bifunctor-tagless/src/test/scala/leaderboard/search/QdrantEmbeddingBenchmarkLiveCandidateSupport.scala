@@ -3,7 +3,7 @@ package leaderboard.search
 import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder, VariantSearchDocumentSnapshotProvider}
+import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.qdrant.{
   QdrantClient,
@@ -160,9 +160,16 @@ object QdrantEmbeddingBenchmarkLiveCandidateSupport {
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
     @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
-    val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
-      seedReady,
-      seed,
+    val seedScope = BeautyQSearchCatalogSeedScope(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
+    val loader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedScope,
       categories,
       services,
       serviceVariantSchemas,
@@ -174,7 +181,7 @@ object QdrantEmbeddingBenchmarkLiveCandidateSupport {
 
     for {
       snapshot  <- loader.load()
-      documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
+      documents <- ZIO.fromEither(BeautyQVariantSearchDocumentMaterialization.project(snapshot))
     } yield documents
   }
 

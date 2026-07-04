@@ -3,7 +3,7 @@ package leaderboard.search
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.VectorSearchSpec
 import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.search.startup.{BeautyQManagedLocalSearchBootstrap, BeautyQManagedLocalSearchBootstrapFingerprint}
@@ -30,7 +30,16 @@ final class ManagedLocalSearchBootstrapFingerprintSpec extends AnyWordSpec {
     case Left(error)  => throw new RuntimeException(error.message)
   }
 
-  private val documents = VariantSearchDocumentBuilder.build(BeautySearchCatalogSnapshot.fromSeedData(seed)) match {
+  private val materializationSnapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = seed.categories,
+    services                   = seed.services,
+    serviceVariantSchemas      = seed.serviceVariantSchemas,
+    masters                    = seed.masters,
+    masterLocations            = seed.masterLocations,
+    masterServiceOffers        = seed.masterServiceOffers,
+    masterServiceOfferVariants = seed.masterServiceOfferVariants,
+  )
+  private val documents = BeautyQVariantSearchDocumentMaterialization.project(materializationSnapshot) match {
     case Right(value) => value
     case Left(error)  => throw new RuntimeException(error.message)
   }

@@ -9,7 +9,7 @@ import leaderboard.api.{BeautySearchApi, BeautySearchServingGate, HttpApi}
 import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchRouteModules
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchJsonClient}
 import leaderboard.search.embedding.LlamaCppEmbeddingClient
@@ -50,8 +50,17 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
     case Right(value) => value
     case Left(error)  => throw new RuntimeException(error.message)
   }
+  private val canonicalMaterializationSnapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = canonicalSeed.categories,
+    services                   = canonicalSeed.services,
+    serviceVariantSchemas      = canonicalSeed.serviceVariantSchemas,
+    masters                    = canonicalSeed.masters,
+    masterLocations            = canonicalSeed.masterLocations,
+    masterServiceOffers        = canonicalSeed.masterServiceOffers,
+    masterServiceOfferVariants = canonicalSeed.masterServiceOfferVariants,
+  )
   private val canonicalDocuments: List[VariantSearchDocument] =
-    VariantSearchDocumentBuilder.build(BeautySearchCatalogSnapshot.fromSeedData(canonicalSeed)) match {
+    BeautyQVariantSearchDocumentMaterialization.project(canonicalMaterializationSnapshot) match {
       case Right(value) => value
       case Left(error)  => throw new RuntimeException(error.message)
     }

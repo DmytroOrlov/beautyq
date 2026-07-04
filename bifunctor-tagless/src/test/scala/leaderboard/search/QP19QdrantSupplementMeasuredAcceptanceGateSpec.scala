@@ -17,7 +17,7 @@ import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivationPreflightCommand,
   BeautySearchQdrantSupplementRuntimeBindingModules,
 }
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
@@ -86,8 +86,17 @@ final class QP19QdrantSupplementMeasuredAcceptanceGateSpec
     case Left(error)  => throw new RuntimeException(error.message)
   }
 
+  private val canonicalMaterializationSnapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = canonicalSeed.categories,
+    services                   = canonicalSeed.services,
+    serviceVariantSchemas      = canonicalSeed.serviceVariantSchemas,
+    masters                    = canonicalSeed.masters,
+    masterLocations            = canonicalSeed.masterLocations,
+    masterServiceOffers        = canonicalSeed.masterServiceOffers,
+    masterServiceOfferVariants = canonicalSeed.masterServiceOfferVariants,
+  )
   private val canonicalDocuments: List[VariantSearchDocument] =
-    VariantSearchDocumentBuilder.build(BeautySearchCatalogSnapshot.fromSeedData(canonicalSeed)) match {
+    BeautyQVariantSearchDocumentMaterialization.project(canonicalMaterializationSnapshot) match {
       case Right(value) => value
       case Left(error)  => throw new RuntimeException(error.message)
     }

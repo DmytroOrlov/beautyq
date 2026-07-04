@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization}
 import leaderboard.search.qdrant.QdrantCandidateAssembler
 import leaderboard.search.semantic.SemanticCandidateHit
 import leaderboard.seed.BeautyQSeedLoader
@@ -14,8 +14,16 @@ final class QdrantCandidateAssemblerSpec extends AnyWordSpec {
     case Left(error) => throw new RuntimeException(error.message)
   }
 
-  private val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seedData)
-  private val documents = VariantSearchDocumentBuilder.build(snapshot) match {
+  private val snapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = seedData.categories,
+    services                   = seedData.services,
+    serviceVariantSchemas      = seedData.serviceVariantSchemas,
+    masters                    = seedData.masters,
+    masterLocations            = seedData.masterLocations,
+    masterServiceOffers        = seedData.masterServiceOffers,
+    masterServiceOfferVariants = seedData.masterServiceOfferVariants,
+  )
+  private val documents = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
     case Right(value) => value
     case Left(error) => throw new RuntimeException(error.message)
   }

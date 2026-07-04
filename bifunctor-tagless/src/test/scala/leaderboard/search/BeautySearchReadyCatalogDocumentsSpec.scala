@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedLoader}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -10,8 +10,16 @@ final class BeautySearchReadyCatalogDocumentsSpec extends AnyWordSpec {
   "BeautySearchReadyCatalogDocuments.from" should {
     "return Right and preserve source/documents for non-empty source and non-empty documents" in {
       val seed      = loadSeedData()
-      val snapshot  = BeautySearchCatalogSnapshot.fromSeedData(seed)
-      val docs      = VariantSearchDocumentBuilder.build(snapshot) match {
+      val snapshot  = BeautyQSearchCatalogSnapshot(
+        categories                 = seed.categories,
+        services                   = seed.services,
+        serviceVariantSchemas      = seed.serviceVariantSchemas,
+        masters                    = seed.masters,
+        masterLocations            = seed.masterLocations,
+        masterServiceOffers        = seed.masterServiceOffers,
+        masterServiceOfferVariants = seed.masterServiceOfferVariants,
+      )
+      val docs      = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
         case Right(v) => v
         case Left(e) => throw new RuntimeException(e.message)
       }
@@ -29,8 +37,16 @@ final class BeautySearchReadyCatalogDocumentsSpec extends AnyWordSpec {
 
     "return Left QueryFailure for empty source string" in {
       val seed      = loadSeedData()
-      val snapshot  = BeautySearchCatalogSnapshot.fromSeedData(seed)
-      val docs      = VariantSearchDocumentBuilder.build(snapshot) match {
+      val snapshot  = BeautyQSearchCatalogSnapshot(
+        categories                 = seed.categories,
+        services                   = seed.services,
+        serviceVariantSchemas      = seed.serviceVariantSchemas,
+        masters                    = seed.masters,
+        masterLocations            = seed.masterLocations,
+        masterServiceOffers        = seed.masterServiceOffers,
+        masterServiceOfferVariants = seed.masterServiceOfferVariants,
+      )
+      val docs      = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
         case Right(v) => v
         case Left(e) => throw new RuntimeException(e.message)
       }
@@ -42,8 +58,16 @@ final class BeautySearchReadyCatalogDocumentsSpec extends AnyWordSpec {
 
     "return Left QueryFailure for whitespace-only source string" in {
       val seed      = loadSeedData()
-      val snapshot  = BeautySearchCatalogSnapshot.fromSeedData(seed)
-      val docs      = VariantSearchDocumentBuilder.build(snapshot) match {
+      val snapshot  = BeautyQSearchCatalogSnapshot(
+        categories                 = seed.categories,
+        services                   = seed.services,
+        serviceVariantSchemas      = seed.serviceVariantSchemas,
+        masters                    = seed.masters,
+        masterLocations            = seed.masterLocations,
+        masterServiceOffers        = seed.masterServiceOffers,
+        masterServiceOfferVariants = seed.masterServiceOfferVariants,
+      )
+      val docs      = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
         case Right(v) => v
         case Left(e) => throw new RuntimeException(e.message)
       }

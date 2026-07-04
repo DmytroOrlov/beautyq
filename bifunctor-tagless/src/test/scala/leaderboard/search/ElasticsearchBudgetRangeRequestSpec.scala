@@ -2,7 +2,7 @@ package leaderboard.search
 
 import leaderboard.model.QueryFailure
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchConstraint}
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -23,7 +23,16 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
 
   private val documents: List[VariantSearchDocument] = {
     val seedData = orFail("load BeautyQ seed", new BeautyQSeedLoader.ResourceLoader().load())
-    orFail("build variant documents", VariantSearchDocumentBuilder.build(BeautySearchCatalogSnapshot.fromSeedData(seedData)))
+    val snapshot = BeautyQSearchCatalogSnapshot(
+      categories                 = seedData.categories,
+      services                   = seedData.services,
+      serviceVariantSchemas      = seedData.serviceVariantSchemas,
+      masters                    = seedData.masters,
+      masterLocations            = seedData.masterLocations,
+      masterServiceOffers        = seedData.masterServiceOffers,
+      masterServiceOfferVariants = seedData.masterServiceOfferVariants,
+    )
+    orFail("build variant documents", BeautyQVariantSearchDocumentMaterialization.project(snapshot))
   }
 
   "ElasticsearchSearchRequestInterpreter budget range" should {

@@ -3,7 +3,7 @@ package leaderboard.search
 import io.circe.{Json, JsonObject}
 import leaderboard.model.*
 import leaderboard.search.dsl.*
-import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.embedding.EmbeddingClient
@@ -28,8 +28,16 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     case Left(error) => throw new RuntimeException(error.message)
   }
 
-  private val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seedData)
-  private val documents = VariantSearchDocumentBuilder.build(snapshot) match {
+  private val snapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = seedData.categories,
+    services                   = seedData.services,
+    serviceVariantSchemas      = seedData.serviceVariantSchemas,
+    masters                    = seedData.masters,
+    masterLocations            = seedData.masterLocations,
+    masterServiceOffers        = seedData.masterServiceOffers,
+    masterServiceOfferVariants = seedData.masterServiceOfferVariants,
+  )
+  private val documents = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
     case Right(value) => value
     case Left(error) => throw new RuntimeException(error.message)
   }
@@ -984,11 +992,11 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     }
   }
 
-  "VariantSearchDocumentBuilder" should {
+  "BeautyQVariantSearchDocumentMaterialization.project" should {
     "fail when joins are broken" in {
       val brokenServiceId = snapshot.services.head.id
       val brokenSnapshot = snapshot.copy(services = snapshot.services.filterNot(_.id == brokenServiceId))
-      val result = VariantSearchDocumentBuilder.build(brokenSnapshot)
+      val result = BeautyQVariantSearchDocumentMaterialization.project(brokenSnapshot)
       assert(result.isLeft)
       assert(result.left.exists(_.message.contains("missing Service")))
     }

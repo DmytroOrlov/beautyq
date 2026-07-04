@@ -2,7 +2,7 @@ package leaderboard.search
 
 import leaderboard.model.QueryFailure
 import leaderboard.plugins.BeautySearchCatalogBackendFactory
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.inmemory.InMemorySearchBackend
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -50,8 +50,16 @@ final class BeautySearchCatalogBackendReadinessSpec extends AnyWordSpec {
 
   private def loadReadyCatalogDocuments(): BeautySearchReadyCatalogDocuments = {
     val seed      = loadSeedData()
-    val snapshot  = BeautySearchCatalogSnapshot.fromSeedData(seed)
-    val documents = VariantSearchDocumentBuilder.build(snapshot) match {
+    val snapshot  = BeautyQSearchCatalogSnapshot(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      serviceVariantSchemas      = seed.serviceVariantSchemas,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
+    val documents = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
       case Right(value) => value
       case Left(error) => throw new RuntimeException(error.message)
     }

@@ -17,7 +17,7 @@ import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightComman
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus.ReadyToEnable
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
 import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingModules
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchJsonClient}
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
@@ -65,8 +65,17 @@ final class BeautySearchQdrantSupplementProvenanceSpec
     case Left(error)  => throw new RuntimeException(error.message)
   }
 
+  private val canonicalMaterializationSnapshot = BeautyQSearchCatalogSnapshot(
+    categories                 = canonicalSeed.categories,
+    services                   = canonicalSeed.services,
+    serviceVariantSchemas      = canonicalSeed.serviceVariantSchemas,
+    masters                    = canonicalSeed.masters,
+    masterLocations            = canonicalSeed.masterLocations,
+    masterServiceOffers        = canonicalSeed.masterServiceOffers,
+    masterServiceOfferVariants = canonicalSeed.masterServiceOfferVariants,
+  )
   private val canonicalDocuments: List[VariantSearchDocument] =
-    VariantSearchDocumentBuilder.build(BeautySearchCatalogSnapshot.fromSeedData(canonicalSeed)) match {
+    BeautyQVariantSearchDocumentMaterialization.project(canonicalMaterializationSnapshot) match {
       case Right(value) => value
       case Left(error)  => throw new RuntimeException(error.message)
     }

@@ -2,7 +2,7 @@ package leaderboard.repo
 
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchCatalogSnapshotLoader}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
 
@@ -37,7 +37,7 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
         sys.error(error.message)
     }
 
-  private val loader = new BeautySearchCatalogSnapshotLoader.FromRepositories[IO](
+  private val loader = new BeautyQSearchCatalogSnapshotLoader.FromRepositories[IO](
     new StubCategories,
     new StubServices,
     new StubServiceVariantSchemas,
@@ -118,7 +118,7 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
     }
 
     "produce a snapshot the document schema can fully project" in {
-      BeautyQVariantSearchDocumentMaterialization.project(BeautySearchCatalogSnapshot.toMaterializationSnapshot(snapshot)) match {
+      BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
         case Right(documents) =>
           assert(documents.map(_.variantId) == List(variantA.id, variantB.id))
           assert(documents.map(_.serviceId) == List(serviceA.id, serviceB.id))

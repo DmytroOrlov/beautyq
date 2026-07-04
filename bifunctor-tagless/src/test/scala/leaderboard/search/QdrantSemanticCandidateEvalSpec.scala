@@ -6,7 +6,7 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import leaderboard.search.eval.BeautySearchEvalQuery
 import leaderboard.search.qdrant.{
@@ -146,9 +146,16 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
     @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
-    val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
-      seedReady,
-      seed,
+    val seedScope = BeautyQSearchCatalogSeedScope(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
+    val loader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedScope,
       categories,
       services,
       serviceVariantSchemas,
@@ -160,7 +167,7 @@ final class QdrantSemanticCandidateEvalSpec extends LeaderboardTest with ProdTes
 
     for {
       snapshot <- loader.load()
-      documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
+      documents <- ZIO.fromEither(BeautyQVariantSearchDocumentMaterialization.project(snapshot))
     } yield documents
   }
 

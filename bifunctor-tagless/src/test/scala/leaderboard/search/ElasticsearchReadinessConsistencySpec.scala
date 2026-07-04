@@ -3,7 +3,7 @@ package leaderboard.search
 import io.circe.Json
 import io.circe.syntax._
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{BeautySearchCatalogSnapshot, BeautySearchReadyCatalogDocuments, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments}
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.{
   ElasticsearchLifecycleStatusResponse,
@@ -241,8 +241,16 @@ final class ElasticsearchReadinessConsistencySpec extends AnyWordSpec {
       case Right(value) => value
       case Left(error)  => throw new RuntimeException(error.message)
     }
-    val snapshot = BeautySearchCatalogSnapshot.fromSeedData(seedData)
-    val allDocuments = VariantSearchDocumentBuilder.build(snapshot) match {
+    val snapshot = BeautyQSearchCatalogSnapshot(
+      categories                 = seedData.categories,
+      services                   = seedData.services,
+      serviceVariantSchemas      = seedData.serviceVariantSchemas,
+      masters                    = seedData.masters,
+      masterLocations            = seedData.masterLocations,
+      masterServiceOffers        = seedData.masterServiceOffers,
+      masterServiceOfferVariants = seedData.masterServiceOfferVariants,
+    )
+    val allDocuments = BeautyQVariantSearchDocumentMaterialization.project(snapshot) match {
       case Right(value) => value
       case Left(error)  => throw new RuntimeException(error.message)
     }

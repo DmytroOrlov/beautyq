@@ -6,7 +6,7 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchIntentVocabulary, VectorDistance, VectorSearchSpec}
 import leaderboard.search.hybrid.ExperimentalBeautySearchService
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
@@ -199,9 +199,16 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
     masterServiceOffers: MasterServiceOffers[IO],
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
   ): IO[QueryFailure, List[VariantSearchDocument]] = {
-    val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
-      seedReady,
-      seed,
+    val seedScope = BeautyQSearchCatalogSeedScope(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
+    val loader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedScope,
       categories,
       services,
       serviceVariantSchemas,
@@ -213,7 +220,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
 
     for {
       snapshot <- loader.load()
-      documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
+      documents <- ZIO.fromEither(BeautyQVariantSearchDocumentMaterialization.project(snapshot))
     } yield documents
   }
 

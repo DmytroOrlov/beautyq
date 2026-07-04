@@ -64,11 +64,6 @@ object BeautySearchCatalogSnapshot {
     )
 }
 
-object VariantSearchDocumentBuilder {
-  def build(snapshot: BeautySearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] =
-    BeautyQVariantSearchDocumentMaterialization.project(BeautySearchCatalogSnapshot.toMaterializationSnapshot(snapshot))
-}
-
 trait BeautySearchCatalogSnapshotLoader[F[_, _]] {
   def load(): F[QueryFailure, BeautySearchCatalogSnapshot]
 }

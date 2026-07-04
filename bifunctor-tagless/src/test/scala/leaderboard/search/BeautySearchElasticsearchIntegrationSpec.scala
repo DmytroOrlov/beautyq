@@ -6,7 +6,7 @@ import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.ElasticsearchPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
-import leaderboard.search.document.{BeautySearchCatalogSnapshotLoader, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization}
 import leaderboard.search.BeautySearchEvalInventory
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
@@ -581,9 +581,16 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
     masterServiceOfferVariants: MasterServiceOfferVariants[IO],
     @unused seedReady: BeautyQSeedReady,
   ): IO[QueryFailure, List[leaderboard.search.document.VariantSearchDocument]] = {
-    val loader = new BeautySearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
-      seedReady,
-      seed,
+    val seedScope = BeautyQSearchCatalogSeedScope(
+      categories                 = seed.categories,
+      services                   = seed.services,
+      masters                    = seed.masters,
+      masterLocations            = seed.masterLocations,
+      masterServiceOffers        = seed.masterServiceOffers,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants,
+    )
+    val loader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+      seedScope,
       categories,
       services,
       serviceVariantSchemas,
@@ -595,7 +602,7 @@ final class BeautySearchElasticsearchIntegrationSpec extends LeaderboardTest wit
 
     for {
       snapshot <- loader.load()
-      documents <- ZIO.fromEither(VariantSearchDocumentBuilder.build(snapshot))
+      documents <- ZIO.fromEither(BeautyQVariantSearchDocumentMaterialization.project(snapshot))
       payload = BeautyQElasticsearchInterpreterAdapter.bulkPayload(spec, documents)
       _ <- client.postNdjson(s"/${spec.variantDocument.indexName}/_bulk", payload)
       _ <- client.post(s"/${spec.variantDocument.indexName}/_refresh")
