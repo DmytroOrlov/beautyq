@@ -33,13 +33,8 @@ object BeautyQSearchDomainSpecReadiness {
         "document-field-kind-mapping",
         "runtime-capabilities",
         "response-policy",
+        "intent-section-mapping",
       ),
-      pendingDecisions = List(
-        BeautyQSearchDomainSpecPendingDecision(
-          id = "intent-section-mapping",
-          section = "intent",
-          reason = "IntentSection requires generic vocabularies, vocabularyGroups, and noiseControls; BeautyQ currently exposes supported languages plus a search-core SearchIntentVocabulary, but no source-owned generic IntentSection mapping yet.",
-        ),
-      ),
+      pendingDecisions = Nil,
     )
 }

@@ -75,8 +75,9 @@ final class BeautyQSearchEvaluationContractSpec extends AnyWordSpec {
       assert(metrics.contains("m11_backend_candidate_inputs_ready"))
     }
 
-    "not declare a full SearchDomainSpec here" in {
-      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
+    "never activate production routing regardless of full SearchDomainSpec declaration" in {
+      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == true)
+      assert(BeautyQSearchEvaluationContract.section.productionRoutingEffect == EvalProductionRoutingEffect.None)
     }
 
     "declare the same backend ids as BeautyQSearchRuntimeContract" in {

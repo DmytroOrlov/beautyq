@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.contract
 
-import leaderboard.search.contract.{SearchBackendId, SearchBackendKind, SearchFieldKind}
+import leaderboard.search.contract.{SearchBackendId, SearchBackendKind, SearchDomainId, SearchFieldKind}
 import leaderboard.search.document.BeautyQVariantSearchDocumentContract
 import leaderboard.search.dsl.{BeautyQSearchIntentVocabulary, BeautyQSearchPresentation, BeautySearchSpecV1}
 import org.scalatest.wordspec.AnyWordSpec
@@ -12,8 +12,8 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.domainId == "beautyq")
     }
 
-    "label itself explicitly as not a complete SearchDomainSpec" in {
-      assert(BeautyQSearchDomainContract.label.contains("not complete SearchDomainSpec"))
+    "label itself without claiming an incomplete SearchDomainSpec" in {
+      assert(!BeautyQSearchDomainContract.label.contains("not complete SearchDomainSpec"))
     }
 
     "reference the same catalog declaration as BeautyQCatalogDeclaration, unmodified" in {
@@ -75,8 +75,8 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.evaluationDeclared == true)
     }
 
-    "declare no full SearchDomainSpec value yet" in {
-      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
+    "declare the full generic SearchDomainSpec value" in {
+      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == true)
     }
 
     "reference the same result unit as BeautyQSearchResultUnitContract" in {
@@ -259,7 +259,54 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(details.serviceIntentGroupFieldName == "serviceId")
     }
 
-    "record catalog, evaluation, document-result-unit, intent-languages, document-field-kind-mapping, runtime-capabilities, and response-policy as the ready readiness sections" in {
+    "reference the same intent section as BeautyQSearchIntentSectionContract" in {
+      assert(BeautyQSearchDomainContract.intentSection eq BeautyQSearchIntentSectionContract.section)
+    }
+
+    "reference the same supported languages in the intent section" in {
+      assert(BeautyQSearchDomainContract.intentSection.languages eq BeautyQSearchLanguageContract.supported)
+      assert(BeautyQSearchDomainContract.intentSection.languages.map(_.code) == List("de", "en", "ru"))
+    }
+
+    "declare non-empty generic vocabularies including known structured alias terms" in {
+      assert(BeautyQSearchDomainContract.intentSection.vocabularies.nonEmpty)
+      val allTerms = BeautyQSearchDomainContract.intentSection.vocabularies.flatMap(_.terms).toSet
+      assert(allTerms.contains("маникюр"))
+      assert(allTerms.contains("lashes"))
+    }
+
+    "declare empty synonyms for every generic vocabulary" in {
+      assert(BeautyQSearchDomainContract.intentSection.vocabularies.forall(_.synonyms == Map.empty))
+    }
+
+    "group structured-alias vocabularies under the structured-aliases group" in {
+      assert(BeautyQSearchIntentSectionContract.structuredAliasVocabularyGroup.name == "structured-aliases")
+      assert(BeautyQSearchIntentSectionContract.structuredAliasVocabularyGroup.vocabularies == BeautyQSearchIntentSectionContract.structuredAliasVocabularies)
+    }
+
+    "declare non-empty noise controls including a known excluded term" in {
+      assert(BeautyQSearchDomainContract.intentSection.noiseControls.nonEmpty)
+      val excludedTerms = BeautyQSearchDomainContract.intentSection.noiseControls.flatMap(_.excludedTerms).toSet
+      assert(excludedTerms.contains("не татуаж"))
+    }
+
+    "reference the existing document/result-unit/field slices in the generic document section" in {
+      assert(BeautyQSearchDomainContract.documentSection.document eq BeautyQVariantSearchDocumentContract.documentSpec)
+      assert(BeautyQSearchDomainContract.documentSection.resultUnit eq BeautyQSearchResultUnitContract.variant)
+      assert(BeautyQSearchDomainContract.documentSection.fields eq BeautyQSearchDocumentFieldContract.fields)
+    }
+
+    "assemble the full generic SearchDomainSpec from contract-owned sections" in {
+      assert(BeautyQSearchDomainContract.searchDomainSpec.id == SearchDomainId("beautyq"))
+      assert(BeautyQSearchDomainContract.searchDomainSpec.catalog eq BeautyQCatalogSection.section)
+      assert(BeautyQSearchDomainContract.searchDomainSpec.document eq BeautyQSearchDomainContract.documentSection)
+      assert(BeautyQSearchDomainContract.searchDomainSpec.intent eq BeautyQSearchIntentSectionContract.section)
+      assert(BeautyQSearchDomainContract.searchDomainSpec.runtime eq BeautyQSearchRuntimeContract.section)
+      assert(BeautyQSearchDomainContract.searchDomainSpec.response eq BeautyQSearchResponsePolicyContract.section)
+      assert(BeautyQSearchDomainContract.searchDomainSpec.evaluation eq BeautyQSearchEvaluationContract.section)
+    }
+
+    "record catalog, evaluation, document-result-unit, intent-languages, document-field-kind-mapping, runtime-capabilities, response-policy, and intent-section-mapping as the ready readiness sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections ==
           List(
@@ -270,28 +317,13 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
             "document-field-kind-mapping",
             "runtime-capabilities",
             "response-policy",
+            "intent-section-mapping",
           )
       )
     }
 
-    "record the exact pending decision ids" in {
-      assert(
-        BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
-          List("intent-section-mapping")
-      )
-    }
-
-    "record the exact pending decision sections" in {
-      assert(
-        BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.section) ==
-          List("intent")
-      )
-    }
-
-    "explain why full SearchDomainSpec is still not declared" in {
-      val reason = BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.head.reason
-      assert(reason.contains("IntentSection"))
-      assert(reason.contains("SearchIntentVocabulary"))
+    "record no pending decisions" in {
+      assert(BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions == Nil)
     }
 
     "derive fullSearchDomainSpecDeclared from the readiness value" in {
@@ -301,8 +333,8 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       )
     }
 
-    "keep fullSearchDomainSpecDeclared false via non-empty pending decisions" in {
-      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
+    "keep fullSearchDomainSpecDeclared true via empty pending decisions" in {
+      assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == true)
     }
 
     "be fully usable from values available in beautyq-search-contract alone, with no repository/materialization/client construction" in {

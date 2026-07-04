@@ -28,6 +28,39 @@ final class BeautyQIntentContractSpec extends AnyWordSpec {
     }
   }
 
+  "BeautyQSearchIntentSectionContract" should {
+    "reference the same supported languages as BeautyQSearchLanguageContract" in {
+      assert(BeautyQSearchIntentSectionContract.section.languages eq BeautyQSearchLanguageContract.supported)
+    }
+
+    "declare non-empty structured-alias vocabularies" in {
+      assert(BeautyQSearchIntentSectionContract.structuredAliasVocabularies.nonEmpty)
+    }
+
+    "include known structured alias terms" in {
+      val allTerms = BeautyQSearchIntentSectionContract.structuredAliasVocabularies.flatMap(_.terms).toSet
+      assert(allTerms.contains("маникюр"))
+      assert(allTerms.contains("lashes"))
+    }
+
+    "declare empty synonyms for every vocabulary" in {
+      assert(BeautyQSearchIntentSectionContract.structuredAliasVocabularies.forall(_.synonyms == Map.empty))
+    }
+
+    "group all structured-alias vocabularies under structuredAliasVocabularyGroup" in {
+      assert(BeautyQSearchIntentSectionContract.structuredAliasVocabularyGroup.vocabularies == BeautyQSearchIntentSectionContract.structuredAliasVocabularies)
+    }
+
+    "declare non-empty noise controls" in {
+      assert(BeautyQSearchIntentSectionContract.noiseControls.nonEmpty)
+    }
+
+    "include a known noise-control excluded term" in {
+      val excludedTerms = BeautyQSearchIntentSectionContract.noiseControls.flatMap(_.excludedTerms).toSet
+      assert(excludedTerms.contains("не татуаж"))
+    }
+  }
+
   "SearchConstraint" should {
     "round-trip ServiceAny through its circe codec" in {
       val constraint: SearchConstraint = SearchConstraint.ServiceAny(Set("Маникюр"))
