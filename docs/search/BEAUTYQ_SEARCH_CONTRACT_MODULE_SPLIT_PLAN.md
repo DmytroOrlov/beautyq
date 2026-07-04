@@ -890,6 +890,28 @@ while the route wiring stays in `bifunctor-tagless`:
   binding modules, and HTTP/tapir wiring all still depend on app/http/parser/
   backend/client/seed surfaces that stay in `bifunctor-tagless` for now.
 
+## Phase 10c record: pure Qdrant supplement route-selection policy extracted
+
+Continues Phase 10b: the pure activation-to-route-selection policy moved into
+`beautyq-search-wiring` as `BeautySearchQdrantSupplementRouteSelection` (an
+`EsOnlyRollbackRoute`/`QdrantSupplementNotReadyRoute`/`QdrantSupplementReadyRoute`
+ADT carrying `qdrantSupplementRouteSelected`/`servingGate`) and
+`BeautySearchQdrantSupplementRouteSelectionPolicy` (`selectionFor`,
+`selectionForOperatorValue`), package `leaderboard.plugins`.
+
+`BeautySearchQdrantSupplementActivationModuleSelector` remains in
+`bifunctor-tagless` as the `RouteSelection -> ModuleDef` interpreter only: its
+new `moduleForRouteSelection` interprets a pure route selection into the
+existing `BeautySearchRouteModules` module, and its existing public
+`moduleFor`/`moduleForOperatorValue` methods now compose the moved policy with
+that interpreter, unchanged in signature and behavior.
+
+`BeautySearchApi`, `BeautySearchRouteModules`, `BeautySearchPluginModules`,
+launcher/runtime-binding/catalog-backend modules, HTTP/Tapir handlers,
+clients, and seed/bootstrap/startup code all remain in `bifunctor-tagless`,
+untouched. No production route activation, fallback, fusion, rerank, default
+route, or Qdrant opt-in behavior changed; `build.sbt` untouched.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

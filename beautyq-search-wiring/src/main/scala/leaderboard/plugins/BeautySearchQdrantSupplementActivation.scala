@@ -12,11 +12,13 @@ package leaderboard.plugins
 //   - QdrantSupplementReady    -> the same explicit no-worsening supplement module wired with
 //                                 `BeautySearchServingGate.enabledReady`: the selected service serves.
 //
-// This is a pure state ADT only. It carries no route/module mapping itself: mapping an activation
-// state to the corresponding `distage.ModuleDef` lives in
-// `BeautySearchQdrantSupplementActivationModuleSelector` in `bifunctor-tagless`, since that mapping
-// depends on `BeautySearchRouteModules` and the app graph, which stay outside this contract/wiring
-// module. This state ADT does NOT change the default `/beauty-search` route, is NOT included by
+// This is a pure state ADT only. It carries no route/module mapping itself: the pure
+// activation-to-route-selection policy lives in `BeautySearchQdrantSupplementRouteSelectionPolicy`,
+// alongside this ADT in `beautyq-search-wiring`; interpreting a route selection into the
+// corresponding `distage.ModuleDef` still lives in
+// `BeautySearchQdrantSupplementActivationModuleSelector` in `bifunctor-tagless`, since that
+// interpretation depends on `BeautySearchRouteModules` and the app graph, which stay outside this
+// contract/wiring module. This state ADT does NOT change the default `/beauty-search` route, is NOT included by
 // `LeaderboardPlugin`, does NOT parse environment/config/CLI, creates no runtime role, wires no Qdrant
 // client/lifecycle/startup indexing, and never silently falls back from Qdrant to ES. Rollback is the
 // explicit `EsOnlyRollback` selection back to the ES-only route, not a runtime fallback.
