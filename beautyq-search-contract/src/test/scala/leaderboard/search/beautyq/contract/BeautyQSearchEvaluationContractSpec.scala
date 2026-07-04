@@ -78,5 +78,12 @@ final class BeautyQSearchEvaluationContractSpec extends AnyWordSpec {
     "not declare a full SearchDomainSpec here" in {
       assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == false)
     }
+
+    "declare the same backend ids as BeautyQSearchRuntimeContract" in {
+      val evaluationBackendIds = BeautyQSearchEvaluationContract.section.backendExpectations.map(_.backendId)
+      val runtimeBackendIds = BeautyQSearchRuntimeContract.section.declarations.map(_.backendId)
+      assert(evaluationBackendIds.forall(runtimeBackendIds.contains))
+      assert(runtimeBackendIds.forall(evaluationBackendIds.contains))
+    }
   }
 }

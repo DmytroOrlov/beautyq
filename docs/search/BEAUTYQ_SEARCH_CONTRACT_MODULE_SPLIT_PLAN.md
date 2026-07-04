@@ -1,6 +1,6 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 7b (BeautyQ variant document projection engine slice), Phase 7c (BeautyQ catalog snapshot loaders slice), and Phase 7d (variant projection consumes materialization-owned catalog snapshots) recorded, alongside Phase 8d (static/offline evaluation contract slice), Phase 8e (full `SearchDomainSpec` readiness blockers made explicit via `BeautyQSearchDomainSpecReadiness`), Phase 8f (BeautyQ variant result unit declared via `BeautyQSearchResultUnitContract`, resolving the `document-result-unit` blocker), Phase 8g (BeautyQ supported search languages `de`/`en`/`ru` declared via `BeautyQSearchLanguageContract`, resolving the `intent-languages` blocker), Phase 8h (BeautyQ generic document fields declared via `BeautyQSearchDocumentFieldContract`, resolving the `document-field-kind-mapping` blocker), Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautyQVariantSearchDocumentMaterialization` (the actual projection engine) now lives in `beautyq-search-materialization`, alongside `BeautyQCatalogGraph`, and exposes both a seven-list `project(...)` and a snapshot-level `project(BeautyQSearchCatalogSnapshot)` overload; `BeautyQVariantSearchDocumentSchema` in `bifunctor-tagless` is now a thin compatibility facade delegating to the snapshot-level overload via `BeautySearchCatalogSnapshot.toMaterializationSnapshot`. The actual full-catalog and seed-scoped repo-backed snapshot loading algorithms (`BeautyQSearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories`, over the seed-free `BeautyQSearchCatalogSnapshot`/`BeautyQSearchCatalogSeedScope`) now live in `beautyq-search-materialization` too; legacy `BeautySearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories` in `bifunctor-tagless` are now compatibility facades delegating to them and converting back via the companion-owned `BeautySearchCatalogSnapshot.fromMaterializationSnapshot`, while legacy `BeautySearchCatalogSnapshot`/`fromSeedData` and `BeautyQSeedData`/`BeautyQSeedLoader`/`BeautyQSeedInserter`/`BeautyQSeedReady` still remain in `bifunctor-tagless`. `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates catalog/document/intent/runtime/response/evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`); `BeautySearchApi`, route/plugin modules, launcher modules, clients, bootstrap/seed code, JSON/resource parsing, the eval runtime harness/backend runners, and repositories remain in `bifunctor-tagless` pending deeper movement.
+Status: Phase 7b (BeautyQ variant document projection engine slice), Phase 7c (BeautyQ catalog snapshot loaders slice), and Phase 7d (variant projection consumes materialization-owned catalog snapshots) recorded, alongside Phase 8d (static/offline evaluation contract slice), Phase 8e (full `SearchDomainSpec` readiness blockers made explicit via `BeautyQSearchDomainSpecReadiness`), Phase 8f (BeautyQ variant result unit declared via `BeautyQSearchResultUnitContract`, resolving the `document-result-unit` blocker), Phase 8g (BeautyQ supported search languages `de`/`en`/`ru` declared via `BeautyQSearchLanguageContract`, resolving the `intent-languages` blocker), Phase 8h (BeautyQ generic document fields declared via `BeautyQSearchDocumentFieldContract`, resolving the `document-field-kind-mapping` blocker), Phase 8i (BeautyQ runtime/response sections declared via `BeautyQSearchRuntimeContract`/`BeautyQSearchResponsePolicyContract`, resolving the `runtime-capabilities`/`response-policy` blockers; only `intent-section-mapping` remains pending), Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautyQVariantSearchDocumentMaterialization` (the actual projection engine) now lives in `beautyq-search-materialization`, alongside `BeautyQCatalogGraph`, and exposes both a seven-list `project(...)` and a snapshot-level `project(BeautyQSearchCatalogSnapshot)` overload; `BeautyQVariantSearchDocumentSchema` in `bifunctor-tagless` is now a thin compatibility facade delegating to the snapshot-level overload via `BeautySearchCatalogSnapshot.toMaterializationSnapshot`. The actual full-catalog and seed-scoped repo-backed snapshot loading algorithms (`BeautyQSearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories`, over the seed-free `BeautyQSearchCatalogSnapshot`/`BeautyQSearchCatalogSeedScope`) now live in `beautyq-search-materialization` too; legacy `BeautySearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories` in `bifunctor-tagless` are now compatibility facades delegating to them and converting back via the companion-owned `BeautySearchCatalogSnapshot.fromMaterializationSnapshot`, while legacy `BeautySearchCatalogSnapshot`/`fromSeedData` and `BeautyQSeedData`/`BeautyQSeedLoader`/`BeautyQSeedInserter`/`BeautyQSeedReady` still remain in `bifunctor-tagless`. `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates catalog/document/intent/runtime/response/evaluation contract slices (`evaluationDeclared = true`) but is still explicitly not a full `SearchDomainSpec` (`fullSearchDomainSpecDeclared = false`); `BeautySearchApi`, route/plugin modules, launcher modules, clients, bootstrap/seed code, JSON/resource parsing, the eval runtime harness/backend runners, and repositories remain in `bifunctor-tagless` pending deeper movement.
 
 ## Non-negotiable premise
 
@@ -1031,6 +1031,45 @@ now has ready sections `catalog`, `evaluation`, `document-result-unit`,
 `intent-languages`, and `document-field-kind-mapping`. Remaining blockers are
 `runtime-capabilities` and `response-policy`. `fullSearchDomainSpecDeclared`
 remains `false`.
+
+No full `SearchDomainSpec` value was constructed, and no
+runtime/repo/materialization/seed/app/client behavior moved; `build.sbt`
+untouched.
+
+## Phase 8i record: BeautyQ runtime and response sections declared
+
+Added `BeautyQSearchRuntimeContract` in `beautyq-search-contract`:
+`section: RuntimeSection` declares Elasticsearch as full-text/facet/geo
+capable and not semantic-vector capable, and Qdrant as semantic-vector
+capable and not full-text/facet/geo capable - matching
+`ElasticsearchSearchRequestInterpreter`'s source-confirmed ES support and
+Qdrant's current vector/semantic candidate/supplement role.
+
+Added `BeautyQSearchResponsePolicyContract` in `beautyq-search-contract`:
+`section: ResponseSection` declares generic response policy. Generic
+grouping is intentionally `None`, since BeautyQ has two component-specific
+grouping fields (provider carousel groups by `masterLocationId`,
+service-intent carousel groups by `serviceId`) and generic `GroupingPolicy`
+has only one grouping slot; the component-specific fields are preserved in
+`BeautyQSearchResponsePolicyDetails` instead. Generic carousel `maxItems`
+uses the variant result-unit limit (`variantSize = 10`); provider/
+service-intent carousel limits remain BeautyQ-specific details. Generic
+facets derive from `BeautySearchSpecV1.spec.facetSpec.fields`; inferred
+filters are described from `FacetSpec` enabled/threshold/min-count values.
+Presentation labels are empty and debug flags are `false`, since no generic
+source-owned labels/debug flags exist. `BeautyQSearchDomainContract` gained
+`runtimeSection = BeautyQSearchRuntimeContract.section` and `response =
+BeautyQSearchResponsePolicyContract.section`.
+
+This resolves the `runtime-capabilities` and `response-policy` readiness
+blockers: readiness now has ready sections `catalog`, `evaluation`,
+`document-result-unit`, `intent-languages`, `document-field-kind-mapping`,
+`runtime-capabilities`, and `response-policy`. A new pending decision,
+`intent-section-mapping` (section `intent`), replaces them: generic
+`IntentSection` still needs vocabularies/vocabularyGroups/noiseControls
+mapping beyond the supported-language list already declared in Phase 8g;
+BeautyQ still exposes only a search-core `SearchIntentVocabulary`.
+`fullSearchDomainSpecDeclared` remains `false`.
 
 No full `SearchDomainSpec` value was constructed, and no
 runtime/repo/materialization/seed/app/client behavior moved; `build.sbt`

@@ -59,6 +59,12 @@ object BeautyQSearchDomainContract {
   /** The generic document field list `DocumentSection` requires. */
   val fields = BeautyQSearchDocumentFieldContract.fields
 
+  /** The generic runtime backend declarations `RuntimeSection` requires. */
+  val runtimeSection = BeautyQSearchRuntimeContract.section
+
+  /** The generic response policy `ResponseSection` requires. */
+  val response = BeautyQSearchResponsePolicyContract.section
+
   /** Evaluation declarations now exist in `beautyq-search-contract`. */
   val evaluationDeclared: Boolean = true
 

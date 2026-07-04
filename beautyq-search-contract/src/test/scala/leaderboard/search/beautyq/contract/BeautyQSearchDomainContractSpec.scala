@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.contract
 
-import leaderboard.search.contract.SearchFieldKind
+import leaderboard.search.contract.{SearchBackendId, SearchBackendKind, SearchFieldKind}
 import leaderboard.search.document.BeautyQVariantSearchDocumentContract
 import leaderboard.search.dsl.{BeautyQSearchIntentVocabulary, BeautyQSearchPresentation, BeautySearchSpecV1}
 import org.scalatest.wordspec.AnyWordSpec
@@ -183,28 +183,115 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       }
     }
 
-    "record catalog, evaluation, document-result-unit, intent-languages, and document-field-kind-mapping as the ready readiness sections" in {
-      assert(
-        BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections ==
-          List("catalog", "evaluation", "document-result-unit", "intent-languages", "document-field-kind-mapping")
-      )
+    "reference the same runtime section as BeautyQSearchRuntimeContract" in {
+      assert(BeautyQSearchDomainContract.runtimeSection eq BeautyQSearchRuntimeContract.section)
     }
 
-    "record the exact pending decision ids" in {
+    "declare the exact runtime backend ids and kinds" in {
+      assert(BeautyQSearchDomainContract.runtimeSection.declarations.map(_.backendId) == List(SearchBackendId("elasticsearch"), SearchBackendId("qdrant")))
+      assert(BeautyQSearchDomainContract.runtimeSection.declarations.map(_.kind) == List(SearchBackendKind.Elasticsearch, SearchBackendKind.Qdrant))
+    }
+
+    "declare Elasticsearch as full-text/facet/geo capable and not semantic-vector capable" in {
+      val capabilities = BeautyQSearchRuntimeContract.elasticsearch.capabilities
+      assert(capabilities.supportsFullText == true)
+      assert(capabilities.supportsFacets == true)
+      assert(capabilities.supportsGeo == true)
+      assert(capabilities.supportsSemanticVector == false)
+    }
+
+    "declare Qdrant as semantic-vector capable and not full-text/facet/geo capable" in {
+      val capabilities = BeautyQSearchRuntimeContract.qdrant.capabilities
+      assert(capabilities.supportsFullText == false)
+      assert(capabilities.supportsFacets == false)
+      assert(capabilities.supportsGeo == false)
+      assert(capabilities.supportsSemanticVector == true)
+    }
+
+    "reference the same response section as BeautyQSearchResponsePolicyContract" in {
+      assert(BeautyQSearchDomainContract.response eq BeautyQSearchResponsePolicyContract.section)
+    }
+
+    "declare a generic response section with no single grouping policy" in {
+      assert(BeautyQSearchDomainContract.response.grouping.isEmpty)
+    }
+
+    "declare a generic carousel policy using the variant result-unit limit" in {
+      assert(BeautyQSearchDomainContract.response.carousel.exists(_.enabled))
+      assert(BeautyQSearchDomainContract.response.carousel.flatMap(_.maxItems) == Some(10))
+    }
+
+    "declare generic facets including representative BeautyQ facet fields" in {
+      assert(BeautyQSearchDomainContract.response.facets.exists(_.fields.nonEmpty))
+      val facetFieldNames = BeautyQSearchDomainContract.response.facets.toList.flatMap(_.fields.map(_.value))
+      assert(facetFieldNames.contains("serviceName"))
+      assert(facetFieldNames.contains("categoryName"))
+      assert(facetFieldNames.contains("priceFrom"))
+      assert(facetFieldNames.contains("durationMin"))
+    }
+
+    "declare enabled inferred filters describing the FacetSpec threshold and min count" in {
+      assert(BeautyQSearchDomainContract.response.inferredFilters.exists(_.enabled))
+      val description = BeautyQSearchDomainContract.response.inferredFilters.map(_.description).getOrElse("")
+      assert(description.contains("0.70"))
+      assert(description.contains("2"))
+    }
+
+    "declare empty presentation labels and disabled debug flags" in {
+      assert(BeautyQSearchDomainContract.response.presentation.labels == Map.empty)
+      assert(BeautyQSearchDomainContract.response.debug.includeExplanation == false)
+      assert(BeautyQSearchDomainContract.response.debug.includeScoreBreakdown == false)
+    }
+
+    "preserve BeautyQ-specific carousel limit names and values in response details" in {
+      val details = BeautyQSearchResponsePolicyContract.details
+      assert(details.variantCarouselLimitName == "variantSize")
+      assert(details.providerCarouselLimitName == "providerSize")
+      assert(details.serviceIntentCarouselLimitName == "serviceIntentSize")
+      assert(details.variantCarouselMaxItems == 10)
+      assert(details.providerCarouselMaxItems == 10)
+      assert(details.serviceIntentCarouselMaxItems == 10)
+    }
+
+    "preserve BeautyQ-specific provider and service-intent group field names in response details" in {
+      val details = BeautyQSearchResponsePolicyContract.details
+      assert(details.providerGroupFieldName == "masterLocationId")
+      assert(details.serviceIntentGroupFieldName == "serviceId")
+    }
+
+    "record catalog, evaluation, document-result-unit, intent-languages, document-field-kind-mapping, runtime-capabilities, and response-policy as the ready readiness sections" in {
       assert(
-        BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
+        BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections ==
           List(
+            "catalog",
+            "evaluation",
+            "document-result-unit",
+            "intent-languages",
+            "document-field-kind-mapping",
             "runtime-capabilities",
             "response-policy",
           )
       )
     }
 
+    "record the exact pending decision ids" in {
+      assert(
+        BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
+          List("intent-section-mapping")
+      )
+    }
+
     "record the exact pending decision sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.section) ==
-          List("runtime", "response")
+          List("intent")
       )
+    }
+
+    "explain why full SearchDomainSpec is still not declared" in {
+      val reason = BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.head.reason
+      assert(reason.contains("IntentSection"))
+      assert(reason.contains("SearchIntentVocabulary"))
     }
 
     "derive fullSearchDomainSpecDeclared from the readiness value" in {

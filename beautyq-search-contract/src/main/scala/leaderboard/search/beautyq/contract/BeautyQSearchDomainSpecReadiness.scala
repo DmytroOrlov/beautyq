@@ -31,17 +31,14 @@ object BeautyQSearchDomainSpecReadiness {
         "document-result-unit",
         "intent-languages",
         "document-field-kind-mapping",
+        "runtime-capabilities",
+        "response-policy",
       ),
       pendingDecisions = List(
         BeautyQSearchDomainSpecPendingDecision(
-          id = "runtime-capabilities",
-          section = "runtime",
-          reason = "RuntimeSection requires pure SearchBackendCapabilities declarations; BeautyQ runtime currently exposes search-core runtime specs, not generic capability declarations.",
-        ),
-        BeautyQSearchDomainSpecPendingDecision(
-          id = "response-policy",
-          section = "response",
-          reason = "ResponseSection requires generic grouping/carousel/facet/inferred-filter/debug policies; BeautyQ currently exposes search-core CarouselSpec and FacetSpec without a source-owned generic mapping.",
+          id = "intent-section-mapping",
+          section = "intent",
+          reason = "IntentSection requires generic vocabularies, vocabularyGroups, and noiseControls; BeautyQ currently exposes supported languages plus a search-core SearchIntentVocabulary, but no source-owned generic IntentSection mapping yet.",
         ),
       ),
     )
