@@ -94,10 +94,22 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.resultUnit.carouselLimitName == BeautyQSearchPresentation.CarouselLimits.Variant)
     }
 
-    "record catalog, evaluation, and document-result-unit as the ready readiness sections" in {
+    "reference the same supported languages as BeautyQSearchLanguageContract" in {
+      assert(BeautyQSearchDomainContract.languages eq BeautyQSearchLanguageContract.supported)
+    }
+
+    "declare the exact supported language codes" in {
+      assert(BeautyQSearchDomainContract.languages.map(_.code) == List("de", "en", "ru"))
+    }
+
+    "not declare a mixed language" in {
+      assert(!BeautyQSearchDomainContract.languages.map(_.code).contains("mixed"))
+    }
+
+    "record catalog, evaluation, document-result-unit, and intent-languages as the ready readiness sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections ==
-          List("catalog", "evaluation", "document-result-unit")
+          List("catalog", "evaluation", "document-result-unit", "intent-languages")
       )
     }
 
@@ -105,7 +117,6 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
           List(
-            "intent-languages",
             "document-field-kind-mapping",
             "runtime-capabilities",
             "response-policy",
@@ -116,7 +127,7 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
     "record the exact pending decision sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.section) ==
-          List("intent", "document", "runtime", "response")
+          List("document", "runtime", "response")
       )
     }
 

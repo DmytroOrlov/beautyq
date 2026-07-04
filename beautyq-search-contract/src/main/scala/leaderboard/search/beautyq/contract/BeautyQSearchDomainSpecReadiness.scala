@@ -29,13 +29,9 @@ object BeautyQSearchDomainSpecReadiness {
         "catalog",
         "evaluation",
         "document-result-unit",
+        "intent-languages",
       ),
       pendingDecisions = List(
-        BeautyQSearchDomainSpecPendingDecision(
-          id = "intent-languages",
-          section = "intent",
-          reason = "IntentSection requires explicit SearchLanguage values; BeautyQ vocabulary has multilingual tokens but no declared supported-language list yet.",
-        ),
         BeautyQSearchDomainSpecPendingDecision(
           id = "document-field-kind-mapping",
           section = "document",

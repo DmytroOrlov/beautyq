@@ -53,6 +53,9 @@ object BeautyQSearchDomainContract {
   /** The BeautyQ variant result-unit descriptor `DocumentSection` requires. */
   val resultUnit = BeautyQSearchResultUnitContract.variant
 
+  /** The supported-language list `IntentSection` requires. */
+  val languages = BeautyQSearchLanguageContract.supported
+
   /** Evaluation declarations now exist in `beautyq-search-contract`. */
   val evaluationDeclared: Boolean = true
 

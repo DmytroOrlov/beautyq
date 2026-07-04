@@ -18,6 +18,16 @@ final class BeautyQIntentContractSpec extends AnyWordSpec {
     }
   }
 
+  "BeautyQSearchLanguageContract" should {
+    "declare only de, en, ru" in {
+      assert(BeautyQSearchLanguageContract.supported.map(_.code) == List("de", "en", "ru"))
+    }
+
+    "not declare mixed as a language" in {
+      assert(!BeautyQSearchLanguageContract.supported.map(_.code).contains("mixed"))
+    }
+  }
+
   "SearchConstraint" should {
     "round-trip ServiceAny through its circe codec" in {
       val constraint: SearchConstraint = SearchConstraint.ServiceAny(Set("Маникюр"))
