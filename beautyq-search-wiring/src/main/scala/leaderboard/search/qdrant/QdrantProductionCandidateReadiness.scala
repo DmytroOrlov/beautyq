@@ -69,7 +69,7 @@ object QdrantProductionCandidateReadiness {
     state: QdrantProductionCandidateReadinessState,
     report: Option[QdrantProductionCandidateQualityReport],
   ): QdrantProductionCandidateReadinessState =
-    state.copy(qualityEval = QdrantProductionCandidateQualityGate.readinessStatus(report))
+    state.copy(qualityEval = QdrantProductionCandidateQualityPolicy.readinessStatus(report))
 
   def withIndexingReadiness(
     state: QdrantProductionCandidateReadinessState,

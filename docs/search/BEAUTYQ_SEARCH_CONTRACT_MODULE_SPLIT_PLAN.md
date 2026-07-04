@@ -1176,6 +1176,51 @@ route decisions, hybrid response projection, lexical/semantic backend
 contracts, snapshot provider semantics, readiness behavior, or production
 activation data models changed.
 
+## Phase 16 record: Qdrant quality policy split and production readiness cluster moved to beautyq-search-wiring
+
+Split `QdrantProductionCandidateQualityGate.scala`'s two mixed concerns and
+moved the remaining Qdrant production-candidate readiness/activation/
+explicit-opt-in cluster (previously blocked by that file) to
+`beautyq-search-wiring`.
+
+Extracted the pure Qdrant quality DTOs and policy functions
+(`QdrantProductionCandidateQualityRule`, `QdrantProductionCandidateParityReport`,
+`QdrantProductionCandidateQualityDecisionStatus`, `QdrantProductionCandidateQualityDecision`,
+`QdrantProductionCandidateParityOutcome`, `QdrantProductionCandidateQualityReport`,
+and `evaluate(...)`/`readinessStatus(...)`) into a new
+`beautyq-search-wiring/.../qdrant/QdrantProductionCandidateQualityPolicy.scala`.
+`QdrantProductionCandidateQualityGate.scala` remains in `bifunctor-tagless` as
+a thin eval-shell adapter only: it keeps the `EngineEvalAggregateReport`
+import and `fromEngineEval(...)` (preserving the exact existing field
+mapping), and its `evaluate(...)`/`readinessStatus(...)` now delegate to
+`QdrantProductionCandidateQualityPolicy`. No duplicate DTO definitions remain
+in the adapter file.
+
+With the quality-gate coupling resolved, the 11-file cluster blocked in
+Phase 15c moved to `beautyq-search-wiring`: `QdrantProductionCandidateReadiness`,
+`QdrantProductionCandidateActivationConfigApproval`,
+`QdrantExplicitOptInRoutePrerequisites`, `QdrantExplicitOptInBeautySearchBackend`,
+`QdrantProductionCandidateActivationPlanning`, `QdrantProductionCandidateActivationPolicy`,
+`QdrantProductionCandidateIndexingReadiness`, `QdrantProductionCandidateObservabilityReadiness`,
+`QdrantProductionCandidateRollbackReadiness`, `QdrantProductionCandidateSearchReadiness`,
+and `QdrantProductionCandidateServingApprovalRequest`. The single call site in
+`QdrantProductionCandidateReadiness.withQualityReport` that referenced
+`QdrantProductionCandidateQualityGate.readinessStatus(...)` was updated to call
+`QdrantProductionCandidateQualityPolicy.readinessStatus(...)` instead - the
+only import-driven edit required by the physical move.
+
+`beautyqSearchWiring/compile`, `bifunctor-tagless/compile`, and
+`bifunctor-tagless/Test/compile` all succeeded afterward with no other edits;
+`build.sbt` was not touched and no compatibility shim was added.
+`bifunctor-tagless` keeps `QdrantProductionCandidateQualityGate` (eval-shell
+adapter only), all `leaderboard.search.eval.*` files, all
+`QdrantEmbeddingBenchmark*` files, config files, startup/bootstrap files,
+API/HTTP files, and Distage `ModuleDef` plugin/module files.
+
+No Qdrant quality-gate thresholds, decision statuses, readiness behavior,
+activation policy behavior, explicit opt-in route prerequisite validation, or
+report shapes changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
