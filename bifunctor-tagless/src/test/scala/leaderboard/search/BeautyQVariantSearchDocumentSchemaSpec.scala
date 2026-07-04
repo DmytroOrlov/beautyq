@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.model.*
-import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentMaterialization, BeautySearchCatalogSnapshot, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchFieldSemantics, SearchFieldKind, SearchFieldSemantic}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedLoader}
 import org.scalatest.wordspec.AnyWordSpec
@@ -184,7 +184,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQVariantSearchDocumentSchema.project" should {
+  "BeautyQVariantSearchDocumentMaterialization.project" should {
     "project seed variants in source order" in {
       val documents = projectSeedDocuments()
 
@@ -325,7 +325,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
       val (snapshot, variant, offer) = firstVariantOfferSnapshot()
       val broken = snapshot.copy(serviceVariantSchemas = snapshot.serviceVariantSchemas.filterNot(_.serviceId == offer.serviceId))
 
-      BeautyQVariantSearchDocumentSchema.project(broken) match {
+      project(broken) match {
         case Right(documents) =>
           assert(documents.map(_.variantId) == snapshot.masterServiceOfferVariants.map(_.id))
           assert(documents.exists(_.variantId == variant.id))
@@ -335,8 +335,13 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
   }
 
+  private def project(snapshot: BeautySearchCatalogSnapshot): Either[QueryFailure, List[VariantSearchDocument]] =
+    BeautyQVariantSearchDocumentMaterialization.project(
+      BeautySearchCatalogSnapshot.toMaterializationSnapshot(snapshot)
+    )
+
   private def projectSeedDocuments(): List[VariantSearchDocument] =
-    BeautyQVariantSearchDocumentSchema.project(BeautySearchCatalogSnapshot.fromSeedData(seed)) match {
+    project(BeautySearchCatalogSnapshot.fromSeedData(seed)) match {
       case Right(value) => value
       case Left(error)  => fail(s"Expected seed projection to succeed, got: ${error.message}")
     }
@@ -368,7 +373,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
   }
 
   private def assertProjectFails(snapshot: BeautySearchCatalogSnapshot, expectedMessage: String): Unit =
-    BeautyQVariantSearchDocumentSchema.project(snapshot) match {
+    project(snapshot) match {
       case Left(failure) =>
         assert(failure.message == expectedMessage)
         (): Unit

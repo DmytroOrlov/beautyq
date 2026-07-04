@@ -27,8 +27,8 @@ catalog snapshot loading                 BeautySearchCatalogSnapshotLoader.FromR
                                          root exclusion, deduplication
         │
         ▼
-schema-owned document projection         SearchDocumentProjection,
-                                         BeautyQVariantSearchDocumentSchema.project
+materialization-owned document projection SearchDocumentProjection,
+                                         BeautyQVariantSearchDocumentMaterialization.project
         │
         ▼
 SearchDocumentSpec / SearchField         BeautyQVariantSearchDocumentContract.Fields,
@@ -105,9 +105,11 @@ They are not the single source of truth for all search metadata:
   `SearchRuntimeSpec`.
 - Document field ownership belongs to `BeautyQVariantSearchDocumentContract.Fields` (in
   `beautyq-search-contract`), not to `BeautySearchSpecV1`.
-- Projection is owned by `BeautyQVariantSearchDocumentSchema.project` (via `SearchDocumentProjection`),
-  which delegates the contract-shaped `documentSpec` it projects into from
-  `BeautyQVariantSearchDocumentContract`; `VariantSearchDocumentBuilder` is a compatibility adapter only.
+- Projection is owned by `BeautyQVariantSearchDocumentMaterialization.project` (via
+  `SearchDocumentProjection`) in `beautyq-search-materialization`, which projects into the
+  contract-shaped `documentSpec` owned by `BeautyQVariantSearchDocumentContract`;
+  `VariantSearchDocumentBuilder` in `bifunctor-tagless` is only a compatibility adapter that delegates
+  directly to it.
 - Generic ES and Qdrant interpreters consume `SearchDocumentSpec` / `SearchRuntimeSpec` / resolved
   constraints. BeautyQ-specific ES compatibility lives in `BeautyQElasticsearchInterpreterAdapter`.
 
@@ -126,15 +128,19 @@ repo graph/loading layer. Existing loading behavior is preserved: preorder categ
 exclusion, stable parent/child ordering, first-occurrence deduplication, seed-scoped
 missing-entity messages, and search projection semantics.
 
-## Schema-owned document projection
+## Materialization-owned document projection
 
 `SearchDocumentProjection` is the projection layer between loaded catalog snapshots and indexed
-documents. `BeautyQVariantSearchDocumentSchema` owns BeautyQ variant projection (a
-materialization/projection compatibility facade); the contract-shaped `SearchDocumentSpec` it
-projects into is owned by `BeautyQVariantSearchDocumentContract`. The production seed-catalog path
-uses `BeautyQVariantSearchDocumentSchema.project`.
+documents. `BeautyQVariantSearchDocumentMaterialization` in `beautyq-search-materialization` owns
+BeautyQ variant projection; the contract-shaped `SearchDocumentSpec` it projects into is owned by
+`BeautyQVariantSearchDocumentContract`. The production seed-catalog path uses
+`BeautyQVariantSearchDocumentMaterialization.project` directly (via
+`BeautySearchCatalogSnapshot.toMaterializationSnapshot`). The former
+`BeautyQVariantSearchDocumentSchema` compatibility facade in `bifunctor-tagless` has been deleted; its
+last callers now call the materialization projection engine directly.
 
-`VariantSearchDocumentBuilder` remains present as a compatibility adapter only.
+`VariantSearchDocumentBuilder` remains present in `bifunctor-tagless` as a compatibility adapter
+only, delegating directly to `BeautyQVariantSearchDocumentMaterialization.project`.
 
 ## Document field ownership
 

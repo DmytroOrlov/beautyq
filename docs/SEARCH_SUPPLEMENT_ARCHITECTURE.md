@@ -61,8 +61,10 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 * ES baseline; Qdrant supplement; `ExplicitConstraintsFilterPlusTop1`
 * Baseline and supplement inputs are shaped by schema/runtime metadata: `SearchRuntimeSpec`,
   `SearchDocumentSpec`, and `SearchDocumentPayloadSpec` owned by `BeautyQVariantSearchDocumentContract`
-  (in `beautyq-search-contract`); `BeautyQVariantSearchDocumentSchema` remains a
-  compatibility/materialization-facing facade over it, not the owner.
+  (in `beautyq-search-contract`); projection itself is owned by
+  `BeautyQVariantSearchDocumentMaterialization` (in `beautyq-search-materialization`) - the former
+  `BeautyQVariantSearchDocumentSchema` compatibility facade has been deleted, and its last callers now
+  call the materialization projection engine directly.
 * Local managed launcher selects the supplement route with `./launcher -u scene:managed :leaderboard`.
 * Local managed startup prepares the BeautyQ data the route reads (SQL/Postgres seed, Elasticsearch
   baseline index, Qdrant supplement collection/vectors) before serving — no user-facing activation env

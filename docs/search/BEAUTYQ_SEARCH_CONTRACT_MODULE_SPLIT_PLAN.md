@@ -968,6 +968,30 @@ Deletion of the schema facade remains forbidden until `project(...)`/
 `BeautyQCatalogGraph` were not removed because real usages remain. No
 production behavior changed; `build.sbt` untouched.
 
+## Phase 11b record: schema projection compatibility facade deleted
+
+The last `BeautyQVariantSearchDocumentSchema.project(...)` callers were
+migrated to call `BeautyQVariantSearchDocumentMaterialization.project(...)`
+(over `BeautySearchCatalogSnapshot.toMaterializationSnapshot(...)`) directly:
+`VariantSearchDocumentBuilder.build` in `VariantSearchDocument.scala`,
+`BeautySearchCatalogBackendFactory.fromSeedLoader` in
+`BeautySearchCatalogBackendModules.scala`, and the projection assertions in
+`BeautyQVariantSearchDocumentSchemaSpec.scala`/`BeautyQRepoGraphLoaderSpec.scala`.
+`BeautyQVariantSearchDocumentSchema.scala` was then deleted - it had no
+remaining callers.
+
+`VariantSearchDocumentBuilder` remains in `bifunctor-tagless` as a
+compatibility API with its public signature unchanged, but now delegates
+directly to materialization-owned projection instead of through the deleted
+schema facade. `BeautySearchCatalogSnapshot`/`BeautySearchCatalogSnapshotLoader`
+remain legacy snapshot-loader compatibility APIs in `bifunctor-tagless`.
+`BeautyQVariantSearchDocumentMaterialization`, `SearchDocumentProjection`,
+`BeautyQSearchCatalogSnapshot`, `BeautyQSearchCatalogSnapshotLoader`, and
+`BeautyQCatalogGraph` remain in `beautyq-search-materialization`, unedited.
+
+No projection output, validation, document fields, tokens, snapshot loading,
+or runtime behavior changed; `build.sbt` untouched.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
