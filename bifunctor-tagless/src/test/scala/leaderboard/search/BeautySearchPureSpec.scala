@@ -3,7 +3,7 @@ package leaderboard.search
 import io.circe.{Json, JsonObject}
 import leaderboard.model.*
 import leaderboard.search.dsl.*
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautySearchCatalogSnapshot, VariantSearchDocument, VariantSearchDocumentBuilder}
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
 import leaderboard.search.eval.BeautySearchEvalScorer
 import leaderboard.search.embedding.EmbeddingClient
@@ -95,8 +95,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         dimension = 384,
         distance = VectorDistance.Cosine,
         sourceTextFields = List(
-          BeautyQVariantSearchDocumentSchema.Fields.serviceName,
-          BeautyQVariantSearchDocumentSchema.Fields.allText,
+          BeautyQVariantSearchDocumentContract.Fields.serviceName,
+          BeautyQVariantSearchDocumentContract.Fields.allText,
         ),
       )
 
@@ -127,7 +127,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
             ),
           )
 
-          val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](hits, BeautyQVariantSearchDocumentSchema.Fields.variantId)
+          val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](hits, BeautyQVariantSearchDocumentContract.Fields.variantId)
 
           assert(decoded == Right(List(
             SemanticDocumentHit(secondVariantId, 0.25),
@@ -145,7 +145,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentContract.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(_.message.contains("Missing payload.variantId")))
@@ -158,7 +158,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentContract.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(_.message.contains("Invalid payload.variantId")))
@@ -171,7 +171,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.5,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(hit), BeautyQVariantSearchDocumentContract.Fields.variantId)
 
       assert(decoded.isLeft)
     }
@@ -188,7 +188,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         score = 0.4,
       )
 
-      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(first, second), BeautyQVariantSearchDocumentSchema.Fields.variantId)
+      val decoded = QdrantCandidateHitDecoder.decode[VariantSearchDocument, MasterServiceOfferVariantId](List(first, second), BeautyQVariantSearchDocumentContract.Fields.variantId)
 
       assert(decoded.isLeft)
       assert(decoded.left.exists(failure => failure.message.contains("first-missing-payload-variant-id")))
@@ -294,8 +294,8 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         dimension = 384,
         distance = VectorDistance.Cosine,
         sourceTextFields = List(
-          BeautyQVariantSearchDocumentSchema.Fields.serviceName,
-          BeautyQVariantSearchDocumentSchema.Fields.categoryName,
+          BeautyQVariantSearchDocumentContract.Fields.serviceName,
+          BeautyQVariantSearchDocumentContract.Fields.categoryName,
         ),
       )
 
@@ -755,7 +755,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
       val embeddingClient = new RecordingEmbeddingClient(embeddingQueryRef, vector)
       val qdrantClient = new RecordingQdrantSearchClient(qdrantPathRef, hits)
       val semantic = new QdrantSemanticCandidateBackend(
-        new QdrantSemanticCandidateSearch(embeddingClient, qdrantClient, BeautyQVariantSearchDocumentSchema.Fields.variantId),
+        new QdrantSemanticCandidateSearch(embeddingClient, qdrantClient, BeautyQVariantSearchDocumentContract.Fields.variantId),
         vectorSpec,
       )
       val lookup = new InMemoryVariantSearchDocumentLookup[IO](knownDocuments)
@@ -1159,7 +1159,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     }
 
     "derive facets from FacetSpec and remove them when absent" in {
-      val syntheticFacet = FacetField(BeautyQVariantSearchDocumentSchema.Fields.serviceName, FacetFieldMode.Terms, limit = 3)
+      val syntheticFacet = FacetField(BeautyQVariantSearchDocumentContract.Fields.serviceName, FacetFieldMode.Terms, limit = 3)
       val specWithFacet = BeautySearchSpecV1.spec.copy(
         facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = BeautySearchSpecV1.spec.facetSpec.fields :+ syntheticFacet)
       )
@@ -1201,7 +1201,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
 
     "use requestSpec.aggregationSize for facet aggregations" in {
       val customSpec = BeautySearchSpecV1.spec.copy(
-        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = List(FacetField(BeautyQVariantSearchDocumentSchema.Fields.serviceName, FacetFieldMode.Terms, limit = 3))),
+        facetSpec = BeautySearchSpecV1.spec.facetSpec.copy(fields = List(FacetField(BeautyQVariantSearchDocumentContract.Fields.serviceName, FacetFieldMode.Terms, limit = 3))),
         requestSpec = BeautySearchSpecV1.spec.requestSpec.copy(aggregationSize = 11),
       )
 
@@ -1290,7 +1290,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         modelName = "synthetic-model",
         dimension = 384,
         distance = VectorDistance.Euclidean,
-        sourceTextFields = List(BeautyQVariantSearchDocumentSchema.Fields.serviceName),
+        sourceTextFields = List(BeautyQVariantSearchDocumentContract.Fields.serviceName),
       )
 
       val json = QdrantJsonInterpreter.createCollectionJson(spec, embeddingSpec)

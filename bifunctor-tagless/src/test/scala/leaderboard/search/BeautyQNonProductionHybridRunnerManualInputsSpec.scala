@@ -42,7 +42,7 @@ final class BeautyQNonProductionHybridRunnerManualInputsSpec extends AnyWordSpec
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new FailIfCalledEmbeddingClient,
           new FailIfCalledQdrantSearchClient,
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
         documentLookup = new FailIfCalledDocumentLookup,
       )
@@ -62,7 +62,7 @@ final class BeautyQNonProductionHybridRunnerManualInputsSpec extends AnyWordSpec
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new FailIfCalledEmbeddingClient,
           new FailIfCalledQdrantSearchClient,
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
         documentLookup = new FailIfCalledDocumentLookup,
       )
@@ -93,7 +93,7 @@ final class BeautyQNonProductionHybridRunnerManualInputsSpec extends AnyWordSpec
             expectedHitId,
             0.92,
           ),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
         documentLookup = new ScriptedDocumentLookup(Map(expectedHitId -> semanticDoc)),
       )
@@ -124,7 +124,7 @@ final class BeautyQNonProductionHybridRunnerManualInputsSpec extends AnyWordSpec
             missingId,
             0.75,
           ),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
         documentLookup = new ScriptedDocumentLookup(Map.empty),
       )

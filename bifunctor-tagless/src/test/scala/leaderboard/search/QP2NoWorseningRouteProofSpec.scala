@@ -283,7 +283,7 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
       modelName = "qp2-no-worsening-route-proof",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.categoryName),
     )
     val readinessConfig = QdrantCollectionReadinessConfig.derive(
       QdrantCollectionReadinessInput(

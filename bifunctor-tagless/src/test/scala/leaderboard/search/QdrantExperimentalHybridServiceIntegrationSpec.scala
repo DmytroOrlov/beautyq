@@ -51,7 +51,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
     modelName = "local-llama-cpp-embedding",
     dimension = 1,
     distance = VectorDistance.Cosine,
-    sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.categoryName),
+    sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.categoryName),
   )
   private val vectorSearchSpecTemplate = VectorSearchSpec(
     collectionName = "placeholder",
@@ -134,7 +134,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
                 compatibilityGuard = new QdrantCollectionCompatibilityGuard(
                   new QdrantCollectionCompatibilityChecker(new QdrantClientCollectionInfoAdapter(qdrantClient))
                 )
-                semanticSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient), leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId)
+                semanticSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(embeddingClient, new QdrantClientSearchAdapter(qdrantClient), leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId)
                 composition = QdrantNonProductionExperimentComposition.build(
                   readinessConfig = readinessConfig,
                   compatibilityGuard = compatibilityGuard,

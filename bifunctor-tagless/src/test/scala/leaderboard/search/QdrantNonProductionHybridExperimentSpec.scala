@@ -36,7 +36,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.1, 0.2)),
           new RecordingQdrantSearchClient(qdrantPathRef, Right(List(searchHit(document.variantId, 0.91)))),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         )
       )
       val experiment = buildExperiment(composition, document)
@@ -96,7 +96,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
           semanticCandidateSearch = new QdrantSemanticCandidateSearch(
             new ThrowingEmbeddingClient,
             new RecordingQdrantSearchClient(qdrantPathRef, Right(Nil)),
-          leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+          leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
           )
         ),
         lexicalBackend = new ThrowingBeautySearchBackend,
@@ -123,7 +123,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
           semanticCandidateSearch = new QdrantSemanticCandidateSearch(
             new ConstEmbeddingClient(Vector(0.3, 0.4)),
             new RecordingQdrantSearchClient(qdrantPathRef, Right(List(searchHit(document.variantId, 0.87)))),
-          leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+          leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
           )
         ),
         lexicalBackend = new CountingBeautySearchBackend(emptyResponse, lexicalCallsRef),
@@ -157,7 +157,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new ConstEmbeddingClient(Vector(0.5, 0.6)),
           new RecordingQdrantSearchClient(qdrantPathRef, Right(List(searchHit(document.variantId, 0.79)))),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
       )
       val experiment = buildExperiment(composition, document)
@@ -181,7 +181,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
           semanticCandidateSearch = new QdrantSemanticCandidateSearch(
             new ConstEmbeddingClient(Vector(0.7, 0.8)),
             new RecordingQdrantSearchClient(qdrantPathRef, Right(List(searchHit(document.variantId, 0.75)))),
-          leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+          leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
           )
         ),
         lexicalBackend = new CountingBeautySearchBackend(lexicalResponse, lexicalCallsRef),
@@ -204,7 +204,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new CountingEmbeddingClient(Vector(0.9, 1.0), embeddingCallsRef),
           new RecordingQdrantSearchClient(qdrantPathRef, Right(List(searchHit(document.variantId, 0.72)))),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         )
       )
       val experiment = buildExperiment(composition, document)
@@ -251,7 +251,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
     semanticCandidateSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(
       new ConstEmbeddingClient(Vector(0.1)),
       new RecordingQdrantSearchClient(runUio(Ref.make(Option.empty[String])), Right(Nil)),
-    leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+    leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
     ),
   ): QdrantNonProductionExperimentComposition =
     QdrantNonProductionExperimentComposition.build(

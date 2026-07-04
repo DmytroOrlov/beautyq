@@ -36,7 +36,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
           new FailIfCalledEmbeddingClient,
           new FailIfCalledQdrantSearchClient,
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
       )
 
@@ -48,7 +48,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
           semanticCandidateSearch = new QdrantSemanticCandidateSearch(
             new FailIfCalledEmbeddingClient,
             new FailIfCalledQdrantSearchClient,
-          leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+          leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
           ),
         ).semanticBackend,
         documentLookup = new FailIfCalledDocumentLookup,
@@ -67,7 +67,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
             expectedHitId,
             0.92,
           ),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
       )
 
@@ -103,7 +103,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
               searchHit(semanticOnlyId, 0.76),
             ),
           ),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
       )
 
@@ -140,7 +140,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
             missingId,
             0.75,
           ),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
       )
 
@@ -168,7 +168,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
             hitId,
             0.81,
           ),
-        leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+        leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.variantId,
         ),
       )
 

@@ -207,7 +207,7 @@ final class QP6NoWorseningRouteMatrixSpec extends AnyWordSpec with HttpContractT
       modelName = "llama-cpp-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
-      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText),
     )
 
   private val vectorSearchSpec: VectorSearchSpec =

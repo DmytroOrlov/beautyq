@@ -944,6 +944,30 @@ remain in `bifunctor-tagless`, untouched. No production route activation,
 default route, fallback, fusion, rerank, Qdrant opt-in, client, seed,
 bootstrap, or runtime behavior changed; `build.sbt` untouched.
 
+## Phase 11a record: schema contract-shaped forwarders retired from test usage
+
+The remaining test-only contract-shaped `BeautyQVariantSearchDocumentSchema`
+references (`Fields`, `documentSpec`, `qdrantPayloadSpec`, `querySchema`)
+across 30 `bifunctor-tagless` test files were migrated to
+`BeautyQVariantSearchDocumentContract`, the source-confirmed owner of those
+declarations. `BeautyQVariantSearchDocumentSchema` no longer exposes those
+forwarders at all - it now only declares `projection`/`project(...)`, its
+`projection` reading `BeautyQVariantSearchDocumentContract.documentSpec`
+directly instead of through a removed local `documentSpec` forwarder.
+
+`BeautyQVariantSearchDocumentSchema.project(...)`/`projection` remain
+unchanged and are still used by production code
+(`BeautySearchCatalogBackendModules.scala`, `VariantSearchDocument.scala`)
+and by projection/materialization tests (`BeautyQVariantSearchDocumentSchemaSpec.scala`,
+`BeautyQRepoGraphLoaderSpec.scala`), none of which were edited beyond the
+prior Phase 9c state.
+
+Deletion of the schema facade remains forbidden until `project(...)`/
+`projection` production and test usages are gone - they are not gone here.
+`BeautySearchCatalogSnapshot`, `BeautySearchCatalogSnapshotLoader`, and
+`BeautyQCatalogGraph` were not removed because real usages remain. No
+production behavior changed; `build.sbt` untouched.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

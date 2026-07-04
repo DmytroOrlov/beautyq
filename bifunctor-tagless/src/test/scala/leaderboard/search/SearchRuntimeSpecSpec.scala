@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, SearchDocumentPayloadSpec}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, SearchDocumentPayloadSpec}
 import leaderboard.search.dsl.*
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -13,9 +13,9 @@ final class SearchRuntimeSpecSpec extends AnyWordSpec {
         .get(BeautySearchSpecV1.QdrantPayloadSpecName)
         .getOrElse(fail("expected qdrant payload spec"))
 
-      assert(runtimeSpec.documentSpec == BeautyQVariantSearchDocumentSchema.documentSpec)
-      assert(runtimeSpec.querySchema == BeautyQVariantSearchDocumentSchema.querySchema)
-      assert(qdrantPayloadSpec == BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec)
+      assert(runtimeSpec.documentSpec == BeautyQVariantSearchDocumentContract.documentSpec)
+      assert(runtimeSpec.querySchema == BeautyQVariantSearchDocumentContract.querySchema)
+      assert(qdrantPayloadSpec == BeautyQVariantSearchDocumentContract.qdrantPayloadSpec)
       assert(runtimeSpec.embeddingSpec == searchSpec.embeddingSpec)
       assert(runtimeSpec.facetSpec == searchSpec.facetSpec)
       assert(runtimeSpec.carouselSpec == searchSpec.carouselSpec)

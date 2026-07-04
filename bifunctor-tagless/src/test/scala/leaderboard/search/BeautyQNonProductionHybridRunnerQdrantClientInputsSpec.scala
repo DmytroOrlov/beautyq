@@ -156,7 +156,7 @@ final class BeautyQNonProductionHybridRunnerQdrantClientInputsSpec extends AnyWo
       modelName = "llama-cpp-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
-      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText),
     )
 
   private val testDocumentSpec: leaderboard.search.dsl.SearchDocumentSpec[VariantSearchDocument] =

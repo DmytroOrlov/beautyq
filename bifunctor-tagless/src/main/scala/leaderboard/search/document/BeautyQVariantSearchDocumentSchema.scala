@@ -1,31 +1,24 @@
 package leaderboard.search.document
 
 import leaderboard.model.QueryFailure
-import leaderboard.search.dsl.*
 
 /** Materialization/projection compatibility surface for the BeautyQ variant
-  * document. The contract-shaped declarations (`Fields`, `documentSpec`,
-  * `qdrantPayloadSpec`, `querySchema`) are owned by
-  * [[BeautyQVariantSearchDocumentContract]] in `beautyq-search-contract` and
-  * only delegated to here for source compatibility. The actual projection
-  * engine - node handles, joins, schema validation, and text normalization -
-  * is owned by [[BeautyQVariantSearchDocumentMaterialization]] in
-  * `beautyq-search-materialization`; `project`/`projection` here only adapt
-  * the seed-coupled [[BeautySearchCatalogSnapshot]] shape to that engine.
-  * This object remains only a source-compatibility facade for existing
-  * callers.
+  * document. This object no longer forwards the contract-shaped declarations
+  * (`Fields`, `documentSpec`, `qdrantPayloadSpec`, `querySchema`) - those are
+  * owned by [[BeautyQVariantSearchDocumentContract]] in
+  * `beautyq-search-contract`, and callers must read them from there directly.
+  * The actual projection engine - node handles, joins, schema validation, and
+  * text normalization - is owned by [[BeautyQVariantSearchDocumentMaterialization]]
+  * in `beautyq-search-materialization`; `project`/`projection` here only
+  * adapt the seed-coupled [[BeautySearchCatalogSnapshot]] shape to that
+  * engine. This object remains only a projection/materialization
+  * compatibility facade for existing `project`/`projection` callers.
   */
 object BeautyQVariantSearchDocumentSchema {
 
-  val Fields = BeautyQVariantSearchDocumentContract.Fields
-
-  lazy val documentSpec: SearchDocumentSpec[VariantSearchDocument] = BeautyQVariantSearchDocumentContract.documentSpec
-  lazy val qdrantPayloadSpec: SearchDocumentPayloadSpec[VariantSearchDocument] = BeautyQVariantSearchDocumentContract.qdrantPayloadSpec
-  lazy val querySchema: SearchQuerySchema[VariantSearchDocument, SearchConstraint] = BeautyQVariantSearchDocumentContract.querySchema
-
   lazy val projection: SearchDocumentProjection[BeautySearchCatalogSnapshot, VariantSearchDocument] =
     SearchDocumentProjection(
-      documentSpec = documentSpec,
+      documentSpec = BeautyQVariantSearchDocumentContract.documentSpec,
       project = project,
     )
 

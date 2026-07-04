@@ -1,13 +1,13 @@
 package leaderboard.search
 
 import leaderboard.model.*
-import leaderboard.search.document.BeautyQVariantSearchDocumentSchema
+import leaderboard.search.document.BeautyQVariantSearchDocumentContract
 import leaderboard.search.dsl.*
 import org.scalatest.wordspec.AnyWordSpec
 
 final class SearchDslTypedFieldSpec extends AnyWordSpec {
-  private val fields = BeautyQVariantSearchDocumentSchema.Fields
-  private val querySchema = BeautyQVariantSearchDocumentSchema.querySchema
+  private val fields = BeautyQVariantSearchDocumentContract.Fields
+  private val querySchema = BeautyQVariantSearchDocumentContract.querySchema
 
   "typed search field handles" should {
     "derive EmbeddingSpec sourceTextFieldPaths from sourceTextFields" in {
@@ -41,7 +41,7 @@ final class SearchDslTypedFieldSpec extends AnyWordSpec {
     }
 
     "derive SearchDocumentPayloadSpec fieldPaths from typed fields" in {
-      val payloadSpec = BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec
+      val payloadSpec = BeautyQVariantSearchDocumentContract.qdrantPayloadSpec
 
       assert(payloadSpec.fields == List(fields.variantId, fields.masterLocationId, fields.serviceId, fields.serviceName))
       assert(payloadSpec.fieldPaths == List("variantId", "masterLocationId", "serviceId", "serviceName"))

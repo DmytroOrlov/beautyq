@@ -212,7 +212,7 @@ final class QP8QdrantSupplementActivationPreflightSpec extends AnyWordSpec with 
       modelName = "llama-cpp-embedding",
       dimension = 1024,
       distance = VectorDistance.Cosine,
-      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.allText),
+      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText),
     )
 
   private val vectorSearchSpec: VectorSearchSpec =
