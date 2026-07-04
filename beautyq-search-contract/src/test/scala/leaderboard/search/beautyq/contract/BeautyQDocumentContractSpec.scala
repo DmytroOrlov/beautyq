@@ -1,5 +1,6 @@
 package leaderboard.search.beautyq.contract
 
+import leaderboard.search.contract.SearchFieldKind
 import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1, ResolvedSearchConstraint, SearchConstraint, SearchGeoPoint}
 import org.scalatest.wordspec.AnyWordSpec
@@ -131,6 +132,22 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
     "point at the current document index and variant carousel limit" in {
       assert(BeautyQSearchResultUnitContract.variant.documentIndexName == BeautyQVariantSearchDocumentContract.documentSpec.indexName)
       assert(BeautyQSearchResultUnitContract.variant.carouselLimitName == BeautyQSearchPresentation.CarouselLimits.Variant)
+    }
+  }
+
+  "BeautyQSearchDocumentFieldContract.fields" should {
+    "preserve the current document field count" in {
+      assert(BeautyQSearchDocumentFieldContract.fields.size == BeautyQVariantSearchDocumentContract.documentSpec.fields.size)
+    }
+
+    "map representative field paths/kinds" in {
+      val kindByName = BeautyQSearchDocumentFieldContract.fields.map(field => field.name.value -> field.kind).toMap
+      assert(kindByName("allText") == SearchFieldKind.Text)
+      assert(kindByName("variantId") == SearchFieldKind.Keyword)
+      assert(kindByName("serviceName") == SearchFieldKind.Facet)
+      assert(kindByName("priceFrom") == SearchFieldKind.Range)
+      assert(kindByName("priceTo") == SearchFieldKind.Numeric)
+      assert(kindByName("location") == SearchFieldKind.Geo)
     }
   }
 }

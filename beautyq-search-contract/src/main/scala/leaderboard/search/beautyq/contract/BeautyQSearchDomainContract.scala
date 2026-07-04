@@ -56,6 +56,9 @@ object BeautyQSearchDomainContract {
   /** The supported-language list `IntentSection` requires. */
   val languages = BeautyQSearchLanguageContract.supported
 
+  /** The generic document field list `DocumentSection` requires. */
+  val fields = BeautyQSearchDocumentFieldContract.fields
+
   /** Evaluation declarations now exist in `beautyq-search-contract`. */
   val evaluationDeclared: Boolean = true
 

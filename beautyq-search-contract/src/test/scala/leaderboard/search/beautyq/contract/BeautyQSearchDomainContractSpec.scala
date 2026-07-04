@@ -1,5 +1,6 @@
 package leaderboard.search.beautyq.contract
 
+import leaderboard.search.contract.SearchFieldKind
 import leaderboard.search.document.BeautyQVariantSearchDocumentContract
 import leaderboard.search.dsl.{BeautyQSearchIntentVocabulary, BeautyQSearchPresentation, BeautySearchSpecV1}
 import org.scalatest.wordspec.AnyWordSpec
@@ -106,10 +107,86 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(!BeautyQSearchDomainContract.languages.map(_.code).contains("mixed"))
     }
 
-    "record catalog, evaluation, document-result-unit, and intent-languages as the ready readiness sections" in {
+    "reference the same generic fields as BeautyQSearchDocumentFieldContract" in {
+      assert(BeautyQSearchDomainContract.fields eq BeautyQSearchDocumentFieldContract.fields)
+    }
+
+    "declare a generic field for every BeautyQ document field name" in {
+      val genericNames = BeautyQSearchDomainContract.fields.map(_.name.value)
+      assert(
+        List(
+          "variantId",
+          "serviceName",
+          "categoryName",
+          "priceFrom",
+          "durationMin",
+          "location",
+          "allText",
+          "serviceText",
+          "attributeText",
+          "providerText",
+          "locationText",
+        ).forall(genericNames.contains)
+      )
+    }
+
+    "declare exactly as many generic fields as the BeautyQ document spec" in {
+      assert(BeautyQSearchDomainContract.fields.size == BeautyQVariantSearchDocumentContract.documentSpec.fields.size)
+    }
+
+    "not declare any generic field as SemanticText" in {
+      assert(!BeautyQSearchDomainContract.fields.exists(_.kind == SearchFieldKind.SemanticText))
+    }
+
+    "map representative generic field kinds correctly" in {
+      val kindByName = BeautyQSearchDomainContract.fields.map(field => field.name.value -> field.kind).toMap
+      assert(kindByName("allText") == SearchFieldKind.Text)
+      assert(kindByName("serviceText") == SearchFieldKind.Text)
+      assert(kindByName("serviceName") == SearchFieldKind.Facet)
+      assert(kindByName("categoryName") == SearchFieldKind.Facet)
+      assert(kindByName("variantId") == SearchFieldKind.Keyword)
+      assert(kindByName("priceFrom") == SearchFieldKind.Range)
+      assert(kindByName("priceTo") == SearchFieldKind.Numeric)
+      assert(kindByName("durationMin") == SearchFieldKind.Range)
+      assert(kindByName("location") == SearchFieldKind.Geo)
+    }
+
+    "map any dynamic enum field to Facet when present" in {
+      val kindByName = BeautyQSearchDomainContract.fields.map(field => field.name.value -> field.kind).toMap
+      kindByName.foreach {
+        case (name, kind) if name.startsWith("enumAttributes.") => assert(kind == SearchFieldKind.Facet)
+        case _ => ()
+      }
+    }
+
+    "map any dynamic boolean field to Facet when present" in {
+      val kindByName = BeautyQSearchDomainContract.fields.map(field => field.name.value -> field.kind).toMap
+      kindByName.foreach {
+        case (name, kind) if name.startsWith("booleanAttributes.") => assert(kind == SearchFieldKind.Facet)
+        case _ => ()
+      }
+    }
+
+    "map any dynamic int field to Range when present" in {
+      val kindByName = BeautyQSearchDomainContract.fields.map(field => field.name.value -> field.kind).toMap
+      kindByName.foreach {
+        case (name, kind) if name.startsWith("intAttributes.") => assert(kind == SearchFieldKind.Range)
+        case _ => ()
+      }
+    }
+
+    "map any dynamic decimal field to Range when present" in {
+      val kindByName = BeautyQSearchDomainContract.fields.map(field => field.name.value -> field.kind).toMap
+      kindByName.foreach {
+        case (name, kind) if name.startsWith("bigDecimalAttributes.") => assert(kind == SearchFieldKind.Range)
+        case _ => ()
+      }
+    }
+
+    "record catalog, evaluation, document-result-unit, intent-languages, and document-field-kind-mapping as the ready readiness sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.readySections ==
-          List("catalog", "evaluation", "document-result-unit", "intent-languages")
+          List("catalog", "evaluation", "document-result-unit", "intent-languages", "document-field-kind-mapping")
       )
     }
 
@@ -117,7 +194,6 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.id) ==
           List(
-            "document-field-kind-mapping",
             "runtime-capabilities",
             "response-policy",
           )
@@ -127,7 +203,7 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
     "record the exact pending decision sections" in {
       assert(
         BeautyQSearchDomainContract.searchDomainSpecReadiness.pendingDecisions.map(_.section) ==
-          List("document", "runtime", "response")
+          List("runtime", "response")
       )
     }
 

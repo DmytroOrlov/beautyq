@@ -30,13 +30,9 @@ object BeautyQSearchDomainSpecReadiness {
         "evaluation",
         "document-result-unit",
         "intent-languages",
+        "document-field-kind-mapping",
       ),
       pendingDecisions = List(
-        BeautyQSearchDomainSpecPendingDecision(
-          id = "document-field-kind-mapping",
-          section = "document",
-          reason = "BeautyQ document fields use search-core SearchFieldKind; no source-owned mapping to search-contract-core SearchFieldKind exists yet.",
-        ),
         BeautyQSearchDomainSpecPendingDecision(
           id = "runtime-capabilities",
           section = "runtime",
