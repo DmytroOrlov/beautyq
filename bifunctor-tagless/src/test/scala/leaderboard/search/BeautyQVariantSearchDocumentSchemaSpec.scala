@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import leaderboard.model.*
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentSchema, BeautySearchCatalogSnapshot, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchFieldSemantics, SearchFieldKind, SearchFieldSemantic}
 import leaderboard.seed.{BeautyQSeedData, BeautyQSeedLoader}
 import org.scalatest.wordspec.AnyWordSpec
@@ -11,9 +11,9 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
 
   private val seed = loadSeedData()
 
-  "BeautyQVariantSearchDocumentSchema.documentSpec" should {
+  "BeautyQVariantSearchDocumentContract.documentSpec" should {
     "declare the BeautyQ variant index and document id" in {
-      val spec = BeautyQVariantSearchDocumentSchema.documentSpec
+      val spec = BeautyQVariantSearchDocumentContract.documentSpec
       val document = projectSeedDocuments() match {
         case first :: _ => first
         case Nil        => fail("Expected seed projection to produce documents")
@@ -24,13 +24,13 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
 
     "preserve static field paths and roles" in {
-      val roles = BeautyQVariantSearchDocumentSchema.documentSpec.fields.map(FieldRole.from)
+      val roles = BeautyQVariantSearchDocumentContract.documentSpec.fields.map(FieldRole.from)
 
       assert(roles.take(staticFieldRoles.size) == staticFieldRoles)
     }
 
-    "expose schema-owned static field handles with existing paths and roles" in {
-      val fields = BeautyQVariantSearchDocumentSchema.Fields
+    "expose contract-owned static field handles with existing paths and roles" in {
+      val fields = BeautyQVariantSearchDocumentContract.Fields
       val roles = fields.staticFields.map(FieldRole.from)
 
       assert(roles == staticFieldRoles)
@@ -45,7 +45,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
 
     "include every dynamic attribute field with expected roles" in {
-      val roles = BeautyQVariantSearchDocumentSchema.documentSpec.fields.map(FieldRole.from)
+      val roles = BeautyQVariantSearchDocumentContract.documentSpec.fields.map(FieldRole.from)
       val dynamicRoles = AttributeDefinition.all.flatMap {
         case definition: EnumAttributeDefinition[?] =>
           List(FieldRole(
@@ -97,8 +97,8 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
       assert(roles.map(_.path) == (staticFieldRoles ++ dynamicRoles).map(_.path))
     }
 
-    "expose dynamic attribute handles through schema-owned maps" in {
-      val fields = BeautyQVariantSearchDocumentSchema.Fields
+    "expose dynamic attribute handles through contract-owned maps" in {
+      val fields = BeautyQVariantSearchDocumentContract.Fields
 
       AttributeDefinition.enumDefinitions.foreach { definition =>
         fields.enumAttributesByCode.get(definition.code) match {
@@ -139,15 +139,15 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec" should {
+  "BeautyQVariantSearchDocumentContract.qdrantPayloadSpec" should {
     "own exactly the Qdrant payload field paths" in {
-      val payloadSpec = BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec
+      val payloadSpec = BeautyQVariantSearchDocumentContract.qdrantPayloadSpec
 
       assert(payloadSpec.fields == List(
-        BeautyQVariantSearchDocumentSchema.Fields.variantId,
-        BeautyQVariantSearchDocumentSchema.Fields.masterLocationId,
-        BeautyQVariantSearchDocumentSchema.Fields.serviceId,
-        BeautyQVariantSearchDocumentSchema.Fields.serviceName,
+        BeautyQVariantSearchDocumentContract.Fields.variantId,
+        BeautyQVariantSearchDocumentContract.Fields.masterLocationId,
+        BeautyQVariantSearchDocumentContract.Fields.serviceId,
+        BeautyQVariantSearchDocumentContract.Fields.serviceName,
       ))
       assert(payloadSpec.fieldPaths == List(
         "variantId",
@@ -158,7 +158,7 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
 
     "reference only fields defined by the document spec" in {
-      val payloadSpec = BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec
+      val payloadSpec = BeautyQVariantSearchDocumentContract.qdrantPayloadSpec
 
       payloadSpec.fieldPaths.foreach { path =>
         payloadSpec.documentSpec.fieldsByPath.get(path) match {
@@ -171,10 +171,10 @@ final class BeautyQVariantSearchDocumentSchemaSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQVariantSearchDocumentSchema.querySchema" should {
-    "point at schema-owned field handles" in {
-      val fields = BeautyQVariantSearchDocumentSchema.Fields
-      val querySchema = BeautyQVariantSearchDocumentSchema.querySchema
+  "BeautyQVariantSearchDocumentContract.querySchema" should {
+    "point at contract-owned field handles" in {
+      val fields = BeautyQVariantSearchDocumentContract.Fields
+      val querySchema = BeautyQVariantSearchDocumentContract.querySchema
 
       assert(querySchema.field("serviceName") == Right(fields.serviceName))
       assert(querySchema.field("categoryName") == Right(fields.categoryName))

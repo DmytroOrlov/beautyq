@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import io.circe.Json
-import leaderboard.search.document.{BeautyQVariantSearchDocumentSchema, VariantSearchDocument}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, VariantSearchDocument}
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.qdrant.{QdrantJsonInterpreter, QdrantVariantDocumentPointBuilder}
 import org.scalatest.wordspec.AnyWordSpec
@@ -26,9 +26,9 @@ final class QdrantVariantDocumentPointBuilderSpec extends AnyWordSpec {
       )
 
       assert(QdrantVariantDocumentPointBuilder.pointId(document) == document.variantId.toString)
-      assert(BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec.payload(document) == Right(expectedPayload))
+      assert(BeautyQVariantSearchDocumentContract.qdrantPayloadSpec.payload(document) == Right(expectedPayload))
       assert(QdrantVariantDocumentPointBuilder.payload(document) == expectedPayload)
-      assert(BeautyQVariantSearchDocumentSchema.qdrantPayloadSpec.payload(document).contains(QdrantVariantDocumentPointBuilder.payload(document)))
+      assert(BeautyQVariantSearchDocumentContract.qdrantPayloadSpec.payload(document).contains(QdrantVariantDocumentPointBuilder.payload(document)))
       assert(point.downField("id").as[String] == Right(document.variantId.toString))
       assert(point.downField("vector").downField(vectorName).as[List[Double]] == Right(vector))
       assert(payload.downField("variantId").as[String] == Right(document.variantId.toString))

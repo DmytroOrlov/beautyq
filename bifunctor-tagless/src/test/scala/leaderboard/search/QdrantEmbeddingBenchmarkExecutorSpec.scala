@@ -3,7 +3,7 @@ package leaderboard.search
 import io.circe.{Json, JsonObject}
 import io.circe.syntax.*
 import leaderboard.model.QueryFailure
-import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
+import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.eval.{
@@ -144,7 +144,7 @@ final class QdrantEmbeddingBenchmarkExecutorSpec extends AnyWordSpec {
       val semanticSearch = new QdrantSemanticCandidateSearch(
         new RecordingEmbeddingClient(embeddingClient, searchQueriesRef),
         new ConstQdrantSearchClient(hits),
-      leaderboard.search.document.BeautyQVariantSearchDocumentSchema.Fields.variantId,
+      BeautyQVariantSearchDocumentContract.Fields.variantId,
       )
       ZIO.succeed(QdrantNonProductionExperimentComposition.build(
         readinessConfig = readinessConfig,

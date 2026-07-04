@@ -716,6 +716,44 @@ fingerprint inputs, and managed-bootstrap source-text field paths are
 byte-for-byte identical to before. No production route activation. Phase 10
 (wiring module assembly) remains separate and untouched.
 
+## Phase 9c record: test/docs consumer cleanup for contract-shaped schema references
+
+A test/docs cleanup slice, not a main-source consumer migration: in
+`bifunctor-tagless` test files that only read the contract-shaped members of
+`BeautyQVariantSearchDocumentSchema` (`Fields`/`documentSpec`/
+`qdrantPayloadSpec`/`querySchema`, never `project`/`projection`/
+`buildDocument`), those specific references now read
+`BeautyQVariantSearchDocumentContract` directly:
+
+- `BeautyQVariantSearchDocumentSchemaSpec.scala` - its `documentSpec`/
+  `Fields`/`qdrantPayloadSpec`/`querySchema` assertions (and describe-block
+  titles) now read `BeautyQVariantSearchDocumentContract`; its `project`
+  assertions and helper methods still read `BeautyQVariantSearchDocumentSchema`,
+  since those exercise projection/materialization behavior over
+  `BeautySearchCatalogSnapshot`.
+- `QdrantVariantDocumentPointBuilderSpec.scala` - only ever read
+  `qdrantPayloadSpec`; migrated entirely to
+  `BeautyQVariantSearchDocumentContract`.
+- `QdrantEmbeddingBenchmarkExecutorSpec.scala` - its one `Fields.variantId`
+  reference (a field handle passed to `QdrantSemanticCandidateSearch`, not a
+  projection call) migrated to `BeautyQVariantSearchDocumentContract`.
+
+No main-source production migration was made in this slice: the remaining
+main-source `BeautyQVariantSearchDocumentSchema` usages are the
+materialization/projection compatibility surface itself
+(`projection`/`project`/`buildDocument`/validation/text-building,
+`BeautySearchCatalogSnapshotLoader`/`VariantSearchDocumentBuilder`), which
+Phase 9a/9b already established are not safe to bulk-migrate. Compatibility
+facade deletion remains forbidden until a zero-usage audit confirms nothing -
+main-source or test - still reads it. Many more `bifunctor-tagless` test
+files still hold contract-shaped-only `BeautyQVariantSearchDocumentSchema`
+references outside this slice's edited-file scope; they remain for a later,
+separately-scoped cleanup pass.
+
+No behavior change: each replacement reads the identical underlying value
+(the schema's delegating `val`/`lazy val` already forwarded 1:1 from the
+contract object). `build.sbt` untouched.
+
 ## Phase 10a record: BeautySearchServingGate moved into beautyq-search-wiring
 
 First `beautyq-search-wiring` slice: `BeautySearchServingGate` - a narrow,

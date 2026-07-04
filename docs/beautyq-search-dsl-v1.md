@@ -31,7 +31,7 @@ schema-owned document projection         SearchDocumentProjection,
                                          BeautyQVariantSearchDocumentSchema.project
         │
         ▼
-SearchDocumentSpec / SearchField         BeautyQVariantSearchDocumentSchema.Fields,
+SearchDocumentSpec / SearchField         BeautyQVariantSearchDocumentContract.Fields,
 handles                                  selector-derived static fields,
                                          explicit dynamic/computed fields
         │
@@ -84,8 +84,8 @@ Where each kind of search concern currently lives:
 | Concern | Current location |
 |---|---|
 | new repo entity / source / relation | model class + `RepoEntity` / `RepoField` + `BeautyQRepoGraph` (current/legacy compatibility surface) |
-| new document field (static/selector-derived) | `BeautyQVariantSearchDocumentSchema.Fields` + document spec |
-| new dynamic or computed field | explicit computed/dynamic field in `BeautyQVariantSearchDocumentSchema` |
+| new document field (static/selector-derived) | `BeautyQVariantSearchDocumentContract.Fields` + document spec |
+| new dynamic or computed field | explicit computed/dynamic field in `BeautyQVariantSearchDocumentContract` |
 | new intent phrase or rule | `BeautyQSearchIntentVocabulary` |
 | new query constraint mapping | BeautyQ query schema resolution |
 | new payload field | schema-owned `SearchDocumentPayloadSpec` |
@@ -103,10 +103,11 @@ They are not the single source of truth for all search metadata:
 
 - `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into the generic
   `SearchRuntimeSpec`.
-- Document field ownership belongs to `BeautyQVariantSearchDocumentSchema.Fields`, not to
-  `BeautySearchSpecV1`.
-- Projection is owned by `BeautyQVariantSearchDocumentSchema.project` (via `SearchDocumentProjection`);
-  `VariantSearchDocumentBuilder` is a compatibility adapter only.
+- Document field ownership belongs to `BeautyQVariantSearchDocumentContract.Fields` (in
+  `beautyq-search-contract`), not to `BeautySearchSpecV1`.
+- Projection is owned by `BeautyQVariantSearchDocumentSchema.project` (via `SearchDocumentProjection`),
+  which delegates the contract-shaped `documentSpec` it projects into from
+  `BeautyQVariantSearchDocumentContract`; `VariantSearchDocumentBuilder` is a compatibility adapter only.
 - Generic ES and Qdrant interpreters consume `SearchDocumentSpec` / `SearchRuntimeSpec` / resolved
   constraints. BeautyQ-specific ES compatibility lives in `BeautyQElasticsearchInterpreterAdapter`.
 
@@ -128,15 +129,16 @@ missing-entity messages, and search projection semantics.
 ## Schema-owned document projection
 
 `SearchDocumentProjection` is the projection layer between loaded catalog snapshots and indexed
-documents. `BeautyQVariantSearchDocumentSchema` owns BeautyQ variant projection and the
-`SearchDocumentSpec`. The production seed-catalog path uses
-`BeautyQVariantSearchDocumentSchema.project`.
+documents. `BeautyQVariantSearchDocumentSchema` owns BeautyQ variant projection (a
+materialization/projection compatibility facade); the contract-shaped `SearchDocumentSpec` it
+projects into is owned by `BeautyQVariantSearchDocumentContract`. The production seed-catalog path
+uses `BeautyQVariantSearchDocumentSchema.project`.
 
 `VariantSearchDocumentBuilder` remains present as a compatibility adapter only.
 
 ## Document field ownership
 
-`BeautyQVariantSearchDocumentSchema.Fields` owns BeautyQ document field handles:
+`BeautyQVariantSearchDocumentContract.Fields` owns BeautyQ document field handles:
 
 - Static direct fields use selector-derived `SearchField` helpers.
 - Dynamic/computed fields remain explicit.
