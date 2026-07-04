@@ -72,7 +72,8 @@ split, dependency DAG, and forbidden dependencies are defined in
 | `search-core` | generic fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
 | `search-elasticsearch` | reusable ES client/interpreter code |
 | `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code |
-| `bifunctor-tagless` | BeautyQ app-side schemas, adapters, backends, routes, startup/plugin wiring, eval/benchmark code, concrete embedding infrastructure |
+| `beautyq-search-wiring` | BeautyQ runtime models/codecs (`BeautySearchModels`), intent parser, in-memory search backend, response assembler, spec-support helpers, readiness wrapper |
+| `bifunctor-tagless` | BeautyQ app-side routes, startup/plugin wiring, eval/benchmark code, concrete embedding infrastructure, concrete ES/Qdrant client wiring |
 
 Generic modules (`search-core`, `search-elasticsearch`, `search-qdrant`) must not know BeautyQ
 names or app types.
@@ -91,7 +92,7 @@ Where each kind of search concern currently lives:
 | new payload field | schema-owned `SearchDocumentPayloadSpec` |
 | new carousel / ranking / presentation name or default | `BeautyQSearchPresentation` |
 | new generic backend behavior | `search-core` runtime metadata + generic interpreter |
-| new BeautyQ-specific route / response behavior | app-side adapter / backend / assembler in `bifunctor-tagless` (current/legacy compatibility surface) |
+| new BeautyQ-specific route / response behavior | `InMemorySearchBackend` / `SearchResponseAssembler` in `beautyq-search-wiring`; HTTP/Tapir route adapter in `bifunctor-tagless` |
 
 Current legacy locations remain until migration phases remove them.
 New target ownership must follow `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.

@@ -1081,6 +1081,42 @@ change.
 No projection output, document fields, repo traversal, seed/bootstrap
 behavior, route behavior, or runtime behavior changed; `build.sbt` untouched.
 
+## Phase 14c record: BeautyQ runtime model/parser/in-memory/response/readiness layer moved to beautyq-search-wiring
+
+Moved six BeautyQ search runtime/model/helper files from `bifunctor-tagless`
+into `beautyq-search-wiring`, with package names unchanged:
+
+- `leaderboard.search.BeautySearchModels` (`UserSearchInput`, `ParsedSearchIntent`,
+  `BeautySearchResponse`, `BeautySearchBackend`, `BeautySearchService`, and related
+  runtime model/codec types)
+- `leaderboard.search.parser.BeautySearchIntentParser`
+- `leaderboard.search.inmemory.InMemorySearchBackend`
+- `leaderboard.search.document.BeautySearchReadyCatalogDocuments`
+- `leaderboard.search.interpreter.SearchResponseAssembler`
+- `leaderboard.search.interpreter.SearchSpecSupport`
+
+These files were source-confirmed as pure BeautyQ runtime/model/helper layer,
+not HTTP/Tapir route handlers, app bootstrap, concrete ES/Qdrant clients, or
+Distage `ModuleDef` interpreters, and already only used BeautyQ contract/
+materialization/runtime concepts visible to `beautyq-search-wiring` through
+its existing dependencies on `beautyq-search-contract`, `beautyq-search-materialization`,
+`search-elasticsearch`, and `search-qdrant`. Both `beautyqSearchWiring/compile`
+and `bifunctor-tagless/compile`/`Test/compile` succeeded with zero import
+fixes required; `build.sbt` was not touched.
+
+`bifunctor-tagless` remains the interpreter shell for HTTP/Tapir route
+handlers, app bootstrap/startup, concrete Elasticsearch/Qdrant client wiring,
+Distage `ModuleDef` interpreters, and the production route/plugin graph
+(`BeautySearchApi`, `BeautySearchRouteModules`, `BeautySearchPluginModules`,
+`BeautySearchCatalogBackendModules`, `BeautySearchQdrantSupplementRuntimeBindingModules`,
+`BeautySearchLocalQdrantSupplementLauncherModule`, `SearchBackendRouter`, and
+the Qdrant candidate/projector/hybrid/eval files); none of those moved in
+this patch.
+
+No parser behavior, response shape, in-memory scoring/filtering/ranking,
+runtime binding names, route behavior, readiness behavior, or projection
+behavior changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
