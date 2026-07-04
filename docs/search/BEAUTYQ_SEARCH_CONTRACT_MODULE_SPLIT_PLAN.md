@@ -1117,6 +1117,65 @@ No parser behavior, response shape, in-memory scoring/filtering/ranking,
 runtime binding names, route behavior, readiness behavior, or projection
 behavior changed.
 
+## Phase 15c record: concrete backend/hybrid/routing/semantic/lexical runtime layer moved to beautyq-search-wiring
+
+Moved 43 of 54 source-confirmed BeautyQ concrete backend/hybrid/routing/
+semantic/lexical runtime files from `bifunctor-tagless` into
+`beautyq-search-wiring`, package names unchanged: `VariantSearchDocumentSnapshotProvider`;
+all eight `leaderboard.search.elasticsearch` BeautyQ ES backend/readiness/
+adapter files (`BeautyQElasticsearchInterpreterAdapter`, `ElasticsearchSearchBackend`,
+`ElasticsearchSeedSearchComposition`, and related readiness/lifecycle DTOs);
+10 of 21 targeted `leaderboard.search.qdrant` files (`QdrantCandidateAssembler`,
+`QdrantCandidateResponseProjector`, `QdrantSemanticCandidateBackend`,
+`QdrantSemanticCandidateSearch`, the moved `QdrantVariantDocument*`
+indexer/point-builder files, and the non-production experiment files); 21 `leaderboard.search.hybrid`
+files including `ExperimentalHybridSearchBackend`, `ExperimentalBeautySearchService`,
+`ExperimentalHybridRouteDecider`/`Diagnostics`, the `BeautyQHybrid*` projection/
+response files, the `BeautyQNonProductionHybridRunner*` composition/manual-input
+files, `hybrid/control/BeautySearchHybridControlPlane`, and
+`hybrid/production/BeautySearchHybridProductionActivation`; and
+`routing.SearchBackendRouter`, `semantic.SemanticCandidateBackend`,
+`lexical.LexicalDocumentBackend`.
+
+11 targeted `leaderboard.search.qdrant` files could not move and remain in
+`bifunctor-tagless`: `QdrantProductionCandidateReadiness`,
+`QdrantProductionCandidateActivationConfigApproval`,
+`QdrantExplicitOptInRoutePrerequisites`, `QdrantExplicitOptInBeautySearchBackend`,
+`QdrantProductionCandidateActivationPlanning`, `QdrantProductionCandidateActivationPolicy`,
+`QdrantProductionCandidateIndexingReadiness`, `QdrantProductionCandidateObservabilityReadiness`,
+`QdrantProductionCandidateRollbackReadiness`,
+`QdrantProductionCandidateSearchReadiness`, and
+`QdrantProductionCandidateServingApprovalRequest`. Reason: `QdrantProductionCandidateReadiness`
+and `QdrantProductionCandidateActivationConfigApproval` both directly reference
+`QdrantProductionCandidateQualityReport`/`QdrantProductionCandidateQualityDecisionStatus`/
+`QdrantProductionCandidateQualityGate`, which stay in `bifunctor-tagless` per this
+patch's own constraint (`QdrantProductionCandidateQualityGate` imports
+`leaderboard.search.eval.EngineEvalAggregateReport`). Moving either file would
+have made `beautyq-search-wiring` depend on `bifunctor-tagless`, which already
+depends on `beautyq-search-wiring` - a real module cycle. The other eight files
+transitively require types owned by those two (`QdrantProductionCandidateReadinessStatus`/
+`ReadinessReport`, `QdrantProductionCandidateActivationApprovalStatus`,
+`QdrantProductionCandidateActivationConfigApprovalReport`), so the entire
+cluster had to stay together in `bifunctor-tagless`. This mirrors the same
+constraint already applied to `QdrantProductionCandidateQualityGate` itself and
+to `QdrantEmbeddingBenchmark*`.
+
+`beautyqSearchWiring/compile`, `bifunctor-tagless/compile`, and
+`bifunctor-tagless/Test/compile` all succeeded afterward with zero import
+fixes; `build.sbt` was not touched, and no compatibility shim was added.
+`bifunctor-tagless` remains the shell for HTTP/Tapir API, app bootstrap/
+startup, Distage `ModuleDef` interpreters, config binding modules, Docker/
+testkit/app launcher shell, and the eval/benchmark runner shell, plus the
+11-file Qdrant production-candidate readiness/activation-config cluster
+described above and the previously-pinned `BeautyQNonProductionHybridRunnerRealClientInputs`,
+`BeautySearchHybridProductionModules`, `QdrantProductionCandidateQualityGate`,
+and `QdrantEmbeddingBenchmark*` files.
+
+No ES/Qdrant request behavior, candidate assembly/projection behavior, hybrid
+route decisions, hybrid response projection, lexical/semantic backend
+contracts, snapshot provider semantics, readiness behavior, or production
+activation data models changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

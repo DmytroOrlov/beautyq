@@ -72,8 +72,8 @@ split, dependency DAG, and forbidden dependencies are defined in
 | `search-core` | generic fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
 | `search-elasticsearch` | reusable ES client/interpreter code |
 | `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code |
-| `beautyq-search-wiring` | BeautyQ runtime models/codecs (`BeautySearchModels`), intent parser, in-memory search backend, response assembler, spec-support helpers, readiness wrapper |
-| `bifunctor-tagless` | BeautyQ app-side routes, startup/plugin wiring, eval/benchmark code, concrete embedding infrastructure, concrete ES/Qdrant client wiring |
+| `beautyq-search-wiring` | BeautyQ runtime models/codecs (`BeautySearchModels`), intent parser, in-memory search backend, response assembler, spec-support helpers, readiness wrapper, concrete ES/Qdrant backend adapters (`ElasticsearchSearchBackend`, `QdrantCandidateAssembler`/`QdrantCandidateResponseProjector`, Qdrant indexers), hybrid backend/routing/response layer (`ExperimentalHybridSearchBackend`, `SearchBackendRouter`, `SemanticCandidateBackend`, `LexicalDocumentBackend`) |
+| `bifunctor-tagless` | BeautyQ app-side routes, startup/plugin wiring, eval/benchmark code, concrete embedding infrastructure, Distage `ModuleDef` interpreters, config binding modules, and the Qdrant production-candidate readiness/activation-config cluster still coupled to the eval-dependent `QdrantProductionCandidateQualityGate` |
 
 Generic modules (`search-core`, `search-elasticsearch`, `search-qdrant`) must not know BeautyQ
 names or app types.
