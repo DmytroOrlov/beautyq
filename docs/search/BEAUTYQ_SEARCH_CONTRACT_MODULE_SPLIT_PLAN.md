@@ -1301,6 +1301,66 @@ benchmark semantics, eval semantics, config names, HTTP contracts, Qdrant/ES
 requests, response shape, scoring, ranking, filtering, readiness, startup
 behavior, renderers, reason codes, or report shapes changed.
 
+## Phase 19c record: pure request/config/embedding-decoder/query-subset boundaries split out of bifunctor-tagless
+
+Split the remaining source-confirmed pure boundaries out of the `bifunctor-tagless`
+API/config/embedding shell, across three destination modules.
+
+`BeautySearchRequestContract.scala` (package `leaderboard.search`, unchanged
+constants/codes/messages/`SemanticError`) moved to `beautyq-search-wiring`. A
+new `BeautySearchRequestValidation` object was added there, extracted
+byte-for-byte from `BeautySearchApi.validate(...)`'s branching (blank query,
+limit bounds, latitude bounds, longitude bounds), returning
+`Either[BeautySearchRequestContract.SemanticError, UserSearchInput]`.
+`BeautySearchApi.scala` in `bifunctor-tagless` now delegates:
+`BeautySearchRequestValidation.validate(input).left.map(badRequest)`, keeping
+`badRequest`/`HttpApiFailure.BadRequest` mapping and all HTTP/Tapir route
+logic as HTTP shell, unchanged validation ordering and HTTP response behavior.
+
+`QdrantEmbeddingBenchmarkQuerySubset.scala` moved to `beautyq-search-wiring`
+unchanged (subset ids, descriptions, query ids, filtering, deduplication,
+limit behavior, operation name, and error messages preserved).
+
+`LlamaCppEmbeddingClient.scala` split: the pure `LlamaCppEmbeddingClientConfig`
+case class and the pure `decodeEmbeddingJson` JSON-decoding logic (field names
+`data`/`embedding`, operation name `llama-cpp-embedding`, exact
+missing-data/error messages) moved to new
+`search-qdrant/.../embedding/LlamaCppEmbeddingClientConfig.scala` and
+`LlamaCppEmbeddingResponseDecoder.scala`. The real `LlamaCppEmbeddingClient`
+class and its Java `HttpClient` request/response shell stayed in
+`bifunctor-tagless`; its companion's public `decodeEmbeddingJson(json: Json)`
+is now a one-line delegate to `LlamaCppEmbeddingResponseDecoder.decodeEmbeddingJson(json)`,
+preserving the method as a compatibility surface. `decodeEmbedding`, HTTP
+request construction, timeout, model string, endpoint URL construction, and
+status handling are unchanged.
+
+`QdrantPortCfg.scala` and `ElasticsearchPortCfg.scala` (both pure `leaderboard.config`
+case class DTOs) moved to `leaderboard-core`, which `search-qdrant`,
+`search-elasticsearch`, and `bifunctor-tagless` already depend on. Config
+binding, Docker-derived config creation, and `makeConfig[...]` shell were not
+touched and remain in `bifunctor-tagless`.
+
+`leaderboard-core/compile`, `search-qdrant/compile`, `beautyqSearchWiring/compile`,
+`bifunctor-tagless/compile`, and `bifunctor-tagless/Test/compile` all
+succeeded afterward; the only edits beyond the moves were the anticipated
+`BeautySearchApi.scala` import/delegation change and removing an
+now-unused `io.circe.Decoder` import from `LlamaCppEmbeddingClient.scala`.
+`build.sbt` was not touched and no compatibility shim beyond the explicitly
+allowed `decodeEmbeddingJson` delegate was added.
+`bifunctor-tagless` keeps `BeautySearchApi.scala`, `BeautySearchTapirEndpoints.scala`,
+`HttpApiFailure.scala`, `BeautySearchProductionInclude.scala`,
+`BeautySearchProductionInclusion.scala`, `LlamaCppEmbeddingClient.scala`,
+`BeautySearchCatalogBackendModules.scala`, `BeautySearchRouteModules.scala`,
+`BeautySearchPluginModules.scala`, `BeautySearchHybridProductionModules.scala`,
+`BeautySearchEvalLoader.scala`, `QdrantEmbeddingBenchmarkCandidateExecutor.scala`,
+and all API/HTTP/startup/config-binding/ModuleDef/real-client/file-IO shell.
+
+No API behavior, route behavior, HTTP contracts, error codes/messages,
+request validation ordering, production route exposure, config names, client
+request semantics, JSON response decoding semantics, app graph semantics,
+runtime binding names, Qdrant/ES requests, response shape, scoring, ranking,
+filtering, readiness, or startup behavior changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

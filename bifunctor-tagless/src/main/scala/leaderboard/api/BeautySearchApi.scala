@@ -4,7 +4,7 @@ import cats.effect.Async
 import izumi.functional.bio.Error2
 import leaderboard.http.HttpApiFailure
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
-import leaderboard.search.{BeautySearchRequestContract, BeautySearchService, UserSearchInput}
+import leaderboard.search.{BeautySearchRequestContract, BeautySearchRequestValidation, BeautySearchService, UserSearchInput}
 import org.http4s.HttpRoutes
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 
@@ -36,21 +36,7 @@ class BeautySearchApi[F[+_, +_]: Error2](
     }
 
   private def validate(input: UserSearchInput): Either[HttpApiFailure.BadRequest, UserSearchInput] =
-    if (input.query.trim.isEmpty) {
-      Left(badRequest(BeautySearchRequestContract.InvalidQuery))
-    } else if (input.limit < BeautySearchRequestContract.MinLimit || input.limit > BeautySearchRequestContract.MaxLimit) {
-      Left(badRequest(BeautySearchRequestContract.InvalidLimit))
-    } else if (input.userLat.exists(latitude =>
-        latitude < BeautySearchRequestContract.MinLatitude || latitude > BeautySearchRequestContract.MaxLatitude
-      )) {
-      Left(badRequest(BeautySearchRequestContract.InvalidLatitude))
-    } else if (input.userLon.exists(longitude =>
-        longitude < BeautySearchRequestContract.MinLongitude || longitude > BeautySearchRequestContract.MaxLongitude
-      )) {
-      Left(badRequest(BeautySearchRequestContract.InvalidLongitude))
-    } else {
-      Right(input)
-    }
+    BeautySearchRequestValidation.validate(input).left.map(badRequest)
 
   private def badRequest(error: BeautySearchRequestContract.SemanticError): HttpApiFailure.BadRequest =
     HttpApiFailure.BadRequest(error.code, error.message)
