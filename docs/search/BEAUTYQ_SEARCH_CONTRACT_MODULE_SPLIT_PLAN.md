@@ -1679,6 +1679,75 @@ source-text fields/order, Qdrant payload shape, ES mapping, materialized
 document text, bootstrap fingerprints, benchmark report shapes, eval/report
 semantics, or route/API behavior changed.
 
+## Phase 26 record: shared eval production-posture metric names centralized
+
+Adds `BeautyQSearchEvaluationMetricNames` (package `leaderboard.search.eval`, in
+`beautyq-search-contract`), an `object SharedProductionPosture` declaring the 22
+BeautyQ eval production-posture metric name constants (`DefaultBeautySearchEsBacked`,
+`QdrantOptInDisabledByDefault`, `QdrantProductionActivationApproved`,
+`ProductionRouteActivated`, `DefaultRouteSwitched`, `ProductionBeautySearchCalled`,
+`EsClientCreated`, `QdrantClientCreated`, `EsExecuted`, `QdrantExecuted`,
+`RoutePluginDiHttpInvolved`, `RealBackendCallRequired`, `RealBackendCallImplemented`,
+`HybridServingImplied`, `FallbackImplied`, `ScoreFusionImplied`, `RerankingImplied`,
+`ProductionTelemetryImplied`, `QualityGreenClaimed`, `ProductionReadinessClaimed`,
+`RouteActivationClaimed`, `ServingApprovalClaimed`) plus an `All` list in that exact
+order, used by M9/M10's static scorecards (`beautyq-search-contract`) and the
+M10-M14 offline planning/design scorecards (`beautyq-search-wiring`) to prove
+"not production serving / not route activation / no real backend execution / no
+hidden Qdrant activation" boundaries.
+
+This is name-only centralization, like Phases 24/25: no metric value, metric
+order, renderer, scorecard outcome, or eval semantic changed, and the generic
+`SearchDomainSpec` shape is untouched - the same mechanical DSL-adoption pattern
+as centralizing the Qdrant source-text fields (Phase 24) and the managed-local
+Qdrant runtime defaults (Phase 25), not a `SearchDomainSpec` shape change.
+
+Prior to this phase, the same 22 metric-key strings were declared as inline
+literals in every `metrics()` builder across ten files: `M9BeautyQSearchEvalStaticScorecard`
+(2 of the 22 present: `route_plugin_di_http_involved`, `real_backend_call_required`;
+`production_activation_approval` is a distinct M9-only metric and was left
+untouched) and `M10BeautyQSearchFullQueryClassificationCoverageScorecard` (all
+22) in `beautyq-search-contract`; `M10BeautyQSearchRetrievalPolicyReadiness`,
+`M11BeautyQSearchCandidateGenerationInputSkeleton`,
+`M11BeautyQSearchCandidateGenerationResultSchema`,
+`M12BeautyQSearchFusionRerankingInputScaffold`,
+`M12BeautyQSearchFusionRerankingPolicyCatalog`,
+`M12BeautyQSearchFusionRerankingSavedOutputSchema`,
+`M13BeautyQSearchControlledOptInRoutePlanning`, and
+`M14BeautyQSearchRouteGateReadinessDesign` (all 22 each) in `beautyq-search-wiring`.
+All ten now reference `BeautyQSearchEvaluationMetricNames.SharedProductionPosture.*`
+directly - no import needed, since these `metrics()` builders already live in the
+exact same `leaderboard.search.eval` package the new object is declared in.
+Module-specific names (e.g. M13/M14's own `route_plugin_di_http_change`,
+`qdrant_production_activation` denied-drift-case names, which are textually
+similar to but distinct from the shared `route_plugin_di_http_involved` /
+`qdrant_production_activation_approved` metrics) were left untouched, along
+with every `m11_*`/`m12_*`/`m13_*`/`m14_*` module-specific metric, consumed
+verdict, row count, drift case, and artifact id.
+
+Ten corresponding `bifunctor-tagless` test files were updated the same way,
+replacing exact-match `metricValue(..., "name")` metric-key lookups with the
+constants (import added to each file's existing `leaderboard.search.eval`
+import block); `forbiddenRenderedTokens`/`fabricationTokens` prose lists and
+`rendered.contains(...)` markdown-content assertions were left untouched since
+none of them are exact metric-key literals matching the shared 22 names.
+
+`BeautyQSearchEvaluationContractSpec` now asserts the evaluation scorecard's
+metrics include every `SharedProductionPosture.All` name (both M9's 2 and
+M10's 22 feed the same distinct `EvalScorecardConfig.metrics` list);
+`BeautyQSearchDomainContractSpec` gained one small assertion that
+`evaluation.scorecard.metrics` contains a few representative shared posture
+names, without weakening any existing `SearchDomainSpec`/evaluation assertion.
+
+`beautyqSearchContract/compile`, `Test/compile`, `beautyqSearchWiring/compile`,
+`Test/compile`, `bifunctor-tagless/compile`, and `Test/compile` all succeeded
+with no other source changes. No metric string values, metric order, report
+markdown output (beyond the source of the string constants), scorecard
+outcomes, eval semantics, or generic `SearchDomainSpec` shape changed. This
+remains an exact-duplicate Sonnet patch, same class of change as Phases 24/25;
+the Fable 5 countdown stays reserved for a future shape/architecture decision,
+not this kind of mechanical name centralization.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

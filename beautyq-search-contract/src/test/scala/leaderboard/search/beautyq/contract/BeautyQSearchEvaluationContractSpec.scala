@@ -1,6 +1,7 @@
 package leaderboard.search.beautyq.contract
 
 import leaderboard.search.contract.{EvalProductionRoutingEffect, SearchBackendId}
+import leaderboard.search.eval.BeautyQSearchEvaluationMetricNames
 import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQSearchEvaluationContractSpec extends AnyWordSpec {
@@ -73,6 +74,11 @@ final class BeautyQSearchEvaluationContractSpec extends AnyWordSpec {
       assert(metrics.contains("dataset_query_count"))
       assert(metrics.contains("total_query_count"))
       assert(metrics.contains("m11_backend_candidate_inputs_ready"))
+    }
+
+    "include every shared production-posture metric name via the M9/M10 summaries" in {
+      val metrics = BeautyQSearchEvaluationContract.section.scorecard.metrics
+      assert(BeautyQSearchEvaluationMetricNames.SharedProductionPosture.All.forall(metrics.contains))
     }
 
     "never activate production routing regardless of full SearchDomainSpec declaration" in {

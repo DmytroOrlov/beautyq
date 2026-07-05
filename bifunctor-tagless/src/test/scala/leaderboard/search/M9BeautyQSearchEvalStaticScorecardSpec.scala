@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import leaderboard.search.eval.{
+  BeautyQSearchEvaluationMetricNames,
   CandidateSource,
   M9BeautyQSearchEvalStaticScorecard,
   M9BeautyQSearchEvalStaticScorecardRenderer,
@@ -59,7 +60,7 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
       assert(metricValue(summary.metrics, "real_backend_evidence_row_count") == "0")
       assert(metricValue(summary.metrics, "es_backend_evidence_row_count") == "0")
       assert(metricValue(summary.metrics, "qdrant_backend_evidence_row_count") == "0")
-      assert(metricValue(summary.metrics, "real_backend_call_required") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallRequired) == "false")
     }
 
     "keep the verdict to dataset and static-row readiness only" in {
@@ -87,7 +88,7 @@ final class M9BeautyQSearchEvalStaticScorecardSpec extends AnyWordSpec {
       assert(!summary.productionActivationApproval)
       assert(!summary.routePluginDiHttpInvolved)
       assert(metricValue(summary.metrics, "production_activation_approval") == "false")
-      assert(metricValue(summary.metrics, "route_plugin_di_http_involved") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RoutePluginDiHttpInvolved) == "false")
       assert(rendered.contains("No route, plugin, DI, or HTTP source is involved."))
       assert(rendered.contains("Default /beauty-search remains ES-backed; Qdrant production activation remains not approved."))
     }

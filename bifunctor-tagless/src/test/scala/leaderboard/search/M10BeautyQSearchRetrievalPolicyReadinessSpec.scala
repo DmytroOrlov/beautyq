@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import leaderboard.search.eval.{
+  BeautyQSearchEvaluationMetricNames,
   M10BeautyQSearchFullQueryClassification,
   M10BeautyQSearchM11CandidateGenerationInputGroup,
   M10BeautyQSearchM11InputRow,
@@ -111,7 +112,7 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
       val summary = M10BeautyQSearchRetrievalPolicyReadiness.DefaultSummary
       assert(!summary.boundary.hybridServingImplied)
       assert(metricValue(summary.metrics, "mixed_intent_is_offline_combined_comparison_only") == "true")
-      assert(metricValue(summary.metrics, "hybrid_serving_implied") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.HybridServingImplied) == "false")
     }
 
     "map representative anchor rows to their expected M11 input groups" in {
@@ -148,11 +149,11 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
       assert(!b.qdrantProductionActivationApproved)
       assert(!b.productionRouteActivated)
       assert(!b.defaultRouteSwitched)
-      assert(metricValue(summary.metrics, "qdrant_production_activation_approved") == "false")
-      assert(metricValue(summary.metrics, "production_route_activated") == "false")
-      assert(metricValue(summary.metrics, "default_route_switched") == "false")
-      assert(metricValue(summary.metrics, "default_beauty_search_es_backed") == "true")
-      assert(metricValue(summary.metrics, "qdrant_opt_in_disabled_by_default") == "true")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantProductionActivationApproved) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionRouteActivated) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultRouteSwitched) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultBeautySearchEsBacked) == "true")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantOptInDisabledByDefault) == "true")
     }
 
     "require and implement no real backend/client/route/plugin/DI/HTTP path" in {
@@ -167,14 +168,14 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
       assert(!b.routePluginDiHttpInvolved)
       assert(!b.realBackendCallRequired)
       assert(!b.realBackendCallImplemented)
-      assert(metricValue(summary.metrics, "production_beauty_search_called") == "false")
-      assert(metricValue(summary.metrics, "es_client_created") == "false")
-      assert(metricValue(summary.metrics, "qdrant_client_created") == "false")
-      assert(metricValue(summary.metrics, "es_executed") == "false")
-      assert(metricValue(summary.metrics, "qdrant_executed") == "false")
-      assert(metricValue(summary.metrics, "route_plugin_di_http_involved") == "false")
-      assert(metricValue(summary.metrics, "real_backend_call_required") == "false")
-      assert(metricValue(summary.metrics, "real_backend_call_implemented") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionBeautySearchCalled) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.EsClientCreated) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantClientCreated) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.EsExecuted) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantExecuted) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RoutePluginDiHttpInvolved) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallRequired) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallImplemented) == "false")
     }
 
     "keep forbidden production/hybrid/fallback/fusion/reranking/telemetry boundaries false" in {
@@ -186,10 +187,10 @@ final class M10BeautyQSearchRetrievalPolicyReadinessSpec extends AnyWordSpec {
       assert(!b.scoreFusionImplied)
       assert(!b.rerankingImplied)
       assert(!b.productionTelemetryImplied)
-      assert(metricValue(summary.metrics, "fallback_implied") == "false")
-      assert(metricValue(summary.metrics, "score_fusion_implied") == "false")
-      assert(metricValue(summary.metrics, "reranking_implied") == "false")
-      assert(metricValue(summary.metrics, "production_telemetry_implied") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.FallbackImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ScoreFusionImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RerankingImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionTelemetryImplied) == "false")
     }
   }
 

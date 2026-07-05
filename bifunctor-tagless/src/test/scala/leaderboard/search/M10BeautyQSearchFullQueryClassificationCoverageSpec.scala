@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import leaderboard.search.eval.{
+  BeautyQSearchEvaluationMetricNames,
   M10BeautyQSearchFullClassificationCoverageAnchorRow,
   M10BeautyQSearchFullClassificationCoverageMetric,
   M10BeautyQSearchFullQueryClassification,
@@ -292,26 +293,26 @@ final class M10BeautyQSearchFullQueryClassificationCoverageSpec extends AnyWordS
       assert(!b.productionTelemetryImplied)
 
       assert(metricValue(summary.metrics, "offline_strategy_intent_is_not_production_routing") == "true")
-      assert(metricValue(summary.metrics, "default_beauty_search_es_backed") == "true")
-      assert(metricValue(summary.metrics, "qdrant_opt_in_disabled_by_default") == "true")
-      assert(metricValue(summary.metrics, "qdrant_production_activation_approved") == "false")
-      assert(metricValue(summary.metrics, "production_route_activated") == "false")
-      assert(metricValue(summary.metrics, "default_route_switched") == "false")
-      assert(metricValue(summary.metrics, "production_beauty_search_called") == "false")
-      assert(metricValue(summary.metrics, "es_executed") == "false")
-      assert(metricValue(summary.metrics, "qdrant_executed") == "false")
-      assert(metricValue(summary.metrics, "route_plugin_di_http_involved") == "false")
-      assert(metricValue(summary.metrics, "real_backend_call_required") == "false")
-      assert(metricValue(summary.metrics, "real_backend_call_implemented") == "false")
-      assert(metricValue(summary.metrics, "hybrid_serving_implied") == "false")
-      assert(metricValue(summary.metrics, "fallback_implied") == "false")
-      assert(metricValue(summary.metrics, "score_fusion_implied") == "false")
-      assert(metricValue(summary.metrics, "reranking_implied") == "false")
-      assert(metricValue(summary.metrics, "production_telemetry_implied") == "false")
-      assert(metricValue(summary.metrics, "quality_green_claimed") == "false")
-      assert(metricValue(summary.metrics, "production_readiness_claimed") == "false")
-      assert(metricValue(summary.metrics, "route_activation_claimed") == "false")
-      assert(metricValue(summary.metrics, "serving_approval_claimed") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultBeautySearchEsBacked) == "true")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantOptInDisabledByDefault) == "true")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantProductionActivationApproved) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionRouteActivated) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultRouteSwitched) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionBeautySearchCalled) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.EsExecuted) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantExecuted) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RoutePluginDiHttpInvolved) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallRequired) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallImplemented) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.HybridServingImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.FallbackImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ScoreFusionImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RerankingImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionTelemetryImplied) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QualityGreenClaimed) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionReadinessClaimed) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RouteActivationClaimed) == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ServingApprovalClaimed) == "false")
     }
 
     "carry the readiness-safe verdict and no marketing readiness tokens" in {

@@ -3,6 +3,7 @@ package leaderboard.search.beautyq.contract
 import leaderboard.search.contract.{SearchBackendId, SearchBackendKind, SearchDomainId, SearchFieldKind}
 import leaderboard.search.document.BeautyQVariantSearchDocumentContract
 import leaderboard.search.dsl.{BeautyQSearchIntentVocabulary, BeautyQSearchPresentation, BeautySearchSpecV1}
+import leaderboard.search.eval.BeautyQSearchEvaluationMetricNames
 import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
@@ -69,6 +70,13 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
 
     "reference the same evaluation section as BeautyQSearchEvaluationContract" in {
       assert(BeautyQSearchDomainContract.evaluation eq BeautyQSearchEvaluationContract.section)
+    }
+
+    "include selected shared production-posture metric names in the evaluation scorecard" in {
+      val metrics = BeautyQSearchDomainContract.evaluation.scorecard.metrics
+      assert(metrics.contains(BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultBeautySearchEsBacked))
+      assert(metrics.contains(BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantProductionActivationApproved))
+      assert(metrics.contains(BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ServingApprovalClaimed))
     }
 
     "reference the same canonical Qdrant source-text fields as BeautyQSearchSourceTextFieldsContract" in {

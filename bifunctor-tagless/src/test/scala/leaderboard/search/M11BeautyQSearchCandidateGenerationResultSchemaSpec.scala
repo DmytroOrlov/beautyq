@@ -1,6 +1,7 @@
 package leaderboard.search
 
 import leaderboard.search.eval.{
+  BeautyQSearchEvaluationMetricNames,
   M10BeautyQSearchM11CandidateGenerationInputGroup,
   M10BeautyQSearchOfflineRetrievalStrategyIntent,
   M10BeautyQSearchQueryCategory,
@@ -280,7 +281,7 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       }
       assert(!summary.boundary.hybridServingImplied)
       assert(metricValue(summary.metrics, "combined_comparison_is_offline_report_shape_not_hybrid_serving") == "true")
-      assert(metricValue(summary.metrics, "hybrid_serving_implied") == "false")
+      assert(metricValue(summary.metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.HybridServingImplied) == "false")
     }
   }
 
@@ -316,14 +317,14 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       assert(!b.routePluginDiHttpInvolved)
       assert(!b.realBackendCallRequired)
       assert(!b.realBackendCallImplemented)
-      assert(metricValue(metrics, "production_beauty_search_called") == "false")
-      assert(metricValue(metrics, "es_client_created") == "false")
-      assert(metricValue(metrics, "qdrant_client_created") == "false")
-      assert(metricValue(metrics, "es_executed") == "false")
-      assert(metricValue(metrics, "qdrant_executed") == "false")
-      assert(metricValue(metrics, "route_plugin_di_http_involved") == "false")
-      assert(metricValue(metrics, "real_backend_call_required") == "false")
-      assert(metricValue(metrics, "real_backend_call_implemented") == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionBeautySearchCalled) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.EsClientCreated) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantClientCreated) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.EsExecuted) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantExecuted) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RoutePluginDiHttpInvolved) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallRequired) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallImplemented) == "false")
     }
 
     "keep all production and Qdrant activation boundaries false/not approved" in {
@@ -335,11 +336,11 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       assert(!b.qdrantProductionActivationApproved)
       assert(!b.productionRouteActivated)
       assert(!b.defaultRouteSwitched)
-      assert(metricValue(metrics, "qdrant_production_activation_approved") == "false")
-      assert(metricValue(metrics, "production_route_activated") == "false")
-      assert(metricValue(metrics, "default_route_switched") == "false")
-      assert(metricValue(metrics, "default_beauty_search_es_backed") == "true")
-      assert(metricValue(metrics, "qdrant_opt_in_disabled_by_default") == "true")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantProductionActivationApproved) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionRouteActivated) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultRouteSwitched) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultBeautySearchEsBacked) == "true")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantOptInDisabledByDefault) == "true")
     }
 
     "keep forbidden production/hybrid/fallback/fusion/reranking/telemetry boundaries false" in {
@@ -351,10 +352,10 @@ final class M11BeautyQSearchCandidateGenerationResultSchemaSpec extends AnyWordS
       assert(!b.scoreFusionImplied)
       assert(!b.rerankingImplied)
       assert(!b.productionTelemetryImplied)
-      assert(metricValue(metrics, "fallback_implied") == "false")
-      assert(metricValue(metrics, "score_fusion_implied") == "false")
-      assert(metricValue(metrics, "reranking_implied") == "false")
-      assert(metricValue(metrics, "production_telemetry_implied") == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.FallbackImplied) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ScoreFusionImplied) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RerankingImplied) == "false")
+      assert(metricValue(metrics, BeautyQSearchEvaluationMetricNames.SharedProductionPosture.ProductionTelemetryImplied) == "false")
     }
   }
 

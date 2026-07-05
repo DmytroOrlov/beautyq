@@ -111,10 +111,10 @@ object M9BeautyQSearchEvalStaticScorecard {
       metric("es_backend_evidence_row_count", summary.esBackendEvidenceRowCount.toString),
       metric("qdrant_backend_evidence_row_count", summary.qdrantBackendEvidenceRowCount.toString),
       metric("production_activation_approval", summary.productionActivationApproval.toString),
-      metric("route_plugin_di_http_involved", summary.routePluginDiHttpInvolved.toString),
+      metric(BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RoutePluginDiHttpInvolved, summary.routePluginDiHttpInvolved.toString),
       metric("full_json_parsing_implemented", summary.fullJsonParsingImplemented.toString),
       metric("full_74_query_static_expansion_implemented", summary.fullAcceptedQueryStaticExpansionImplemented.toString),
-      metric("real_backend_call_required", summary.realBackendCallRequired.toString),
+      metric(BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallRequired, summary.realBackendCallRequired.toString),
       metric("verdict", summary.verdict),
     )
 
