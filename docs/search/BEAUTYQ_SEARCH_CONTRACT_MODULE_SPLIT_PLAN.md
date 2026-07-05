@@ -1410,6 +1410,56 @@ behavior, action labels, result fields, log message, runtime binding names,
 source text field order, expected vector dimension, or Qdrant count-field
 fallback order changed.
 
+## Phase 21 record: bifunctor-tagless direct dependencies collapsed to the wiring boundary
+
+Build-graph cleanup only, no Scala source files touched. Phases 14c through
+20 moved essentially all source-confirmed pure/reusable BeautyQ search code
+out of `bifunctor-tagless` into `beautyq-search-wiring` (and, for a few
+narrowly-scoped pieces, into `search-qdrant`/`leaderboard-core`). What
+remains in `bifunctor-tagless` is genuine shell: Distage `ModuleDef`/plugin
+wiring, HTTP/Tapir/API routes, startup/lifecycle, config binding, Java/real
+clients, and file/resource IO - source-confirmed to have no further safe
+move without relocating that shell itself.
+
+With that boundary reached, `bifunctor-tagless`'s direct project dependency
+list in `build.sbt` no longer needed to spell out every lower module by
+name. Replaced:
+
+```
+.dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel, beautyqSearchContract, beautyqSearchRepositories, beautyqSearchMaterialization, beautyqSearchWiring)
+```
+
+with:
+
+```
+.dependsOn(beautyqSearchWiring)
+```
+
+`beautyqSearchWiring` already transitively depends on
+`beautyqSearchContract`, `beautyqSearchMaterialization`, `search-elasticsearch`,
+and `search-qdrant`, which in turn transitively bring in
+`beautyqSearchRepositories`, `repoCore`, `beautyqModel`, `search-core`,
+`searchContractCore`, and `leaderboard-core` - the exact same set
+`bifunctor-tagless` previously depended on directly, now available only
+transitively through the single `beautyqSearchWiring` boundary. No other
+project's `.dependsOn(...)` and no root `.aggregate(...)` entry changed.
+`bifunctor-tagless/compile`, `bifunctor-tagless/Test/compile`, and every
+downstream module's compile succeeded unchanged, with zero Scala source
+edits required.
+
+`bifunctor-tagless` is now intentionally the app/shell module living over
+the `beautyq-search-wiring` boundary: it depends on the search/runtime stack
+only through that one module, and keeps only HTTP/API/Tapir routes, Distage
+`ModuleDef` interpreters, startup/lifecycle shell, config binding, real
+ES/Qdrant/embedding clients, and file/resource IO loaders as source.
+
+No API behavior, route behavior, HTTP contracts, error codes/messages,
+request validation, production route exposure, config names, client request
+semantics, JSON decoding semantics, app graph semantics, runtime binding
+names, Qdrant/ES requests, response shape, scoring, ranking, filtering,
+readiness, startup behavior, renderers, reason codes, fingerprints, metadata
+keys, or report shapes changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

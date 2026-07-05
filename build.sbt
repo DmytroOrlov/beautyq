@@ -179,7 +179,7 @@ lazy val beautyqSearchWiring = project
 
 lazy val `bifunctor-tagless` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(`leaderboard-core`, `search-core`, `search-elasticsearch`, `search-qdrant`, repoCore, beautyqModel, beautyqSearchContract, beautyqSearchRepositories, beautyqSearchMaterialization, beautyqSearchWiring)
+  .dependsOn(beautyqSearchWiring)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
