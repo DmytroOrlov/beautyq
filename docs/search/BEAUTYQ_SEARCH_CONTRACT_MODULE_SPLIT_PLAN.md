@@ -1221,6 +1221,51 @@ No Qdrant quality-gate thresholds, decision statuses, readiness behavior,
 activation policy behavior, explicit opt-in route prerequisite validation, or
 report shapes changed.
 
+## Phase 17 record: pure eval and Qdrant embedding benchmark model/report layer moved to beautyq-search-wiring
+
+Moved the largest remaining pure eval/benchmark layer from `bifunctor-tagless`
+into `beautyq-search-wiring`, package names unchanged.
+
+Qdrant embedding benchmark: `QdrantEmbeddingBenchmark` (DTOs/aggregation),
+`QdrantEmbeddingBenchmarkReportJson`, `QdrantEmbeddingBenchmarkReportFormatter`,
+`QdrantEmbeddingBenchmarkDecisionPolicy`, `QdrantEmbeddingBenchmarkSavedReportComparison`,
+and `QdrantEmbeddingBenchmarkRunner` (which also declares the pure
+`QdrantEmbeddingBenchmarkCandidateExecutor` trait it depends on). The
+real-client implementation of that trait stays behind: `QdrantEmbeddingBenchmarkCandidateExecutor.scala`
+in `bifunctor-tagless` defines the concrete `QdrantEmbeddingBenchmarkQdrantCandidateExecutor`
+(imports `QdrantClient`, `LlamaCppEmbeddingClient`) and was not moved.
+
+EngineEval: `EngineEval` (DTOs/aggregate metrics), `EngineEvalReportAssembly`,
+`EngineEvalReportFormatter`, `EngineEvalReportJson`,
+`EngineEvalSavedReportComparison`, and `BeautySearchEvalReportJson` (pure JSON
+codec over `BeautySearchEvalReport`).
+
+Split `BeautySearchEval.scala`'s two mixed concerns: the pure eval model/scoring
+code (`BeautySearchEvalLocation`, `EvalNumericRange`, `EvalConstraintBlock`,
+`EvalTopK`, `EvalCarouselWeights`, `EvalVariantExpectation`,
+`EvalProviderExpectation`, `EvalServiceExpectation`, `EvalScoring`,
+`BeautySearchEvalQuery`, `BeautySearchEvalSuite`, `BeautySearchEvalReport`, and
+`object BeautySearchEvalScorer`) moved to `beautyq-search-wiring/.../eval/BeautySearchEval.scala`.
+The file-IO loader/decoder shell (`object BeautySearchEvalLoader`, its
+`Files.readString`/`Path`/`StandardCharsets` usage, and all its implicit
+Circe decoders with their existing defaulting behavior) moved unchanged into
+a new `bifunctor-tagless/.../eval/BeautySearchEvalLoader.scala`, in the same
+`leaderboard.search.eval` package so it resolves the pure model types without
+a cross-module import.
+
+`beautyqSearchWiring/compile`, `bifunctor-tagless/compile`, and
+`bifunctor-tagless/Test/compile` all succeeded afterward with zero import
+fixes; `build.sbt` was not touched and no compatibility shim was added.
+`bifunctor-tagless` keeps `QdrantEmbeddingBenchmarkCandidateExecutor.scala`,
+`QdrantProductionCandidateQualityGate.scala`, `BeautySearchEvalLoader.scala`,
+`BeautySearchLocalDevOnlyFallbackPolicy.scala`, all `M*.scala` eval
+design/scaffold files, config files, API/HTTP files, startup/bootstrap files,
+and Distage `ModuleDef` plugin/module files.
+
+No benchmark semantics, eval aggregation, report JSON shape, decoder
+defaulting behavior, candidate selection, search behavior, or app graph
+semantics changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
