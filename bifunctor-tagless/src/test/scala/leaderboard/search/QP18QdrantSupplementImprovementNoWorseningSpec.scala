@@ -204,7 +204,7 @@ final class QP18QdrantSupplementImprovementNoWorseningSpec
       modelName = "qp18-test-local-proof",
       dimension = vectorDimension,
       distance = VectorDistance.Cosine,
-      sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.categoryName),
+      sourceTextFields = leaderboard.search.beautyq.contract.BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields,
     )
     val readinessConfig = QdrantCollectionReadinessConfig.derive(
       QdrantCollectionReadinessInput(

@@ -71,6 +71,11 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.evaluation eq BeautyQSearchEvaluationContract.section)
     }
 
+    "reference the same canonical Qdrant source-text fields as BeautyQSearchSourceTextFieldsContract" in {
+      assert(BeautyQSearchDomainContract.qdrantSourceTextFields == BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields)
+      assert(BeautyQSearchDomainContract.qdrantSourceTextFieldPaths == BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFieldPaths)
+    }
+
     "declare that an evaluation section now exists" in {
       assert(BeautyQSearchDomainContract.evaluationDeclared == true)
     }

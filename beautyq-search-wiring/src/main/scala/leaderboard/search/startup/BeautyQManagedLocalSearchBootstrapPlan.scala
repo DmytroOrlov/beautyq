@@ -1,7 +1,8 @@
 package leaderboard.search.startup
 
 import io.circe.Json
-import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, VariantSearchDocument}
+import leaderboard.search.beautyq.contract.BeautyQSearchSourceTextFieldsContract
+import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.{EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
 import leaderboard.search.qdrant.{QdrantCollectionIdentity, QdrantCollectionReadinessConfig}
 
@@ -34,13 +35,8 @@ object BeautyQManagedLocalSearchBootstrapPlan {
   val EmbeddingPreflightOperationName: String = "beautyq-managed-local-embedding-preflight"
   val EmbeddingModelName: String = "local-llama-cpp-embedding"
   val SourceTextFields: List[SearchField[VariantSearchDocument]] =
-    List(
-      BeautyQVariantSearchDocumentContract.Fields.serviceText,
-      BeautyQVariantSearchDocumentContract.Fields.attributeText,
-      BeautyQVariantSearchDocumentContract.Fields.allText,
-      BeautyQVariantSearchDocumentContract.Fields.categoryName,
-    )
-  val SourceTextFieldPaths: List[String] = SourceTextFields.map(_.path)
+    BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields
+  val SourceTextFieldPaths: List[String] = BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFieldPaths
 
   /**
    * Expected local managed BeautyQ Qdrant vector dimension. It matches the fixed local launcher

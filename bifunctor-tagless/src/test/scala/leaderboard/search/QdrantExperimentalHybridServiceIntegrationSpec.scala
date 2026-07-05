@@ -51,7 +51,7 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
     modelName = "local-llama-cpp-embedding",
     dimension = 1,
     distance = VectorDistance.Cosine,
-    sourceTextFields = List(leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.serviceText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.attributeText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.allText, leaderboard.search.document.BeautyQVariantSearchDocumentContract.Fields.categoryName),
+    sourceTextFields = leaderboard.search.beautyq.contract.BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields,
   )
   private val vectorSearchSpecTemplate = VectorSearchSpec(
     collectionName = "placeholder",

@@ -2,7 +2,9 @@
 
 > This document describes the current BeautyQ search implementation state before the planned
 > search-contract/module split. Target ownership, module boundaries, and anti-scope-drift rules
-> are defined in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+> are defined in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`. New coordinators should
+> start with `docs/search/BEAUTYQ_SEARCH_COORDINATOR_ONBOARDING.md` for the DSL north star and
+> workflow rules.
 
 ## Overview
 
@@ -213,6 +215,15 @@ Generic `SearchDocumentPayloadSpec` derives explicit payload maps from schema-ow
 BeautyQ Qdrant payload contract remains exactly: `variantId`, `masterLocationId`, `serviceId`,
 `serviceName`. `QdrantDocumentPointBuilder.fromPayloadSpec` is generic. The BeautyQ Qdrant point
 builder is a thin adapter.
+
+The canonical BeautyQ Qdrant *semantic source-text* field order (the fields embedded into the
+vector at index time, distinct from the Qdrant payload above) is contract-owned by
+`BeautyQSearchSourceTextFieldsContract` (`leaderboard.search.beautyq.contract`, in
+`beautyq-search-contract`): `serviceText`, `attributeText`, `allText`, `categoryName`, exposed also
+via `BeautyQSearchDomainContract.qdrantSourceTextFields`/`qdrantSourceTextFieldPaths`.
+`BeautyQManagedLocalSearchBootstrapPlan.SourceTextFields` (`beautyq-search-wiring`) and
+`QdrantEmbeddingBenchmarkExecutorConfig.sourceTextFields` (`bifunctor-tagless`, real Qdrant/Llama
+client shell) both reference this contract declaration rather than declaring the list locally.
 
 ## Carousel / ranking / presentation metadata
 

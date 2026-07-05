@@ -43,6 +43,13 @@ object BeautyQSearchDomainContract {
 
   val evaluation = BeautyQSearchEvaluationContract.section
 
+  /** The canonical BeautyQ Qdrant semantic source-text field order, owned by
+    * [[BeautyQSearchSourceTextFieldsContract]].
+    */
+  val qdrantSourceTextFields = BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields
+
+  val qdrantSourceTextFieldPaths = BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFieldPaths
+
   /** The BeautyQ variant result-unit descriptor `DocumentSection` requires. */
   val resultUnit = BeautyQSearchResultUnitContract.variant
 

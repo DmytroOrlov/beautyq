@@ -1547,6 +1547,67 @@ codes/messages, validation ordering, `Ranks.getRank` behavior, `Ladder`/`Profile
 behavior, production inclusion behavior, opt-in route exposure, or app graph
 semantics changed.
 
+## Phase 24 record: canonical Qdrant source-text fields centralized; coordinator onboarding doc added
+
+Adds `BeautyQSearchSourceTextFieldsContract` (package
+`leaderboard.search.beautyq.contract`, in `beautyq-search-contract`) as the
+single contract-owned declaration of the canonical BeautyQ Qdrant semantic
+source-text field order:
+
+```scala
+val qdrantSourceTextFields: List[SearchField[VariantSearchDocument]] =
+  List(
+    BeautyQVariantSearchDocumentContract.Fields.serviceText,
+    BeautyQVariantSearchDocumentContract.Fields.attributeText,
+    BeautyQVariantSearchDocumentContract.Fields.allText,
+    BeautyQVariantSearchDocumentContract.Fields.categoryName,
+  )
+val qdrantSourceTextFieldPaths: List[String] = qdrantSourceTextFields.map(_.path)
+```
+
+`BeautyQSearchDomainContract` exposes both values as a thin passthrough
+(`qdrantSourceTextFields`, `qdrantSourceTextFieldPaths`), alongside its
+existing catalog/document/intent/runtime/response/evaluation slices.
+
+Prior to this phase, the exact same four-field list was declared locally,
+byte-for-byte identical, in `BeautyQManagedLocalSearchBootstrapPlan.SourceTextFields`
+(`beautyq-search-wiring`) and `QdrantEmbeddingBenchmarkExecutorConfig.sourceTextFields`
+(`bifunctor-tagless`, real Qdrant/Llama client shell), and duplicated again in
+nine test files. Both production/runtime consumers now reference
+`BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields`/`qdrantSourceTextFieldPaths`
+directly, while keeping their own public compatibility names
+(`SourceTextFields`/`SourceTextFieldPaths`, `sourceTextFields`) unchanged, so no
+call site elsewhere had to change. The nine test files with an *exact* full
+four-field list now reference the same contract declaration:
+`RuntimeEsQdrantScorecardProofSpec` (11 occurrences, including the Y0E
+`baseline_current` source-field candidate), `DisabledRuntimeHybridExecutionEsQdrantProofSpec`,
+`QP2NoWorseningRouteProofSpec`, `M18DualEngineOfflineEvalQdrantRealLegSpec`,
+`QdrantSemanticCandidateEvalSpec`, `QP19QdrantSupplementMeasuredAcceptanceGateSpec`,
+`QP18QdrantSupplementImprovementNoWorseningSpec`, `BeautySearchQdrantSupplementProvenanceSpec`,
+and `QdrantExperimentalHybridServiceIntegrationSpec`. Intentionally partial or
+synthetic source-text-field lists elsewhere (`serviceText`+`allText`,
+`allText`-only, `serviceName`-only, test-local synthetic `SearchField` lists in
+files such as `QP5QdrantSupplementReadinessContractSpec`,
+`QP6NoWorseningRouteMatrixSpec`, `QP8QdrantSupplementActivationPreflightSpec`,
+`QP14QdrantSupplementActivationDiagnosticsSpec`, `BeautySearchPureSpec`,
+`SearchDslTypedFieldSpec`, `BeautyQNonProductionHybridRunner*InputsSpec`/`*ModuleSpec`,
+and the other `Y0ESourceFieldCandidate`/Y0-series measurement axes in
+`RuntimeEsQdrantScorecardProofSpec`) were left untouched — they are deliberate
+measurement/test axes, not accidental duplication of the canonical list.
+
+`beautyqSearchContract/compile`, `Test/compile`, `beautyqSearchWiring/compile`,
+`bifunctor-tagless/compile`, and `Test/compile` all succeeded with no other
+source changes. No field names, field order, Qdrant payload shape, ES mapping,
+materialized document text, runtime bootstrap fingerprints, benchmark report
+shapes, eval/report semantics, or route/API behavior changed.
+
+Also adds `docs/search/BEAUTYQ_SEARCH_COORDINATOR_ONBOARDING.md`, a concise
+onboarding doc for the next coordinator: the DSL north star, current module
+architecture, `SearchDomainSpec` section list, coordinator workflow rules, and
+scope-drift boundaries established across Phases 22-24. See that doc for the
+full picture; this module-split plan remains the detailed phase-by-phase
+history.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
