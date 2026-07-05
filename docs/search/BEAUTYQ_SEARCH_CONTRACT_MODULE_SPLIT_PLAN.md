@@ -1460,6 +1460,54 @@ names, Qdrant/ES requests, response shape, scoring, ranking, filtering,
 readiness, startup behavior, renderers, reason codes, fingerprints, metadata
 keys, or report shapes changed.
 
+## Phase 22 record: HTTP/API/Tapir shell split into a new app-http module
+
+App-shell module split. Added `lazy val appHttp` (`.in(file("app-http"))`,
+`name := "app-http"`, `lightweightSettings` with `circeGeneric`/`zio`/`zioCats`/
+`http4sDsl`/`http4sCirce`/`tapirHttp4sServer`/`tapirJsonCirce`/`scalatest % Test`),
+`.dependsOn(beautyqSearchWiring)`, added to the root `.aggregate(...)`.
+`bifunctor-tagless`'s `.dependsOn(beautyqSearchWiring)` became
+`.dependsOn(beautyqSearchWiring, appHttp)`; `appSettings(...)` and library
+dependencies unchanged.
+
+Moved with `git mv`, package declarations unchanged: 12 of the 13 originally
+targeted `leaderboard.api` files (`BeautySearchApi`, `BeautySearchProductionInclude`,
+`BeautySearchProductionInclusion`, `CategoryApi`, `EsLifecycleStatusApi`,
+`HttpApi`, `LadderApi`, `MasterApi`, `MasterLocationApi`,
+`MasterServiceOfferApi`, `MasterServiceOfferVariantApi`, `ServiceApi`),
+`leaderboard.http.HttpApiFailure`, and all 12 `leaderboard.http.tapir.*`
+files, to `app-http`.
+
+`ProfileApi.scala` could not move: it imports `leaderboard.services.Ranks`, a
+generic business-logic service (over `Ladder`/`Profiles` repos) that lives
+only in `bifunctor-tagless` and is out of this patch's scope. Moving it
+would have forced `appHttp` to depend on `bifunctor-tagless`, which is
+forbidden and circular (`bifunctor-tagless` already depends on `appHttp`).
+`ProfileApi.scala` stays in `bifunctor-tagless`, unedited, in its original
+`leaderboard.api` package; it resolves `HttpApi`, `HttpApiFailure`,
+`ProfileTapirEndpoints`, and `LegacyJsonResponse` from `app-http` transitively
+through `bifunctor-tagless`'s new dependency, exactly like any other shell
+consumer. `LeaderboardPlugin.scala` still wires `ProfileApi` together with
+`Ranks` unchanged.
+
+`HttpServer.scala` (`Lifecycle`, `BeautyQSeedReady`, `BeautyQManagedLocalSearchDataReady`,
+`Set[HttpApi[F]]` combination) stayed in `bifunctor-tagless`, along with all
+`leaderboard.plugins` `ModuleDef` shell, config binding, startup/lifecycle
+shell, `LlamaCppEmbeddingClient`, `BeautySearchEvalLoader`,
+`QdrantEmbeddingBenchmarkCandidateExecutor`, and all other real-client/file-IO
+shell.
+
+`appHttp/compile`, `appHttp/Test/compile`, `bifunctor-tagless/compile`,
+`bifunctor-tagless/Test/compile`, and `beautyqSearchWiring/compile` all
+succeeded with zero Scala source body edits (only file relocation);
+`build.sbt` changes were limited to the new project block and the two
+`dependsOn`/`aggregate` lines.
+
+No endpoint paths, HTTP methods, request/response JSON shapes, error codes,
+validation ordering, production inclusion behavior, opt-in route exposure,
+app graph semantics, config names, startup behavior, or runtime binding
+names changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

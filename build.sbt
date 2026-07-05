@@ -177,9 +177,24 @@ lazy val beautyqSearchWiring = project
   )))
   .dependsOn(beautyqSearchContract, beautyqSearchMaterialization, `search-elasticsearch`, `search-qdrant`)
 
+lazy val appHttp = project
+  .in(file("app-http"))
+  .settings(name := "app-http")
+  .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
+    Deps.zio,
+    Deps.zioCats,
+    Deps.http4sDsl,
+    Deps.http4sCirce,
+    Deps.tapirHttp4sServer,
+    Deps.tapirJsonCirce,
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(beautyqSearchWiring)
+
 lazy val `bifunctor-tagless` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(beautyqSearchWiring)
+  .dependsOn(beautyqSearchWiring, appHttp)
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
@@ -199,6 +214,7 @@ lazy val `distage-example` = project
     beautyqSearchRepositories,
     beautyqSearchMaterialization,
     beautyqSearchWiring,
+    appHttp,
     `bifunctor-tagless`,
     `graal-resources`,
   )
