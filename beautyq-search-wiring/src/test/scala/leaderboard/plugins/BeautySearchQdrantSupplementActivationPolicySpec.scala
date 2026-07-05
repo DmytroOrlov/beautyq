@@ -1,7 +1,7 @@
 package leaderboard.plugins
 
 import leaderboard.search.qdrant.{ObservedQdrantVectorConfig, QdrantCollectionCompatibilityExpectation}
-import leaderboard.search.dsl.VectorDistance
+import leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract
 import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautySearchQdrantSupplementActivationPolicySpec extends AnyWordSpec {
@@ -33,9 +33,9 @@ final class BeautySearchQdrantSupplementActivationPolicySpec extends AnyWordSpec
     val expectation = QdrantCollectionCompatibilityExpectation(
       collectionName = "beautyq_v1",
       vectorName = "llama-cpp-embedding",
-      expectedDimension = 1024,
-      expectedDistance = VectorDistance.Cosine,
-      embeddingModelName = "local-llama-cpp-embedding",
+      expectedDimension = BeautyQSearchRuntimeContract.ManagedLocalQdrantExpectedVectorDimension,
+      expectedDistance = BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance,
+      embeddingModelName = BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName,
     )
 
     "report ReadyToEnable when the observed config matches the expectation" in {

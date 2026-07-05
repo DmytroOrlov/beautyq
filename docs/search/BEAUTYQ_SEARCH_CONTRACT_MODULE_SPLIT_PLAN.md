@@ -1547,7 +1547,7 @@ codes/messages, validation ordering, `Ranks.getRank` behavior, `Ladder`/`Profile
 behavior, production inclusion behavior, opt-in route exposure, or app graph
 semantics changed.
 
-## Phase 24 record: canonical Qdrant source-text fields centralized; coordinator onboarding doc added
+## Phase 24 record: canonical Qdrant source-text fields centralized
 
 Adds `BeautyQSearchSourceTextFieldsContract` (package
 `leaderboard.search.beautyq.contract`, in `beautyq-search-contract`) as the
@@ -1601,12 +1601,83 @@ source changes. No field names, field order, Qdrant payload shape, ES mapping,
 materialized document text, runtime bootstrap fingerprints, benchmark report
 shapes, eval/report semantics, or route/API behavior changed.
 
-Also adds `docs/search/BEAUTYQ_SEARCH_COORDINATOR_ONBOARDING.md`, a concise
-onboarding doc for the next coordinator: the DSL north star, current module
-architecture, `SearchDomainSpec` section list, coordinator workflow rules, and
-scope-drift boundaries established across Phases 22-24. See that doc for the
-full picture; this module-split plan remains the detailed phase-by-phase
-history.
+## Coordinator checkpoint (after Phase 24/25)
+
+- The north star is the real BeautyQ `SearchDomainSpec` / DSL: contract-owned
+  declarations every interpreter consumes, not a clean module graph for its
+  own sake.
+- Module split and shell split are means, not the final goal. A boundary
+  move only counts as progress if it reduces duplicated/invented BeautyQ
+  semantics somewhere else.
+- Catalog topology is only one `SearchDomainSpec` section (see "Full
+  `SearchDomainSpec` sections" above) - never describe it as the whole
+  contract.
+- Duplicated BeautyQ semantics (field lists, model names, thresholds,
+  dimensions, distances, capability declarations) should move into
+  contract-owned slices only when source proves an *exact* duplication -
+  not a superficially similar but intentionally different test/measurement
+  axis, mismatch fixture, or synthetic label.
+- Coordinator prompting/review/verification-label workflow rules live in
+  `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`, not in this file.
+- Current module ownership and architecture live in
+  `docs/beautyq-search-dsl-v1.md`, not in a separate onboarding doc.
+
+## Phase 25 record: managed-local Qdrant runtime defaults centralized
+
+Adds to `BeautyQSearchRuntimeContract` (`beautyq-search-contract`):
+explicit backend-id constants (`ElasticsearchBackendId = SearchBackendId("elasticsearch")`,
+`QdrantBackendId = SearchBackendId("qdrant")`, now used by the `elasticsearch`/`qdrant`
+declarations instead of inline string literals) and the canonical managed-local
+BeautyQ Qdrant runtime defaults: `ManagedLocalQdrantEmbeddingModelName =
+"local-llama-cpp-embedding"`, `ManagedLocalQdrantExpectedVectorDimension = 1024`,
+`ManagedLocalQdrantVectorDistance = VectorDistance.Cosine`. `BeautyQSearchDomainContract`
+exposes all five as thin passthroughs (`elasticsearchBackendId`, `qdrantBackendId`,
+`managedLocalQdrantEmbeddingModelName`, `managedLocalQdrantExpectedVectorDimension`,
+`managedLocalQdrantVectorDistance`).
+
+Prior to this phase, the same three managed-local values were declared locally in
+three places: `BeautyQManagedLocalSearchBootstrapPlan.EmbeddingModelName`/`ExpectedVectorDimension`
+(`beautyq-search-wiring`), `QdrantEmbeddingBenchmarkExecutorConfig.distance`
+(`bifunctor-tagless`, real Qdrant/Llama client shell), and the request JSON `"model"`
+field hardcoded inside `LlamaCppEmbeddingClient` (`bifunctor-tagless`, real HTTP client
+shell). All three now delegate to `BeautyQSearchRuntimeContract`, keeping their own
+public compatibility names (`EmbeddingModelName`, `ExpectedVectorDimension`, `distance`)
+unchanged, so no call site elsewhere had to change. Importing `BeautyQSearchRuntimeContract`
+into `LlamaCppEmbeddingClient` introduced no dependency cycle: `bifunctor-tagless` already
+depends on `beautyq-search-contract` transitively via `beautyq-search-wiring`.
+
+Positive managed-local test constants updated to reference the contract: the
+`embeddingSpecTemplate` in `QdrantSemanticCandidateEvalSpec` and
+`QdrantExperimentalHybridServiceIntegrationSpec` (`modelName`/`distance`, `dimension = 1`
+left as an intentional reduced test dimension, distinct from the canonical `1024`);
+the `QdrantRetrievalSmokeSpec.embeddingSpec` helper in `QdrantLlamaCppRetrievalSmokeSpec`
+(`modelName`/`distance`, `dimension` stays a runtime-derived parameter); the
+`expectation` fixture in `BeautySearchQdrantSupplementActivationPolicySpec`
+(`expectedDimension`/`expectedDistance`/`embeddingModelName`, with a deliberate
+`expectedDimension + 1` mismatch case in a second test left untouched); and one
+literal `1024` regression-pin assertion in `ManagedLocalEmbeddingPreflightSpec`.
+`ManagedLocalSearchBootstrapFingerprintSpec` needed no change - it already
+fully delegates through `BeautyQManagedLocalSearchBootstrap`'s own public
+surface with no locally hardcoded managed-local literal. Intentionally
+different constants left unchanged: `dimension = 1` test-local axes above,
+the `wrongDimension`/`actualDimension=512` mismatch branch and the
+`"expectedDimension=1024"` message-content substring check (both in
+`ManagedLocalEmbeddingPreflightSpec`), and the `expectedDimension + 1`
+mismatch fixture in `BeautySearchQdrantSupplementActivationPolicySpec`.
+
+Also removes the last references to the now-deleted standalone coordinator
+onboarding doc: its useful north-star/scope-drift content is folded into the
+"Coordinator checkpoint" section above, and `docs/beautyq-search-dsl-v1.md`'s
+top-of-file pointer now points at this plan and at
+`docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` instead.
+
+`beautyqSearchContract/compile`, `Test/compile`, `beautyqSearchWiring/compile`,
+`Test/compile`, `bifunctor-tagless/compile`, and `Test/compile` all succeeded
+with no other source changes. No backend ids, backend kinds, runtime
+declaration order, capabilities, managed-local model name/dimension/distance,
+source-text fields/order, Qdrant payload shape, ES mapping, materialized
+document text, bootstrap fingerprints, benchmark report shapes, eval/report
+semantics, or route/API behavior changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

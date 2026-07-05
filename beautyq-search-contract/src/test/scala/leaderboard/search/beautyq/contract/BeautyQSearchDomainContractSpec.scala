@@ -197,6 +197,17 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.runtimeSection.declarations.map(_.kind) == List(SearchBackendKind.Elasticsearch, SearchBackendKind.Qdrant))
     }
 
+    "expose the elasticsearch/qdrant backend id passthroughs delegating to BeautyQSearchRuntimeContract" in {
+      assert(BeautyQSearchDomainContract.elasticsearchBackendId == BeautyQSearchRuntimeContract.ElasticsearchBackendId)
+      assert(BeautyQSearchDomainContract.qdrantBackendId == BeautyQSearchRuntimeContract.QdrantBackendId)
+    }
+
+    "expose the managed-local Qdrant runtime default passthroughs delegating to BeautyQSearchRuntimeContract" in {
+      assert(BeautyQSearchDomainContract.managedLocalQdrantEmbeddingModelName == BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName)
+      assert(BeautyQSearchDomainContract.managedLocalQdrantExpectedVectorDimension == BeautyQSearchRuntimeContract.ManagedLocalQdrantExpectedVectorDimension)
+      assert(BeautyQSearchDomainContract.managedLocalQdrantVectorDistance == BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance)
+    }
+
     "declare Elasticsearch as full-text/facet/geo capable and not semantic-vector capable" in {
       val capabilities = BeautyQSearchRuntimeContract.elasticsearch.capabilities
       assert(capabilities.supportsFullText == true)

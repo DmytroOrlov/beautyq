@@ -2,7 +2,7 @@ package leaderboard.search.qdrant
 
 import io.circe.Json
 import leaderboard.model.QueryFailure
-import leaderboard.search.beautyq.contract.BeautyQSearchSourceTextFieldsContract
+import leaderboard.search.beautyq.contract.{BeautyQSearchRuntimeContract, BeautyQSearchSourceTextFieldsContract}
 import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.{EmbeddingClient, LlamaCppEmbeddingClient, LlamaCppEmbeddingClientConfig}
@@ -89,7 +89,7 @@ final case class QdrantEmbeddingBenchmarkExecutorConfig(
   vectorName: String = "llama-cpp-embedding",
   topK: Int = 20,
   scoreThreshold: Option[Double] = None,
-  distance: VectorDistance = VectorDistance.Cosine,
+  distance: VectorDistance = BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance,
   sourceTextFields: List[SearchField[VariantSearchDocument]] = BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields,
   cleanupCollections: Boolean = true,
 ) {

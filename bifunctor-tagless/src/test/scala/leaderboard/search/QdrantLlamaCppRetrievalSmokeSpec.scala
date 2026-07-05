@@ -102,9 +102,9 @@ private object QdrantRetrievalSmokeSpec {
   def embeddingSpec(dimension: Int): leaderboard.search.dsl.EmbeddingSpec[Any] =
     leaderboard.search.dsl.EmbeddingSpec[Any](
       vectorName = "llama-cpp-embedding",
-      modelName = "local-llama-cpp-embedding",
+      modelName = leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName,
       dimension = dimension,
-      distance = leaderboard.search.dsl.VectorDistance.Cosine,
+      distance = leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance,
       sourceTextFields = Nil,
     )
 

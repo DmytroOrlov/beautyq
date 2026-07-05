@@ -7,7 +7,7 @@ import leaderboard.config.QdrantPortCfg
 import leaderboard.model.QueryFailure
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
-import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchIntentVocabulary, VectorDistance, VectorSearchSpec}
+import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, SearchIntentVocabulary, VectorSearchSpec}
 import leaderboard.search.hybrid.ExperimentalBeautySearchService
 import leaderboard.search.interpreter.SearchEmbeddingTextExtractor
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -48,9 +48,9 @@ final class QdrantExperimentalHybridServiceIntegrationSpec extends LeaderboardTe
   private val parser = new BeautySearchIntentParser(semanticSmokeSpec)
   private val embeddingSpecTemplate = EmbeddingSpec[VariantSearchDocument](
     vectorName = "llama-cpp-embedding",
-    modelName = "local-llama-cpp-embedding",
+    modelName = leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName,
     dimension = 1,
-    distance = VectorDistance.Cosine,
+    distance = leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance,
     sourceTextFields = leaderboard.search.beautyq.contract.BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields,
   )
   private val vectorSearchSpecTemplate = VectorSearchSpec(

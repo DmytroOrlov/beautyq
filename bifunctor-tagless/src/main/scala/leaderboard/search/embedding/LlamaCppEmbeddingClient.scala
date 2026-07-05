@@ -3,6 +3,7 @@ package leaderboard.search.embedding
 import io.circe.Json
 import io.circe.parser.parse
 import leaderboard.model.QueryFailure
+import leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract
 import zio.{IO, ZIO}
 
 import java.net.URI
@@ -19,7 +20,7 @@ final class LlamaCppEmbeddingClient(config: LlamaCppEmbeddingClientConfig) exten
     ZIO.attemptBlocking {
       val requestJson = Json.obj(
         "input" -> Json.fromString(text),
-        "model" -> Json.fromString("local-llama-cpp-embedding"),
+        "model" -> Json.fromString(BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName),
       )
       val request = HttpRequest
         .newBuilder(URI.create(config.baseUrl + config.endpointPath))

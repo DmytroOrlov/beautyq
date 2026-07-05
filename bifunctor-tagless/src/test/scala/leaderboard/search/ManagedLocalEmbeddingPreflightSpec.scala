@@ -75,7 +75,10 @@ final class ManagedLocalEmbeddingPreflightSpec extends AnyWordSpec {
       assert(failure.message.contains("embedding"), failure.message)
       assert(failure.message.contains(s"expectedDimension=$expectedDimension"), failure.message)
       assert(failure.message.contains(s"actualDimension=$wrongDimension"), failure.message)
-      assert(expectedDimension == 1024, s"expected dimension contract must be 1024, got $expectedDimension")
+      assert(
+        expectedDimension == leaderboard.search.beautyq.contract.BeautyQSearchRuntimeContract.ManagedLocalQdrantExpectedVectorDimension,
+        s"expected dimension contract must match the canonical managed-local default, got $expectedDimension",
+      )
     }
   }
 

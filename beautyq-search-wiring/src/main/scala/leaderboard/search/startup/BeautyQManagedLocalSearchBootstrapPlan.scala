@@ -1,9 +1,9 @@
 package leaderboard.search.startup
 
 import io.circe.Json
-import leaderboard.search.beautyq.contract.BeautyQSearchSourceTextFieldsContract
+import leaderboard.search.beautyq.contract.{BeautyQSearchRuntimeContract, BeautyQSearchSourceTextFieldsContract}
 import leaderboard.search.document.VariantSearchDocument
-import leaderboard.search.dsl.{EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
+import leaderboard.search.dsl.{EmbeddingSpec, SearchField, VectorSearchSpec}
 import leaderboard.search.qdrant.{QdrantCollectionIdentity, QdrantCollectionReadinessConfig}
 
 final case class BeautyQManagedLocalSearchBootstrapResult(
@@ -33,7 +33,7 @@ object BeautyQManagedLocalSearchBootstrapAction {
 
 object BeautyQManagedLocalSearchBootstrapPlan {
   val EmbeddingPreflightOperationName: String = "beautyq-managed-local-embedding-preflight"
-  val EmbeddingModelName: String = "local-llama-cpp-embedding"
+  val EmbeddingModelName: String = BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName
   val SourceTextFields: List[SearchField[VariantSearchDocument]] =
     BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFields
   val SourceTextFieldPaths: List[String] = BeautyQSearchSourceTextFieldsContract.qdrantSourceTextFieldPaths
@@ -44,14 +44,14 @@ object BeautyQManagedLocalSearchBootstrapPlan {
    * that does not return exactly this many components so the Qdrant collection is only ever created
    * for vectors it can actually hold.
    */
-  val ExpectedVectorDimension: Int = 1024
+  val ExpectedVectorDimension: Int = BeautyQSearchRuntimeContract.ManagedLocalQdrantExpectedVectorDimension
 
   def embeddingSpec(vectorSearchSpec: VectorSearchSpec, dimension: Int): EmbeddingSpec[VariantSearchDocument] =
     EmbeddingSpec[VariantSearchDocument](
       vectorName = vectorSearchSpec.vectorName,
       modelName = EmbeddingModelName,
       dimension = dimension,
-      distance = VectorDistance.Cosine,
+      distance = BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance,
       sourceTextFields = SourceTextFields,
     )
 

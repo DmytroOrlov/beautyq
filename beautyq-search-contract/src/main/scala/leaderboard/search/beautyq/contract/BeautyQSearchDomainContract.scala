@@ -62,6 +62,22 @@ object BeautyQSearchDomainContract {
   /** The generic runtime backend declarations `RuntimeSection` requires. */
   val runtimeSection = BeautyQSearchRuntimeContract.section
 
+  /** The Elasticsearch/Qdrant backend id constants, owned by
+    * [[BeautyQSearchRuntimeContract]].
+    */
+  val elasticsearchBackendId = BeautyQSearchRuntimeContract.ElasticsearchBackendId
+
+  val qdrantBackendId = BeautyQSearchRuntimeContract.QdrantBackendId
+
+  /** The canonical managed-local BeautyQ Qdrant runtime defaults, owned by
+    * [[BeautyQSearchRuntimeContract]].
+    */
+  val managedLocalQdrantEmbeddingModelName = BeautyQSearchRuntimeContract.ManagedLocalQdrantEmbeddingModelName
+
+  val managedLocalQdrantExpectedVectorDimension = BeautyQSearchRuntimeContract.ManagedLocalQdrantExpectedVectorDimension
+
+  val managedLocalQdrantVectorDistance = BeautyQSearchRuntimeContract.ManagedLocalQdrantVectorDistance
+
   /** The generic response policy `ResponseSection` requires. */
   val response = BeautyQSearchResponsePolicyContract.section
 
