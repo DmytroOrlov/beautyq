@@ -4,15 +4,14 @@ import distage.Lifecycle
 import izumi.functional.bio.{Error2, F}
 import leaderboard.model.QueryFailure
 import leaderboard.runtime.QueryFailureToThrowable
-import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
-import leaderboard.search.dsl.{BeautySearchSpec, EmbeddingSpec, SearchField, VectorDistance, VectorSearchSpec}
+import leaderboard.search.document.{BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
+import leaderboard.search.dsl.{BeautySearchSpec, EmbeddingSpec, SearchField, VectorSearchSpec}
 import io.circe.Json
 import leaderboard.search.elasticsearch.{ElasticsearchJsonClient, ElasticsearchSeedIndexInitializer}
 import leaderboard.search.embedding.EmbeddingClient
 import leaderboard.search.qdrant.{
   QdrantClient,
   QdrantClientCollectionInfoAdapter,
-  QdrantCollectionIdentity,
   QdrantCollectionReadinessConfig,
   QdrantEmbeddingBenchmarkDefaultCompositionFactory,
   QdrantJsonInterpreter,
@@ -38,51 +37,17 @@ import zio.{Duration, IO, Schedule, ZIO}
  * NOT fake readiness: a failed embedding/ES/Qdrant call fails loudly instead of degrading to a fake
  * ES-only response. It is intended only for the `Scene.Managed` local launcher path; production startup
  * indexing remains out of scope.
+ *
+ * The pure bootstrap DTOs/action labels and the pure plan (embedding spec, readiness config, and Qdrant
+ * reuse-decision helpers) live in `BeautyQManagedLocalSearchBootstrapPlan`; this object keeps the
+ * lifecycle/startup shell and real ES/Qdrant/embedding client execution.
  */
-final case class BeautyQManagedLocalSearchBootstrapResult(
-  esIndexName: String,
-  esDocumentCount: Int,
-  esAction: BeautyQManagedLocalSearchBootstrapAction,
-  qdrantCollectionName: String,
-  qdrantIndexedCount: Int,
-  qdrantAction: BeautyQManagedLocalSearchBootstrapAction,
-  vectorDimension: Int,
-  fingerprint: String,
-)
-
-sealed trait BeautyQManagedLocalSearchBootstrapAction extends Product with Serializable {
-  def label: String
-}
-
-object BeautyQManagedLocalSearchBootstrapAction {
-  case object Rebuilt extends BeautyQManagedLocalSearchBootstrapAction {
-    override val label: String = "rebuilt"
-  }
-
-  case object Reused extends BeautyQManagedLocalSearchBootstrapAction {
-    override val label: String = "reused"
-  }
-}
-
 object BeautyQManagedLocalSearchBootstrap {
-  val EmbeddingPreflightOperationName: String = "beautyq-managed-local-embedding-preflight"
-  val EmbeddingModelName: String = "local-llama-cpp-embedding"
-  val SourceTextFields: List[SearchField[VariantSearchDocument]] =
-    List(
-      BeautyQVariantSearchDocumentContract.Fields.serviceText,
-      BeautyQVariantSearchDocumentContract.Fields.attributeText,
-      BeautyQVariantSearchDocumentContract.Fields.allText,
-      BeautyQVariantSearchDocumentContract.Fields.categoryName,
-    )
-  val SourceTextFieldPaths: List[String] = SourceTextFields.map(_.path)
-
-  /**
-   * Expected local managed BeautyQ Qdrant vector dimension. It matches the fixed local launcher
-   * collection (`..._1024_cosine`, dimension `1024`); the embedding preflight rejects any endpoint
-   * that does not return exactly this many components so the Qdrant collection is only ever created
-   * for vectors it can actually hold.
-   */
-  val ExpectedVectorDimension: Int = 1024
+  val EmbeddingPreflightOperationName: String = BeautyQManagedLocalSearchBootstrapPlan.EmbeddingPreflightOperationName
+  val EmbeddingModelName: String = BeautyQManagedLocalSearchBootstrapPlan.EmbeddingModelName
+  val SourceTextFields: List[SearchField[VariantSearchDocument]] = BeautyQManagedLocalSearchBootstrapPlan.SourceTextFields
+  val SourceTextFieldPaths: List[String] = BeautyQManagedLocalSearchBootstrapPlan.SourceTextFieldPaths
+  val ExpectedVectorDimension: Int = BeautyQManagedLocalSearchBootstrapPlan.ExpectedVectorDimension
 
   private val DimensionProbeText: String = "beautyq managed local search bootstrap probe"
   private val EmbeddingPreflightContext: String = "BeautyQ managed local search Qdrant bootstrap embedding preflight"
@@ -132,22 +97,10 @@ object BeautyQManagedLocalSearchBootstrap {
       )
 
   def embeddingSpec(vectorSearchSpec: VectorSearchSpec, dimension: Int): EmbeddingSpec[VariantSearchDocument] =
-    EmbeddingSpec[VariantSearchDocument](
-      vectorName = vectorSearchSpec.vectorName,
-      modelName = EmbeddingModelName,
-      dimension = dimension,
-      distance = VectorDistance.Cosine,
-      sourceTextFields = SourceTextFields,
-    )
+    BeautyQManagedLocalSearchBootstrapPlan.embeddingSpec(vectorSearchSpec, dimension)
 
-  def readinessConfig(vectorSearchSpec: VectorSearchSpec, dimension: Int): QdrantCollectionReadinessConfig = {
-    val spec = embeddingSpec(vectorSearchSpec, dimension)
-    QdrantCollectionReadinessConfig(
-      collectionName = vectorSearchSpec.collectionName,
-      vectorSearchSpec = vectorSearchSpec,
-      compatibilityExpectation = QdrantCollectionIdentity.compatibilityExpectation(spec, vectorSearchSpec),
-    )
-  }
+  def readinessConfig(vectorSearchSpec: VectorSearchSpec, dimension: Int): QdrantCollectionReadinessConfig =
+    BeautyQManagedLocalSearchBootstrapPlan.readinessConfig(vectorSearchSpec, dimension)
 
   def run(
     esClient: ElasticsearchJsonClient,
@@ -258,8 +211,7 @@ object BeautyQManagedLocalSearchBootstrap {
     expectedDocumentCount: Int,
     fingerprint: BeautyQManagedLocalSearchBootstrapFingerprint,
   ): Boolean =
-    observedQdrantPointCount(json).exists(_ >= expectedDocumentCount) &&
-      BeautyQManagedLocalSearchBootstrapFingerprint.decodeCollectionMetadataValue(json).contains(fingerprint.value)
+    BeautyQManagedLocalSearchBootstrapPlan.qdrantCollectionInfoReusable(json, expectedDocumentCount, fingerprint)
 
   private def prepareElasticsearch(
     esClient: ElasticsearchJsonClient,
@@ -325,14 +277,6 @@ object BeautyQManagedLocalSearchBootstrap {
       case _ =>
         false
     }
-
-  private def observedQdrantPointCount(json: Json): Option[Int] =
-    List(
-      json.hcursor.downField("result").get[Int]("points_count").toOption,
-      json.hcursor.downField("result").get[Int]("indexed_vectors_count").toOption,
-      json.hcursor.get[Int]("points_count").toOption,
-      json.hcursor.get[Int]("indexed_vectors_count").toOption,
-    ).flatten.headOption
 }
 
 /**

@@ -1361,6 +1361,55 @@ request semantics, JSON response decoding semantics, app graph semantics,
 runtime binding names, Qdrant/ES requests, response shape, scoring, ranking,
 filtering, readiness, or startup behavior changed.
 
+## Phase 20 record: managed-local bootstrap pure plan/fingerprint layer moved to beautyq-search-wiring
+
+Extracted the remaining source-confirmed pure managed-local bootstrap layer
+out of `BeautyQManagedLocalSearchBootstrap.scala`, leaving only the
+lifecycle/startup execution shell in `bifunctor-tagless`.
+
+`BeautyQManagedLocalSearchBootstrapFingerprint.scala` (fingerprint
+construction, `Version`/`MetadataKey`/`MetadataVersionKey`, `build(...)`,
+`decodeCollectionMetadataValue(...)`, `asQdrantCollectionMetadata`) moved to
+`beautyq-search-wiring/.../startup/`, unchanged.
+
+A new `beautyq-search-wiring/.../startup/BeautyQManagedLocalSearchBootstrapPlan.scala`
+now holds the pure bootstrap DTOs/action labels
+(`BeautyQManagedLocalSearchBootstrapResult`, `BeautyQManagedLocalSearchBootstrapAction`)
+and the pure plan helpers moved out of the old `BeautyQManagedLocalSearchBootstrap`
+object: `EmbeddingPreflightOperationName`, `EmbeddingModelName`,
+`SourceTextFields` (unchanged order: `serviceText`, `attributeText`,
+`allText`, `categoryName`), `SourceTextFieldPaths`, `ExpectedVectorDimension`
+(`1024`), `embeddingSpec(...)` (unchanged `VectorDistance.Cosine`),
+`readinessConfig(...)`, and `qdrantCollectionInfoReusable(...)` with its
+private `observedQdrantPointCount(...)` (unchanged Qdrant count-field
+fallback order: `result.points_count`, `result.indexed_vectors_count`,
+top-level `points_count`, top-level `indexed_vectors_count`).
+
+`BeautyQManagedLocalSearchBootstrap.scala` in `bifunctor-tagless` keeps
+`embeddingPreflight(...)`, `run(...)`, `preparedResourcesReusable(...)`,
+`elasticsearchReusable(...)`, `qdrantReusable(...)`, `prepareElasticsearch(...)`,
+`prepareQdrant(...)`, `isQdrantCollectionAlreadyExists(...)`,
+`isTransientQdrantCollectionMiss(...)`, and `BeautyQManagedLocalSearchDataReady`
+(with its `Noop`/`Bootstrap` `Lifecycle` classes) as the startup/effect shell.
+Its public compatibility surface (`EmbeddingPreflightOperationName`,
+`EmbeddingModelName`, `SourceTextFields`, `SourceTextFieldPaths`,
+`ExpectedVectorDimension`, `embeddingSpec(...)`, `readinessConfig(...)`,
+`qdrantCollectionInfoReusable(...)`) now delegates to
+`BeautyQManagedLocalSearchBootstrapPlan`; only imports that became unused
+after the move (`BeautyQVariantSearchDocumentContract`, `VectorDistance`,
+`QdrantCollectionIdentity`) were removed.
+
+`beautyqSearchWiring/compile`, `bifunctor-tagless/compile`, and
+`bifunctor-tagless/Test/compile` all succeeded afterward with no other
+edits; `build.sbt` was not touched and no compatibility shim beyond the
+explicitly-required delegating members was added.
+
+No bootstrap behavior, preflight behavior, fingerprint value, fingerprint
+inputs, metadata keys, reuse decision, ES/Qdrant creation behavior, retry
+behavior, action labels, result fields, log message, runtime binding names,
+source text field order, expected vector dimension, or Qdrant count-field
+fallback order changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
