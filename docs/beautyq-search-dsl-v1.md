@@ -73,8 +73,9 @@ split, dependency DAG, and forbidden dependencies are defined in
 | `search-elasticsearch` | reusable ES client/interpreter code |
 | `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code; pure Llama embedding config (`LlamaCppEmbeddingClientConfig`) and response JSON decoder (`LlamaCppEmbeddingResponseDecoder`) |
 | `beautyq-search-wiring` | BeautyQ runtime models/codecs (`BeautySearchModels`), pure request contract/validation (`BeautySearchRequestContract`, `BeautySearchRequestValidation`), intent parser, in-memory search backend, response assembler, spec-support helpers, readiness wrapper, concrete ES/Qdrant backend adapters (`ElasticsearchSearchBackend`, `QdrantCandidateAssembler`/`QdrantCandidateResponseProjector`, Qdrant indexers), hybrid backend/routing/response layer (`ExperimentalHybridSearchBackend`, `SearchBackendRouter`, `SemanticCandidateBackend`, `LexicalDocumentBackend`), pure Qdrant production-candidate readiness/activation/explicit-opt-in policy (`QdrantProductionCandidateReadiness`, `QdrantProductionCandidateActivationConfigApproval`, `QdrantExplicitOptInRoutePrerequisites`/`QdrantExplicitOptInBeautySearchBackend`, and the quality DTO/policy in `QdrantProductionCandidateQualityPolicy`), pure eval DTO/scoring/report/json/formatter/saved-comparison layer (`BeautySearchEval` model/scorer, `BeautySearchEvalReportJson`, `EngineEval`/`EngineEvalReportAssembly`/`EngineEvalReportFormatter`/`EngineEvalReportJson`/`EngineEvalSavedReportComparison`), pure Qdrant embedding benchmark DTO/report/json/formatter/decision/saved-comparison/runner layer (`QdrantEmbeddingBenchmark`, `QdrantEmbeddingBenchmarkReportJson`/`ReportFormatter`/`DecisionPolicy`/`SavedReportComparison`/`Runner`, `QdrantEmbeddingBenchmarkQuerySubset`), the pure eval design/scaffold layer (all `M8`–`M21` design/scaffold files) and `BeautySearchLocalDevOnlyFallbackPolicy`, the Qdrant quality-gate adapter `QdrantProductionCandidateQualityGate` (including `fromEngineEval`), and the managed-local bootstrap pure plan/fingerprint layer (`BeautyQManagedLocalSearchBootstrapPlan` with `BeautyQManagedLocalSearchBootstrapResult`/`Action`, `embeddingSpec`/`readinessConfig`/`qdrantCollectionInfoReusable`, and `BeautyQManagedLocalSearchBootstrapFingerprint`) |
-| `app-http` | HTTP/API/Tapir shell: `HttpApi`, `HttpApiFailure`, `BeautySearchApi`, `CategoryApi`/`LadderApi`/`MasterApi`/`MasterLocationApi`/`MasterServiceOfferApi`/`MasterServiceOfferVariantApi`/`ServiceApi`/`EsLifecycleStatusApi`, `BeautySearchProductionInclude`/`Inclusion`, and all `leaderboard.http.tapir.*TapirEndpoints` |
-| `bifunctor-tagless` | The app/shell module over the `beautyq-search-wiring` and `app-http` boundaries. `HttpServer` (lifecycle/startup, combines `Set[HttpApi[F]]`), `ProfileApi` (stays here - see Phase 22 note below), startup/plugin wiring, Distage `ModuleDef` interpreters (`BeautySearchCatalogBackendModules`, `BeautySearchRouteModules`, `BeautySearchPluginModules`, `BeautySearchHybridProductionModules`), config binding modules, the real Java `HttpClient` embedding shell (`LlamaCppEmbeddingClient`), the file-IO eval loader `BeautySearchEvalLoader`, the real-client `QdrantEmbeddingBenchmarkCandidateExecutor` runner shell, and the managed-local bootstrap lifecycle/startup execution shell (`BeautyQManagedLocalSearchBootstrap`'s `run`/`embeddingPreflight`/ES-Qdrant preparation, `BeautyQManagedLocalSearchDataReady`) |
+| `app-services` | Small app-level service boundaries over repository interfaces: `leaderboard.services.Ranks` (`Ranks.Impl`) |
+| `app-http` | HTTP/API/Tapir shell: `HttpApi`, `HttpApiFailure`, `BeautySearchApi`, `CategoryApi`/`LadderApi`/`MasterApi`/`MasterLocationApi`/`MasterServiceOfferApi`/`MasterServiceOfferVariantApi`/`ServiceApi`/`EsLifecycleStatusApi`/`ProfileApi`, `BeautySearchProductionInclude`/`Inclusion`, and all `leaderboard.http.tapir.*TapirEndpoints` |
+| `bifunctor-tagless` | The app/shell module over the `beautyq-search-wiring`, `app-http`, and `app-services` boundaries. `HttpServer` (lifecycle/startup, combines `Set[HttpApi[F]]`), startup/plugin wiring, Distage `ModuleDef` interpreters (`BeautySearchCatalogBackendModules`, `BeautySearchRouteModules`, `BeautySearchPluginModules`, `BeautySearchHybridProductionModules`), config binding modules, the real Java `HttpClient` embedding shell (`LlamaCppEmbeddingClient`), the file-IO eval loader `BeautySearchEvalLoader`, the real-client `QdrantEmbeddingBenchmarkCandidateExecutor` runner shell, and the managed-local bootstrap lifecycle/startup execution shell (`BeautyQManagedLocalSearchBootstrap`'s `run`/`embeddingPreflight`/ES-Qdrant preparation, `BeautyQManagedLocalSearchDataReady`). It no longer owns `ProfileApi` or `Ranks` source, but still wires/consumes both via `LeaderboardPlugin`/`LeaderboardRole`. |
 
 Generic modules (`search-core`, `search-elasticsearch`, `search-qdrant`) must not know BeautyQ
 names or app types.
@@ -86,11 +87,15 @@ collapsed to `beautyqSearchWiring` only - the lower search/runtime modules
 `leaderboard-core`) are intentionally collapsed behind that one wiring
 boundary and reached only transitively. As of Phase 22, `bifunctor-tagless`
 also depends directly on `appHttp` (HTTP/API/Tapir shell), which itself
-depends only on `beautyqSearchWiring`. `ProfileApi` is the one API class that
-stayed in `bifunctor-tagless` instead of moving to `app-http`, because it
-depends on `leaderboard.services.Ranks`, a generic business-logic service
-that lives only in `bifunctor-tagless`; moving `ProfileApi` would have
-required `app-http` to depend on `bifunctor-tagless`, which is forbidden.
+depends only on `beautyqSearchWiring`. Phase 22 left `ProfileApi` behind in
+`bifunctor-tagless` because it depended on `leaderboard.services.Ranks`, a
+generic business-logic service that lived only in `bifunctor-tagless`. Phase
+23 closed that gap: a new `appServices` module owns `Ranks`, `appHttp` now
+depends on `beautyqSearchWiring` and `appServices`, `bifunctor-tagless`
+depends on `beautyqSearchWiring`, `appHttp`, and `appServices`, and
+`ProfileApi` moved to `app-http` alongside the other API classes.
+`Ladder`/`Profiles` repo interfaces and their `Dummy`/`Postgres`
+implementations remain in `beautyq-search-repositories`.
 
 ## Ownership table (current locations)
 

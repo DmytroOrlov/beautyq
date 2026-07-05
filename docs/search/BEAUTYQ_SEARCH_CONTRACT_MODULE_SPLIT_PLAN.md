@@ -1508,6 +1508,45 @@ validation ordering, production inclusion behavior, opt-in route exposure,
 app graph semantics, config names, startup behavior, or runtime binding
 names changed.
 
+## Phase 23 record: app-services boundary extracted; Phase 22's ProfileApi deviation closed
+
+Closes the Phase 22 `ProfileApi.scala` deviation (it stayed in `bifunctor-tagless`
+because it depended on `leaderboard.services.Ranks`, which lived only there).
+Added a new `lazy val appServices` (`.in(file("app-services"))`,
+`name := "app-services"`, `lightweightSettings` with `distageCore`/`scalatest % Test`),
+`.dependsOn(beautyqSearchRepositories)`, added to the root `.aggregate(...)`.
+`appHttp`'s `.dependsOn(beautyqSearchWiring)` became
+`.dependsOn(beautyqSearchWiring, appServices)`; `bifunctor-tagless`'s
+`.dependsOn(beautyqSearchWiring, appHttp)` became
+`.dependsOn(beautyqSearchWiring, appHttp, appServices)`.
+
+Moved with `git mv`, package declarations unchanged: `Ranks.scala`
+(`trait Ranks`, `object Ranks` with `Ranks.Impl`) from
+`bifunctor-tagless/.../leaderboard/services/` to
+`app-services/.../leaderboard/services/`; `ProfileApi.scala` from
+`bifunctor-tagless/.../leaderboard/api/` to `app-http/.../leaderboard/api/`,
+completing the 13-of-13 `leaderboard.api` file move started in Phase 22.
+
+`Ladder`/`Profiles` repo interfaces and their `Dummy`/`Postgres`
+implementations (`Lifecycle`/Doobie shell) stayed in
+`beautyq-search-repositories`, unedited. `LeaderboardPlugin.scala`,
+`LeaderboardRole.scala`, and `HttpServer.scala` stayed in `bifunctor-tagless`,
+unedited; they still wire/consume `ProfileApi` and `Ranks` by import,
+resolving both transitively through `bifunctor-tagless`'s dependency on
+`appHttp`/`appServices`, exactly like every other API/service class.
+
+`appServices/compile`, `appServices/Test/compile`, `appHttp/compile`,
+`appHttp/Test/compile`, `bifunctor-tagless/compile`,
+`bifunctor-tagless/Test/compile`, `beautyqSearchRepositories/compile`, and
+`beautyqSearchWiring/compile` all succeeded with zero Scala source body
+edits (only file relocation); `build.sbt` changes were limited to the new
+project block and the two `dependsOn`/`aggregate` lines.
+
+No `ProfileApi` routes, HTTP methods, request/response JSON, error
+codes/messages, validation ordering, `Ranks.getRank` behavior, `Ladder`/`Profiles`
+behavior, production inclusion behavior, opt-in route exposure, or app graph
+semantics changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
