@@ -1266,6 +1266,41 @@ No benchmark semantics, eval aggregation, report JSON shape, decoder
 defaulting behavior, candidate selection, search behavior, or app graph
 semantics changed.
 
+## Phase 18 record: remaining pure eval design/scaffold and quality-gate layer moved to beautyq-search-wiring
+
+Moved the remaining pure eval design/scaffold layer and the Qdrant
+quality-gate adapter from `bifunctor-tagless` into `beautyq-search-wiring`,
+package names unchanged.
+
+All 45 `M*.scala` eval design/scaffold files (`M8TelemetrySchemaRenderer`
+through `M21ProductionActivationDecisionPackage`, including the full `M9`/`M11`/
+`M12`/`M19`/`M20` families) and `BeautySearchLocalDevOnlyFallbackPolicy.scala`
+moved to `beautyq-search-wiring/.../eval/`. These are pure data/policy/design
+declarations with no HTTP/API/startup/config/Distage/real-client/file-loader
+dependency; `BeautySearchLocalDevOnlyFallbackPolicy.scala`'s only cross-file
+dependency, `M10BeautyQSearchOfflineRoutingBoundary` (declared in
+`M10BeautyQSearchRetrievalPolicyReadiness.scala`), moved in the same patch.
+
+`QdrantProductionCandidateQualityGate.scala` also moved to
+`beautyq-search-wiring/.../qdrant/`: after Phase 17 it only depends on
+`EngineEvalAggregateReport` and the wiring-owned `QdrantProductionCandidateQualityPolicy`,
+so its remaining `bifunctor-tagless` residency was no longer required.
+
+`beautyqSearchWiring/compile`, `bifunctor-tagless/compile`, and
+`bifunctor-tagless/Test/compile` all succeeded afterward with zero import
+fixes; `build.sbt` was not touched and no compatibility shim was added.
+`bifunctor-tagless` keeps `BeautySearchEvalLoader.scala`,
+`QdrantEmbeddingBenchmarkCandidateExecutor.scala`,
+`BeautySearchCatalogBackendModules.scala`, `BeautySearchRouteModules.scala`,
+`BeautySearchPluginModules.scala`, `BeautySearchHybridProductionModules.scala`,
+`BeautyQNonProductionHybridRunnerRealClientInputs.scala`, all API/HTTP files,
+startup/bootstrap files, config files, and Docker/testkit/plugin shell files.
+
+No API behavior, route behavior, app graph semantics, runtime binding names,
+benchmark semantics, eval semantics, config names, HTTP contracts, Qdrant/ES
+requests, response shape, scoring, ranking, filtering, readiness, startup
+behavior, renderers, reason codes, or report shapes changed.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations
