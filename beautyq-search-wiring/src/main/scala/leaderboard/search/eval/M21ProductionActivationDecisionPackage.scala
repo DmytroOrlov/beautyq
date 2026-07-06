@@ -315,7 +315,7 @@ object M21ProductionActivationDecisionPackage {
         "default_beauty_search_route=unchanged",
         s"m20_closeout=${closeout.closeoutStatus.render}",
         s"serving_approved=$servingApproved",
-        s"qdrant_production_activation_approved=$qdrantProductionActivationApproved",
+        s"${BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantProductionActivationApproved}=$qdrantProductionActivationApproved",
         s"route_proof_scope=${routeProofScope.render}",
       ).mkString("; ")
   }

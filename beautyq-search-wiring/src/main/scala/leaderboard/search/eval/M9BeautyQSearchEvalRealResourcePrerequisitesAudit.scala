@@ -154,7 +154,7 @@ object M9BeautyQSearchEvalRealResourcePrerequisitesAudit {
       "gate_status",
       "resource_config_present",
       "production_activation_not_approved_confirmed",
-      "real_backend_call_implemented",
+      BeautyQSearchEvaluationMetricNames.SharedProductionPosture.RealBackendCallImplemented,
       "candidate_source",
       "execution_mode",
     )

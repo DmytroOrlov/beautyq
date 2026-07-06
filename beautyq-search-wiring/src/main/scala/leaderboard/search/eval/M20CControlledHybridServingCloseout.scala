@@ -273,7 +273,7 @@ object M20CControlledHybridServingCloseout {
         "default_beauty_search_route=unchanged",
         s"module_proof_scope=${moduleProofScope.render}",
         s"serving_approved=$servingApproved",
-        s"qdrant_production_activation_approved=$qdrantProductionActivationApproved",
+        s"${BeautyQSearchEvaluationMetricNames.SharedProductionPosture.QdrantProductionActivationApproved}=$qdrantProductionActivationApproved",
       ).mkString("; ")
   }
 

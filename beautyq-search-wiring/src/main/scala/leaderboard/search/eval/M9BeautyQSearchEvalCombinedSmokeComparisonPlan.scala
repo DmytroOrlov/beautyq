@@ -150,7 +150,8 @@ enum M9BeautyQSearchEvalCombinedComparisonPlanReason {
       case CheckpointEligibleForQdrantOnlyNotComparison    => "checkpoint_eligible_for_qdrant_only_not_comparison"
       case ProductionActivationNotApproved                 => "production_activation_not_approved"
       case QdrantProductionActivationNotApproved           => "qdrant_production_activation_not_approved"
-      case DefaultBeautySearchEsBacked                     => "default_beauty_search_es_backed"
+      case DefaultBeautySearchEsBacked                     =>
+        BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultBeautySearchEsBacked
       case NoProductionRouteChange                         => "no_production_route_change"
       case RealBackendCallNotImplemented                   => "real_backend_call_not_implemented"
       case NoQualityGreenOrProductionReadinessClaim        => "no_quality_green_or_production_readiness_claim"

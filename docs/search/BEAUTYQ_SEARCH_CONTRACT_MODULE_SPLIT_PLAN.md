@@ -1748,6 +1748,106 @@ remains an exact-duplicate Sonnet patch, same class of change as Phases 24/25;
 the Fable 5 countdown stays reserved for a future shape/architecture decision,
 not this kind of mechanical name centralization.
 
+## Phase 27 record: residual M9/M11/M12/M20/M21 eval boundary surfaces adopt shared production-posture names
+
+Closes out the `BeautyQSearchEvaluationMetricNames.SharedProductionPosture` (Phase
+26) consumer-adoption sweep over the eval boundary surfaces Phase 26 did not
+reach: `M9BeautyQSearchEvalQdrantOnlySmokeExecutionPlan`,
+`M9BeautyQSearchEvalRealResourcePrerequisitesAudit`,
+`M9BeautyQSearchEvalCombinedSmokeComparisonPlan`,
+`M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix`,
+`M12BeautyQSearchFusionRerankingExperimentPlan`,
+`M12BeautyQSearchFusionRerankingBoundaryFailureMatrix`,
+`M20CControlledHybridServingCloseout`, and
+`M21ProductionActivationDecisionPackage` (all in `beautyq-search-wiring`).
+
+Like Phases 24/25/26, this is exact name-only consumer adoption: no new
+`BeautyQSearchEvaluationMetricNames` constant was added, no metric value,
+metric order, rendered markdown, checked-in artifact byte content, scorecard
+outcome, or eval semantic changed, and the generic `SearchDomainSpec` shape is
+untouched.
+
+The two M9 plan files (`QdrantOnlySmokeExecutionPlan`,
+`CombinedSmokeComparisonPlan`) each had exactly one exact-match occurrence -
+their `PlanReason.render` enum's `DefaultBeautySearchEsBacked` case - now
+returning `SharedProductionPosture.DefaultBeautySearchEsBacked` instead of the
+inline literal. `M9BeautyQSearchEvalRealResourcePrerequisitesAudit` had one
+occurrence inside `MinimumValidationEvidenceFields`
+(`"real_backend_call_implemented"`), now the constant. M9-only reason names
+that are textually similar but distinct in value - `production_activation_not_approved`,
+`qdrant_production_activation_not_approved`,
+`qdrant_production_activation_not_approved_confirmed`, `no_production_route_change`,
+`real_backend_call_not_implemented`, `production_activation_boundary_not_approved_standing_boundary`
+- were left untouched, as were all smoke/comparison/prerequisite-specific labels.
+
+`M11BeautyQSearchCandidateGenerationBoundaryFailureMatrix`,
+`M12BeautyQSearchFusionRerankingExperimentPlan`, and
+`M12BeautyQSearchFusionRerankingBoundaryFailureMatrix` each had the full,
+identical 22-entry `SharedProductionPosture` block inline in their `metrics()`
+builders (the same block Phase 26 already centralized in their sibling M11/M12
+files); all three now reference the 22 constants directly, in the same order.
+Matrix-specific names (`matrix_*`, `accepted_row_count`, `denied_row_count`,
+`reason_code_count_sum`, `m11_*`/`m12_*` consumed-verdict/count metrics, case
+ids, and reason codes) were left untouched.
+
+`M20CControlledHybridServingCloseout` and `M21ProductionActivationDecisionPackage`
+each had one exact-match occurrence of `qdrant_production_activation_approved`
+inside their human-readable `render: String` line
+(`s"qdrant_production_activation_approved=$qdrantProductionActivationApproved"`),
+now `s"${SharedProductionPosture.QdrantProductionActivationApproved}=$qdrantProductionActivationApproved"`
+- the rendered text is byte-identical since the constant's value equals the
+literal it replaced. `M20CControlledHybridServingCloseout.CloseoutEvidence.missingEvidence`
+also contains one `"qdrant_production_activation_approved"` entry, but that
+list is a closeout-specific blocker-code report (parallel to the M9/M11/M12
+reason-code enums), not a `metrics()` builder, so it was deliberately left as
+a local literal rather than folded into this adoption pass; it is reported as
+a known remaining exact-string match, not missed by accident.
+`qdrant_production_activation_approval_still_absent`, `production_activation_approved=false`,
+`serving_approved`, `fallback_enabled`, `score_fusion_enabled`,
+`approve_production_activation`, `reject_production_activation`,
+`defer_production_activation`, and every other `m20_*`/`m21_*` name were left
+untouched.
+
+Corresponding `bifunctor-tagless` specs were updated the same way:
+`M11BeautyQSearchCandidateGenerationBoundaryFailureMatrixSpec` and
+`M12BeautyQSearchFusionRerankingBoundaryFailureMatrixSpec` had their exact-match
+`metricValue(..., "name")` shared-key lookups replaced with the constants
+(import added to each file's existing `leaderboard.search.eval` import block).
+The three M9 spec files assert the plan/audit boolean accessor methods
+directly (never a string-keyed metric lookup), so none needed a change.
+`M20CControlledHybridServingCloseoutSpec` and `M21ProductionActivationDecisionPackageSpec`
+only assert the rendered text output (e.g.
+`rendered.contains("qdrant_production_activation_approved=false")`), which
+stays byte-identical, so neither needed a change either. No file named
+`M12BeautyQSearchFusionRerankingExperimentPlanSpec.scala` exists in the repo,
+but the class `M12BeautyQSearchFusionRerankingExperimentPlanSpec` does exist -
+as a second top-level `AnyWordSpec` in
+`M12BeautyQSearchFusionRerankingPolicyCatalogSpec.scala`, alongside
+`M12BeautyQSearchFusionRerankingPolicyCatalogSpec` itself - and
+`sbt bifunctor-tagless/testOnly *M12BeautyQSearchFusionRerankingExperimentPlanSpec`
+runs its 19 tests directly. Both classes in that file already asserted their
+shared-key `metricValue` lookups through
+`BeautyQSearchEvaluationMetricNames.SharedProductionPosture.*` before this
+phase (bundled into the same file edit when Phase 26 updated
+`M12BeautyQSearchFusionRerankingPolicyCatalog`'s corresponding spec), so no
+test-side edit was needed here even though the production-side
+`M12BeautyQSearchFusionRerankingExperimentPlan.scala` still had inline
+literals until this phase fixed them: the string-equality lookup passes
+either way, which is why every one of these tests was green both before and
+after this phase's production-side edit.
+
+Checked-in `bifunctor-tagless/src/test/resources/leaderboard/search/eval/`
+markdown artifacts (`m11-beautyq-candidate-generation-boundary-failure-matrix.md`,
+`m12-beautyq-fusion-reranking-boundary-failure-matrix.md`) remain
+byte-identical, confirmed both by `git diff` showing no changes and by the
+existing byte-for-byte checked-in-artifact spec assertions passing unchanged.
+
+`beautyqSearchWiring/compile`, `Test/compile`, `bifunctor-tagless/compile`, and
+`Test/compile` all succeeded with no other source changes. This remains an
+exact-duplicate Sonnet patch, same class of change as Phases 24/25/26; the
+Fable 5 countdown stays reserved for a future shape/architecture decision, not
+this kind of mechanical name adoption.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

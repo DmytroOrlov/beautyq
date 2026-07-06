@@ -117,7 +117,8 @@ enum M9BeautyQSearchEvalQdrantOnlySmokePlanReason {
         "checkpoint_eligible_for_es_qdrant_comparison_not_qdrant_only"
       case ProductionActivationNotApproved                   => "production_activation_not_approved"
       case QdrantProductionActivationNotApproved             => "qdrant_production_activation_not_approved"
-      case DefaultBeautySearchEsBacked                       => "default_beauty_search_es_backed"
+      case DefaultBeautySearchEsBacked                       =>
+        BeautyQSearchEvaluationMetricNames.SharedProductionPosture.DefaultBeautySearchEsBacked
       case NoProductionRouteChange                           => "no_production_route_change"
       case RealBackendCallNotImplemented                     => "real_backend_call_not_implemented"
       case NoHybridFallbackFusionRerankingTelemetryRouteSwitch =>

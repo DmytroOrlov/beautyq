@@ -324,13 +324,16 @@ for the Qdrant supplement candidate source, not a Qdrant-only retrieval path.
   checked-in eval resources.
 - `q_broad_004`, `q_broad_006`: intentionally non-lexical; Qdrant supplement candidates only.
 - The repeated eval production-boundary metric keys used across the M9/M10 static/offline
-  scorecards (`beautyq-search-contract`) and the M10-M14 offline planning/design scorecards
-  (`beautyq-search-wiring`) - e.g. `default_beauty_search_es_backed`,
-  `qdrant_production_activation_approved`, `route_plugin_di_http_involved`,
-  `hybrid_serving_implied`, `serving_approval_claimed` - are contract-owned by
-  `BeautyQSearchEvaluationMetricNames.SharedProductionPosture` (package `leaderboard.search.eval`,
-  in `beautyq-search-contract`). Module-specific `m11_*`/`m12_*`/`m13_*`/`m14_*` metrics, verdicts,
-  and drift-case names remain declared locally where they are produced.
+  scorecards (`beautyq-search-contract`), the M9/M11/M12 offline plan/audit/boundary-matrix
+  contracts, and the M10-M14 offline planning/design scorecards (all `beautyq-search-wiring`)
+  - e.g. `default_beauty_search_es_backed`, `qdrant_production_activation_approved`,
+  `route_plugin_di_http_involved`, `hybrid_serving_implied`, `serving_approval_claimed` - are
+  contract-owned by `BeautyQSearchEvaluationMetricNames.SharedProductionPosture` (package
+  `leaderboard.search.eval`, in `beautyq-search-contract`). `M20CControlledHybridServingCloseout`
+  and `M21ProductionActivationDecisionPackage` also reference the same
+  `QdrantProductionActivationApproved` constant in their human-readable `render` line.
+  Module-specific `m9_*`/`m11_*`/`m12_*`/`m13_*`/`m14_*`/`m20_*`/`m21_*` metrics, verdicts, reason
+  codes, and drift-case names remain declared locally where they are produced.
 
 Qdrant supplement candidate eval (manual, environment-gated):
 
