@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–32 records below). The closeout is **not** a new module-move
+the Phase 29–33 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2106,6 +2106,20 @@ source-comment alignment, and focused tests.
 
 No runtime logic, production source values, tests, `build.sbt`, ADT shapes, route behavior,
 request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 33 record: ES/Qdrant port configs moved out of leaderboard-core
+
+`ElasticsearchPortCfg` and `QdrantPortCfg` moved from `leaderboard-core` to the legacy app shell
+config package under `bifunctor-tagless`, preserving package `leaderboard.config`. The move aligns
+ownership with actual consumers: shell plugins, Docker/managed-resource wiring, launcher modules,
+and integration/manual tests. `PostgresCfg` and `PostgresPortCfg` already lived in the same shell
+config package and were unchanged. `search-elasticsearch` and `search-qdrant` remain generic
+interpreter/client modules and do not need to own these app-shell port binding classes in this
+patch.
+
+No imports, runtime behavior, config keys, Docker behavior, client behavior, build dependencies,
+route behavior, request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL
+shape changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
