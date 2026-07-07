@@ -1,9 +1,8 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29 record below). This pass is docs-only: it reconciles this plan, `README.md`, and
-`docs/beautyq-search-dsl-v1.md` with current code and recent commit history. It is **not** a new
-module-move phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
+the Phase 29 and Phase 30 records below). The closeout is **not** a new module-move phase, **not**
+a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
 
@@ -176,6 +175,24 @@ routes.
 - `search-qdrant` must **not** depend on: BeautyQ repositories, BeautyQ materialization, HTTP handlers, app wiring.
 - `beautyq-search-repositories` must **not** depend on: ES/Qdrant interpreters, HTTP/app modules, search runtime services.
 - `app-http` must **not** directly depend on: repo graph internals, catalog materialization internals, backend-specific search semantics.
+
+## Phase 30 record: boundary guardrails added
+
+This patch adds focused static/import/build-DAG guardrails that enforce the documented closeout
+ownership boundaries. `beautyq-search-contract` is checked against runtime/app/materialization
+imports while allowing `leaderboard.repo.catalog` for the generic `repo-core` catalog DSL.
+`search-elasticsearch` and `search-qdrant` are checked as generic modules with no BeautyQ
+names/imports. `app-http` is checked against repo/materialization/backend semantic leaks while
+allowing the current ES lifecycle/status DTO imports only:
+`ElasticsearchStartupReadinessStatusResponse` and `ElasticsearchStartupReadinessTransition`.
+`build.sbt` is checked against the current closeout DAG.
+
+`bifunctor-tagless` remains a temporary legacy app shell, and the final rename/removal remains
+out-of-band. This patch does not move code, change module dependencies, change route behavior,
+change request/response JSON shape, activate Qdrant, introduce fallback/fusion/rerank, or redesign
+the DSL.
+
+Verification is focused only unless the full suite is separately run by the coordinator/user.
 
 ## Legacy compatibility retirement matrix
 

@@ -124,6 +124,33 @@ real clients/resources, startup/bootstrap/seed/eval shell execution, and similar
 execution code. Its final physical rename/removal is out-of-band and must not be treated as
 a blocker for this BeautyQ search split closeout.
 
+## How to add new BeautyQ search code
+
+- Contract declarations, field names, backend ids, payload names, source-text names, response
+  provenance labels, evaluation metric names, supported languages, result-unit declarations, and
+  pure intent/runtime/response/evaluation declarations go in `beautyq-search-contract`.
+- Generic contract ADTs or generic DSL primitives go in `search-contract-core` only when they are
+  domain-neutral and proven with neutral fixtures.
+- Generic ES interpreter/client code goes in `search-elasticsearch`; it must not mention BeautyQ or
+  import BeautyQ repositories/HTTP/app code.
+- Generic Qdrant interpreter/client code goes in `search-qdrant`; it must not mention BeautyQ or
+  import BeautyQ repositories/HTTP/app code.
+- BeautyQ catalog/document materialization, snapshots, projection, and repo-backed loading go in
+  `beautyq-search-materialization`.
+- BeautyQ runtime/search/backend/routing/policy/eval-design/helper code that consumes the contract
+  goes in `beautyq-search-wiring`.
+- HTTP/Tapir routes and API adapters go in `app-http`.
+- App-level services go in `app-services`.
+- Config, Distage `ModuleDef` composition, real clients/resources, startup/bootstrap/seed/eval
+  shell execution, and temporary app-shell glue remain in `bifunctor-tagless` until the
+  out-of-band final rename/removal.
+- Do not put repositories, clients, HTTP handlers, runtime services, analytics/logging services,
+  production fallback/fusion/rerank activation logic, or app wiring into `SearchDomainSpec`.
+
+Phase 30 adds focused static guardrails in `SearchModuleBoundaryGuardrailSpec`. These guardrails are
+source-level/import/build-DAG checks only; they do not imply production Qdrant activation or route
+behavior changes.
+
 ## BeautySearchSpec / BeautySearchSpecV1
 
 `BeautySearchSpec` and `BeautySearchSpecV1` are **app-side wiring and compatibility aggregates**.
