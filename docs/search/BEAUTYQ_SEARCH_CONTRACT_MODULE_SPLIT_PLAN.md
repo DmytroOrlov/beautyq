@@ -1,8 +1,8 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29 and Phase 30 records below). The closeout is **not** a new module-move phase, **not**
-a Qdrant production-activation phase, and **not** a DSL redesign.
+the Phase 29, Phase 30, and Phase 31 records below). The closeout is **not** a new module-move
+phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
 
@@ -2057,6 +2057,41 @@ and the ownership-table's HTTP/Tapir route adapter line corrected to
 `app-http`). No Scala source, `build.sbt`, or checked-in resource changed;
 this is a docs-only patch, and no compile/test claim beyond what is actually
 run should be read into it.
+
+## Phase 31 record: SearchDomainSpec closeout wording aligned
+
+This patch is **source-comment/docs/focused-test-only**: no Scala runtime behavior, `build.sbt`,
+ADT shape, production source value, or checked-in resource changed. It aligns stale source comments
+and docs with the post-Phase-30 state.
+
+- `BeautyQSearchDomainContract.searchDomainSpec` is already the full generic `SearchDomainSpec`
+  assembled entirely from contract-owned sections (catalog/document/intent/runtime/response/
+  evaluation) - not a partial or pending assembly.
+- `BeautyQSearchDomainSpecReadiness.current.pendingDecisions` is empty in current code, and its
+  scaladoc no longer says it records why `fullSearchDomainSpecDeclared` "is still false" - it now
+  describes the current readiness state as explicit data, with the pending-decision shape kept
+  around for future contract expansion rather than as a currently-active blocker list.
+- `fullSearchDomainSpecDeclared` is `true`, derived from empty `pendingDecisions`.
+- `BeautyQCatalogSection`'s scaladoc no longer says the document/intent/runtime/response/evaluation
+  sections "do not exist yet" - they exist in sibling contract-owned objects and are assembled,
+  together with the catalog section, by `BeautyQSearchDomainContract`. `BeautyQCatalogSection`
+  itself stays catalog-only on purpose: `label`, `catalogTopology`, and `section` are unchanged,
+  and it must still not be described as the whole business search contract by itself.
+- `BeautyQSearchDomainContractSpec` gained focused assertions locking these closeout facts:
+  `BeautyQSearchDomainSpecReadiness.current.pendingDecisions == Nil`,
+  `BeautyQSearchDomainSpecReadiness.current.fullSearchDomainSpecDeclared == true`, and
+  `BeautyQCatalogSection.label == "catalog topology section, not complete search contract"`,
+  alongside the existing `searchDomainSpec.catalog eq BeautyQCatalogSection.section` assertion.
+- Historical phase records such as Phase 8c and Phase 8e remain historical snapshots, preserved
+  exactly as written, not rewritten to pretend they were always true.
+- This patch does not move code, change module dependencies, change route behavior, change
+  request/response JSON shape, activate Qdrant, introduce fallback/fusion/rerank, remove any
+  compatibility API, or redesign the DSL. Phase 30's boundary guardrails remain the enforcement
+  layer for module boundaries; this patch adds no new guardrail and does not duplicate them.
+
+Verification is focused only (`BeautyQSearchDomainContractSpec`,
+`SearchModuleBoundaryGuardrailSpec`) unless the full suite is separately run by the
+coordinator/user.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

@@ -6,10 +6,14 @@ import leaderboard.search.contract.CatalogSection
   * `CatalogSection` from `search-contract-core`.
   *
   * [[label]] states explicitly, so callers/tests can assert it rather than
-  * only read it in a comment: this is the BeautyQ catalog topology section
-  * only, not the complete BeautyQ search contract. Document, intent,
-  * runtime, response, and evaluation sections do not exist yet - this object
-  * must not be treated as, or described as, a full `SearchDomainSpec`.
+  * only read it in a comment: this is still only the BeautyQ catalog
+  * topology section, not the whole business search contract by itself. The
+  * document, intent, runtime, response, and evaluation sections now exist
+  * too, each in its own sibling contract-owned object, and are assembled
+  * together with this one into the full generic `SearchDomainSpec` by
+  * [[BeautyQSearchDomainContract]]. This object stays catalog-only on
+  * purpose - it must not be treated as, or described as, that full
+  * contract.
   */
 object BeautyQCatalogSection {
 

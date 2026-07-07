@@ -361,6 +361,19 @@ final class BeautyQSearchDomainContractSpec extends AnyWordSpec {
       assert(BeautyQSearchDomainContract.fullSearchDomainSpecDeclared == true)
     }
 
+    "record BeautyQSearchDomainSpecReadiness.current directly as having no pending decisions" in {
+      assert(BeautyQSearchDomainSpecReadiness.current.pendingDecisions == Nil)
+    }
+
+    "declare BeautyQSearchDomainSpecReadiness.current.fullSearchDomainSpecDeclared true" in {
+      assert(BeautyQSearchDomainSpecReadiness.current.fullSearchDomainSpecDeclared == true)
+    }
+
+    "keep BeautyQCatalogSection catalog-only even though the full domain contract is assembled elsewhere" in {
+      assert(BeautyQCatalogSection.label == "catalog topology section, not complete search contract")
+      assert(BeautyQSearchDomainContract.searchDomainSpec.catalog eq BeautyQCatalogSection.section)
+    }
+
     "be fully usable from values available in beautyq-search-contract alone, with no repository/materialization/client construction" in {
       // Every assertion above reads a plain value already owned by this module;
       // none of them require constructing a repository, materializer, ES/Qdrant

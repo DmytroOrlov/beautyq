@@ -151,6 +151,16 @@ Phase 30 adds focused static guardrails in `SearchModuleBoundaryGuardrailSpec`. 
 source-level/import/build-DAG checks only; they do not imply production Qdrant activation or route
 behavior changes.
 
+**Phase 31 closeout note**: the full generic `SearchDomainSpec` is assembled in
+`BeautyQSearchDomainContract.searchDomainSpec`, entirely from contract-owned sections; catalog
+topology (`BeautyQCatalogSection`) remains only one section of that full contract, never the whole
+contract by itself. `BeautyQSearchDomainSpecReadiness.current.pendingDecisions` is empty in current
+code, so `fullSearchDomainSpecDeclared` is `true`. The Phase 30 guardrails above are what actually
+protect this closeout against contract/runtime/http/materialization import drift going forward.
+Broader new DSL ergonomics (e.g. a builder layer, or a broader response/provenance DSL) remain a
+future architecture decision only if source evidence shows real duplication or unsafe constructor
+noise.
+
 ## BeautySearchSpec / BeautySearchSpecV1
 
 `BeautySearchSpec` and `BeautySearchSpecV1` are **app-side wiring and compatibility aggregates**.
