@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–37 records below). The closeout is **not** a new module-move
+the Phase 29–38 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2195,6 +2195,28 @@ Current legitimate model dependencies remain allowed: `io.circe` (codecs), inter
 No model source, codec behavior, validation behavior, public model API, build dependency,
 runtime behavior, route behavior, request/response JSON shape, Qdrant activation, fallback,
 fusion, rerank, or DSL redesign changed.
+
+## Phase 38 record: BeautyQ repositories boundary guardrail added
+
+`beautyq-search-repositories` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents repository/data-access code
+(repository traits, Dummy implementations, Postgres implementations, `leaderboard.sql.SQL`, the
+`leaderboard.repo` package object) from drifting toward search contracts/runtime
+(`leaderboard.search.*`, `SearchDomainSpec`/`SearchField`/`SearchRuntimeDeclaration`),
+materialization (`BeautyQCatalogGraph`, `BeautyQSearchCatalogSnapshot`/`Loader`,
+`BeautyQVariantSearchDocumentMaterialization`, `SearchDocumentProjection`), app/http/plugin layers,
+config/resource shell, app services, concrete backend clients (`ElasticsearchClient`/
+`QdrantClient`), route behavior, response assembly, parser, eval, or Qdrant activation logic.
+
+Current legitimate repository dependencies remain allowed: BeautyQ model types
+(`leaderboard.model`), generic `repo-core` operations (`leaderboard.repo.RepoOp`),
+repository-local `leaderboard.sql.SQL`, Doobie/Postgres implementation imports, `distage.Lifecycle`,
+`izumi.functional.bio`, `logstage`, `cats.data.NonEmptyList`, and `QueryFailureToThrowable`. No
+current `beautyq-search-repositories` main source violated the new guardrail.
+
+No repository source, SQL query, Dummy/Postgres implementation, public repository API, build
+dependency, runtime behavior, route behavior, request/response JSON shape, Qdrant activation,
+fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
