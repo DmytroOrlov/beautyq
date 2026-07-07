@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–35 records below). The closeout is **not** a new module-move
+the Phase 29–36 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2151,6 +2151,31 @@ import exception, for the pure catalog DSL.
 No current `beautyq-search-contract` main source violated the hardened guardrail. No production
 source, ADT shape, build dependency, runtime behavior, route behavior, request/response JSON
 shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 36 record: repo-core self-guardrail added
+
+`repo-core` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents generic repo/catalog primitives
+(`RepoEntity`, `RepoField`, `EntityNode`, `RepoValueSource`, `Relation`, `GraphLoading`, `RepoOp`,
+the catalog declaration/materialization DSL, `CatalogEntity`, `CatalogValue`, `TupleSelect`,
+`CatalogEntityDerivation`) from drifting toward BeautyQ/domain-specific repositories
+(`leaderboard.repo.Categories`/`Services`/`Masters`/`MasterLocations`/`MasterServiceOffers`/
+`MasterServiceOfferVariants`/`ServiceVariantSchemas`/`BeautyQCatalogGraph`), search modules,
+app/http/plugin layers, SQL/config/resource wiring, concrete backend clients
+(`ElasticsearchClient`/`QdrantClient`), or runtime modules (`doobie`, `http4s`, `tapir`, `zio`,
+`cats.effect`, `ModuleDef`, `Lifecycle`). `leaderboard.model.QueryFailure` and
+`izumi.functional.bio` remain allowed/current dependencies for generic repo operations and graph
+loading, and internal `leaderboard.repo` imports (e.g. `RepoOp`) are untouched.
+
+Repo-core comments were made domain-neutral and storage-neutral where they previously named
+BeautyQ (`RepoGraph.scala`'s interpreter/catalog-DSL comments and its `Category`/`Service`/
+`Repositories[F]`-shaped `TupleSelect`/`relation`/`relationAs` examples, now `Parent`/`Child`/
+`Env[F]`) or described generic physical naming as SQL-specific (`RepoEntity.scala` and
+`RepoNaming.scala`, now "physical column"/"physical naming strategy"/"physical identifiers").
+
+No public API, type name, method name, behavior, build dependency, runtime behavior, route
+behavior, request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL
+redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

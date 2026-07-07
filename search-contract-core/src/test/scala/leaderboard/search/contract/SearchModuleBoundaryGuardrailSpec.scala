@@ -102,6 +102,38 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "http4s",
   )
 
+  private val repoCoreForbiddenImports = List(
+    "leaderboard.search",
+    "leaderboard.api",
+    "leaderboard.http",
+    "leaderboard.plugins",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.services",
+    "leaderboard.repo.Categories",
+    "leaderboard.repo.Services",
+    "leaderboard.repo.Masters",
+    "leaderboard.repo.MasterLocations",
+    "leaderboard.repo.MasterServiceOffers",
+    "leaderboard.repo.MasterServiceOfferVariants",
+    "leaderboard.repo.ServiceVariantSchemas",
+    "leaderboard.repo.BeautyQCatalogGraph",
+    "doobie",
+    "http4s",
+    "tapir",
+    "zio",
+    "cats.effect",
+    "ModuleDef",
+    "Lifecycle",
+    "ElasticsearchClient",
+    "QdrantClient",
+  )
+
+  private val repoCoreForbiddenSourceText = List(
+    "BeautyQ",
+    "beautyq",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -132,6 +164,18 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         .flatMap(path => containsForbiddenImport(path, searchContractCoreForbiddenImports, allowedPatterns = Nil))
 
       assertNoViolations("search-contract-core boundary violations", violations)
+    }
+
+    "keep repo-core main sources generic and free of domain, search, app, runtime, and resource imports" in {
+      val files = scalaMainFiles("repo-core/src/main/scala")
+      val importViolations = files.flatMap(path => containsForbiddenImport(path, repoCoreForbiddenImports, allowedPatterns = Nil))
+      val sourceViolations = files.flatMap { path =>
+        repoCoreForbiddenSourceText.filter(read(path).contains).map { forbiddenText =>
+          s"${relative(path)}: forbidden BeautyQ-specific source text: $forbiddenText"
+        }
+      }
+
+      assertNoViolations("repo-core boundary violations", importViolations ++ sourceViolations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -281,6 +325,54 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = Nil,
       )
       assert(forbiddenSearchContractCoreRepoImport.nonEmpty)
+
+      val forbiddenRepoCoreBeautyQContractImport = importLineViolations(
+        displayPath       = "synthetic/RepoCore.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = repoCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenRepoCoreBeautyQContractImport.nonEmpty)
+
+      val forbiddenRepoCoreCategoriesImport = importLineViolations(
+        displayPath       = "synthetic/RepoCore.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = repoCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenRepoCoreCategoriesImport.nonEmpty)
+
+      val forbiddenRepoCoreSqlImport = importLineViolations(
+        displayPath       = "synthetic/RepoCore.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = repoCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenRepoCoreSqlImport.nonEmpty)
+
+      val forbiddenRepoCoreDoobieImport = importLineViolations(
+        displayPath       = "synthetic/RepoCore.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = repoCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenRepoCoreDoobieImport.nonEmpty)
+
+      val allowedRepoCoreQueryFailureImport = importLineViolations(
+        displayPath       = "synthetic/RepoCore.scala",
+        lines             = List("import leaderboard.model.QueryFailure"),
+        forbiddenPatterns = repoCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedRepoCoreQueryFailureImport.isEmpty)
+
+      val allowedRepoCoreBioImport = importLineViolations(
+        displayPath       = "synthetic/RepoCore.scala",
+        lines             = List("import izumi.functional.bio.{Error2, F}"),
+        forbiddenPatterns = repoCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedRepoCoreBioImport.isEmpty)
     }
   }
 

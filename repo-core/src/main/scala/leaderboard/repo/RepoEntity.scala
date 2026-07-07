@@ -19,7 +19,7 @@ final case class RepoField[A, B](
 
 object RepoField {
 
-  /** Derive a [[RepoField]] from a direct field selector, deriving the SQL
+  /** Derive a [[RepoField]] from a direct field selector, deriving the physical
     * column from the field label via [[RepoNamingStrategy.SnakeCase]].
     */
   inline def derived[A, B](inline selector: A => B): RepoField[A, B] = {
@@ -114,9 +114,9 @@ final case class RepoEntity[A](
       .collectFirst { case (knownLabel, knownColumn) if knownLabel == label => knownColumn }
       .getOrElse(RepoNamingStrategy.SnakeCase.column(label))
 
-  /** Derive a typed [[RepoField]] from a direct field selector. The SQL column
-    * is taken from this entity's derived columns when the field is known, and
-    * otherwise from [[RepoNamingStrategy.SnakeCase]].
+  /** Derive a typed [[RepoField]] from a direct field selector. The physical
+    * column is taken from this entity's derived columns when the field is
+    * known, and otherwise from [[RepoNamingStrategy.SnakeCase]].
     */
   inline def field[B](inline selector: A => B): RepoField[A, B] = {
     val label = RepoFieldMacro.label[A, B](selector)

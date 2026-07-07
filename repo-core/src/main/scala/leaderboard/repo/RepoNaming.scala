@@ -1,11 +1,11 @@
 package leaderboard.repo
 
-/** Physical SQL naming strategy for the model-first repository graph.
+/** Physical naming strategy for the model-first repository graph.
   *
-  * A single strategy maps Scala model/type/field names to physical SQL
+  * A single strategy maps Scala model/type/field names to physical
   * identifiers. There are intentionally no per-table or per-column overrides:
-  * the public entity API never asks for raw SQL strings for normal fields or
-  * tables.
+  * the public entity API never asks for raw physical names for normal fields
+  * or tables.
   */
 sealed trait RepoNamingStrategy {
 

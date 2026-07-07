@@ -72,7 +72,7 @@ object Relation {
 
 /** Generic interpreter for the domain graph relations.
   *
-  * The interpreter is intentionally free of any BeautyQ-specific knowledge: it
+  * The interpreter is intentionally free of any concrete-domain knowledge: it
   * only understands [[Relation]] primitives and repo operations, executing keys
   * through [[RepoField.select]].
   */
@@ -182,14 +182,14 @@ object GraphLoading {
 // metadata. No repo instances, loader functions, or runtime dependencies ever
 // appear in the declaration chain.
 //
-// A domain (see `BeautyQCatalogGraph`) separately supplies "Evidence" - given
+// A concrete domain separately supplies "Evidence" - given
 // instances of [[CatalogEntity]]/[[CatalogValue]] (what a declared type *is*)
 // and [[CatalogRootTree]]/[[CatalogRootAll]]/[[CatalogMany]]/[[CatalogValueEdge]]
 // (how to *load* it for a concrete `F`/repositories type `R`) - and then calls
 // `declaration.materialize[F, R](build)` to turn the pure declaration plus
 // that evidence into typed `R => Relation` factories, which `build`
 // destructures into the domain's own named fields. Nothing in this file
-// mentions BeautyQ or any other specific domain.
+// requires a concrete domain type.
 // ============================================================================
 
 /** Whether a declared root is loaded as a self-tree or as a flat "all" collection. */
@@ -513,9 +513,9 @@ private[repo] object MaterializeAll {
   * for the head position, so the *first* (head-most) matching element wins;
   * it does not disambiguate between two *later* occurrences of the same
   * type. A tuple that legitimately needs two distinct relations of the exact
-  * same type (e.g. two different `HasMany[F, Category, CategoryId, Service,
-  * ServiceId]` edges) is not selectable by type alone and would need
-  * explicit labels - not solved here, and not needed by the current BeautyQ
+  * same type (e.g. two different `HasMany[F, Parent, ParentId, Child,
+  * ChildId]` edges) is not selectable by type alone and would need
+  * explicit labels - not solved here, and not needed by the current
   * declaration (every declared relation factory type is unique).
   */
 trait TupleSelect[T <: Tuple, A] {
@@ -551,8 +551,8 @@ final case class MaterializedDeclaration[F[_, _], R, Rels <: Tuple](
   /** Selects the one relation factory of exact type `A` out of [[relations]],
     * via [[TupleSelect]] - no manual reverse-tuple destructuring, no
     * repeated tuple type alias. `A` is almost always given explicitly (e.g.
-    * `declaration.relation[Repositories[F] => Relation.HasMany[F, Category,
-    * CategoryId, Service, ServiceId]]`), since expected-type propagation
+    * `declaration.relation[Env[F] => Relation.HasMany[F, Parent,
+    * ParentId, Child, ChildId]]`), since expected-type propagation
     * into a named case-class constructor argument does not, in practice,
     * flow through this call. Resolution is deferred to each inline-expansion
     * site via `summonInline` (rather than a plain `using` parameter) because
@@ -565,8 +565,8 @@ final case class MaterializedDeclaration[F[_, _], R, Rels <: Tuple](
     summonInline[TupleSelect[Rels, A]](relations)
 
   /** Alias for [[relation]] for call sites that read more clearly with the
-    * type spelled out explicitly, e.g. `declaration.relationAs[Repositories[F]
-    * => Relation.SelfTree[F, Category, CategoryId]]`.
+    * type spelled out explicitly, e.g. `declaration.relationAs[Env[F]
+    * => Relation.SelfTree[F, Parent, ParentId]]`.
     */
   inline def relationAs[A]: A =
     summonInline[TupleSelect[Rels, A]](relations)
