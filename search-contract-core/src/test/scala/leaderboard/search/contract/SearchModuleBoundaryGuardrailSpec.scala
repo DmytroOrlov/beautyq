@@ -25,6 +25,24 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "Tapir",
     "ModuleDef",
     "Lifecycle",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.services",
+    "leaderboard.search.hybrid",
+    "leaderboard.search.startup",
+    "leaderboard.search.embedding",
+    "leaderboard.search.inmemory",
+    "leaderboard.search.parser",
+    "leaderboard.search.interpreter",
+    "leaderboard.search.semantic",
+    "doobie",
+    "http4s",
+    "tapir",
+    "zio",
+    "cats.effect",
+    "izumi.functional.bio",
+    "ElasticsearchClient",
+    "QdrantClient",
   )
 
   private val contractAllowedImports = List(
@@ -152,6 +170,46 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = contractAllowedImports,
       )
       assert(allowedContractImport.isEmpty)
+
+      val forbiddenContractConfigImport = importLineViolations(
+        displayPath       = "synthetic/Contract.scala",
+        lines             = List("import leaderboard.config.ElasticsearchPortCfg"),
+        forbiddenPatterns = contractForbiddenImports,
+        allowedPatterns   = contractAllowedImports,
+      )
+      assert(forbiddenContractConfigImport.nonEmpty)
+
+      val forbiddenContractSqlImport = importLineViolations(
+        displayPath       = "synthetic/Contract.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = contractForbiddenImports,
+        allowedPatterns   = contractAllowedImports,
+      )
+      assert(forbiddenContractSqlImport.nonEmpty)
+
+      val forbiddenContractHybridImport = importLineViolations(
+        displayPath       = "synthetic/Contract.scala",
+        lines             = List("import leaderboard.search.hybrid.BeautyQNonProductionHybridRunnerRealClientInputs"),
+        forbiddenPatterns = contractForbiddenImports,
+        allowedPatterns   = contractAllowedImports,
+      )
+      assert(forbiddenContractHybridImport.nonEmpty)
+
+      val forbiddenContractDoobieImport = importLineViolations(
+        displayPath       = "synthetic/Contract.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = contractForbiddenImports,
+        allowedPatterns   = contractAllowedImports,
+      )
+      assert(forbiddenContractDoobieImport.nonEmpty)
+
+      val forbiddenContractZioImport = importLineViolations(
+        displayPath       = "synthetic/Contract.scala",
+        lines             = List("import zio.Task"),
+        forbiddenPatterns = contractForbiddenImports,
+        allowedPatterns   = contractAllowedImports,
+      )
+      assert(forbiddenContractZioImport.nonEmpty)
 
       val forbiddenAppHttpImport = importLineViolations(
         displayPath       = "synthetic/AppHttp.scala",

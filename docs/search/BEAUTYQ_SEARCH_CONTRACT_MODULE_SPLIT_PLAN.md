@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–34 records below). The closeout is **not** a new module-move
+the Phase 29–35 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2135,6 +2135,22 @@ domain-neutral.
 
 The ADT shape did not change. No runtime behavior, build dependency, route behavior,
 request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 35 record: BeautyQ contract boundary guardrail hardened
+
+The existing `beautyq-search-contract` import guardrail (`contractForbiddenImports` in
+`SearchModuleBoundaryGuardrailSpec`) was extended to cover config/sql/app-service/resource/runtime
+implementation packages (`leaderboard.config`, `leaderboard.sql`, `leaderboard.services`,
+`leaderboard.search.hybrid`, `leaderboard.search.startup`, `leaderboard.search.embedding`,
+`leaderboard.search.inmemory`, `leaderboard.search.parser`, `leaderboard.search.interpreter`,
+`leaderboard.search.semantic`) and common effect/resource/runtime libraries (`doobie`, `http4s`,
+`tapir`, `zio`, `cats.effect`, `izumi.functional.bio`, plus concrete `ElasticsearchClient`/
+`QdrantClient` type names). `leaderboard.repo.catalog` remains the only allowed `leaderboard.repo`
+import exception, for the pure catalog DSL.
+
+No current `beautyq-search-contract` main source violated the hardened guardrail. No production
+source, ADT shape, build dependency, runtime behavior, route behavior, request/response JSON
+shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
