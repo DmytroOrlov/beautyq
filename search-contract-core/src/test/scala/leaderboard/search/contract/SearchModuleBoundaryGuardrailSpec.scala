@@ -60,6 +60,30 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "leaderboard.search.elasticsearch.ElasticsearchStartupReadinessTransition",
   )
 
+  private val searchContractCoreForbiddenImports = List(
+    "leaderboard.model",
+    "leaderboard.repo",
+    "leaderboard.api",
+    "leaderboard.http",
+    "leaderboard.plugins",
+    "leaderboard.sql",
+    "leaderboard.config",
+    "leaderboard.search.beautyq",
+    "leaderboard.search.elasticsearch",
+    "leaderboard.search.qdrant",
+    "leaderboard.search.hybrid",
+    "leaderboard.search.startup",
+    "leaderboard.search.embedding",
+    "beautyq",
+    "BeautyQ",
+    "ModuleDef",
+    "Lifecycle",
+    "Tapir",
+    "HttpApi",
+    "doobie",
+    "http4s",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -83,6 +107,13 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         .flatMap(path => containsForbiddenImport(path, appHttpForbiddenImports, appHttpAllowedImports))
 
       assertNoViolations("app-http boundary violations", violations)
+    }
+
+    "keep search-contract-core main sources generic and free of domain, app, runtime, and resource imports" in {
+      val violations = scalaMainFiles("search-contract-core/src/main/scala")
+        .flatMap(path => containsForbiddenImport(path, searchContractCoreForbiddenImports, allowedPatterns = Nil))
+
+      assertNoViolations("search-contract-core boundary violations", violations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -176,6 +207,22 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = appHttpAllowedImports,
       )
       assert(mixedGroupedAppHttpImport.nonEmpty)
+
+      val forbiddenSearchContractCoreBeautyQImport = importLineViolations(
+        displayPath       = "synthetic/SearchContractCore.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = searchContractCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenSearchContractCoreBeautyQImport.nonEmpty)
+
+      val forbiddenSearchContractCoreRepoImport = importLineViolations(
+        displayPath       = "synthetic/SearchContractCore.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = searchContractCoreForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenSearchContractCoreRepoImport.nonEmpty)
     }
   }
 

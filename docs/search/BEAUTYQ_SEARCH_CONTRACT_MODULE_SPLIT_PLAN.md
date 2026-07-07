@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–33 records below). The closeout is **not** a new module-move
+the Phase 29–34 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2120,6 +2120,21 @@ patch.
 No imports, runtime behavior, config keys, Docker behavior, client behavior, build dependencies,
 route behavior, request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL
 shape changed.
+
+## Phase 34 record: search-contract-core self-guardrail added
+
+`search-contract-core` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents the generic contract ADTs
+(`SearchDomainSpec`, `SearchField`, `SearchRuntimeDeclaration`) from drifting toward
+BeautyQ/domain-specific code, repositories, app/http/plugin layers, SQL/config/resource wiring,
+concrete backend packages (`leaderboard.search.elasticsearch`/`leaderboard.search.qdrant`/
+`leaderboard.search.hybrid`/`leaderboard.search.startup`/`leaderboard.search.embedding`), or
+Distage/runtime modules (`ModuleDef`, `Lifecycle`, `Tapir`, `HttpApi`, `doobie`, `http4s`). A
+generic-core comment on `SearchDomainSpec` that named BeautyQ as an example was made
+domain-neutral.
+
+The ADT shape did not change. No runtime behavior, build dependency, route behavior,
+request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

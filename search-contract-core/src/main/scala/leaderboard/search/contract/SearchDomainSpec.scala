@@ -176,7 +176,7 @@ final case class EvalSection(
   * runtime declarations, response policy, and evaluation metadata.
   *
   * Fully generic in `Catalog`, `Document`, and `ResultUnit` - a concrete
-  * domain (e.g. BeautyQ) supplies its own types for these and assembles a
+  * domain supplies its own types for these and assembles a
   * `SearchDomainSpec` from them; this module never encodes domain-specific
   * values or types.
   */
