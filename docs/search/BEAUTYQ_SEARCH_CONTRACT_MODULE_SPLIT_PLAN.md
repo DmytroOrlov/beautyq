@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–44 records below). The closeout is **not** a new module-move
+the Phase 29–45 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -19,8 +19,8 @@ Current physical ownership:
   `beautyq-search-materialization`. The legacy `BeautyQVariantSearchDocumentSchema`,
   `VariantSearchDocumentBuilder`, `BeautySearchCatalogSnapshot`, and
   `BeautySearchCatalogSnapshotLoader` compatibility facades that used to live in
-  `bifunctor-tagless` have since been deleted outright (not merely forwarded) - there is no
-  remaining compatibility shim for them.
+  `leaderboard-app-shell` (formerly named `bifunctor-tagless`) have since been deleted outright
+  (not merely forwarded) - there is no remaining compatibility shim for them.
 - Generic Elasticsearch client/interpreter: `search-elasticsearch`.
 - Generic Qdrant client/interpreter: `search-qdrant`.
 - BeautyQ runtime/search/routing/policy/backend/eval-design/helper layer consuming the contract
@@ -29,12 +29,13 @@ Current physical ownership:
 - HTTP/Tapir API layer, including `BeautySearchApi` and every other `leaderboard.api.*`/
   `leaderboard.http.tapir.*` endpoint: `app-http`.
 - App-level service boundaries such as `leaderboard.services.Ranks`: `app-services`.
-- `bifunctor-tagless` is now a **temporary legacy-named app shell**: config, Distage/module
+- `leaderboard-app-shell` is the app shell module: config, Distage/module
   (`ModuleDef`) composition and plugin wiring, real clients/resources, and
   startup/bootstrap/seed/eval shell execution code. It is no longer the conceptual owner of the
   BeautyQ search contract, materialization, runtime/wiring, or HTTP layers - those moved to the
-  modules above across Phases 2-23. Final physical rename/removal of `bifunctor-tagless` is
-  **out-of-band**: a separate, manual step that must not block this feature closeout.
+  modules above across Phases 2-23. It was previously named `bifunctor-tagless`; the physical
+  rename is recorded in the Phase 45 record below, and older phase records may still use the
+  former name historically.
 
 **Phase 8c clarification**: the Phase 8c record below recorded `evaluationDeclared = false` and
 `fullSearchDomainSpecDeclared = false` - that was historically accurate when it was written. It was
@@ -165,7 +166,7 @@ above) that already housed `SearchIntentVocabulary`, `SearchIntentRule`,
 `SearchRuntimeSpec`, and related generic types before this split began.
 `beautyq-search-contract` may depend on it - and does, since Phase 8a - for
 those generic types; `search-core` itself depends only on `leaderboard-core`,
-so this does not introduce any dependency on `bifunctor-tagless`,
+so this does not introduce any dependency on `leaderboard-app-shell`,
 repositories, materialization, ES/Qdrant, HTTP/app, wiring, clients, or
 routes.
 
@@ -2398,6 +2399,38 @@ module") was updated to current search-core ownership wording ("owned by the sea
 No search-core behavior, DSL shape, field derivation logic, runtime fingerprint logic, document
 JSON/payload behavior, lexical/semantic policy behavior, build dependency, HTTP route behavior,
 request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 45 record: app shell module renamed to leaderboard-app-shell
+
+The physical sbt module/directory formerly named `bifunctor-tagless` was renamed to
+`leaderboard-app-shell`. The module remains the app shell: config, Distage/module composition,
+plugin wiring, real clients/resources, HTTP server lifecycle/startup, startup/bootstrap/seed/eval
+shell execution, and real-client/manual/integration test shell code.
+
+`build.sbt`'s project id and the root `distage-example` aggregate were updated from
+`` `bifunctor-tagless` `` to `` `leaderboard-app-shell` ``; its `dependsOn(beautyqSearchWiring,
+appHttp, appServices)` and every other build dependency are unchanged. `leaderboard-core` remains
+generic core and was not renamed - it is a separate module from this app-shell rename, and any
+change to its physical path was reverted before this record was written.
+
+Current docs and current command examples (README's module map, `docs/beautyq-search-dsl-v1.md`'s
+current ownership tables/notes, this plan's top Status section and Dependency DAG note,
+`docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`, `docs/DISTAGE_HTTP_TESTING.md`,
+`docs/SEARCH_DOMAIN_ONBOARDING.md`, and `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`) were
+updated to the new module name, and current-state wording that called the module "temporary
+legacy-named" with an "out-of-band" final rename was corrected, since that rename has now happened.
+
+Historical phase records (Phase 2 through Phase 44, and the older Phase 7b-7d/8d-8j records) were
+intentionally left historical and still say `bifunctor-tagless` where they describe what was true
+at the time - they are dated snapshots, not rewritten to pretend the module always had its current
+name. `SearchModuleBoundaryGuardrailSpec`'s build-DAG assertion for this project was updated to
+expect `` `leaderboard-app-shell` `` (and its other assertions continue to expect
+`` `leaderboard-core` ``, unaffected by this rename).
+
+No package names changed - every source file's `package leaderboard.*` declaration is unchanged.
+No Scala source behavior changed; this is a pure path rename plus docs/test-string updates. No
+module ownership, dependency DAG semantics, HTTP route behavior, request/response JSON shape,
+Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

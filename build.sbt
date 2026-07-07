@@ -201,7 +201,7 @@ lazy val appHttp = project
   )))
   .dependsOn(beautyqSearchWiring, appServices)
 
-lazy val `bifunctor-tagless` = project
+lazy val `leaderboard-app-shell` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
   .dependsOn(beautyqSearchWiring, appHttp, appServices)
 
@@ -225,7 +225,7 @@ lazy val `distage-example` = project
     beautyqSearchWiring,
     appHttp,
     appServices,
-    `bifunctor-tagless`,
+    `leaderboard-app-shell`,
     `graal-resources`,
   )
   .enablePlugins(GraalVMNativeImagePlugin, UniversalPlugin)

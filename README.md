@@ -36,7 +36,7 @@ activation env flag is required, and operators never create or index the Qdrant 
 startup does it automatically. The launcher HTTP server binds to source-confirmed port `8080`.
 
 The local embedding endpoint is configured at `llama-cpp-embedding` in
-`bifunctor-tagless/src/main/resources/common-reference.conf` (default base URL
+`leaderboard-app-shell/src/main/resources/common-reference.conf` (default base URL
 `http://localhost:8081`, endpoint path `/v1/embeddings`; base URL override
 `M18_QDRANT_EMBEDDING_ENDPOINT`). The managed launcher reads that value through Distage config, and
 the Scala constructors do not carry runtime endpoint defaults. The endpoint is a hard startup
@@ -90,6 +90,6 @@ detailed ownership rules, and dependency DAG.
 | `beautyq-search-wiring` | BeautyQ runtime/search/backend/routing/policy/eval-design/helper layer that consumes the contract - the largest BeautyQ-specific module |
 | `app-services` | app-level service boundaries over repository interfaces, e.g. `leaderboard.services.Ranks` |
 | `app-http` | HTTP/Tapir API layer for the whole app, including `BeautySearchApi` and every other API/endpoint class |
-| `bifunctor-tagless` | **temporary legacy-named app shell**: config, Distage/module composition and plugin wiring, real clients/resources, and startup/bootstrap/seed/eval shell execution code. No longer the conceptual owner of the BeautyQ search contract, materialization, runtime/wiring, or HTTP layers. Its final rename/removal is intentionally out-of-band and not part of this closeout. |
+| `leaderboard-app-shell` | **app shell module**: config, Distage/module composition and plugin wiring, real clients/resources, and startup/bootstrap/seed/eval shell execution code. No longer the conceptual owner of the BeautyQ search contract, materialization, runtime/wiring, or HTTP layers. Previously named `bifunctor-tagless`. |
 
 The repository also contains upstream distage example implementation variants under `monofunctor-tagless` and `monomorphic-cats`.

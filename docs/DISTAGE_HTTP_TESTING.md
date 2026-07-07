@@ -29,9 +29,9 @@ Focused local harness docs for route and service proofs. This is not a full Dist
 ## Commands
 
 * QP18:
-  `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP18QdrantSupplementImprovementNoWorseningSpec'`
+  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP18QdrantSupplementImprovementNoWorseningSpec'`
 * QP19:
-  `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
+  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
 
 ## Do not
 

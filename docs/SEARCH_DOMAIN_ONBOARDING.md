@@ -83,7 +83,7 @@ New domains should use the measured-gate method from this doc. New domain archit
 boundaries should follow `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — it defines
 the target search-contract/module split, dependency DAG, and forbidden dependencies.
 
-Do not start a new domain by copying `BeautyQRepoGraph` or `bifunctor-tagless` app-side ownership.
+Do not start a new domain by copying `BeautyQRepoGraph` or `leaderboard-app-shell` app-side ownership.
 `BeautyQRepoGraph` and `BeautyQCatalogGraph` are legacy/current BeautyQ implementation surfaces
 (full detail in `docs/beautyq-search-dsl-v1.md`), not the target pattern for a new domain.
 

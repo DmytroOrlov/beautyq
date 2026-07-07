@@ -368,7 +368,7 @@ mkdir -p "$WORK"
   echo
 
   echo "## relevant anchors"
-  rg -n "PatternA|PatternB" AGENTS.md docs bifunctor-tagless/src/main bifunctor-tagless/src/test || true
+  rg -n "PatternA|PatternB" AGENTS.md docs leaderboard-app-shell/src/main leaderboard-app-shell/src/test || true
   echo
 
   echo "## recent commits"

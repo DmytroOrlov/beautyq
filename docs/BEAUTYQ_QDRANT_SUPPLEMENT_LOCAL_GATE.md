@@ -43,7 +43,7 @@ startup, prepares all local data the route needs before the HTTP server serves `
 
 This needs the dockerized Elasticsearch/Qdrant containers (started by the managed scene) and the local
 embedding endpoint configured at `llama-cpp-embedding` in
-`bifunctor-tagless/src/main/resources/common-reference.conf` (default base URL
+`leaderboard-app-shell/src/main/resources/common-reference.conf` (default base URL
 `http://localhost:8081`, endpoint path `/v1/embeddings`; base URL override
 `M18_QDRANT_EMBEDDING_ENDPOINT`). The managed launcher reads it through Distage config, and Scala
 constructors do not carry runtime endpoint defaults. No user-facing Qdrant activation env flag is
@@ -139,7 +139,7 @@ Frontend should treat these fields as explanation, debug, and status metadata. T
 Command:
 
 ```bash
-sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'
+sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'
 ```
 
 Expected counts:
@@ -177,11 +177,11 @@ Rules:
 ## Preflight and smoke commands
 
 * QP11 preflight:
-  `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP11QdrantSupplementRealResourcePreflightSpec'`
+  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP11QdrantSupplementRealResourcePreflightSpec'`
 * QP18 local proof:
-  `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP18QdrantSupplementImprovementNoWorseningSpec'`
+  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP18QdrantSupplementImprovementNoWorseningSpec'`
 * QP19 measured gate:
-  `sbt 'bifunctor-tagless/Test/compile' 'bifunctor-tagless/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
+  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
 
 ## Failure meanings
 

@@ -5,9 +5,10 @@
 > in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`). The DSL north star, phase history,
 > and anti-scope-drift rules are defined in that plan; this document owns current architecture and
 > module ownership. Coordinator prompting/review workflow rules live in
-> `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`. `bifunctor-tagless` remains a temporary
-> legacy-named app shell; its final rename is a separate, out-of-band step and is not part of this
-> closeout.
+> `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`. `leaderboard-app-shell` is the app shell
+> module: config, Distage/module composition, plugin wiring, real clients/resources, and
+> startup/bootstrap/seed/eval shell execution. It was previously named `bifunctor-tagless`; older
+> phase records may still use that name historically.
 
 ## Overview
 
@@ -80,23 +81,23 @@ split, dependency DAG, and forbidden dependencies are defined in
 | `beautyq-search-wiring` | BeautyQ runtime models/codecs (`BeautySearchModels`), pure request contract/validation (`BeautySearchRequestContract`, `BeautySearchRequestValidation`), intent parser, in-memory search backend, response assembler, spec-support helpers, readiness wrapper, concrete ES/Qdrant backend adapters (`ElasticsearchSearchBackend`, `QdrantCandidateAssembler`/`QdrantCandidateResponseProjector`, Qdrant indexers), hybrid backend/routing/response layer (`ExperimentalHybridSearchBackend`, `SearchBackendRouter`, `SemanticCandidateBackend`, `LexicalDocumentBackend`), pure Qdrant production-candidate readiness/activation/explicit-opt-in policy (`QdrantProductionCandidateReadiness`, `QdrantProductionCandidateActivationConfigApproval`, `QdrantExplicitOptInRoutePrerequisites`/`QdrantExplicitOptInBeautySearchBackend`, and the quality DTO/policy in `QdrantProductionCandidateQualityPolicy`), pure eval DTO/scoring/report/json/formatter/saved-comparison layer (`BeautySearchEval` model/scorer, `BeautySearchEvalReportJson`, `EngineEval`/`EngineEvalReportAssembly`/`EngineEvalReportFormatter`/`EngineEvalReportJson`/`EngineEvalSavedReportComparison`), pure Qdrant embedding benchmark DTO/report/json/formatter/decision/saved-comparison/runner layer (`QdrantEmbeddingBenchmark`, `QdrantEmbeddingBenchmarkReportJson`/`ReportFormatter`/`DecisionPolicy`/`SavedReportComparison`/`Runner`, `QdrantEmbeddingBenchmarkQuerySubset`), the pure eval design/scaffold layer (all `M8`–`M21` design/scaffold files) and `BeautySearchLocalDevOnlyFallbackPolicy`, the Qdrant quality-gate adapter `QdrantProductionCandidateQualityGate` (including `fromEngineEval`), and the managed-local bootstrap pure plan/fingerprint layer (`BeautyQManagedLocalSearchBootstrapPlan` with `BeautyQManagedLocalSearchBootstrapResult`/`Action`, `embeddingSpec`/`readinessConfig`/`qdrantCollectionInfoReusable`, and `BeautyQManagedLocalSearchBootstrapFingerprint`) |
 | `app-services` | Small app-level service boundaries over repository interfaces: `leaderboard.services.Ranks` (`Ranks.Impl`) |
 | `app-http` | HTTP/API/Tapir shell: `HttpApi`, `HttpApiFailure`, `BeautySearchApi`, `CategoryApi`/`LadderApi`/`MasterApi`/`MasterLocationApi`/`MasterServiceOfferApi`/`MasterServiceOfferVariantApi`/`ServiceApi`/`EsLifecycleStatusApi`/`ProfileApi`, `BeautySearchProductionInclude`/`Inclusion`, and all `leaderboard.http.tapir.*TapirEndpoints` |
-| `bifunctor-tagless` | The app/shell module over the `beautyq-search-wiring`, `app-http`, and `app-services` boundaries. `HttpServer` (lifecycle/startup, combines `Set[HttpApi[F]]`), startup/plugin wiring, Distage `ModuleDef` interpreters (`BeautySearchCatalogBackendModules`, `BeautySearchRouteModules`, `BeautySearchPluginModules`, `BeautySearchHybridProductionModules`), config binding modules, the real Java `HttpClient` embedding shell (`LlamaCppEmbeddingClient`), the file-IO eval loader `BeautySearchEvalLoader`, the real-client `QdrantEmbeddingBenchmarkCandidateExecutor` runner shell, and the managed-local bootstrap lifecycle/startup execution shell (`BeautyQManagedLocalSearchBootstrap`'s `run`/`embeddingPreflight`/ES-Qdrant preparation, `BeautyQManagedLocalSearchDataReady`). It no longer owns `ProfileApi` or `Ranks` source, but still wires/consumes both via `LeaderboardPlugin`/`LeaderboardRole`. |
+| `leaderboard-app-shell` | The app/shell module over the `beautyq-search-wiring`, `app-http`, and `app-services` boundaries. `HttpServer` (lifecycle/startup, combines `Set[HttpApi[F]]`), startup/plugin wiring, Distage `ModuleDef` interpreters (`BeautySearchCatalogBackendModules`, `BeautySearchRouteModules`, `BeautySearchPluginModules`, `BeautySearchHybridProductionModules`), config binding modules, the real Java `HttpClient` embedding shell (`LlamaCppEmbeddingClient`), the file-IO eval loader `BeautySearchEvalLoader`, the real-client `QdrantEmbeddingBenchmarkCandidateExecutor` runner shell, and the managed-local bootstrap lifecycle/startup execution shell (`BeautyQManagedLocalSearchBootstrap`'s `run`/`embeddingPreflight`/ES-Qdrant preparation, `BeautyQManagedLocalSearchDataReady`). It no longer owns `ProfileApi` or `Ranks` source, but still wires/consumes both via `LeaderboardPlugin`/`LeaderboardRole`. |
 
 Generic modules (`search-core`, `search-elasticsearch`, `search-qdrant`) must not know BeautyQ
 names or app types.
 
-As of Phase 21, `bifunctor-tagless`'s direct `build.sbt` project dependencies were
+As of Phase 21, `leaderboard-app-shell`'s direct `build.sbt` project dependencies were
 collapsed to `beautyqSearchWiring` only - the lower search/runtime modules
 (`beautyqSearchContract`, `beautyqSearchMaterialization`, `beautyqSearchRepositories`,
 `search-elasticsearch`, `search-qdrant`, `search-core`, `repoCore`, `beautyqModel`,
 `leaderboard-core`) are intentionally collapsed behind that one wiring
-boundary and reached only transitively. As of Phase 22, `bifunctor-tagless`
+boundary and reached only transitively. As of Phase 22, `leaderboard-app-shell`
 also depends directly on `appHttp` (HTTP/API/Tapir shell), which itself
 depends only on `beautyqSearchWiring`. Phase 22 left `ProfileApi` behind in
-`bifunctor-tagless` because it depended on `leaderboard.services.Ranks`, a
-generic business-logic service that lived only in `bifunctor-tagless`. Phase
+`leaderboard-app-shell` because it depended on `leaderboard.services.Ranks`, a
+generic business-logic service that lived only in `leaderboard-app-shell`. Phase
 23 closed that gap: a new `appServices` module owns `Ranks`, `appHttp` now
-depends on `beautyqSearchWiring` and `appServices`, `bifunctor-tagless`
+depends on `beautyqSearchWiring` and `appServices`, `leaderboard-app-shell`
 depends on `beautyqSearchWiring`, `appHttp`, and `appServices`, and
 `ProfileApi` moved to `app-http` alongside the other API classes.
 `Ladder`/`Profiles` repo interfaces and their `Dummy`/`Postgres`
@@ -118,11 +119,10 @@ Where each kind of search concern currently lives:
 | new generic backend behavior | `search-core` runtime metadata + generic interpreter |
 | new BeautyQ-specific route / response behavior | `InMemorySearchBackend` / `SearchResponseAssembler` in `beautyq-search-wiring`; HTTP/Tapir route adapter in `app-http` |
 
-The ownership table above describes the current split-closeout layout. `bifunctor-tagless`
-remains only as a temporary legacy-named app shell for config, Distage/module composition,
-real clients/resources, startup/bootstrap/seed/eval shell execution, and similar app-shell
-execution code. Its final physical rename/removal is out-of-band and must not be treated as
-a blocker for this BeautyQ search split closeout.
+The ownership table above describes the current split-closeout layout. `leaderboard-app-shell`
+is the app shell module for config, Distage/module composition, real clients/resources,
+startup/bootstrap/seed/eval shell execution, and similar app-shell execution code. It was
+previously named `bifunctor-tagless`; older phase records may still use that name historically.
 
 ## How to add new BeautyQ search code
 
@@ -142,8 +142,8 @@ a blocker for this BeautyQ search split closeout.
 - HTTP/Tapir routes and API adapters go in `app-http`.
 - App-level services go in `app-services`.
 - Config, Distage `ModuleDef` composition, real clients/resources, startup/bootstrap/seed/eval
-  shell execution, and temporary app-shell glue remain in `bifunctor-tagless` until the
-  out-of-band final rename/removal.
+  shell execution, and app-shell glue live in `leaderboard-app-shell` (formerly named
+  `bifunctor-tagless`).
 - Do not put repositories, clients, HTTP handlers, runtime services, analytics/logging services,
   production fallback/fusion/rerank activation logic, or app wiring into `SearchDomainSpec`.
 
@@ -173,7 +173,7 @@ They are not the single source of truth for all search metadata:
 - Projection is owned by `BeautyQVariantSearchDocumentMaterialization.project` (via
   `SearchDocumentProjection`) in `beautyq-search-materialization`, which projects into the
   contract-shaped `documentSpec` owned by `BeautyQVariantSearchDocumentContract`.
-  Production code (`BeautySearchCatalogBackendFactory.fromSeedLoader` in `bifunctor-tagless`)
+  Production code (`BeautySearchCatalogBackendFactory.fromSeedLoader` in `leaderboard-app-shell`)
   calls it directly on a `BeautyQSearchCatalogSnapshot` built from seed data.
 - Generic ES and Qdrant interpreters consume `SearchDocumentSpec` / `SearchRuntimeSpec` / resolved
   constraints. BeautyQ-specific ES compatibility lives in `BeautyQElasticsearchInterpreterAdapter`.
@@ -205,7 +205,7 @@ BeautyQ variant projection; the contract-shaped `SearchDocumentSpec` it projects
 snapshot/loader/builder compatibility adapter in between. The former
 `BeautyQVariantSearchDocumentSchema` compatibility facade, `VariantSearchDocumentBuilder`,
 `BeautySearchCatalogSnapshot`, and `BeautySearchCatalogSnapshotLoader` have all been deleted
-from `bifunctor-tagless`.
+from `leaderboard-app-shell`.
 
 ## Document field ownership
 
@@ -265,7 +265,7 @@ vector at index time, distinct from the Qdrant payload above) is contract-owned 
 `beautyq-search-contract`): `serviceText`, `attributeText`, `allText`, `categoryName`, exposed also
 via `BeautyQSearchDomainContract.qdrantSourceTextFields`/`qdrantSourceTextFieldPaths`.
 `BeautyQManagedLocalSearchBootstrapPlan.SourceTextFields` (`beautyq-search-wiring`) and
-`QdrantEmbeddingBenchmarkExecutorConfig.sourceTextFields` (`bifunctor-tagless`, real Qdrant/Llama
+`QdrantEmbeddingBenchmarkExecutorConfig.sourceTextFields` (`leaderboard-app-shell`, real Qdrant/Llama
 client shell) both reference this contract declaration rather than declaring the list locally.
 
 The canonical managed-local BeautyQ Qdrant runtime defaults - embedding model name
@@ -390,7 +390,7 @@ Qdrant supplement candidate eval (manual, environment-gated):
 
 ```bash
 LLAMA_CPP_EMBEDDING_URL=http://localhost:8081 \
-  sbt 'project bifunctor-tagless' \
+  sbt 'project leaderboard-app-shell' \
   'testOnly leaderboard.search.QdrantSemanticCandidateEvalSpec'
 ```
 
