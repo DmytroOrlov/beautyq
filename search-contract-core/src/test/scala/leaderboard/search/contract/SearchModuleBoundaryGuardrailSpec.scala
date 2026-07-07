@@ -134,6 +134,27 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "beautyq",
   )
 
+  private val beautyqModelForbiddenImports = List(
+    "leaderboard.repo",
+    "leaderboard.search",
+    "leaderboard.api",
+    "leaderboard.http",
+    "leaderboard.plugins",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.services",
+    "doobie",
+    "http4s",
+    "tapir",
+    "zio",
+    "cats.effect",
+    "izumi.functional.bio",
+    "ModuleDef",
+    "Lifecycle",
+    "ElasticsearchClient",
+    "QdrantClient",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -176,6 +197,13 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
       }
 
       assertNoViolations("repo-core boundary violations", importViolations ++ sourceViolations)
+    }
+
+    "keep beautyq-model main sources pure model/data/codecs/validation only" in {
+      val violations = scalaMainFiles("beautyq-model/src/main/scala")
+        .flatMap(path => containsForbiddenImport(path, beautyqModelForbiddenImports, allowedPatterns = Nil))
+
+      assertNoViolations("beautyq-model boundary violations", violations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -373,6 +401,70 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = Nil,
       )
       assert(allowedRepoCoreBioImport.isEmpty)
+
+      val forbiddenBeautyqModelRepoImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenBeautyqModelRepoImport.nonEmpty)
+
+      val forbiddenBeautyqModelSearchContractImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenBeautyqModelSearchContractImport.nonEmpty)
+
+      val forbiddenBeautyqModelSqlImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenBeautyqModelSqlImport.nonEmpty)
+
+      val forbiddenBeautyqModelDoobieImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenBeautyqModelDoobieImport.nonEmpty)
+
+      val forbiddenBeautyqModelZioImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import zio.Task"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenBeautyqModelZioImport.nonEmpty)
+
+      val allowedBeautyqModelCirceImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import io.circe.Codec"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedBeautyqModelCirceImport.isEmpty)
+
+      val allowedBeautyqModelInternalImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import leaderboard.model.AttributeMap.Impl"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedBeautyqModelInternalImport.isEmpty)
+
+      val allowedBeautyqModelUuidImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqModel.scala",
+        lines             = List("import java.util.UUID"),
+        forbiddenPatterns = beautyqModelForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedBeautyqModelUuidImport.isEmpty)
     }
   }
 

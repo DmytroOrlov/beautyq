@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–36 records below). The closeout is **not** a new module-move
+the Phase 29–37 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2176,6 +2176,25 @@ BeautyQ (`RepoGraph.scala`'s interpreter/catalog-DSL comments and its `Category`
 No public API, type name, method name, behavior, build dependency, runtime behavior, route
 behavior, request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL
 redesign changed.
+
+## Phase 37 record: beautyq-model self-guardrail added
+
+`beautyq-model` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents the pure BeautyQ model module
+(`Category`, `Service`, `Master`, `MasterLocation`, `MasterServiceOffer`,
+`MasterServiceOfferVariant`, `ServiceVariantSchema`, `AttributeDefinition`, `AttributeMap`,
+`CodedEnumValue`, `UserProfile`) from drifting toward repositories, search contracts/runtime,
+materialization, app/http/plugin layers, SQL/config/resource wiring, concrete backend clients
+(`ElasticsearchClient`/`QdrantClient`), or effect runtimes (`doobie`, `http4s`, `tapir`, `zio`,
+`cats.effect`, `izumi.functional.bio`, `ModuleDef`, `Lifecycle`).
+
+Current legitimate model dependencies remain allowed: `io.circe` (codecs), internal
+`leaderboard.model` imports, `java.util.UUID`, and Scala annotations
+(`scala.annotation.nowarn`). No current `beautyq-model` main source violated the new guardrail.
+
+No model source, codec behavior, validation behavior, public model API, build dependency,
+runtime behavior, route behavior, request/response JSON shape, Qdrant activation, fallback,
+fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
