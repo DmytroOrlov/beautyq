@@ -1848,6 +1848,100 @@ exact-duplicate Sonnet patch, same class of change as Phases 24/25/26; the
 Fable 5 countdown stays reserved for a future shape/architecture decision, not
 this kind of mechanical name adoption.
 
+## Phase 28 record: response provenance labels and route diagnostic reason categories centralized
+
+Adds `BeautyQSearchResponseProvenanceContract` (package
+`leaderboard.search.beautyq.contract`, in `beautyq-search-contract`), declaring:
+
+- `JsonFields.ExecutionMode`/`ResultOrigin`: the exact `/beauty-search` response
+  JSON field names (`executionMode`, `resultOrigin`);
+- `ExecutionModes.EsOnly`/`EsPlusQdrantSupplement` (+ `All`): the exact
+  `BeautySearchExecutionMode` JSON values;
+- `ResultOrigins.EsBaseline`/`QdrantSupplement` (+ `All`): the exact
+  `VariantResultOrigin` JSON values;
+- `RouteDiagnosticReasonCategories.LexicalOnly`/`SemanticCandidates`/
+  `FallbackNotImplemented`/`LexicalWithQdrantVariantSupplement` (+ `All`): the
+  exact `ExperimentalHybridRouteDiagnostics.reasonCategory` values.
+
+Like Phases 24/25/26/27, this is name-only centralization: no response JSON
+field/value changed, no encoder/decoder behavior changed, no route decision
+changed, and the generic `SearchDomainSpec` shape is untouched - this new
+object is not wired into `BeautyQSearchDomainContract`/`SearchDomainSpec` at
+all, since none of these labels are part of the generic contract shape.
+
+`BeautySearchModels.scala` (`beautyq-search-wiring`) now delegates
+`BeautySearchExecutionMode.EsOnly`/`EsPlusQdrantSupplement` and
+`VariantResultOrigin.EsBaseline`/`QdrantSupplement`'s `.label` values to the
+matching `ExecutionModes`/`ResultOrigins` constants; the encoders/decoders
+built from those `.label` values are untouched.
+`ExperimentalHybridRouteDiagnostics.scala` (`beautyq-search-wiring`) now
+delegates its four `reasonCategory` string literals to
+`RouteDiagnosticReasonCategories.*`; route matching and the boolean fields
+(`usesLexicalBackend`, `usesSemanticBackend`, `fallbackRequested`,
+`fallbackImplemented`) are untouched.
+`M9BeautyQSearchEvalRealResourceRunbookConsistency.scala`
+(`beautyq-search-wiring`) now builds `RequiredEvidenceModeTokens` from
+`ExecutionModes.EsOnly`/`EsPlusQdrantSupplement`/`ResultOrigins.QdrantSupplement`
+and its `RequiredBoundaryTokens`'s `"resultOrigin"` entry from
+`JsonFields.ResultOrigin`, instead of inline literals; this is a pure static
+doc-consistency contract, so nothing runtime-observable changed.
+
+Five bifunctor-tagless focused test files were updated the same way:
+`BeautySearchQdrantSupplementProvenanceSpec` (one `assertJsonStringField`
+field-name literal), `ExperimentalHybridRouteDiagnosticsSpec` (four
+`reasonCategory` assertions), `BeautySearchPureSpec` (one constructed
+`ExperimentalHybridRouteDiagnostics` fixture's `reasonCategory` field),
+`BeautySearchApiHttpContractSuite` (two `hcursor.downField(...)` field-name +
+decoded-value assertions - the separate full raw JSON body snapshot literal in
+the same file was deliberately left untouched per the task's "do not rewrite
+full raw JSON body snapshots" boundary), and
+`M9BeautyQSearchEvalRealResourceRunbookConsistencySpec` (three
+`runbookText.contains(...)` mode-token assertions plus the `"resultOrigin"`
+boundary-token assertion). `BeautyQSearchDomainContractSpec` needed no change:
+grepping it for every response-provenance token confirmed it never referenced
+any of them, and this new contract object is deliberately not wired into
+`BeautyQSearchDomainContract`, so there was no natural assertion to add.
+
+Separately, this phase closed out two already-owned-but-not-fully-adopted
+constant sets in `beautyq-search-wiring`/`bifunctor-tagless` test code:
+
+- `BeautySearchQdrantSupplementRuntimeBindingPlan.LexicalBackendBindingName`
+  (owned since an earlier phase) was still duplicated as the exact literal
+  `"qdrantSupplementLexicalElasticsearch"` in nine `make[BeautySearchBackend[IO]]
+  .named(...)` DI setup calls across `QP2NoWorseningRouteProofSpec`,
+  `QdrantVariantSupplementPolicySpec`, `QP3NoWorseningControlContractSpec`,
+  `QP4QdrantSupplementActivationSpec`, `QP5QdrantSupplementReadinessContractSpec`,
+  `QP6NoWorseningRouteMatrixSpec`, `QP7QdrantSupplementOperatorConfigSpec`,
+  `QP8QdrantSupplementActivationPreflightSpec`, and
+  `QP10QdrantSupplementLauncherActivationSpec`; all nine now reference the
+  constant directly. `BeautySearchQdrantSupplementRuntimeBindingPlanSpec`'s
+  one literal value-pin assertion
+  (`LexicalBackendBindingName == "qdrantSupplementLexicalElasticsearch"`) was
+  deliberately left as a literal - replacing it with the constant would make
+  the assertion tautological. `QP12LocalLauncherActivationSmokeSpec` and
+  `QP13QdrantSupplementRuntimeBindingsSpec` reference the same literal only in
+  a doc-comment and in an assertion that a DI missing-binding error *message*
+  contains the qualified name; neither is a `make[...].named(...)` setup call,
+  so per the task's explicit nine-file target list, neither was touched.
+- `BeautySearchQdrantSupplementActivationConfig.QdrantSupplementReadyOperatorValue`/
+  `QdrantSupplementNotReadyOperatorValue`/`EsOnlyRollbackOperatorValue` turned
+  out to be already fully adopted everywhere in the repo (QP7/QP8/QP10/QP11/
+  QP14/QP18/QP19, etc.): every actual operator-value input or assertion already
+  references the constants. The remaining raw `qdrant-supplement-ready`/
+  `qdrant-supplement-not-ready` hyphenated-string occurrences are exclusively
+  ScalaTest `should`/`in` description strings, doc-comments, and
+  human-readable `s"..."` failure-message prose - never a real input or
+  comparison value - so no test file needed a code change for this part.
+
+`beautyqSearchContract/compile`, `Test/compile`, `beautyqSearchWiring/compile`,
+`Test/compile`, `bifunctor-tagless/compile`, and `Test/compile` all succeeded.
+No response JSON field/value, encoder/decoder behavior, route decision, DI
+binding semantics, activation parsing, checked-in resource, or generic
+`SearchDomainSpec` shape changed. This remains an exact-duplicate Sonnet
+patch, same class of change as Phases 24/25/26/27; the Fable 5 countdown
+stays reserved for a future shape/architecture decision, not this kind of
+mechanical name adoption.
+
 ## Phase 8d record: static/offline evaluation contract section extracted
 
 This slice moves the pure static/offline BeautyQ evaluation declarations

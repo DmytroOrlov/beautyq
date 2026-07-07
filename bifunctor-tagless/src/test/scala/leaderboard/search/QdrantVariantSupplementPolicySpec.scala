@@ -9,6 +9,7 @@ import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, BeautySearchServingGate, HttpApi}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingPlan
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchConstraint, SearchGeoPoint}
@@ -478,7 +479,7 @@ final class QdrantVariantSupplementPolicySpec extends AnyWordSpec with HttpContr
     val module = new ModuleDef {
       include(BeautySearchRouteModules.apiQdrantVariantSupplementExplicitOptIn(BeautySearchServingGate.disabled))
       make[Async[Task]].fromValue(Async[Task])
-      make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(
+      make[BeautySearchBackend[IO]].named(BeautySearchQdrantSupplementRuntimeBindingPlan.LexicalBackendBindingName).fromValue(
         new StubBeautySearchBackend(BeautySearchResponse(Nil, Nil, Nil, Nil, Nil))
       )
       make[SemanticCandidateBackend[IO]].fromValue(new StubSemanticCandidateBackend(List(SemanticCandidateHit(knownDocument.variantId, 0.9))))

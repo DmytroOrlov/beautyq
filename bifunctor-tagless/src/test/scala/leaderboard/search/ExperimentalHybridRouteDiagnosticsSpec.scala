@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.RouteDiagnosticReasonCategories
 import leaderboard.search.dsl.BeautySearchSpecV1
 import leaderboard.search.hybrid.{ExperimentalHybridRouteDecider, ExperimentalHybridRouteDiagnostics}
 import leaderboard.search.parser.BeautySearchIntentParser
@@ -21,7 +22,7 @@ final class ExperimentalHybridRouteDiagnosticsSpec extends AnyWordSpec {
       assert(!diagnostics.usesSemanticBackend)
       assert(!diagnostics.fallbackRequested)
       assert(!diagnostics.fallbackImplemented)
-      assert(diagnostics.reasonCategory == "lexical-only")
+      assert(diagnostics.reasonCategory == RouteDiagnosticReasonCategories.LexicalOnly)
     }
 
     "mark QdrantCandidateRoute as semantic-only" in {
@@ -35,7 +36,7 @@ final class ExperimentalHybridRouteDiagnosticsSpec extends AnyWordSpec {
       assert(diagnostics.usesSemanticBackend)
       assert(!diagnostics.fallbackRequested)
       assert(!diagnostics.fallbackImplemented)
-      assert(diagnostics.reasonCategory == "semantic-candidates")
+      assert(diagnostics.reasonCategory == RouteDiagnosticReasonCategories.SemanticCandidates)
     }
 
     "mark ElasticsearchThenQdrantFallback as requested but not implemented" in {
@@ -49,7 +50,7 @@ final class ExperimentalHybridRouteDiagnosticsSpec extends AnyWordSpec {
       assert(!diagnostics.usesSemanticBackend)
       assert(diagnostics.fallbackRequested)
       assert(!diagnostics.fallbackImplemented)
-      assert(diagnostics.reasonCategory == "fallback-not-implemented")
+      assert(diagnostics.reasonCategory == RouteDiagnosticReasonCategories.FallbackNotImplemented)
     }
 
     "mark ElasticsearchWithQdrantVariantSupplement as lexical with semantic supplement" in {
@@ -63,7 +64,7 @@ final class ExperimentalHybridRouteDiagnosticsSpec extends AnyWordSpec {
       assert(diagnostics.usesSemanticBackend)
       assert(!diagnostics.fallbackRequested)
       assert(!diagnostics.fallbackImplemented)
-      assert(diagnostics.reasonCategory == "lexical-with-qdrant-variant-supplement")
+      assert(diagnostics.reasonCategory == RouteDiagnosticReasonCategories.LexicalWithQdrantVariantSupplement)
     }
 
     "preserve the routing signal from metadata" in {

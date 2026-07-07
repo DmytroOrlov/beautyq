@@ -276,6 +276,14 @@ explicitly changes them:
 - `SearchConstraint` JSON type strings are unchanged.
 - ES request/source/mapping behavior is unchanged.
 - Qdrant payload shape (`variantId`, `masterLocationId`, `serviceId`, `serviceName`) is unchanged.
+- The `/beauty-search` response provenance JSON field names (`executionMode`, `resultOrigin`) and
+  values (`es_only`, `es_plus_qdrant_supplement`, `es_baseline`, `qdrant_supplement`), and the
+  `ExperimentalHybridRouteDiagnostics` route diagnostic reason categories (`lexical-only`,
+  `semantic-candidates`, `fallback-not-implemented`, `lexical-with-qdrant-variant-supplement`), are
+  contract-owned by `BeautyQSearchResponseProvenanceContract` (package
+  `leaderboard.search.beautyq.contract`, in `beautyq-search-contract`); `BeautySearchModels` and
+  `ExperimentalHybridRouteDiagnostics` (`beautyq-search-wiring`) delegate to it. This is name-only
+  centralization: response JSON shape/values and route decisions are unchanged.
 
 ## Testing standard
 

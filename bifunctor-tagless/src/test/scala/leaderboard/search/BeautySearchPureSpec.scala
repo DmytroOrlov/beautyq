@@ -2,6 +2,7 @@ package leaderboard.search
 
 import io.circe.{Json, JsonObject}
 import leaderboard.model.*
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.RouteDiagnosticReasonCategories
 import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.elasticsearch.BeautyQElasticsearchInterpreterAdapter
@@ -670,7 +671,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
         usesSemanticBackend = true,
         fallbackRequested = false,
         fallbackImplemented = false,
-        reasonCategory = "semantic-candidates",
+        reasonCategory = RouteDiagnosticReasonCategories.SemanticCandidates,
       ))
     }
 

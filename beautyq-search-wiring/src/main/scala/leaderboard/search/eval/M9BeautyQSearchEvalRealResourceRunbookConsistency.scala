@@ -20,6 +20,7 @@ package leaderboard.search.eval
   * evidence.
   */
 object M9BeautyQSearchEvalRealResourceRunbookConsistency {
+  import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.{ExecutionModes, JsonFields, ResultOrigins}
 
   /** Repository-relative path of the current local/test supplement gate doc. */
   val RunbookPath: String = "docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md"
@@ -41,9 +42,9 @@ object M9BeautyQSearchEvalRealResourceRunbookConsistency {
     */
   val RequiredEvidenceModeTokens: List[String] =
     List(
-      "es_only",
-      "es_plus_qdrant_supplement",
-      "qdrant_supplement",
+      ExecutionModes.EsOnly,
+      ExecutionModes.EsPlusQdrantSupplement,
+      ResultOrigins.QdrantSupplement,
     )
 
   /** Local/test boundary language the doc must carry. */
@@ -54,7 +55,7 @@ object M9BeautyQSearchEvalRealResourceRunbookConsistency {
       "does not require an activation value",
       "used_with_append",
       "used_no_append",
-      "resultOrigin",
+      JsonFields.ResultOrigin,
       "testedQueries=4",
       "totalQdrantOnlyAppends=1",
       "no fallback",

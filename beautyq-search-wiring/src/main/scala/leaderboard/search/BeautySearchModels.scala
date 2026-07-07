@@ -4,6 +4,7 @@ import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.semiauto
 import izumi.functional.bio.Error2
 import leaderboard.model.*
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract
 import leaderboard.search.parser.BeautySearchIntentParser
 import leaderboard.search.dsl.SearchConstraint
 
@@ -65,10 +66,10 @@ sealed trait BeautySearchExecutionMode extends Product with Serializable {
 
 object BeautySearchExecutionMode {
   case object EsOnly extends BeautySearchExecutionMode {
-    override val label: String = "es_only"
+    override val label: String = BeautyQSearchResponseProvenanceContract.ExecutionModes.EsOnly
   }
   case object EsPlusQdrantSupplement extends BeautySearchExecutionMode {
-    override val label: String = "es_plus_qdrant_supplement"
+    override val label: String = BeautyQSearchResponseProvenanceContract.ExecutionModes.EsPlusQdrantSupplement
   }
 
   implicit val encoder: Encoder[BeautySearchExecutionMode] =
@@ -87,10 +88,10 @@ sealed trait VariantResultOrigin extends Product with Serializable {
 
 object VariantResultOrigin {
   case object EsBaseline extends VariantResultOrigin {
-    override val label: String = "es_baseline"
+    override val label: String = BeautyQSearchResponseProvenanceContract.ResultOrigins.EsBaseline
   }
   case object QdrantSupplement extends VariantResultOrigin {
-    override val label: String = "qdrant_supplement"
+    override val label: String = BeautyQSearchResponseProvenanceContract.ResultOrigins.QdrantSupplement
   }
 
   implicit val encoder: Encoder[VariantResultOrigin] =

@@ -8,6 +8,7 @@ import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, BeautySearchServingGate, HttpApi}
 import leaderboard.config.{ElasticsearchPortCfg, QdrantPortCfg}
 import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingPlan
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1, EmbeddingSpec, SearchConstraint, VectorDistance, VectorSearchSpec}
@@ -175,7 +176,7 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
     val module = new ModuleDef {
       include(BeautySearchRouteModules.apiQdrantVariantSupplementExplicitOptIn(gate))
       make[Async[Task]].fromValue(Async[Task])
-      make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(
+      make[BeautySearchBackend[IO]].named(BeautySearchQdrantSupplementRuntimeBindingPlan.LexicalBackendBindingName).fromValue(
         new StubLexicalBackend(BeautySearchResponse(Nil, Nil, Nil, Nil, Nil))
       )
       make[SemanticCandidateBackend[IO]].fromValue(
@@ -373,7 +374,7 @@ final class QP2NoWorseningRouteProofSpec extends LeaderboardTest with ProdTest w
     val base = new ModuleDef {
       include(BeautySearchRouteModules.apiQdrantVariantSupplementExplicitOptIn(BeautySearchServingGate.enabledReady))
       make[Async[Task]].fromValue(Async[Task])
-      make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(realLexicalBackend)
+      make[BeautySearchBackend[IO]].named(BeautySearchQdrantSupplementRuntimeBindingPlan.LexicalBackendBindingName).fromValue(realLexicalBackend)
       make[SemanticCandidateBackend[IO]].fromValue(new StubSemanticBackend(Nil))
       make[VariantSearchDocumentLookup[IO]].fromValue(new InMemoryVariantSearchDocumentLookup[IO](canonicalDocuments))
       make[OptInRouteProbe].from {

@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.{ExecutionModes, JsonFields, ResultOrigins}
 import leaderboard.search.eval.M9BeautyQSearchEvalRealResourceRunbookConsistency
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -36,9 +37,9 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
 
     "prove the doc mentions the required response and provenance modes" in {
       assert(result.allModeTokensPresent)
-      assert(runbookText.contains("es_only"))
-      assert(runbookText.contains("es_plus_qdrant_supplement"))
-      assert(runbookText.contains("qdrant_supplement"))
+      assert(runbookText.contains(ExecutionModes.EsOnly))
+      assert(runbookText.contains(ExecutionModes.EsPlusQdrantSupplement))
+      assert(runbookText.contains(ResultOrigins.QdrantSupplement))
       assert(M9BeautyQSearchEvalRealResourceRunbookConsistency.RequiredEvidenceModeTokens.length == 3)
     }
 
@@ -78,7 +79,7 @@ final class M9BeautyQSearchEvalRealResourceRunbookConsistencySpec extends AnyWor
     "name the locked gate counts and frontend provenance as the capture path" in {
       assert(runbookText.contains("testedQueries=4"))
       assert(runbookText.contains("totalQdrantOnlyAppends=1"))
-      assert(runbookText.contains("resultOrigin"))
+      assert(runbookText.contains(JsonFields.ResultOrigin))
     }
   }
 

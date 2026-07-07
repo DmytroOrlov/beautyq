@@ -8,6 +8,7 @@ import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{QdrantSupplementNotReady, QdrantSupplementReady}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
+import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingPlan
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.qdrant.{
@@ -398,7 +399,7 @@ final class QP5QdrantSupplementReadinessContractSpec extends AnyWordSpec {
   ): BeautySearchBackend[IO] = {
     val module = new ModuleDef {
       include(BeautySearchQdrantSupplementActivationModuleSelector.moduleFor(activation))
-      make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(fixture.lexicalBackend)
+      make[BeautySearchBackend[IO]].named(BeautySearchQdrantSupplementRuntimeBindingPlan.LexicalBackendBindingName).fromValue(fixture.lexicalBackend)
       make[SemanticCandidateBackend[IO]].fromValue(fixture.semanticBackend)
       make[VariantSearchDocumentLookup[IO]].fromValue(fixture.documentLookup)
     }

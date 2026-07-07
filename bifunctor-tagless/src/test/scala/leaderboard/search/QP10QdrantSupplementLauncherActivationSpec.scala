@@ -12,6 +12,7 @@ import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.plugins.BeautySearchQdrantSupplementActivation
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationConfig
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationModuleSelector
+import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingPlan
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchJsonClient
@@ -255,7 +256,7 @@ final class QP10QdrantSupplementLauncherActivationSpec extends AnyWordSpec with 
     val module = new ModuleDef {
       include(selectedModule)
       make[Async[Task]].fromValue(Async[Task])
-      make[BeautySearchBackend[IO]].named("qdrantSupplementLexicalElasticsearch").fromValue(fixture.lexicalBackend)
+      make[BeautySearchBackend[IO]].named(BeautySearchQdrantSupplementRuntimeBindingPlan.LexicalBackendBindingName).fromValue(fixture.lexicalBackend)
       make[SemanticCandidateBackend[IO]].fromValue(fixture.semanticBackend)
       make[VariantSearchDocumentLookup[IO]].fromValue(fixture.documentLookup)
       make[ApisProbe].from {

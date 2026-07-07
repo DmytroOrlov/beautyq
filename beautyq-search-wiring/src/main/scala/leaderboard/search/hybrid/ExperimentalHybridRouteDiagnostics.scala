@@ -1,5 +1,6 @@
 package leaderboard.search.hybrid
 
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract
 import leaderboard.search.routing.{SearchBackendRoute, SearchRoutingMetadata, SearchRoutingSignal}
 
 final case class ExperimentalHybridRouteDiagnostics(
@@ -13,6 +14,8 @@ final case class ExperimentalHybridRouteDiagnostics(
 )
 
 object ExperimentalHybridRouteDiagnostics {
+  import BeautyQSearchResponseProvenanceContract.RouteDiagnosticReasonCategories
+
   def from(
     route: SearchBackendRoute,
     metadata: SearchRoutingMetadata,
@@ -26,7 +29,7 @@ object ExperimentalHybridRouteDiagnostics {
           usesSemanticBackend = false,
           fallbackRequested = false,
           fallbackImplemented = false,
-          reasonCategory = "lexical-only",
+          reasonCategory = RouteDiagnosticReasonCategories.LexicalOnly,
         )
 
       case SearchBackendRoute.QdrantCandidateRoute =>
@@ -37,7 +40,7 @@ object ExperimentalHybridRouteDiagnostics {
           usesSemanticBackend = true,
           fallbackRequested = false,
           fallbackImplemented = false,
-          reasonCategory = "semantic-candidates",
+          reasonCategory = RouteDiagnosticReasonCategories.SemanticCandidates,
         )
 
       case SearchBackendRoute.ElasticsearchThenQdrantFallback =>
@@ -48,7 +51,7 @@ object ExperimentalHybridRouteDiagnostics {
           usesSemanticBackend = false,
           fallbackRequested = true,
           fallbackImplemented = false,
-          reasonCategory = "fallback-not-implemented",
+          reasonCategory = RouteDiagnosticReasonCategories.FallbackNotImplemented,
         )
 
       case SearchBackendRoute.ElasticsearchWithQdrantVariantSupplement =>
@@ -59,7 +62,7 @@ object ExperimentalHybridRouteDiagnostics {
           usesSemanticBackend = true,
           fallbackRequested = false,
           fallbackImplemented = false,
-          reasonCategory = "lexical-with-qdrant-variant-supplement",
+          reasonCategory = RouteDiagnosticReasonCategories.LexicalWithQdrantVariantSupplement,
         )
     }
 }

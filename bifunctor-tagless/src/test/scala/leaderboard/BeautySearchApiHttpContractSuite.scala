@@ -6,6 +6,7 @@ import leaderboard.api.BeautySearchApi
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
 import leaderboard.model.QueryFailure
 import leaderboard.search.*
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.{ExecutionModes, JsonFields, ResultOrigins}
 import leaderboard.search.dsl.SearchConstraint
 import org.http4s.{Request, Status}
 import zio.interop.catz.*
@@ -41,9 +42,9 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
         _        <- assertIO(json.hcursor.downField("serviceIntentCarousel").focus.exists(_.asArray.exists(_.size == 1)))
         _        <- assertIO(json.hcursor.downField("facets").focus.exists(_.asArray.exists(_.size == 1)))
         _        <- assertIO(json.hcursor.downField("inferredFilters").focus.exists(_.asArray.exists(_.size == 1)))
-        _        <- assertIO(json.hcursor.downField("executionMode").as[String].toOption.contains("es_only"))
+        _        <- assertIO(json.hcursor.downField(JsonFields.ExecutionMode).as[String].toOption.contains(ExecutionModes.EsOnly))
         _        <- assertIO(json.hcursor.downField("qdrantSupplement").downField("status").as[String].toOption.contains("not_used"))
-        _        <- assertIO(json.hcursor.downField("variantCarousel").downArray.downField("resultOrigin").as[String].toOption.contains("es_baseline"))
+        _        <- assertIO(json.hcursor.downField("variantCarousel").downArray.downField(JsonFields.ResultOrigin).as[String].toOption.contains(ResultOrigins.EsBaseline))
         _        <- assertIO(json.hcursor.downField("variantCarousel").downArray.downField("variantId").as[String].toOption.contains("11111111-1111-1111-1111-111111111111"))
         _        <- assertIO(json.hcursor.downField("providerCarousel").downArray.downField("masterLocationId").as[String].toOption.contains("33333333-3333-3333-3333-333333333333"))
         _        <- assertIO(json.hcursor.downField("serviceIntentCarousel").downArray.downField("serviceId").as[String].toOption.contains("55555555-5555-5555-5555-555555555555"))

@@ -17,6 +17,7 @@ import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightComman
 import leaderboard.plugins.BeautySearchQdrantSupplementActivationPreflightStatus.ReadyToEnable
 import leaderboard.plugins.BeautySearchLocalQdrantSupplementLauncherModule
 import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingModules
+import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.JsonFields
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpec, BeautySearchSpecV1, EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchJsonClient}
@@ -108,7 +109,7 @@ final class BeautySearchQdrantSupplementProvenanceSpec
       assert(decoded.qdrantSupplement == QdrantSupplementSummary.notUsed)
       assert(decoded.variantCarousel.nonEmpty)
       assert(decoded.variantCarousel.forall(_.resultOrigin == VariantResultOrigin.EsBaseline))
-      assertJsonStringField(response, "executionMode", BeautySearchExecutionMode.EsOnly.label)
+      assertJsonStringField(response, JsonFields.ExecutionMode, BeautySearchExecutionMode.EsOnly.label)
     }
 
     "keep duplicate-dropped Qdrant candidates out of frontend contribution provenance" in {
