@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–38 records below). The closeout is **not** a new module-move
+the Phase 29–39 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2217,6 +2217,31 @@ current `beautyq-search-repositories` main source violated the new guardrail.
 No repository source, SQL query, Dummy/Postgres implementation, public repository API, build
 dependency, runtime behavior, route behavior, request/response JSON shape, Qdrant activation,
 fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 39 record: BeautyQ materialization boundary guardrail added
+
+`beautyq-search-materialization` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents snapshot/loading/projection/
+materialization code from drifting toward HTTP/Tapir/routes, app services, app
+shell/plugins/config/resources, raw SQL/Doobie implementation details, ES/Qdrant clients or
+interpreters, runtime backend routing/activation, response assembly, parser, eval runner, manual
+benchmark wiring, fallback/fusion/rerank production behavior, or concrete backend clients
+(`ElasticsearchClient`/`QdrantClient`).
+
+Current legitimate materialization dependencies remain allowed: BeautyQ model types
+(`leaderboard.model`), `repo-core` graph/catalog primitives, BeautyQ repository interfaces
+(`Categories`/`Services`/`Masters`/`MasterLocations`/`MasterServiceOffers`/
+`MasterServiceOfferVariants`/`ServiceVariantSchemas`/`GraphLoading`), `BeautyQCatalogGraph`,
+`BeautyQCatalogDeclaration`, search DSL document-field helpers (`leaderboard.search.dsl.*`),
+`VariantSearchDocument`, and `izumi.functional.bio.Error2`. `BeautyQCatalogGraph`,
+`BeautyQSearchCatalogSnapshot`, `BeautyQSearchCatalogSnapshotLoader`,
+`BeautyQSearchCatalogSeedScope`, `SearchDocumentProjection`, and
+`BeautyQVariantSearchDocumentMaterialization` remain owned by `beautyq-search-materialization`. No
+current `beautyq-search-materialization` main source violated the new guardrail.
+
+No materialization source, snapshot shape, projection logic, graph logic, repository source, SQL
+query, build dependency, runtime behavior, route behavior, request/response JSON shape, Qdrant
+activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

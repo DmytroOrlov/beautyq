@@ -180,6 +180,45 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "QdrantClient",
   )
 
+  private val beautyqMaterializationForbiddenImports = List(
+    "leaderboard.api",
+    "leaderboard.http",
+    "leaderboard.plugins",
+    "leaderboard.config",
+    "leaderboard.services",
+    "leaderboard.sql",
+    "leaderboard.search.elasticsearch",
+    "leaderboard.search.qdrant",
+    "leaderboard.search.hybrid",
+    "leaderboard.search.startup",
+    "leaderboard.search.embedding",
+    "leaderboard.search.inmemory",
+    "leaderboard.search.parser",
+    "leaderboard.search.interpreter",
+    "leaderboard.search.routing",
+    "leaderboard.search.semantic",
+    "leaderboard.search.eval",
+    "leaderboard.search.beautyq.contract.BeautyQSearchDomainContract",
+    "BeautyQSearchRuntimeContract",
+    "SearchDomainSpec",
+    "SearchField",
+    "SearchRuntimeDeclaration",
+    "SearchBackendRouter",
+    "SearchResponseAssembler",
+    "HttpRoutes",
+    "ServerEndpoint",
+    "Tapir",
+    "tapir",
+    "http4s",
+    "doobie",
+    "zio",
+    "cats.effect",
+    "ModuleDef",
+    "Lifecycle",
+    "ElasticsearchClient",
+    "QdrantClient",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -236,6 +275,13 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         .flatMap(path => containsForbiddenImport(path, beautyqRepositoriesForbiddenImports, allowedPatterns = Nil))
 
       assertNoViolations("beautyq-search-repositories boundary violations", violations)
+    }
+
+    "keep beautyq-search-materialization main sources limited to snapshot loading and document materialization" in {
+      val violations = scalaMainFiles("beautyq-search-materialization/src/main/scala")
+        .flatMap(path => containsForbiddenImport(path, beautyqMaterializationForbiddenImports, allowedPatterns = Nil))
+
+      assertNoViolations("beautyq-search-materialization boundary violations", violations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -593,6 +639,118 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = Nil,
       )
       assert(allowedRepositoriesBioImport.isEmpty)
+
+      val forbiddenMaterializationTapirImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.http.tapir.BeautySearchTapirEndpoints"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationTapirImport.nonEmpty)
+
+      val forbiddenMaterializationConfigImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.config.QdrantPortCfg"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationConfigImport.nonEmpty)
+
+      val forbiddenMaterializationQdrantClientImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.search.qdrant.QdrantClient"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationQdrantClientImport.nonEmpty)
+
+      val forbiddenMaterializationHybridImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.search.hybrid.ExperimentalHybridSearchBackend"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationHybridImport.nonEmpty)
+
+      val forbiddenMaterializationInterpreterImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.search.interpreter.SearchResponseAssembler"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationInterpreterImport.nonEmpty)
+
+      val forbiddenMaterializationSqlImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationSqlImport.nonEmpty)
+
+      val forbiddenMaterializationDoobieImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenMaterializationDoobieImport.nonEmpty)
+
+      val allowedMaterializationModelImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.model.Category"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationModelImport.isEmpty)
+
+      val allowedMaterializationCatalogGraphImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.repo.BeautyQCatalogGraph"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationCatalogGraphImport.isEmpty)
+
+      val allowedMaterializationCategoriesImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationCategoriesImport.isEmpty)
+
+      val allowedMaterializationCatalogDeclarationImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQCatalogDeclaration"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationCatalogDeclarationImport.isEmpty)
+
+      val allowedMaterializationDslImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.search.dsl.SearchGeoPoint"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationDslImport.isEmpty)
+
+      val allowedMaterializationDocumentImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import leaderboard.search.document.VariantSearchDocument"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationDocumentImport.isEmpty)
+
+      val allowedMaterializationBioImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqMaterialization.scala",
+        lines             = List("import izumi.functional.bio.Error2"),
+        forbiddenPatterns = beautyqMaterializationForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedMaterializationBioImport.isEmpty)
     }
   }
 
