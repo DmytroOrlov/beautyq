@@ -244,6 +244,54 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "QdrantClient",
   )
 
+  private val beautyqWiringForbiddenImports = List(
+    "leaderboard.api.",
+    "leaderboard.http",
+    "leaderboard.plugins.",
+    "leaderboard.config",
+    "leaderboard.services",
+    "leaderboard.sql",
+    "doobie",
+    "http4s",
+    "tapir",
+    "cats.effect",
+    "ModuleDef",
+    "HttpRoutes",
+    "ServerEndpoint",
+    "HttpServer",
+    "Transactor",
+    "PostgresCfg",
+    "QdrantPortCfg",
+    "ElasticsearchPortCfg",
+    "BeautySearchApi",
+    "HttpApi",
+    "CategoryApi",
+    "ServiceApi",
+    "MasterApi",
+    "LadderApi",
+    "ProfileApi",
+    "BeautySearchTapirEndpoints",
+    "BeautySearchPluginModules",
+    "BeautySearchCatalogBackendModules",
+    "BeautySearchRouteModules",
+    "BeautySearchLocalQdrantSupplementLauncherModule",
+    "BeautySearchQdrantSupplementRuntimeBindingModules",
+    "BeautySearchQdrantSupplementActivationModuleSelector",
+    "LeaderboardPlugin",
+    "LlamaCppEmbeddingClient",
+    "LlamaCppEmbeddingClientConfig",
+    "QdrantEmbeddingBenchmarkCandidateExecutor",
+    "BeautyQNonProductionHybridRunnerRealClientInputs",
+  )
+
+  private val beautyqWiringAllowedImports = List(
+    "leaderboard.api.BeautySearchServingGate",
+    "leaderboard.plugins.BeautySearchQdrantSupplementActivation",
+    "leaderboard.plugins.BeautySearchQdrantSupplementActivation.EsOnlyRollback",
+    "leaderboard.plugins.BeautySearchQdrantSupplementActivation.QdrantSupplementNotReady",
+    "leaderboard.plugins.BeautySearchQdrantSupplementActivation.QdrantSupplementReady",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -307,6 +355,13 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         .flatMap(path => containsForbiddenImport(path, beautyqMaterializationForbiddenImports, allowedPatterns = Nil))
 
       assertNoViolations("beautyq-search-materialization boundary violations", violations)
+    }
+
+    "keep beautyq-search-wiring main sources free of app-http, app-services, shell, config, resource, and repository implementation imports" in {
+      val violations = scalaMainFiles("beautyq-search-wiring/src/main/scala")
+        .flatMap(path => containsForbiddenImport(path, beautyqWiringForbiddenImports, beautyqWiringAllowedImports))
+
+      assertNoViolations("beautyq-search-wiring boundary violations", violations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -912,6 +967,216 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = Nil,
       )
       assert(allowedGenericBackendCirceImport.isEmpty)
+
+      val forbiddenWiringApiImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.api.BeautySearchApi"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringApiImport.nonEmpty)
+
+      val forbiddenWiringTapirImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.http.tapir.BeautySearchTapirEndpoints"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringTapirImport.nonEmpty)
+
+      val forbiddenWiringServicesImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.services.Ranks"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringServicesImport.nonEmpty)
+
+      val forbiddenWiringConfigImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.config.QdrantPortCfg"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringConfigImport.nonEmpty)
+
+      val forbiddenWiringSqlImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringSqlImport.nonEmpty)
+
+      val forbiddenWiringDoobieImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringDoobieImport.nonEmpty)
+
+      val forbiddenWiringModuleDefImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import izumi.distage.model.definition.ModuleDef"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringModuleDefImport.nonEmpty)
+
+      val forbiddenWiringPluginModulesImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.plugins.BeautySearchPluginModules"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringPluginModulesImport.nonEmpty)
+
+      val forbiddenWiringLlamaCppConfigImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringLlamaCppConfigImport.nonEmpty)
+
+      val forbiddenWiringHybridRealClientImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.hybrid.BeautyQNonProductionHybridRunnerRealClientInputs"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringHybridRealClientImport.nonEmpty)
+
+      val forbiddenWiringBenchmarkExecutorImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkCandidateExecutor"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(forbiddenWiringBenchmarkExecutorImport.nonEmpty)
+
+      val allowedWiringServingGateImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.api.BeautySearchServingGate"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringServingGateImport.isEmpty)
+
+      val allowedWiringActivationGroupedImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List(
+          "import leaderboard.plugins.BeautySearchQdrantSupplementActivation.{EsOnlyRollback, QdrantSupplementNotReady, QdrantSupplementReady}",
+        ),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringActivationGroupedImport.isEmpty)
+
+      val allowedWiringContractImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringContractImport.isEmpty)
+
+      val allowedWiringDocumentImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.document.BeautySearchReadyCatalogDocuments"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringDocumentImport.isEmpty)
+
+      val allowedWiringDslImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.dsl.BeautySearchSpec"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringDslImport.isEmpty)
+
+      val allowedWiringElasticsearchImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.elasticsearch.ElasticsearchSearchBackend"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringElasticsearchImport.isEmpty)
+
+      val allowedWiringQdrantImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.qdrant.QdrantExplicitOptInBeautySearchBackend"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringQdrantImport.isEmpty)
+
+      val allowedWiringRoutingImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.routing.SearchBackendRouter"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringRoutingImport.isEmpty)
+
+      val allowedWiringInterpreterImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.interpreter.SearchResponseAssembler"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringInterpreterImport.isEmpty)
+
+      val allowedWiringParserImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.parser.BeautySearchIntentParser"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringParserImport.isEmpty)
+
+      val allowedWiringEvalImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.eval.BeautySearchEvalQuery"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringEvalImport.isEmpty)
+
+      val allowedWiringEmbeddingImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import leaderboard.search.embedding.EmbeddingClient"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringEmbeddingImport.isEmpty)
+
+      val allowedWiringZioImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import zio.IO"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringZioImport.isEmpty)
+
+      val allowedWiringCirceImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import io.circe.Json"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringCirceImport.isEmpty)
+
+      val allowedWiringBioImport = importLineViolations(
+        displayPath       = "synthetic/BeautyqWiring.scala",
+        lines             = List("import izumi.functional.bio.Error2"),
+        forbiddenPatterns = beautyqWiringForbiddenImports,
+        allowedPatterns   = beautyqWiringAllowedImports,
+      )
+      assert(allowedWiringBioImport.isEmpty)
     }
   }
 

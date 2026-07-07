@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–40 records below). The closeout is **not** a new module-move
+the Phase 29–41 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2272,6 +2272,35 @@ Synthetic proof coverage was added for both the newly-forbidden and the still-al
 No `search-elasticsearch` source, `search-qdrant` source, client behavior, interpreter behavior,
 request/response mapping, build dependency, runtime behavior, route behavior, request/response
 JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 41 record: BeautyQ wiring boundary guardrail added
+
+`beautyq-search-wiring` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents wiring/runtime/policy/backend/eval-design
+code from drifting toward app-http routes/endpoints (`leaderboard.api.`/`leaderboard.http`,
+`BeautySearchApi`/`HttpApi`/`CategoryApi`/`ServiceApi`/`MasterApi`/`LadderApi`/`ProfileApi`/
+`BeautySearchTapirEndpoints`, `HttpRoutes`/`ServerEndpoint`/`Tapir`/`tapir`/`http4s`), app-services
+orchestration (`leaderboard.services`), app shell/plugin modules (`leaderboard.plugins.`,
+`BeautySearchPluginModules`/`BeautySearchCatalogBackendModules`/`BeautySearchRouteModules`/
+`BeautySearchLocalQdrantSupplementLauncherModule`/`BeautySearchQdrantSupplementRuntimeBindingModules`/
+`BeautySearchQdrantSupplementActivationModuleSelector`/`LeaderboardPlugin`, `ModuleDef`,
+`HttpServer`), config/resource/bootstrap ownership (`leaderboard.config`, `PostgresCfg`/
+`QdrantPortCfg`/`ElasticsearchPortCfg`), raw SQL/Doobie repository implementation
+(`leaderboard.sql`, `doobie`, `Transactor`), or concrete real-client shell ownership
+(`LlamaCppEmbeddingClient`/`LlamaCppEmbeddingClientConfig`,
+`QdrantEmbeddingBenchmarkCandidateExecutor`, `BeautyQNonProductionHybridRunnerRealClientInputs`).
+
+Current package-preserved pure wiring exceptions remain allowed: `leaderboard.api.BeautySearchServingGate`
+and the pure `leaderboard.plugins.BeautySearchQdrantSupplementActivation`
+(`EsOnlyRollback`/`QdrantSupplementNotReady`/`QdrantSupplementReady`) member imports, including the
+grouped import form. Current legitimate wiring dependencies remain allowed: BeautyQ contract,
+materialization-facing document/runtime helpers, ES/Qdrant backend adapter types, routing, response
+assembly, parser, eval-design/helper types, startup plan/fingerprint types, ZIO, Circe, and BIO. No
+current `beautyq-search-wiring` main source violated the new guardrail.
+
+No `beautyq-search-wiring` source, routing policy, parser, response assembly, backend behavior,
+eval design, startup plan, build dependency, HTTP route behavior, request/response JSON shape,
+Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
