@@ -366,6 +366,63 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "zio",
   )
 
+  private val searchCoreForbiddenImports = List(
+    "leaderboard.model.",
+    "leaderboard.repo",
+    "leaderboard.api",
+    "leaderboard.http",
+    "leaderboard.plugins",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.services",
+    "leaderboard.runtime",
+    "leaderboard.search.beautyq",
+    "leaderboard.search.elasticsearch",
+    "leaderboard.search.qdrant",
+    "leaderboard.search.hybrid",
+    "leaderboard.search.startup",
+    "leaderboard.search.routing",
+    "leaderboard.search.eval",
+    "leaderboard.search.parser",
+    "leaderboard.search.embedding",
+    "BeautyQ",
+    "beautyq",
+    "BeautyQCatalogGraph",
+    "BeautyQSearchCatalogSnapshot",
+    "BeautyQSearchCatalogSnapshotLoader",
+    "BeautyQVariantSearchDocumentMaterialization",
+    "SearchDocumentProjection",
+    "SearchBackendRouter",
+    "SearchResponseAssembler",
+    "BeautySearchService",
+    "ElasticsearchClient",
+    "QdrantClient",
+    "LlamaCppEmbeddingClient",
+    "LlamaCppEmbeddingClientConfig",
+    "QdrantEmbeddingBenchmarkCandidateExecutor",
+    "BeautyQNonProductionHybridRunnerRealClientInputs",
+    "PostgresCfg",
+    "QdrantPortCfg",
+    "ElasticsearchPortCfg",
+    "Transactor",
+    "ModuleDef",
+    "Lifecycle",
+    "Resource",
+    "HttpRoutes",
+    "ServerEndpoint",
+    "HttpServer",
+    "Tapir",
+    "tapir",
+    "http4s",
+    "doobie",
+    "cats.effect",
+    "zio",
+  )
+
+  private val searchCoreAllowedImports = List(
+    "leaderboard.model.QueryFailure",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -443,6 +500,13 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         .flatMap(path => containsForbiddenImport(path, appServicesForbiddenImports, allowedPatterns = Nil))
 
       assertNoViolations("app-services boundary violations", violations)
+    }
+
+    "keep search-core main sources generic and free of domain, repo, app, runtime, resource, and backend-client imports" in {
+      val violations = scalaMainFiles("search-core/src/main/scala")
+        .flatMap(path => containsForbiddenImport(path, searchCoreForbiddenImports, searchCoreAllowedImports))
+
+      assertNoViolations("search-core boundary violations", violations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -1570,6 +1634,206 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = Nil,
       )
       assert(allowedAppServicesBioImport.isEmpty)
+
+      val forbiddenSearchCoreModelImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.model.Category"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreModelImport.nonEmpty)
+
+      val forbiddenSearchCoreRepoImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreRepoImport.nonEmpty)
+
+      val forbiddenSearchCoreContractImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreContractImport.nonEmpty)
+
+      val forbiddenSearchCoreQdrantClientImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.qdrant.QdrantClient"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreQdrantClientImport.nonEmpty)
+
+      val forbiddenSearchCoreElasticsearchClientImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.elasticsearch.ElasticsearchClient"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreElasticsearchClientImport.nonEmpty)
+
+      val forbiddenSearchCoreMaterializationImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.document.BeautyQVariantSearchDocumentMaterialization"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreMaterializationImport.nonEmpty)
+
+      val forbiddenSearchCoreBackendRouterImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.routing.SearchBackendRouter"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreBackendRouterImport.nonEmpty)
+
+      val forbiddenSearchCoreResponseAssemblerImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.interpreter.SearchResponseAssembler"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreResponseAssemblerImport.nonEmpty)
+
+      val forbiddenSearchCoreApiImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.api.BeautySearchApi"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreApiImport.nonEmpty)
+
+      val forbiddenSearchCoreConfigImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.config.QdrantPortCfg"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreConfigImport.nonEmpty)
+
+      val forbiddenSearchCoreSqlImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreSqlImport.nonEmpty)
+
+      val forbiddenSearchCoreDoobieImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreDoobieImport.nonEmpty)
+
+      val forbiddenSearchCoreTapirImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import sttp.tapir.Endpoint"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreTapirImport.nonEmpty)
+
+      val forbiddenSearchCoreModuleDefImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import izumi.distage.model.definition.ModuleDef"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(forbiddenSearchCoreModuleDefImport.nonEmpty)
+
+      val allowedSearchCoreQueryFailureImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.model.QueryFailure"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreQueryFailureImport.isEmpty)
+
+      val allowedSearchCoreDslImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.dsl.SearchDocumentSpec"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreDslImport.isEmpty)
+
+      val allowedSearchCoreDslGroupedImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.dsl.{EmbeddingSpec, SearchDocumentSpec}"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreDslGroupedImport.isEmpty)
+
+      val allowedSearchCoreDocumentJsonImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.document.SearchDocumentJson"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreDocumentJsonImport.isEmpty)
+
+      val allowedSearchCorePayloadSpecImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.document.SearchDocumentPayloadSpec"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCorePayloadSpecImport.isEmpty)
+
+      val allowedSearchCoreLexicalImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.lexical.LexicalDocumentHit"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreLexicalImport.isEmpty)
+
+      val allowedSearchCoreSemanticImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.semantic.SemanticDocumentHit"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreSemanticImport.isEmpty)
+
+      val allowedSearchCoreInterpreterImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import leaderboard.search.interpreter.SearchEmbeddingTextExtractor"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreInterpreterImport.isEmpty)
+
+      val allowedSearchCoreCirceImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import io.circe.Json"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreCirceImport.isEmpty)
+
+      val allowedSearchCoreQuotedImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import scala.quoted.*"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreQuotedImport.isEmpty)
+
+      val allowedSearchCoreJavaStdlibImport = importLineViolations(
+        displayPath       = "synthetic/SearchCore.scala",
+        lines             = List("import java.security.MessageDigest"),
+        forbiddenPatterns = searchCoreForbiddenImports,
+        allowedPatterns   = searchCoreAllowedImports,
+      )
+      assert(allowedSearchCoreJavaStdlibImport.isEmpty)
     }
   }
 

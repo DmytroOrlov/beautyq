@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–43 records below). The closeout is **not** a new module-move
+the Phase 29–44 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2365,6 +2365,39 @@ lifecycle allowed/spoof/mixed proofs were preserved unchanged.
 No `app-http` source, endpoint definition, route behavior, request/response JSON shape, schema,
 app-service source, repository source, SQL query, build dependency, Qdrant activation, fallback,
 fusion, rerank, or DSL redesign changed.
+
+## Phase 44 record: search-core boundary guardrail added
+
+`search-core` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents generic search DSL/document/
+runtime-fingerprint/lexical/semantic/interpreter helpers from drifting toward BeautyQ/domain model
+types (`leaderboard.model.*` other than `QueryFailure`), repositories (`leaderboard.repo`),
+materialization (`BeautyQCatalogGraph`, `BeautyQSearchCatalogSnapshot`/`Loader`,
+`BeautyQVariantSearchDocumentMaterialization`, `SearchDocumentProjection`), app-http
+(`leaderboard.api`, `leaderboard.http`), app-services (`leaderboard.services`), app
+shell/plugin/config/resource ownership (`leaderboard.plugins`, `leaderboard.config`, `ModuleDef`,
+`Lifecycle`, `Resource`), raw SQL/Doobie (`leaderboard.sql`, `doobie`), concrete ES/Qdrant/Llama
+client ownership (`ElasticsearchClient`/`QdrantClient`/`LlamaCppEmbeddingClient`/
+`LlamaCppEmbeddingClientConfig`), runtime routing/response assembly
+(`leaderboard.search.routing`/`SearchBackendRouter`, `leaderboard.search.interpreter.SearchResponseAssembler`),
+or backend activation concerns (`leaderboard.search.beautyq`/`elasticsearch`/`qdrant`/`hybrid`/
+`startup`/`eval`/`parser`/`embedding`, `BeautySearchService`, `Tapir`/`tapir`/`http4s`, `zio`,
+`cats.effect`).
+
+Current legitimate generic search-core dependencies remain allowed: `leaderboard.model.QueryFailure`
+(the sole allowed exception to the generic `leaderboard.model.` ban), internal
+`leaderboard.search.dsl`/`document`/`lexical`/`semantic`/`interpreter` helpers, Circe, Java
+standard-library imports, and Scala quoted macro imports. No current `search-core` main source
+violated the new guardrail.
+
+A stale `SearchFieldDerivation` comment ("stays independently movable to a future search-core
+module") was updated to current search-core ownership wording ("owned by the search DSL in the
+`search-core` module so it stays independent from repository internals"); the file already lives in
+`search-core`. This is a comment-only fix - the macro logic is unchanged.
+
+No search-core behavior, DSL shape, field derivation logic, runtime fingerprint logic, document
+JSON/payload behavior, lexical/semantic policy behavior, build dependency, HTTP route behavior,
+request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
