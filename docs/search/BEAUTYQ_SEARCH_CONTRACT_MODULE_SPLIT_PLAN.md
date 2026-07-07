@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–42 records below). The closeout is **not** a new module-move
+the Phase 29–43 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2327,6 +2327,44 @@ source violated the new guardrail.
 No `app-services` source, service behavior, repository source, SQL query, build dependency, HTTP
 route behavior, request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL
 redesign changed.
+
+## Phase 43 record: app-http boundary guardrail hardened
+
+The existing `app-http` boundary guardrail (`appHttpForbiddenImports` in
+`SearchModuleBoundaryGuardrailSpec`) was hardened. The guard prevents HTTP/Tapir route and
+endpoint code from drifting toward app shell/plugin/config/resource/bootstrap ownership
+(`leaderboard.plugins`, `leaderboard.config`, `ModuleDef`, `Plugin`, `Resource`, `HttpServer`,
+`Docker`, `BeautySearchPluginModules`/`BeautySearchRouteModules`/
+`BeautySearchCatalogBackendModules`/`BeautySearchLocalQdrantSupplementLauncherModule`/
+`BeautySearchQdrantSupplementRuntimeBindingModules`/`BeautySearchQdrantSupplementActivationModuleSelector`),
+raw SQL/Doobie repository implementation (`leaderboard.sql`, `doobie`, `Transactor`, `PostgresCfg`/
+`QdrantPortCfg`/`ElasticsearchPortCfg`), concrete ES/Qdrant/Llama client construction
+(`ElasticsearchClient`/`QdrantClient`/`LlamaCppEmbeddingClient`/`LlamaCppEmbeddingClientConfig`/
+`QdrantEmbeddingBenchmarkCandidateExecutor`/`BeautyQNonProductionHybridRunnerRealClientInputs`),
+materialization graph/snapshot/projection internals (`BeautyQCatalogGraph`,
+`BeautyQSearchCatalogSnapshot`, `BeautyQSearchCatalogSnapshotLoader`, and projection/materialization
+symbols), backend routing/response-assembly internals
+(`leaderboard.search.routing`/`SearchBackendRouter`, `leaderboard.search.interpreter`/
+`SearchResponseAssembler`), startup/manual benchmark wiring (`leaderboard.search.parser`/`eval`/
+`startup`), or Distage `ModuleDef` composition (`leaderboard.runtime`).
+
+Current legitimate app-http dependencies remain allowed: `leaderboard.api`, `leaderboard.http`,
+`leaderboard.http.tapir`, Tapir/http4s route types (`org.http4s.HttpRoutes`, `sttp.tapir.*`,
+`sttp.tapir.server.http4s.Http4sServerInterpreter`), Circe, BIO, `cats.effect.Async`, `logstage`,
+model types, current repository interfaces used by CRUD APIs (`Categories`/`Services`/`Masters`/
+`MasterLocations`/`MasterServiceOffers`/`MasterServiceOfferVariants`/`Ladder`/`Profiles`),
+`leaderboard.services.Ranks`, search-facing request/response/service façade types
+(`BeautySearchRequestContract`/`BeautySearchRequestValidation`/`BeautySearchService`/
+`BeautySearchResponse`/`UserSearchInput`, all imported directly from the bare `leaderboard.search`
+package, not a forbidden subpackage), and the exact ES lifecycle DTO exception
+(`ElasticsearchStartupReadinessStatusResponse`/`ElasticsearchStartupReadinessTransition`, unchanged).
+No current `app-http` main source violated the hardened guardrail. Synthetic proof coverage was
+extended for the newly-forbidden and newly-confirmed-allowed imports, and the existing ES
+lifecycle allowed/spoof/mixed proofs were preserved unchanged.
+
+No `app-http` source, endpoint definition, route behavior, request/response JSON shape, schema,
+app-service source, repository source, SQL query, build dependency, Qdrant activation, fallback,
+fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

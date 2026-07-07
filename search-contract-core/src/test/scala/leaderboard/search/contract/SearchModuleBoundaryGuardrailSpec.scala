@@ -96,6 +96,41 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "leaderboard.search.qdrant",
     "leaderboard.search.hybrid",
     "leaderboard.search.elasticsearch",
+    "leaderboard.plugins",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.runtime",
+    "leaderboard.search.routing",
+    "leaderboard.search.interpreter",
+    "leaderboard.search.parser",
+    "leaderboard.search.eval",
+    "leaderboard.search.startup",
+    "leaderboard.repo.BeautyQSearchCatalogSnapshot",
+    "leaderboard.repo.BeautyQSearchCatalogSnapshotLoader",
+    "SearchBackendRouter",
+    "SearchResponseAssembler",
+    "BeautySearchPluginModules",
+    "BeautySearchRouteModules",
+    "BeautySearchCatalogBackendModules",
+    "BeautySearchLocalQdrantSupplementLauncherModule",
+    "BeautySearchQdrantSupplementRuntimeBindingModules",
+    "BeautySearchQdrantSupplementActivationModuleSelector",
+    "ElasticsearchClient",
+    "QdrantClient",
+    "LlamaCppEmbeddingClient",
+    "LlamaCppEmbeddingClientConfig",
+    "QdrantEmbeddingBenchmarkCandidateExecutor",
+    "BeautyQNonProductionHybridRunnerRealClientInputs",
+    "PostgresCfg",
+    "QdrantPortCfg",
+    "ElasticsearchPortCfg",
+    "Transactor",
+    "ModuleDef",
+    "Plugin",
+    "Resource",
+    "HttpServer",
+    "Docker",
+    "doobie",
   )
 
   private val appHttpAllowedImports = List(
@@ -541,6 +576,206 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = appHttpAllowedImports,
       )
       assert(mixedGroupedAppHttpImport.nonEmpty)
+
+      val forbiddenAppHttpPluginModulesImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.plugins.BeautySearchPluginModules"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpPluginModulesImport.nonEmpty)
+
+      val forbiddenAppHttpConfigImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.config.QdrantPortCfg"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpConfigImport.nonEmpty)
+
+      val forbiddenAppHttpSqlImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpSqlImport.nonEmpty)
+
+      val forbiddenAppHttpDoobieImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpDoobieImport.nonEmpty)
+
+      val forbiddenAppHttpModuleDefImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import izumi.distage.model.definition.ModuleDef"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpModuleDefImport.nonEmpty)
+
+      val forbiddenAppHttpResourceImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import cats.effect.Resource"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpResourceImport.nonEmpty)
+
+      val forbiddenAppHttpCatalogGraphImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.repo.BeautyQCatalogGraph"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpCatalogGraphImport.nonEmpty)
+
+      val forbiddenAppHttpMaterializationImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.document.BeautyQVariantSearchDocumentMaterialization"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpMaterializationImport.nonEmpty)
+
+      val forbiddenAppHttpResponseAssemblerImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.interpreter.SearchResponseAssembler"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpResponseAssemblerImport.nonEmpty)
+
+      val forbiddenAppHttpBackendRouterImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.routing.SearchBackendRouter"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpBackendRouterImport.nonEmpty)
+
+      val forbiddenAppHttpLlamaCppConfigImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpLlamaCppConfigImport.nonEmpty)
+
+      val forbiddenAppHttpHybridRealClientImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.hybrid.BeautyQNonProductionHybridRunnerRealClientInputs"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(forbiddenAppHttpHybridRealClientImport.nonEmpty)
+
+      val allowedAppHttpTapirEndpointsImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.http.tapir.BeautySearchTapirEndpoints"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpTapirEndpointsImport.isEmpty)
+
+      val allowedAppHttpRoutesImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import org.http4s.HttpRoutes"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpRoutesImport.isEmpty)
+
+      val allowedAppHttpTapirServerImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import sttp.tapir.server.http4s.Http4sServerInterpreter"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpTapirServerImport.isEmpty)
+
+      val allowedAppHttpTapirEndpointImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import sttp.tapir.Endpoint"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpTapirEndpointImport.isEmpty)
+
+      val allowedAppHttpAsyncImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import cats.effect.Async"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpAsyncImport.isEmpty)
+
+      val allowedAppHttpBioImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import izumi.functional.bio.Error2"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpBioImport.isEmpty)
+
+      val allowedAppHttpCirceImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import io.circe.Json"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpCirceImport.isEmpty)
+
+      val allowedAppHttpLogstageImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import logstage.LogIO2"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpLogstageImport.isEmpty)
+
+      val allowedAppHttpModelImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.model.Category"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpModelImport.isEmpty)
+
+      val allowedAppHttpRepoImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpRepoImport.isEmpty)
+
+      val allowedAppHttpRanksImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.services.Ranks"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpRanksImport.isEmpty)
+
+      val allowedAppHttpSearchServiceImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.BeautySearchService"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpSearchServiceImport.isEmpty)
+
+      val allowedAppHttpSearchResponseImport = importLineViolations(
+        displayPath       = "synthetic/AppHttp.scala",
+        lines             = List("import leaderboard.search.{BeautySearchResponse, UserSearchInput}"),
+        forbiddenPatterns = appHttpForbiddenImports,
+        allowedPatterns   = appHttpAllowedImports,
+      )
+      assert(allowedAppHttpSearchResponseImport.isEmpty)
 
       val forbiddenSearchContractCoreBeautyQImport = importLineViolations(
         displayPath       = "synthetic/SearchContractCore.scala",
