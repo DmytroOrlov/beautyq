@@ -23,7 +23,7 @@ object BeautyQCatalogSection {
     CatalogSection(BeautyQCatalogDeclaration.declaration)
 
   /** Alias for [[catalogTopology]] for call sites that read more naturally as
-    * "the catalog section of a not-yet-assembled BeautyQ search contract".
+    * "the catalog section of the BeautyQ search contract".
     */
   def section: CatalogSection[BeautyQCatalogDeclaration.declaration.type] = catalogTopology
 }

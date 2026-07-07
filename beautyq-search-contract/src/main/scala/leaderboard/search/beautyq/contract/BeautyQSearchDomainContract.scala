@@ -111,8 +111,8 @@ object BeautyQSearchDomainContract {
   /** Evaluation declarations now exist in `beautyq-search-contract`. */
   val evaluationDeclared: Boolean = true
 
-  /** Explicit, testable record of what still blocks a full
-    * `SearchDomainSpec[...]` assembly. See [[BeautyQSearchDomainSpecReadiness]].
+  /** Explicit, testable readiness record for the full `SearchDomainSpec[...]`
+    * assembly. See [[BeautyQSearchDomainSpecReadiness]].
     */
   val searchDomainSpecReadiness: BeautyQSearchDomainSpecReadiness = BeautyQSearchDomainSpecReadiness.current
 

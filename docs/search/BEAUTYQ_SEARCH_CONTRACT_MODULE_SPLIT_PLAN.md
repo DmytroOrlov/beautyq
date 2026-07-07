@@ -44,7 +44,8 @@ unedited as a dated snapshot (see the clarification note placed directly after i
 ownership and readiness from this Status section, from current code, or from
 `docs/beautyq-search-dsl-v1.md`.
 
-This closeout is **docs-only reconciliation**. It does not imply: production Qdrant activation;
+This closeout/reconciliation sequence is limited to docs, static guardrails, source-comment
+alignment, and focused tests. It does not imply: production Qdrant activation;
 fallback/fusion/rerank activation; any route behavior change; any request/response JSON shape
 change; a DSL redesign; or deleting any compatibility surface without a separate zero-usage audit.
 
