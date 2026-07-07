@@ -292,6 +292,45 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "leaderboard.plugins.BeautySearchQdrantSupplementActivation.QdrantSupplementReady",
   )
 
+  private val appServicesForbiddenImports = List(
+    "leaderboard.api",
+    "leaderboard.http",
+    "leaderboard.plugins",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.runtime",
+    "leaderboard.search",
+    "leaderboard.repo.BeautyQCatalogGraph",
+    "leaderboard.repo.BeautyQSearchCatalogSnapshot",
+    "leaderboard.repo.BeautyQSearchCatalogSnapshotLoader",
+    "BeautyQVariantSearchDocumentMaterialization",
+    "SearchDocumentProjection",
+    "BeautyQSearchCatalogSnapshot",
+    "BeautyQSearchCatalogSnapshotLoader",
+    "ElasticsearchClient",
+    "QdrantClient",
+    "LlamaCppEmbeddingClient",
+    "LlamaCppEmbeddingClientConfig",
+    "BeautyQNonProductionHybridRunnerRealClientInputs",
+    "QdrantEmbeddingBenchmarkCandidateExecutor",
+    "ModuleDef",
+    "Lifecycle",
+    "Resource",
+    "Transactor",
+    "PostgresCfg",
+    "QdrantPortCfg",
+    "ElasticsearchPortCfg",
+    "HttpRoutes",
+    "ServerEndpoint",
+    "HttpServer",
+    "Tapir",
+    "tapir",
+    "http4s",
+    "doobie",
+    "cats.effect",
+    "zio",
+  )
+
   "BeautyQ search module boundaries" should {
     "keep beautyq-search-contract main sources free of runtime, app, and materialization imports" in {
       val violations = scalaMainFiles("beautyq-search-contract/src/main/scala")
@@ -362,6 +401,13 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         .flatMap(path => containsForbiddenImport(path, beautyqWiringForbiddenImports, beautyqWiringAllowedImports))
 
       assertNoViolations("beautyq-search-wiring boundary violations", violations)
+    }
+
+    "keep app-services main sources free of HTTP, shell, config, SQL, concrete client, and search runtime imports" in {
+      val violations = scalaMainFiles("app-services/src/main/scala")
+        .flatMap(path => containsForbiddenImport(path, appServicesForbiddenImports, allowedPatterns = Nil))
+
+      assertNoViolations("app-services boundary violations", violations)
     }
 
     "keep build.sbt in the closeout split DAG shape" in {
@@ -1177,6 +1223,118 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = beautyqWiringAllowedImports,
       )
       assert(allowedWiringBioImport.isEmpty)
+
+      val forbiddenAppServicesApiImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.api.ProfileApi"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesApiImport.nonEmpty)
+
+      val forbiddenAppServicesTapirImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.http.tapir.ProfileTapirEndpoints"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesTapirImport.nonEmpty)
+
+      val forbiddenAppServicesConfigImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.config.PostgresCfg"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesConfigImport.nonEmpty)
+
+      val forbiddenAppServicesSqlImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesSqlImport.nonEmpty)
+
+      val forbiddenAppServicesDoobieImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesDoobieImport.nonEmpty)
+
+      val forbiddenAppServicesModuleDefImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import izumi.distage.model.definition.ModuleDef"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesModuleDefImport.nonEmpty)
+
+      val forbiddenAppServicesSearchContractImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesSearchContractImport.nonEmpty)
+
+      val forbiddenAppServicesQdrantClientImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.search.qdrant.QdrantClient"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesQdrantClientImport.nonEmpty)
+
+      val forbiddenAppServicesPluginModulesImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.plugins.BeautySearchPluginModules"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesPluginModulesImport.nonEmpty)
+
+      val forbiddenAppServicesLlamaCppConfigImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesLlamaCppConfigImport.nonEmpty)
+
+      val forbiddenAppServicesCatalogGraphImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.repo.BeautyQCatalogGraph"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenAppServicesCatalogGraphImport.nonEmpty)
+
+      val allowedAppServicesModelImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.model.{QueryFailure, RankedProfile, UserId}"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedAppServicesModelImport.isEmpty)
+
+      val allowedAppServicesRepoImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import leaderboard.repo.{Ladder, Profiles}"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedAppServicesRepoImport.isEmpty)
+
+      val allowedAppServicesBioImport = importLineViolations(
+        displayPath       = "synthetic/AppServices.scala",
+        lines             = List("import izumi.functional.bio.Monad2"),
+        forbiddenPatterns = appServicesForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedAppServicesBioImport.isEmpty)
     }
   }
 

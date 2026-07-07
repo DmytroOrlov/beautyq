@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–41 records below). The closeout is **not** a new module-move
+the Phase 29–42 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2301,6 +2301,32 @@ current `beautyq-search-wiring` main source violated the new guardrail.
 No `beautyq-search-wiring` source, routing policy, parser, response assembly, backend behavior,
 eval design, startup plan, build dependency, HTTP route behavior, request/response JSON shape,
 Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 42 record: app-services boundary guardrail added
+
+`app-services` now has a boundary guardrail scanning its own main sources
+(`SearchModuleBoundaryGuardrailSpec`). The guard prevents application service orchestration
+(currently only `leaderboard.services.Ranks`) from drifting toward app-http routes/endpoints
+(`leaderboard.api`, `leaderboard.http`), app shell/plugin/config/resource/bootstrap ownership
+(`leaderboard.plugins`, `leaderboard.config`, `ModuleDef`, `Lifecycle`, `Resource`, `HttpServer`),
+raw SQL/Doobie repository implementation (`leaderboard.sql`, `doobie`, `Transactor`,
+`PostgresCfg`/`QdrantPortCfg`/`ElasticsearchPortCfg`), concrete ES/Qdrant/Llama client ownership
+(`ElasticsearchClient`/`QdrantClient`/`LlamaCppEmbeddingClient`/`LlamaCppEmbeddingClientConfig`/
+`QdrantEmbeddingBenchmarkCandidateExecutor`/`BeautyQNonProductionHybridRunnerRealClientInputs`),
+materialization graph/snapshot/projection internals (`leaderboard.repo.BeautyQCatalogGraph`/
+`BeautyQSearchCatalogSnapshot`/`BeautyQSearchCatalogSnapshotLoader`,
+`BeautyQVariantSearchDocumentMaterialization`, `SearchDocumentProjection`), or BeautyQ search
+runtime/wiring concerns (`leaderboard.search`, `leaderboard.runtime`).
+
+Current legitimate app-service dependencies remain allowed: BeautyQ model types
+(`leaderboard.model`), repository interfaces such as `Ladder` and `Profiles`
+(`leaderboard.repo` broadly, since `app-services` legitimately depends only on
+`beautyqSearchRepositories`), and `izumi.functional.bio.Monad2`. No current `app-services` main
+source violated the new guardrail.
+
+No `app-services` source, service behavior, repository source, SQL query, build dependency, HTTP
+route behavior, request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL
+redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
