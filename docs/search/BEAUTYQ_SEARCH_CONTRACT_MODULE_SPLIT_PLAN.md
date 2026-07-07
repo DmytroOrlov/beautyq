@@ -1,6 +1,53 @@
 # BeautyQ Search Contract Module Split Plan
 
-Status: Phase 7b (BeautyQ variant document projection engine slice), Phase 7c (BeautyQ catalog snapshot loaders slice), and Phase 7d (variant projection consumes materialization-owned catalog snapshots) recorded, alongside Phase 8d (static/offline evaluation contract slice), Phase 8e (full `SearchDomainSpec` readiness blockers made explicit via `BeautyQSearchDomainSpecReadiness`), Phase 8f (BeautyQ variant result unit declared via `BeautyQSearchResultUnitContract`, resolving the `document-result-unit` blocker), Phase 8g (BeautyQ supported search languages `de`/`en`/`ru` declared via `BeautyQSearchLanguageContract`, resolving the `intent-languages` blocker), Phase 8h (BeautyQ generic document fields declared via `BeautyQSearchDocumentFieldContract`, resolving the `document-field-kind-mapping` blocker), Phase 8i (BeautyQ runtime/response sections declared via `BeautyQSearchRuntimeContract`/`BeautyQSearchResponsePolicyContract`, resolving the `runtime-capabilities`/`response-policy` blockers), Phase 8j (BeautyQ generic intent section declared via `BeautyQSearchIntentSectionContract`, resolving the final `intent-section-mapping` blocker; full generic `SearchDomainSpec` now assembled), Phase 10b (Qdrant supplement activation/preflight policy slice), Phase 10a (first `beautyq-search-wiring` slice), and Phase 8c (`BeautyQSearchDomainContract` thin aggregate). `BeautyQVariantSearchDocumentMaterialization` (the actual projection engine) now lives in `beautyq-search-materialization`, alongside `BeautyQCatalogGraph`, and exposes both a seven-list `project(...)` and a snapshot-level `project(BeautyQSearchCatalogSnapshot)` overload; `BeautyQVariantSearchDocumentSchema` in `bifunctor-tagless` is now a thin compatibility facade delegating to the snapshot-level overload via `BeautySearchCatalogSnapshot.toMaterializationSnapshot`. The actual full-catalog and seed-scoped repo-backed snapshot loading algorithms (`BeautyQSearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories`, over the seed-free `BeautyQSearchCatalogSnapshot`/`BeautyQSearchCatalogSeedScope`) now live in `beautyq-search-materialization` too; legacy `BeautySearchCatalogSnapshotLoader.FromRepositories`/`SeedScopedFromRepositories` in `bifunctor-tagless` are now compatibility facades delegating to them and converting back via the companion-owned `BeautySearchCatalogSnapshot.fromMaterializationSnapshot`, while legacy `BeautySearchCatalogSnapshot`/`fromSeedData` and `BeautyQSeedData`/`BeautyQSeedLoader`/`BeautyQSeedInserter`/`BeautyQSeedReady` still remain in `bifunctor-tagless`. `BeautySearchServingGate` and the Qdrant supplement activation state/config/preflight/command/diagnostics live in `beautyq-search-wiring`; `BeautyQSearchDomainContract` aggregates catalog/document/intent/runtime/response/evaluation contract slices and now assembles the full generic `SearchDomainSpec` from those contract-owned sections (`evaluationDeclared = true`, `fullSearchDomainSpecDeclared = true`); `BeautySearchApi`, route/plugin modules, launcher modules, clients, bootstrap/seed code, JSON/resource parsing, the eval runtime harness/backend runners, and repositories remain in `bifunctor-tagless` pending deeper movement.
+Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
+the Phase 29 record below). This pass is docs-only: it reconciles this plan, `README.md`, and
+`docs/beautyq-search-dsl-v1.md` with current code and recent commit history. It is **not** a new
+module-move phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
+
+Current physical ownership:
+
+- Pure BeautyQ search contract declarations (catalog/document/intent/runtime/response/evaluation
+  slices, `BeautyQSearchDomainContract`): `beautyq-search-contract`.
+- Generic search-contract ADTs (`SearchDomainSpec`, `SearchField`, `SearchRuntimeDeclaration`):
+  `search-contract-core`.
+- Generic repo/catalog graph-loading primitives: `repo-core`.
+- BeautyQ domain model: `beautyq-model`.
+- BeautyQ repository interfaces and their `Dummy`/`Postgres` implementations:
+  `beautyq-search-repositories`.
+- BeautyQ catalog/document materialization, snapshots, and snapshot loaders (the actual
+  `BeautyQVariantSearchDocumentMaterialization` projection engine and `BeautyQCatalogGraph`):
+  `beautyq-search-materialization`. The legacy `BeautyQVariantSearchDocumentSchema`,
+  `VariantSearchDocumentBuilder`, `BeautySearchCatalogSnapshot`, and
+  `BeautySearchCatalogSnapshotLoader` compatibility facades that used to live in
+  `bifunctor-tagless` have since been deleted outright (not merely forwarded) - there is no
+  remaining compatibility shim for them.
+- Generic Elasticsearch client/interpreter: `search-elasticsearch`.
+- Generic Qdrant client/interpreter: `search-qdrant`.
+- BeautyQ runtime/search/routing/policy/backend/eval-design/helper layer consuming the contract
+  (including `BeautySearchServingGate` and the Qdrant supplement activation
+  state/config/preflight/command/diagnostics): `beautyq-search-wiring`.
+- HTTP/Tapir API layer, including `BeautySearchApi` and every other `leaderboard.api.*`/
+  `leaderboard.http.tapir.*` endpoint: `app-http`.
+- App-level service boundaries such as `leaderboard.services.Ranks`: `app-services`.
+- `bifunctor-tagless` is now a **temporary legacy-named app shell**: config, Distage/module
+  (`ModuleDef`) composition and plugin wiring, real clients/resources, and
+  startup/bootstrap/seed/eval shell execution code. It is no longer the conceptual owner of the
+  BeautyQ search contract, materialization, runtime/wiring, or HTTP layers - those moved to the
+  modules above across Phases 2-23. Final physical rename/removal of `bifunctor-tagless` is
+  **out-of-band**: a separate, manual step that must not block this feature closeout.
+
+**Phase 8c clarification**: the Phase 8c record below recorded `evaluationDeclared = false` and
+`fullSearchDomainSpecDeclared = false` - that was historically accurate when it was written. It was
+superseded by Phases 8d-8j: current code assembles the full generic `SearchDomainSpec` through
+`BeautyQSearchDomainContract`, with both flags `true`. The Phase 8c record itself is preserved
+unedited as a dated snapshot (see the clarification note placed directly after it); read current
+ownership and readiness from this Status section, from current code, or from
+`docs/beautyq-search-dsl-v1.md`.
+
+This closeout is **docs-only reconciliation**. It does not imply: production Qdrant activation;
+fallback/fusion/rerank activation; any route behavior change; any request/response JSON shape
+change; a DSL redesign; or deleting any compatibility surface without a separate zero-usage audit.
 
 ## Non-negotiable premise
 
@@ -852,6 +899,15 @@ still pass unchanged.
 Build changes: none - `build.sbt` was not touched. No behavior change: this
 is a pure aggregation of existing values, with no repository/materialization/
 ES/Qdrant/client/route/runtime code moved or imported.
+
+> **Current-status clarification (added during Phase 29 docs reconciliation, not a rewrite of the
+> record above):** the `evaluationDeclared = false` and `fullSearchDomainSpecDeclared = false`
+> flags recorded above were historically accurate at the time Phase 8c was written. They were
+> superseded by Phases 8d-8j: current code's `BeautyQSearchDomainContract` assembles the full
+> generic `SearchDomainSpec` from contract-owned sections, with both flags `true`. Read the record
+> above as a dated snapshot of Phase 8c; read current `evaluationDeclared`/
+> `fullSearchDomainSpecDeclared` state from current code, from the Status section at the top of
+> this file, or from `docs/beautyq-search-dsl-v1.md`.
 
 ## Phase 10b record: Qdrant supplement activation/preflight policy split into beautyq-search-wiring
 
@@ -1941,6 +1997,49 @@ binding semantics, activation parsing, checked-in resource, or generic
 patch, same class of change as Phases 24/25/26/27; the Fable 5 countdown
 stays reserved for a future shape/architecture decision, not this kind of
 mechanical name adoption.
+
+## Phase 29 record: code/doc/commit reconciliation closeout
+
+This phase is **docs-only**: no Scala source, `build.sbt`, or checked-in
+resource changed. It reconciles this plan (and `README.md` and
+`docs/beautyq-search-dsl-v1.md`) with current code and the recent commit
+history - in particular Phases 21-23 (the `app-http`/`app-services`
+extraction) and Phases 24-28 (the source-text-field/runtime-default/
+eval-metric-name/response-provenance centralization series), none of which
+the top Status section had caught up with.
+
+- `bifunctor-tagless` is recorded as a **temporary legacy-named app shell**
+  (config, Distage/module composition and plugin wiring, real
+  clients/resources, startup/bootstrap/seed/eval shell execution code) - not
+  the conceptual owner of the BeautyQ search contract, materialization,
+  runtime/wiring, or HTTP layers.
+- It does **not** rename or remove `bifunctor-tagless`; that stays a
+  separate, manual, out-of-band step, and does not block this closeout.
+- It does **not** move any code between modules.
+- It does **not** change production/runtime behavior, route decisions, or
+  request/response JSON shape.
+- It does **not** activate the Qdrant supplement by default, and introduces
+  no fallback, score fusion, or reranking.
+- It does **not** delete any compatibility API; any future deletion still
+  requires its own separate zero-usage audit, same as every prior phase.
+- It updates stale top-level wording (the Status section, and the one
+  remaining stale `docs/beautyq-search-dsl-v1.md` ownership-table line for
+  the HTTP/Tapir route adapter) that predated Phases 21-28.
+- It preserves every historical phase record exactly as written, including
+  Phase 8c's `evaluationDeclared = false`/`fullSearchDomainSpecDeclared =
+  false` (correct at the time it was written), rather than rewriting
+  history - see the clarification note placed directly after the Phase 8c
+  record for how to read that record today.
+
+Changed files: `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`
+(the Status rewrite above, this record, and the Phase 8c clarification
+note), `README.md` (module map rewritten to the current physical layout,
+temporary-legacy-shell wording added, out-of-band rename noted), and
+`docs/beautyq-search-dsl-v1.md` (the stale "before the planned split" intro
+and the ownership-table's HTTP/Tapir route adapter line corrected to
+`app-http`). No Scala source, `build.sbt`, or checked-in resource changed;
+this is a docs-only patch, and no compile/test claim beyond what is actually
+run should be read into it.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

@@ -70,16 +70,26 @@ Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.stat
 
 ## Module map
 
-This is the current physical module map before the planned BeautyQ search-contract/module split.
-Target BeautyQ search ownership and module boundaries are defined in
-`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+The BeautyQ search-contract/module split is in closeout / reconciliation state. This is the
+**current physical module map**; see
+`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for the full phase-by-phase history,
+detailed ownership rules, and dependency DAG.
 
 | Module | Responsibility |
 |---|---|
 | `leaderboard-core` | generic failure types (`QueryFailure` and siblings) |
 | `search-core` | generic search framework: fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
+| `search-contract-core` | generic search-contract ADTs (`SearchDomainSpec`, `SearchField`, `SearchRuntimeDeclaration`) |
+| `repo-core` | generic repo/catalog graph-loading primitives, independent of BeautyQ |
+| `beautyq-model` | BeautyQ domain model (attributes, service-variant schema, master-service-offer-variant, user profile) |
+| `beautyq-search-contract` | pure BeautyQ search contract declarations (catalog/document/intent/runtime/response/evaluation slices, `BeautyQSearchDomainContract`); no repo/client/HTTP imports |
+| `beautyq-search-repositories` | BeautyQ repository interfaces and their `Dummy`/`Postgres` implementations |
+| `beautyq-search-materialization` | BeautyQ catalog/document materialization: catalog snapshots, snapshot loaders, and variant document projection |
 | `search-elasticsearch` | reusable ES client/interpreter code (mapping, ingestion, request, response); no BeautyQ-specific logic |
 | `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code; no BeautyQ-specific logic |
-| `bifunctor-tagless` | BeautyQ app-side schemas, adapters, backends, routes, startup/plugin wiring, eval/benchmark code, and concrete embedding infrastructure |
+| `beautyq-search-wiring` | BeautyQ runtime/search/backend/routing/policy/eval-design/helper layer that consumes the contract - the largest BeautyQ-specific module |
+| `app-services` | app-level service boundaries over repository interfaces, e.g. `leaderboard.services.Ranks` |
+| `app-http` | HTTP/Tapir API layer for the whole app, including `BeautySearchApi` and every other API/endpoint class |
+| `bifunctor-tagless` | **temporary legacy-named app shell**: config, Distage/module composition and plugin wiring, real clients/resources, and startup/bootstrap/seed/eval shell execution code. No longer the conceptual owner of the BeautyQ search contract, materialization, runtime/wiring, or HTTP layers. Its final rename/removal is intentionally out-of-band and not part of this closeout. |
 
 The repository also contains upstream distage example implementation variants under `monofunctor-tagless` and `monomorphic-cats`.

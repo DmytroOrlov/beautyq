@@ -1,10 +1,13 @@
 # BeautyQ Search Architecture
 
-> This document describes the current BeautyQ search implementation state before the planned
-> search-contract/module split. The DSL north star, phase history, and anti-scope-drift rules are
-> defined in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`; this document owns current
-> architecture and module ownership. Coordinator prompting/review workflow rules live in
-> `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`.
+> This document describes the current BeautyQ search implementation state after the BeautyQ
+> search-contract/module split closeout (see the Phase 29 reconciliation record in
+> `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`). The DSL north star, phase history,
+> and anti-scope-drift rules are defined in that plan; this document owns current architecture and
+> module ownership. Coordinator prompting/review workflow rules live in
+> `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`. `bifunctor-tagless` remains a temporary
+> legacy-named app shell; its final rename is a separate, out-of-band step and is not part of this
+> closeout.
 
 ## Overview
 
@@ -113,10 +116,13 @@ Where each kind of search concern currently lives:
 | new payload field | schema-owned `SearchDocumentPayloadSpec` |
 | new carousel / ranking / presentation name or default | `BeautyQSearchPresentation` |
 | new generic backend behavior | `search-core` runtime metadata + generic interpreter |
-| new BeautyQ-specific route / response behavior | `InMemorySearchBackend` / `SearchResponseAssembler` in `beautyq-search-wiring`; HTTP/Tapir route adapter in `bifunctor-tagless` |
+| new BeautyQ-specific route / response behavior | `InMemorySearchBackend` / `SearchResponseAssembler` in `beautyq-search-wiring`; HTTP/Tapir route adapter in `app-http` |
 
-Current legacy locations remain until migration phases remove them.
-New target ownership must follow `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+The ownership table above describes the current split-closeout layout. `bifunctor-tagless`
+remains only as a temporary legacy-named app shell for config, Distage/module composition,
+real clients/resources, startup/bootstrap/seed/eval shell execution, and similar app-shell
+execution code. Its final physical rename/removal is out-of-band and must not be treated as
+a blocker for this BeautyQ search split closeout.
 
 ## BeautySearchSpec / BeautySearchSpecV1
 
