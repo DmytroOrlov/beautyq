@@ -55,6 +55,31 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
     "leaderboard.http",
     "leaderboard.plugins",
     "leaderboard.search.beautyq",
+    "leaderboard.config",
+    "leaderboard.sql",
+    "leaderboard.services",
+    "leaderboard.search.hybrid",
+    "leaderboard.search.startup",
+    "leaderboard.search.routing",
+    "leaderboard.search.eval",
+    "leaderboard.search.parser",
+    "BeautyQCatalogGraph",
+    "BeautyQSearchCatalogSnapshot",
+    "BeautyQSearchCatalogSnapshotLoader",
+    "BeautyQVariantSearchDocumentMaterialization",
+    "SearchDocumentProjection",
+    "BeautyQSearchDomainContract",
+    "BeautyQSearchRuntimeContract",
+    "SearchBackendRouter",
+    "SearchResponseAssembler",
+    "HttpRoutes",
+    "ServerEndpoint",
+    "Tapir",
+    "tapir",
+    "http4s",
+    "doobie",
+    "cats.effect",
+    "ModuleDef",
   )
 
   private val genericBackendForbiddenSourceText = List(
@@ -751,6 +776,142 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
         allowedPatterns   = Nil,
       )
       assert(allowedMaterializationBioImport.isEmpty)
+
+      val forbiddenGenericBackendContractImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.beautyq.contract.BeautyQSearchDomainContract"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendContractImport.nonEmpty)
+
+      val forbiddenGenericBackendRepoImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.repo.Categories"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendRepoImport.nonEmpty)
+
+      val forbiddenGenericBackendMaterializationImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.document.BeautyQVariantSearchDocumentMaterialization"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendMaterializationImport.nonEmpty)
+
+      val forbiddenGenericBackendTapirImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.http.tapir.BeautySearchTapirEndpoints"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendTapirImport.nonEmpty)
+
+      val forbiddenGenericBackendConfigImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.config.QdrantPortCfg"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendConfigImport.nonEmpty)
+
+      val forbiddenGenericBackendRoutingImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.routing.SearchBackendRouter"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendRoutingImport.nonEmpty)
+
+      val forbiddenGenericBackendSqlImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.sql.SQL"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendSqlImport.nonEmpty)
+
+      val forbiddenGenericBackendDoobieImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import doobie.ConnectionIO"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(forbiddenGenericBackendDoobieImport.nonEmpty)
+
+      val allowedGenericBackendQueryFailureImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.model.QueryFailure"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendQueryFailureImport.isEmpty)
+
+      val allowedGenericBackendDslImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.dsl.SearchDocumentSpec"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendDslImport.isEmpty)
+
+      val allowedGenericBackendDocumentJsonImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.document.SearchDocumentJson"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendDocumentJsonImport.isEmpty)
+
+      val allowedGenericBackendLexicalImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.lexical.LexicalDocumentHit"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendLexicalImport.isEmpty)
+
+      val allowedGenericBackendSemanticImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.semantic.SemanticDocumentHit"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendSemanticImport.isEmpty)
+
+      val allowedGenericBackendEmbeddingImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.embedding.EmbeddingClient"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendEmbeddingImport.isEmpty)
+
+      val allowedGenericBackendInterpreterImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import leaderboard.search.interpreter.SearchEmbeddingTextExtractor"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendInterpreterImport.isEmpty)
+
+      val allowedGenericBackendZioImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import zio.IO"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendZioImport.isEmpty)
+
+      val allowedGenericBackendCirceImport = importLineViolations(
+        displayPath       = "synthetic/GenericBackend.scala",
+        lines             = List("import io.circe.Json"),
+        forbiddenPatterns = genericBackendForbiddenImports,
+        allowedPatterns   = Nil,
+      )
+      assert(allowedGenericBackendCirceImport.isEmpty)
     }
   }
 

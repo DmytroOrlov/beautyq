@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–39 records below). The closeout is **not** a new module-move
+the Phase 29–40 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2242,6 +2242,36 @@ current `beautyq-search-materialization` main source violated the new guardrail.
 No materialization source, snapshot shape, projection logic, graph logic, repository source, SQL
 query, build dependency, runtime behavior, route behavior, request/response JSON shape, Qdrant
 activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 40 record: generic search backend guardrail hardened
+
+The existing `search-elasticsearch` / `search-qdrant` generic backend guardrail
+(`genericBackendForbiddenImports`, used by `genericBackendViolations` in
+`SearchModuleBoundaryGuardrailSpec`) was hardened. The guard prevents generic backend adapters
+from drifting toward BeautyQ domain/repositories/materialization (`leaderboard.search.beautyq`,
+`leaderboard.repo`, `BeautyQCatalogGraph`, `BeautyQSearchCatalogSnapshot`/`Loader`,
+`BeautyQVariantSearchDocumentMaterialization`, `SearchDocumentProjection`,
+`BeautyQSearchDomainContract`/`BeautyQSearchRuntimeContract`), HTTP/Tapir/routes
+(`leaderboard.api`, `leaderboard.http`, `HttpRoutes`, `ServerEndpoint`, `Tapir`/`tapir`, `http4s`),
+app services (`leaderboard.services`), app shell/plugins/config/resources (`leaderboard.plugins`,
+`leaderboard.config`), raw SQL/Doobie (`leaderboard.sql`, `doobie`), runtime routing/activation
+(`leaderboard.search.hybrid`/`startup`/`routing`, `SearchBackendRouter`), response assembly
+(`SearchResponseAssembler`), parser/eval runner (`leaderboard.search.parser`/`eval`), or app-level
+wiring (`ModuleDef`, `cats.effect`).
+
+Current legitimate generic backend dependencies remain allowed: `QueryFailure`, `search-core`
+DSL/document/lexical/semantic helpers (`leaderboard.search.dsl`,
+`leaderboard.search.document.SearchDocumentJson`/`SearchDocumentPayloadSpec`,
+`leaderboard.search.lexical`, `leaderboard.search.semantic`), the Qdrant embedding/interpreter
+helpers currently owned by the backend module (`leaderboard.search.embedding`,
+`leaderboard.search.interpreter.SearchEmbeddingTextExtractor`), Circe JSON, ZIO, and Java HTTP.
+The existing scoped `BeautyQ`/`beautyq` source-text check on backend main sources is unchanged.
+No current `search-elasticsearch`/`search-qdrant` main source violated the hardened guardrail.
+Synthetic proof coverage was added for both the newly-forbidden and the still-allowed imports.
+
+No `search-elasticsearch` source, `search-qdrant` source, client behavior, interpreter behavior,
+request/response mapping, build dependency, runtime behavior, route behavior, request/response
+JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
