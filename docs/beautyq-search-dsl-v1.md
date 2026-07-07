@@ -1,8 +1,8 @@
 # BeautyQ Search Architecture
 
 > This document describes the current BeautyQ search implementation state after the BeautyQ
-> search-contract/module split closeout (see the Phase 29 reconciliation record in
-> `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`). The DSL north star, phase history,
+> search-contract/module split closeout (see the Status section and Phase 29–32 closeout records
+> in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`). The DSL north star, phase history,
 > and anti-scope-drift rules are defined in that plan; this document owns current architecture and
 > module ownership. Coordinator prompting/review workflow rules live in
 > `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`. `bifunctor-tagless` remains a temporary

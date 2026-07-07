@@ -1,7 +1,7 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29, Phase 30, and Phase 31 records below). The closeout is **not** a new module-move
+the Phase 29–32 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Current physical ownership:
@@ -2093,6 +2093,19 @@ and docs with the post-Phase-30 state.
 Verification is focused only (`BeautyQSearchDomainContractSpec`,
 `SearchModuleBoundaryGuardrailSpec`) unless the full suite is separately run by the
 coordinator/user.
+
+## Phase 32 record: final stale closeout wording removed
+
+This patch removed the last current-status wording that still described the full
+`SearchDomainSpec` assembly as pending. `BeautyQSearchDomainContract` readiness wording now
+describes the current explicit readiness record for the assembled full `SearchDomainSpec`.
+`BeautyQSearchCatalogSection` no longer refers to a not-yet-assembled contract; it remains
+catalog-only while the full contract is assembled by `BeautyQSearchDomainContract`. The top Status
+wording now accurately describes the closeout/reconciliation sequence as docs, static guardrails,
+source-comment alignment, and focused tests.
+
+No runtime logic, production source values, tests, `build.sbt`, ADT shapes, route behavior,
+request/response JSON shape, Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 
