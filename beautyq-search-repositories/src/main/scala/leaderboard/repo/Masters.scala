@@ -22,11 +22,11 @@ object Masters {
 
   /** Optional master by id. */
   def byId[F[_, _]](repo: Masters[F]): OptionalByKey[F, MasterId, Master] =
-    OptionalByKey(repo.getMaster)
+    OptionalByKey.derived[F, Masters[F], MasterId, Master](repo)
 
   /** All masters. */
   def all[F[_, _]](repo: Masters[F]): AllValues[F, Master] =
-    AllValues(() => repo.getMasters())
+    AllValues.derived[F, Masters[F], Master](repo)
 
   class Dummy[F[+_, +_]: Applicative2: Primitives2]
     extends Lifecycle.LiftF[F[Nothing, _], Masters[F]](for {

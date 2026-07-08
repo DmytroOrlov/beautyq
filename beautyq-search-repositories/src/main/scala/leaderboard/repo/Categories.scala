@@ -24,11 +24,11 @@ object Categories {
 
   /** Optional category by id. */
   def byId[F[_, _]](repo: Categories[F]): OptionalByKey[F, CategoryId, Category] =
-    OptionalByKey(repo.getCategory)
+    OptionalByKey.derived[F, Categories[F], CategoryId, Category](repo)
 
   /** Children by parent id. */
   def childrenByParent[F[_, _]](repo: Categories[F]): ManyByKey[F, CategoryId, Category] =
-    ManyByKey(repo.getChildren)
+    ManyByKey.derived[F, Categories[F], CategoryId, Category](repo)
 
   private def parentNotFound(parentId: CategoryId): QueryFailure =
     QueryFailure.domain(s"Parent category $parentId does not exist")

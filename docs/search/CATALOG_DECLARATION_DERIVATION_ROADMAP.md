@@ -102,6 +102,22 @@ Non-goals:
 
 ### Phase B: derive standard repo operation adapters
 
+Status: Phase B.1 derives standard repo operation adapter bodies by method signature while keeping
+existing BeautyQ companion wrapper names stable. Relation evidence derivation is still Phase D.
+
+Status: Phase B.2 policy accepted. Ambiguous repo loader derivation must stay explicit when
+distinct domain IDs are transparent aliases of the same underlying type. The derivation must not
+fall back to method names. Current BeautyQ ambiguous wrappers remain manual:
+`MasterServiceOffers.byMaster`, `MasterServiceOffers.byService`,
+`MasterServiceOfferVariants.byOffer`, and `MasterServiceOfferVariants.byLocation` - because
+`MasterId`, `ServiceId`, `MasterLocationId`, and `MasterServiceOfferId` are transparent aliases of
+the same underlying `UUID`, so after dealiasing the paired many-loader methods in each repo have
+identical type shapes.
+
+Future domains should prefer nominal/opaque ID types when they want more complete type-based
+derivation. Migrating BeautyQ IDs to nominal/opaque types is a separate model refactor and is not
+part of Phase B.
+
 Goal:
 
 * Remove repetitive wrappers like:

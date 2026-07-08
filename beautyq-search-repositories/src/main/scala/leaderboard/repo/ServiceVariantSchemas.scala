@@ -38,7 +38,7 @@ object ServiceVariantSchemas {
 
   /** Service variant schema (aggregate value) by service id. */
   def byService[F[_, _]](repo: ServiceVariantSchemas[F]): ValueByKey[F, ServiceId, ServiceVariantSchema] =
-    ValueByKey(repo.getServiceVariantSchema)
+    ValueByKey.derived[F, ServiceVariantSchemas[F], ServiceId, ServiceVariantSchema](repo)
 
   private type ServiceVariantSchemaRow       = (String, Boolean)
   private type ServiceVariantSchemaInsertRow = (ServiceId, String, Boolean)

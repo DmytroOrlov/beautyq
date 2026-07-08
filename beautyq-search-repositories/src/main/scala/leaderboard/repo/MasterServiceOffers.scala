@@ -24,7 +24,7 @@ object MasterServiceOffers {
 
   /** Optional offer by id. */
   def byId[F[_, _]](repo: MasterServiceOffers[F]): OptionalByKey[F, MasterServiceOfferId, MasterServiceOffer] =
-    OptionalByKey(repo.getMasterServiceOffer)
+    OptionalByKey.derived[F, MasterServiceOffers[F], MasterServiceOfferId, MasterServiceOffer](repo)
 
   /** Offers by master id. */
   def byMaster[F[_, _]](repo: MasterServiceOffers[F]): ManyByKey[F, MasterId, MasterServiceOffer] =

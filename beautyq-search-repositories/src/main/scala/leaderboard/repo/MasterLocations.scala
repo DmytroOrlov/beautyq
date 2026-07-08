@@ -23,11 +23,11 @@ object MasterLocations {
 
   /** Optional master location by id. */
   def byId[F[_, _]](repo: MasterLocations[F]): OptionalByKey[F, MasterLocationId, MasterLocation] =
-    OptionalByKey(repo.getMasterLocation)
+    OptionalByKey.derived[F, MasterLocations[F], MasterLocationId, MasterLocation](repo)
 
   /** Locations by master id. */
   def byMaster[F[_, _]](repo: MasterLocations[F]): ManyByKey[F, MasterId, MasterLocation] =
-    ManyByKey(repo.getMasterLocationsByMaster)
+    ManyByKey.derived[F, MasterLocations[F], MasterId, MasterLocation](repo)
 
   private def masterNotFound(masterId: MasterId): QueryFailure =
     QueryFailure.domain(s"Master $masterId does not exist")

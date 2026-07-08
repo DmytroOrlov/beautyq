@@ -26,11 +26,11 @@ object Services {
 
   /** Optional service by id. */
   def byId[F[_, _]](repo: Services[F]): OptionalByKey[F, ServiceId, Service] =
-    OptionalByKey(repo.getService)
+    OptionalByKey.derived[F, Services[F], ServiceId, Service](repo)
 
   /** Services by category id. */
   def byCategory[F[_, _]](repo: Services[F]): ManyByKey[F, CategoryId, Service] =
-    ManyByKey(repo.getServicesByCategory)
+    ManyByKey.derived[F, Services[F], CategoryId, Service](repo)
 
   private def categoryNotFound(categoryId: CategoryId): QueryFailure =
     QueryFailure.domain(s"Category $categoryId does not exist")
