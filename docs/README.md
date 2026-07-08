@@ -2,16 +2,18 @@
 
 ## Start here
 
-* `BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` — current BeautyQ route truth and stop-state.
+* `../README.md` — current coordinator focus and BeautyQ route truth.
 * `BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` — locked BeautyQ local/test Qdrant supplement gate.
 * `SEARCH_SUPPLEMENT_ARCHITECTURE.md` — reusable baseline-plus-supplement architecture.
 * `SEARCH_DOMAIN_ONBOARDING.md` — how to start a new domain without repeating the BeautyQ loop.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
 * `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — BeautyQ search contract/module split plan, current closeout status, phase history, guardrails, and anti-scope-drift rules.
+* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — post-closeout catalog declaration simplification and Scala 3 derivation roadmap.
 
 ## BeautyQ search contract/module split
 
 * `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — BeautyQ search contract/module split plan, current closeout status, phase history, guardrails, and anti-scope-drift rules.
+* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — post-closeout catalog declaration simplification and Scala 3 derivation roadmap.
 
 ## BeautyQ search architecture
 

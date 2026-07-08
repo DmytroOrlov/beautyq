@@ -7,17 +7,32 @@ This repository currently includes BeautyQ search work inside the broader distag
 
 Start here:
 
-* `AGENTS.md` for repo rules
+* `AGENTS.md` for agent rules in the repository
 * `docs/README.md` for the docs map
-* `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` for current BeautyQ route truth and stop-state
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for the locked BeautyQ local/test Qdrant supplement gate
 * `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline-plus-supplement architecture
 * `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for the target BeautyQ search contract/module split and anti-scope-drift rules
 
+Current coordinator focus:
+
+The module split is closed out. Current work is post-closeout catalog declaration / Scala 3
+derivation: keep business-facing domain search code close to the catalog tree while deriving
+repetitive repo/materialization evidence where it is safe and compile-time checked.
+
+Start from `docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`.
+
+The route/Qdrant sections below are current operational truth, not the active design task.
+
+Longer-term direction: a reusable domain-agnostic search contract/materialization DSL that can
+onboard a new domain with explicit topology, documented metrics, and transparent ES/Qdrant
+configuration guidance.
+
 Current BeautyQ route truth:
 
+* Production / non-managed default `POST /beauty-search` remains ES-backed.
 * Local managed launcher `POST /beauty-search` is ES-backed with the constrained Qdrant supplement.
-* Qdrant remains a constrained supplement only.
+* Qdrant supplement remains local/test constrained supplement only.
+* Local/test provenance, measured gates, and benchmark reports are local/test evidence only; they do not approve a production/default route switch.
 * There is no fallback, fusion, or rerank.
 
 Run the local managed launcher:
@@ -67,6 +82,16 @@ curl -sS -X POST 'http://localhost:8080/beauty-search' \
 ```
 
 Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_no_append`, `qdrantSupplement.contribution` is `none`, `qdrantSupplement.appendedVariantIds` is empty, and `origins` is only `["es_baseline"]`.
+
+## Eval and measurement guardrails
+
+BeautyQ eval query changes are not simple JSON-only edits. Accepted query additions must update
+the known eval/count-lock chain together and must not tune ES/Qdrant, parser, vocabulary, seed data,
+routes, or production search behavior unless that is the explicit objective.
+
+Dirty catalog profiles in runtime scorecard tests are measurement-only. They may show worse coverage
+without failing the test and do not by themselves justify production Qdrant activation, fallback,
+fusion, rerank, or ES/Qdrant tuning.
 
 ## Module map
 

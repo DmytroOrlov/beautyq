@@ -25,10 +25,11 @@ final class GraphLoadingSpec extends AnyWordSpec {
       val node = RepoEntity.derived[GraphTreeNode].node(_.id)
       val relation = node.selfTree(
         parent   = _.parentId,
+        root     = "root",
         children = ManyByKey[IO, String, GraphTreeNode](key => ZIO.succeed(childrenByParent.getOrElse(key, Nil))),
       )
 
-      val loaded = runIO(GraphLoading.selfTreeFrom(relation, "root"))
+      val loaded = runIO(GraphLoading.selfTreeFrom(relation))
 
       assert(loaded.map(_.id) == List("a", "a-child", "b"))
     }

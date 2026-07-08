@@ -1,8 +1,11 @@
 # BeautyQ Search Contract Module Split Plan
 
 Status: the BeautyQ search contract/module split is in **closeout / reconciliation state** (see
-the Phase 29–45 records below). The closeout is **not** a new module-move
+the Phase 29–46 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
+
+Post-closeout catalog declaration / Scala 3 derivation work is tracked separately in
+`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`.
 
 Current physical ownership:
 
@@ -2431,6 +2434,27 @@ No package names changed - every source file's `package leaderboard.*` declarati
 No Scala source behavior changed; this is a pure path rename plus docs/test-string updates. No
 module ownership, dependency DAG semantics, HTTP route behavior, request/response JSON shape,
 Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
+
+## Phase 46 record: catalog self-tree root key moved into declaration
+
+Post-closeout catalog declaration simplification started in
+`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`.
+
+Phase A moved the self-tree root key from the full BeautyQ catalog snapshot loader into the pure
+catalog declaration:
+
+```scala
+.rootTree(_.parentId, root = Category.rootCategoryId)
+```
+
+`RootTreeSpec` and `Relation.SelfTree` now carry the root key, and `GraphLoading.selfTreeFrom` reads
+it from the relation instead of accepting it as a separate argument. The full BeautyQ catalog
+snapshot loader no longer repeats `Category.rootCategoryId`.
+
+This is a small catalog DSL/API change, not a module split continuation and not a broader DSL
+redesign. No repo loader derivation, Graph/Relations removal, snapshot derivation, search document
+projection, DI wiring, HTTP route behavior, request/response JSON shape, Qdrant activation,
+fallback, fusion, or rerank changed.
 
 ## Phase 8d record: static/offline evaluation contract section extracted
 

@@ -48,7 +48,7 @@ object BeautyQSearchCatalogSnapshotLoader {
 
     override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.selfTreeFrom(relations.categoryTree, Category.rootCategoryId)
+        loadedCategories <- GraphLoading.selfTreeFrom(relations.categoryTree)
         loadedServices   <- GraphLoading.manyFor(relations.categoryServices, loadedCategories)
         loadedSchemas    <- GraphLoading.valueFor(relations.serviceSchemas, loadedServices)
         loadedMasters    <- GraphLoading.allOf(relations.allMasters)

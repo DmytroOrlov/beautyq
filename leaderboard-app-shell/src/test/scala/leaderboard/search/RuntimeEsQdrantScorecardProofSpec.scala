@@ -124,7 +124,7 @@ import scala.annotation.unused
 // policy, change the default `/beauty-search` route, or claim Qdrant quality beyond measured
 // evidence. Passing scorecard evidence is DECISION SUPPORT ONLY. Qdrant can become a response-policy
 // candidate only when measured gates preserve useful complement AND control hard-negative / ambiguous
-// noise. See docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md § "BeautyQ Hybrid North Star".
+// noise. See README.md#eval-and-measurement-guardrails.
 final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdTest {
   override def config = super.config.copy(
     activation = super.config.activation ++ Activation(Mode -> Mode.Test),

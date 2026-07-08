@@ -14,15 +14,16 @@ import leaderboard.repo.catalog
   * intent, runtime, response, and evaluation sections; none of those exist
   * yet, and this declaration must not be described as if it were the whole
   * contract. All repository/materialization wiring for this catalog topology
-  * lives in `leaderboard.repo.BeautyQCatalogGraph` (in `bifunctor-tagless`),
-  * which materializes this pure declaration - it is never imported here.
+  * lives in `leaderboard.repo.BeautyQCatalogGraph` (in
+  * `beautyq-search-materialization`), which materializes this pure
+  * declaration - it is never imported here.
   */
 object BeautyQCatalogDeclaration {
 
   val declaration =
     catalog("beautyq")
       .branch[Category]
-      .rootTree(_.parentId)
+      .rootTree(_.parentId, root = Category.rootCategoryId)
       .child[Service](_.categoryId)
       .branch[Service]
       .value[ServiceVariantSchema](_.serviceId)

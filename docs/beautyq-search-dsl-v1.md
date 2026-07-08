@@ -371,8 +371,8 @@ for the Qdrant supplement candidate source, not a Qdrant-only retrieval path.
 
 ## Current eval coverage
 
-- Current eval query counts are owned by `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md` and
-  checked-in eval resources.
+- Current eval/query-count guardrails are summarized in the top-level `README.md`;
+  exact counts are enforced by checked-in eval resources and runtime scorecards.
 - `q_broad_004`, `q_broad_006`: intentionally non-lexical; Qdrant supplement candidates only.
 - The repeated eval production-boundary metric keys used across the M9/M10 static/offline
   scorecards (`beautyq-search-contract`), the M9/M11/M12 offline plan/audit/boundary-matrix
@@ -404,8 +404,6 @@ Per `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`:
 - There is no Qdrant-only search, no fallback, no score fusion, and no rerank.
 
 ## B-lite EngineEval model
-
-Full API and metric semantics in `docs/BEAUTYQ_CURRENT_STATE_AND_HANDOFF.md`.
 
 The pure `EngineEval` comparison model covers B-lite ES-native and Qdrant-native eval:
 

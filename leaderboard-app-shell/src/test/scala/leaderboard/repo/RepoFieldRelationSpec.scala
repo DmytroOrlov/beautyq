@@ -60,7 +60,7 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
     val noVariants   = ManyByKey[IO, MasterServiceOfferId, MasterServiceOfferVariant](_ => ZIO.succeed(Nil))
 
     "store the self-tree parent field label and column" in {
-      val tree = category.selfTree(parent = _.parentId, children = noCategories)
+      val tree = category.selfTree(parent = _.parentId, root = Category.rootCategoryId, children = noCategories)
       assert(tree.parent.label == "parentId")
       assert(tree.parent.column == "parent_id")
       assert(tree.node.entity.sourceName == "category")

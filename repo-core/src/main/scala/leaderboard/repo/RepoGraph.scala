@@ -15,11 +15,16 @@ import scala.deriving.Mirror
 final case class EntityNode[A, K](entity: RepoEntity[A], key: RepoField[A, K]) {
 
   /** A recursive self tree (e.g. categories under a parent). `parent` is the
-    * selector of the edge from a node to its parent key; `children` loads direct
-    * children by parent key.
+    * selector of the edge from a node to its parent key; `root` is the
+    * synthetic key traversal starts from; `children` loads direct children by
+    * parent key.
     */
-  inline def selfTree[F[_, _]](inline parent: A => K, children: ManyByKey[F, K, A]): Relation.SelfTree[F, A, K] =
-    Relation.SelfTree(this, entity.field(parent), children)
+  inline def selfTree[F[_, _]](
+    inline parent: A => K,
+    root: K,
+    children: ManyByKey[F, K, A],
+  ): Relation.SelfTree[F, A, K] =
+    Relation.SelfTree(this, entity.field(parent), root, children)
 
   /** A has-many relation to a child source joined on the child's `by` field. */
   inline def hasMany[F[_, _], C, CK](child: EntityNode[C, CK])(inline by: C => K, load: ManyByKey[F, K, C]): Relation.HasMany[F, A, K, C, CK] =
@@ -36,10 +41,13 @@ final case class EntityNode[A, K](entity: RepoEntity[A], key: RepoField[A, K]) {
 
 object Relation {
 
-  /** A recursive self tree. Retains the node and the parent-edge field. */
+  /** A recursive self tree. Retains the node, the parent-edge field, and the
+    * synthetic root key traversal starts from.
+    */
   final case class SelfTree[F[_, _], A, K](
     node: EntityNode[A, K],
     parent: RepoField[A, K],
+    rootKey: K,
     children: ManyByKey[F, K, A],
   )
 
@@ -78,12 +86,12 @@ object Relation {
   */
 object GraphLoading {
 
-  /** Preorder traversal of a self tree starting from `rootKey`. The synthetic
-    * root itself is never part of the result; only its descendants are loaded.
-    * Sibling order follows repo-returned order; each node is emitted before its
-    * descendants.
+  /** Preorder traversal of a self tree starting from the relation's own
+    * `rootKey`. The synthetic root itself is never part of the result; only
+    * its descendants are loaded. Sibling order follows repo-returned order;
+    * each node is emitted before its descendants.
     */
-  def selfTreeFrom[F[+_, +_]: Error2, A, K](relation: Relation.SelfTree[F, A, K], rootKey: K): F[QueryFailure, List[A]] = {
+  def selfTreeFrom[F[+_, +_]: Error2, A, K](relation: Relation.SelfTree[F, A, K]): F[QueryFailure, List[A]] = {
     def loop(parentKey: K): F[QueryFailure, List[A]] =
       relation.children.run(parentKey).flatMap {
         directChildren =>
@@ -96,7 +104,7 @@ object GraphLoading {
           }
       }
 
-    loop(rootKey)
+    loop(relation.rootKey)
   }
 
   /** Load all children of all parents, preserving parent order then child order. */
@@ -227,10 +235,14 @@ private[repo] def decapitalize(name: String): String =
 
 // --- Pure specs: recorded by the declaration chain, no F/R/loaders. ---
 
-/** A declared self-tree root: entity type `A`, its own key type `K`, and the
-  * resolved parent-edge field. Pure - no loader, no repositories.
+/** A declared self-tree root: entity type `A`, its own key type `K`, the
+  * resolved parent-edge field, and the synthetic root key traversal starts
+  * from. Pure - no loader, no repositories.
   */
-final case class RootTreeSpec[A, K](parentField: RepoField[A, K])
+final case class RootTreeSpec[A, K](
+  parentField: RepoField[A, K],
+  rootKey: K,
+)
 
 /** A declared flat "all" root for entity type `A`. Pure marker - no loader,
   * no repositories.
@@ -271,11 +283,13 @@ final class CatalogBranch[Specs <: Tuple, A](
   val entityName: String,
 ) {
 
-  /** Declares `A`'s root as a self-tree, joined through `parent`. */
-  inline def rootTree[K](inline parent: A => K): CatalogBranch[RootTreeSpec[A, K] *: Specs, A] = {
+  /** Declares `A`'s root as a self-tree, joined through `parent`, with
+    * traversal starting from the explicit `root` key.
+    */
+  inline def rootTree[K](inline parent: A => K, root: K): CatalogBranch[RootTreeSpec[A, K] *: Specs, A] = {
     val field = RepoField.derived(parent)
     val step  = CatalogStep.Root(entityName, RootLoading.Tree, Some(field.label))
-    new CatalogBranch(name, steps :+ step, RootTreeSpec[A, K](field) *: specs, entityName)
+    new CatalogBranch(name, steps :+ step, RootTreeSpec[A, K](field, root) *: specs, entityName)
   }
 
   /** Declares `A`'s root as a flat "all" collection. */
@@ -458,7 +472,14 @@ private[repo] object MaterializeOne {
     entity: CatalogEntity.Aux[A, K],
     loader: CatalogRootTree.Aux[F, R, A, K],
   ): MaterializeOne[RootTreeSpec[A, K], F, R, Relation.SelfTree[F, A, K]] =
-    spec => repositories => Relation.SelfTree(entity.node, spec.parentField, loader.load(repositories))
+    spec =>
+      repositories =>
+        Relation.SelfTree(
+          node = entity.node,
+          parent = spec.parentField,
+          rootKey = spec.rootKey,
+          children = loader.load(repositories),
+        )
 
   given rootAll[F[_, _], R, A, K](using
     entity: CatalogEntity.Aux[A, K],
