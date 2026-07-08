@@ -71,13 +71,13 @@ object BeautyQSearchCatalogSnapshotLoader {
 
     override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.seedRequired(seedScope.nonRootCategories, Categories.entity.modelName, (_: Category).id, Categories.byId(categories))
-        loadedServices   <- GraphLoading.seedRequired(seedScope.services, Services.entity.modelName, (_: Service).id, Services.byId(services))
-        loadedSchemas    <- GraphLoading.seedValues(seedScope.services.map(_.id), ServiceVariantSchemas.byService(serviceVariantSchemas))
-        loadedMasters    <- GraphLoading.seedRequired(seedScope.masters, Masters.entity.modelName, (_: Master).id, Masters.byId(masters))
-        loadedLocations  <- GraphLoading.seedRequired(seedScope.masterLocations, MasterLocations.entity.modelName, (_: MasterLocation).id, MasterLocations.byId(masterLocations))
-        loadedOffers     <- GraphLoading.seedRequired(seedScope.masterServiceOffers, MasterServiceOffers.entity.modelName, (_: MasterServiceOffer).id, MasterServiceOffers.byId(masterServiceOffers))
-        loadedVariants   <- GraphLoading.seedRequired(seedScope.masterServiceOfferVariants, MasterServiceOfferVariants.entity.modelName, (_: MasterServiceOfferVariant).id, MasterServiceOfferVariants.byId(masterServiceOfferVariants))
+        loadedCategories <- GraphLoading.seedRequiredById[F, Categories[F], Category](seedScope.nonRootCategories, categories)
+        loadedServices   <- GraphLoading.seedRequiredById[F, Services[F], Service](seedScope.services, services)
+        loadedSchemas    <- GraphLoading.seedValuesByKey[F, ServiceVariantSchemas[F], ServiceId, ServiceVariantSchema](seedScope.services.map(_.id), serviceVariantSchemas)
+        loadedMasters    <- GraphLoading.seedRequiredById[F, Masters[F], Master](seedScope.masters, masters)
+        loadedLocations  <- GraphLoading.seedRequiredById[F, MasterLocations[F], MasterLocation](seedScope.masterLocations, masterLocations)
+        loadedOffers     <- GraphLoading.seedRequiredById[F, MasterServiceOffers[F], MasterServiceOffer](seedScope.masterServiceOffers, masterServiceOffers)
+        loadedVariants   <- GraphLoading.seedRequiredById[F, MasterServiceOfferVariants[F], MasterServiceOfferVariant](seedScope.masterServiceOfferVariants, masterServiceOfferVariants)
       } yield BeautyQSearchCatalogSnapshot(
         categories                 = loadedCategories,
         services                   = loadedServices,

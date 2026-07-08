@@ -11,6 +11,15 @@ final case class GraphHolder(id: String)
 final case class GraphChild(id: String, parentId: String)
 final case class GraphValue(holderId: String, label: String)
 
+// Deliberately unconventional method names - proves seedRequiredById/seedValuesByKey
+// derive the repo operation by signature, never by method name.
+trait SeedRequiredByIdRepo[F[_, _]] {
+  def whatever(id: String): F[QueryFailure, Option[GraphHolder]]
+}
+trait SeedValuesByKeyRepo[F[_, _]] {
+  def whatever2(holderId: String): F[QueryFailure, GraphValue]
+}
+
 final class GraphLoadingSpec extends AnyWordSpec {
 
   "selfTree relation" should {
@@ -129,6 +138,70 @@ final class GraphLoadingSpec extends AnyWordSpec {
         case Right(value) =>
           fail(s"Expected a missing-entity failure, got: $value")
       }
+    }
+  }
+
+  "seedRequiredById" should {
+    "load required seed items in input order, deriving the repo operation by signature (not method name)" in {
+      val h1 = GraphHolder("h1")
+      val h2 = GraphHolder("h2")
+      val byId: Map[String, GraphHolder] = Map(h1.id -> h1, h2.id -> h2)
+      val repo = new SeedRequiredByIdRepo[IO] {
+        def whatever(id: String): IO[QueryFailure, Option[GraphHolder]] = ZIO.succeed(byId.get(id))
+      }
+
+      val loaded = runIO(GraphLoading.seedRequiredById[IO, SeedRequiredByIdRepo[IO], GraphHolder](List(h2, h1), repo))
+
+      assert(loaded == List(h2, h1))
+    }
+
+    "fail with the same canonical missing-entity message as seedRequired" in {
+      val missing = GraphHolder("missing-holder")
+      val repo = new SeedRequiredByIdRepo[IO] {
+        def whatever(id: String): IO[QueryFailure, Option[GraphHolder]] = ZIO.succeed(None)
+      }
+
+      val result = runIO(GraphLoading.seedRequiredById[IO, SeedRequiredByIdRepo[IO], GraphHolder](List(missing), repo).either)
+
+      result match {
+        case Left(failure) =>
+          assert(failure.message == s"Seed-scoped search snapshot is missing GraphHolder for seed item $missing")
+        case Right(value) =>
+          fail(s"Expected a missing-entity failure, got: $value")
+      }
+    }
+
+    "not deduplicate when the same seed item appears twice" in {
+      val h1 = GraphHolder("h1")
+      val repo = new SeedRequiredByIdRepo[IO] {
+        def whatever(id: String): IO[QueryFailure, Option[GraphHolder]] = ZIO.succeed(Some(h1))
+      }
+
+      val loaded = runIO(GraphLoading.seedRequiredById[IO, SeedRequiredByIdRepo[IO], GraphHolder](List(h1, h1), repo))
+
+      assert(loaded == List(h1, h1))
+    }
+  }
+
+  "seedValuesByKey" should {
+    "preserve key order, deriving the repo operation by signature (not method name)" in {
+      val repo = new SeedValuesByKeyRepo[IO] {
+        def whatever2(holderId: String): IO[QueryFailure, GraphValue] = ZIO.succeed(GraphValue(holderId, s"value-$holderId"))
+      }
+
+      val loaded = runIO(GraphLoading.seedValuesByKey[IO, SeedValuesByKeyRepo[IO], String, GraphValue](List("h2", "h1"), repo))
+
+      assert(loaded.map(_.holderId) == List("h2", "h1"))
+    }
+
+    "not deduplicate when the same key appears twice" in {
+      val repo = new SeedValuesByKeyRepo[IO] {
+        def whatever2(holderId: String): IO[QueryFailure, GraphValue] = ZIO.succeed(GraphValue(holderId, s"value-$holderId"))
+      }
+
+      val loaded = runIO(GraphLoading.seedValuesByKey[IO, SeedValuesByKeyRepo[IO], String, GraphValue](List("h1", "h1"), repo))
+
+      assert(loaded.map(_.holderId) == List("h1", "h1"))
     }
   }
 

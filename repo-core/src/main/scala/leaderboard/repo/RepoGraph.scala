@@ -178,6 +178,61 @@ object GraphLoading {
           loaded <- load.run(key)
         } yield loaded :: tail
     }
+
+  /** Seed-scoped required load for a conventional-id product type `A`,
+    * against a repositories value that has exactly one optional-by-id method
+    * shaped `A`'s own id key type `=> F[QueryFailure, Option[A]]`. Removes the
+    * repeated `GraphLoading.seedRequired(items, X.entity.modelName, _.id,
+    * X.byId(repo))` boilerplate a seed-scoped loader would otherwise write
+    * per entity: the model name and id selector come from the same
+    * `CatalogEntity.derived` entity-evidence construction
+    * [[CatalogEntity.derivedFromId]] uses for catalog materialization (so a
+    * seed-scoped entity name/id-field can never silently drift from the
+    * catalog's own), and the optional-by-id operation is derived from `Repo`
+    * by signature via [[OptionalByKey.derived]] - no method-name fallback.
+    * Delegates to [[seedRequired]] unchanged: same canonical missing-entity
+    * message, same seed item order.
+    *
+    * Pins `K` to [[ConventionalIdKey]] *first*, then summons entity evidence
+    * for that already-pinned `K` via a direct [[CatalogEntity.derivedFromId]]
+    * invocation - not `CatalogEntity.derived[A](RepoEntity.derived[A])`.
+    * Verified empirically: the latter gives `entity` its own, freshly-derived,
+    * value-bound `Key` member. That member is semantically the same type as
+    * `ConventionalIdKey[...]`, but reaches a nested quoted macro (
+    * [[OptionalByKey.derived]], which also needs the same `K` as an explicit
+    * type argument to know what to look for on `Repo`) as an unreduced
+    * path-dependent reference, which the macro's own `TypeRepr` comparison
+    * against concrete repo method parameter types then correctly fails to
+    * match - no repo method is literally parameter-typed `entity.Key`.
+    * Summoning entity evidence *for* `ConventionalIdKey[...]` directly instead
+    * means `entity.Key` *is*, syntactically, `ConventionalIdKey[...]` - the
+    * same pure, value-free type-level expression [[OptionalByKey.derived]]
+    * also receives, needing no separate proof that two differently-spelled
+    * expressions are equal.
+    */
+  transparent inline def seedRequiredById[F[+_, +_]: Error2, Repo, A](
+    items: List[A],
+    repo: Repo,
+  )(using mirror: Mirror.ProductOf[A]): F[QueryFailure, List[A]] = {
+    val entity = CatalogEntity.derivedFromId[A, ConventionalIdKey[mirror.MirroredElemLabels, mirror.MirroredElemTypes]]
+    seedRequired(
+      items,
+      entity.node.entity.modelName,
+      entity.node.key.select,
+      OptionalByKey.derived[F, Repo, ConventionalIdKey[mirror.MirroredElemLabels, mirror.MirroredElemTypes], A](repo),
+    )
+  }
+
+  /** Seed-scoped value loads by key for a repositories value that has exactly
+    * one method shaped `K => F[QueryFailure, V]`, derived by signature via
+    * [[ValueByKey.derived]] - no method-name fallback. Delegates to
+    * [[seedValues]] unchanged: same key order.
+    */
+  transparent inline def seedValuesByKey[F[+_, +_]: Error2, Repo, K, V](
+    keys: List[K],
+    repo: Repo,
+  ): F[QueryFailure, List[V]] =
+    seedValues(keys, ValueByKey.derived[F, Repo, K, V](repo))
 }
 
 // ============================================================================

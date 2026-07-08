@@ -2,7 +2,7 @@ package leaderboard.repo
 
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.*
-import leaderboard.search.document.{BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization}
+import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
 
@@ -48,6 +48,31 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
   )
 
   private val repositories = BeautyQCatalogGraph.Repositories[IO](
+    new StubCategories,
+    new StubServices,
+    new StubServiceVariantSchemas,
+    new StubMasters,
+    new StubMasterLocations,
+    new StubMasterServiceOffers,
+    new StubMasterServiceOfferVariants,
+  )
+
+  // Deliberately reordered vs. natural traversal order, and including a
+  // synthetic-root category entry, to prove seed order is preserved as given
+  // and the root is still filtered out via `nonRootCategories`.
+  private val rootCategoryEntry = Category(rootCategoryId, rootCategoryId, 0, "Root")
+
+  private val seedScope = BeautyQSearchCatalogSeedScope(
+    categories                 = List(categoryB, rootCategoryEntry, categoryAChild, categoryA),
+    services                   = List(serviceB, serviceA),
+    masters                    = List(master),
+    masterLocations            = List(location),
+    masterServiceOffers        = List(offerB, offerA),
+    masterServiceOfferVariants = List(variantB, variantA),
+  )
+
+  private val seedScopeLoader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+    seedScope,
     new StubCategories,
     new StubServices,
     new StubServiceVariantSchemas,
@@ -137,6 +162,59 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
           assert(documents.map(_.serviceId) == List(serviceA.id, serviceB.id))
         case Left(failure) =>
           fail(s"Expected a fully projected snapshot, got: ${failure.message}")
+      }
+    }
+  }
+
+  "BeautyQ seed-scoped graph loader (Seed F1: seedRequiredById/seedValuesByKey)" should {
+    val seedSnapshot = runIO(seedScopeLoader.load())
+
+    "exclude the synthetic root category via seedScope.nonRootCategories, preserving seed order" in {
+      assert(seedSnapshot.categories == List(categoryB, categoryAChild, categoryA))
+    }
+
+    "preserve seed order for services, masters, locations, offers and variants" in {
+      assert(seedSnapshot.services == List(serviceB, serviceA))
+      assert(seedSnapshot.masters == List(master))
+      assert(seedSnapshot.masterLocations == List(location))
+      assert(seedSnapshot.masterServiceOffers == List(offerB, offerA))
+      assert(seedSnapshot.masterServiceOfferVariants == List(variantB, variantA))
+    }
+
+    "load seed schemas by seedScope.services.map(_.id), preserving that order" in {
+      assert(seedSnapshot.serviceVariantSchemas.map(_.serviceId) == List(serviceB.id, serviceA.id))
+    }
+
+    "produce a seed-scoped snapshot the document schema can fully project" in {
+      BeautyQVariantSearchDocumentMaterialization.project(seedSnapshot) match {
+        case Right(documents) =>
+          assert(documents.map(_.variantId) == List(variantB.id, variantA.id))
+        case Left(failure) =>
+          fail(s"Expected a fully projected seed-scoped snapshot, got: ${failure.message}")
+      }
+    }
+
+    "fail with the canonical missing-entity message when a seed entity is absent" in {
+      val missingMaster = Master(uuid("00000000a5ff"), "Missing Master")
+      val brokenSeedScope = seedScope.copy(masters = List(missingMaster))
+      val brokenLoader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+        brokenSeedScope,
+        new StubCategories,
+        new StubServices,
+        new StubServiceVariantSchemas,
+        new StubMasters,
+        new StubMasterLocations,
+        new StubMasterServiceOffers,
+        new StubMasterServiceOfferVariants,
+      )
+
+      val result = runIO(brokenLoader.load().either)
+
+      result match {
+        case Left(failure) =>
+          assert(failure.message == s"Seed-scoped search snapshot is missing Master for seed item $missingMaster")
+        case Right(value) =>
+          fail(s"Expected a missing-entity failure, got: $value")
       }
     }
   }

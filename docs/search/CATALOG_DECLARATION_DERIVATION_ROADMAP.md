@@ -422,5 +422,6 @@ This roadmap is now historical phase detail for A–F (and D2A, recorded above).
 continues in `CATALOG_DECLARATION_DERIVATION_HANDOFF.md`.
 
 D2A (derive `CatalogValueEdge` from repositories while keeping `CatalogValue` / value-source policy
-explicit) is done. The next recommended patch is Seed F1: extract seed-scoped loading helpers
-without changing seed semantics.
+explicit) and Seed F1 (extract seed-scoped loading helpers without changing seed semantics) are both
+done. See `CATALOG_DECLARATION_DERIVATION_HANDOFF.md` for the current next-recommended-patch
+pointer, which changes more often than this historical log is updated.

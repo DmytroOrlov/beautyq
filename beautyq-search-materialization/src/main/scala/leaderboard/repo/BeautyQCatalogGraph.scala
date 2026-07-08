@@ -107,8 +107,9 @@ object BeautyQCatalogGraph {
     // the repositories bundle's only method shaped `ServiceId => F[QueryFailure,
     // ServiceVariantSchema]`, so `CatalogValueEdge.derivedFromRepositories`
     // (repo-core) resolves it automatically at materialization time.
-    // `ServiceVariantSchemas.byService` itself stays - the seed-scoped loader
-    // still calls it directly.
+    // `ServiceVariantSchemas.byService` itself stays (not removed) - Seed F1
+    // later removed the seed-scoped loader's own call site too, so it is now
+    // part of the wrapper zero-usage cleanup set, not called from anywhere.
 
     given [F[_, _]]: CatalogMany.Aux[F, Repositories[F], Master, MasterServiceOffer, MasterId] =
       CatalogMany.fromRepo[F, Repositories[F], MasterServiceOffers[F], Master, MasterServiceOffer, MasterId](_.masterServiceOffers)(MasterServiceOffers.byMaster)
