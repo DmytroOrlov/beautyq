@@ -26,11 +26,11 @@ object BeautyQCatalogGraph {
    * BeautyQ-specific repositories and loaders the declaration itself never
    * mentions.
    */
-  def graph[F[_, _]]: Graph[F] = {
+  transparent inline def graph[F[_, _]] = {
     import Evidence.given
 
     BeautyQCatalogDeclaration.declaration
-      .materialize[F, Repositories[F]](Graph.fromDeclaration)
+      .materialize[F, Repositories[F]](identity)
   }
 
   /** Typed graph nodes for the BeautyQ catalog entities. Used only by
@@ -78,60 +78,6 @@ object BeautyQCatalogGraph {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   )
 
-  /** The fully-materialized BeautyQ catalog graph: a name, the inspectable
-    * [[CatalogStep]]s in declaration order (see
-    * [[BeautyQCatalogDeclaration.declaration]]), and one
-    * repositories-to-relation factory per declared root/edge. Every factory
-    * is still backed by the plain [[Relation]] case classes; nothing here
-    * re-derives loading semantics. The typed fields below are BeautyQ's own
-    * choice of names - the reusable DSL that builds the declaration knows
-    * nothing about them.
-    */
-  final case class Graph[F[_, _]](
-    name: String,
-    steps: Vector[CatalogStep],
-    categoryTree: Repositories[F] => Relation.SelfTree[F, Category, CategoryId],
-    categoryServices: Repositories[F] => Relation.HasMany[F, Category, CategoryId, Service, ServiceId],
-    serviceSchemas: Repositories[F] => Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem],
-    allMasters: Repositories[F] => Relation.All[F, Master, MasterId],
-    masterLocationsByMaster: Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId],
-    masterOffersByMaster: Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId],
-    offerVariants: Repositories[F] => Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId],
-  )
-
-  object Graph {
-
-    /** Converts the materialized declaration into BeautyQ's own named, typed
-      * [[Graph]]. This is the one place BeautyQ knowledge (field names)
-      * meets the generic DSL: each field is picked out of the materialized
-      * relation tuple by its exact type via [[TupleSelect]]
-      * (`declaration.relation`/`relationAs`), so there is no manually
-      * repeated tuple type and no reverse-order destructuring to keep in
-      * sync with [[BeautyQCatalogDeclaration.declaration]] by hand.
-      *
-      * `inline` is required here, not just style: `Rels` only becomes a
-      * concrete tuple type at this method's own call site (inside [[graph]]);
-      * `relation`/`relationAs` defer their `TupleSelect` lookup to their
-      * inline-expansion point via `summonInline`, so `fromDeclaration` itself
-      * must stay inline for that lookup to see a concrete `Rels` rather than
-      * an abstract type parameter.
-      */
-    inline def fromDeclaration[F[_, _], Rels <: Tuple](
-      declaration: MaterializedDeclaration[F, Repositories[F], Rels]
-    ): Graph[F] =
-      Graph(
-        name                    = declaration.name,
-        steps                   = declaration.steps,
-        categoryTree            = declaration.relationAs[Repositories[F] => Relation.SelfTree[F, Category, CategoryId]],
-        categoryServices        = declaration.relationAs[Repositories[F] => Relation.HasMany[F, Category, CategoryId, Service, ServiceId]],
-        serviceSchemas          = declaration.relationAs[Repositories[F] => Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]],
-        allMasters              = declaration.relationAs[Repositories[F] => Relation.All[F, Master, MasterId]],
-        masterLocationsByMaster = declaration.relationAs[Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId]],
-        masterOffersByMaster    = declaration.relationAs[Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId]],
-        offerVariants           = declaration.relationAs[Repositories[F] => Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]],
-      )
-  }
-
   /** All BeautyQ-specific materialization wiring: what each declared type
     * *is* ([[CatalogEntity]]/[[CatalogValue]]), and how to *load* each
     * declared root/edge for a concrete `F`/[[Repositories]]
@@ -170,27 +116,41 @@ object BeautyQCatalogGraph {
     * concrete [[Repositories]].
     */
   final class Relations[F[_, _]](repositories: Repositories[F]) {
-    private val declaration: Graph[F] = graph[F]
+    private val declaration = graph[F]
 
     val categoryTree: Relation.SelfTree[F, Category, CategoryId] =
-      declaration.categoryTree(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.SelfTree[F, Category, CategoryId]]
+        .apply(repositories)
 
     val categoryServices: Relation.HasMany[F, Category, CategoryId, Service, ServiceId] =
-      declaration.categoryServices(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.HasMany[F, Category, CategoryId, Service, ServiceId]]
+        .apply(repositories)
 
     val serviceSchemas: Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
-      declaration.serviceSchemas(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]]
+        .apply(repositories)
 
     val allMasters: Relation.All[F, Master, MasterId] =
-      declaration.allMasters(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.All[F, Master, MasterId]]
+        .apply(repositories)
 
     val masterLocationsByMaster: Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId] =
-      declaration.masterLocationsByMaster(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId]]
+        .apply(repositories)
 
     val masterOffersByMaster: Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId] =
-      declaration.masterOffersByMaster(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId]]
+        .apply(repositories)
 
     val offerVariants: Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId] =
-      declaration.offerVariants(repositories)
+      declaration
+        .relationAs[Repositories[F] => Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]]
+        .apply(repositories)
   }
 }

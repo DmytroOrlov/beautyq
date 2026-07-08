@@ -88,19 +88,25 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
 
     "declare category -> service as a many edge keyed by categoryId, straight from the chain declaration" in {
       val declaration = BeautyQCatalogGraph.graph[IO]
-      val relation     = declaration.categoryServices(repositories)
+      val relation = declaration
+        .relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasMany[IO, Category, CategoryId, Service, ServiceId]]
+        .apply(repositories)
       assert(relation.foreignKey.label == "categoryId")
     }
 
     "declare service -> serviceVariantSchema as a value edge keyed by serviceId, straight from the chain declaration" in {
       val declaration = BeautyQCatalogGraph.graph[IO]
-      val relation     = declaration.serviceSchemas(repositories)
+      val relation = declaration
+        .relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasValue[IO, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]]
+        .apply(repositories)
       assert(relation.valueKey.label == "serviceId")
     }
 
     "declare masterServiceOffer -> masterServiceOfferVariant as a many edge keyed by masterServiceOfferId, straight from the chain declaration" in {
       val declaration = BeautyQCatalogGraph.graph[IO]
-      val relation     = declaration.offerVariants(repositories)
+      val relation = declaration
+        .relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasMany[IO, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]]
+        .apply(repositories)
       assert(relation.foreignKey.label == "masterServiceOfferId")
     }
 

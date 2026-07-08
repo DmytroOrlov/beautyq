@@ -260,6 +260,11 @@ Non-goals:
 
 ### Phase E: replace `Graph` / `Relations` named-field tautology with typed accessors
 
+Status: Phase E1 removes the BeautyQ-specific `Graph` / `Graph.fromDeclaration` factory wrapper.
+`BeautyQCatalogGraph.graph` now exposes the generic materialized declaration directly, and
+`Relations` reads relation factories through typed `MaterializedDeclaration.relationAs[...]`.
+The `Relations` named facade remains explicit until snapshot-loader usage is source-confirmed.
+
 Goal:
 
 * Stop repeating every edge as:

@@ -649,10 +649,10 @@ final case class MaterializedDeclaration[F[_, _], R, Rels <: Tuple](
     * into a named case-class constructor argument does not, in practice,
     * flow through this call. Resolution is deferred to each inline-expansion
     * site via `summonInline` (rather than a plain `using` parameter) because
-    * `Rels` is only concrete at the call site of an `inline` caller such as
-    * `Graph.fromDeclaration` - a plain `using` parameter would instead be
-    * resolved once, generically, at `fromDeclaration`'s own definition,
-    * where `Rels` is still an abstract type parameter.
+    * `Rels` is only concrete at the call site of an inline caller that
+    * materializes a domain declaration - a plain `using` parameter would
+    * instead be resolved once, generically, where `Rels` is still an abstract
+    * type parameter.
     */
   inline def relation[A]: A =
     summonInline[TupleSelect[Rels, A]](relations)
