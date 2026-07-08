@@ -171,6 +171,18 @@ Production C.3 still needs a coordinator architecture decision: first pin output
 specs, first parameterize catalog evidence, or combine both. The combined path may be the
 highest-boilerplate-reduction target.
 
+Status: Phase C.2b (`repo-core/src/test/scala/leaderboard/repo/CatalogEntity2Derivation.scala` +
+`CatalogEntityParameterizedDesignSpec.scala`) fairly retested Candidate B with a real validating
+macro in its own file (separate from its call sites, resolving the Phase C.2 "Cyclic macro
+dependencies" blocker) and proved parameterized `CatalogEntity[A, K]` alone does not solve the
+free-key problem; specs still need to carry output key types before remaining entity givens can be
+removed. The same free-key `RootAllSpecCurrent[A]`/child-key `ManyEdgeSpecCurrent[P, C, K]` shapes
+that fail with `CatalogEntity.Aux[A, K]` also fail with a validating, directly-parameterized
+`ParamCatalogEntity[A, K]`, with the identical "macro expansion was stopped" symptom; the
+key-carrying `RootAllSpec2`/`ManyEdgeSpec2` shapes succeed with either encoding. Production C.3
+should prioritize key-carrying specs (Candidate A); parameterizing catalog evidence on top remains
+an open, independent boilerplate-reduction question, not a substitute for it.
+
 Goal:
 
 * Remove repetitive `CatalogEntity.Aux[...]` where entities have conventional `id`.
