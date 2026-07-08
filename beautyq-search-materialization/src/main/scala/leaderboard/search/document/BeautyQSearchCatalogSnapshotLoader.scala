@@ -2,7 +2,7 @@ package leaderboard.search.document
 
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services, loadAll}
+import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services, loadAll, toSnapshot}
 
 /** Materialization-owned loader for [[BeautyQSearchCatalogSnapshot]].
   * `beautyq-search-materialization` must not depend on seed data: the
@@ -44,18 +44,13 @@ object BeautyQSearchCatalogSnapshotLoader {
       masterServiceOfferVariants = masterServiceOfferVariants,
     )
 
-    override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] =
+    override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] = {
+      import BeautyQCatalogGraph.Evidence.given
+
       for {
         loaded <- BeautyQCatalogGraph.graph[F].loadAll(repositories)
-      } yield BeautyQSearchCatalogSnapshot(
-        categories                 = loaded.values[List[Category]],
-        services                   = GraphLoading.distinctByKey(loaded.values[List[Service]])(_.id),
-        serviceVariantSchemas      = GraphLoading.distinctByKey(loaded.values[List[ServiceVariantSchema]])(_.serviceId),
-        masters                    = GraphLoading.distinctByKey(loaded.values[List[Master]])(_.id),
-        masterLocations            = GraphLoading.distinctByKey(loaded.values[List[MasterLocation]])(_.id),
-        masterServiceOffers        = GraphLoading.distinctByKey(loaded.values[List[MasterServiceOffer]])(_.id),
-        masterServiceOfferVariants = GraphLoading.distinctByKey(loaded.values[List[MasterServiceOfferVariant]])(_.id),
-      )
+      } yield loaded.toSnapshot[BeautyQSearchCatalogSnapshot]
+    }
   }
 
   /** Loads exactly the seed-scoped catalog through the shared repo operation

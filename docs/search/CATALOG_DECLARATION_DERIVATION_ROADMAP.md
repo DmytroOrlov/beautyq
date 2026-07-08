@@ -325,10 +325,49 @@ order - parents before children - even though the tuple itself is stored backwar
 BeautyQ's real seven-relation chain (categories, services, schemas, masters, locations, offers,
 variants) via the unchanged `BeautyQRepoGraphLoaderSpec` ordering assertions, all passing.
 
-`CatalogValue`/aggregate value-source derivation is not started or claimed. Phase F snapshot
-constructor derivation is not started - `BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`
-still manually builds `BeautyQSearchCatalogSnapshot` field-by-field via `loaded.values[List[A]]` plus
-explicit `GraphLoading.distinctByKey` calls, with dedup keys unchanged.
+Status: Phase F2 derives full-loader snapshot constructor assembly from `LoadedCatalog` into a
+generic repo-core snapshot assembly helper. The BeautyQ full loader now delegates both traversal and
+snapshot construction to generic materialization helpers. Raw loaded lists remain non-deduplicated;
+snapshot assembly applies first-occurrence deduplication by catalog entity key or aggregate value key.
+Seed-scoped loading remains explicit. Search document projection and value-edge derivation remain
+separate.
+
+`loaded.toSnapshot[Snapshot]` (repo-core, new file `CatalogSnapshotAssembly.scala`) is a standalone
+extension on `LoadedCatalog` (same reasoning as `loadAll` on `MaterializedDeclaration`: it introduces
+its own type parameters rather than adding a method to `LoadedCatalog`'s own body). It walks
+`Mirror.ProductOf[Snapshot].MirroredElemTypes` - the snapshot's own field-type tuple, e.g.
+`(List[Category], List[Service], ...)` - via `private[repo]` typeclasses `AssembleSnapshotFields`
+(recurses the field tuple) and `AssembleSnapshotField` (assembles one `List[A]` field), then builds
+`Snapshot` via `mirror.fromProduct`. Snapshot field order therefore always follows `Snapshot`'s own
+constructor, never `LoadedCatalog.items`'s storage order - the two tuples are walked independently,
+joined only by `TupleSelect[Items, List[A]]` per field.
+
+Each field is deduplicated (first-occurrence) using whichever key evidence the domain already
+declared for `A`, with `AssembleSnapshotField.fromValue` (aggregate/value types, keyed by
+`CatalogValue.Aux[A, K, Row]`'s own `valueSource.keyField` - e.g. `serviceId` for
+`ServiceVariantSchema`) taking priority over the low-priority `fromConventionalId` fallback (normal
+entity types), mirroring `TupleSelect`/`TupleSelectLowPriority`'s own disambiguation pattern.
+`fromConventionalId` cannot request `CatalogEntity.Aux[A, K]` via a `using` clause - `K` would be a
+free type parameter with no other unification source, reproducing the declaration-time
+free-`K`-defaults-to-`Any` limitation `ConventionalIdKey`'s own doc describes. It instead calls
+`CatalogEntity.derived[A](RepoEntity.derived[A])` directly, requiring `fromConventionalId` itself to
+be `inline` so that call sees a concrete `A` at each summon site. Two further, purely mechanical
+constraints followed from that: an `inline given` may not itself return a bare function value or an
+anonymous class instance (both rejected by the compiler as "duplicated at each inline site"), so both
+`AssembleSnapshotField` givens construct a named `AssembleSnapshotFieldImpl` instead, keeping the
+`inline given`'s own right-hand side a plain constructor call. No broad automatic
+`given CatalogEntity[A]` was added anywhere - this derivation is entirely local to
+`AssembleSnapshotField`'s own low-priority given.
+
+`BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()` now reads only
+`for { loaded <- BeautyQCatalogGraph.graph[F].loadAll(repositories) } yield loaded.toSnapshot
+[BeautyQSearchCatalogSnapshot]`, with a local `import BeautyQCatalogGraph.Evidence.given` so
+`CatalogValue.Aux[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]` is in scope for
+`fromValue` to pick up - confirmed by the unchanged `BeautyQRepoGraphLoaderSpec` ordering and
+projection assertions, all still passing. `SeedScopedFromRepositories` is untouched and still builds
+`BeautyQSearchCatalogSnapshot` manually from seed-scoped loads.
+
+`CatalogValue`/`CatalogValueEdge` derivation is not started or claimed.
 
 Goal:
 
