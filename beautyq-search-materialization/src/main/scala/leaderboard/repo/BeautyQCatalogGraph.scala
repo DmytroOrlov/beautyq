@@ -1,7 +1,7 @@
 package leaderboard.repo
 
 import leaderboard.model.Category.CategoryId
-import leaderboard.model.{Category, Master, MasterId, MasterLocation, MasterLocationId, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId, Service, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
+import leaderboard.model.{Category, Master, MasterId, MasterLocation, MasterLocationId, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
 import leaderboard.search.beautyq.contract.BeautyQCatalogDeclaration
 
 /** Central BeautyQ catalog graph facade.
@@ -112,45 +112,4 @@ object BeautyQCatalogGraph {
       CatalogMany.fromRepo[F, Repositories[F], MasterServiceOfferVariants[F], MasterServiceOffer, MasterServiceOfferVariant, MasterServiceOfferId](_.masterServiceOfferVariants)(MasterServiceOfferVariants.byOffer)
   }
 
-  /** The BeautyQ catalog relations, materialized from [[graph]] against a
-    * concrete [[Repositories]].
-    */
-  final class Relations[F[_, _]](repositories: Repositories[F]) {
-    private val declaration = graph[F]
-
-    val categoryTree: Relation.SelfTree[F, Category, CategoryId] =
-      declaration
-        .relationAs[Repositories[F] => Relation.SelfTree[F, Category, CategoryId]]
-        .apply(repositories)
-
-    val categoryServices: Relation.HasMany[F, Category, CategoryId, Service, ServiceId] =
-      declaration
-        .relationAs[Repositories[F] => Relation.HasMany[F, Category, CategoryId, Service, ServiceId]]
-        .apply(repositories)
-
-    val serviceSchemas: Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
-      declaration
-        .relationAs[Repositories[F] => Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]]
-        .apply(repositories)
-
-    val allMasters: Relation.All[F, Master, MasterId] =
-      declaration
-        .relationAs[Repositories[F] => Relation.All[F, Master, MasterId]]
-        .apply(repositories)
-
-    val masterLocationsByMaster: Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId] =
-      declaration
-        .relationAs[Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId]]
-        .apply(repositories)
-
-    val masterOffersByMaster: Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId] =
-      declaration
-        .relationAs[Repositories[F] => Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId]]
-        .apply(repositories)
-
-    val offerVariants: Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId] =
-      declaration
-        .relationAs[Repositories[F] => Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]]
-        .apply(repositories)
-  }
 }

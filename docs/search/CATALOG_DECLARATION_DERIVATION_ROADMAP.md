@@ -261,9 +261,12 @@ Non-goals:
 ### Phase E: replace `Graph` / `Relations` named-field tautology with typed accessors
 
 Status: Phase E1 removes the BeautyQ-specific `Graph` / `Graph.fromDeclaration` factory wrapper.
-`BeautyQCatalogGraph.graph` now exposes the generic materialized declaration directly, and
-`Relations` reads relation factories through typed `MaterializedDeclaration.relationAs[...]`.
-The `Relations` named facade remains explicit until snapshot-loader usage is source-confirmed.
+`BeautyQCatalogGraph.graph` now exposes the generic materialized declaration directly.
+
+Status: Phase E2 removes the BeautyQ `Relations` named facade. The full snapshot loader now
+selects relation factories directly from the generic materialized declaration via typed
+`relationAs[...]` and keeps traversal/snapshot assembly unchanged. Phase F snapshot traversal and
+constructor derivation remains future work.
 
 Goal:
 

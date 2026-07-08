@@ -2,7 +2,7 @@ package leaderboard.search.document
 
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Relation, ServiceVariantSchemas, Services}
 
 /** Materialization-owned loader for [[BeautyQSearchCatalogSnapshot]].
   * `beautyq-search-materialization` must not depend on seed data: the
@@ -34,27 +34,51 @@ object BeautyQSearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautyQSearchCatalogSnapshotLoader[F] {
 
-    private val relations = new BeautyQCatalogGraph.Relations[F](
-      BeautyQCatalogGraph.Repositories(
-        categories                 = categories,
-        services                   = services,
-        serviceVariantSchemas      = serviceVariantSchemas,
-        masters                    = masters,
-        masterLocations            = masterLocations,
-        masterServiceOffers        = masterServiceOffers,
-        masterServiceOfferVariants = masterServiceOfferVariants,
-      )
+    private val repositories = BeautyQCatalogGraph.Repositories[F](
+      categories                 = categories,
+      services                   = services,
+      serviceVariantSchemas      = serviceVariantSchemas,
+      masters                    = masters,
+      masterLocations            = masterLocations,
+      masterServiceOffers        = masterServiceOffers,
+      masterServiceOfferVariants = masterServiceOfferVariants,
     )
+
+    private transparent inline def relation[A]: A =
+      BeautyQCatalogGraph.graph[F]
+        .relationAs[BeautyQCatalogGraph.Repositories[F] => A]
+        .apply(repositories)
+
+    private val categoryTree: Relation.SelfTree[F, Category, Category.CategoryId] =
+      relation[Relation.SelfTree[F, Category, Category.CategoryId]]
+
+    private val categoryServices: Relation.HasMany[F, Category, Category.CategoryId, Service, ServiceId] =
+      relation[Relation.HasMany[F, Category, Category.CategoryId, Service, ServiceId]]
+
+    private val serviceSchemas: Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
+      relation[Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]]
+
+    private val allMasters: Relation.All[F, Master, MasterId] =
+      relation[Relation.All[F, Master, MasterId]]
+
+    private val masterLocationsByMaster: Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId] =
+      relation[Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId]]
+
+    private val masterOffersByMaster: Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId] =
+      relation[Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId]]
+
+    private val offerVariants: Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId] =
+      relation[Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]]
 
     override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.selfTreeFrom(relations.categoryTree)
-        loadedServices   <- GraphLoading.manyFor(relations.categoryServices, loadedCategories)
-        loadedSchemas    <- GraphLoading.valueFor(relations.serviceSchemas, loadedServices)
-        loadedMasters    <- GraphLoading.allOf(relations.allMasters)
-        loadedLocations  <- GraphLoading.manyFor(relations.masterLocationsByMaster, loadedMasters)
-        loadedOffers     <- GraphLoading.manyFor(relations.masterOffersByMaster, loadedMasters)
-        loadedVariants   <- GraphLoading.manyFor(relations.offerVariants, loadedOffers)
+        loadedCategories <- GraphLoading.selfTreeFrom(categoryTree)
+        loadedServices   <- GraphLoading.manyFor(categoryServices, loadedCategories)
+        loadedSchemas    <- GraphLoading.valueFor(serviceSchemas, loadedServices)
+        loadedMasters    <- GraphLoading.allOf(allMasters)
+        loadedLocations  <- GraphLoading.manyFor(masterLocationsByMaster, loadedMasters)
+        loadedOffers     <- GraphLoading.manyFor(masterOffersByMaster, loadedMasters)
+        loadedVariants   <- GraphLoading.manyFor(offerVariants, loadedOffers)
       } yield BeautyQSearchCatalogSnapshot(
         categories                 = loadedCategories,
         services                   = GraphLoading.distinctByKey(loadedServices)(_.id),

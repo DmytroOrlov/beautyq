@@ -79,11 +79,20 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
       assert(snapshot.masterServiceOfferVariants == List(variantA, variantB))
     }
 
-    "expose unchanged relation metadata via BeautyQCatalogGraph.Relations" in {
-      val relations = new BeautyQCatalogGraph.Relations[IO](repositories)
-      assert(relations.categoryServices.foreignKey.label == "categoryId")
-      assert(relations.serviceSchemas.valueKey.label == "serviceId")
-      assert(relations.offerVariants.foreignKey.label == "masterServiceOfferId")
+    "expose unchanged relation metadata through typed relation selection" in {
+      val declaration = BeautyQCatalogGraph.graph[IO]
+      val categoryServices = declaration
+        .relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasMany[IO, Category, CategoryId, Service, ServiceId]]
+        .apply(repositories)
+      val serviceSchemas = declaration
+        .relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasValue[IO, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]]
+        .apply(repositories)
+      val offerVariants = declaration
+        .relationAs[BeautyQCatalogGraph.Repositories[IO] => Relation.HasMany[IO, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]]
+        .apply(repositories)
+      assert(categoryServices.foreignKey.label == "categoryId")
+      assert(serviceSchemas.valueKey.label == "serviceId")
+      assert(offerVariants.foreignKey.label == "masterServiceOfferId")
     }
 
     "declare category -> service as a many edge keyed by categoryId, straight from the chain declaration" in {
