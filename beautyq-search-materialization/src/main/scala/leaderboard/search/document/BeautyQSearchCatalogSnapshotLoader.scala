@@ -2,7 +2,8 @@ package leaderboard.search.document
 
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services, loadAll, toSnapshot}
+import leaderboard.model.Category.CategoryId
+import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Relation, ServiceVariantSchemas, Services, loadAll, toSnapshot}
 
 /** Materialization-owned loader for [[BeautyQSearchCatalogSnapshot]].
   * `beautyq-search-materialization` must not depend on seed data: the
@@ -69,9 +70,33 @@ object BeautyQSearchCatalogSnapshotLoader {
     masterServiceOfferVariants: MasterServiceOfferVariants[F],
   ) extends BeautyQSearchCatalogSnapshotLoader[F] {
 
+    private val repositories = BeautyQCatalogGraph.Repositories[F](
+      categories                 = categories,
+      services                   = services,
+      serviceVariantSchemas      = serviceVariantSchemas,
+      masters                    = masters,
+      masterLocations            = masterLocations,
+      masterServiceOffers        = masterServiceOffers,
+      masterServiceOfferVariants = masterServiceOfferVariants,
+    )
+
+    /** The category self-tree's own root key, read from the materialized
+      * catalog declaration/relation - not `Category.rootCategoryId` directly -
+      * so seed-scoped root filtering can never silently drift from what the
+      * catalog declaration itself declares as the category tree's root.
+      */
+    private val categoryRootKey: CategoryId =
+      BeautyQCatalogGraph.graph[F]
+        .relationAs[BeautyQCatalogGraph.Repositories[F] => Relation.SelfTree[F, Category, CategoryId]]
+        .apply(repositories)
+        .rootKey
+
+    private val seedCategories: List[Category] =
+      seedScope.categories.filterNot(_.id == categoryRootKey)
+
     override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.seedRequiredById[F, Categories[F], Category](seedScope.nonRootCategories, categories)
+        loadedCategories <- GraphLoading.seedRequiredById[F, Categories[F], Category](seedCategories, categories)
         loadedServices   <- GraphLoading.seedRequiredById[F, Services[F], Service](seedScope.services, services)
         loadedSchemas    <- GraphLoading.seedValuesByKey[F, ServiceVariantSchemas[F], ServiceId, ServiceVariantSchema](seedScope.services.map(_.id), serviceVariantSchemas)
         loadedMasters    <- GraphLoading.seedRequiredById[F, Masters[F], Master](seedScope.masters, masters)

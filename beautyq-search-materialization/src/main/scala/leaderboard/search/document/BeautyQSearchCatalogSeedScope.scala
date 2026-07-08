@@ -17,7 +17,4 @@ final case class BeautyQSearchCatalogSeedScope(
   masterLocations: List[MasterLocation],
   masterServiceOffers: List[MasterServiceOffer],
   masterServiceOfferVariants: List[MasterServiceOfferVariant],
-) {
-  def nonRootCategories: List[Category] =
-    categories.filterNot(_.id == Category.rootCategoryId)
-}
+)

@@ -59,7 +59,9 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
 
   // Deliberately reordered vs. natural traversal order, and including a
   // synthetic-root category entry, to prove seed order is preserved as given
-  // and the root is still filtered out via `nonRootCategories`.
+  // and the root is still filtered out - now via the category self-tree's
+  // own root key, read off the materialized catalog declaration/relation,
+  // not a seed-scope-local `nonRootCategories` method (Seed root-key cleanup).
   private val rootCategoryEntry = Category(rootCategoryId, rootCategoryId, 0, "Root")
 
   private val seedScope = BeautyQSearchCatalogSeedScope(
@@ -169,7 +171,7 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
   "BeautyQ seed-scoped graph loader (Seed F1: seedRequiredById/seedValuesByKey)" should {
     val seedSnapshot = runIO(seedScopeLoader.load())
 
-    "exclude the synthetic root category via seedScope.nonRootCategories, preserving seed order" in {
+    "exclude the synthetic root category using the catalog declaration's own self-tree root key, preserving seed order" in {
       assert(seedSnapshot.categories == List(categoryB, categoryAChild, categoryA))
     }
 

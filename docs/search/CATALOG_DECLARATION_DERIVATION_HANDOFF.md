@@ -13,7 +13,7 @@ next".
 
 ## Current accepted state
 
-All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup besides:
+All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup/seed root-key cleanup besides:
 
 ```text
 A:         root key moved into catalog declaration
@@ -25,6 +25,7 @@ E1/E2:     BeautyQ Graph/fromDeclaration/Relations named-field layers removed
 F1/F2:     full-loader traversal and full-loader snapshot assembly derived generically
 Seed F1:   seed-scoped required/value loading helpers derived by conventional id / signature
 Wrapper cleanup: zero-usage BeautyQ repo companion wrappers deleted
+Seed root-key cleanup: seed-scoped root filtering derived from the materialized catalog relation
 ```
 
 The BeautyQ full loader (`BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`) is now:
@@ -105,7 +106,7 @@ Repo wrappers:
   BLOCKED_BY_TRANSPARENT_UUID_AMBIGUITY
 
 Root id/root key:
-  PATCH_READY_SEED_ROOT_FILTER_FROM_DECLARATION
+  DONE_SEED_ROOT_FILTER_FROM_DECLARATION
   KEEP_EXPLICIT_REPOSITORY_ROOT_INVARIANTS
   KEEP_EXPLICIT_API_ROOT_CHILDREN_ENDPOINT
 
@@ -161,23 +162,25 @@ had claimed the seed-scoped loader was still a caller.
 ```text
 1. D2A: derive CatalogValueEdge from repositories.                              [done]
 2. Seed F1: extract seed-scoped loading helpers without changing seed semantics. [done]
-3. Wrapper zero-usage cleanup: remove the zero-usage repo companion wrappers. [done]
-4. Seed root-key cleanup: derive root filtering from declaration root where safe.
-5. D2B/value-source DSL: separate policy decision.
+3. Wrapper zero-usage cleanup: remove the zero-usage repo companion wrappers.   [done]
+4. Seed root-key cleanup: derive root filtering from declaration root where safe. [done]
+5. Transparent UUID ambiguity decision: separate policy decision.
+6. D2B/value-source DSL: separate policy decision.
 ```
 
-Recommended next patch: **Seed root-key cleanup**.
+Recommended next patch: **Transparent UUID ambiguity decision**.
 
-Rationale: with D2A, Seed F1, and wrapper cleanup all landed, seed root-key cleanup is the next item
-that already has a concrete, scoped goal recorded in this document (derive root filtering from the
-catalog declaration's own root where safe) rather than needing fresh design work. It is independent
-of the wrapper cleanup just done - the two were never sequenced for a mechanical reason, just kept
-separate so a mechanical wrapper deletion didn't get bundled with a change touching
-root/persistence-adjacent invariants. `MasterServiceOffers.byMaster`/`MasterServiceOfferVariants
-.byOffer` remain explicit and untouched - they are still the two ambiguous relation-evidence call
-sites `BeautyQCatalogGraph.Evidence` uses, blocked on transparent UUID aliasing, not on anything
-seed root-key cleanup would change. D2B/value-source DSL remains a separate policy decision, not
-advanced by any of D2A/Seed F1/wrapper cleanup.
+Rationale: D2A, Seed F1, wrapper cleanup, and seed root-key cleanup are all landed. The two
+remaining explicit wrappers/evidence (`MasterServiceOffers.byMaster`/
+`MasterServiceOfferVariants.byOffer`, and the `BeautyQCatalogGraph.Evidence` givens that call them)
+are blocked purely on transparent UUID aliasing (`MasterId`/`ServiceId`/`MasterLocationId`/
+`MasterServiceOfferId` all dealias to the same underlying `UUID`, so type-only derivation cannot
+disambiguate them) - not on anything a mechanical patch can resolve. That decision (accept the
+aliasing as permanently explicit, or migrate BeautyQ IDs to nominal/opaque types as a separate model
+refactor - flagged as a future domain preference back in the historical roadmap's Phase B.2 record)
+is the only remaining item in this tautology inventory that isn't already `KEEP_EXPLICIT_*` or
+`DONE_*`. D2B/value-source DSL remains a separate, independent policy decision, not advanced by any
+of D2A/Seed F1/wrapper cleanup/seed root-key cleanup.
 
 ## D2A scope
 
@@ -224,8 +227,10 @@ behavior are all byte-for-byte unchanged - confirmed by both repo-core unit cove
 (`GraphLoadingSpec`) and BeautyQ-level coverage (`BeautyQRepoGraphLoaderSpec`'s new
 "BeautyQ seed-scoped graph loader" block), which exercises the real
 `SeedScopedFromRepositories` end-to-end, including the canonical missing-entity failure path and a
-seed snapshot that still projects successfully. `seedScope.nonRootCategories`/root filtering is
-untouched - not derived from the catalog declaration in this patch, per the original scope below.
+seed snapshot that still projects successfully. `seedScope.nonRootCategories`/root filtering itself
+was intentionally left untouched in this patch, not derived from the catalog declaration yet, per
+the original scope below - that followed later, in Seed root-key cleanup (see its own scope
+section below).
 
 Original scope, kept for reference:
 
@@ -285,6 +290,55 @@ stayed imported in `MasterServiceOffers`/`MasterServiceOfferVariants` since the 
 D2A-era "the seed-scoped loader still calls it directly" claim about `ServiceVariantSchemas
 .byService` was already stale before this patch, fixed in a prior closeout follow-up) - the
 `Evidence` givens themselves were not touched.
+
+## Seed root-key cleanup scope
+
+Status: implemented. `BeautyQSearchCatalogSeedScope.nonRootCategories` (`categories.filterNot(_.id
+== Category.rootCategoryId)`) was removed - it had exactly one caller anywhere in the repo
+(`SeedScopedFromRepositories`, changed in this same patch), so no coordinator decision was needed
+to keep it. `BeautyQSearchCatalogSeedScope` now only carries seed lists; it does not know the
+catalog declaration's root key.
+
+`SeedScopedFromRepositories` now builds a `BeautyQCatalogGraph.Repositories[F]` bundle (the same
+shape `FromRepositories` already builds) and reads the category self-tree relation's own `rootKey`
+off the materialized catalog declaration:
+
+```scala
+private val categoryRootKey: CategoryId =
+  BeautyQCatalogGraph.graph[F]
+    .relationAs[BeautyQCatalogGraph.Repositories[F] => Relation.SelfTree[F, Category, CategoryId]]
+    .apply(repositories)
+    .rootKey
+
+private val seedCategories: List[Category] =
+  seedScope.categories.filterNot(_.id == categoryRootKey)
+```
+
+`categoryRootKey` is the exact value `BeautyQCatalogDeclaration.declaration`'s own
+`.rootTree(_.parentId, root = Category.rootCategoryId)` call declared as the category tree's root -
+read off the materialized relation, not `Category.rootCategoryId` referenced directly in the
+search-materialization seed path. `BeautyQCatalogGraph.graph[F]` needed no caller-side
+`import BeautyQCatalogGraph.Evidence.given`: its own body already imports `Evidence.given`
+internally (it is `transparent inline`), and evidence is only needed to *build* the materialized
+relation tuple, not to read an already-materialized relation's `rootKey` afterward - confirmed
+empirically (the compiler flags a caller-side import of `Evidence.given` here as unused).
+
+Seed order, the canonical missing-entity message, the manual `BeautyQSearchCatalogSnapshot(...)`
+constructor, and the no-dedup behavior are all unchanged - confirmed by
+`BeautyQRepoGraphLoaderSpec`'s existing seed-scoped test block (updated only to stop describing the
+exclusion as "via `seedScope.nonRootCategories`", since that method no longer exists) and by
+`RepoFieldRelationSpec`, both still passing.
+
+Everything storage/bootstrap/API-facing keeps using `Category.rootCategoryId` directly, unchanged
+by this patch: `Category.rootCategoryId` itself, `BeautyQSeedData.nonRootCategories` and
+`BeautyQSeedInserter` (bootstrap/seed-insertion ordering policy, `bifunctor-tagless`/app shell,
+never depended on the search-materialization module), `Categories`/`Services` repository
+persistence checks and `rootCategoryIdSqlLiteral` (SQL constraint literal), and
+`CategoryApi.getRootChildren` (the API root-children endpoint). This patch only removed the
+repetition inside `beautyq-search-materialization`'s own seed-scoped search loader - a materialized
+catalog snapshot query is not the same design pressure as a persistence constraint, a bootstrap
+insertion order, or a public API route, and none of those needed to (or should) share a single root
+source of truth with the search-materialization loader.
 
 ## Bundle / coordinator workflow rules
 
