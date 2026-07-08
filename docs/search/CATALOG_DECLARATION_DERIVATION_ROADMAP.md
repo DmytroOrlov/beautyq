@@ -1,5 +1,9 @@
 # Catalog Declaration Derivation Roadmap
 
+> Status: A–F are historical/completed phase notes through full-loader traversal and snapshot
+> assembly derivation. For current coordinator handoff and next active work, start from
+> `docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md`.
+
 ## Status
 
 * Module split closeout is done separately in `BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
@@ -400,11 +404,10 @@ Non-goals:
 * HTTP/app-shell/DI/resource wiring;
 * full `SearchDomainSpec` sections outside catalog.
 
-## Next coordinator checklist
+## Closeout / continuation
 
-* Review the Phase A / Phase 46 implementation and validation notes first.
-* Then continue with Phase B evidence bundle before editing.
-* Do not jump directly to Phase E/F.
-* Do not introduce a library dependency before comparing zero-dependency Scala 3 derivation with any
-  external library.
-* Keep each phase focused and behavior-preserving.
+This roadmap is now historical phase detail for A–F. Current active work continues in
+`CATALOG_DECLARATION_DERIVATION_HANDOFF.md`.
+
+The next recommended patch is D2A: derive `CatalogValueEdge` from repositories while keeping
+`CatalogValue` / value-source policy explicit.

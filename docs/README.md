@@ -8,12 +8,14 @@
 * `SEARCH_DOMAIN_ONBOARDING.md` — how to start a new domain without repeating the BeautyQ loop.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
 * `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — BeautyQ search contract/module split plan, current closeout status, phase history, guardrails, and anti-scope-drift rules.
-* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — post-closeout catalog declaration simplification and Scala 3 derivation roadmap.
+* `search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` — current coordinator handoff for catalog declaration derivation: accepted state through Phase F2, remaining tautology inventory, and the recommended next patch.
+* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — historical A–F phase log for catalog declaration simplification and Scala 3 derivation; see the handoff doc above for current/active work.
 
 ## BeautyQ search contract/module split
 
 * `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — BeautyQ search contract/module split plan, current closeout status, phase history, guardrails, and anti-scope-drift rules.
-* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — post-closeout catalog declaration simplification and Scala 3 derivation roadmap.
+* `search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` — current coordinator handoff for catalog declaration derivation: accepted state through Phase F2, remaining tautology inventory, and the recommended next patch.
+* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — historical A–F phase log for catalog declaration simplification and Scala 3 derivation; see the handoff doc above for current/active work.
 
 ## BeautyQ search architecture
 

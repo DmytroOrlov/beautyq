@@ -19,7 +19,9 @@ The module split is closed out. Current work is post-closeout catalog declaratio
 derivation: keep business-facing domain search code close to the catalog tree while deriving
 repetitive repo/materialization evidence where it is safe and compile-time checked.
 
-Start from `docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`.
+Start from `docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` for the current coordinator
+handoff and next active tasks. Use `docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` as the
+historical A–F phase log.
 
 The route/Qdrant sections below are current operational truth, not the active design task.
 
