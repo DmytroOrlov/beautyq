@@ -2,7 +2,7 @@ package leaderboard.search.document
 
 import izumi.functional.bio.Error2
 import leaderboard.model.*
-import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Relation, ServiceVariantSchemas, Services}
+import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services, loadAll}
 
 /** Materialization-owned loader for [[BeautyQSearchCatalogSnapshot]].
   * `beautyq-search-materialization` must not depend on seed data: the
@@ -44,49 +44,17 @@ object BeautyQSearchCatalogSnapshotLoader {
       masterServiceOfferVariants = masterServiceOfferVariants,
     )
 
-    private transparent inline def relation[A]: A =
-      BeautyQCatalogGraph.graph[F]
-        .relationAs[BeautyQCatalogGraph.Repositories[F] => A]
-        .apply(repositories)
-
-    private val categoryTree: Relation.SelfTree[F, Category, Category.CategoryId] =
-      relation[Relation.SelfTree[F, Category, Category.CategoryId]]
-
-    private val categoryServices: Relation.HasMany[F, Category, Category.CategoryId, Service, ServiceId] =
-      relation[Relation.HasMany[F, Category, Category.CategoryId, Service, ServiceId]]
-
-    private val serviceSchemas: Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
-      relation[Relation.HasValue[F, Service, ServiceId, ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]]
-
-    private val allMasters: Relation.All[F, Master, MasterId] =
-      relation[Relation.All[F, Master, MasterId]]
-
-    private val masterLocationsByMaster: Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId] =
-      relation[Relation.HasMany[F, Master, MasterId, MasterLocation, MasterLocationId]]
-
-    private val masterOffersByMaster: Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId] =
-      relation[Relation.HasMany[F, Master, MasterId, MasterServiceOffer, MasterServiceOfferId]]
-
-    private val offerVariants: Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId] =
-      relation[Relation.HasMany[F, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId]]
-
     override def load(): F[QueryFailure, BeautyQSearchCatalogSnapshot] =
       for {
-        loadedCategories <- GraphLoading.selfTreeFrom(categoryTree)
-        loadedServices   <- GraphLoading.manyFor(categoryServices, loadedCategories)
-        loadedSchemas    <- GraphLoading.valueFor(serviceSchemas, loadedServices)
-        loadedMasters    <- GraphLoading.allOf(allMasters)
-        loadedLocations  <- GraphLoading.manyFor(masterLocationsByMaster, loadedMasters)
-        loadedOffers     <- GraphLoading.manyFor(masterOffersByMaster, loadedMasters)
-        loadedVariants   <- GraphLoading.manyFor(offerVariants, loadedOffers)
+        loaded <- BeautyQCatalogGraph.graph[F].loadAll(repositories)
       } yield BeautyQSearchCatalogSnapshot(
-        categories                 = loadedCategories,
-        services                   = GraphLoading.distinctByKey(loadedServices)(_.id),
-        serviceVariantSchemas      = GraphLoading.distinctByKey(loadedSchemas)(_.serviceId),
-        masters                    = GraphLoading.distinctByKey(loadedMasters)(_.id),
-        masterLocations            = GraphLoading.distinctByKey(loadedLocations)(_.id),
-        masterServiceOffers        = GraphLoading.distinctByKey(loadedOffers)(_.id),
-        masterServiceOfferVariants = GraphLoading.distinctByKey(loadedVariants)(_.id),
+        categories                 = loaded.values[List[Category]],
+        services                   = GraphLoading.distinctByKey(loaded.values[List[Service]])(_.id),
+        serviceVariantSchemas      = GraphLoading.distinctByKey(loaded.values[List[ServiceVariantSchema]])(_.serviceId),
+        masters                    = GraphLoading.distinctByKey(loaded.values[List[Master]])(_.id),
+        masterLocations            = GraphLoading.distinctByKey(loaded.values[List[MasterLocation]])(_.id),
+        masterServiceOffers        = GraphLoading.distinctByKey(loaded.values[List[MasterServiceOffer]])(_.id),
+        masterServiceOfferVariants = GraphLoading.distinctByKey(loaded.values[List[MasterServiceOfferVariant]])(_.id),
       )
   }
 

@@ -295,6 +295,41 @@ Non-goals:
 
 ### Phase F: derive full catalog snapshot loader
 
+Status: Phase F1 derives the full-loader traversal into a generic loaded-catalog helper. The
+BeautyQ full snapshot loader no longer manually sequences `GraphLoading.selfTreeFrom` / `manyFor` /
+`valueFor` / `allOf`; it still manually assembles `BeautyQSearchCatalogSnapshot` and keeps
+deduplication keys explicit. Seed-scoped loading remains explicit.
+
+`LoadedCatalog[Items <: Tuple]` (repo-core, new file `CatalogLoadedGraph.scala`) is a raw,
+non-deduplicated bundle of loaded lists, one per declared relation, selected by exact `List[A]` type
+via the existing `TupleSelect`. `LoadCatalogRelations[F, R, Rels]`/`LoadOneRelation[F, R, H, Prior]`
+(both `private[repo]`, mirroring `MaterializeAll`/`MaterializeOne`'s own internal-machinery-vs-public-
+evidence split) recursively load a materialized relation tuple, one `LoadOneRelation` given per
+relation-factory shape (`SelfTree`/`All`/`HasMany`/`HasValue`). `declaration.loadAll(repositories)` is
+a standalone extension on `MaterializedDeclaration` (not a method in its own body: `Materialized
+Declaration`'s own `F[_, _]` is invariant, and `Error2[F]` - needed for the `.map` that wraps the
+result in `LoadedCatalog` - requires `F[+_, +_]`; the extension introduces its own fresh covariant
+`F[+_, +_]: Error2`, the same shape `GraphLoading`'s own standalone functions already use, rather than
+widening `MaterializedDeclaration`'s own declared variance).
+
+`Rels` is stored in reverse declaration order (each `.rootTree`/`.rootAll`/`.child`/`.value` call
+prepends its spec, so the tuple's head is always the latest-declared relation). `LoadCatalogRelations
+.cons` recurses into the tuple's tail *before* loading its head, accumulating one loaded list per
+relation into `Prior`; a `HasMany`/`HasValue` head then selects its already-loaded parent list out of
+`Prior` via `TupleSelect[Prior, List[P]]` (safe here, unlike the Phase C3 free-`K`-defaults-to-`Any`
+pitfall: `P` is never a free variable needing solving on its own - it, `Prior`, and every other type
+parameter are all determined by unifying the given's own declared result type against the already-fully
+-concrete `H`/`TLoaded` implicit search is looking for, the same mechanism `TupleSelect.found` itself
+already relies on). Unwinding this tail-first recursion runs the actual loads in forward declaration
+order - parents before children - even though the tuple itself is stored backwards; verified against
+BeautyQ's real seven-relation chain (categories, services, schemas, masters, locations, offers,
+variants) via the unchanged `BeautyQRepoGraphLoaderSpec` ordering assertions, all passing.
+
+`CatalogValue`/aggregate value-source derivation is not started or claimed. Phase F snapshot
+constructor derivation is not started - `BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`
+still manually builds `BeautyQSearchCatalogSnapshot` field-by-field via `loaded.values[List[A]]` plus
+explicit `GraphLoading.distinctByKey` calls, with dedup keys unchanged.
+
 Goal:
 
 * Remove manual full traversal and snapshot constructor when the snapshot fields match loaded graph
