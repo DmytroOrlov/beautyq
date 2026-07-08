@@ -157,6 +157,20 @@ unconstrained before macro expansion runs. Closing that gap would mean rewriting
 itself, which is out of scope for this phase. `CatalogValue` / aggregate value-source evidence
 remains fully explicit, unchanged.
 
+Status: Phase C.2 design spike (`repo-core/src/test/scala/leaderboard/repo/`
+`CatalogEntityKeyPropagationDesignSpec.scala`) positively proved key-carrying specs (Candidate A): a
+rootAll-like or manyEdge-like spec that carries its output key type(s) lets
+`CatalogEntity.derivedFromId` resolve automatically and build real `Relation.All` /
+`Relation.HasMany` values without explicit entity givens.
+
+Candidate B, directly parameterized entity evidence such as `CatalogEntity[A, K]`, remains open. A
+fair validating macro-backed test could not be completed inside the test-only spike without adding
+a separate macro implementation file. It is not rejected.
+
+Production C.3 still needs a coordinator architecture decision: first pin output key types in
+specs, first parameterize catalog evidence, or combine both. The combined path may be the
+highest-boilerplate-reduction target.
+
 Goal:
 
 * Remove repetitive `CatalogEntity.Aux[...]` where entities have conventional `id`.
