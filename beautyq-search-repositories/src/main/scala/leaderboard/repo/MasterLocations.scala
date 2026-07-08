@@ -5,7 +5,6 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterId, MasterLocation, MasterLocationId, QueryFailure}
-import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -20,14 +19,6 @@ trait MasterLocations[F[_, _]] {
 object MasterLocations {
   /** Model-derived entity metadata for [[MasterLocation]]. */
   val entity: RepoEntity[MasterLocation] = RepoEntity.derived[MasterLocation]
-
-  /** Optional master location by id. */
-  def byId[F[_, _]](repo: MasterLocations[F]): OptionalByKey[F, MasterLocationId, MasterLocation] =
-    OptionalByKey.derived[F, MasterLocations[F], MasterLocationId, MasterLocation](repo)
-
-  /** Locations by master id. */
-  def byMaster[F[_, _]](repo: MasterLocations[F]): ManyByKey[F, MasterId, MasterLocation] =
-    ManyByKey.derived[F, MasterLocations[F], MasterId, MasterLocation](repo)
 
   private def masterNotFound(masterId: MasterId): QueryFailure =
     QueryFailure.domain(s"Master $masterId does not exist")

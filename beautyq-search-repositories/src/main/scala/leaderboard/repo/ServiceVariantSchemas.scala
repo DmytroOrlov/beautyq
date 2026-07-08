@@ -7,7 +7,6 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{AttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
-import leaderboard.repo.RepoOp.ValueByKey
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -35,10 +34,6 @@ object ServiceVariantSchemas {
       rowSource      = itemEntity,
       keyField       = RepoField.derived[ServiceVariantSchema, ServiceId](_.serviceId),
     )
-
-  /** Service variant schema (aggregate value) by service id. */
-  def byService[F[_, _]](repo: ServiceVariantSchemas[F]): ValueByKey[F, ServiceId, ServiceVariantSchema] =
-    ValueByKey.derived[F, ServiceVariantSchemas[F], ServiceId, ServiceVariantSchema](repo)
 
   private type ServiceVariantSchemaRow       = (String, Boolean)
   private type ServiceVariantSchemaInsertRow = (ServiceId, String, Boolean)

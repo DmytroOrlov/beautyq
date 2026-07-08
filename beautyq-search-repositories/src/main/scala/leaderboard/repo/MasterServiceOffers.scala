@@ -5,7 +5,7 @@ import doobie.implicits.*
 import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, QueryFailure, ServiceId}
-import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
+import leaderboard.repo.RepoOp.ManyByKey
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -22,17 +22,12 @@ object MasterServiceOffers {
   /** Model-derived entity metadata for [[MasterServiceOffer]]. */
   val entity: RepoEntity[MasterServiceOffer] = RepoEntity.derived[MasterServiceOffer]
 
-  /** Optional offer by id. */
-  def byId[F[_, _]](repo: MasterServiceOffers[F]): OptionalByKey[F, MasterServiceOfferId, MasterServiceOffer] =
-    OptionalByKey.derived[F, MasterServiceOffers[F], MasterServiceOfferId, MasterServiceOffer](repo)
-
-  /** Offers by master id. */
+  /** Offers by master id. Kept explicit: `MasterId`/`ServiceId`/`MasterLocationId`/
+    * `MasterServiceOfferId` are transparent aliases of the same underlying `UUID`,
+    * so type-only derivation is ambiguous here - see `BeautyQCatalogGraph.Evidence`.
+    */
   def byMaster[F[_, _]](repo: MasterServiceOffers[F]): ManyByKey[F, MasterId, MasterServiceOffer] =
     ManyByKey(repo.getMasterServiceOffersByMaster)
-
-  /** Offers by service id. */
-  def byService[F[_, _]](repo: MasterServiceOffers[F]): ManyByKey[F, ServiceId, MasterServiceOffer] =
-    ManyByKey(repo.getMasterServiceOffersByService)
 
   private def masterNotFound(masterId: MasterId): QueryFailure =
     QueryFailure.domain(s"Master $masterId does not exist")

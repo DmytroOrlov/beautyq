@@ -7,7 +7,6 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{QueryFailure, Service, ServiceId}
-import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -23,14 +22,6 @@ trait Services[F[_, _]] {
 object Services {
   /** Model-derived entity metadata for [[Service]]. */
   val entity: RepoEntity[Service] = RepoEntity.derived[Service]
-
-  /** Optional service by id. */
-  def byId[F[_, _]](repo: Services[F]): OptionalByKey[F, ServiceId, Service] =
-    OptionalByKey.derived[F, Services[F], ServiceId, Service](repo)
-
-  /** Services by category id. */
-  def byCategory[F[_, _]](repo: Services[F]): ManyByKey[F, CategoryId, Service] =
-    ManyByKey.derived[F, Services[F], CategoryId, Service](repo)
 
   private def categoryNotFound(categoryId: CategoryId): QueryFailure =
     QueryFailure.domain(s"Category $categoryId does not exist")

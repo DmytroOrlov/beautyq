@@ -13,17 +13,18 @@ next".
 
 ## Current accepted state
 
-All of Phases A–F are done, and D2A/Seed F1 besides:
+All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup besides:
 
 ```text
-A:      root key moved into catalog declaration
-B:      standard repo op adapters derived by method signature
-C:      normal CatalogEntity evidence derived from conventional id; specs carry output key types
-D1:     unambiguous rootTree/rootAll/many relation-loader evidence derived
-D2A:    unambiguous value-edge (CatalogValueEdge) relation-loader evidence derived
-E1/E2:  BeautyQ Graph/fromDeclaration/Relations named-field layers removed
-F1/F2:  full-loader traversal and full-loader snapshot assembly derived generically
-Seed F1: seed-scoped required/value loading helpers derived by conventional id / signature
+A:         root key moved into catalog declaration
+B:         standard repo op adapters derived by method signature
+C:         normal CatalogEntity evidence derived from conventional id; specs carry output key types
+D1:        unambiguous rootTree/rootAll/many relation-loader evidence derived
+D2A:       unambiguous value-edge (CatalogValueEdge) relation-loader evidence derived
+E1/E2:     BeautyQ Graph/fromDeclaration/Relations named-field layers removed
+F1/F2:     full-loader traversal and full-loader snapshot assembly derived generically
+Seed F1:   seed-scoped required/value loading helpers derived by conventional id / signature
+Wrapper cleanup: zero-usage BeautyQ repo companion wrappers deleted
 ```
 
 The BeautyQ full loader (`BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`) is now:
@@ -100,7 +101,7 @@ SeedScopedFromRepositories:
   BLOCKED_SEED_TO_SNAPSHOT_BY_DEDUP_POLICY
 
 Repo wrappers:
-  PATCH_READY_WRAPPER_ZERO_USAGE_CLEANUP_FOR_ID_KEYED_WRAPPERS
+  DONE_WRAPPER_ZERO_USAGE_CLEANUP_FOR_ID_KEYED_WRAPPERS
   BLOCKED_BY_TRANSPARENT_UUID_AMBIGUITY
 
 Root id/root key:
@@ -147,39 +148,36 @@ invocation - pinning `K` to `ConventionalIdKey` *before* summoning entity eviden
 summoning evidence first and reusing its own separately-derived `Key` member, which empirically
 does not reach a nested quoted macro's own type comparison reduced) and repo operation (via
 `OptionalByKey.derived`/`ValueByKey.derived`, by signature, no method-name fallback) automatically.
-**Zero-usage check performed while writing this note** (`grep` across the whole repo, main +
-test sources): `Categories.byId`, `Services.byId`, `Masters.byId`, `MasterLocations.byId`,
-`MasterServiceOffers.byId`, `MasterServiceOfferVariants.byId` now have **no remaining callers
-anywhere** - Seed F1 was their last one, D1 having already removed the full loader's dependence on
-them. `ServiceVariantSchemas.byService` is in the same state (no remaining call site). A
-closeout follow-up fixed the D2A-era comment in `BeautyQCatalogGraph.scala`'s `Evidence` object
-that had claimed the seed-scoped loader was still a caller, and the matching sentence in this
-document's own D2A section below - both now correctly say it is part of the wrapper zero-usage
-cleanup set instead. None of these seven wrapper symbols were deleted in Seed F1 - only their
-seed-loader call sites were replaced.
+A zero-usage check performed after Seed F1 found `Categories.byId`, `Services.byId`,
+`Masters.byId`, `MasterLocations.byId`, `MasterServiceOffers.byId`,
+`MasterServiceOfferVariants.byId`, and `ServiceVariantSchemas.byService` had no remaining callers
+anywhere - Seed F1 was their last one, D1 having already removed the full loader's dependence on
+them. The wrapper zero-usage cleanup patch then deleted all 13 zero-usage wrappers (see "Wrapper zero-usage cleanup
+scope" below) and fixed the D2A-era comment in `BeautyQCatalogGraph.scala`'s `Evidence` object that
+had claimed the seed-scoped loader was still a caller.
 
 ## Recommended next sequence
 
 ```text
 1. D2A: derive CatalogValueEdge from repositories.                              [done]
 2. Seed F1: extract seed-scoped loading helpers without changing seed semantics. [done]
-3. Wrapper zero-usage cleanup: remove the seven now-zero-usage id/value wrappers.
+3. Wrapper zero-usage cleanup: remove the zero-usage repo companion wrappers. [done]
 4. Seed root-key cleanup: derive root filtering from declaration root where safe.
 5. D2B/value-source DSL: separate policy decision.
 ```
 
-Recommended next patch: **wrapper zero-usage cleanup**.
+Recommended next patch: **Seed root-key cleanup**.
 
-Rationale: Seed F1's own zero-usage check (see the note above) already found - not merely
-predicted - that `Categories.byId`/`Services.byId`/`Masters.byId`/`MasterLocations.byId`/
-`MasterServiceOffers.byId`/`MasterServiceOfferVariants.byId`/`ServiceVariantSchemas.byService` have
-no remaining callers anywhere in the repo. That makes wrapper cleanup the most concrete, lowest-risk
-next step - the audit work is already done, only the deletion (plus the stale
-`BeautyQCatalogGraph.scala` comment noted above) remains. Seed root-key cleanup is independent of
-that finding and can be sequenced either before or after it; it is listed after because it touches
-root/persistence-adjacent invariants and deserves its own, separate coordinator attention rather
-than being bundled with a mechanical wrapper deletion. D2B/value-source DSL remains a separate policy
-decision, not advanced by either Seed F1 or wrapper cleanup.
+Rationale: with D2A, Seed F1, and wrapper cleanup all landed, seed root-key cleanup is the next item
+that already has a concrete, scoped goal recorded in this document (derive root filtering from the
+catalog declaration's own root where safe) rather than needing fresh design work. It is independent
+of the wrapper cleanup just done - the two were never sequenced for a mechanical reason, just kept
+separate so a mechanical wrapper deletion didn't get bundled with a change touching
+root/persistence-adjacent invariants. `MasterServiceOffers.byMaster`/`MasterServiceOfferVariants
+.byOffer` remain explicit and untouched - they are still the two ambiguous relation-evidence call
+sites `BeautyQCatalogGraph.Evidence` uses, blocked on transparent UUID aliasing, not on anything
+seed root-key cleanup would change. D2B/value-source DSL remains a separate policy decision, not
+advanced by any of D2A/Seed F1/wrapper cleanup.
 
 ## D2A scope
 
@@ -247,6 +245,46 @@ is a different policy than the full loader's first-occurrence dedup, and the two
 silently unified. Whether/how to eventually let the seed loader also use `toSnapshot` is an open
 policy question, not a mechanical refactor; it is explicitly out of scope for "Seed F1" as scoped
 above.
+
+## Wrapper zero-usage cleanup scope
+
+Status: implemented. Mechanical deletion only, per the zero-usage check recorded above - no
+repository trait changed, no repo method renamed, no evidence logic changed.
+
+Removed (zero remaining callers anywhere in the repo):
+
+```text
+Categories.byId
+Categories.childrenByParent
+Services.byId
+Services.byCategory
+ServiceVariantSchemas.byService
+Masters.byId
+Masters.all
+MasterLocations.byId
+MasterLocations.byMaster
+MasterServiceOffers.byId
+MasterServiceOffers.byService
+MasterServiceOfferVariants.byId
+MasterServiceOfferVariants.byLocation
+```
+
+Kept (still explicit ambiguous relation evidence - `BeautyQCatalogGraph.Evidence` calls both
+directly, because `MasterId`/`ServiceId`/`MasterLocationId`/`MasterServiceOfferId` are transparent
+aliases of the same underlying `UUID`, so type-only derivation is ambiguous):
+
+```text
+MasterServiceOffers.byMaster
+MasterServiceOfferVariants.byOffer
+```
+
+Now-unused `leaderboard.repo.RepoOp.{OptionalByKey, ManyByKey, ValueByKey, AllValues}` imports were
+removed from each companion object where every symbol they imported became unused; `ManyByKey`
+stayed imported in `MasterServiceOffers`/`MasterServiceOfferVariants` since the kept `byMaster`/
+`byOffer` still use it. `BeautyQCatalogGraph.scala`'s `Evidence` object comment was updated (the
+D2A-era "the seed-scoped loader still calls it directly" claim about `ServiceVariantSchemas
+.byService` was already stale before this patch, fixed in a prior closeout follow-up) - the
+`Evidence` givens themselves were not touched.
 
 ## Bundle / coordinator workflow rules
 

@@ -7,7 +7,6 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}
-import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -21,14 +20,6 @@ trait Categories[F[_, _]] {
 object Categories {
   /** Model-derived entity metadata for [[Category]]. */
   val entity: RepoEntity[Category] = RepoEntity.derived[Category]
-
-  /** Optional category by id. */
-  def byId[F[_, _]](repo: Categories[F]): OptionalByKey[F, CategoryId, Category] =
-    OptionalByKey.derived[F, Categories[F], CategoryId, Category](repo)
-
-  /** Children by parent id. */
-  def childrenByParent[F[_, _]](repo: Categories[F]): ManyByKey[F, CategoryId, Category] =
-    ManyByKey.derived[F, Categories[F], CategoryId, Category](repo)
 
   private def parentNotFound(parentId: CategoryId): QueryFailure =
     QueryFailure.domain(s"Parent category $parentId does not exist")

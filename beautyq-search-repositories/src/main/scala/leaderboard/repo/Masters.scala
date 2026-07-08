@@ -5,7 +5,6 @@ import doobie.postgres.implicits.*
 import doobie.implicits.*
 import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.{Master, MasterId, QueryFailure}
-import leaderboard.repo.RepoOp.{AllValues, OptionalByKey}
 import leaderboard.sql.SQL
 import leaderboard.runtime.QueryFailureToThrowable
 import logstage.LogIO2
@@ -19,14 +18,6 @@ trait Masters[F[_, _]] {
 object Masters {
   /** Model-derived entity metadata for [[Master]]. */
   val entity: RepoEntity[Master] = RepoEntity.derived[Master]
-
-  /** Optional master by id. */
-  def byId[F[_, _]](repo: Masters[F]): OptionalByKey[F, MasterId, Master] =
-    OptionalByKey.derived[F, Masters[F], MasterId, Master](repo)
-
-  /** All masters. */
-  def all[F[_, _]](repo: Masters[F]): AllValues[F, Master] =
-    AllValues.derived[F, Masters[F], Master](repo)
 
   class Dummy[F[+_, +_]: Applicative2: Primitives2]
     extends Lifecycle.LiftF[F[Nothing, _], Masters[F]](for {

@@ -7,7 +7,7 @@ import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure, ServiceId, ServiceVariantSchema}
-import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey}
+import leaderboard.repo.RepoOp.ManyByKey
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -24,17 +24,12 @@ object MasterServiceOfferVariants {
   /** Model-derived entity metadata for [[MasterServiceOfferVariant]]. */
   val entity: RepoEntity[MasterServiceOfferVariant] = RepoEntity.derived[MasterServiceOfferVariant]
 
-  /** Optional variant by id. */
-  def byId[F[_, _]](repo: MasterServiceOfferVariants[F]): OptionalByKey[F, MasterServiceOfferVariantId, MasterServiceOfferVariant] =
-    OptionalByKey.derived[F, MasterServiceOfferVariants[F], MasterServiceOfferVariantId, MasterServiceOfferVariant](repo)
-
-  /** Variants by offer id. */
+  /** Variants by offer id. Kept explicit: `MasterServiceOfferId`/`MasterLocationId`
+    * are transparent aliases of the same underlying `UUID`, so type-only
+    * derivation is ambiguous here - see `BeautyQCatalogGraph.Evidence`.
+    */
   def byOffer[F[_, _]](repo: MasterServiceOfferVariants[F]): ManyByKey[F, MasterServiceOfferId, MasterServiceOfferVariant] =
     ManyByKey(repo.getMasterServiceOfferVariantsByOffer)
-
-  /** Variants by location id. */
-  def byLocation[F[_, _]](repo: MasterServiceOfferVariants[F]): ManyByKey[F, MasterLocationId, MasterServiceOfferVariant] =
-    ManyByKey(repo.getMasterServiceOfferVariantsByLocation)
 
   private case class MasterServiceOfferVariantBaseRow(
     id: MasterServiceOfferVariantId,
