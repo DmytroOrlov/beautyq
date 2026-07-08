@@ -212,8 +212,12 @@ members) to pin the output key type without ever asking Scala's implicit search 
 variable. `CatalogEntity.derivedFromId` is unchanged and still does all the work at materialization
 time, where the key type is now always already concrete.
 
-Phase D (relation evidence derivation) is not started. `CatalogValue`/aggregate value-source
-derivation is not started or claimed.
+Status: Phase D1 derives unambiguous rootTree/rootAll/many relation-loader evidence from the
+repository bundle by operation signature. BeautyQ no longer hand-wires the unambiguous
+`Category` tree, `Category -> Service`, `Master` rootAll, or `Master -> MasterLocation` loaders.
+`CatalogValueEdge` and transparent-UUID ambiguous many edges remain explicit.
+
+`CatalogValue`/aggregate value-source derivation is not started or claimed.
 
 Goal:
 

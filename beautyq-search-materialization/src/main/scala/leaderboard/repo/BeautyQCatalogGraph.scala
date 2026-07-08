@@ -156,20 +156,8 @@ object BeautyQCatalogGraph {
     given CatalogValue.Aux[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
       CatalogValue.from(Nodes.serviceVariantSchema)
 
-    given [F[_, _]]: CatalogRootTree.Aux[F, Repositories[F], Category, CategoryId] =
-      CatalogRootTree.fromRepo[F, Repositories[F], Categories[F], Category, CategoryId](_.categories)(Categories.childrenByParent)
-
-    given [F[_, _]]: CatalogMany.Aux[F, Repositories[F], Category, Service, CategoryId] =
-      CatalogMany.fromRepo[F, Repositories[F], Services[F], Category, Service, CategoryId](_.services)(Services.byCategory)
-
     given [F[_, _]]: CatalogValueEdge.Aux[F, Repositories[F], Service, ServiceVariantSchema, ServiceId] =
       CatalogValueEdge.fromRepo[F, Repositories[F], ServiceVariantSchemas[F], Service, ServiceVariantSchema, ServiceId](_.serviceVariantSchemas)(ServiceVariantSchemas.byService)
-
-    given [F[_, _]]: CatalogRootAll[F, Repositories[F], Master] =
-      CatalogRootAll.fromRepo[F, Repositories[F], Masters[F], Master](_.masters)(Masters.all)
-
-    given [F[_, _]]: CatalogMany.Aux[F, Repositories[F], Master, MasterLocation, MasterId] =
-      CatalogMany.fromRepo[F, Repositories[F], MasterLocations[F], Master, MasterLocation, MasterId](_.masterLocations)(MasterLocations.byMaster)
 
     given [F[_, _]]: CatalogMany.Aux[F, Repositories[F], Master, MasterServiceOffer, MasterId] =
       CatalogMany.fromRepo[F, Repositories[F], MasterServiceOffers[F], Master, MasterServiceOffer, MasterId](_.masterServiceOffers)(MasterServiceOffers.byMaster)

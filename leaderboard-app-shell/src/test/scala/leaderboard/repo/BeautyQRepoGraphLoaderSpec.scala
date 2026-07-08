@@ -105,8 +105,6 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
     }
 
     "select a materialized relation factory by its exact type via TupleSelect" in {
-      import BeautyQCatalogGraph.Evidence.given
-
       val materialized =
         catalog("beautyq")
           .branch[Category]

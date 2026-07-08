@@ -474,6 +474,9 @@ object CatalogRootTree {
       type Key = K
       def load(repositories: R): ManyByKey[F, K, A] = loader(select(repositories))
     }
+
+  transparent inline given derivedFromRepositories[F[_, _], R, A, K](using Mirror.ProductOf[R]): Aux[F, R, A, K] =
+    ${ CatalogRelationEvidenceDerivation.rootTreeImpl[F, R, A, K] }
 }
 
 /** Evidence for how to load a flat "all" root, for effect type `F` and
@@ -485,6 +488,9 @@ trait CatalogRootAll[F[_, _], R, A] {
 object CatalogRootAll {
   def fromRepo[F[_, _], R, Repo, A](select: R => Repo)(loader: Repo => AllValues[F, A]): CatalogRootAll[F, R, A] =
     (repositories: R) => loader(select(repositories))
+
+  transparent inline given derivedFromRepositories[F[_, _], R, A](using Mirror.ProductOf[R]): CatalogRootAll[F, R, A] =
+    ${ CatalogRelationEvidenceDerivation.rootAllImpl[F, R, A] }
 }
 
 /** Evidence for how to load a has-many edge's children, for effect type `F`
@@ -502,6 +508,9 @@ object CatalogMany {
       type Key = K
       def load(repositories: R): ManyByKey[F, K, C] = loader(select(repositories))
     }
+
+  transparent inline given derivedFromRepositories[F[_, _], R, P, C, K](using Mirror.ProductOf[R]): Aux[F, R, P, C, K] =
+    ${ CatalogRelationEvidenceDerivation.manyImpl[F, R, P, C, K] }
 }
 
 /** Evidence for how to load a has-one aggregate value edge's value, for
