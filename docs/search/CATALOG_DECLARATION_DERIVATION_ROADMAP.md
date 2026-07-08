@@ -143,6 +143,20 @@ Non-goals:
 
 ### Phase C: derive catalog entity/value evidence
 
+Status: Phase C.1 adds automatic `CatalogEntity.Aux` derivation from a conventional `id` field
+(`CatalogEntity.derivedFromId`, repo-core), but only `Category`'s manual BeautyQ
+`CatalogEntity.Aux[...]` given was removed from `BeautyQCatalogGraph.Evidence` - it is the only one
+of the six that never appears as an edge's child side or as a `rootAll` root, so its key type is
+always already pinned by the declared spec type. The other five (`Service`, `Master`,
+`MasterLocation`, `MasterServiceOffer`, `MasterServiceOfferVariant`) stay explicit: verified
+empirically, Scala's implicit search cannot use a fully generic `derivedFromId[A, K]` given to
+solve a free key type in `MaterializeOne.manyEdge`'s `childEntity` or `MaterializeOne.rootAll`'s
+`entity` slot, because unifying `CatalogEntity.Aux[C, CK]` against a generic candidate leaves `CK`
+unconstrained before macro expansion runs. Closing that gap would mean rewriting
+`CatalogRootAll`/`CatalogMany`/`MaterializeOne` to carry the child/root key type in the spec tuple
+itself, which is out of scope for this phase. `CatalogValue` / aggregate value-source evidence
+remains fully explicit, unchanged.
+
 Goal:
 
 * Remove repetitive `CatalogEntity.Aux[...]` where entities have conventional `id`.

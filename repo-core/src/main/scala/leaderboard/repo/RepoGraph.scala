@@ -372,6 +372,26 @@ object CatalogEntity {
     */
   transparent inline def derived[A](entity: RepoEntity[A]): CatalogEntity[A] =
     ${ CatalogEntityDerivation.derivedImpl[A]('entity) }
+
+  /** Automatic entity evidence for any conventional id-keyed product type:
+    * no `RepoEntity` value, repo companion, or hand-written selector needed.
+    * Derives its own `RepoEntity[A]` (via [[RepoEntity.derived]]) and node
+    * from `A`'s own `id` field, then checks the discovered id type against
+    * the requested `K`. Fails to compile if `A` has no conventional `id`
+    * field, or if that field's type does not match `K`. Explicit evidence
+    * built via [[from]]/[[derived]] stays available for types this cannot
+    * cover (no conventional `id`) or where a coordinator wants full control.
+    *
+    * Compiler caveat: the specific abort reason is only guaranteed to show
+    * when this given is invoked directly (`CatalogEntity.derivedFromId[A, K]`).
+    * When it is instead reached through ordinary given search (`summon`, or
+    * resolving a `using` parameter) and fails, the Scala 3 compiler reports
+    * only its own generic "no given instance found ... macro expansion was
+    * stopped" wrapper, not the message below - a verified compiler behavior,
+    * unaffected by `-explain`.
+    */
+  transparent inline given derivedFromId[A, K](using mirror: Mirror.ProductOf[A]): Aux[A, K] =
+    ${ CatalogEntityDerivation.derivedGivenImpl[A, K]('mirror) }
 }
 
 /** Evidence that `A` is a value/aggregate catalog source (not a normal
