@@ -235,6 +235,37 @@ private[repo] def decapitalize(name: String): String =
 
 // --- Pure specs: recorded by the declaration chain, no F/R/loaders. ---
 
+/** Type-level lookup of a product type's conventional `id` field type from
+  * its `Mirror`'s own element labels/types - pure type-level computation
+  * (match type reduction), no macro, no value indirection. Used by
+  * `CatalogBranch.rootAll`/`CatalogChildStart.apply` to pin a declared
+  * root/child's output key type at declaration time, purely from `A`'s own
+  * `Mirror.ProductOf[A]`, with no separate free type parameter for Scala's
+  * inference to default to `Any`.
+  *
+  * `CatalogEntity.Aux[A, K]`/[[CatalogEntity.derivedFromId]] (a
+  * `transparent inline given`) cannot be used for this instead: verified
+  * empirically, when `K` is a free type parameter of the *caller* (e.g. a
+  * `rootAll[K](using CatalogEntity.Aux[A, K])`-shaped method, matching the
+  * pattern that already works for `MaterializeOne`'s materialization-time
+  * givens), Scala's inference defaults the unconstrained `K` to `Any` before
+  * attempting the `using` search, and the derivation macro then correctly
+  * aborts (`Any` never equals a real id field's type). That default happens
+  * regardless of whether the sought type is `CatalogEntity.Aux[A, K]` or the
+  * unrefined `CatalogEntity[A]`. This match type sidesteps the problem
+  * entirely: there is no separate `K` slot to default, because the id field
+  * type is read directly off `A`'s own `Mirror`.
+  *
+  * Fails to compile (match type reduction failure) if `A` has no field
+  * literally named `id` - the same safety guarantee
+  * `CatalogEntity.derivedFromId` provides for materialization evidence, just
+  * enforced one step earlier, at declaration time.
+  */
+type ConventionalIdKey[Labels <: Tuple, Elems <: Tuple] = (Labels, Elems) match {
+  case ("id" *: _, elemT *: _)           => elemT
+  case (_ *: labelsTail, _ *: elemsTail) => ConventionalIdKey[labelsTail, elemsTail]
+}
+
 /** A declared self-tree root: entity type `A`, its own key type `K`, the
   * resolved parent-edge field, and the synthetic root key traversal starts
   * from. Pure - no loader, no repositories.
@@ -244,16 +275,19 @@ final case class RootTreeSpec[A, K](
   rootKey: K,
 )
 
-/** A declared flat "all" root for entity type `A`. Pure marker - no loader,
-  * no repositories.
-  */
-final case class RootAllSpec[A]()
-
-/** A declared has-many edge: parent type `P`, child type `C`, and the
-  * resolved foreign-key field (typed by the parent's own key `K`). Pure - no
+/** A declared flat "all" root for entity type `A`, carrying its own output
+  * key type `K` (pinned via `A`'s entity evidence at declaration time, the
+  * same way [[RootTreeSpec]] carries its root key type). Pure marker - no
   * loader, no repositories.
   */
-final case class ManyEdgeSpec[P, C, K](foreignKey: RepoField[C, K])
+final case class RootAllSpec[A, K]()
+
+/** A declared has-many edge: parent type `P`, child type `C`, the resolved
+  * foreign-key field (typed by the parent's own key `K`), and the child's own
+  * output key type `CK` (pinned via `C`'s entity evidence at declaration
+  * time). Pure - no loader, no repositories.
+  */
+final case class ManyEdgeSpec[P, C, K, CK](foreignKey: RepoField[C, K])
 
 /** A declared has-one aggregate value edge: parent type `P`, value type `V`,
   * and the resolved value-key field (typed by the parent's own key `K`).
@@ -292,10 +326,16 @@ final class CatalogBranch[Specs <: Tuple, A](
     new CatalogBranch(name, steps :+ step, RootTreeSpec[A, K](field, root) *: specs, entityName)
   }
 
-  /** Declares `A`'s root as a flat "all" collection. */
-  def rootAll: CatalogBranch[RootAllSpec[A] *: Specs, A] = {
+  /** Declares `A`'s root as a flat "all" collection. Requires `A` to be a
+    * product type with a conventional `id` field (any normal case class);
+    * pins the output key type to that field's own type via
+    * [[ConventionalIdKey]], the same way [[rootTree]] carries its root key
+    * type explicitly - so materialization (`CatalogEntity.derivedFromId`)
+    * never has to solve it freely.
+    */
+  inline def rootAll(using mirror: Mirror.ProductOf[A]): CatalogBranch[RootAllSpec[A, ConventionalIdKey[mirror.MirroredElemLabels, mirror.MirroredElemTypes]] *: Specs, A] = {
     val step = CatalogStep.Root(entityName, RootLoading.All, None)
-    new CatalogBranch(name, steps :+ step, RootAllSpec[A]() *: specs, entityName)
+    new CatalogBranch(name, steps :+ step, RootAllSpec[A, ConventionalIdKey[mirror.MirroredElemLabels, mirror.MirroredElemTypes]]() *: specs, entityName)
   }
 
   /** Declares a has-many child edge from the current branch to `C`, joined
@@ -323,13 +363,16 @@ final class CatalogBranch[Specs <: Tuple, A](
 }
 
 /** `.apply(by)` for a has-many child edge declaration; `K` (the parent's own
-  * key type) is inferred from `by`, not supplied explicitly.
+  * key type) is inferred from `by`, not supplied explicitly. The child's own
+  * output key type is pinned via `C`'s conventional `id` field, using
+  * [[ConventionalIdKey]] on `C`'s own `Mirror.ProductOf` - the same
+  * declaration-time mechanism [[CatalogBranch.rootAll]] uses.
   */
 final class CatalogChildStart[Specs <: Tuple, A, C](branch: CatalogBranch[Specs, A], childName: String) {
-  inline def apply[K](inline by: C => K): CatalogBranch[ManyEdgeSpec[A, C, K] *: Specs, A] = {
+  inline def apply[K](inline by: C => K)(using mirror: Mirror.ProductOf[C]): CatalogBranch[ManyEdgeSpec[A, C, K, ConventionalIdKey[mirror.MirroredElemLabels, mirror.MirroredElemTypes]] *: Specs, A] = {
     val field = RepoField.derived(by)
     val step  = CatalogStep.Edge(branch.entityName, childName, EdgeKind.Many, field.label)
-    new CatalogBranch(branch.name, branch.steps :+ step, ManyEdgeSpec[A, C, K](field) *: branch.specs, branch.entityName)
+    new CatalogBranch(branch.name, branch.steps :+ step, ManyEdgeSpec[A, C, K, ConventionalIdKey[mirror.MirroredElemLabels, mirror.MirroredElemTypes]](field) *: branch.specs, branch.entityName)
   }
 }
 
@@ -504,14 +547,14 @@ private[repo] object MaterializeOne {
   given rootAll[F[_, _], R, A, K](using
     entity: CatalogEntity.Aux[A, K],
     loader: CatalogRootAll[F, R, A],
-  ): MaterializeOne[RootAllSpec[A], F, R, Relation.All[F, A, K]] =
+  ): MaterializeOne[RootAllSpec[A, K], F, R, Relation.All[F, A, K]] =
     _ => repositories => Relation.All(entity.node, loader.load(repositories))
 
   given manyEdge[F[_, _], R, P, C, K, CK](using
     parentEntity: CatalogEntity.Aux[P, K],
     childEntity: CatalogEntity.Aux[C, CK],
     loader: CatalogMany.Aux[F, R, P, C, K],
-  ): MaterializeOne[ManyEdgeSpec[P, C, K], F, R, Relation.HasMany[F, P, K, C, CK]] =
+  ): MaterializeOne[ManyEdgeSpec[P, C, K, CK], F, R, Relation.HasMany[F, P, K, C, CK]] =
     spec => repositories => Relation.HasMany(parentEntity.node, childEntity.node, spec.foreignKey, loader.load(repositories))
 
   given valueEdge[F[_, _], R, P, V, K, VK, Row](using

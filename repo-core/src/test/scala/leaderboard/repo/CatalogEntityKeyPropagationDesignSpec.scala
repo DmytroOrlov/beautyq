@@ -4,20 +4,26 @@ import leaderboard.repo.RepoOp.{AllValues, ManyByKey}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, ZIO}
 
-/** Phase C.2 design spike - NOT a production change.
+/** Phase C.2 design spike - NOT a production change (historical: production
+  * `RootAllSpec`/`ManyEdgeSpec` now carry their output key types as of Phase
+  * C3, so the five entities named below no longer need explicit
+  * `CatalogEntity.Aux[...]` givens in `BeautyQCatalogGraph.Evidence` - see
+  * that object and the roadmap's Phase C3 status for the current state).
   *
   * Phase C.1 found that `CatalogEntity.derivedFromId[A, K]` (a fully generic
   * `transparent inline given`) can only resolve when the requested `K` is
   * already concrete/pinned by something *other* than entity evidence itself
   * before the given search runs. That holds for `RootTreeSpec[A, K]` and a
   * `ManyEdgeSpec[P, C, K]`'s *parent* side (`K` is part of the spec's own
-  * type), which is why `Category`'s explicit given could be removed. It does
-  * NOT hold for `RootAllSpec[A]` (carries no key at all) or a
-  * `ManyEdgeSpec[P, C, K]`'s *child* side (`CK` never appears in the spec),
-  * which is why `Master`/`Service`/`MasterLocation`/`MasterServiceOffer`/
-  * `MasterServiceOfferVariant` still need explicit givens - verified
-  * empirically in Phase C.1 by removing e.g. `Master`'s given and observing
-  * the same "unresolved `???` / macro expansion was stopped" failure.
+  * type), which is why `Category`'s explicit given could be removed first.
+  * At the time this spike was written, that did NOT yet hold for
+  * `RootAllSpec[A]` (carried no key at all) or a `ManyEdgeSpec[P, C, K]`'s
+  * *child* side (`CK` did not appear in the spec), which is why
+  * `Master`/`Service`/`MasterLocation`/`MasterServiceOffer`/
+  * `MasterServiceOfferVariant` still needed explicit givens back then -
+  * verified empirically in Phase C.1 by removing e.g. `Master`'s given and
+  * observing the same "unresolved `???` / macro expansion was stopped"
+  * failure. Phase C3 closed this gap in production specs (see below).
   *
   * This spike reproduces both shapes with local, BeautyQ-free fixtures, and
   * tests one candidate fix: specs carrying their own output key types
@@ -26,6 +32,14 @@ import zio.{IO, ZIO}
   * production `RepoGraph.scala`/`CatalogEntityDerivation.scala`/
   * `BeautyQCatalogGraph.scala`, and it does not derive real relation-loading
   * evidence (`CatalogRootAll`/`CatalogMany` are untouched, unused here).
+  * Candidate A's finding (key-carrying specs let entity evidence resolve
+  * automatically) is exactly what Phase C3 built on for production, though
+  * production pins the key type via a type-level `Mirror`-based lookup at
+  * declaration time rather than via a `CatalogEntity.Aux[A, K]` `using`
+  * clause on `rootAll`/`child` themselves (verified during C3: the latter
+  * still leaves the method's own `K`/`CK` free and Scala defaults it to
+  * `Any`, the same failure this spike reproduces for `RootAllSpecCurrent`/
+  * `ManyEdgeSpecCurrent`).
   */
 
 // --- Fixture domain, not BeautyQ ---

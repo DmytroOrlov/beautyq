@@ -1,7 +1,7 @@
 package leaderboard.repo
 
 import leaderboard.model.QueryFailure
-import leaderboard.repo.RepoOp.{ManyByKey, OptionalByKey, ValueByKey}
+import leaderboard.repo.RepoOp.{AllValues, ManyByKey, OptionalByKey, ValueByKey}
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Runtime, Unsafe, ZIO}
 
@@ -74,6 +74,35 @@ final class GraphLoadingSpec extends AnyWordSpec {
       val loaded = runIO(GraphLoading.valueFor(relation, List(h1, h2)))
 
       assert(loaded.map(_.label) == List("value-h1", "value-h2"))
+    }
+  }
+
+  "catalog declaration DSL (Phase C3: key-carrying rootAll/child-edge specs)" should {
+    "materialize a rootAll declaration without a manual CatalogEntity.Aux given" in {
+      val declaration = catalog("graphRootAll").branch[GraphHolder].rootAll
+
+      given CatalogRootAll[IO, Unit, GraphHolder] =
+        CatalogRootAll.fromRepo[IO, Unit, Unit, GraphHolder](identity)(_ => AllValues[IO, GraphHolder](() => ZIO.succeed(Nil)))
+
+      val materialized = declaration.materialize[IO, Unit](identity)
+      val relation      = materialized.relationAs[Unit => Relation.All[IO, GraphHolder, String]]
+
+      assert(relation(()).node.key.label == "id")
+    }
+
+    "materialize a child-edge declaration without a manual child CatalogEntity.Aux given" in {
+      val declaration = catalog("graphChildEdge").branch[GraphHolder].child[GraphChild](_.parentId)
+
+      given CatalogMany.Aux[IO, Unit, GraphHolder, GraphChild, String] =
+        CatalogMany.fromRepo[IO, Unit, Unit, GraphHolder, GraphChild, String](identity)(_ => ManyByKey[IO, String, GraphChild](_ => ZIO.succeed(Nil)))
+
+      val materialized = declaration.materialize[IO, Unit](identity)
+      val relation      = materialized.relationAs[Unit => Relation.HasMany[IO, GraphHolder, String, GraphChild, String]]
+
+      val built = relation(())
+      assert(built.parent.key.label == "id")
+      assert(built.child.key.label == "id")
+      assert(built.foreignKey.label == "parentId")
     }
   }
 

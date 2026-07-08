@@ -9,7 +9,11 @@ final case class ParamWidget(id: ParamWidgetId, name: String)
 final case class ParamGadgetId(value: String)
 final case class ParamGadget(id: ParamGadgetId, widgetId: ParamWidgetId, label: String)
 
-/** Phase C.2b design spike - NOT a production change.
+/** Phase C.2b design spike - NOT a production change (historical: as of
+  * Phase C3, production `RootAllSpec`/`ManyEdgeSpec` carry their output key
+  * types, matching `RootAllSpec2`/`ManyEdgeSpec2` below rather than
+  * `RootAllSpecCurrent`/`ManyEdgeSpecCurrent` - see
+  * `BeautyQCatalogGraph.Evidence` and the roadmap's Phase C3 status).
   *
   * Fairly tests whether `ParamCatalogEntity[A, K]` (`CatalogEntity2Derivation.scala`,
   * a directly-parameterized, *validating* entity-evidence encoding - "Candidate B")
@@ -22,9 +26,10 @@ final case class ParamGadget(id: ParamGadgetId, widgetId: ParamWidgetId, label: 
   *
   * Reuses the free-key/key-carrying fixture shapes already declared in
   * `CatalogEntityKeyPropagationDesignSpec.scala` (same package):
-  * `RootAllSpecCurrent[A]`/`ManyEdgeSpecCurrent[P, C, K]` (production's current,
-  * free-key shape) and `RootAllSpec2[A, K]`/`ManyEdgeSpec2[P, C, PK, CK]`
-  * (key-carrying "Candidate A" shape).
+  * `RootAllSpecCurrent[A]`/`ManyEdgeSpecCurrent[P, C, K]` (the free-key shape
+  * production used before Phase C3) and `RootAllSpec2[A, K]`/
+  * `ManyEdgeSpec2[P, C, PK, CK]` (key-carrying "Candidate A" shape, matching
+  * what production specs carry as of Phase C3).
   *
   * Result, verified empirically below: parameterizing entity evidence does not, by
   * itself, solve the free-key problem. `summon[ParamKeyPropagationProof[
@@ -36,8 +41,12 @@ final case class ParamGadget(id: ParamGadgetId, widgetId: ParamWidgetId, label: 
   * C.1 found for `CatalogEntity.Aux[A, K]`. A fully generic, validating,
   * macro-backed given cannot help Scala's implicit search pin a free key type,
   * regardless of whether the entity-evidence encoding is path-dependent-refined
-  * (`CatalogEntity.Aux`) or directly parameterized (`ParamCatalogEntity`). Specs
-  * still need to carry their own output key types (Candidate A) either way.
+  * (`CatalogEntity.Aux`) or directly parameterized (`ParamCatalogEntity`). Phase C3
+  * confirmed the same limitation applies even to a direct (non-`given`) method call
+  * like `rootAll`/`child` when `K`/`CK` is only bound via a `using` clause on that
+  * method itself; production instead pins the key type via a type-level
+  * `Mirror`-based lookup at declaration time (see `ConventionalIdKey` in
+  * `RepoGraph.scala`), not by adopting Candidate B.
   */
 trait ParamKeyPropagationProof[Spec]
 

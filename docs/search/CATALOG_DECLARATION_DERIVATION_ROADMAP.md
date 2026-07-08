@@ -183,6 +183,38 @@ key-carrying `RootAllSpec2`/`ManyEdgeSpec2` shapes succeed with either encoding.
 should prioritize key-carrying specs (Candidate A); parameterizing catalog evidence on top remains
 an open, independent boilerplate-reduction question, not a substitute for it.
 
+Status: Phase C3 pins rootAll and child-edge output key types in production catalog specs,
+allowing all normal BeautyQ `CatalogEntity.Aux[...]` givens to be removed. `CatalogValue` and
+relation loader evidence remain explicit.
+
+`RootAllSpec[A]`/`ManyEdgeSpec[P, C, K]` became `RootAllSpec[A, K]`/`ManyEdgeSpec[P, C, K, CK]`,
+carrying their output key type(s) the same way `RootTreeSpec[A, K]` already did. `CatalogBranch
+.rootAll`/`CatalogChildStart.apply` keep their exact public call shape (`.rootAll`,
+`.child[Service](_.categoryId)`, no explicit type arguments) unchanged - confirmed by recompiling
+the untouched `BeautyQCatalogDeclaration.declaration` as-is. All five remaining BeautyQ normal
+entity givens (`Service`/`Master`/`MasterLocation`/`MasterServiceOffer`/
+`MasterServiceOfferVariant`) were removed from `BeautyQCatalogGraph.Evidence`; only `Category`'s
+had been removable before this phase.
+
+Deviation from the task's suggested implementation shape, verified empirically: a `rootAll[K](using
+CatalogEntity.Aux[A, K])`/`apply[K, CK](...)(using CatalogEntity.Aux[C, CK])` shape - `K`/`CK` as a
+free type parameter of `rootAll`/`apply` itself, resolved via a `using` clause - does not compile.
+Scala defaults the unconstrained `K`/`CK` to `Any` before attempting the `using` search (regardless
+of whether the sought type is `CatalogEntity.Aux[A, K]` or the unrefined `CatalogEntity[A]`), and
+`CatalogEntity.derivedFromId`'s validation then correctly rejects `Any`. This reproduces, at
+declaration time, the exact same free-variable limitation Phase C.1/C.2/C.2b diagnosed at
+materialization time - it is not specific to `MaterializeOne`'s nested implicit search. Instead,
+`RepoGraph.scala` adds `ConventionalIdKey[Labels, Elems]`, a pure type-level match type that reads
+a product type's conventional `id` field type directly off its own `Mirror.ProductOf` element
+labels/types - no macro, no free type parameter, no value indirection. `rootAll`/`apply` use it
+(`using mirror: Mirror.ProductOf[A]`, keyed off the *named* `mirror` parameter's own path-dependent
+members) to pin the output key type without ever asking Scala's implicit search to solve a free
+variable. `CatalogEntity.derivedFromId` is unchanged and still does all the work at materialization
+time, where the key type is now always already concrete.
+
+Phase D (relation evidence derivation) is not started. `CatalogValue`/aggregate value-source
+derivation is not started or claimed.
+
 Goal:
 
 * Remove repetitive `CatalogEntity.Aux[...]` where entities have conventional `id`.

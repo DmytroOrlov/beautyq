@@ -140,36 +140,19 @@ object BeautyQCatalogGraph {
     * only [[graph]] does, at materialization time.
     */
   object Evidence {
-    // `Category`'s normal entity evidence is not declared here: it is the only
-    // one of these six entities that never appears as an edge's *child* side
-    // or as a `rootAll` root, so its key type is always already pinned by the
-    // declared spec type (`RootTreeSpec[Category, CategoryId]` /
-    // `ManyEdgeSpec[Category, Service, CategoryId]`) wherever it is needed -
-    // `CatalogEntity.derivedFromId` (repo-core) resolves it automatically from
-    // `Category`'s own conventional `id` field there.
-    //
-    // The other five stay explicit. Each one is needed as a *child* entity
-    // (`MaterializeOne.manyEdge`'s `childEntity: CatalogEntity.Aux[C, CK]`,
-    // e.g. Service/MasterLocation/MasterServiceOffer/MasterServiceOfferVariant)
-    // or as a `rootAll` root (`MaterializeOne.rootAll`'s
-    // `entity: CatalogEntity.Aux[A, K]`, e.g. Master) - in both shapes the key
-    // type (`CK`/`K`) is a free type variable that only the *matched entity
-    // evidence itself* pins down, not the declared spec tuple type. A fully
-    // generic `derivedFromId[A, K]` given cannot help Scala's implicit search
-    // solve a free `K`/`CK` this way: unifying `CatalogEntity.Aux[C, CK]`
-    // against a generic `derivedFromId[A, K]` candidate leaves `CK`
-    // unconstrained before macro expansion even runs, so the search aborts
-    // (`???`/"macro expansion was stopped", verified empirically) instead of
-    // picking the one `K` that would actually make `A`'s `id` field line up.
-    // Fixing this in general would mean rewriting `CatalogRootAll`/
-    // `CatalogMany`/`MaterializeOne` to carry the child/root key type in the
-    // spec tuple itself, which is out of scope for this phase.
-    given CatalogEntity.Aux[Service, ServiceId] = CatalogEntity.derived(Services.entity)
-    given CatalogEntity.Aux[Master, MasterId] = CatalogEntity.derived(Masters.entity)
-    given CatalogEntity.Aux[MasterLocation, MasterLocationId] = CatalogEntity.derived(MasterLocations.entity)
-    given CatalogEntity.Aux[MasterServiceOffer, MasterServiceOfferId] = CatalogEntity.derived(MasterServiceOffers.entity)
-    given CatalogEntity.Aux[MasterServiceOfferVariant, MasterServiceOfferVariantId] = CatalogEntity.derived(MasterServiceOfferVariants.entity)
-
+    // No normal entity evidence (`CatalogEntity.Aux[...]`) is declared here at
+    // all, for any of the six BeautyQ entities (Category/Service/Master/
+    // MasterLocation/MasterServiceOffer/MasterServiceOfferVariant): Phase C3
+    // made `CatalogBranch.rootAll`/`CatalogChildStart.apply` pin the output
+    // key type of every declared root/child directly from the entity's own
+    // conventional `id` field at declaration time (`RootAllSpec[A, K]`/
+    // `ManyEdgeSpec[P, C, K, CK]` in `BeautyQCatalogDeclaration.declaration`
+    // now carry that key type explicitly, the same way `RootTreeSpec[A, K]`
+    // already did). With the key type always already concrete in the spec
+    // tuple, `CatalogEntity.derivedFromId` (repo-core) resolves every normal
+    // entity automatically at materialization time too - the free-`K`/`CK`
+    // problem Phase C.1/C.2/C.2b diagnosed no longer arises, because nothing
+    // ever asks for `CatalogEntity.Aux[A, K]` with a free `K`.
     given CatalogValue.Aux[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
       CatalogValue.from(Nodes.serviceVariantSchema)
 
