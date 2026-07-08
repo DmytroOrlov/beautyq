@@ -13,13 +13,14 @@ next".
 
 ## Current accepted state
 
-All of Phases A–F are done:
+All of Phases A–F are done, and D2A besides:
 
 ```text
 A:     root key moved into catalog declaration
 B:     standard repo op adapters derived by method signature
 C:     normal CatalogEntity evidence derived from conventional id; specs carry output key types
 D1:    unambiguous rootTree/rootAll/many relation-loader evidence derived
+D2A:   unambiguous value-edge (CatalogValueEdge) relation-loader evidence derived
 E1/E2: BeautyQ Graph/fromDeclaration/Relations named-field layers removed
 F1/F2: full-loader traversal and full-loader snapshot assembly derived generically
 ```
@@ -83,7 +84,7 @@ Status per cluster:
 
 ```text
 CatalogValueEdge:
-  PATCH_READY_D2A_DERIVE_VALUE_EDGE_FROM_REPOSITORIES
+  DONE_D2A_DERIVED_FROM_REPOSITORIES
 
 CatalogValue:
   KEEP_EXPLICIT_VALUE_SOURCE_POLICY_FOR_NOW
@@ -110,38 +111,59 @@ Nodes compatibility for projection:
 
 Notes on each status:
 
+* **`DONE_*`** — implemented and validated; kept in the inventory so the historical shape of the
+  cluster (what it used to be, why it mattered) stays visible without having to open the roadmap.
 * **`PATCH_READY_*`** — a specific, scoped patch is ready to propose; see the scope sections below.
 * **`KEEP_EXPLICIT_*`** — a deliberate decision to leave this explicit for now; not a blocker, not
   forgotten work. Re-derive only behind a fresh coordinator decision, not as a drive-by.
 * **`BLOCKED_*`** — genuinely blocked on something outside this initiative's current scope
   (a policy decision, a model refactor, or another patch landing first).
 
-`CatalogValueEdge` is the one remaining piece of the original Phase D goal
+`CatalogValueEdge` was the one remaining piece of the original Phase D goal
 (`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`'s "Phase D: derive relation evidence from
 declaration + repo loaders" listed `CatalogRootTree.Aux`/`CatalogMany.Aux`/`CatalogValueEdge.Aux`;
-D1 derived the first two, `CatalogValueEdge` was explicitly left explicit). `CatalogValue` itself
-(the value-source *identity* evidence, as opposed to the edge-loader) is a separate, independent
-decision — do not conflate deriving the edge loader with deriving the value source.
+D1 derived the first two, `CatalogValueEdge` was left explicit until D2A). `CatalogRelationEvidence
+Derivation.valueEdgeImpl` (repo-core) now derives it the same way D1 derived
+rootTree/rootAll/many: exactly one repositories-bundle field with a method shaped `K => F[QueryFailure,
+V]` for the requested `K`/`V`, reusing the existing `uniqueRepositoryField`/`singleArgCandidates`
+helpers - no method-name or repo-field-name fallback, fails to compile on zero or multiple matches.
+BeautyQ's only declared value edge (`Service -> ServiceVariantSchema`, keyed by `serviceId`) resolves
+this way now; its explicit `CatalogValueEdge.Aux[...]` given was removed from
+`BeautyQCatalogGraph.Evidence`. `CatalogValue` itself (the value-source *identity* evidence, as
+opposed to the edge-loader) is a separate, independent decision, deliberately untouched by D2A - do
+not conflate deriving the edge loader with deriving the value source.
 
 ## Recommended next sequence
 
 ```text
-1. D2A: derive CatalogValueEdge from repositories.
+1. D2A: derive CatalogValueEdge from repositories.               [done]
 2. Seed F1: extract seed-scoped loading helpers without changing seed semantics.
 3. Seed root-key cleanup: derive root filtering from declaration root where safe.
 4. Wrapper cleanup: only after zero-usage audit.
 5. D2B/value-source DSL: separate policy decision.
 ```
 
-Recommended next patch: **D2A**.
+Recommended next patch: **Seed F1**.
 
-Rationale: D2A is the smallest, most mechanically similar patch to the D1 work already merged (same
-"derive an unambiguous relation-loader evidence given from the repositories bundle by operation
-signature" shape, just for the value-edge loader instead of rootTree/rootAll/many), so it carries
-the least design risk of anything in this list. Everything after it either depends on a policy
-decision (seed dedup, value-source DSL) or on D2A/seed work landing first (wrapper cleanup).
+Rationale: with D2A landed, the next-smallest, least-design-risk patch in the list is Seed F1
+(reduce `SeedScopedFromRepositories` boilerplate without touching its semantics). Everything after
+it either depends on a policy decision (seed dedup, value-source DSL) or on Seed F1/seed root-key
+work landing first (wrapper cleanup).
 
 ## D2A scope
+
+Status: implemented. `CatalogValueEdge.derivedFromRepositories` (repo-core, `RepoGraph.scala` +
+`CatalogRelationEvidenceDerivation.valueEdgeImpl`) derives unambiguous value-edge loader evidence
+from a repositories bundle by exact operation shape (`K => F[QueryFailure, V]`), the same
+type/signature-based matching D1 already used for rootTree/rootAll/many - no method-name or
+repo-field-name fallback, compile-time failure on zero or multiple matches.
+`BeautyQCatalogGraph.Evidence`'s explicit `CatalogValueEdge.Aux[F, Repositories[F], Service,
+ServiceVariantSchema, ServiceId]` given was removed; `CatalogValue.Aux[ServiceVariantSchema,
+ServiceId, ServiceVariantSchemaItem]` stays explicit, unchanged, per this scope's own "Keep" rule
+below. `ServiceVariantSchemas.byService` was kept (not removed) - the seed-scoped loader still
+calls it directly.
+
+Original scope, kept for reference:
 
 ```text
 Goal:

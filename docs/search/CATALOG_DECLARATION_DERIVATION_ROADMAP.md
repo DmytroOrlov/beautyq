@@ -221,6 +221,18 @@ repository bundle by operation signature. BeautyQ no longer hand-wires the unamb
 `Category` tree, `Category -> Service`, `Master` rootAll, or `Master -> MasterLocation` loaders.
 `CatalogValueEdge` and transparent-UUID ambiguous many edges remain explicit.
 
+Status: Phase D2A derives unambiguous value-edge (`CatalogValueEdge`) relation-loader evidence the
+same way D1 derived rootTree/rootAll/many: exactly one repositories-bundle field with a method
+shaped `K => F[QueryFailure, V]`, via a new `CatalogRelationEvidenceDerivation.valueEdgeImpl`
+reusing the existing `uniqueRepositoryField`/`singleArgCandidates` helpers - no method-name or
+repo-field-name fallback, compile-time failure on zero or multiple matches. This supersedes the D1
+status line above: `CatalogValueEdge` no longer remains explicit. BeautyQ's only declared value edge
+(`Service -> ServiceVariantSchema`, keyed by `serviceId`) now resolves automatically; its explicit
+`CatalogValueEdge.Aux[...]` given was removed from `BeautyQCatalogGraph.Evidence`.
+`CatalogValue.Aux[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem]` stays explicit,
+unchanged - value-source identity evidence is a separate, independent decision from the edge-loader
+derived here. Transparent-UUID ambiguous many edges remain explicit, unchanged.
+
 `CatalogValue`/aggregate value-source derivation is not started or claimed.
 
 Goal:
@@ -406,8 +418,9 @@ Non-goals:
 
 ## Closeout / continuation
 
-This roadmap is now historical phase detail for A–F. Current active work continues in
-`CATALOG_DECLARATION_DERIVATION_HANDOFF.md`.
+This roadmap is now historical phase detail for A–F (and D2A, recorded above). Current active work
+continues in `CATALOG_DECLARATION_DERIVATION_HANDOFF.md`.
 
-The next recommended patch is D2A: derive `CatalogValueEdge` from repositories while keeping
-`CatalogValue` / value-source policy explicit.
+D2A (derive `CatalogValueEdge` from repositories while keeping `CatalogValue` / value-source policy
+explicit) is done. The next recommended patch is Seed F1: extract seed-scoped loading helpers
+without changing seed semantics.

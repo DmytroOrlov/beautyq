@@ -1,7 +1,7 @@
 package leaderboard.repo
 
 import leaderboard.model.QueryFailure
-import leaderboard.repo.RepoOp.{AllValues, ManyByKey}
+import leaderboard.repo.RepoOp.{AllValues, ManyByKey, ValueByKey}
 
 import scala.quoted.*
 
@@ -78,6 +78,32 @@ private[repo] object CatalogRelationEvidenceDerivation {
             type Key = K
             def load(repositories: R): ManyByKey[F, K, C] =
               ManyByKey.derived[F, repo, K, C](${ Select.unique('repositories.asTerm, fieldSymbol.name).asExprOf[repo] })
+          }
+        }
+    }
+  }
+
+  def valueEdgeImpl[F[_, _]: Type, R: Type, P: Type, V: Type, K: Type](using Quotes): Expr[CatalogValueEdge.Aux[F, R, P, V, K]] = {
+    import quotes.reflect.*
+
+    val repositoriesTpe = TypeRepr.of[R]
+    val keyTpe          = TypeRepr.of[K]
+    val resultTpe       = TypeRepr.of[F[QueryFailure, V]]
+    val (fieldSymbol, fieldTpe) = uniqueRepositoryField(
+      derivationName = "CatalogValueEdge.derivedFromRepositories",
+      wrapperName    = "CatalogValueEdge",
+      repositoriesTpe,
+      expectedShape  = s"${keyTpe.show} => ${resultTpe.show}",
+      matches        = fieldTpe => singleArgCandidates(fieldTpe, keyTpe, resultTpe),
+    )
+
+    fieldTpe.asType match {
+      case '[repo] =>
+        '{
+          new CatalogValueEdge[F, R, P, V] {
+            type Key = K
+            def load(repositories: R): ValueByKey[F, K, V] =
+              ValueByKey.derived[F, repo, K, V](${ Select.unique('repositories.asTerm, fieldSymbol.name).asExprOf[repo] })
           }
         }
     }

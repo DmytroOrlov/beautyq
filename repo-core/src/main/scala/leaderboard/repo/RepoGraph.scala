@@ -528,6 +528,9 @@ object CatalogValueEdge {
       type Key = K
       def load(repositories: R): ValueByKey[F, K, V] = loader(select(repositories))
     }
+
+  transparent inline given derivedFromRepositories[F[_, _], R, P, V, K](using Mirror.ProductOf[R]): Aux[F, R, P, V, K] =
+    ${ CatalogRelationEvidenceDerivation.valueEdgeImpl[F, R, P, V, K] }
 }
 
 // --- Materialization: pure spec + evidence -> typed `R => Relation` factory. ---
