@@ -182,6 +182,8 @@ Rules:
   `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP18QdrantSupplementImprovementNoWorseningSpec'`
 * QP19 measured gate:
   `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
+* M3 embedding benchmark comparison (selection matrix + real-resource orchestrator):
+  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QdrantEmbeddingBenchmarkComparisonSelectionSpec leaderboard.search.QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec'`
 
 ## Failure meanings
 
@@ -216,6 +218,14 @@ comparison available, with no fixture/auto-pass path. Source truth lives in
 `QdrantEmbeddingBenchmarkComparisonSelectionSpec.scala` (deterministic selection matrix), and
 `QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec.scala` (real-resource orchestrator).
 
+Command (selection-matrix spec first: deterministic and pure, no live servers; real-resource
+orchestrator second: probes live candidates and may cancel or fail red per "Selection order" and
+"Semantics" below):
+
+```bash
+sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QdrantEmbeddingBenchmarkComparisonSelectionSpec leaderboard.search.QdrantEmbeddingBenchmarkSavedReportComparisonManualSpec'
+```
+
 This is a local/test embedding-candidate comparison only. It does not switch, approve, or imply any
 production/default `/beauty-search` route, and its output is not a rollout signal.
 
@@ -234,11 +244,15 @@ production/default `/beauty-search` route, and its output is not a rollout signa
 
 * `QDRANT_EMBEDDING_BENCHMARK_LEFT_JSON` — saved left single-candidate report JSON.
 * `QDRANT_EMBEDDING_BENCHMARK_RIGHT_JSON` — saved right single-candidate report JSON.
+* `QDRANT_EMBEDDING_SMALL_URL` — live left-candidate embedding endpoint override (defaults to
+  `LlamaCppEmbeddingTestConfig.default.baseUrl`).
+* `QDRANT_EMBEDDING_LARGE_URL` — live right-candidate embedding endpoint override (defaults to
+  `http://localhost:8082`).
 
-Saved report JSON content comes only from these two env vars. There is no directory scan or hidden
-file discovery.
+Saved report JSON content comes only from the two `_JSON` env vars above. There is no directory scan
+or hidden file discovery.
 
-### Fresh report capture
+### Fresh report capture and comparison output
 
 Each live candidate run prints its fresh single-candidate report between bounded markers:
 
@@ -248,8 +262,17 @@ BEGIN_QDRANT_EMBEDDING_BENCHMARK_FRESH_REPORT_JSON (<candidateId>)
 END_QDRANT_EMBEDDING_BENCHMARK_FRESH_REPORT_JSON (<candidateId>)
 ```
 
-This print is the only export. Fresh reports are generated in memory and are **not** auto-written to
-any file; capture the block by hand to replay it later as a saved counterpart via the env vars above.
+The final comparison decision is printed the same way, between its own bounded markers:
+
+```
+BEGIN_QDRANT_EMBEDDING_BENCHMARK_COMPARISON
+... comparison decision ...
+END_QDRANT_EMBEDDING_BENCHMARK_COMPARISON
+```
+
+These prints are the only export. Fresh reports and comparison output are generated in memory and are
+**not** auto-written to any file; capture a fresh-report block by hand to replay it later as a saved
+counterpart via the env vars above.
 
 ### Semantics
 
