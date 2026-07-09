@@ -15,15 +15,20 @@ Start here:
 
 Current coordinator focus:
 
-The module split is closed out. Current work is post-closeout catalog declaration / Scala 3
-derivation: keep business-facing domain search code close to the catalog tree while deriving
-repetitive repo/materialization evidence where it is safe and compile-time checked.
+The module split and catalog/materialization derivation closeout are done.
 
-Start from `docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` for the current coordinator
-handoff and next active tasks. Use `docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` as the
-historical A–F phase log.
+Current coordinator state:
 
-The route/Qdrant sections below are current operational truth, not the active design task.
+* `docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` is the closeout owner.
+* It records that no catalog/materialization derivation blocker remains.
+* `docs/search/NEW_DOMAIN_ONBOARDING.md` is the owner for starting new domains from the generic
+  surfaces.
+* Any next large code patch must start from a fresh source-truth bundle and an explicit
+  policy/code surface, not from an assumed remaining catalog-derivation task.
+
+The handoff includes the accepted A–F/closeout summary.
+
+The route/Qdrant sections below are current operational truth.
 
 Longer-term direction: a reusable domain-agnostic search contract/materialization DSL that can
 onboard a new domain with explicit topology, documented metrics, and transparent ES/Qdrant

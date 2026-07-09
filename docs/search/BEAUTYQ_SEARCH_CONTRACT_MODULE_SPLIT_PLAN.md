@@ -5,7 +5,7 @@ the Phase 29–46 records below). The closeout is **not** a new module-move
 phase, **not** a Qdrant production-activation phase, and **not** a DSL redesign.
 
 Post-closeout catalog declaration / Scala 3 derivation work is tracked separately in
-`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`.
+`docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` (the closeout owner and A–F summary).
 
 Current physical ownership:
 
@@ -2438,8 +2438,9 @@ Qdrant activation, fallback, fusion, rerank, or DSL redesign changed.
 
 ## Phase 46 record: catalog self-tree root key moved into declaration
 
-Post-closeout catalog declaration simplification started in
-`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`.
+Post-closeout catalog declaration simplification started in what was then a separate roadmap
+document, later deleted and consolidated into `docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md`
+(the closeout/A–F summary owner).
 
 Phase A moved the self-tree root key from the full BeautyQ catalog snapshot loader into the pure
 catalog declaration:

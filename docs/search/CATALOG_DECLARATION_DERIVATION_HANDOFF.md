@@ -1,18 +1,31 @@
 # Catalog Declaration Derivation Handoff
 
-Owner: current catalog declaration derivation closeout state. For new-domain onboarding, link to
-`docs/search/NEW_DOMAIN_ONBOARDING.md`.
+**What is this file?** Current catalog/materialization derivation closeout owner.
+
+**Is there an active next derivation patch?** No.
+
+**What remains explicit?** Projection, runtime/backend routing, API/response policy, seed policy,
+SQL/persistence constraints, and future supplement gates.
+
+**Where should a new domain start?** `docs/search/NEW_DOMAIN_ONBOARDING.md`.
 
 ## Purpose
 
-This is the **current coordinator starting point** for catalog declaration / Scala 3 derivation
-work, picking up immediately after Phases A–F of
-`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` completed. That roadmap document is now
-**historical phase detail** — it stays as the dated record of how A–F were designed, attempted,
-and (in a few cases) redesigned after an approach failed empirically. Read it when you need the
-"why" behind a specific mechanism (e.g. why `ConventionalIdKey` exists, why `LoadedCatalog` stores
-its tuple in reverse order). Read *this* document first for "what is true now" and "what to do
-next".
+This is the **sole closeout owner** for catalog declaration / Scala 3 derivation work. Phases A–F
+and every follow-up closeout patch are done. The detailed phase-by-phase design log that used to
+live in a separate roadmap document has been deleted; the "Historical A–F summary" section below is
+the retained, compact record of what still matters from it. Read *this* document for "what is true
+now" and "what remains explicit".
+
+## Historical A–F summary
+
+The deleted roadmap used to contain the long phase-by-phase design log. The retained source-truth
+summary is the accepted-state list below. Important historical constraints that still matter:
+
+- keep pure catalog declaration separate from repo/materialization/projection/runtime layers;
+- derive only tautological evidence and keep business policy explicit;
+- preserve compile-time failure for ambiguous derivation;
+- do not mix repo derivation, snapshot assembly, projection, and runtime changes in one patch.
 
 ## Current accepted state
 
@@ -70,7 +83,7 @@ assumed already-distinct). See "Seed F2 scope" below for why `toRawSnapshot`, no
 
 ## Current architecture boundaries
 
-The three-layer model from the historical roadmap still holds and is not being revisited:
+The three-layer model established during the A–F phase work still holds and is not being revisited:
 
 ```text
 1. pure catalog declaration / contract
@@ -147,10 +160,10 @@ Notes on each status:
 * **`BLOCKED_*`** — genuinely blocked on something outside this initiative's current scope
   (a policy decision, a model refactor, or another patch landing first).
 
-`CatalogValueEdge` was the one remaining piece of the original Phase D goal
-(`docs/search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md`'s "Phase D: derive relation evidence from
-declaration + repo loaders" listed `CatalogRootTree.Aux`/`CatalogMany.Aux`/`CatalogValueEdge.Aux`;
-D1 derived the first two, `CatalogValueEdge` was left explicit until D2A). `CatalogRelationEvidence
+`CatalogValueEdge` was the one remaining piece of the original Phase D goal (Phase D's "derive
+relation evidence from declaration + repo loaders" listed
+`CatalogRootTree.Aux`/`CatalogMany.Aux`/`CatalogValueEdge.Aux`; D1 derived the first two,
+`CatalogValueEdge` was left explicit until D2A). `CatalogRelationEvidence
 Derivation.valueEdgeImpl` (repo-core) now derives it the same way D1 derived
 rootTree/rootAll/many: exactly one repositories-bundle field with a method shaped `K => F[QueryFailure,
 V]` for the requested `K`/`V`, reusing the existing `uniqueRepositoryField`/`singleArgCandidates`
@@ -250,9 +263,9 @@ Forbidden:
 - do not use method-name fallback.
 ```
 
-The "do not use method-name fallback" rule repeats the Phase B.2 policy already on record in the
-historical roadmap: ambiguous repo loader derivation (e.g. two ID types that are transparent
-aliases of the same underlying type) must stay explicit rather than guess from a method name.
+The "do not use method-name fallback" rule repeats the Phase B.2 policy already established:
+ambiguous repo loader derivation (e.g. two ID types that are transparent aliases of the same
+underlying type) must stay explicit rather than guess from a method name.
 
 ## Seed F1 scope
 
