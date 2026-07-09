@@ -14,7 +14,7 @@ next".
 ## Current accepted state
 
 All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup/seed root-key cleanup/nominal BeautyQ
-ID migration/Seed F2 besides:
+ID migration/Seed F2/Nodes-projection boundary cleanup besides:
 
 ```text
 A:         root key moved into catalog declaration
@@ -32,6 +32,8 @@ Nominal BeautyQ ID migration: CategoryId/ServiceId/MasterId/MasterLocationId/Mas
   CatalogMany evidence + repo wrappers (byMaster/byOffer) were removed as a result
 Seed F2:   seed-scoped snapshot assembly now goes through a generic, no-dedup LoadedCatalog helper
   (toRawSnapshot) instead of a manual BeautyQSearchCatalogSnapshot(...) constructor call
+Nodes/projection boundary cleanup: BeautyQCatalogGraph.Nodes removed; the search document
+  projection engine now owns its own node handles, built directly from repository entity metadata
 ```
 
 The BeautyQ full loader (`BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`) is now:
@@ -124,7 +126,7 @@ Transparent UUID ambiguity:
   DONE_NOMINAL_ID_MIGRATION
 
 Nodes compatibility for projection:
-  KEEP_EXPLICIT_NODES_FOR_PROJECTION
+  DONE_NODES_REMOVED_PROJECTION_OWNS_LOCAL_ENTITY_METADATA
 ```
 
 Notes on each status:
@@ -176,29 +178,32 @@ had claimed the seed-scoped loader was still a caller.
 4. Seed root-key cleanup: derive root filtering from declaration root where safe. [done]
 5. Nominal BeautyQ ID migration: opaque ids, removing the last ambiguous wrappers. [done]
 6. Seed F2: assemble the seed-scoped snapshot via a generic, no-dedup LoadedCatalog helper. [done]
-7. Nodes/projection boundary audit: separate scope decision.
+7. Nodes/projection boundary cleanup: remove BeautyQCatalogGraph.Nodes, localize projection metadata. [done]
 8. D2B/value-source DSL: separate policy decision.
 ```
 
-Recommended next patch: **Nodes/projection boundary audit**.
+Recommended next patch: **D2B/value-source DSL decision**.
 
 Rationale: D2A, Seed F1, wrapper cleanup, seed root-key cleanup, the nominal BeautyQ ID migration,
-and Seed F2 are all landed. `CategoryId`/`ServiceId`/`MasterId`/`MasterLocationId`/
-`MasterServiceOfferId`/`MasterServiceOfferVariantId` are now opaque UUID-backed types (not
-transparent aliases of the same underlying `UUID`), so `CatalogMany.derivedFromRepositories` now
-disambiguates `Master -> MasterServiceOffer` (by `MasterId`) and `MasterServiceOffer ->
-MasterServiceOfferVariant` (by `MasterServiceOfferId`) purely by type/signature - the last two
-explicit `CatalogMany.Aux` givens in `BeautyQCatalogGraph.Evidence`, and the
-`MasterServiceOffers.byMaster`/`MasterServiceOfferVariants.byOffer` wrappers they called, were
-removed. See "Nominal BeautyQ ID migration scope" below for the full typeclass-surface record
-(Circe/Doobie/Tapir). `SeedScopedFromRepositories`'s manual `BeautyQSearchCatalogSnapshot(...)`
-constructor - the last hand-written residual left after Seed F1 - was also removed; see "Seed F2
-scope" below. With that resolved, every entry in the tautology inventory above is now `DONE_*` or a
-deliberate `KEEP_EXPLICIT_*`; the next open item is auditing whether `BeautyQCatalogGraph.Nodes`
-(kept explicit for the search projection layer) can also be simplified now that entity evidence
-derives automatically, without pulling projection/runtime concerns into this initiative (see "Known
-non-goals"). D2B/value-source DSL remains a separate, independent policy decision, not advanced by
-any of the patches above.
+Seed F2, and the Nodes/projection boundary cleanup are all landed. `CategoryId`/`ServiceId`/
+`MasterId`/`MasterLocationId`/`MasterServiceOfferId`/`MasterServiceOfferVariantId` are now opaque
+UUID-backed types (not transparent aliases of the same underlying `UUID`), so
+`CatalogMany.derivedFromRepositories` now disambiguates `Master -> MasterServiceOffer` (by
+`MasterId`) and `MasterServiceOffer -> MasterServiceOfferVariant` (by `MasterServiceOfferId`)
+purely by type/signature - the last two explicit `CatalogMany.Aux` givens in
+`BeautyQCatalogGraph.Evidence`, and the `MasterServiceOffers.byMaster`/
+`MasterServiceOfferVariants.byOffer` wrappers they called, were removed. See "Nominal BeautyQ ID
+migration scope" below for the full typeclass-surface record (Circe/Doobie/Tapir).
+`SeedScopedFromRepositories`'s manual `BeautyQSearchCatalogSnapshot(...)` constructor - the last
+hand-written residual left after Seed F1 - was also removed; see "Seed F2 scope" below.
+`BeautyQCatalogGraph.Nodes` - the last piece kept explicit purely for the search projection layer's
+convenience, not for catalog materialization itself - has now been removed too; see "Nodes/projection
+boundary cleanup scope" below. With that resolved, every entry in the tautology inventory above is
+now `DONE_*` or a deliberate `KEEP_EXPLICIT_*`/`BLOCKED_*`; there is no remaining catalog-declaration-
+side cleanup item to sequence next. D2B/value-source DSL is the one remaining item in the tautology
+inventory (`CatalogValue: KEEP_EXPLICIT_VALUE_SOURCE_POLICY_FOR_NOW`) and is a separate, independent
+policy decision (whether/how to derive `CatalogValue` identity evidence itself, not just the edge
+loader) - not advanced by any of the patches above, and not attempted by this one either.
 
 ## D2A scope
 
@@ -513,6 +518,71 @@ Forbidden:
 - do not change seed order, the missing-entity message, the schema key source, or root filtering;
 - do not change the full loader;
 - do not derive seed traversal from the catalog relation tuple in this patch.
+```
+
+## Nodes/projection boundary cleanup scope
+
+Status: implemented. `BeautyQCatalogGraph.Nodes` - the object exposing `EntityNode`/`RepoValueSource`
+handles for `Category`/`Service`/`Master`/`MasterLocation`/`MasterServiceOffer` plus
+`serviceVariantSchema` - has been deleted entirely from `BeautyQCatalogGraph.scala`. It had exactly
+two remaining production/test roles by the time of this patch: (1) `BeautyQVariantSearchDocumentMaterialization`
+read the five entity-node handles purely as row metadata for indexing snapshot lists and building
+missing-entity error messages, never for catalog materialization; (2) `BeautyQCatalogGraph.Evidence`
+read `Nodes.serviceVariantSchema` (itself just `ServiceVariantSchemas.valueSource`, one indirection
+removed) to build the explicit `CatalogValue.Aux[ServiceVariantSchema, ServiceId,
+ServiceVariantSchemaItem]` given. Neither role needed a shared, catalog-graph-owned facade: normal
+entity evidence (`CatalogEntity.derivedFromId`) has derived itself automatically since Phase C3, so
+`Nodes` was never read by catalog materialization itself, only by two single-purpose external
+readers.
+
+`BeautyQCatalogGraph.Evidence`'s `CatalogValue.Aux[...]` given now reads
+`CatalogValue.from(ServiceVariantSchemas.valueSource)` directly - the same value, one fewer
+indirection, no behavior change. `BeautyQVariantSearchDocumentMaterialization` now builds its own
+five node handles directly from each repository's own `entity: RepoEntity[A]` (already a public,
+model-derived val on every BeautyQ repo companion - `Categories.entity`, `Services.entity`,
+`Masters.entity`, `MasterLocations.entity`, `MasterServiceOffers.entity`): `Categories.entity.node
+(_.id)`, and so on, as `private val`s local to the projection object (no new public
+`ProjectionNodes`-style facade - there is exactly one production consumer, so a shared object would
+be pure indirection). A short comment marks these as row metadata for indexing/error messages only,
+not catalog declaration/evidence API.
+
+`graph`, `Repositories`, and `BeautyQCatalogDeclaration` itself are unchanged; only `Nodes`'s
+now-unused imports (`Category`, `Master`, `MasterId`, `MasterLocation`, `MasterLocationId`,
+`MasterServiceOffer`, `MasterServiceOfferId`, `MasterServiceOfferVariant`, `Service`, and
+`Category.CategoryId`) were removed from `BeautyQCatalogGraph.scala` alongside it - `ServiceId`,
+`ServiceVariantSchema`, and `ServiceVariantSchemaItem` stay imported, still needed by `Evidence`'s
+`CatalogValue.Aux` given. `ServiceVariantSchemas.valueSource` itself is untouched, still the single
+explicit value-source identity for `ServiceVariantSchema`; deriving `CatalogValue` (as opposed to
+just wiring it from one fewer indirection) remains the separate, undecided D2B/value-source DSL
+question, not attempted here.
+
+Projection behavior, join order, and every missing-entity/error message are byte-for-byte
+unchanged - confirmed by `BeautyQVariantSearchDocumentContractProjectionSpec` (all canonical
+missing-offer/service/category/master/location/cross-master/schema-validation message assertions,
+unmodified, still passing) and `BeautyQRepoGraphLoaderSpec` (full and seed-scoped projection,
+unmodified, still passing). `RepoFieldRelationSpec`'s `"BeautyQCatalogGraph.Nodes"` test block was
+removed rather than rewritten: the two assertions it made (`Categories.entity.node(_.id)`'s key
+label/column; `ServiceVariantSchemas.valueSource.keyField.label`) were already exact duplicates of
+coverage in that same file's pre-existing `"Entity nodes"` and `"ServiceVariantSchema value source"`
+blocks, so rewriting it in place would only have reintroduced a duplicate under a new heading.
+`"BeautyQCatalogGraph.graph"` tests in the same file are unchanged.
+
+Original scope, kept for reference:
+
+```text
+Goal:
+- remove the public BeautyQCatalogGraph.Nodes object;
+- keep projection metadata in the projection implementation that uses it;
+- keep CatalogValue evidence explicit, but wire it directly from ServiceVariantSchemas.valueSource;
+- keep projection behavior and error messages unchanged.
+
+Forbidden:
+- do not change BeautyQCatalogDeclaration, BeautyQCatalogGraph.graph, or Repositories;
+- do not derive CatalogValue;
+- do not change ServiceVariantSchemas.valueSource;
+- do not change SearchDocumentProjection semantics, projection join order, or missing-entity messages;
+- do not change the full loader, the seed loader, toSnapshot, or toRawSnapshot;
+- do not change repository traits, nominal id helpers, or API/runtime/search backend wiring.
 ```
 
 ## Bundle / coordinator workflow rules

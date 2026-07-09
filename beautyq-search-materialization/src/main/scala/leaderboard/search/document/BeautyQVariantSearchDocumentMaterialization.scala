@@ -1,28 +1,32 @@
 package leaderboard.search.document
 
 import leaderboard.model.*
-import leaderboard.repo.BeautyQCatalogGraph
-import leaderboard.repo.ServiceVariantSchemas
+import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Masters, Services, ServiceVariantSchemas}
 import leaderboard.search.dsl.SearchGeoPoint
 
 /** The BeautyQ variant document projection engine: projects a repo-backed
   * catalog snapshot (as plain lists, not the seed-coupled
   * `BeautySearchCatalogSnapshot`) into [[VariantSearchDocument]] values.
   *
-  * This owns the actual materialization logic - node handles from
-  * [[BeautyQCatalogGraph]], joins, schema validation, and text
-  * normalization/token building. It needs [[BeautyQCatalogGraph]] and
-  * [[ServiceVariantSchemas]] and therefore cannot live in the pure contract
-  * module.
+  * This owns the actual materialization logic - node handles built directly
+  * from repository entity metadata, joins, schema validation, and text
+  * normalization/token building. It needs the BeautyQ repositories'
+  * companions (for entity node metadata) and [[ServiceVariantSchemas]] and
+  * therefore cannot live in the pure contract module.
   */
 object BeautyQVariantSearchDocumentMaterialization {
   private val BuildOperationName = "build-variant-search-documents"
 
-  private val categoryNode           = BeautyQCatalogGraph.Nodes.category
-  private val serviceNode            = BeautyQCatalogGraph.Nodes.service
-  private val masterNode             = BeautyQCatalogGraph.Nodes.master
-  private val masterLocationNode     = BeautyQCatalogGraph.Nodes.masterLocation
-  private val masterServiceOfferNode = BeautyQCatalogGraph.Nodes.masterServiceOffer
+  // Projection owns these node handles only as row metadata for
+  // indexing/error messages (entity model name + id field/column). They are
+  // not catalog declaration/evidence API - the catalog declaration derives
+  // its own entity evidence automatically at materialization time
+  // (`CatalogEntity.derivedFromId`) and never references these.
+  private val categoryNode           = Categories.entity.node(_.id)
+  private val serviceNode            = Services.entity.node(_.id)
+  private val masterNode             = Masters.entity.node(_.id)
+  private val masterLocationNode     = MasterLocations.entity.node(_.id)
+  private val masterServiceOfferNode = MasterServiceOffers.entity.node(_.id)
 
   /** Projects a materialization-owned [[BeautyQSearchCatalogSnapshot]]
     * directly. Delegates to the seven-list `project` overload below, kept

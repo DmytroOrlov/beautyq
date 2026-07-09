@@ -148,5 +148,7 @@ pre-migration shape), independent of the real BeautyQ repositories.
   missing-entity message, manual snapshot constructor, no dedup).
 * No change to `UserId`.
 * No projection/runtime/DI wiring changes - `BeautyQCatalogGraph.Nodes` and the search document
-  projection layer were left exactly as they were (see the handoff doc's "Recommended next patch",
-  Nodes/projection boundary audit, for whether that's worth revisiting next).
+  projection layer were left exactly as they were by this migration. `BeautyQCatalogGraph.Nodes`
+  was not part of this patch's scope; it was removed by a later, separate Nodes/projection boundary
+  cleanup patch (see the handoff doc's "Nodes/projection boundary cleanup scope"), which moved
+  projection's node-handle metadata to live directly in the projection engine itself.

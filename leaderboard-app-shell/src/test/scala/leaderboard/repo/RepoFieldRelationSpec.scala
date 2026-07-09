@@ -107,17 +107,6 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQCatalogGraph.Nodes" should {
-    "expose the category node key field label and column" in {
-      assert(BeautyQCatalogGraph.Nodes.category.key.label == "id")
-      assert(BeautyQCatalogGraph.Nodes.category.key.column == "id")
-    }
-
-    "expose the serviceVariantSchema value source key field, kept explicit" in {
-      assert(BeautyQCatalogGraph.Nodes.serviceVariantSchema.keyField.label == "serviceId")
-    }
-  }
-
   "BeautyQCatalogGraph.graph" should {
     "declare the catalog under the name \"beautyq\"" in {
       assert(BeautyQCatalogGraph.graph[IO].name == "beautyq")

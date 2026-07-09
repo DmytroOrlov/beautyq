@@ -1,7 +1,6 @@
 package leaderboard.repo
 
-import leaderboard.model.Category.CategoryId
-import leaderboard.model.{Category, Master, MasterId, MasterLocation, MasterLocationId, MasterServiceOffer, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
+import leaderboard.model.{ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
 import leaderboard.search.beautyq.contract.BeautyQCatalogDeclaration
 
 /** Central BeautyQ catalog graph facade.
@@ -31,36 +30,6 @@ object BeautyQCatalogGraph {
 
     BeautyQCatalogDeclaration.declaration
       .materialize[F, Repositories[F]](identity)
-  }
-
-  /** Typed graph nodes for the BeautyQ catalog entities. Used only by
-    * [[Evidence]] (to build [[CatalogEntity]]/[[CatalogValue]] instances) and
-    * by external callers such as
-    * `leaderboard.search.document.BeautyQVariantSearchDocumentMaterialization`.
-    * The pure [[BeautyQCatalogDeclaration.declaration]] never references
-    * these.
-    */
-  object Nodes {
-    val category: EntityNode[Category, CategoryId] =
-      Categories.entity.node(_.id)
-
-    val service: EntityNode[Service, ServiceId] =
-      Services.entity.node(_.id)
-
-    /** Not an id-keyed node: an aggregate value source keyed by `serviceId`
-      * and physically sourced from schema item rows. Stays explicit.
-      */
-    val serviceVariantSchema: RepoValueSource[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
-      ServiceVariantSchemas.valueSource
-
-    val master: EntityNode[Master, MasterId] =
-      Masters.entity.node(_.id)
-
-    val masterLocation: EntityNode[MasterLocation, MasterLocationId] =
-      MasterLocations.entity.node(_.id)
-
-    val masterServiceOffer: EntityNode[MasterServiceOffer, MasterServiceOfferId] =
-      MasterServiceOffers.entity.node(_.id)
   }
 
   /** The repositories needed to wire the BeautyQ catalog relations for a
@@ -100,7 +69,7 @@ object BeautyQCatalogGraph {
     // problem Phase C.1/C.2/C.2b diagnosed no longer arises, because nothing
     // ever asks for `CatalogEntity.Aux[A, K]` with a free `K`.
     given CatalogValue.Aux[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
-      CatalogValue.from(Nodes.serviceVariantSchema)
+      CatalogValue.from(ServiceVariantSchemas.valueSource)
 
     // No explicit CatalogValueEdge.Aux given for Service -> ServiceVariantSchema
     // here (Phase D2A): `ServiceVariantSchemas[F].getServiceVariantSchema` is
