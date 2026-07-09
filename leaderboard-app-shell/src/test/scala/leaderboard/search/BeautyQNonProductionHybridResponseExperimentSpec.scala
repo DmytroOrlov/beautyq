@@ -2,7 +2,8 @@ package leaderboard.search
 
 import java.util.UUID
 
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.BeautyQNonProductionHybridResponseExperiment
@@ -122,7 +123,7 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
 
     "fail clearly when lookup returns a partial map and the pipeline sees a missing document" in {
       val present = variantDocument(17)
-      val missingId = variantId(18)
+      val missingId = MasterServiceOfferVariantId(indexUuid(18))
 
       val error = runFailure(
         lexicalResult = Right(List(LexicalDocumentHit(present.variantId, 3.0), LexicalDocumentHit(missingId, 2.0))),
@@ -339,7 +340,7 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
 
     "missing lookup document propagates QueryFailure through pipeline" in {
       val lexical = variantDocument(38)
-      val missingId = variantId(39)
+      val missingId = MasterServiceOfferVariantId(indexUuid(39))
 
       val error = runFailure(
         lexicalResult = Right(List(LexicalDocumentHit(lexical.variantId, 1.0), LexicalDocumentHit(missingId, 0.5))),
@@ -470,12 +471,12 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
     val masterIndex = locationIndex + 1000
 
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(locationIndex),
-      masterId = variantId(masterIndex),
-      serviceId = variantId(resolvedServiceIndex),
-      categoryId = variantId(categoryIndex),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(locationIndex)),
+      masterId = MasterId(indexUuid(masterIndex)),
+      serviceId = ServiceId(indexUuid(resolvedServiceIndex)),
+      categoryId = CategoryId(indexUuid(categoryIndex)),
       serviceName = s"Service $resolvedServiceIndex",
       categoryName = s"Category $categoryIndex",
       masterName = s"Master $masterIndex",
@@ -499,7 +500,7 @@ final class BeautyQNonProductionHybridResponseExperimentSpec extends AnyWordSpec
     )
   }
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 
   private def run[A](effect: IO[QueryFailure, A]): A =

@@ -5,7 +5,8 @@ import distage.{Injector, ModuleDef}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, BeautySearchServingGate, HttpApi}
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.plugins.BeautySearchQdrantSupplementRuntimeBindingPlan
 import leaderboard.plugins.BeautySearchRouteModules
 import leaderboard.search.document.VariantSearchDocument
@@ -201,13 +202,13 @@ final class QP3NoWorseningControlContractSpec extends AnyWordSpec with HttpContr
   // ============================================================================================
 
   private def variantId(i: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-$i%012d")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-$i%012d"))
 
-  private val fixedMasterServiceOfferId = UUID.fromString("10000000-0000-0000-0000-000000000000")
-  private val fixedMasterLocationId     = UUID.fromString("20000000-0000-0000-0000-000000000000")
-  private val fixedMasterId             = UUID.fromString("30000000-0000-0000-0000-000000000000")
-  private val fixedServiceId            = UUID.fromString("40000000-0000-0000-0000-000000000000")
-  private val fixedCategoryId           = UUID.fromString("50000000-0000-0000-0000-000000000000")
+  private val fixedMasterServiceOfferId = MasterServiceOfferId(UUID.fromString("10000000-0000-0000-0000-000000000000"))
+  private val fixedMasterLocationId     = MasterLocationId(UUID.fromString("20000000-0000-0000-0000-000000000000"))
+  private val fixedMasterId             = MasterId(UUID.fromString("30000000-0000-0000-0000-000000000000"))
+  private val fixedServiceId            = ServiceId(UUID.fromString("40000000-0000-0000-0000-000000000000"))
+  private val fixedCategoryId           = CategoryId(UUID.fromString("50000000-0000-0000-0000-000000000000"))
 
   private def document(id: MasterServiceOfferVariantId): VariantSearchDocument =
     VariantSearchDocument(

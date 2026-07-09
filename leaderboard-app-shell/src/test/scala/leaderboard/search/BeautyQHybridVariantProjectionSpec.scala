@@ -2,7 +2,8 @@ package leaderboard.search
 
 import java.util.UUID
 
-import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.BeautyQHybridCandidateSource.{Lexical, Semantic}
@@ -93,7 +94,7 @@ final class BeautyQHybridVariantProjectionSpec extends AnyWordSpec {
     }
 
     "fail clearly when a policy candidate has no document" in {
-      val missingId = variantId(9)
+      val missingId = MasterServiceOfferVariantId(indexUuid(9))
 
       val result = BeautyQHybridVariantProjection.project(
         policyResult = policyResult(List(BeautyQHybridVariantCandidate(missingId, Some(4.0), None, Set(Lexical)))),
@@ -105,7 +106,7 @@ final class BeautyQHybridVariantProjectionSpec extends AnyWordSpec {
     }
 
     "include missing variant id in missing document error" in {
-      val missingId = variantId(10)
+      val missingId = MasterServiceOfferVariantId(indexUuid(10))
 
       val result = BeautyQHybridVariantProjection.project(
         policyResult = policyResult(List(BeautyQHybridVariantCandidate(missingId, None, Some(0.77), Set(Semantic)))),
@@ -182,12 +183,12 @@ final class BeautyQHybridVariantProjectionSpec extends AnyWordSpec {
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(index + 200),
-      masterId = variantId(index + 300),
-      serviceId = variantId(index + 400),
-      categoryId = variantId(index + 500),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(index + 200)),
+      masterId = MasterId(indexUuid(index + 300)),
+      serviceId = ServiceId(indexUuid(index + 400)),
+      categoryId = CategoryId(indexUuid(index + 500)),
       serviceName = s"Service $index",
       categoryName = s"Category $index",
       masterName = s"Master $index",
@@ -210,6 +211,6 @@ final class BeautyQHybridVariantProjectionSpec extends AnyWordSpec {
       locationText = s"location $index main street $index",
     )
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 }

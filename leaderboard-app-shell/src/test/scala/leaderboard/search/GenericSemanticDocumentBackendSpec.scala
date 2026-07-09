@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.semantic.{SemanticCandidateHit, SemanticDocumentBackend, SemanticDocumentHit}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -39,7 +39,7 @@ final class GenericSemanticDocumentBackendSpec extends AnyWordSpec {
     }
 
     "convert BeautyQ semantic candidate hits to generic document hits" in {
-      val variantId = UUID.fromString("00000000-0000-0000-0000-000000000123")
+      val variantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000123"))
       val candidateHit = SemanticCandidateHit(variantId, 0.88)
 
       val documentHit = SemanticCandidateHit.toDocumentHit(candidateHit)

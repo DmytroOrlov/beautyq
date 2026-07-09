@@ -4,7 +4,7 @@ import distage.{DIKey, Mode}
 import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.search.document.{BeautyQSearchCatalogSeedScope, BeautyQSearchCatalogSnapshotLoader, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorSearchSpec}
@@ -248,7 +248,7 @@ private object SemanticEvalMeasurement {
   def from(
     query: BeautySearchEvalQuery,
     hits: List[QdrantCandidateHit],
-    documentsByVariantId: Map[UUID, VariantSearchDocument],
+    documentsByVariantId: Map[MasterServiceOfferVariantId, VariantSearchDocument],
   ): SemanticEvalMeasurement =
     SemanticEvalMeasurement(
       queryId = query.id,
@@ -264,7 +264,7 @@ private object SemanticEvalMeasurement {
 
   private def documentValues(
     hits: List[QdrantCandidateHit],
-    documentsByVariantId: Map[UUID, VariantSearchDocument],
+    documentsByVariantId: Map[MasterServiceOfferVariantId, VariantSearchDocument],
   )(value: VariantSearchDocument => String): List[String] =
     hits.iterator.flatMap(hit => documentsByVariantId.get(hit.variantId).map(value)).toList.distinct
 }

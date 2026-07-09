@@ -1,6 +1,7 @@
 package leaderboard.search
 
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument}
 import leaderboard.search.dsl.SearchGeoPoint
 import org.scalatest.wordspec.AnyWordSpec
@@ -53,12 +54,12 @@ final class VariantSearchDocumentSnapshotProviderSpec extends AnyWordSpec {
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = uuid(index, 1),
-      masterServiceOfferId = uuid(index, 2),
-      masterLocationId = uuid(index, 3),
-      masterId = uuid(index, 4),
-      serviceId = uuid(index, 5),
-      categoryId = uuid(index, 6),
+      variantId = MasterServiceOfferVariantId(uuid(index, 1)),
+      masterServiceOfferId = MasterServiceOfferId(uuid(index, 2)),
+      masterLocationId = MasterLocationId(uuid(index, 3)),
+      masterId = MasterId(uuid(index, 4)),
+      serviceId = ServiceId(uuid(index, 5)),
+      categoryId = CategoryId(uuid(index, 6)),
       serviceName = s"Service $index",
       categoryName = "Category",
       masterName = s"Master $index",

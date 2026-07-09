@@ -3,15 +3,12 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.CategoryApi
 import leaderboard.http.tapir.CategoryTapirEndpoints
-import leaderboard.model.Category
+import leaderboard.model.{Category, QueryFailure}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
-import leaderboard.model.QueryFailure
 import leaderboard.repo.Categories
 import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
-
-import java.util.UUID
 
 class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def categoryApi(state: CategoryApiContractState): CategoryApi[IO] =
@@ -19,8 +16,8 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
 
   "CategoryApi current http4s contracts" should {
     "return 200 and exact category json for an existing entity" in {
-      val categoryId = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val parentId   = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val categoryId = CategoryId.fromString("11111111-2222-3333-4444-555555555555")
+      val parentId   = CategoryId.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
       val category   = Category(categoryId, parentId, 1, "Hair")
 
       for {
@@ -33,7 +30,7 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
     }
 
     "return 404 and typed error json for a missing category" in {
-      val categoryId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
+      val categoryId = CategoryId.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- CategoryApiContractState.make
@@ -45,9 +42,9 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
     }
 
     "return 200 and exact json array for the children endpoint" in {
-      val parentId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first    = Category(UUID.fromString("00000000-0000-0000-0000-000000000001"), parentId, 1, "Alpha")
-      val second   = Category(UUID.fromString("00000000-0000-0000-0000-000000000002"), parentId, 1, "Beta")
+      val parentId = CategoryId.fromString("12345678-1234-1234-1234-123456789abc")
+      val first    = Category(CategoryId.fromString("00000000-0000-0000-0000-000000000001"), parentId, 1, "Alpha")
+      val second   = Category(CategoryId.fromString("00000000-0000-0000-0000-000000000002"), parentId, 1, "Beta")
 
       for {
         state    <- CategoryApiContractState.make
@@ -61,7 +58,7 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
     }
 
     "return 200 and exact json array for the root endpoint" in {
-      val rootChild = Category(UUID.fromString("99999999-0000-0000-0000-000000000001"), rootCategoryId, 0, "Root")
+      val rootChild = Category(CategoryId.fromString("99999999-0000-0000-0000-000000000001"), rootCategoryId, 0, "Root")
 
       for {
         state    <- CategoryApiContractState.make
@@ -75,8 +72,8 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
     }
 
     "return 200 with empty body and capture the posted category payload" in {
-      val categoryId = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
-      val parentId   = UUID.fromString("01010101-0202-0303-0404-050505050505")
+      val categoryId = CategoryId.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
+      val parentId   = CategoryId.fromString("01010101-0202-0303-0404-050505050505")
       val payload    = s"""{"id":"$categoryId","parentId":"$parentId","depth":2,"name":"Coloring"}"""
 
       for {

@@ -13,7 +13,8 @@ next".
 
 ## Current accepted state
 
-All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup/seed root-key cleanup besides:
+All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup/seed root-key cleanup/nominal BeautyQ
+ID migration besides:
 
 ```text
 A:         root key moved into catalog declaration
@@ -26,6 +27,9 @@ F1/F2:     full-loader traversal and full-loader snapshot assembly derived gener
 Seed F1:   seed-scoped required/value loading helpers derived by conventional id / signature
 Wrapper cleanup: zero-usage BeautyQ repo companion wrappers deleted
 Seed root-key cleanup: seed-scoped root filtering derived from the materialized catalog relation
+Nominal BeautyQ ID migration: CategoryId/ServiceId/MasterId/MasterLocationId/MasterServiceOfferId/
+  MasterServiceOfferVariantId became opaque UUID-backed types; the last explicit ambiguous
+  CatalogMany evidence + repo wrappers (byMaster/byOffer) were removed as a result
 ```
 
 The BeautyQ full loader (`BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`) is now:
@@ -103,7 +107,7 @@ SeedScopedFromRepositories:
 
 Repo wrappers:
   DONE_WRAPPER_ZERO_USAGE_CLEANUP_FOR_ID_KEYED_WRAPPERS
-  BLOCKED_BY_TRANSPARENT_UUID_AMBIGUITY
+  DONE_NOMINAL_ID_MIGRATION_REMOVED_LAST_AMBIGUOUS_WRAPPERS
 
 Root id/root key:
   DONE_SEED_ROOT_FILTER_FROM_DECLARATION
@@ -111,7 +115,7 @@ Root id/root key:
   KEEP_EXPLICIT_API_ROOT_CHILDREN_ENDPOINT
 
 Transparent UUID ambiguity:
-  BLOCKED_TRANSPARENT_UUID_AMBIGUITY
+  DONE_NOMINAL_ID_MIGRATION
 
 Nodes compatibility for projection:
   KEEP_EXPLICIT_NODES_FOR_PROJECTION
@@ -164,23 +168,28 @@ had claimed the seed-scoped loader was still a caller.
 2. Seed F1: extract seed-scoped loading helpers without changing seed semantics. [done]
 3. Wrapper zero-usage cleanup: remove the zero-usage repo companion wrappers.   [done]
 4. Seed root-key cleanup: derive root filtering from declaration root where safe. [done]
-5. Transparent UUID ambiguity decision: separate policy decision.
-6. D2B/value-source DSL: separate policy decision.
+5. Nominal BeautyQ ID migration: opaque ids, removing the last ambiguous wrappers. [done]
+6. Nodes/projection boundary audit: separate scope decision.
+7. D2B/value-source DSL: separate policy decision.
 ```
 
-Recommended next patch: **Transparent UUID ambiguity decision**.
+Recommended next patch: **Nodes/projection boundary audit**.
 
-Rationale: D2A, Seed F1, wrapper cleanup, and seed root-key cleanup are all landed. The two
-remaining explicit wrappers/evidence (`MasterServiceOffers.byMaster`/
-`MasterServiceOfferVariants.byOffer`, and the `BeautyQCatalogGraph.Evidence` givens that call them)
-are blocked purely on transparent UUID aliasing (`MasterId`/`ServiceId`/`MasterLocationId`/
-`MasterServiceOfferId` all dealias to the same underlying `UUID`, so type-only derivation cannot
-disambiguate them) - not on anything a mechanical patch can resolve. That decision (accept the
-aliasing as permanently explicit, or migrate BeautyQ IDs to nominal/opaque types as a separate model
-refactor - flagged as a future domain preference back in the historical roadmap's Phase B.2 record)
-is the only remaining item in this tautology inventory that isn't already `KEEP_EXPLICIT_*` or
-`DONE_*`. D2B/value-source DSL remains a separate, independent policy decision, not advanced by any
-of D2A/Seed F1/wrapper cleanup/seed root-key cleanup.
+Rationale: D2A, Seed F1, wrapper cleanup, seed root-key cleanup, and the nominal BeautyQ ID
+migration are all landed. `CategoryId`/`ServiceId`/`MasterId`/`MasterLocationId`/
+`MasterServiceOfferId`/`MasterServiceOfferVariantId` are now opaque UUID-backed types (not
+transparent aliases of the same underlying `UUID`), so `CatalogMany.derivedFromRepositories` now
+disambiguates `Master -> MasterServiceOffer` (by `MasterId`) and `MasterServiceOffer ->
+MasterServiceOfferVariant` (by `MasterServiceOfferId`) purely by type/signature - the last two
+explicit `CatalogMany.Aux` givens in `BeautyQCatalogGraph.Evidence`, and the
+`MasterServiceOffers.byMaster`/`MasterServiceOfferVariants.byOffer` wrappers they called, were
+removed. See "Nominal BeautyQ ID migration scope" below for the full typeclass-surface record
+(Circe/Doobie/Tapir). With that resolved, every entry in the tautology inventory above is now
+`DONE_*` or a deliberate `KEEP_EXPLICIT_*`; the next open item is auditing whether
+`BeautyQCatalogGraph.Nodes` (kept explicit for the search projection layer) can also be simplified
+now that entity evidence derives automatically, without pulling projection/runtime concerns into
+this initiative (see "Known non-goals"). D2B/value-source DSL remains a separate, independent
+policy decision, not advanced by any of the patches above.
 
 ## D2A scope
 
@@ -274,14 +283,17 @@ MasterServiceOfferVariants.byId
 MasterServiceOfferVariants.byLocation
 ```
 
-Kept (still explicit ambiguous relation evidence - `BeautyQCatalogGraph.Evidence` calls both
-directly, because `MasterId`/`ServiceId`/`MasterLocationId`/`MasterServiceOfferId` are transparent
-aliases of the same underlying `UUID`, so type-only derivation is ambiguous):
+Kept at the time (explicit ambiguous relation evidence - `BeautyQCatalogGraph.Evidence` called both
+directly, because `MasterId`/`ServiceId`/`MasterLocationId`/`MasterServiceOfferId` were transparent
+aliases of the same underlying `UUID`, so type-only derivation was ambiguous):
 
 ```text
 MasterServiceOffers.byMaster
 MasterServiceOfferVariants.byOffer
 ```
+
+Both were later removed by the nominal BeautyQ ID migration (see "Nominal BeautyQ ID migration
+scope" below) once the underlying ambiguity was resolved at the type level.
 
 Now-unused `leaderboard.repo.RepoOp.{OptionalByKey, ManyByKey, ValueByKey, AllValues}` imports were
 removed from each companion object where every symbol they imported became unused; `ManyByKey`
@@ -339,6 +351,107 @@ repetition inside `beautyq-search-materialization`'s own seed-scoped search load
 catalog snapshot query is not the same design pressure as a persistence constraint, a bootstrap
 insertion order, or a public API route, and none of those needed to (or should) share a single root
 source of truth with the search-materialization loader.
+
+## Nominal BeautyQ ID migration scope
+
+Status: implemented. `Category.CategoryId`, `ServiceId`, `MasterId`, `MasterLocationId`,
+`MasterServiceOfferId`, and `MasterServiceOfferVariantId` moved from transparent `type X = UUID`
+aliases (all mutually `=:=` to the derivation macro, since Scala dealiases plain type aliases
+everywhere) to Scala 3 `opaque type X = UUID` (`beautyq-model`). `UserId` was deliberately left
+untouched (it belongs to the unrelated leaderboard/ladder domain, never appears in
+`BeautyQCatalogGraph.Repositories`, and the task's own scope excluded it unless compilation forced
+a decision, which it did not).
+
+**Update (boilerplate cleanup, later patch):** each id's companion now extends one shared
+dependency-free `UuidBackedId[A]` trait (`beautyq-model`) instead of repeating a full adapter body
+per id. `UuidBackedId[A]` supplies `fromString` and the `.value` extension by default; each
+companion only implements the two primitives (`apply`, `unwrap`) and adds
+`given UuidBackedId[X] = this` to register itself for typeclass search. Two scoping rules drove the
+exact shape: (1) a trait cannot declare both an abstract `def value(id: A): UUID` and a concrete
+`extension (id: A) def value: UUID` in the same body (identical erased signature - the primitive is
+named `unwrap` instead, so `value` is only ever the extension); (2) the `given UuidBackedId[X] =
+this` must be a member of the companion itself, not a sibling statement in the package object,
+because cross-module implicit search only reaches a type's own companion scope, not arbitrary
+package-object siblings (same reasoning as the Circe self-collision below). See
+`docs/search/BEAUTYQ_NOMINAL_ID_REFACTOR.md`'s "Generic helper design" for the full per-layer table
+and the two additional gotchas found empirically while building this.
+
+Opaque-type transparency is scoped to the statement sequence that declares the type, not global
+like a plain alias - so a caller-side codec built by summoning `Decoder[UUID]`/`Encoder[UUID]`
+*inside* an id's own companion self-collides (the id's own `Codec[X]`, itself reachable as
+`Codec[UUID]` from inside that scope, wins the implicit search and loops); each id's codec instead
+closes over a `Decoder[UUID]`/`Encoder[UUID]` pair captured once at the top of the package object,
+outside every opaque scope. That same transparency also rules out a fully generic Circe `given`
+(it would be an ambiguous `UuidBackedId[UUID]` candidate for all six ids at once, from inside their
+own defining scope) - so Circe alone derives each id's codec through a **plain function**
+(`uuidBackedIdCodec[A](id: UuidBackedId[A]): Codec[A]`, called once per id), never a `given`; a
+plain function call cannot be an implicit-search candidate at all. Doobie/Tapir/Scalacheck don't
+share this constraint, since they run outside `beautyq-model`, where the ids are just ordinary
+opaque types.
+
+Typeclass surfaces added, one per layer, each only where that layer already owns the dependency:
+
+```text
+Circe  (beautyq-model):              implicit val codec: Codec[X] = uuidBackedIdCodec(X) per id
+                                      (one shared plain-function body, not a given - see above).
+Doobie (beautyq-search-repositories): one generic given [A](using UuidBackedId[A]): Meta[A] =
+                                      Meta[UUID].timap(id.apply)(id.unwrap) (leaderboard.repo
+                                      package object); SQL columns stay `uuid`,
+                                      rootCategoryIdSqlLiteral renders `.value`.
+Tapir  (app-http):                   one generic given [A](using UuidBackedId[A]):
+                                      Codec[String, A, CodecFormat.TextPlain] and one generic
+                                      given [A](using UuidBackedId[A]): Schema[A], in
+                                      leaderboard.http.tapir.BeautyQIdTapirSupport, each a `.map`
+                                      adaptation of Tapir's own Codec.uuid / Schema.schemaForUUID
+                                      (imported into the six BeautyQ tapir endpoint files); route
+                                      paths and JSON wire shape unchanged.
+```
+
+Removed as a direct result (`CatalogMany.derivedFromRepositories` now disambiguates both edges by
+type/signature alone, the same mechanism D1 already used for every other rootTree/rootAll/many
+edge):
+
+```text
+MasterServiceOffers.byMaster                     (beautyq-search-repositories)
+MasterServiceOfferVariants.byOffer                (beautyq-search-repositories)
+CatalogMany.Aux[F, Repositories[F], Master, MasterServiceOffer, MasterId]                    (BeautyQCatalogGraph.Evidence)
+CatalogMany.Aux[F, Repositories[F], MasterServiceOffer, MasterServiceOfferVariant, MasterServiceOfferId]  (BeautyQCatalogGraph.Evidence)
+```
+
+No method-name fallback and no selector-guided fallback were added anywhere - both edges resolve
+purely because `MasterId`/`ServiceId`/`MasterLocationId`/`MasterServiceOfferId` are now nominally
+distinct types, the same `uniqueRepositoryField`/`singleArgCandidates` exact-type-match machinery
+(`CatalogRelationEvidenceDerivation`, unchanged) that already worked for every unambiguous edge.
+`repo-core/src/test/scala/leaderboard/repo/NominalIdCatalogManyDerivationSpec.scala` proves the
+mechanism directly and generically (two local opaque ids sharing a UUID representation, a repo with
+a correct-parent-id method and a competing-other-id method returning the same child type;
+`CatalogMany.derivedFromRepositories` selects the correct one) - independent of the real BeautyQ
+repositories bundle, which `BeautyQRepoGraphLoaderSpec`/`RepoFieldRelationSpec` continue to cover
+end-to-end.
+
+SQL storage, JSON/API wire representation, HTTP route paths, full-loader semantics, and seed-loader
+semantics (order, canonical missing-entity message, manual snapshot constructor, no dedup) are all
+unchanged - opaque types are a compile-time-only, zero-runtime-cost abstraction (erased to their
+underlying `UUID` at runtime), so every place that previously rendered or persisted a raw `UUID`
+continues to do so identically once wrapped.
+
+Original scope, kept for reference:
+
+```text
+Goal:
+- replace BeautyQ catalog/search UUID id aliases with nominal (opaque) ids;
+- preserve UUID storage/JSON/API shape and existing runtime semantics;
+- remove MasterServiceOffers.byMaster / MasterServiceOfferVariants.byOffer and the explicit
+  ambiguous CatalogMany givens once nominal ids make derivation unambiguous;
+- add a repo-core test proving the derivation now disambiguates by type/signature.
+
+Forbidden:
+- do not add dependencies;
+- do not implement method-name fallback;
+- do not implement selector-guided fallback;
+- do not change SQL storage column types, JSON field names/shape, or HTTP route paths;
+- do not change catalog declaration / full loader / seed loader semantics.
+```
 
 ## Bundle / coordinator workflow rules
 

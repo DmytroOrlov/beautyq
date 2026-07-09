@@ -3,13 +3,11 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.MasterLocationApi
 import leaderboard.http.tapir.MasterLocationTapirEndpoints
-import leaderboard.model.{MasterLocation, MasterLocationId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocation, MasterLocationId, QueryFailure}
 import leaderboard.repo.MasterLocations
 import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
-
-import java.util.UUID
 
 class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterLocationApi(state: MasterLocationApiContractState): MasterLocationApi[IO] =
@@ -17,8 +15,8 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
 
   "MasterLocationApi current http4s contracts" should {
     "return 200 and exact location json for an existing entity" in {
-      val locationId = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val masterId   = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val locationId = MasterLocationId.fromString("11111111-2222-3333-4444-555555555555")
+      val masterId   = MasterId.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
       val location   = MasterLocation(locationId, masterId, "Studio", "Main street", 55, 37)
 
       for {
@@ -33,7 +31,7 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
     }
 
     "return 404 and typed error json for a missing location" in {
-      val locationId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
+      val locationId = MasterLocationId.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterLocationApiContractState.make
@@ -45,9 +43,9 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
     }
 
     "return 200 and exact json array for the master endpoint" in {
-      val masterId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first    = MasterLocation(UUID.fromString("00000000-0000-0000-0000-000000000001"), masterId, "Alpha", "A", 1, 2)
-      val second   = MasterLocation(UUID.fromString("00000000-0000-0000-0000-000000000002"), masterId, "Beta", "B", 3, 4)
+      val masterId = MasterId.fromString("12345678-1234-1234-1234-123456789abc")
+      val first    = MasterLocation(MasterLocationId.fromString("00000000-0000-0000-0000-000000000001"), masterId, "Alpha", "A", 1, 2)
+      val second   = MasterLocation(MasterLocationId.fromString("00000000-0000-0000-0000-000000000002"), masterId, "Beta", "B", 3, 4)
 
       for {
         state    <- MasterLocationApiContractState.make
@@ -61,8 +59,8 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
     }
 
     "return 200 with empty body and capture the posted location payload" in {
-      val locationId = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
-      val masterId   = UUID.fromString("01010101-0202-0303-0404-050505050505")
+      val locationId = MasterLocationId.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
+      val masterId   = MasterId.fromString("01010101-0202-0303-0404-050505050505")
       val payload    = s"""{"id":"$locationId","masterId":"$masterId","name":"Office","address":"Center","lat":50,"lon":30}"""
 
       for {
@@ -95,7 +93,7 @@ class MasterLocationApiHttpContractSuite extends SpecZIO with AssertZIO with Htt
     }
 
     "return current server failure semantics when the master endpoint fails" in {
-      val masterId = UUID.fromString("99999999-0000-0000-0000-000000000000")
+      val masterId = MasterId.fromString("99999999-0000-0000-0000-000000000000")
 
       for {
         state    <- MasterLocationApiContractState.make

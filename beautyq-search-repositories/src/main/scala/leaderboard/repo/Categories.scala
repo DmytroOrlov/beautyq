@@ -3,7 +3,6 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.Fragment
 import doobie.implicits.*
-import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.model.{Category, QueryFailure}

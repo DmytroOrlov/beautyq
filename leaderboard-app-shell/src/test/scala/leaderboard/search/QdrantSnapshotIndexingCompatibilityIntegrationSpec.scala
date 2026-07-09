@@ -5,7 +5,8 @@ import io.circe.Json
 import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{EmbeddingSpec, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.qdrant.{
@@ -159,12 +160,12 @@ final class QdrantSnapshotIndexingCompatibilityIntegrationSpec extends Leaderboa
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = uuid(index, 1),
-      masterServiceOfferId = uuid(index, 2),
-      masterLocationId = uuid(index, 3),
-      masterId = uuid(index, 4),
-      serviceId = uuid(index, 5),
-      categoryId = uuid(index, 6),
+      variantId = MasterServiceOfferVariantId(uuid(index, 1)),
+      masterServiceOfferId = MasterServiceOfferId(uuid(index, 2)),
+      masterLocationId = MasterLocationId(uuid(index, 3)),
+      masterId = MasterId(uuid(index, 4)),
+      serviceId = ServiceId(uuid(index, 5)),
+      categoryId = CategoryId(uuid(index, 6)),
       serviceName = s"Service $index",
       categoryName = "Category",
       masterName = s"Master $index",

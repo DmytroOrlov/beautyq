@@ -3,7 +3,7 @@ package leaderboard
 import leaderboard.model.*
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import doobie.implicits.*
-import doobie.postgres.implicits.*
+import leaderboard.repo.given
 import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.sql.SQL
 import zio.{IO, ZIO}

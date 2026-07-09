@@ -2,6 +2,7 @@ package leaderboard.http.tapir
 
 import io.circe.Json
 import leaderboard.http.HttpApiFailure
+import leaderboard.http.tapir.BeautyQIdTapirSupport.given
 import leaderboard.model.{MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantId}
 import sttp.tapir.*
 import sttp.tapir.json.circe.*

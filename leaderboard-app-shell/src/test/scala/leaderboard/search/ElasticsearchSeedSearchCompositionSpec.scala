@@ -1,7 +1,8 @@
 package leaderboard.search
 
 import io.circe.Json
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, BeautySearchReadyCatalogDocuments, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchGeoPoint}
 import leaderboard.search.elasticsearch.{
@@ -168,12 +169,12 @@ final class ElasticsearchSeedSearchCompositionSpec extends AnyWordSpec {
 
     "derive unchanged source JSON with nested dynamic attributes" in {
       val document = VariantSearchDocument(
-        variantId = UUID.fromString("00000000-0000-0000-0000-000000000101"),
-        masterServiceOfferId = UUID.fromString("00000000-0000-0000-0000-000000000202"),
-        masterLocationId = UUID.fromString("00000000-0000-0000-0000-000000000303"),
-        masterId = UUID.fromString("00000000-0000-0000-0000-000000000404"),
-        serviceId = UUID.fromString("00000000-0000-0000-0000-000000000505"),
-        categoryId = UUID.fromString("00000000-0000-0000-0000-000000000606"),
+        variantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000101")),
+        masterServiceOfferId = MasterServiceOfferId(UUID.fromString("00000000-0000-0000-0000-000000000202")),
+        masterLocationId = MasterLocationId(UUID.fromString("00000000-0000-0000-0000-000000000303")),
+        masterId = MasterId(UUID.fromString("00000000-0000-0000-0000-000000000404")),
+        serviceId = ServiceId(UUID.fromString("00000000-0000-0000-0000-000000000505")),
+        categoryId = CategoryId(UUID.fromString("00000000-0000-0000-0000-000000000606")),
         serviceName = "Manicure",
         categoryName = "Nails",
         masterName = "Beauty Master",

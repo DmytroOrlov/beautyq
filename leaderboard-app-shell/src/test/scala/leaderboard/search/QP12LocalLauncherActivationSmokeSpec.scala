@@ -7,7 +7,8 @@ import io.circe.{Json, JsonObject}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.{BeautySearchApi, HttpApi}
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.plugins.{
   BeautySearchQdrantSupplementActivation,
   BeautySearchQdrantSupplementActivationConfig,
@@ -339,13 +340,13 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   // ============================================================================================
 
   private def variantId(i: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-$i%012d")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-$i%012d"))
 
-  private val fixedMasterServiceOfferId = UUID.fromString("10000000-0000-0000-0000-000000000000")
-  private val fixedMasterLocationId     = UUID.fromString("20000000-0000-0000-0000-000000000000")
-  private val fixedMasterId             = UUID.fromString("30000000-0000-0000-0000-000000000000")
-  private val fixedServiceId            = UUID.fromString("40000000-0000-0000-0000-000000000000")
-  private val fixedCategoryId           = UUID.fromString("50000000-0000-0000-0000-000000000000")
+  private val fixedMasterServiceOfferId = MasterServiceOfferId(UUID.fromString("10000000-0000-0000-0000-000000000000"))
+  private val fixedMasterLocationId     = MasterLocationId(UUID.fromString("20000000-0000-0000-0000-000000000000"))
+  private val fixedMasterId             = MasterId(UUID.fromString("30000000-0000-0000-0000-000000000000"))
+  private val fixedServiceId            = ServiceId(UUID.fromString("40000000-0000-0000-0000-000000000000"))
+  private val fixedCategoryId           = CategoryId(UUID.fromString("50000000-0000-0000-0000-000000000000"))
 
   // Minimal catalog/Qdrant document (resolved by the in-memory document lookup and projected by the
   // Qdrant candidate projector; both proven over this shape by QP6/QP13).
@@ -384,11 +385,11 @@ final class QP12LocalLauncherActivationSmokeSpec extends AnyWordSpec with HttpCo
   private def esHitDocument(id: MasterServiceOfferVariantId): VariantSearchDocument =
     VariantSearchDocument(
       variantId = id,
-      masterServiceOfferId = UUID.fromString("11000000-0000-0000-0000-000000000000"),
-      masterLocationId = UUID.fromString("21000000-0000-0000-0000-000000000000"),
-      masterId = UUID.fromString("31000000-0000-0000-0000-000000000000"),
-      serviceId = UUID.fromString("41000000-0000-0000-0000-000000000000"),
-      categoryId = UUID.fromString("51000000-0000-0000-0000-000000000000"),
+      masterServiceOfferId = MasterServiceOfferId(UUID.fromString("11000000-0000-0000-0000-000000000000")),
+      masterLocationId = MasterLocationId(UUID.fromString("21000000-0000-0000-0000-000000000000")),
+      masterId = MasterId(UUID.fromString("31000000-0000-0000-0000-000000000000")),
+      serviceId = ServiceId(UUID.fromString("41000000-0000-0000-0000-000000000000")),
+      categoryId = CategoryId(UUID.fromString("51000000-0000-0000-0000-000000000000")),
       serviceName = "Manicure",
       categoryName = "Nails",
       masterName = "Beauty Master",

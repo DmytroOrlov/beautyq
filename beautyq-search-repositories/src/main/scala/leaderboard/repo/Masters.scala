@@ -1,7 +1,6 @@
 package leaderboard.repo
 
 import distage.Lifecycle
-import doobie.postgres.implicits.*
 import doobie.implicits.*
 import izumi.functional.bio.{Applicative2, Error2, F, Primitives2}
 import leaderboard.model.{Master, MasterId, QueryFailure}

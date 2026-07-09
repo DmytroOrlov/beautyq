@@ -1,7 +1,7 @@
 package leaderboard.search
 
 import io.circe.Json
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.BeautyQVariantSearchDocumentContract
 import leaderboard.search.dsl.VectorSearchSpec
 import leaderboard.search.embedding.EmbeddingClient
@@ -54,8 +54,8 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       assert(!runUio(queryRef.get).contains(intent.remainingText))
       assert(runUio(pathRef.get).contains("/collections/beauty-semantic/points/search"))
       assert(result == List(
-        SemanticCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000011"), 0.93),
-        SemanticCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000022"), 0.81),
+        SemanticCandidateHit(MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000011")), 0.93),
+        SemanticCandidateHit(MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000022")), 0.81),
       ))
     }
 
@@ -164,8 +164,8 @@ final class QdrantSemanticCandidateBackendSpec extends AnyWordSpec {
       ))
 
       assert(result == List(
-        SemanticDocumentHit(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), 0.95),
-        SemanticDocumentHit(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), 0.88),
+        SemanticDocumentHit(MasterServiceOfferVariantId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), 0.95),
+        SemanticDocumentHit(MasterServiceOfferVariantId(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")), 0.88),
       ))
     }
 

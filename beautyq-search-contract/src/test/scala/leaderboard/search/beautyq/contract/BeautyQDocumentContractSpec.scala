@@ -1,5 +1,7 @@
 package leaderboard.search.beautyq.contract
 
+import leaderboard.model.Category.CategoryId
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
 import leaderboard.search.contract.SearchFieldKind
 import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, VariantSearchDocument}
 import leaderboard.search.dsl.{BeautyQSearchPresentation, BeautySearchSpecV1, ResolvedSearchConstraint, SearchConstraint, SearchGeoPoint}
@@ -13,12 +15,12 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
 
   private def sampleDocument: VariantSearchDocument =
     VariantSearchDocument(
-      variantId = uuid("0000000000a1"),
-      masterServiceOfferId = uuid("0000000000a2"),
-      masterLocationId = uuid("0000000000a3"),
-      masterId = uuid("0000000000a4"),
-      serviceId = uuid("0000000000a5"),
-      categoryId = uuid("0000000000a6"),
+      variantId = MasterServiceOfferVariantId(uuid("0000000000a1")),
+      masterServiceOfferId = MasterServiceOfferId(uuid("0000000000a2")),
+      masterLocationId = MasterLocationId(uuid("0000000000a3")),
+      masterId = MasterId(uuid("0000000000a4")),
+      serviceId = ServiceId(uuid("0000000000a5")),
+      categoryId = CategoryId(uuid("0000000000a6")),
       serviceName = "Маникюр",
       categoryName = "Ногти, маникюр и педикюр",
       masterName = "Studio One",

@@ -172,7 +172,7 @@ object EngineEvalSavedReportComparisonManualSpec {
   private val SavedReportComparisonOperation = "engine-eval-saved-report-comparison"
 
   private def variantId(slot: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x"))
 
   val v1: MasterServiceOfferVariantId = variantId(1)
   val v2: MasterServiceOfferVariantId = variantId(2)

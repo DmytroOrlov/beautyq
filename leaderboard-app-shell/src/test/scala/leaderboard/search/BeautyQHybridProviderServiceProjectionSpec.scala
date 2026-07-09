@@ -2,7 +2,8 @@ package leaderboard.search
 
 import java.util.UUID
 
-import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.BeautyQHybridCandidateSource.{Lexical, Semantic}
@@ -190,12 +191,12 @@ final class BeautyQHybridProviderServiceProjectionSpec extends AnyWordSpec {
     val masterIndex = locationIndex + 1000
 
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(locationIndex),
-      masterId = variantId(masterIndex),
-      serviceId = variantId(resolvedServiceIndex),
-      categoryId = variantId(categoryIndex),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(locationIndex)),
+      masterId = MasterId(indexUuid(masterIndex)),
+      serviceId = ServiceId(indexUuid(resolvedServiceIndex)),
+      categoryId = CategoryId(indexUuid(categoryIndex)),
       serviceName = s"Service $resolvedServiceIndex",
       categoryName = s"Category $categoryIndex",
       masterName = s"Master $masterIndex",
@@ -219,6 +220,6 @@ final class BeautyQHybridProviderServiceProjectionSpec extends AnyWordSpec {
     )
   }
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 }

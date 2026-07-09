@@ -9,8 +9,6 @@ import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
 
-import java.util.UUID
-
 class MasterServiceOfferVariantApiHttpContractSuite
     extends SpecZIO
     with AssertZIO
@@ -26,9 +24,9 @@ class MasterServiceOfferVariantApiHttpContractSuite
 
   "MasterServiceOfferVariantApi legacy compatibility contracts" should {
     "pin legacy compatibility: existing single-entity GET returns 200 and exact json with attribute groups" in {
-      val variantId            = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val masterServiceOfferId = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-      val masterLocationId     = UUID.fromString("99999999-8888-7777-6666-555555555555")
+      val variantId            = MasterServiceOfferVariantId.fromString("11111111-2222-3333-4444-555555555555")
+      val masterServiceOfferId = MasterServiceOfferId.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val masterLocationId     = MasterLocationId.fromString("99999999-8888-7777-6666-555555555555")
 
       for {
         variant <- makeVariant(
@@ -58,7 +56,7 @@ class MasterServiceOfferVariantApiHttpContractSuite
     }
 
     "return 404 and typed not-found json for a missing single-entity GET" in {
-      val variantId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
+      val variantId = MasterServiceOfferVariantId.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterServiceOfferVariantApiContractState.make
@@ -72,9 +70,9 @@ class MasterServiceOfferVariantApiHttpContractSuite
     }
 
     "return 200 and exact json array for the offer endpoint" in {
-      val offerId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first   = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000001"), offerId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001"), 1, 2, 30)
-      val second  = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000002"), offerId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002"), 3, 4, 45)
+      val offerId = MasterServiceOfferId.fromString("12345678-1234-1234-1234-123456789abc")
+      val first   = variantOf(MasterServiceOfferVariantId.fromString("00000000-0000-0000-0000-000000000001"), offerId, MasterLocationId.fromString("aaaaaaaa-0000-0000-0000-000000000001"), 1, 2, 30)
+      val second  = variantOf(MasterServiceOfferVariantId.fromString("00000000-0000-0000-0000-000000000002"), offerId, MasterLocationId.fromString("aaaaaaaa-0000-0000-0000-000000000002"), 3, 4, 45)
 
       for {
         state    <- MasterServiceOfferVariantApiContractState.make
@@ -88,9 +86,9 @@ class MasterServiceOfferVariantApiHttpContractSuite
     }
 
     "return 200 and exact json array for the location endpoint" in {
-      val locationId = UUID.fromString("12345678-0000-0000-0000-123456789abc")
-      val first      = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000003"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001"), locationId, 5, 6, 60)
-      val second     = variantOf(UUID.fromString("00000000-0000-0000-0000-000000000004"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002"), locationId, 7, 8, 75)
+      val locationId = MasterLocationId.fromString("12345678-0000-0000-0000-123456789abc")
+      val first      = variantOf(MasterServiceOfferVariantId.fromString("00000000-0000-0000-0000-000000000003"), MasterServiceOfferId.fromString("bbbbbbbb-0000-0000-0000-000000000001"), locationId, 5, 6, 60)
+      val second     = variantOf(MasterServiceOfferVariantId.fromString("00000000-0000-0000-0000-000000000004"), MasterServiceOfferId.fromString("bbbbbbbb-0000-0000-0000-000000000002"), locationId, 7, 8, 75)
 
       for {
         state    <- MasterServiceOfferVariantApiContractState.make
@@ -105,9 +103,9 @@ class MasterServiceOfferVariantApiHttpContractSuite
 
     "return 200 with empty body and capture the posted variant payload" in {
       val variant = variantOf(
-        UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff"),
-        UUID.fromString("01010101-0202-0303-0404-050505050505"),
-        UUID.fromString("06060606-0707-0808-0909-101010101010"),
+        MasterServiceOfferVariantId.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff"),
+        MasterServiceOfferId.fromString("01010101-0202-0303-0404-050505050505"),
+        MasterLocationId.fromString("06060606-0707-0808-0909-101010101010"),
         20,
         25,
         90,
@@ -145,7 +143,7 @@ class MasterServiceOfferVariantApiHttpContractSuite
     }
 
     "return current server failure semantics when the location endpoint fails" in {
-      val locationId = UUID.fromString("99999999-0000-0000-0000-000000000000")
+      val locationId = MasterLocationId.fromString("99999999-0000-0000-0000-000000000000")
 
       for {
         state <- MasterServiceOfferVariantApiContractState.make

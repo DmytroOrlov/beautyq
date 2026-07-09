@@ -2,7 +2,8 @@ package leaderboard.search
 
 import io.circe.{Json, JsonObject}
 import io.circe.syntax.*
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, InMemoryVariantSearchDocumentSnapshotProvider, VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.embedding.EmbeddingClient
@@ -59,7 +60,7 @@ final class QdrantEmbeddingBenchmarkExecutorSpec extends AnyWordSpec {
       val documents = List(firstDocument, secondDocument)
       val collectionCallsRef = runUio(Ref.make(List.empty[String]))
       val deletesRef = runUio(Ref.make(List.empty[String]))
-      val upsertCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val upsertCallsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val searchQueriesRef = runUio(Ref.make(List.empty[String]))
       val benchmarkCandidate = candidate("candidate-a", "Qwen3-Embedding-0.6B", 1024)
       val config = QdrantEmbeddingBenchmarkExecutorConfig(collectionRunId = "executor-spec", topK = 5)
@@ -129,7 +130,7 @@ final class QdrantEmbeddingBenchmarkExecutorSpec extends AnyWordSpec {
 
   private final class FakeCompositionFactory(
     hits: List[QdrantSearchHit],
-    upsertCallsRef: Ref[List[(String, UUID)]],
+    upsertCallsRef: Ref[List[(String, MasterServiceOfferVariantId)]],
     searchQueriesRef: Ref[List[String]],
   ) extends QdrantEmbeddingBenchmarkCompositionFactory {
     override def build(
@@ -175,7 +176,7 @@ final class QdrantEmbeddingBenchmarkExecutorSpec extends AnyWordSpec {
       ))
   }
 
-  private final class RecordingDocumentUpsert(callsRef: Ref[List[(String, UUID)]]) extends QdrantVariantDocumentUpsert {
+  private final class RecordingDocumentUpsert(callsRef: Ref[List[(String, MasterServiceOfferVariantId)]]) extends QdrantVariantDocumentUpsert {
     override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
       callsRef.update(_ :+ (collectionName -> document.variantId)).as(Json.obj())
   }
@@ -221,12 +222,12 @@ final class QdrantEmbeddingBenchmarkExecutorSpec extends AnyWordSpec {
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = uuid(index, 1),
-      masterServiceOfferId = uuid(index, 2),
-      masterLocationId = uuid(index, 3),
-      masterId = uuid(index, 4),
-      serviceId = uuid(index, 5),
-      categoryId = uuid(index, 6),
+      variantId = MasterServiceOfferVariantId(uuid(index, 1)),
+      masterServiceOfferId = MasterServiceOfferId(uuid(index, 2)),
+      masterLocationId = MasterLocationId(uuid(index, 3)),
+      masterId = MasterId(uuid(index, 4)),
+      serviceId = ServiceId(uuid(index, 5)),
+      categoryId = CategoryId(uuid(index, 6)),
       serviceName = s"Service $index",
       categoryName = "Category",
       masterName = s"Master $index",

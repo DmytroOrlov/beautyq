@@ -32,8 +32,8 @@ final class M18DualEngineOfflineEvalQdrantRealLegSpec extends LeaderboardTest wi
     memoizationRoots = super.config.memoizationRoots + DIKey[QdrantPortCfg],
   )
 
-  private val variantId: MasterServiceOfferVariantId = UUID.randomUUID()
-  private val otherVariantId: MasterServiceOfferVariantId = UUID.randomUUID()
+  private val variantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
+  private val otherVariantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
 
   "M18 dual-engine offline eval Qdrant leg against real Qdrant" should {
     "execute the Qdrant leg via QdrantSemanticCandidateBackend's documentHits path and emit non-empty " +
@@ -186,11 +186,11 @@ final class M18DualEngineOfflineEvalQdrantRealLegSpec extends LeaderboardTest wi
     )
 
   private def syntheticDocument(id: MasterServiceOfferVariantId, serviceName: String, tag: String): VariantSearchDocument = {
-    val masterServiceOfferId: MasterServiceOfferId = UUID.randomUUID()
-    val masterLocationId: MasterLocationId = UUID.randomUUID()
-    val masterId: MasterId = UUID.randomUUID()
-    val serviceId: ServiceId = UUID.randomUUID()
-    val categoryId: CategoryId = UUID.randomUUID()
+    val masterServiceOfferId: MasterServiceOfferId = MasterServiceOfferId(UUID.randomUUID())
+    val masterLocationId: MasterLocationId = MasterLocationId(UUID.randomUUID())
+    val masterId: MasterId = MasterId(UUID.randomUUID())
+    val serviceId: ServiceId = ServiceId(UUID.randomUUID())
+    val categoryId: CategoryId = CategoryId(UUID.randomUUID())
     VariantSearchDocument(
       variantId = id,
       masterServiceOfferId = masterServiceOfferId,

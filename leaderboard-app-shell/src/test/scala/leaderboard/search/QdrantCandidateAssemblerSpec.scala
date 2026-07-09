@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import leaderboard.model.MasterServiceOfferVariantId
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization}
 import leaderboard.search.qdrant.QdrantCandidateAssembler
 import leaderboard.search.semantic.SemanticCandidateHit
@@ -28,7 +29,7 @@ final class QdrantCandidateAssemblerSpec extends AnyWordSpec {
     case Left(error) => throw new RuntimeException(error.message)
   }
 
-  private val unknownVariantId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+  private val unknownVariantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
 
   "Qdrant candidate assembly" should {
     "preserve variant hit order" in {

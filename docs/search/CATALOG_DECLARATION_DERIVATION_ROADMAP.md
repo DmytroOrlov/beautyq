@@ -111,16 +111,19 @@ existing BeautyQ companion wrapper names stable. Relation evidence derivation is
 
 Status: Phase B.2 policy accepted. Ambiguous repo loader derivation must stay explicit when
 distinct domain IDs are transparent aliases of the same underlying type. The derivation must not
-fall back to method names. Current BeautyQ ambiguous wrappers remain manual:
+fall back to method names. At the time of Phase B, BeautyQ's ambiguous wrappers remained manual:
 `MasterServiceOffers.byMaster`, `MasterServiceOffers.byService`,
 `MasterServiceOfferVariants.byOffer`, and `MasterServiceOfferVariants.byLocation` - because
-`MasterId`, `ServiceId`, `MasterLocationId`, and `MasterServiceOfferId` are transparent aliases of
-the same underlying `UUID`, so after dealiasing the paired many-loader methods in each repo have
-identical type shapes.
+`MasterId`, `ServiceId`, `MasterLocationId`, and `MasterServiceOfferId` were transparent aliases of
+the same underlying `UUID`, so after dealiasing the paired many-loader methods in each repo had
+identical type shapes. (`Services.byId`/`byCategory` and the other zero-usage wrappers named here
+were later deleted by the wrapper zero-usage cleanup patch; `byMaster`/`byOffer` specifically were
+kept until the nominal BeautyQ ID migration made them derivable - see
+`CATALOG_DECLARATION_DERIVATION_HANDOFF.md`'s "Nominal BeautyQ ID migration scope".)
 
 Future domains should prefer nominal/opaque ID types when they want more complete type-based
-derivation. Migrating BeautyQ IDs to nominal/opaque types is a separate model refactor and is not
-part of Phase B.
+derivation. Migrating BeautyQ IDs to nominal/opaque types was a separate model refactor, out of
+scope for Phase B itself - it was later done as its own patch (see the handoff doc).
 
 Goal:
 

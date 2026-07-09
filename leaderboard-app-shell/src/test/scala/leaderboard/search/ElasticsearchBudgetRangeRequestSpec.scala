@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchConstraint}
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
 import leaderboard.search.elasticsearch.{BeautyQElasticsearchInterpreterAdapter, ElasticsearchSearchInput, ElasticsearchSearchRequestInterpreter}
@@ -96,12 +96,12 @@ final class ElasticsearchBudgetRangeRequestSpec extends AnyWordSpec {
         .getOrElse(cancel("seed has no manicure variant to exercise the budget filter"))
 
       val belowThreshold = manicure.copy(
-        variantId = UUID.fromString("00000000-0000-0000-0000-0000000000a1"),
+        variantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-0000000000a1")),
         priceFrom = BigDecimal(39),
         priceTo = BigDecimal(39),
       )
       val aboveThreshold = manicure.copy(
-        variantId = UUID.fromString("00000000-0000-0000-0000-0000000000a2"),
+        variantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-0000000000a2")),
         priceFrom = BigDecimal(75),
         priceTo = BigDecimal(75),
       )

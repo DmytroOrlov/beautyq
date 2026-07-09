@@ -389,11 +389,11 @@ final class QdrantEmbeddingBenchmarkRunnerSpec extends AnyWordSpec {
       Runtime.default.unsafe.run(effect.either).getOrThrowFiberFailure().swap.getOrElse(sys.error("expected failure"))
     }
 
-  private def variantId(value: Int): MasterServiceOfferVariantId = id(value)
+  private def variantId(value: Int): MasterServiceOfferVariantId = MasterServiceOfferVariantId(id(value))
 
-  private def providerId(value: Int): MasterLocationId = id(value + 100)
+  private def providerId(value: Int): MasterLocationId = MasterLocationId(id(value + 100))
 
-  private def serviceId(value: Int): ServiceId = id(value + 200)
+  private def serviceId(value: Int): ServiceId = ServiceId(id(value + 200))
 
   private def id(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")

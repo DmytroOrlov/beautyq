@@ -9,13 +9,13 @@ import java.util.UUID
 final class BeautySearchEvalReportJsonSpec extends AnyWordSpec {
 
   private def variantId(slot: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x"))
 
   private def locationId(slot: Int): MasterLocationId =
-    UUID.fromString(f"10000000-0000-0000-0000-00000000${slot}%04x")
+    MasterLocationId(UUID.fromString(f"10000000-0000-0000-0000-00000000${slot}%04x"))
 
   private def serviceId(slot: Int): ServiceId =
-    UUID.fromString(f"20000000-0000-0000-0000-00000000${slot}%04x")
+    ServiceId(UUID.fromString(f"20000000-0000-0000-0000-00000000${slot}%04x"))
 
   private val v1: MasterServiceOfferVariantId = variantId(1)
   private val v2: MasterServiceOfferVariantId = variantId(2)

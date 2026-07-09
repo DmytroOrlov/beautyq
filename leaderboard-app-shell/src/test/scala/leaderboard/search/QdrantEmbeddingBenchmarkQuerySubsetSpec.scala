@@ -245,11 +245,11 @@ final class QdrantEmbeddingBenchmarkQuerySubsetSpec extends AnyWordSpec {
     )
 
   private def variantId(index: Int): MasterServiceOfferVariantId =
-    UUID.nameUUIDFromBytes(s"variant-$index".getBytes)
+    MasterServiceOfferVariantId(UUID.nameUUIDFromBytes(s"variant-$index".getBytes))
 
   private def providerId(index: Int): MasterLocationId =
-    UUID.nameUUIDFromBytes(s"provider-$index".getBytes)
+    MasterLocationId(UUID.nameUUIDFromBytes(s"provider-$index".getBytes))
 
   private def serviceId(index: Int): ServiceId =
-    UUID.nameUUIDFromBytes(s"service-$index".getBytes)
+    ServiceId(UUID.nameUUIDFromBytes(s"service-$index".getBytes))
 }

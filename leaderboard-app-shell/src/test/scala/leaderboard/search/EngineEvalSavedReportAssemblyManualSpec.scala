@@ -163,25 +163,25 @@ object EngineEvalSavedReportAssemblyManualSpec {
   val EnvExpectedRolesJson = "ENGINE_EVAL_EXPECTED_ROLES_JSON"
 
   private def variantId(slot: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x"))
 
   val v1: MasterServiceOfferVariantId = variantId(1)
   val v2: MasterServiceOfferVariantId = variantId(2)
   val v3: MasterServiceOfferVariantId = variantId(3)
 
   private def locationId(slot: Int): MasterLocationId =
-    UUID.fromString(f"10000000-0000-0000-0000-00000000${slot}%04x")
+    MasterLocationId(UUID.fromString(f"10000000-0000-0000-0000-00000000${slot}%04x"))
 
   private def serviceId(slot: Int): ServiceId =
-    UUID.fromString(f"20000000-0000-0000-0000-00000000${slot}%04x")
+    ServiceId(UUID.fromString(f"20000000-0000-0000-0000-00000000${slot}%04x"))
 
   private val l1: MasterLocationId = locationId(1)
   private val s1: ServiceId = serviceId(1)
 
-  val nailsA1: MasterServiceOfferVariantId = UUID.fromString("c82d90c3-d9e4-5f0b-8689-6476c5e7fe35")
-  val nailsA2: MasterServiceOfferVariantId = UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659")
-  val lashesB1: MasterServiceOfferVariantId = UUID.fromString("01051aa3-95cb-5c3f-9691-582f2b145f38")
-  val lashesB2: MasterServiceOfferVariantId = UUID.fromString("5848ff40-41eb-5981-b56e-84c5ae8c9e07")
+  val nailsA1: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"))
+  val nailsA2: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659"))
+  val lashesB1: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("01051aa3-95cb-5c3f-9691-582f2b145f38"))
+  val lashesB2: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("5848ff40-41eb-5981-b56e-84c5ae8c9e07"))
 
   def fixtureEsReport(
     queryId: String,

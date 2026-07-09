@@ -4,7 +4,8 @@ import distage.{DIKey, Mode}
 import izumi.distage.model.definition.Activation
 import leaderboard.{LeaderboardTest, ProdTest}
 import leaderboard.config.QdrantPortCfg
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{BeautySearchSpecV1, EmbeddingSpec, VectorDistance}
 import leaderboard.search.embedding.EmbeddingClient
@@ -68,14 +69,14 @@ final class BeautyQManualHybridRealQdrantIndexingSmokeSpec extends LeaderboardTe
 
             val collectionPath = s"/collections/${readinessConfig.collectionName}"
 
-            val testVariantId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+            val testVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
             val testDocument = VariantSearchDocument(
               variantId = testVariantId,
-              masterServiceOfferId = UUID.fromString("00000000-0000-0000-0000-000000000002"),
-              masterLocationId = UUID.fromString("00000000-0000-0000-0000-000000000003"),
-              masterId = UUID.fromString("00000000-0000-0000-0000-000000000004"),
-              serviceId = UUID.fromString("00000000-0000-0000-0000-000000000005"),
-              categoryId = UUID.fromString("00000000-0000-0000-0000-000000000006"),
+              masterServiceOfferId = MasterServiceOfferId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
+              masterLocationId = MasterLocationId(UUID.fromString("00000000-0000-0000-0000-000000000003")),
+              masterId = MasterId(UUID.fromString("00000000-0000-0000-0000-000000000004")),
+              serviceId = ServiceId(UUID.fromString("00000000-0000-0000-0000-000000000005")),
+              categoryId = CategoryId(UUID.fromString("00000000-0000-0000-0000-000000000006")),
               serviceName = "Test Service",
               categoryName = "Test Category",
               masterName = "Test Master",

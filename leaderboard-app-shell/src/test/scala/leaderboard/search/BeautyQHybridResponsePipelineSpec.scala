@@ -2,7 +2,8 @@ package leaderboard.search
 
 import java.util.UUID
 
-import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.{BeautyQHybridResponseCarouselLimits, BeautyQHybridResponsePipeline, HybridDocumentRetrievalResult}
@@ -136,7 +137,7 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
     }
 
     "propagate missing document failure" in {
-      val missingId = variantId(18)
+      val missingId = MasterServiceOfferVariantId(indexUuid(18))
 
       val result = BeautyQHybridResponsePipeline.projectResponse(
         retrieval = HybridDocumentRetrievalResult.fromHits(
@@ -154,7 +155,7 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
 
     "prevent response construction when a document is missing" in {
       val present = variantDocument(19)
-      val missingId = variantId(20)
+      val missingId = MasterServiceOfferVariantId(indexUuid(20))
 
       val result = BeautyQHybridResponsePipeline.projectResponse(
         retrieval = HybridDocumentRetrievalResult.fromHits(
@@ -253,7 +254,7 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
     }
 
     "fail with missing document for overlapping lexical+semantic id" in {
-      val missingId = variantId(30)
+      val missingId = MasterServiceOfferVariantId(indexUuid(30))
 
       val result = BeautyQHybridResponsePipeline.projectResponse(
         retrieval = HybridDocumentRetrievalResult.fromHits(
@@ -370,12 +371,12 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
     val masterIndex = locationIndex + 1000
 
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(locationIndex),
-      masterId = variantId(masterIndex),
-      serviceId = variantId(resolvedServiceIndex),
-      categoryId = variantId(categoryIndex),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(locationIndex)),
+      masterId = MasterId(indexUuid(masterIndex)),
+      serviceId = ServiceId(indexUuid(resolvedServiceIndex)),
+      categoryId = CategoryId(indexUuid(categoryIndex)),
       serviceName = s"Service $resolvedServiceIndex",
       categoryName = s"Category $categoryIndex",
       masterName = s"Master $masterIndex",
@@ -399,6 +400,6 @@ final class BeautyQHybridResponsePipelineSpec extends AnyWordSpec {
     )
   }
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 }

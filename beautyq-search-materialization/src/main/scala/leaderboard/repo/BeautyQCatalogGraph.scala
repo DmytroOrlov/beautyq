@@ -112,11 +112,17 @@ object BeautyQCatalogGraph {
     // `CatalogValueEdge.derivedFromRepositories`, and seed-scoped value
     // loading uses `GraphLoading.seedValuesByKey`.
 
-    given [F[_, _]]: CatalogMany.Aux[F, Repositories[F], Master, MasterServiceOffer, MasterId] =
-      CatalogMany.fromRepo[F, Repositories[F], MasterServiceOffers[F], Master, MasterServiceOffer, MasterId](_.masterServiceOffers)(MasterServiceOffers.byMaster)
-
-    given [F[_, _]]: CatalogMany.Aux[F, Repositories[F], MasterServiceOffer, MasterServiceOfferVariant, MasterServiceOfferId] =
-      CatalogMany.fromRepo[F, Repositories[F], MasterServiceOfferVariants[F], MasterServiceOffer, MasterServiceOfferVariant, MasterServiceOfferId](_.masterServiceOfferVariants)(MasterServiceOfferVariants.byOffer)
+    // No explicit CatalogMany.Aux given for Master -> MasterServiceOffer or
+    // MasterServiceOffer -> MasterServiceOfferVariant here (nominal BeautyQ ID
+    // migration): `MasterId`/`ServiceId`/`MasterLocationId`/`MasterServiceOfferId`/
+    // `MasterServiceOfferVariantId` are now distinct opaque types (not
+    // transparent aliases of the same `UUID`), so each repositories field has
+    // exactly one method whose parameter key type matches the requested `K`
+    // by type/signature - `CatalogMany.derivedFromRepositories` (repo-core)
+    // resolves both edges automatically at materialization time. The old
+    // `MasterServiceOffers.byMaster`/`MasterServiceOfferVariants.byOffer`
+    // companion wrappers (kept explicit only for the prior ambiguous-UUID
+    // era) were removed in the nominal id migration.
   }
 
 }

@@ -634,16 +634,16 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // id for the synthetic J-methodology queries (#1 lexical-exact, #2 semantic-complement). NOT used
   // as the expected id for the canonical-backed queries (#4-#6): those queries now carry canonical
   // acceptableVariantIds as their expected set.
-  private val variantId: MasterServiceOfferVariantId = UUID.randomUUID()
+  private val variantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
   // Seven unrelated seeded distractor variants across distinct beauty subdomains (nails, lashes, brows,
   // face, pmu, body-wax, body-massage). With topK=3 and the redesigned seeded collection, Qdrant MUST
   // rank and CANNOT trivially return the whole collection: a real positive complement for the
   // semantic query is backed by at least one excluded distractor, not just a recall-floor artifact.
   private val distractorVariantIds: List[MasterServiceOfferVariantId] =
-    List.fill(7)(UUID.randomUUID())
+    List.fill(7)(MasterServiceOfferVariantId(UUID.randomUUID()))
   // An explicitly OUT-OF-CATALOG sentinel: the only "right" answer for the hard-negative query. It is
   // never seeded, so every real catalog candidate Qdrant returns for that query is honest noise.
-  private val outOfCatalogId: MasterServiceOfferVariantId = UUID.randomUUID()
+  private val outOfCatalogId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
 
   // ---- K2: Canonical acceptableVariantIds (source-confirmed from beautyq_search_eval_queries_v1.json). ----
   // Each canonical row carries a SET of acceptable variant ids. K2 seeds EVERY canonical acceptable
@@ -685,21 +685,21 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
   // (kept for assertion stability), and the additional acceptable ids are appended in the canonical
   // set's order.
   private val qNails001SeededCanonicalId: MasterServiceOfferVariantId =
-    UUID.fromString("c82d90c3-d9e4-5f0b-8689-6476c5e7fe35")
+    MasterServiceOfferVariantId(UUID.fromString("c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"))
   private val qNails001SeededCanonicalIdSecondary: MasterServiceOfferVariantId =
-    UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659")
+    MasterServiceOfferVariantId(UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659"))
   private val qNails003SeededCanonicalId: MasterServiceOfferVariantId =
-    UUID.fromString("798c4326-e081-59a9-b659-98671f1fd656")
+    MasterServiceOfferVariantId(UUID.fromString("798c4326-e081-59a9-b659-98671f1fd656"))
   private val qNails003SeededCanonicalIdSecondary: MasterServiceOfferVariantId =
-    UUID.fromString("677dd40f-9ebc-5566-bfc4-9249b7ac5503")
+    MasterServiceOfferVariantId(UUID.fromString("677dd40f-9ebc-5566-bfc4-9249b7ac5503"))
   private val qNoise005SeededCanonicalId: MasterServiceOfferVariantId =
-    UUID.fromString("4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7")
+    MasterServiceOfferVariantId(UUID.fromString("4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7"))
   private val qNoise005SeededCanonicalIdSecondary: MasterServiceOfferVariantId =
-    UUID.fromString("d658c194-38f7-5396-b8cb-cf155739c235")
+    MasterServiceOfferVariantId(UUID.fromString("d658c194-38f7-5396-b8cb-cf155739c235"))
   private val qNoise005SeededCanonicalIdTertiary: MasterServiceOfferVariantId =
-    UUID.fromString("b64e24fe-567e-53ed-bb08-1aa217241e2c")
+    MasterServiceOfferVariantId(UUID.fromString("b64e24fe-567e-53ed-bb08-1aa217241e2c"))
   private val qNoise005SeededCanonicalIdQuaternary: MasterServiceOfferVariantId =
-    UUID.fromString("3160f0f7-4940-52a7-80e4-fc82adbcfb5d")
+    MasterServiceOfferVariantId(UUID.fromString("3160f0f7-4940-52a7-80e4-fc82adbcfb5d"))
 
   // The full seeded catalog id set (1 J "balayage" + 7 J distractors + 8 K2 canonical-acceptable-
   // anchored docs = 16 documents). Qdrant searches with limit=topK=3 over this collection, so it
@@ -7985,11 +7985,11 @@ final class RuntimeEsQdrantScorecardProofSpec extends LeaderboardTest with ProdT
     categoryName: String,
     tag: String,
   ): VariantSearchDocument = {
-    val masterServiceOfferId: MasterServiceOfferId = UUID.randomUUID()
-    val masterLocationId: MasterLocationId         = UUID.randomUUID()
-    val masterId: MasterId                         = UUID.randomUUID()
-    val serviceId: ServiceId                       = UUID.randomUUID()
-    val categoryId: CategoryId                     = UUID.randomUUID()
+    val masterServiceOfferId: MasterServiceOfferId = MasterServiceOfferId(UUID.randomUUID())
+    val masterLocationId: MasterLocationId         = MasterLocationId(UUID.randomUUID())
+    val masterId: MasterId                         = MasterId(UUID.randomUUID())
+    val serviceId: ServiceId                       = ServiceId(UUID.randomUUID())
+    val categoryId: CategoryId                     = CategoryId(UUID.randomUUID())
     VariantSearchDocument(
       variantId = id,
       masterServiceOfferId = masterServiceOfferId,

@@ -3,13 +3,11 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.MasterServiceOfferApi
 import leaderboard.http.tapir.MasterServiceOfferTapirEndpoints
-import leaderboard.model.{MasterServiceOffer, MasterServiceOfferId, QueryFailure}
+import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, QueryFailure, ServiceId}
 import leaderboard.repo.MasterServiceOffers
 import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
-
-import java.util.UUID
 
 class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterServiceOfferApi(state: MasterServiceOfferApiContractState): MasterServiceOfferApi[IO] =
@@ -17,9 +15,9 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
 
   "MasterServiceOfferApi current http4s contracts" should {
     "return 200 and exact offer json for an existing entity" in {
-      val offerId   = UUID.fromString("11111111-2222-3333-4444-555555555555")
-      val masterId  = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-      val serviceId = UUID.fromString("99999999-8888-7777-6666-555555555555")
+      val offerId   = MasterServiceOfferId.fromString("11111111-2222-3333-4444-555555555555")
+      val masterId  = MasterId.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+      val serviceId = ServiceId.fromString("99999999-8888-7777-6666-555555555555")
       val offer     = MasterServiceOffer(offerId, masterId, serviceId)
 
       for {
@@ -32,7 +30,7 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
     }
 
     "return 404 and typed error json for a missing offer" in {
-      val offerId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
+      val offerId = MasterServiceOfferId.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterServiceOfferApiContractState.make
@@ -44,9 +42,9 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
     }
 
     "return 200 and exact json array for the master endpoint" in {
-      val masterId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-      val first    = MasterServiceOffer(UUID.fromString("00000000-0000-0000-0000-000000000001"), masterId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001"))
-      val second   = MasterServiceOffer(UUID.fromString("00000000-0000-0000-0000-000000000002"), masterId, UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002"))
+      val masterId = MasterId.fromString("12345678-1234-1234-1234-123456789abc")
+      val first    = MasterServiceOffer(MasterServiceOfferId.fromString("00000000-0000-0000-0000-000000000001"), masterId, ServiceId.fromString("aaaaaaaa-0000-0000-0000-000000000001"))
+      val second   = MasterServiceOffer(MasterServiceOfferId.fromString("00000000-0000-0000-0000-000000000002"), masterId, ServiceId.fromString("aaaaaaaa-0000-0000-0000-000000000002"))
 
       for {
         state    <- MasterServiceOfferApiContractState.make
@@ -60,9 +58,9 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
     }
 
     "return 200 and exact json array for the service endpoint" in {
-      val serviceId = UUID.fromString("12345678-0000-0000-0000-123456789abc")
-      val first     = MasterServiceOffer(UUID.fromString("00000000-0000-0000-0000-000000000003"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001"), serviceId)
-      val second    = MasterServiceOffer(UUID.fromString("00000000-0000-0000-0000-000000000004"), UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002"), serviceId)
+      val serviceId = ServiceId.fromString("12345678-0000-0000-0000-123456789abc")
+      val first     = MasterServiceOffer(MasterServiceOfferId.fromString("00000000-0000-0000-0000-000000000003"), MasterId.fromString("bbbbbbbb-0000-0000-0000-000000000001"), serviceId)
+      val second    = MasterServiceOffer(MasterServiceOfferId.fromString("00000000-0000-0000-0000-000000000004"), MasterId.fromString("bbbbbbbb-0000-0000-0000-000000000002"), serviceId)
 
       for {
         state    <- MasterServiceOfferApiContractState.make
@@ -76,9 +74,9 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
     }
 
     "return 200 with empty body and capture the posted offer payload" in {
-      val offerId   = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
-      val masterId  = UUID.fromString("01010101-0202-0303-0404-050505050505")
-      val serviceId = UUID.fromString("06060606-0707-0808-0909-101010101010")
+      val offerId   = MasterServiceOfferId.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
+      val masterId  = MasterId.fromString("01010101-0202-0303-0404-050505050505")
+      val serviceId = ServiceId.fromString("06060606-0707-0808-0909-101010101010")
       val payload   = s"""{"id":"$offerId","masterId":"$masterId","serviceId":"$serviceId"}"""
 
       for {
@@ -111,7 +109,7 @@ class MasterServiceOfferApiHttpContractSuite extends SpecZIO with AssertZIO with
     }
 
     "return current server failure semantics when the service endpoint fails" in {
-      val serviceId = UUID.fromString("99999999-0000-0000-0000-000000000000")
+      val serviceId = ServiceId.fromString("99999999-0000-0000-0000-000000000000")
 
       for {
         state <- MasterServiceOfferApiContractState.make

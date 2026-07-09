@@ -61,9 +61,9 @@ final class ManagedLocalSearchBootstrapSpec
 
   // Source-confirmed seed records (proof that BeautyQ data is reachable through the repositories).
   private val knownSeedMasterId: MasterId =
-    UUID.fromString("6bbb7472-d382-541e-a007-c842ebf3c25b")
+    MasterId(UUID.fromString("6bbb7472-d382-541e-a007-c842ebf3c25b"))
   private val knownSeedVariantId: MasterServiceOfferVariantId =
-    UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659")
+    MasterServiceOfferVariantId(UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659"))
 
   private val canonicalSeed = new BeautyQSeedLoader.ResourceLoader().load() match {
     case Right(value) => value

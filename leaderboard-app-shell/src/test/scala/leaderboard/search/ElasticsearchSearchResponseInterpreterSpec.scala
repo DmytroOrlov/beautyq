@@ -4,6 +4,8 @@ import io.circe.Json
 import io.circe.syntax.*
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.Decoder
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.elasticsearch.ElasticsearchSearchResponseInterpreter
@@ -187,12 +189,12 @@ final class ElasticsearchSearchResponseInterpreterSpec extends AnyWordSpec {
 
   private def variantDocument(variantId: UUID = uuid("00000000-0000-0000-0000-000000000321")): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = variantId,
-      masterServiceOfferId = uuid("00000000-0000-0000-0000-000000000222"),
-      masterLocationId = uuid("00000000-0000-0000-0000-000000000333"),
-      masterId = uuid("00000000-0000-0000-0000-000000000444"),
-      serviceId = uuid("00000000-0000-0000-0000-000000000555"),
-      categoryId = uuid("00000000-0000-0000-0000-000000000666"),
+      variantId = MasterServiceOfferVariantId(variantId),
+      masterServiceOfferId = MasterServiceOfferId(uuid("00000000-0000-0000-0000-000000000222")),
+      masterLocationId = MasterLocationId(uuid("00000000-0000-0000-0000-000000000333")),
+      masterId = MasterId(uuid("00000000-0000-0000-0000-000000000444")),
+      serviceId = ServiceId(uuid("00000000-0000-0000-0000-000000000555")),
+      categoryId = CategoryId(uuid("00000000-0000-0000-0000-000000000666")),
       serviceName = "Manicure",
       categoryName = "Nails",
       masterName = "Beauty Master",

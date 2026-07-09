@@ -639,9 +639,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
             BigDecimal("54.0000"),
             BigDecimal("64.0000"),
           )
-          id1       = java.util.UUID.fromString("30000000-0000-0000-0000-000000000002")
-          id2       = java.util.UUID.fromString("30000000-0000-0000-0000-000000000001")
-          id3       = java.util.UUID.fromString("30000000-0000-0000-0000-000000000003")
+          id1       = MasterServiceOfferVariantId(java.util.UUID.fromString("30000000-0000-0000-0000-000000000002"))
+          id2       = MasterServiceOfferVariantId(java.util.UUID.fromString("30000000-0000-0000-0000-000000000001"))
+          id3       = MasterServiceOfferVariantId(java.util.UUID.fromString("30000000-0000-0000-0000-000000000003"))
           variant1 <- makeVariant(id1, offerId, location1Id, BigDecimal("14.0000"), BigDecimal("24.0000"), 30)
           variant2 <- makeVariant(id2, offerId, location2Id, BigDecimal("34.0000"), BigDecimal("44.0000"), 60)
           variant3 <- makeVariant(id3, offerId, location3Id, BigDecimal("54.0000"), BigDecimal("64.0000"), 90)
@@ -695,9 +695,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
             BigDecimal("15.0000"),
             BigDecimal("25.0000"),
           )
-          id1       = java.util.UUID.fromString("40000000-0000-0000-0000-000000000002")
-          id2       = java.util.UUID.fromString("40000000-0000-0000-0000-000000000001")
-          id3       = java.util.UUID.fromString("40000000-0000-0000-0000-000000000003")
+          id1       = MasterServiceOfferVariantId(java.util.UUID.fromString("40000000-0000-0000-0000-000000000002"))
+          id2       = MasterServiceOfferVariantId(java.util.UUID.fromString("40000000-0000-0000-0000-000000000001"))
+          id3       = MasterServiceOfferVariantId(java.util.UUID.fromString("40000000-0000-0000-0000-000000000003"))
           variant1 <- makeVariant(id1, offer1Id, locationId, BigDecimal("15.0000"), BigDecimal("25.0000"), 30)
           variant2 <- makeVariant(id2, offer2Id, locationId, BigDecimal("35.0000"), BigDecimal("45.0000"), 60)
           variant3 <- makeVariant(id3, offer3Id, locationId, BigDecimal("55.0000"), BigDecimal("65.0000"), 90)

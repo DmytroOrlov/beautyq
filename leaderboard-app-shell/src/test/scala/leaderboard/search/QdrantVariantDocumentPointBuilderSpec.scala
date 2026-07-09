@@ -1,6 +1,8 @@
 package leaderboard.search
 
 import io.circe.Json
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{BeautyQVariantSearchDocumentContract, VariantSearchDocument}
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.qdrant.{QdrantJsonInterpreter, QdrantVariantDocumentPointBuilder}
@@ -46,12 +48,12 @@ final class QdrantVariantDocumentPointBuilderSpec extends AnyWordSpec {
 
   private def variantDocument(): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = UUID.fromString("00000000-0000-0000-0000-000000000101"),
-      masterServiceOfferId = UUID.fromString("00000000-0000-0000-0000-000000000202"),
-      masterLocationId = UUID.fromString("00000000-0000-0000-0000-000000000303"),
-      masterId = UUID.fromString("00000000-0000-0000-0000-000000000404"),
-      serviceId = UUID.fromString("00000000-0000-0000-0000-000000000505"),
-      categoryId = UUID.fromString("00000000-0000-0000-0000-000000000606"),
+      variantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000101")),
+      masterServiceOfferId = MasterServiceOfferId(UUID.fromString("00000000-0000-0000-0000-000000000202")),
+      masterLocationId = MasterLocationId(UUID.fromString("00000000-0000-0000-0000-000000000303")),
+      masterId = MasterId(UUID.fromString("00000000-0000-0000-0000-000000000404")),
+      serviceId = ServiceId(UUID.fromString("00000000-0000-0000-0000-000000000505")),
+      categoryId = CategoryId(UUID.fromString("00000000-0000-0000-0000-000000000606")),
       serviceName = "Manicure",
       categoryName = "Nails",
       masterName = "Beauty Master",

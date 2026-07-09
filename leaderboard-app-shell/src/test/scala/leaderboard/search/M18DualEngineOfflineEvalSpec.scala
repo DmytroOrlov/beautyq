@@ -149,9 +149,9 @@ final class M18DualEngineOfflineEvalSpec extends AnyWordSpec {
     }
   }
 
-  private val variant1: MasterServiceOfferVariantId = UUID.fromString("00000000-0000-0000-0000-000000000001")
-  private val variant2: MasterServiceOfferVariantId = UUID.fromString("00000000-0000-0000-0000-000000000002")
-  private val variant3: MasterServiceOfferVariantId = UUID.fromString("00000000-0000-0000-0000-000000000003")
+  private val variant1: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+  private val variant2: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+  private val variant3: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
 
   private val dataset: M9OfflineEvalDataset =
     M9OfflineEvalDataset(

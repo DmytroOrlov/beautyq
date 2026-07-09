@@ -31,8 +31,8 @@ final class M18DualEngineOfflineEvalEsRealLegSpec extends LeaderboardTest with P
 
   private val spec = BeautySearchSpecV1.spec
 
-  private val variantId: MasterServiceOfferVariantId = UUID.randomUUID()
-  private val otherVariantId: MasterServiceOfferVariantId = UUID.randomUUID()
+  private val variantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
+  private val otherVariantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
 
   "M18 dual-engine offline eval ES leg against real Elasticsearch" should {
     "execute the ES leg via ElasticsearchSearchBackend's documentHits path and emit non-empty real candidate rows, while Qdrant stays honestly resource-gated" in {
@@ -155,11 +155,11 @@ final class M18DualEngineOfflineEvalEsRealLegSpec extends LeaderboardTest with P
   }
 
   private def syntheticDocument(id: MasterServiceOfferVariantId, serviceName: String, tag: String): VariantSearchDocument = {
-    val masterServiceOfferId: MasterServiceOfferId = UUID.randomUUID()
-    val masterLocationId: MasterLocationId = UUID.randomUUID()
-    val masterId: MasterId = UUID.randomUUID()
-    val serviceId: ServiceId = UUID.randomUUID()
-    val categoryId: CategoryId = UUID.randomUUID()
+    val masterServiceOfferId: MasterServiceOfferId = MasterServiceOfferId(UUID.randomUUID())
+    val masterLocationId: MasterLocationId = MasterLocationId(UUID.randomUUID())
+    val masterId: MasterId = MasterId(UUID.randomUUID())
+    val serviceId: ServiceId = ServiceId(UUID.randomUUID())
+    val categoryId: CategoryId = CategoryId(UUID.randomUUID())
     VariantSearchDocument(
       variantId = id,
       masterServiceOfferId = masterServiceOfferId,

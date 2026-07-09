@@ -4,15 +4,14 @@ import io.circe.parser.parse
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.BeautySearchApi
 import leaderboard.http.tapir.BeautySearchTapirEndpoints
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.*
 import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.{ExecutionModes, JsonFields, ResultOrigins}
 import leaderboard.search.dsl.SearchConstraint
 import org.http4s.{Request, Status}
 import zio.interop.catz.*
 import zio.{IO, Ref, Task, UIO, ZIO}
-
-import java.util.UUID
 
 class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private val tapirEndpoints = BeautySearchTapirEndpoints
@@ -205,12 +204,12 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
     BeautySearchResponse(
       variantCarousel = List(
         VariantSearchResult(
-          variantId = UUID.fromString("11111111-1111-1111-1111-111111111111"),
-          masterServiceOfferId = UUID.fromString("22222222-2222-2222-2222-222222222222"),
-          masterLocationId = UUID.fromString("33333333-3333-3333-3333-333333333333"),
-          masterId = UUID.fromString("44444444-4444-4444-4444-444444444444"),
-          serviceId = UUID.fromString("55555555-5555-5555-5555-555555555555"),
-          categoryId = UUID.fromString("66666666-6666-6666-6666-666666666666"),
+          variantId = MasterServiceOfferVariantId.fromString("11111111-1111-1111-1111-111111111111"),
+          masterServiceOfferId = MasterServiceOfferId.fromString("22222222-2222-2222-2222-222222222222"),
+          masterLocationId = MasterLocationId.fromString("33333333-3333-3333-3333-333333333333"),
+          masterId = MasterId.fromString("44444444-4444-4444-4444-444444444444"),
+          serviceId = ServiceId.fromString("55555555-5555-5555-5555-555555555555"),
+          categoryId = CategoryId.fromString("66666666-6666-6666-6666-666666666666"),
           serviceName = "Маникюр",
           categoryName = "Ногти",
           masterName = "Анна",
@@ -231,22 +230,22 @@ class BeautySearchApiHttpContractSuite extends SpecZIO with AssertZIO with HttpC
       ),
       providerCarousel = List(
         ProviderSearchResult(
-          masterId = UUID.fromString("44444444-4444-4444-4444-444444444444"),
+          masterId = MasterId.fromString("44444444-4444-4444-4444-444444444444"),
           masterName = "Анна",
-          masterLocationId = UUID.fromString("33333333-3333-3333-3333-333333333333"),
+          masterLocationId = MasterLocationId.fromString("33333333-3333-3333-3333-333333333333"),
           locationName = "Wandsbek studio",
           address = "Wandsbeker Marktstrasse 1",
           matchingVariantCount = 1,
-          sampleMatchingVariantIds = List(UUID.fromString("11111111-1111-1111-1111-111111111111")),
+          sampleMatchingVariantIds = List(MasterServiceOfferVariantId.fromString("11111111-1111-1111-1111-111111111111")),
           bestScore = 9.5d,
           distanceKm = Some(BigDecimal("1.2")),
         )
       ),
       serviceIntentCarousel = List(
         ServiceIntentSearchResult(
-          serviceId = UUID.fromString("55555555-5555-5555-5555-555555555555"),
+          serviceId = ServiceId.fromString("55555555-5555-5555-5555-555555555555"),
           serviceName = "Маникюр",
-          categoryId = UUID.fromString("66666666-6666-6666-6666-666666666666"),
+          categoryId = CategoryId.fromString("66666666-6666-6666-6666-666666666666"),
           categoryName = "Ногти",
           matchingVariantCount = 1,
           bestScore = 9.5d,

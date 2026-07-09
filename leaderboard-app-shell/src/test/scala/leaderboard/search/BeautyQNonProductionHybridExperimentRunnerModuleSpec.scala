@@ -5,7 +5,8 @@ import java.util.UUID
 import distage.{Injector, ModuleDef}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.{
@@ -52,7 +53,7 @@ final class BeautyQNonProductionHybridExperimentRunnerModuleSpec extends AnyWord
 
     "missing lookup document propagates QueryFailure" in {
       val lexical = variantDocument(3)
-      val missingId = variantId(4)
+      val missingId = MasterServiceOfferVariantId(indexUuid(4))
 
       val probe = buildRunnerProbe(
         lexicalHits = List(
@@ -257,12 +258,12 @@ final class BeautyQNonProductionHybridExperimentRunnerModuleSpec extends AnyWord
     val masterIndex = locationIndex + 1000
 
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(locationIndex),
-      masterId = variantId(masterIndex),
-      serviceId = variantId(resolvedServiceIndex),
-      categoryId = variantId(categoryIndex),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(locationIndex)),
+      masterId = MasterId(indexUuid(masterIndex)),
+      serviceId = ServiceId(indexUuid(resolvedServiceIndex)),
+      categoryId = CategoryId(indexUuid(categoryIndex)),
       serviceName = s"Service $resolvedServiceIndex",
       categoryName = s"Category $categoryIndex",
       masterName = s"Master $masterIndex",
@@ -286,6 +287,6 @@ final class BeautyQNonProductionHybridExperimentRunnerModuleSpec extends AnyWord
     )
   }
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 }

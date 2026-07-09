@@ -1,7 +1,6 @@
 package leaderboard.search
 
-import leaderboard.model.MasterServiceOfferVariantId
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{SearchField, SearchFieldKind, SearchValue, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient

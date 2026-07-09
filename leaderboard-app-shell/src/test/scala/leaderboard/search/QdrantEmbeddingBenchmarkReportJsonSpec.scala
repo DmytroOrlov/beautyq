@@ -388,11 +388,11 @@ final class QdrantEmbeddingBenchmarkReportJsonSpec extends AnyWordSpec {
       serviceHitAtK = variantHitRank.nonEmpty,
     )
 
-  private def variantId(value: Int): MasterServiceOfferVariantId = id(value)
+  private def variantId(value: Int): MasterServiceOfferVariantId = MasterServiceOfferVariantId(id(value))
 
-  private def providerId(value: Int): MasterLocationId = id(value + 100)
+  private def providerId(value: Int): MasterLocationId = MasterLocationId(id(value + 100))
 
-  private def serviceId(value: Int): ServiceId = id(value + 200)
+  private def serviceId(value: Int): ServiceId = ServiceId(id(value + 200))
 
   private def id(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")

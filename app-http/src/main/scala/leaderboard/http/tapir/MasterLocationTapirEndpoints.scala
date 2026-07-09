@@ -1,6 +1,7 @@
 package leaderboard.http.tapir
 
 import leaderboard.http.HttpApiFailure
+import leaderboard.http.tapir.BeautyQIdTapirSupport.given
 import leaderboard.model.{MasterId, MasterLocation, MasterLocationId}
 import sttp.tapir.*
 import sttp.tapir.generic.auto.*

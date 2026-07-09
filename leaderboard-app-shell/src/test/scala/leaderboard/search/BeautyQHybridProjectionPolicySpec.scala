@@ -12,8 +12,8 @@ import org.scalatest.wordspec.AnyWordSpec
 final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
   "BeautyQ hybrid projection policy" should {
     "preserve lexical order for lexical-only candidates" in {
-      val first = variantId(1)
-      val second = variantId(2)
+      val first = MasterServiceOfferVariantId(indexUuid(1))
+      val second = MasterServiceOfferVariantId(indexUuid(2))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(first, 12.0), LexicalDocumentHit(second, 8.0)),
@@ -25,8 +25,8 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "preserve semantic order for semantic-only candidates" in {
-      val first = variantId(3)
-      val second = variantId(4)
+      val first = MasterServiceOfferVariantId(indexUuid(3))
+      val second = MasterServiceOfferVariantId(indexUuid(4))
 
       val result = project(
         lexicalHits = Nil,
@@ -38,7 +38,7 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "collapse overlap to one candidate by variant id" in {
-      val shared = variantId(5)
+      val shared = MasterServiceOfferVariantId(indexUuid(5))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(shared, 10.0)),
@@ -50,9 +50,9 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "keep lexical-first order when overlap exists" in {
-      val lexicalFirst = variantId(6)
-      val shared = variantId(7)
-      val semanticFirst = variantId(8)
+      val lexicalFirst = MasterServiceOfferVariantId(indexUuid(6))
+      val shared = MasterServiceOfferVariantId(indexUuid(7))
+      val semanticFirst = MasterServiceOfferVariantId(indexUuid(8))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(lexicalFirst, 10.0), LexicalDocumentHit(shared, 9.0)),
@@ -63,8 +63,8 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "append semantic-only candidates after lexical candidates" in {
-      val lexicalOnly = variantId(9)
-      val semanticOnly = variantId(10)
+      val lexicalOnly = MasterServiceOfferVariantId(indexUuid(9))
+      val semanticOnly = MasterServiceOfferVariantId(indexUuid(10))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(lexicalOnly, 4.0)),
@@ -75,7 +75,7 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "preserve lexical and semantic scores separately" in {
-      val shared = variantId(11)
+      val shared = MasterServiceOfferVariantId(indexUuid(11))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(shared, 17.5)),
@@ -88,7 +88,7 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
 
     "not produce a fused score field" in {
       val candidate = project(
-        lexicalHits = List(LexicalDocumentHit(variantId(12), 7.0)),
+        lexicalHits = List(LexicalDocumentHit(MasterServiceOfferVariantId(indexUuid(12)), 7.0)),
         semanticHits = Nil,
       ).candidates.head
 
@@ -96,7 +96,7 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "use the first lexical hit for duplicate lexical ids" in {
-      val duplicate = variantId(13)
+      val duplicate = MasterServiceOfferVariantId(indexUuid(13))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(duplicate, 11.0), LexicalDocumentHit(duplicate, 3.0)),
@@ -108,7 +108,7 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "use the first semantic hit for duplicate semantic ids" in {
-      val duplicate = variantId(14)
+      val duplicate = MasterServiceOfferVariantId(indexUuid(14))
 
       val result = project(
         lexicalHits = Nil,
@@ -120,9 +120,9 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "report input and unique candidate category diagnostics" in {
-      val lexicalOnly = variantId(15)
-      val shared = variantId(16)
-      val semanticOnly = variantId(17)
+      val lexicalOnly = MasterServiceOfferVariantId(indexUuid(15))
+      val shared = MasterServiceOfferVariantId(indexUuid(16))
+      val semanticOnly = MasterServiceOfferVariantId(indexUuid(17))
 
       val result = project(
         lexicalHits = List(
@@ -145,8 +145,8 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "work from HybridDocumentRetrievalResult of MasterServiceOfferVariantId" in {
-      val lexicalId = variantId(18)
-      val semanticId = variantId(19)
+      val lexicalId = MasterServiceOfferVariantId(indexUuid(18))
+      val semanticId = MasterServiceOfferVariantId(indexUuid(19))
       val retrieval: HybridDocumentRetrievalResult[MasterServiceOfferVariantId] =
         HybridDocumentRetrievalResult.fromHits(
           lexicalHits = List(LexicalDocumentHit(lexicalId, 5.0)),
@@ -160,8 +160,8 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
 
     "not require Qdrant, Elasticsearch, or file IO" in {
       val result = project(
-        lexicalHits = List(LexicalDocumentHit(variantId(20), 2.0)),
-        semanticHits = List(SemanticDocumentHit(variantId(21), 0.51)),
+        lexicalHits = List(LexicalDocumentHit(MasterServiceOfferVariantId(indexUuid(20)), 2.0)),
+        semanticHits = List(SemanticDocumentHit(MasterServiceOfferVariantId(indexUuid(21)), 0.51)),
       )
 
       assert(result.candidates.size == 2)
@@ -170,8 +170,8 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "not reorder semantic-only candidates by higher semantic score" in {
-      val first = variantId(22)
-      val second = variantId(23)
+      val first = MasterServiceOfferVariantId(indexUuid(22))
+      val second = MasterServiceOfferVariantId(indexUuid(23))
 
       val result = project(
         lexicalHits = Nil,
@@ -185,8 +185,8 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "not move mixed candidate with higher semantic score ahead of lexical-only" in {
-      val lexicalOnly = variantId(24)
-      val mixed = variantId(25)
+      val lexicalOnly = MasterServiceOfferVariantId(indexUuid(24))
+      val mixed = MasterServiceOfferVariantId(indexUuid(25))
 
       val result = project(
         lexicalHits = List(LexicalDocumentHit(lexicalOnly, 5.0)),
@@ -202,9 +202,9 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
     }
 
     "not reorder output candidates by any score magnitude" in {
-      val lowLexical = variantId(26)
-      val highSemanticOnly = variantId(27)
-      val midMixed = variantId(28)
+      val lowLexical = MasterServiceOfferVariantId(indexUuid(26))
+      val highSemanticOnly = MasterServiceOfferVariantId(indexUuid(27))
+      val midMixed = MasterServiceOfferVariantId(indexUuid(28))
 
       val result = project(
         lexicalHits = List(
@@ -230,6 +230,6 @@ final class BeautyQHybridProjectionPolicySpec extends AnyWordSpec {
       HybridDocumentRetrievalResult.fromHits(lexicalHits, semanticHits)
     )
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 }

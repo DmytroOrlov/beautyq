@@ -3,14 +3,12 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.ServiceApi
 import leaderboard.http.tapir.ServiceTapirEndpoints
+import leaderboard.model.{QueryFailure, Service, ServiceId}
 import leaderboard.model.Category.CategoryId
-import leaderboard.model.{QueryFailure, Service}
 import leaderboard.repo.Services
 import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
-
-import java.util.UUID
 
 class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def serviceApi(state: ServiceApiContractState): ServiceApi[IO] =
@@ -18,8 +16,8 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
   "ServiceApi current http4s contracts" should {
     "return 200 and exact service json for an existing entity" in {
-      val serviceId  = UUID.fromString("11111111-1111-1111-1111-111111111111")
-      val categoryId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+      val serviceId  = ServiceId.fromString("11111111-1111-1111-1111-111111111111")
+      val categoryId = CategoryId.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
       val service    = Service(serviceId, categoryId, "Cut")
 
       for {
@@ -32,7 +30,7 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
     }
 
     "return 404 and typed error json for a missing service" in {
-      val serviceId = UUID.fromString("22222222-2222-2222-2222-222222222222")
+      val serviceId = ServiceId.fromString("22222222-2222-2222-2222-222222222222")
 
       for {
         state    <- ServiceApiContractState.make
@@ -44,9 +42,9 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
     }
 
     "return 200 and exact json array for the category endpoint" in {
-      val categoryId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-      val first      = Service(UUID.fromString("00000000-0000-0000-0000-000000000001"), categoryId, "Alpha")
-      val second     = Service(UUID.fromString("00000000-0000-0000-0000-000000000002"), categoryId, "Beta")
+      val categoryId = CategoryId.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+      val first      = Service(ServiceId.fromString("00000000-0000-0000-0000-000000000001"), categoryId, "Alpha")
+      val second     = Service(ServiceId.fromString("00000000-0000-0000-0000-000000000002"), categoryId, "Beta")
 
       for {
         state    <- ServiceApiContractState.make
@@ -60,8 +58,8 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
     }
 
     "return 200 with empty body and capture the posted service payload" in {
-      val serviceId  = UUID.fromString("33333333-3333-3333-3333-333333333333")
-      val categoryId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
+      val serviceId  = ServiceId.fromString("33333333-3333-3333-3333-333333333333")
+      val categoryId = CategoryId.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
       val payload    = s"""{"id":"$serviceId","categoryId":"$categoryId","name":"Color"}"""
 
       for {
@@ -94,7 +92,7 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
     }
 
     "return current server failure semantics when the category endpoint fails" in {
-      val categoryId = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")
+      val categoryId = CategoryId.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")
 
       for {
         state    <- ServiceApiContractState.make

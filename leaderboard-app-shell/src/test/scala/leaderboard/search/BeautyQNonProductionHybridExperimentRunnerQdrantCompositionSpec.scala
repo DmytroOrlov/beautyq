@@ -2,7 +2,8 @@ package leaderboard.search
 
 import io.circe.syntax.*
 import io.circe.{Json, JsonObject}
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
@@ -56,7 +57,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
     }
 
     "semantic-only runner path uses Qdrant semantic backend seam" in {
-      val expectedHitId = UUID.fromString("00000000-0000-0000-0000-000000000101")
+      val expectedHitId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000101"))
       val semanticDoc = variantDocumentWithId(1, expectedHitId)
 
       val composition = buildCompositionWith(
@@ -86,9 +87,9 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
     }
 
     "lexical + semantic overlap still deduplicates through runner" in {
-      val lexicalOnlyId = UUID.fromString("00000000-0000-0000-0000-000000000201")
-      val overlapId = UUID.fromString("00000000-0000-0000-0000-000000000202")
-      val semanticOnlyId = UUID.fromString("00000000-0000-0000-0000-000000000203")
+      val lexicalOnlyId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000201"))
+      val overlapId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000202"))
+      val semanticOnlyId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000203"))
 
       val docA = variantDocumentWithId(2, lexicalOnlyId)
       val docB = variantDocumentWithId(3, overlapId)
@@ -130,7 +131,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
     }
 
     "missing lookup document from Qdrant semantic hit propagates QueryFailure" in {
-      val missingId = UUID.fromString("00000000-0000-0000-0000-000000000303")
+      val missingId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000303"))
 
       val composition = buildCompositionWith(
         semanticCandidateSearch = new QdrantSemanticCandidateSearch(
@@ -157,7 +158,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
     }
 
     "composition semanticBackend integrates with scripted lexical backend and lookup" in {
-      val hitId = UUID.fromString("00000000-0000-0000-0000-000000000404")
+      val hitId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000404"))
       val doc = variantDocumentWithId(5, hitId)
 
       val composition = buildCompositionWith(
@@ -278,7 +279,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
 
   private final class ExpectingQdrantSearchClient(
     expectedCollectionName: String,
-    expectedVariantId: UUID,
+    expectedVariantId: MasterServiceOfferVariantId,
     expectedScore: Double,
   ) extends QdrantSearchClient {
     override def search(path: String, json: Json): IO[QueryFailure, List[QdrantSearchHit]] =
@@ -289,7 +290,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
           s"unexpected path: '$path', expected: /collections/${expectedCollectionName}/points/search"))
       )
 
-    private def searchHit(variantId: UUID, score: Double): QdrantSearchHit =
+    private def searchHit(variantId: MasterServiceOfferVariantId, score: Double): QdrantSearchHit =
       QdrantSearchHit(
         id = variantId.toString,
         payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(variantId.toString))),
@@ -309,7 +310,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
       ZIO.succeed(result)
   }
 
-  private def searchHit(variantId: UUID, score: Double): QdrantSearchHit =
+  private def searchHit(variantId: MasterServiceOfferVariantId, score: Double): QdrantSearchHit =
     QdrantSearchHit(
       id = variantId.toString,
       payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(variantId.toString))),
@@ -374,14 +375,14 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
     )
   }
 
-  private def variantDocumentWithId(index: Int, hitVariantId: UUID): VariantSearchDocument =
+  private def variantDocumentWithId(index: Int, hitVariantId: MasterServiceOfferVariantId): VariantSearchDocument =
     VariantSearchDocument(
       variantId = hitVariantId,
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(index + 200),
-      masterId = variantId(index + 1000),
-      serviceId = variantId(index + 400),
-      categoryId = variantId(index + 500),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(index + 200)),
+      masterId = MasterId(indexUuid(index + 1000)),
+      serviceId = ServiceId(indexUuid(index + 400)),
+      categoryId = CategoryId(indexUuid(index + 500)),
       serviceName = s"Service $index",
       categoryName = s"Category $index",
       masterName = s"Master $index",
@@ -404,7 +405,7 @@ final class BeautyQNonProductionHybridExperimentRunnerQdrantCompositionSpec exte
       locationText = s"location $index address $index category",
     )
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 
   private val input = UserSearchInput(query = "composition test", userLat = None, userLon = None, limit = 10)

@@ -3,11 +3,9 @@ package leaderboard.repo
 import distage.Lifecycle
 import doobie.free.{connection => FC}
 import doobie.implicits.*
-import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.ServiceVariantSchemaValidationError.{DisallowedAttribute, MissingRequiredAttribute}
 import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure, ServiceId, ServiceVariantSchema}
-import leaderboard.repo.RepoOp.ManyByKey
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -23,13 +21,6 @@ trait MasterServiceOfferVariants[F[_, _]] {
 object MasterServiceOfferVariants {
   /** Model-derived entity metadata for [[MasterServiceOfferVariant]]. */
   val entity: RepoEntity[MasterServiceOfferVariant] = RepoEntity.derived[MasterServiceOfferVariant]
-
-  /** Variants by offer id. Kept explicit: `MasterServiceOfferId`/`MasterLocationId`
-    * are transparent aliases of the same underlying `UUID`, so type-only
-    * derivation is ambiguous here - see `BeautyQCatalogGraph.Evidence`.
-    */
-  def byOffer[F[_, _]](repo: MasterServiceOfferVariants[F]): ManyByKey[F, MasterServiceOfferId, MasterServiceOfferVariant] =
-    ManyByKey(repo.getMasterServiceOfferVariantsByOffer)
 
   private case class MasterServiceOfferVariantBaseRow(
     id: MasterServiceOfferVariantId,

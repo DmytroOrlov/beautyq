@@ -2,7 +2,8 @@ package leaderboard.search
 
 import java.util.UUID
 
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.{BeautyQNonProductionHybridExperimentRunner, BeautyQNonProductionHybridResponseExperiment, BeautyQNonProductionHybridResponseExperimentResult}
@@ -96,7 +97,7 @@ final class BeautyQNonProductionHybridExperimentRunnerSpec extends AnyWordSpec {
 
     "missing lookup document failure propagates through runner" in {
       val lexical = variantDocument(6)
-      val missingId = variantId(7)
+      val missingId = MasterServiceOfferVariantId(indexUuid(7))
 
       val error = runFailure(
         lexicalResult = Right(List(LexicalDocumentHit(lexical.variantId, 1.0), LexicalDocumentHit(missingId, 0.5))),
@@ -300,12 +301,12 @@ final class BeautyQNonProductionHybridExperimentRunnerSpec extends AnyWordSpec {
     val masterIndex = locationIndex + 1000
 
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(locationIndex),
-      masterId = variantId(masterIndex),
-      serviceId = variantId(resolvedServiceIndex),
-      categoryId = variantId(categoryIndex),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(locationIndex)),
+      masterId = MasterId(indexUuid(masterIndex)),
+      serviceId = ServiceId(indexUuid(resolvedServiceIndex)),
+      categoryId = CategoryId(indexUuid(categoryIndex)),
       serviceName = s"Service $resolvedServiceIndex",
       categoryName = s"Category $categoryIndex",
       masterName = s"Master $masterIndex",
@@ -329,7 +330,7 @@ final class BeautyQNonProductionHybridExperimentRunnerSpec extends AnyWordSpec {
     )
   }
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 
   private def run[A](effect: IO[QueryFailure, A]): A =

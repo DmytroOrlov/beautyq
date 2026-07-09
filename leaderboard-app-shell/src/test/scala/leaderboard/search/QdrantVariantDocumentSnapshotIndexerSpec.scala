@@ -2,7 +2,8 @@ package leaderboard.search
 
 import io.circe.Json
 import io.circe.syntax.*
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{SearchGeoPoint, VectorDistance}
 import leaderboard.search.qdrant.{
@@ -24,7 +25,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
   "QdrantVariantDocumentSnapshotIndexer" should {
     "load snapshot from provider and index every document in input order" in {
       val documents = List(variantDocument(1), variantDocument(2), variantDocument(3))
-      val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val callsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val provider = new FakeSnapshotProvider(Right(documents))
       val documentIndexer = new FakeDocumentIndexer(callsRef, Right(Json.obj()))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(provider, documentIndexer)
@@ -37,7 +38,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
 
     "report loaded and indexed counts" in {
       val documents = List(variantDocument(1), variantDocument(2))
-      val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val callsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(documents)),
         new FakeDocumentIndexer(callsRef, Right(Json.obj())),
@@ -53,7 +54,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
     }
 
     "report zero for empty snapshot" in {
-      val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val callsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(Nil)),
         new FakeDocumentIndexer(callsRef, Right(Json.obj())),
@@ -72,7 +73,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
     "index snapshot normally when compatible guard succeeds" in {
       val documents = List(variantDocument(1), variantDocument(2))
       val snapshotCallsRef = runUio(Ref.make(0))
-      val indexCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val indexCallsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(documents), Some(snapshotCallsRef)),
         new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
@@ -92,7 +93,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
     "propagate guard QueryFailure without loading snapshot or indexing" in {
       val failure = QueryFailure.operation("get-qdrant-collection-info", "qdrant failed")
       val snapshotCallsRef = runUio(Ref.make(0))
-      val indexCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val indexCallsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(List(variantDocument(1))), Some(snapshotCallsRef)),
         new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
@@ -110,7 +111,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
 
     "propagate guard mismatch QueryFailure without loading snapshot or indexing" in {
       val snapshotCallsRef = runUio(Ref.make(0))
-      val indexCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val indexCallsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(List(variantDocument(1))), Some(snapshotCallsRef)),
         new FakeDocumentIndexer(indexCallsRef, Right(Json.obj())),
@@ -133,7 +134,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
 
     "propagate snapshot provider failure without indexing when compatible guard succeeds" in {
       val failure = QueryFailure.operation("load-snapshot", "snapshot failed")
-      val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val callsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Left(failure)),
         new FakeDocumentIndexer(callsRef, Right(Json.obj())),
@@ -148,7 +149,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
     "propagate first indexing failure when compatible guard succeeds" in {
       val documents = List(variantDocument(1), variantDocument(2), variantDocument(3))
       val failure = QueryFailure.operation("index-document", "indexing failed")
-      val callsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val callsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val indexer = new QdrantVariantDocumentSnapshotIndexer(
         new FakeSnapshotProvider(Right(documents)),
         new FailingOnVariantDocumentIndexer(callsRef, documents(1).variantId, failure),
@@ -170,7 +171,7 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
   }
 
   private final class FakeDocumentIndexer(
-    callsRef: Ref[List[(String, UUID)]],
+    callsRef: Ref[List[(String, MasterServiceOfferVariantId)]],
     result: Either[QueryFailure, Json],
   ) extends QdrantVariantDocumentUpsert {
     override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
@@ -178,8 +179,8 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
   }
 
   private final class FailingOnVariantDocumentIndexer(
-    callsRef: Ref[List[(String, UUID)]],
-    failingVariantId: UUID,
+    callsRef: Ref[List[(String, MasterServiceOfferVariantId)]],
+    failingVariantId: MasterServiceOfferVariantId,
     failure: QueryFailure,
   ) extends QdrantVariantDocumentUpsert {
     override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
@@ -189,12 +190,12 @@ final class QdrantVariantDocumentSnapshotIndexerSpec extends AnyWordSpec {
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = uuid(index, 1),
-      masterServiceOfferId = uuid(index, 2),
-      masterLocationId = uuid(index, 3),
-      masterId = uuid(index, 4),
-      serviceId = uuid(index, 5),
-      categoryId = uuid(index, 6),
+      variantId = MasterServiceOfferVariantId(uuid(index, 1)),
+      masterServiceOfferId = MasterServiceOfferId(uuid(index, 2)),
+      masterLocationId = MasterLocationId(uuid(index, 3)),
+      masterId = MasterId(uuid(index, 4)),
+      serviceId = ServiceId(uuid(index, 5)),
+      categoryId = CategoryId(uuid(index, 6)),
       serviceName = s"Service $index",
       categoryName = "Category",
       masterName = s"Master $index",

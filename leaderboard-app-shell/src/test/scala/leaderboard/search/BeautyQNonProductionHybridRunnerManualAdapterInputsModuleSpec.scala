@@ -5,7 +5,8 @@ import io.circe.{Json, JsonObject}
 import distage.{Injector, ModuleDef}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{EmbeddingSpec, SearchDocumentSpec, SearchGeoPoint, SearchField, SearchFieldKind, SearchValue, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
@@ -47,7 +48,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsModuleSpec extend
 
       val result = runIO(probe.handle.indexSnapshot())
 
-      assert(result.indexedVariantIds == List(expectedVariantId))
+      assert(result.indexedVariantIds == List(MasterServiceOfferVariantId(expectedVariantId)))
     }
 
     "materialized handle run is explicit and does not index" in {
@@ -58,7 +59,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsModuleSpec extend
 
       val result = runIO(probe.handle.run(input, intent))
 
-      assert(result.response.variantCarousel.map(_.variantId) == List(expectedVariantId))
+      assert(result.response.variantCarousel.map(_.variantId) == List(MasterServiceOfferVariantId(expectedVariantId)))
       assert(result.diagnostics.lexicalHitCount == 0)
       assert(result.diagnostics.semanticHitCount == 1)
       assert(result.diagnostics.distinctVariantIdCount == 1)
@@ -188,7 +189,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsModuleSpec extend
       make[QdrantPointUpsertClient].from {
         new ExpectingUpsertClient(
           testReadinessConfig.collectionName,
-          doc.variantId,
+          doc.variantId.value,
         )
       }
 
@@ -288,7 +289,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsModuleSpec extend
       make[QdrantSearchClient].from {
         new ExpectingQdrantSearchClient(
           testReadinessConfig.vectorSearchSpec.collectionName,
-          semanticDoc.variantId,
+          semanticDoc.variantId.value,
           0.92,
         )
       }
@@ -659,12 +660,12 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsModuleSpec extend
 
   private def moduleTestDocumentWithId(docVariantId: UUID): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = docVariantId,
-      masterServiceOfferId = makeVariantId(100),
-      masterLocationId = makeVariantId(200),
-      masterId = makeVariantId(1000),
-      serviceId = makeVariantId(400),
-      categoryId = makeVariantId(500),
+      variantId = MasterServiceOfferVariantId(docVariantId),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(100)),
+      masterLocationId = MasterLocationId(indexUuid(200)),
+      masterId = MasterId(indexUuid(1000)),
+      serviceId = ServiceId(indexUuid(400)),
+      categoryId = CategoryId(indexUuid(500)),
       serviceName = "Test Service",
       categoryName = "Test Category",
       masterName = "Test Master",
@@ -687,7 +688,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsModuleSpec extend
       locationText = "test location test address test category",
     )
 
-  private def makeVariantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 
   private val input = UserSearchInput(query = "test query", userLat = None, userLon = None, limit = 10)

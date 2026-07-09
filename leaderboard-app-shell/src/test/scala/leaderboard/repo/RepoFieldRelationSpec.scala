@@ -1,7 +1,7 @@
 package leaderboard.repo
 
-import leaderboard.model.Category.CategoryId
 import leaderboard.model.{Category, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema}
+import leaderboard.model.Category.CategoryId
 import leaderboard.repo.RepoOp.ManyByKey
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, ZIO}
@@ -15,8 +15,8 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
   "RepoField selector derivation" should {
     "derive Category.parentId as parentId / parent_id and select the value" in {
       val field   = Categories.entity.field(_.parentId)
-      val parent  = uuid("0000000000a1")
-      val category = Category(uuid("0000000000a2"), parent, 1, "child")
+      val parent  = CategoryId(uuid("0000000000a1"))
+      val category = Category(CategoryId(uuid("0000000000a2")), parent, 1, "child")
       assert(field.label == "parentId")
       assert(field.column == "parent_id")
       assert(field.select(category) == parent)

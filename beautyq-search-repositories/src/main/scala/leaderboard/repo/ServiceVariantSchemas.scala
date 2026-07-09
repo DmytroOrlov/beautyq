@@ -4,7 +4,6 @@ import distage.Lifecycle
 import doobie.Update
 import doobie.free.{connection => FC}
 import doobie.implicits.*
-import doobie.postgres.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.{AttributeDefinition, QueryFailure, ServiceId, ServiceVariantSchema, ServiceVariantSchemaItem}
 import leaderboard.runtime.QueryFailureToThrowable

@@ -2,7 +2,8 @@ package leaderboard.search
 
 import io.circe.syntax.*
 import io.circe.{Json, JsonObject}
-import leaderboard.model.{MasterServiceOfferVariantId, QueryFailure}
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{SearchGeoPoint, SearchField, SearchFieldKind, SearchValue, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
@@ -75,7 +76,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsSpec extends AnyW
 
       val result = run(handle.indexSnapshot())
 
-      assert(result.indexedVariantIds == List(expectedVariantId))
+      assert(result.indexedVariantIds == List(MasterServiceOfferVariantId(expectedVariantId)))
     }
 
     "built handle run delegates through Qdrant semantic search without indexing" in {
@@ -94,7 +95,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsSpec extends AnyW
           expectedVariantId,
           0.92,
         ),
-        documentLookup = new ScriptedDocumentLookup(Map(expectedVariantId -> semanticDoc)),
+        documentLookup = new ScriptedDocumentLookup(Map(MasterServiceOfferVariantId(expectedVariantId) -> semanticDoc)),
         documentSpec = testDocumentSpec,
         embeddingSpec = testEmbeddingSpec,
       )
@@ -346,12 +347,12 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsSpec extends AnyW
 
   private def testDocumentWithId(docVariantId: UUID): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = docVariantId,
-      masterServiceOfferId = makeVariantId(100),
-      masterLocationId = makeVariantId(200),
-      masterId = makeVariantId(1000),
-      serviceId = makeVariantId(400),
-      categoryId = makeVariantId(500),
+      variantId = MasterServiceOfferVariantId(docVariantId),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(100)),
+      masterLocationId = MasterLocationId(indexUuid(200)),
+      masterId = MasterId(indexUuid(1000)),
+      serviceId = ServiceId(indexUuid(400)),
+      categoryId = CategoryId(indexUuid(500)),
       serviceName = "Test Service",
       categoryName = "Test Category",
       masterName = "Test Master",
@@ -374,7 +375,7 @@ final class BeautyQNonProductionHybridRunnerManualAdapterInputsSpec extends AnyW
       locationText = "test location test address test category",
     )
 
-  private def makeVariantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 
   private val input = UserSearchInput(query = "test query", userLat = None, userLon = None, limit = 10)

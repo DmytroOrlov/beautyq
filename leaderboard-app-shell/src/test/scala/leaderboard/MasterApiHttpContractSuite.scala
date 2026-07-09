@@ -9,15 +9,13 @@ import org.http4s.Status
 import zio.interop.catz.*
 import zio.{IO, Ref, UIO, ZIO}
 
-import java.util.UUID
-
 class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContractTestSupport {
   private def masterApi(state: MasterApiContractState): MasterApi[IO] =
     new MasterApi[IO](state.masters, MasterTapirEndpoints)
 
   "MasterApi current http4s contracts" should {
     "return 200 and exact master json for an existing entity" in {
-      val masterId = UUID.fromString("11111111-2222-3333-4444-555555555555")
+      val masterId = MasterId.fromString("11111111-2222-3333-4444-555555555555")
       val master   = Master(masterId, "Kai")
 
       for {
@@ -30,7 +28,7 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
     }
 
     "return 404 and typed error JSON for a missing master" in {
-      val masterId = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
+      val masterId = MasterId.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa")
 
       for {
         state    <- MasterApiContractState.make
@@ -42,8 +40,8 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
     }
 
     "return 200 and exact json array for the master list endpoint" in {
-      val first  = Master(UUID.fromString("00000000-0000-0000-0000-000000000001"), "Alpha")
-      val second = Master(UUID.fromString("00000000-0000-0000-0000-000000000002"), "Beta")
+      val first  = Master(MasterId.fromString("00000000-0000-0000-0000-000000000001"), "Alpha")
+      val second = Master(MasterId.fromString("00000000-0000-0000-0000-000000000002"), "Beta")
 
       for {
         state    <- MasterApiContractState.make
@@ -57,7 +55,7 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
     }
 
     "return 200 with empty body and capture the posted master payload" in {
-      val masterId = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
+      val masterId = MasterId.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
       val payload  = s"""{"id":"$masterId","name":"Nori"}"""
 
       for {
@@ -120,7 +118,7 @@ class MasterApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContrac
     }
 
     "return current server failure semantics when single-master lookup fails" in {
-      val masterId = UUID.fromString("12345678-1234-1234-1234-123456789abc")
+      val masterId = MasterId.fromString("12345678-1234-1234-1234-123456789abc")
 
       for {
         state    <- MasterApiContractState.make

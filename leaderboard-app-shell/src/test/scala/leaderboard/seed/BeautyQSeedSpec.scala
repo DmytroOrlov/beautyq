@@ -21,12 +21,12 @@ abstract class BeautyQSeedSpec extends LeaderboardTest {
 
   private val seedLoader = new BeautyQSeedLoader.ResourceLoader()
 
-  private val knownCategoryId = UUID.fromString("e1558eb7-8f7d-5b71-844d-71cc37a192e8")
-  private val knownServiceId = UUID.fromString("a1085253-a9bf-517c-80c4-262b0bf9a5a4")
-  private val knownMasterId = UUID.fromString("6bbb7472-d382-541e-a007-c842ebf3c25b")
-  private val knownLocationId = UUID.fromString("78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52")
-  private val knownOfferId = UUID.fromString("73a9fc17-4f0d-5417-b04d-a65f8fdb2399")
-  private val knownVariantId = UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659")
+  private val knownCategoryId = Category.CategoryId(UUID.fromString("e1558eb7-8f7d-5b71-844d-71cc37a192e8"))
+  private val knownServiceId = ServiceId(UUID.fromString("a1085253-a9bf-517c-80c4-262b0bf9a5a4"))
+  private val knownMasterId = MasterId(UUID.fromString("6bbb7472-d382-541e-a007-c842ebf3c25b"))
+  private val knownLocationId = MasterLocationId(UUID.fromString("78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"))
+  private val knownOfferId = MasterServiceOfferId(UUID.fromString("73a9fc17-4f0d-5417-b04d-a65f8fdb2399"))
+  private val knownVariantId = MasterServiceOfferVariantId(UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659"))
 
   private def loadSkippedRecordsFromResourceOrDie: IO[Nothing, List[Json]] = {
     val result = for {

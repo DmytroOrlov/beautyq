@@ -2,7 +2,8 @@ package leaderboard.search
 
 import io.circe.syntax.*
 import io.circe.{Json, JsonObject}
-import leaderboard.model.QueryFailure
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, QueryFailure, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.{VariantSearchDocument, VariantSearchDocumentSnapshotProvider}
 import leaderboard.search.dsl.{BeautySearchSpecV1, SearchGeoPoint, VectorDistance, VectorSearchSpec}
 import leaderboard.search.embedding.EmbeddingClient
@@ -54,7 +55,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
     "indexSnapshot delegates to composition.indexSnapshot and guarded snapshot indexing" in {
       val document = variantDocument(2)
       val snapshotCallsRef = runUio(Ref.make(0))
-      val upsertCallsRef = runUio(Ref.make(List.empty[(String, UUID)]))
+      val upsertCallsRef = runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))
       val composition = buildComposition(
         snapshotProvider = new FakeSnapshotProvider(Right(List(document)), snapshotCallsRef),
         documentUpsert = new RecordingDocumentUpsert(upsertCallsRef),
@@ -247,7 +248,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
     readinessConfig: QdrantCollectionReadinessConfig = testReadinessConfig,
     compatibilityGuard: QdrantCollectionCompatibilityGuard = compatibleGuard,
     snapshotProvider: VariantSearchDocumentSnapshotProvider[IO] = new FakeSnapshotProvider(Right(Nil), runUio(Ref.make(0))),
-    documentUpsert: QdrantVariantDocumentUpsert = new RecordingDocumentUpsert(runUio(Ref.make(List.empty[(String, UUID)]))),
+    documentUpsert: QdrantVariantDocumentUpsert = new RecordingDocumentUpsert(runUio(Ref.make(List.empty[(String, MasterServiceOfferVariantId)]))),
     semanticCandidateSearch: QdrantSemanticCandidateSearch = new QdrantSemanticCandidateSearch(
       new ConstEmbeddingClient(Vector(0.1)),
       new RecordingQdrantSearchClient(runUio(Ref.make(Option.empty[String])), Right(Nil)),
@@ -270,7 +271,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
       callsRef.update(_ + 1) *> ZIO.fromEither(result)
   }
 
-  private final class RecordingDocumentUpsert(callsRef: Ref[List[(String, UUID)]]) extends QdrantVariantDocumentUpsert {
+  private final class RecordingDocumentUpsert(callsRef: Ref[List[(String, MasterServiceOfferVariantId)]]) extends QdrantVariantDocumentUpsert {
     override def upsertDocument(collectionName: String, document: VariantSearchDocument): IO[QueryFailure, Json] =
       callsRef.update(_ :+ (collectionName -> document.variantId)).as(Json.obj())
   }
@@ -314,7 +315,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
   ) extends VariantSearchDocumentLookup[IO] {
     private val documentsById = documents.iterator.map(document => document.variantId -> document).toMap
 
-    override def lookup(variantIds: List[UUID]): IO[QueryFailure, Map[UUID, VariantSearchDocument]] =
+    override def lookup(variantIds: List[MasterServiceOfferVariantId]): IO[QueryFailure, Map[MasterServiceOfferVariantId, VariantSearchDocument]] =
       callsRef.update(_ + 1).as {
         variantIds.iterator.flatMap(variantId => documentsById.get(variantId).map(document => variantId -> document)).toMap
       }
@@ -381,7 +382,7 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
       )
     )
 
-  private def searchHit(variantId: UUID, score: Double): QdrantSearchHit =
+  private def searchHit(variantId: MasterServiceOfferVariantId, score: Double): QdrantSearchHit =
     QdrantSearchHit(
       id = variantId.toString,
       payload = JsonObject.fromMap(Map("variantId" -> Json.fromString(variantId.toString))),
@@ -399,12 +400,12 @@ final class QdrantNonProductionHybridExperimentSpec extends AnyWordSpec {
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = uuid(index, 1),
-      masterServiceOfferId = uuid(index, 2),
-      masterLocationId = uuid(index, 3),
-      masterId = uuid(index, 4),
-      serviceId = uuid(index, 5),
-      categoryId = uuid(index, 6),
+      variantId = MasterServiceOfferVariantId(uuid(index, 1)),
+      masterServiceOfferId = MasterServiceOfferId(uuid(index, 2)),
+      masterLocationId = MasterLocationId(uuid(index, 3)),
+      masterId = MasterId(uuid(index, 4)),
+      serviceId = ServiceId(uuid(index, 5)),
+      categoryId = CategoryId(uuid(index, 6)),
       serviceName = s"Service $index",
       categoryName = "Category",
       masterName = s"Master $index",

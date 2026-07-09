@@ -125,7 +125,7 @@ final class QdrantProductionCandidateOfflineEvalEvidenceSpec extends AnyWordSpec
     )
 
   private def variantId(slot: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x"))
 
   private def evalQuery(
     id: String,

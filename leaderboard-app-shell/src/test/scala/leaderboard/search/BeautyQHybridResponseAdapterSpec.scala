@@ -2,7 +2,8 @@ package leaderboard.search
 
 import java.util.UUID
 
-import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.{MasterId, MasterLocationId, MasterServiceOfferId, MasterServiceOfferVariantId, ServiceId}
+import leaderboard.model.Category.CategoryId
 import leaderboard.search.document.VariantSearchDocument
 import leaderboard.search.dsl.SearchGeoPoint
 import leaderboard.search.hybrid.BeautyQHybridCandidateSource.{Lexical, Semantic}
@@ -268,13 +269,13 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
           providerCandidate(
             document,
             representativeDisplayScore = 1.0,
-            sampleMatchingVariantIds = List(variantId(900), variantId(901), variantId(902), variantId(903)),
+            sampleMatchingVariantIds = List(MasterServiceOfferVariantId(indexUuid(900)), MasterServiceOfferVariantId(indexUuid(901)), MasterServiceOfferVariantId(indexUuid(902)), MasterServiceOfferVariantId(indexUuid(903))),
           )
         ),
         serviceIntentCandidates = Nil,
       ).response
 
-      assert(response.providerCarousel.head.sampleMatchingVariantIds == List(variantId(900), variantId(901), variantId(902)))
+      assert(response.providerCarousel.head.sampleMatchingVariantIds == List(MasterServiceOfferVariantId(indexUuid(900)), MasterServiceOfferVariantId(indexUuid(901)), MasterServiceOfferVariantId(indexUuid(902))))
       assert(response.providerCarousel.head.distanceKm.isEmpty)
     }
 
@@ -379,7 +380,7 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
           providerCandidate(
             first,
             representativeDisplayScore = 1.0,
-            sampleMatchingVariantIds = List(variantId(910), variantId(911), variantId(912), variantId(913)),
+            sampleMatchingVariantIds = List(MasterServiceOfferVariantId(indexUuid(910)), MasterServiceOfferVariantId(indexUuid(911)), MasterServiceOfferVariantId(indexUuid(912)), MasterServiceOfferVariantId(indexUuid(913))),
           ),
           providerCandidate(second, representativeDisplayScore = 2.0),
         ),
@@ -388,7 +389,7 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
       ).response
 
       assert(response.providerCarousel.map(_.masterLocationId) == List(first.masterLocationId))
-      assert(response.providerCarousel.head.sampleMatchingVariantIds == List(variantId(910), variantId(911), variantId(912)))
+      assert(response.providerCarousel.head.sampleMatchingVariantIds == List(MasterServiceOfferVariantId(indexUuid(910)), MasterServiceOfferVariantId(indexUuid(911)), MasterServiceOfferVariantId(indexUuid(912))))
     }
   }
 
@@ -440,7 +441,7 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
       address = document.address,
       matchingVariantCount = 4,
       sampleMatchingVariantIds =
-        if (sampleMatchingVariantIds.nonEmpty) sampleMatchingVariantIds else List(document.variantId, variantId(800)),
+        if (sampleMatchingVariantIds.nonEmpty) sampleMatchingVariantIds else List(document.variantId, MasterServiceOfferVariantId(indexUuid(800))),
       representativeDisplayScore = representativeDisplayScore,
       sources = Set(BeautyQHybridCandidateSource.Lexical),
     )
@@ -476,12 +477,12 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
 
   private def variantDocument(index: Int): VariantSearchDocument =
     VariantSearchDocument(
-      variantId = variantId(index),
-      masterServiceOfferId = variantId(index + 100),
-      masterLocationId = variantId(index + 200),
-      masterId = variantId(index + 300),
-      serviceId = variantId(index + 400),
-      categoryId = variantId(index + 500),
+      variantId = MasterServiceOfferVariantId(indexUuid(index)),
+      masterServiceOfferId = MasterServiceOfferId(indexUuid(index + 100)),
+      masterLocationId = MasterLocationId(indexUuid(index + 200)),
+      masterId = MasterId(indexUuid(index + 300)),
+      serviceId = ServiceId(indexUuid(index + 400)),
+      categoryId = CategoryId(indexUuid(index + 500)),
       serviceName = s"Service $index",
       categoryName = s"Category $index",
       masterName = s"Master $index",
@@ -504,6 +505,6 @@ final class BeautyQHybridResponseAdapterSpec extends AnyWordSpec {
       locationText = s"location $index main street $index",
     )
 
-  private def variantId(value: Int): MasterServiceOfferVariantId =
+  private def indexUuid(value: Int): UUID =
     UUID.fromString(f"00000000-0000-0000-0000-$value%012d")
 }

@@ -1,6 +1,6 @@
 package leaderboard.search
 
-import leaderboard.model.MasterServiceOfferVariantId
+import leaderboard.model.{MasterServiceOfferVariantId}
 import leaderboard.search.eval.{BeautySearchEvalReport, EngineEvalAggregateMetrics, EngineEvalAggregateReport, EngineEvalComparisonMetrics, EngineEvalEngine, EngineEvalQueryReport, EngineEvalResult, EngineExpectedRole}
 import leaderboard.search.qdrant.QdrantEmbeddingBenchmarkQueryResult
 import org.scalatest.wordspec.AnyWordSpec
@@ -10,7 +10,7 @@ import java.util.UUID
 final class EngineEvalSpec extends AnyWordSpec {
 
   private def variantId(slot: Int): MasterServiceOfferVariantId =
-    UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x")
+    MasterServiceOfferVariantId(UUID.fromString(f"00000000-0000-0000-0000-00000000${slot}%04x"))
 
   private val v1: MasterServiceOfferVariantId = variantId(1)
   private val v2: MasterServiceOfferVariantId = variantId(2)

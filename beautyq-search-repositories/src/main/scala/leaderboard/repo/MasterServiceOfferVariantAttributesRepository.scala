@@ -5,7 +5,6 @@ import doobie.Update
 import doobie.free.connection as FC
 import doobie.free.connection.ConnectionIO
 import doobie.implicits.*
-import doobie.postgres.implicits.*
 import doobie.util.fragments
 import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, BooleanAttributeDefinition, CodedEnumValue, EnumAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.AttributeDefinition.AnyAttributeDefinition

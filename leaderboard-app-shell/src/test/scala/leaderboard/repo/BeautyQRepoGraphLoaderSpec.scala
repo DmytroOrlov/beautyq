@@ -13,23 +13,23 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
   private def uuid(suffix: String): UUID = UUID.fromString(s"00000000-0000-0000-0000-$suffix")
 
   // --- deterministic immutable fixture graph ---
-  private val categoryA      = Category(uuid("0000000000a1"), rootCategoryId, 0, "Category A")
-  private val categoryB      = Category(uuid("0000000000b1"), rootCategoryId, 0, "Category B")
-  private val categoryAChild = Category(uuid("0000000000a2"), categoryA.id, 1, "Category A Child")
+  private val categoryA      = Category(CategoryId(uuid("0000000000a1")), rootCategoryId, 0, "Category A")
+  private val categoryB      = Category(CategoryId(uuid("0000000000b1")), rootCategoryId, 0, "Category B")
+  private val categoryAChild = Category(CategoryId(uuid("0000000000a2")), categoryA.id, 1, "Category A Child")
 
-  private val serviceA = Service(uuid("000000005e01"), categoryAChild.id, "Service A")
-  private val serviceB = Service(uuid("000000005e02"), categoryB.id, "Service B")
+  private val serviceA = Service(ServiceId(uuid("000000005e01")), categoryAChild.id, "Service A")
+  private val serviceB = Service(ServiceId(uuid("000000005e02")), categoryB.id, "Service B")
 
-  private val master   = Master(uuid("00000000a501"), "Master One")
-  private val location = MasterLocation(uuid("00000010c001"), master.id, "Location One", "Address One", BigDecimal("52.5"), BigDecimal("13.4"))
+  private val master   = Master(MasterId(uuid("00000000a501")), "Master One")
+  private val location = MasterLocation(MasterLocationId(uuid("00000010c001")), master.id, "Location One", "Address One", BigDecimal("52.5"), BigDecimal("13.4"))
 
-  private val offerA = MasterServiceOffer(uuid("00000000ff01"), master.id, serviceA.id)
-  private val offerB = MasterServiceOffer(uuid("00000000ff02"), master.id, serviceB.id)
+  private val offerA = MasterServiceOffer(MasterServiceOfferId(uuid("00000000ff01")), master.id, serviceA.id)
+  private val offerB = MasterServiceOffer(MasterServiceOfferId(uuid("00000000ff02")), master.id, serviceB.id)
 
-  private val variantA = makeVariant(uuid("00000000aa01"), offerA.id, location.id)
-  private val variantB = makeVariant(uuid("00000000aa02"), offerB.id, location.id)
+  private val variantA = makeVariant(MasterServiceOfferVariantId(uuid("00000000aa01")), offerA.id, location.id)
+  private val variantB = makeVariant(MasterServiceOfferVariantId(uuid("00000000aa02")), offerB.id, location.id)
 
-  private def makeVariant(id: UUID, offerId: MasterServiceOfferId, locationId: MasterLocationId): MasterServiceOfferVariant =
+  private def makeVariant(id: MasterServiceOfferVariantId, offerId: MasterServiceOfferId, locationId: MasterLocationId): MasterServiceOfferVariant =
     MasterServiceOfferVariant.make(id, offerId, locationId, BigDecimal(10), BigDecimal(20), 30) match {
       case Right(variant) =>
         variant
@@ -197,7 +197,7 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
     }
 
     "fail with the canonical missing-entity message when a seed entity is absent" in {
-      val missingMaster = Master(uuid("00000000a5ff"), "Missing Master")
+      val missingMaster = Master(MasterId(uuid("00000000a5ff")), "Missing Master")
       val brokenSeedScope = seedScope.copy(masters = List(missingMaster))
       val brokenLoader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
         brokenSeedScope,

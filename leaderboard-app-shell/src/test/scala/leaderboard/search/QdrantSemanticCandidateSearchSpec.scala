@@ -22,8 +22,8 @@ final class QdrantSemanticCandidateSearchSpec extends AnyWordSpec {
       )
       val queryText = "маникюр рядом"
       val vector = Vector(0.1, 0.2, 0.3)
-      val firstVariantId = UUID.fromString("00000000-0000-0000-0000-000000000111")
-      val secondVariantId = UUID.fromString("00000000-0000-0000-0000-000000000222")
+      val firstVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000111"))
+      val secondVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000222"))
       val hits = List(
         QdrantSearchHit(
           id = "point-1",

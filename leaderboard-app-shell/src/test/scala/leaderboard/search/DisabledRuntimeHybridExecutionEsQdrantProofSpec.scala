@@ -58,8 +58,8 @@ final class DisabledRuntimeHybridExecutionEsQdrantProofSpec extends LeaderboardT
 
   private val spec = BeautySearchSpecV1.spec
 
-  private val variantId: MasterServiceOfferVariantId      = UUID.randomUUID()
-  private val otherVariantId: MasterServiceOfferVariantId = UUID.randomUUID()
+  private val variantId: MasterServiceOfferVariantId      = MasterServiceOfferVariantId(UUID.randomUUID())
+  private val otherVariantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.randomUUID())
 
   // The single shared query/input source. Both the ES leg and the Qdrant leg run over this exact
   // dataset query; the runner builds one UserSearchInput/ParsedSearchIntent per leg from it, so both
@@ -336,11 +336,11 @@ final class DisabledRuntimeHybridExecutionEsQdrantProofSpec extends LeaderboardT
     )
 
   private def syntheticDocument(id: MasterServiceOfferVariantId, serviceName: String, tag: String): VariantSearchDocument = {
-    val masterServiceOfferId: MasterServiceOfferId = UUID.randomUUID()
-    val masterLocationId: MasterLocationId         = UUID.randomUUID()
-    val masterId: MasterId                         = UUID.randomUUID()
-    val serviceId: ServiceId                       = UUID.randomUUID()
-    val categoryId: CategoryId                     = UUID.randomUUID()
+    val masterServiceOfferId: MasterServiceOfferId = MasterServiceOfferId(UUID.randomUUID())
+    val masterLocationId: MasterLocationId         = MasterLocationId(UUID.randomUUID())
+    val masterId: MasterId                         = MasterId(UUID.randomUUID())
+    val serviceId: ServiceId                       = ServiceId(UUID.randomUUID())
+    val categoryId: CategoryId                     = CategoryId(UUID.randomUUID())
     VariantSearchDocument(
       variantId = id,
       masterServiceOfferId = masterServiceOfferId,

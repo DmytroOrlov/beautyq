@@ -2,6 +2,7 @@ package leaderboard.search
 
 import io.circe.{Json, JsonObject}
 import leaderboard.model.*
+import leaderboard.model.{MasterServiceOfferVariantId}
 import leaderboard.search.beautyq.contract.BeautyQSearchResponseProvenanceContract.RouteDiagnosticReasonCategories
 import leaderboard.search.dsl.*
 import leaderboard.search.document.{BeautyQSearchCatalogSnapshot, BeautyQVariantSearchDocumentContract, BeautyQVariantSearchDocumentMaterialization, VariantSearchDocument}
@@ -46,7 +47,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
   private val parser = new BeautySearchIntentParser(BeautySearchSpecV1.spec)
 
   private val evalSuite = BeautySearchEvalInventory.evalSuite
-  private val unknownVariantId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+  private val unknownVariantId: MasterServiceOfferVariantId = MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
 
   "BeautySearchSpecV1" should {
     "have vector backend disabled by default" in {
@@ -437,7 +438,7 @@ final class BeautySearchPureSpec extends AnyWordSpec {
     "return an empty candidate response when all semantic hits are unknown" in {
       val hits = List(
         SemanticCandidateHit(unknownVariantId, 0.99),
-        SemanticCandidateHit(UUID.fromString("00000000-0000-0000-0000-000000000124"), 0.88),
+        SemanticCandidateHit(MasterServiceOfferVariantId(UUID.fromString("00000000-0000-0000-0000-000000000124")), 0.88),
       )
       val lexical = new FakeBeautySearchBackend(emptyResponse)
       val semantic = new CountingSemanticCandidateBackend(hits)
