@@ -56,6 +56,22 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 * at least one improvement
 * zero baseline regressions unless explicit user-approved metrics budget exists
 
+## Future-domain measured gate
+
+A future domain's supplement gate must compare baseline output against baseline-plus-supplement
+output, not supplement output alone, to prove local value before any production/default-route work.
+Generic invariants:
+
+* the measured gate tracks `testedQueries`, `improvedQueries`, `unchangedQueries`,
+  `worsenedQueries`, `totalSupplementOnlyAppends`, `duplicateBaselineIds`, `lostBaselineIds`,
+  `prefixOrderRegressions`, `baselineOwnedComponentChanges`, and `appendBudgetViolations`;
+* default append budget is at most one supplement-only candidate per query, unless a domain
+  explicitly approves a different budget;
+* gate/benchmark output is local/test evidence only, never automatic production/default route
+  approval.
+
+Full new-domain checklist and pass-condition thresholds: `docs/search/NEW_DOMAIN_ONBOARDING.md`.
+
 ## BeautyQ concrete example
 
 * ES baseline; Qdrant supplement; `ExplicitConstraintsFilterPlusTop1`
@@ -80,9 +96,11 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 * no Qdrant-only search
 * no fallback
 * no score fusion/rerank
+* no traffic shadowing/mirroring
 * no production startup indexing (local managed startup may prepare local ES/Qdrant data only)
 * no production collection lifecycle
 * no production route/default behavior change from frontend provenance alone
+* no route/API JSON contract change from supplement wiring
 * no benchmark output as automatic rollout signal
 
 Qdrant does not replace ES. The supplement path has no fallback, no score fusion, and no rerank; the locked measured gate remains the acceptance source.

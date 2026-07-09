@@ -286,6 +286,7 @@ counterpart via the env vars above.
 
 ## Reuse for next domain
 
-* `docs/SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`
+* `docs/search/NEW_DOMAIN_ONBOARDING.md` — future-domain supplement-gate checklist.
+* `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` — reusable generic supplement policy.
 
 Future domains should start from the measured gate method, not from BeautyQ commit history.

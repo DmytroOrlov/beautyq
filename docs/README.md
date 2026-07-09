@@ -22,12 +22,8 @@
 
 * `local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`
 
-## Reusable templates
-
-* `SEARCH_SUPPLEMENT_FUTURE_DOMAIN_GATE_TEMPLATE.md`
-
 ## Removed historical layers
 
-Old review/report layers, activation runbooks, platform reference dumps, macOS metadata, and the
-historical BeautyQ module-split phase log were removed. Use the current docs above instead of
-looking for removed history.
+Old review/report layers, activation runbooks, platform reference dumps, macOS metadata, the
+historical BeautyQ module-split phase log, and the standalone future-domain supplement gate
+template were removed. Use the current docs above instead of looking for removed history.
