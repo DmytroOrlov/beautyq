@@ -45,6 +45,7 @@ automatically once your types have the right shape:
 - Full loader: `declaration.materialize[F, R](identity).loadAll(repositories).map(_.toSnapshot
   [YourSnapshot])` - generic traversal in declaration order, generic dedup (by `CatalogValue`/
   conventional id) into your snapshot case class via `Mirror.ProductOf`.
+- `RepoSnapshotProjection` for indexing snapshot rows and required joins in document projection.
 - Seed loader: explicit `GraphLoading.seedRequiredById`/`seedValuesByKey` calls (still one call per
   seed-scoped list - see "What a new domain still declares" below) assembled into your snapshot via
   `LoadedCatalog(...).toRawSnapshot[YourSnapshot]` - same generic `Mirror.ProductOf` assembly as

@@ -1,7 +1,7 @@
 package leaderboard.search.document
 
 import leaderboard.model.*
-import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Masters, Services, ServiceVariantSchemas}
+import leaderboard.repo.{Categories, MasterLocations, MasterServiceOffers, Masters, RepoSnapshotProjection, Services, ServiceVariantSchemas}
 import leaderboard.search.dsl.SearchGeoPoint
 
 /** The BeautyQ variant document projection engine: projects a repo-backed
@@ -55,68 +55,68 @@ object BeautyQVariantSearchDocumentMaterialization {
     masterServiceOffers: List[MasterServiceOffer],
     masterServiceOfferVariants: List[MasterServiceOfferVariant],
   ): Either[QueryFailure, List[VariantSearchDocument]] = {
-    val categoriesById = SearchDocumentProjection.indexByKeyPreservingFirst(
-      SearchDocumentProjection.source(categoryNode, categories)
+    val categoriesById = RepoSnapshotProjection.indexByKeyPreservingFirst(
+      RepoSnapshotProjection.source(categoryNode, categories)
     )
-    val servicesById = SearchDocumentProjection.indexByKeyPreservingFirst(
-      SearchDocumentProjection.source(serviceNode, services)
+    val servicesById = RepoSnapshotProjection.indexByKeyPreservingFirst(
+      RepoSnapshotProjection.source(serviceNode, services)
     )
-    val schemasByServiceId = SearchDocumentProjection.indexByKeyPreservingFirst(
-      SearchDocumentProjection.valueSource(ServiceVariantSchemas.valueSource, serviceVariantSchemas)
+    val schemasByServiceId = RepoSnapshotProjection.indexByKeyPreservingFirst(
+      RepoSnapshotProjection.valueSource(ServiceVariantSchemas.valueSource, serviceVariantSchemas)
     )
-    val mastersById = SearchDocumentProjection.indexByKeyPreservingFirst(
-      SearchDocumentProjection.source(masterNode, masters)
+    val mastersById = RepoSnapshotProjection.indexByKeyPreservingFirst(
+      RepoSnapshotProjection.source(masterNode, masters)
     )
-    val locationsById = SearchDocumentProjection.indexByKeyPreservingFirst(
-      SearchDocumentProjection.source(masterLocationNode, masterLocations)
+    val locationsById = RepoSnapshotProjection.indexByKeyPreservingFirst(
+      RepoSnapshotProjection.source(masterLocationNode, masterLocations)
     )
-    val offersById = SearchDocumentProjection.indexByKeyPreservingFirst(
-      SearchDocumentProjection.source(masterServiceOfferNode, masterServiceOffers)
+    val offersById = RepoSnapshotProjection.indexByKeyPreservingFirst(
+      RepoSnapshotProjection.source(masterServiceOfferNode, masterServiceOffers)
     )
 
-    val offerByVariant = SearchDocumentProjection.requiredJoin(
+    val offerByVariant = RepoSnapshotProjection.requiredJoin(
       operationName = BuildOperationName,
       joined = offersById,
       key = (variant: MasterServiceOfferVariant) => variant.masterServiceOfferId,
       rootId = (variant: MasterServiceOfferVariant) => variant.id,
     )
-    val locationByVariant = SearchDocumentProjection.requiredJoin(
+    val locationByVariant = RepoSnapshotProjection.requiredJoin(
       operationName = BuildOperationName,
       joined = locationsById,
       key = (variant: MasterServiceOfferVariant) => variant.masterLocationId,
       rootId = (variant: MasterServiceOfferVariant) => variant.id,
     )
 
-    SearchDocumentProjection.projectRoots(masterServiceOfferVariants) {
+    RepoSnapshotProjection.projectRoots(masterServiceOfferVariants) {
       variant =>
         for {
           offer <- offerByVariant(variant)
-          service <- SearchDocumentProjection.requiredByKey(
+          service <- RepoSnapshotProjection.requiredByKey(
             operationName = BuildOperationName,
             joined = servicesById,
             key = offer.serviceId,
             rootId = variant.id,
           )
-          category <- SearchDocumentProjection.requiredByKey(
+          category <- RepoSnapshotProjection.requiredByKey(
             operationName = BuildOperationName,
             joined = categoriesById,
             key = service.categoryId,
             rootId = variant.id,
           )
-          master <- SearchDocumentProjection.requiredByKey(
+          master <- RepoSnapshotProjection.requiredByKey(
             operationName = BuildOperationName,
             joined = mastersById,
             key = offer.masterId,
             rootId = variant.id,
           )
           location <- locationByVariant(variant)
-          _ <- SearchDocumentProjection.checkInvariant(
+          _ <- RepoSnapshotProjection.checkInvariant(
             location.masterId == offer.masterId,
             QueryFailure.domain(
               s"$BuildOperationName: variant ${variant.id} joins offer ${offer.id} and location ${location.id} from different masters (${offer.masterId} != ${location.masterId})"
             ),
           )
-          _ <- validateAgainstSchema(variant, service.id, SearchDocumentProjection.optionalLookup(schemasByServiceId, service.id))
+          _ <- validateAgainstSchema(variant, service.id, RepoSnapshotProjection.optionalLookup(schemasByServiceId, service.id))
         } yield buildDocument(
           variant = variant,
           service = service,

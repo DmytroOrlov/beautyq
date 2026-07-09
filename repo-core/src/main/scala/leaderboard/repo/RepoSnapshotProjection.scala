@@ -1,15 +1,8 @@
-package leaderboard.search.document
+package leaderboard.repo
 
 import leaderboard.model.QueryFailure
-import leaderboard.repo.{EntityNode, RepoField, RepoValueSource}
-import leaderboard.search.dsl.SearchDocumentSpec
 
-final case class SearchDocumentProjection[S, A](
-  documentSpec: SearchDocumentSpec[A],
-  project: S => Either[QueryFailure, List[A]],
-)
-
-object SearchDocumentProjection {
+object RepoSnapshotProjection {
   final case class SnapshotRows[A, K](
     entityName: String,
     keyField: RepoField[A, K],

@@ -33,8 +33,9 @@ catalog snapshot loading                 BeautyQSearchCatalogSnapshotLoader.From
                                          root exclusion, deduplication
         │
         ▼
-materialization-owned document projection SearchDocumentProjection,
-                                         BeautyQVariantSearchDocumentMaterialization.project
+materialization-owned document projection BeautyQVariantSearchDocumentMaterialization.project
+                                         (generic snapshot-row indexing/join helpers via
+                                         repo-core's RepoSnapshotProjection)
         │
         ▼
 SearchDocumentSpec / SearchField         BeautyQVariantSearchDocumentContract.Fields,
@@ -170,9 +171,11 @@ They are not the single source of truth for all search metadata:
   `SearchRuntimeSpec`.
 - Document field ownership belongs to `BeautyQVariantSearchDocumentContract.Fields` (in
   `beautyq-search-contract`), not to `BeautySearchSpecV1`.
-- Projection is owned by `BeautyQVariantSearchDocumentMaterialization.project` (via
-  `SearchDocumentProjection`) in `beautyq-search-materialization`, which projects into the
-  contract-shaped `documentSpec` owned by `BeautyQVariantSearchDocumentContract`.
+- Projection is owned by `BeautyQVariantSearchDocumentMaterialization.project` in
+  `beautyq-search-materialization`, which projects into the contract-shaped `documentSpec` owned by
+  `BeautyQVariantSearchDocumentContract`. Generic snapshot-row indexing/join helpers used by that
+  projection (`RepoSnapshotProjection`) live in `repo-core`, a shared generic helper layer - not a
+  BeautyQ document contract owner.
   Production code (`BeautySearchCatalogBackendFactory.fromSeedLoader` in `leaderboard-app-shell`)
   calls it directly on a `BeautyQSearchCatalogSnapshot` built from seed data.
 - Generic ES and Qdrant interpreters consume `SearchDocumentSpec` / `SearchRuntimeSpec` / resolved
@@ -195,9 +198,10 @@ missing-entity messages, and search projection semantics.
 
 ## Materialization-owned document projection
 
-`SearchDocumentProjection` is the projection layer between loaded catalog snapshots and indexed
-documents. `BeautyQVariantSearchDocumentMaterialization` in `beautyq-search-materialization` owns
-BeautyQ variant projection; the contract-shaped `SearchDocumentSpec` it projects into is owned by
+`BeautyQVariantSearchDocumentMaterialization` in `beautyq-search-materialization` owns BeautyQ
+variant projection. `RepoSnapshotProjection` in `repo-core` provides the generic snapshot-row
+indexing, required-join, optional-lookup, invariant-check, and root-projection helpers that
+projection uses; the contract-shaped `SearchDocumentSpec` it projects into is owned by
 `BeautyQVariantSearchDocumentContract`. The production seed-catalog path
 (`BeautySearchCatalogBackendFactory.fromSeedLoader`) builds a
 `BeautyQSearchCatalogSnapshot` directly from seed data and calls

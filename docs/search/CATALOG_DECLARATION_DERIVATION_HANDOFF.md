@@ -203,10 +203,16 @@ had claimed the seed-scoped loader was still a caller.
 8. D2B value-source construction helper: RepoValueSource.derived; CatalogValue stays explicit. [done]
 ```
 
+Generic snapshot-row projection helpers (`RepoSnapshotProjection`) now live in repo-core for
+indexing, required joins, optional lookups, invariant checks, and root projection sequencing. This
+does not make domain projection fully derived; BeautyQ/domain projection logic remains explicit:
+joins, canonical missing-entity messages, schema/business-invariant validation, text/token
+normalization, and document construction are not derived.
+
 Recommended next patch: **none - no catalog/materialization derivation blocker remains.** Further
-work here is either (a) the genuine `CatalogValue`-identity-derivation policy decision, still
-deliberately `KEEP_EXPLICIT_VALUE_SOURCE_POLICY_FOR_NOW`, not attempted by any patch above, or (b)
-extracting shared *projection* helpers (row metadata, join patterns) - deliberately deferred until a
+work here is the genuine `CatalogValue`-identity-derivation policy decision, still deliberately
+`KEEP_EXPLICIT_VALUE_SOURCE_POLICY_FOR_NOW`, not attempted by any patch above; broader
+projection-helper extraction beyond the existing `RepoSnapshotProjection` remains deferred until a
 second domain, or a repeated pattern within this one, actually appears; see
 `docs/search/NEW_DOMAIN_ONBOARDING.md` for what a new domain reuses today versus still declares.
 
