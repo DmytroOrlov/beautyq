@@ -27,6 +27,14 @@ final case class SnapAssemblyBadSnapshot(count: Int)
 final case class SnapAssemblyPlainItem(label: String)
 final case class SnapAssemblyPlainSnapshot(items: List[SnapAssemblyPlainItem])
 
+// --- CatalogValue explicit-policy fixture: no conventional `id` field, and no
+// `given CatalogValue` anywhere in scope for this type by default. Proves that
+// a mere `val` RepoValueSource does not make CatalogValue evidence available -
+// only an explicit `given CatalogValue.Aux[...]` does. ---
+final case class SnapAssemblyPolicyParentId(value: String)
+final case class SnapAssemblyPolicyItem(parentId: SnapAssemblyPolicyParentId, label: String)
+final case class SnapAssemblyPolicySnapshot(items: List[SnapAssemblyPolicyItem])
+
 final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
 
   private val e1 = SnapAssemblyEntity(SnapAssemblyEntityId("e1"), "e1")
@@ -42,14 +50,22 @@ final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
   private val rawPlainItems = List(p1, p2, p1)
 
   given CatalogValue.Aux[SnapAssemblyValueItem, SnapAssemblyValueParentId, SnapAssemblyValueItem] =
-    CatalogValue.from(RepoValueSource[SnapAssemblyValueItem, SnapAssemblyValueParentId, SnapAssemblyValueItem](
-      valueModelName = "SnapAssemblyValueItem",
-      rowSource      = RepoEntity.derived[SnapAssemblyValueItem],
-      keyField       = RepoField.derived[SnapAssemblyValueItem, SnapAssemblyValueParentId](_.parentId),
-    ))
+    CatalogValue.from(RepoValueSource.derived[SnapAssemblyValueItem, SnapAssemblyValueParentId, SnapAssemblyValueItem](_.parentId))
 
   private val loaded = LoadedCatalog(rawEntities *: rawValues *: EmptyTuple)
   private val plainLoaded = LoadedCatalog(rawPlainItems *: EmptyTuple)
+
+  private val policyItem1 = SnapAssemblyPolicyItem(SnapAssemblyPolicyParentId("pp1"), "policy-v1")
+  private val policyItem2 = SnapAssemblyPolicyItem(SnapAssemblyPolicyParentId("pp2"), "policy-v2")
+  private val rawPolicyItems = List(policyItem1, policyItem2, policyItem1)
+
+  // Deliberately a plain `val`, not a `given`: proves that a correctly-derived
+  // RepoValueSource merely being in scope does not supply CatalogValue
+  // evidence - only an explicit `given CatalogValue.Aux[...]` does.
+  private val policyValueSource: RepoValueSource[SnapAssemblyPolicyItem, SnapAssemblyPolicyParentId, SnapAssemblyPolicyItem] =
+    RepoValueSource.derived[SnapAssemblyPolicyItem, SnapAssemblyPolicyParentId, SnapAssemblyPolicyItem](_.parentId)
+
+  private val policyLoaded = LoadedCatalog(rawPolicyItems *: EmptyTuple)
 
   "LoadedCatalog.toSnapshot (generic snapshot assembly)" should {
     "build a product snapshot case class from a LoadedCatalog, following the snapshot's own field order" in {
@@ -144,6 +160,24 @@ final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
       assert(raw.items == rawPlainItems)
 
       assertDoesNotCompile("plainLoaded.toSnapshot[SnapAssemblyPlainSnapshot]")
+    }
+  }
+
+  "CatalogValue explicit value-source policy" should {
+    "not compile toSnapshot for an aggregate/value field when only a plain (non-given) RepoValueSource is in scope" in {
+      assert(policyValueSource.keyField.label == "parentId")
+
+      assertDoesNotCompile("policyLoaded.toSnapshot[SnapAssemblyPolicySnapshot]")
+    }
+
+    "compile and deduplicate by the declared key, preserving first occurrence, once an explicit local CatalogValue.Aux given is declared" in {
+      given CatalogValue.Aux[SnapAssemblyPolicyItem, SnapAssemblyPolicyParentId, SnapAssemblyPolicyItem] =
+        CatalogValue.from(RepoValueSource.derived[SnapAssemblyPolicyItem, SnapAssemblyPolicyParentId, SnapAssemblyPolicyItem](_.parentId))
+
+      val snapshot = policyLoaded.toSnapshot[SnapAssemblyPolicySnapshot]
+
+      assert(snapshot.items == List(policyItem1, policyItem2))
+      assert(snapshot.items.size == 2)
     }
   }
 }
