@@ -20,7 +20,7 @@ object BeautyQSearchDomainContract {
   val label: String =
     "BeautyQ search contract aggregate over catalog/document/intent/runtime/response slices; full generic SearchDomainSpec declared"
 
-  /** The catalog topology section, owned by [[BeautyQCatalogDeclaration]] via
+  /** The catalog topology section, owned by [[BeautyQSearchDeclarations]] via
     * [[BeautyQCatalogSection]]. Unchanged by this aggregate.
     */
   val catalog = BeautyQCatalogSection.section
@@ -29,7 +29,7 @@ object BeautyQSearchDomainContract {
 
   val qdrantPayload = BeautyQVariantSearchDocumentContract.qdrantPayloadSpec
 
-  val query = BeautyQVariantSearchDocumentContract.querySchema
+  val query = BeautyQSearchDeclarations.querySchema
 
   val intent = BeautyQSearchIntentVocabulary.vocabulary
 

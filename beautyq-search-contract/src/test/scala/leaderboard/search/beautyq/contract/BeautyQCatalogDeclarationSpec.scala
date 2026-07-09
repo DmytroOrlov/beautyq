@@ -5,6 +5,10 @@ import org.scalatest.wordspec.AnyWordSpec
 final class BeautyQCatalogDeclarationSpec extends AnyWordSpec {
 
   "BeautyQCatalogDeclaration" should {
+    "remain a compatibility alias for the business-facing catalog declaration" in {
+      assert(BeautyQCatalogDeclaration.declaration eq BeautyQSearchDeclarations.catalog)
+    }
+
     "be constructible from beautyq-search-contract alone, using BeautyQ model types from beautyq-model" in {
       val declaration = BeautyQCatalogDeclaration.declaration
       assert(declaration.name == "beautyq")
@@ -62,6 +66,12 @@ final class BeautyQCatalogDeclarationSpec extends AnyWordSpec {
       // no F effect type, no repositories instance, no .materialize call.
       val declaration = BeautyQCatalogDeclaration.declaration
       assert(declaration.entityName == "masterServiceOffer")
+    }
+  }
+
+  "BeautyQSearchDeclarations.catalog" should {
+    "be the business-facing catalog declaration" in {
+      assert(BeautyQSearchDeclarations.catalog.name == "beautyq")
     }
   }
 

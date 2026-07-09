@@ -157,9 +157,11 @@ code, so `fullSearchDomainSpecDeclared` is `true`. The Phase 30 guardrails above
 protect this closeout against contract/runtime/http/materialization import drift going forward.
 `SearchQuerySchema` now has a small additive fluent builder that still produces the same
 `SearchQuerySchema` value. Its public query names remain explicit caller-supplied strings, not
-macro-derived from document-field paths. Broader builders for document/domain/facets/runtime/intent
-and response/provenance DSL remain a future architecture decision only if source evidence shows
-real duplication or unsafe constructor noise.
+macro-derived from document-field paths. `BeautyQSearchDeclarations` is the business-facing source
+of truth for the two fluent BeautyQ declarations: catalog topology and the public query schema;
+document fields/payload remain owned by `BeautyQVariantSearchDocumentContract`. Broader builders for
+document/domain/facets/runtime/intent and response/provenance DSL remain a future architecture
+decision only if source evidence shows real duplication or unsafe constructor noise.
 
 ## BeautySearchSpec / BeautySearchSpecV1
 

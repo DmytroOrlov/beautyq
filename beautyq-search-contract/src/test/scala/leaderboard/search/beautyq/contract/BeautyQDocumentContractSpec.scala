@@ -80,6 +80,10 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
   }
 
   "BeautyQVariantSearchDocumentContract.querySchema" should {
+    "remain a compatibility alias for the business-facing query declaration" in {
+      assert(BeautyQVariantSearchDocumentContract.querySchema eq BeautyQSearchDeclarations.querySchema)
+    }
+
     "preserve the explicit query field names, order, handles, and geo scoring field" in {
       val querySchema = BeautyQVariantSearchDocumentContract.querySchema
       val fields = BeautyQVariantSearchDocumentContract.Fields
