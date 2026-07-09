@@ -60,17 +60,27 @@ Only appended Qdrant-only variants use `qdrant_supplement`. ES baseline variants
 
 A future domain's supplement gate must compare baseline output against baseline-plus-supplement
 output, not supplement output alone, to prove local value before any production/default-route work.
-Generic invariants:
 
-* the measured gate tracks `testedQueries`, `improvedQueries`, `unchangedQueries`,
-  `worsenedQueries`, `totalSupplementOnlyAppends`, `duplicateBaselineIds`, `lostBaselineIds`,
-  `prefixOrderRegressions`, `baselineOwnedComponentChanges`, and `appendBudgetViolations`;
-* default append budget is at most one supplement-only candidate per query, unless a domain
-  explicitly approves a different budget;
-* gate/benchmark output is local/test evidence only, never automatic production/default route
-  approval.
+Generic gate metrics: `testedQueries`, `improvedQueries`, `unchangedQueries`, `worsenedQueries`,
+`totalSupplementOnlyAppends`, `duplicateBaselineIds`, `lostBaselineIds`, `prefixOrderRegressions`,
+`baselineOwnedComponentChanges`, `appendBudgetViolations`.
 
-Full new-domain checklist and pass-condition thresholds: `docs/search/NEW_DOMAIN_ONBOARDING.md`.
+Default pass/fail policy:
+
+* at least one improvement (`improvedQueries >= 1`) by default, unless a domain-specific accepted
+  harm budget says otherwise;
+* zero worsening (`worsenedQueries == 0`) by default;
+* no lost baseline ids (`lostBaselineIds == 0`);
+* no duplicate baseline ids (`duplicateBaselineIds == 0`);
+* no prefix/order regressions (`prefixOrderRegressions == 0`);
+* no baseline-owned component changes (`baselineOwnedComponentChanges == 0`);
+* append budget must be explicit: default is at most one supplement-only candidate per query
+  (`appendBudgetViolations == 0`), unless a domain explicitly approves a different budget.
+
+Gate/benchmark output is local/test evidence only, never automatic production/default route
+approval.
+
+New-domain setup checklist: `docs/search/NEW_DOMAIN_ONBOARDING.md`.
 
 ## BeautyQ concrete example
 

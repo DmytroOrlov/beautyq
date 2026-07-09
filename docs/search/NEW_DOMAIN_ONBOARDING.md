@@ -142,51 +142,27 @@ behind implicit scope would be clever but harder to debug than one explicit line
 ## Measured local gate before building a supplement
 
 Before wiring any new-domain search supplement (a candidate source added alongside a baseline
-backend) toward production, prove it locally first. Reuse this method, not any BeautyQ threshold or
-query text. This is the full new-domain checklist; generic supplement architecture/policy context:
-`docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`.
+backend) toward production, prove it locally first. Generic supplement policy, gate metrics, and
+default pass/fail thresholds are owned by `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` - reuse that
+method, not any BeautyQ threshold or query text.
 
-```text
-baseline map:
-- baseline backend (and its owner)
-- response id model
-- baseline-owned components
-- supplement candidate source (and its owner)
-- source-confirmed query inventory
-- one expected improvement query
-- one baseline-preservation query
+A new domain must define:
 
-gate metrics:
-- testedQueries
-- improvedQueries
-- unchangedQueries
-- worsenedQueries
-- totalSupplementOnlyAppends
-- duplicateBaselineIds
-- lostBaselineIds
-- prefixOrderRegressions
-- baselineOwnedComponentChanges
-- appendBudgetViolations
-
-pass:
-- testedQueries >= 2
-- improvedQueries >= 1
-- worsenedQueries == 0
-- lostBaselineIds == 0
-- duplicateBaselineIds == 0
-- prefixOrderRegressions == 0
-- baselineOwnedComponentChanges == 0
-- appendBudgetViolations == 0
-```
-
-A new domain must also define: which spec/command runs its own measured gate (the same way
-BeautyQ's is `QP19QdrantSupplementMeasuredAcceptanceGateSpec`); a short failure-meaning code per stop
-condition above; and, if the domain keeps its own concrete local/test gate doc, its docs owner (the
-same way `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` owns BeautyQ's).
+- baseline owner;
+- supplement candidate owner;
+- accepted query/eval set (source-confirmed, including at least one expected-improvement query and
+  one baseline-preservation query);
+- measured gate command/spec owner (the same way BeautyQ's is
+  `QP19QdrantSupplementMeasuredAcceptanceGateSpec`);
+- metric thresholds (reuse the generic thresholds in `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`
+  unless a domain-specific accepted harm budget says otherwise);
+- failure meanings (a short code per stop condition);
+- docs owner for the domain's own concrete local/test gate, if it keeps one (the same way
+  `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` owns BeautyQ's);
+- a separate approval boundary for any production/default route change - a passing measured gate is
+  local/test evidence only, never rollout approval by itself.
 
 Lock or stop: if the gate is green, lock the exact query set, counts, and failure markers; if there
 is no improvement, stop; if there is any regression, stop or get an explicit coordinator/user-approved
 budget before implementing (never a vague "almost no worsening"); if the source query inventory is
-incomplete, report it as source-incomplete rather than inventing queries. Any production/default
-route change needs a separate approval step beyond a green gate - a passing measured gate is
-local/test evidence only, never rollout approval by itself.
+incomplete, report it as source-incomplete rather than inventing queries.
