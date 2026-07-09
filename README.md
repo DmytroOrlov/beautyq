@@ -11,7 +11,7 @@ Start here:
 * `docs/README.md` for the docs map
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for the locked BeautyQ local/test Qdrant supplement gate
 * `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline-plus-supplement architecture
-* `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for the target BeautyQ search contract/module split and anti-scope-drift rules
+* `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator workflow and anti-scope-drift rules
 
 Current coordinator focus:
 
@@ -102,10 +102,9 @@ fusion, rerank, or ES/Qdrant tuning.
 
 ## Module map
 
-The BeautyQ search-contract/module split is in closeout / reconciliation state. This is the
-**current physical module map**; see
-`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for the full phase-by-phase history,
-detailed ownership rules, and dependency DAG.
+This is the current physical module map. See `docs/beautyq-search-dsl-v1.md` for detailed BeautyQ
+search ownership, `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator/source-truth
+workflow, and the boundary guardrail specs for enforced import/build-DAG constraints.
 
 | Module | Responsibility |
 |---|---|

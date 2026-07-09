@@ -7,7 +7,6 @@
 * `SEARCH_SUPPLEMENT_ARCHITECTURE.md` — reusable baseline-plus-supplement architecture.
 * `search/NEW_DOMAIN_ONBOARDING.md` — new-domain onboarding owner.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
-* `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — historical module split phase record and guardrails only.
 * `search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` — catalog/materialization derivation closeout owner; no active derivation blocker.
 
 ## BeautyQ search architecture
@@ -15,9 +14,9 @@
 * `beautyq-search-dsl-v1.md` — current BeautyQ search implementation notes: layer map,
   module ownership, repo graph loading, schema-owned document projection, SearchDocumentSpec /
   SearchField handles, intent vocabulary, SearchRuntimeSpec / fingerprint, generic ES/Qdrant
-  interpreters, BeautyQ app-side adapters, and testing standard. This is current implementation
-  state, not the target module split plan — see
-  `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for target ownership.
+  interpreters, BeautyQ app-side adapters, and testing standard. This is the current architecture
+  and module ownership owner; see the catalog/materialization closeout, new-domain onboarding, and
+  coordinator workflow entries above for their respective owners.
 
 ## Coordinator workflow
 
@@ -29,4 +28,6 @@
 
 ## Removed historical layers
 
-Old review/report layers, activation runbooks, platform reference dumps, and macOS metadata were removed. Use the current docs above instead of looking for removed history.
+Old review/report layers, activation runbooks, platform reference dumps, macOS metadata, and the
+historical BeautyQ module-split phase log were removed. Use the current docs above instead of
+looking for removed history.

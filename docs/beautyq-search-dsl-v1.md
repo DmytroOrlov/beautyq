@@ -1,10 +1,8 @@
 # BeautyQ Search Architecture
 
 > This document describes the current BeautyQ search implementation state after the BeautyQ
-> search-contract/module split closeout (see the Status section and Phase 29–32 closeout records
-> in `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`). The DSL north star, phase history,
-> and anti-scope-drift rules are defined in that plan; this document owns current architecture and
-> module ownership. Coordinator prompting/review workflow rules live in
+> search-contract/module split closeout. This document owns current architecture and module
+> ownership. Coordinator prompting/review workflow and anti-scope-drift rules live in
 > `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`. `leaderboard-app-shell` is the app shell
 > module: config, Distage/module composition, plugin wiring, real clients/resources, and
 > startup/bootstrap/seed/eval shell execution. It was previously named `bifunctor-tagless`; older
@@ -69,9 +67,8 @@ BeautyQ app-side adapters                query schema resolution, hybrid policy,
 
 ## Module ownership (current physical modules)
 
-This is the **current physical module layout**, not the target module split. The target 10-module
-split, dependency DAG, and forbidden dependencies are defined in
-`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+This is the current physical module layout. Boundary/import/build-DAG protection is enforced by
+`SearchModuleBoundaryGuardrailSpec` and summarized in "How to add new BeautyQ search code" below.
 
 | Module | Owns (current) |
 |---|---|
@@ -245,9 +242,9 @@ Do not call this "DSL synonyms" or reference a `SearchSynonym dictionary` as cur
 `SearchRuntimeSpec` is the current runtime/fingerprint aggregation. It aggregates document schema,
 query schema, request/facet/carousel config, payload specs, embedding config, vector config, and
 runtime metadata. `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into generic
-runtime metadata. `SearchRuntimeSpec` is not the full target search contract — the eventual full
-`SearchDomainSpec` target (catalog/document/intent/runtime/response/evaluation sections) is
-defined by `docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md`.
+runtime metadata. `SearchRuntimeSpec` is not the full target search contract - the full generic
+`SearchDomainSpec` is assembled separately by `BeautyQSearchDomainContract.searchDomainSpec` (see
+the "Phase 31 closeout note" above for readiness detail).
 
 `SearchRuntimeFingerprint` derives from runtime schema/config and includes: document field
 metadata, query schema mappings, request config, facets, carousel, ranking, payload paths,

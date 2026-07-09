@@ -45,11 +45,11 @@ Do not call a patch commit-ready from focused checks alone when the task touches
 ## sbt rules
 
 * Do not run sbt commands in parallel; run one chained sbt command.
-* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run exact requested focused sbt commands from the repo working directory and keep sbt tasks quoted, e.g. `sbt 'Test/compile' 'testOnly package.SomeSpec'`.
+* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run requested focused sbt tasks from the repo working directory with `sbt --batch --no-global -Dsbt.server=false`, and keep sbt tasks quoted.
 * If the requested command is full-suite verification, do not run it as a delegated agent. Report `VERIFICATION BLOCKED` by agent policy and ask coordinator/user to run it.
 * Do not run malformed or diagnostic variants such as `sbt Test/compile ...`, `sbt about`, `sbt ... | tail`, `sbt ... | head`, `sbt ... | tee`, or any command that rewrites, wraps, filters, or decomposes the requested validation command.
 * Do not run setup probes (`type/which sbt`, `java -version`, `echo $JAVA_HOME`, `echo $SBT_OPTS`, `ls/cat .sbtopts .jvmopts`), inspect sbt wrapper/launcher lines, or read resolved tool paths outside the repo unless the exact command fails with a missing-command/setup error.
-* If sbt hits `~/.sbt/boot/sbt.boot.lock`, retry the same command once with local permission/escalation.
+* If sbt hits local cache permission failures, request the needed access only for `~/.sbt/boot`, `~/.sbt/1.0`, or `~/.ivy2`, then retry the same command once.
 * If escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
 * Do not edit source to work around sbt locks.
 * If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup: clean target directories, then rerun the same command. Report it as cleanup, not source change.
@@ -57,7 +57,7 @@ Do not call a patch commit-ready from focused checks alone when the task touches
 Preferred focused shape:
 
 ```bash
-sbt 'Test/compile' 'testOnly package.SomeSpec'
+sbt --batch --no-global -Dsbt.server=false 'Test/compile' 'testOnly package.SomeSpec'
 ```
 
 ## Cleanup / reset policy
