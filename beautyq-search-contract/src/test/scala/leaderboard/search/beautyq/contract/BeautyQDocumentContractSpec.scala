@@ -51,7 +51,17 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQVariantSearchDocumentContract.documentSpec" should {
+  "BeautyQSearchDeclarations.VariantDocument" should {
+    "own the canonical fields, document spec, payload, and query schema" in {
+      assert(BeautyQSearchDeclarations.VariantDocument.Fields.serviceName eq BeautyQVariantSearchDocumentContract.Fields.serviceName)
+      assert(BeautyQSearchDeclarations.VariantDocument.documentSpec eq BeautyQVariantSearchDocumentContract.documentSpec)
+      assert(BeautyQSearchDeclarations.VariantDocument.qdrantPayloadSpec eq BeautyQVariantSearchDocumentContract.qdrantPayloadSpec)
+      assert(BeautyQSearchDeclarations.VariantDocument.querySchema eq BeautyQVariantSearchDocumentContract.querySchema)
+      assert(BeautyQSearchDeclarations.querySchema eq BeautyQSearchDeclarations.VariantDocument.querySchema)
+    }
+  }
+
+  "BeautyQVariantSearchDocumentContract.documentSpec facade" should {
     "declare the beautyq_variant_v1 index" in {
       assert(BeautyQVariantSearchDocumentContract.documentSpec.indexName == "beautyq_variant_v1")
     }
@@ -69,8 +79,8 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQVariantSearchDocumentContract.qdrantPayloadSpec" should {
-    "own exactly the expected Qdrant payload field paths" in {
+  "BeautyQVariantSearchDocumentContract.qdrantPayloadSpec facade" should {
+    "expose exactly the expected Qdrant payload field paths" in {
       val paths = BeautyQVariantSearchDocumentContract.qdrantPayloadSpec.fieldPaths
       assert(paths.contains("variantId"))
       assert(paths.contains("masterLocationId"))
@@ -81,7 +91,7 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
 
   "BeautyQVariantSearchDocumentContract.querySchema" should {
     "remain a compatibility alias for the business-facing query declaration" in {
-      assert(BeautyQVariantSearchDocumentContract.querySchema eq BeautyQSearchDeclarations.querySchema)
+      assert(BeautyQVariantSearchDocumentContract.querySchema eq BeautyQSearchDeclarations.VariantDocument.querySchema)
     }
 
     "preserve the explicit query field names, order, handles, and geo scoring field" in {

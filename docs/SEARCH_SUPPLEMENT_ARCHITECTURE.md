@@ -86,7 +86,7 @@ New-domain setup checklist: `docs/search/NEW_DOMAIN_ONBOARDING.md`.
 
 * ES baseline; Qdrant supplement; `ExplicitConstraintsFilterPlusTop1`
 * Baseline and supplement inputs are shaped by schema/runtime metadata: `SearchRuntimeSpec`,
-  `SearchDocumentSpec`, and `SearchDocumentPayloadSpec` owned by `BeautyQVariantSearchDocumentContract`
+  `SearchDocumentSpec`, and `SearchDocumentPayloadSpec` owned by `BeautyQSearchDeclarations.VariantDocument`
   (in `beautyq-search-contract`); projection itself is owned by
   `BeautyQVariantSearchDocumentMaterialization` (in `beautyq-search-materialization`) - the former
   `BeautyQVariantSearchDocumentSchema` compatibility facade has been deleted, and its last callers now

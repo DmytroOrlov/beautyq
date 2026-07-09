@@ -36,7 +36,7 @@ materialization-owned document projection BeautyQVariantSearchDocumentMaterializ
                                          repo-core's RepoSnapshotProjection)
         │
         ▼
-SearchDocumentSpec / SearchField         BeautyQVariantSearchDocumentContract.Fields,
+SearchDocumentSpec / SearchField         BeautyQSearchDeclarations.VariantDocument.Fields,
 handles                                  selector-derived static fields,
                                          explicit dynamic/computed fields
         │
@@ -108,8 +108,8 @@ Where each kind of search concern currently lives:
 | Concern | Current location |
 |---|---|
 | new repo entity / source / relation | model class + repository companion `RepoEntity`/`RepoField`/`RepoValueSource` metadata + `BeautyQCatalogDeclaration`/`BeautyQCatalogGraph` materialization |
-| new document field (static/selector-derived) | `BeautyQVariantSearchDocumentContract.Fields` + document spec |
-| new dynamic or computed field | explicit computed/dynamic field in `BeautyQVariantSearchDocumentContract` |
+| new document field (static/selector-derived) | `BeautyQSearchDeclarations.VariantDocument.Fields` + document spec |
+| new dynamic or computed field | explicit computed/dynamic field in `BeautyQSearchDeclarations.VariantDocument` |
 | new intent phrase or rule | `BeautyQSearchIntentVocabulary` |
 | new query constraint mapping | BeautyQ query schema resolution |
 | new payload field | schema-owned `SearchDocumentPayloadSpec` |
@@ -158,8 +158,10 @@ protect this closeout against contract/runtime/http/materialization import drift
 `SearchQuerySchema` now has a small additive fluent builder that still produces the same
 `SearchQuerySchema` value. Its public query names remain explicit caller-supplied strings, not
 macro-derived from document-field paths. `BeautyQSearchDeclarations` is the business-facing source
-of truth for the two fluent BeautyQ declarations: catalog topology and the public query schema;
-document fields/payload remain owned by `BeautyQVariantSearchDocumentContract`. Broader builders for
+of truth for catalog topology, while `BeautyQSearchDeclarations.VariantDocument` owns the complete
+Variant document branch: canonical fields, document and payload specs, and the public query schema.
+`BeautyQSearchDeclarations.querySchema` and `BeautyQVariantSearchDocumentContract` are compatibility
+facades for existing callers. Broader builders for
 document/domain/facets/runtime/intent and response/provenance DSL remain a future architecture
 decision only if source evidence shows real duplication or unsafe constructor noise.
 
@@ -170,11 +172,11 @@ They are not the single source of truth for all search metadata:
 
 - `BeautySearchSpecV1.runtimeSpec` wires BeautyQ app-side config into the generic
   `SearchRuntimeSpec`.
-- Document field ownership belongs to `BeautyQVariantSearchDocumentContract.Fields` (in
+- Document field ownership belongs to `BeautyQSearchDeclarations.VariantDocument.Fields` (in
   `beautyq-search-contract`), not to `BeautySearchSpecV1`.
 - Projection is owned by `BeautyQVariantSearchDocumentMaterialization.project` in
   `beautyq-search-materialization`, which projects into the contract-shaped `documentSpec` owned by
-  `BeautyQVariantSearchDocumentContract`. Generic snapshot-row indexing/join helpers used by that
+  `BeautyQSearchDeclarations.VariantDocument`. Generic snapshot-row indexing/join helpers used by that
   projection (`RepoSnapshotProjection`) live in `repo-core`, a shared generic helper layer - not a
   BeautyQ document contract owner.
   Production code (`BeautySearchCatalogBackendFactory.fromSeedLoader` in `leaderboard-app-shell`)
@@ -202,7 +204,7 @@ missing-entity messages, and search projection semantics.
 variant projection. `RepoSnapshotProjection` in `repo-core` provides the generic snapshot-row
 indexing, required-join, optional-lookup, invariant-check, and root-projection helpers that
 projection uses; the contract-shaped `SearchDocumentSpec` it projects into is owned by
-`BeautyQVariantSearchDocumentContract`. The production seed-catalog path
+`BeautyQSearchDeclarations.VariantDocument`. The production seed-catalog path
 (`BeautySearchCatalogBackendFactory.fromSeedLoader`) builds a
 `BeautyQSearchCatalogSnapshot` directly from seed data and calls
 `BeautyQVariantSearchDocumentMaterialization.project` on it directly, with no legacy
@@ -213,7 +215,7 @@ from `leaderboard-app-shell`.
 
 ## Document field ownership
 
-`BeautyQVariantSearchDocumentContract.Fields` owns BeautyQ document field handles:
+`BeautyQSearchDeclarations.VariantDocument.Fields` owns BeautyQ document field handles:
 
 - Static direct fields use selector-derived `SearchField` helpers.
 - Dynamic/computed fields remain explicit.
