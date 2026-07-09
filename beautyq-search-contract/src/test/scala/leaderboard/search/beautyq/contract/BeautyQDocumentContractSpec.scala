@@ -80,6 +80,15 @@ final class BeautyQDocumentContractSpec extends AnyWordSpec {
   }
 
   "BeautyQVariantSearchDocumentContract.querySchema" should {
+    "preserve the explicit query field names, order, handles, and geo scoring field" in {
+      val querySchema = BeautyQVariantSearchDocumentContract.querySchema
+      val fields = BeautyQVariantSearchDocumentContract.Fields
+
+      assert(querySchema.fields.map(_.name) == List("serviceName", "categoryName", "priceFrom", "durationMin", "location"))
+      assert(querySchema.fields.map(_.field) == List(fields.serviceName, fields.categoryName, fields.priceFrom, fields.durationMin, fields.location))
+      assert(querySchema.geoScoringField == Some(fields.location))
+    }
+
     "resolve ServiceAny to a terms constraint on serviceName" in {
       BeautyQVariantSearchDocumentContract.querySchema.resolve(SearchConstraint.ServiceAny(Set("Маникюр"))) match {
         case Right(ResolvedSearchConstraint.Terms(field, values, _)) =>

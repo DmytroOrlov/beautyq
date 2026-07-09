@@ -414,6 +414,47 @@ final case class SearchQuerySchema[A, C](
     fieldsByName.get(name).toRight(QueryFailure.domain(s"Search query field '$name' is not defined"))
 }
 
+/** Starts a pure, fluent [[SearchQuerySchema]] declaration. Public query
+  * names stay explicit because they are part of the query contract and may
+  * differ from their referenced document-field paths.
+  */
+def searchQuery[A, C]: SearchQuerySchemaBuilder[A, C] =
+  SearchQuerySchemaBuilder(fields = Nil, geoScoringField = None)
+
+/** Immutable intermediate state for a fluent [[SearchQuerySchema]]
+  * declaration. It records fields in declaration order and can optionally set
+  * the geo-scoring field before accepting the domain's explicit resolver.
+  */
+final case class SearchQuerySchemaBuilder[A, C] private[dsl] (
+  fields: List[SearchQueryField[A]],
+  geoScoringField: Option[SearchField[A]],
+) {
+  def field(name: String, field: SearchField[A]): SearchQuerySchemaBuilder[A, C] =
+    copy(fields = fields :+ SearchQueryField(name, field))
+
+  def geoScoring(field: SearchField[A]): SearchQuerySchemaBuilder[A, C] =
+    copy(geoScoringField = Some(field))
+
+  def resolve(
+    resolver: C => Either[QueryFailure, ResolvedSearchConstraint[A]]
+  ): SearchQuerySchemaResolveBuilder[A, C] =
+    SearchQuerySchemaResolveBuilder(fields, geoScoringField, resolver)
+}
+
+/** Immutable final intermediate state: the remaining explicit domain policy
+  * is the conversion of an exposed facet value back into a query constraint.
+  */
+final case class SearchQuerySchemaResolveBuilder[A, C] private[dsl] (
+  fields: List[SearchQueryField[A]],
+  geoScoringField: Option[SearchField[A]],
+  resolver: C => Either[QueryFailure, ResolvedSearchConstraint[A]],
+) {
+  def facetConstraint(
+    facetResolver: (FacetField[A], String) => Either[QueryFailure, C]
+  ): SearchQuerySchema[A, C] =
+    SearchQuerySchema(fields, geoScoringField, resolver, facetResolver)
+}
+
 sealed trait TextOperator extends Product with Serializable {
   def value: String
 }

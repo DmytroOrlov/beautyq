@@ -38,18 +38,15 @@ object BeautyQVariantSearchDocumentContract {
     )
 
   lazy val querySchema: SearchQuerySchema[VariantSearchDocument, SearchConstraint] =
-    SearchQuerySchema(
-      fields = List(
-        SearchQueryField("serviceName", Fields.serviceName),
-        SearchQueryField("categoryName", Fields.categoryName),
-        SearchQueryField("priceFrom", Fields.priceFrom),
-        SearchQueryField("durationMin", Fields.durationMin),
-        SearchQueryField("location", Fields.location),
-      ),
-      geoScoringField = Some(Fields.location),
-      resolve = beautyQResolveConstraint,
-      facetConstraint = beautyQFacetConstraint,
-    )
+    searchQuery[VariantSearchDocument, SearchConstraint]
+      .field("serviceName", Fields.serviceName)
+      .field("categoryName", Fields.categoryName)
+      .field("priceFrom", Fields.priceFrom)
+      .field("durationMin", Fields.durationMin)
+      .field("location", Fields.location)
+      .geoScoring(Fields.location)
+      .resolve(beautyQResolveConstraint)
+      .facetConstraint(beautyQFacetConstraint)
 
   private def fieldByCode(
     fields: Map[String, SearchField[VariantSearchDocument]],

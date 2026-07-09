@@ -1840,15 +1840,14 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
   private def repoRoot: Path = {
     def loop(path: Path): Path = {
       val hasBuild = Files.isRegularFile(path.resolve("build.sbt"))
-      val hasPlan  = Files.isRegularFile(path.resolve("docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md"))
 
-      if (hasBuild && hasPlan) {
+      if (hasBuild) {
         path
       } else {
         Option(path.getParent) match {
           case Some(parent) => loop(parent)
           case None =>
-            fail(s"Could not find repo root from ${Paths.get("").toAbsolutePath}; expected build.sbt and docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md")
+            fail(s"Could not find repo root from ${Paths.get("").toAbsolutePath}; expected build.sbt")
         }
       }
     }
