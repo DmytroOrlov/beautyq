@@ -423,9 +423,9 @@ exact shape: (1) a trait cannot declare both an abstract `def value(id: A): UUID
 named `unwrap` instead, so `value` is only ever the extension); (2) the `given UuidBackedId[X] =
 this` must be a member of the companion itself, not a sibling statement in the package object,
 because cross-module implicit search only reaches a type's own companion scope, not arbitrary
-package-object siblings (same reasoning as the Circe self-collision below). See
-`docs/search/BEAUTYQ_NOMINAL_ID_REFACTOR.md`'s "Generic helper design" for the full per-layer table
-and the two additional gotchas found empirically while building this.
+package-object siblings (same reasoning as the Circe self-collision below). The durable per-layer
+typeclass-surface and scoping gotchas are retained above and below; onboarding for new domains lives
+in `docs/search/NEW_DOMAIN_ONBOARDING.md`.
 
 Opaque-type transparency is scoped to the statement sequence that declares the type, not global
 like a plain alias - so a caller-side codec built by summoning `Decoder[UUID]`/`Encoder[UUID]`
