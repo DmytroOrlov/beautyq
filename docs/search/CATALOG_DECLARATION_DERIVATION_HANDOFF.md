@@ -411,9 +411,12 @@ untouched (it belongs to the unrelated leaderboard/ladder domain, never appears 
 a decision, which it did not).
 
 **Update (boilerplate cleanup, later patch):** each id's companion now extends one shared
-dependency-free `UuidBackedId[A]` trait (`beautyq-model`) instead of repeating a full adapter body
-per id. `UuidBackedId[A]` supplies `fromString` and the `.value` extension by default; each
-companion only implements the two primitives (`apply`, `unwrap`) and adds
+dependency-free `UuidBackedId[A]` trait instead of repeating a full adapter body per id. That trait
+originally lived in `beautyq-model`; after the later D2B move (see "D2B value-source helper scope"
+below), it lives in `leaderboard-core` as `leaderboard.model.UuidBackedId`, and `beautyq-model` only
+declares the BeautyQ opaque ids and their Circe-local codec helper. `UuidBackedId[A]` supplies
+`fromString` and the `.value` extension by default; each companion only implements the two
+primitives (`apply`, `unwrap`) and adds
 `given UuidBackedId[X] = this` to register itself for typeclass search. Two scoping rules drove the
 exact shape: (1) a trait cannot declare both an abstract `def value(id: A): UUID` and a concrete
 `extension (id: A) def value: UUID` in the same body (identical erased signature - the primitive is
