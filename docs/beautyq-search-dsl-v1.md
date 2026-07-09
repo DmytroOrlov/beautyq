@@ -24,8 +24,8 @@ and Qdrant payload shape are preserved.
 ## Layer map
 
 ```
-repo model graph                         BeautyQRepoGraph, typed RepoEntity/RepoField nodes,
-                                         Mirror-derived entity metadata
+repo model graph                         BeautyQCatalogGraph over BeautyQCatalogDeclaration,
+                                         RepoEntity/RepoField metadata, RepoValueSource values
         │
         ▼
 catalog snapshot loading                 BeautyQSearchCatalogSnapshotLoader.FromRepositories,
@@ -110,7 +110,7 @@ Where each kind of search concern currently lives:
 
 | Concern | Current location |
 |---|---|
-| new repo entity / source / relation | model class + `RepoEntity` / `RepoField` + `BeautyQRepoGraph` (current/legacy compatibility surface) |
+| new repo entity / source / relation | model class + repository companion `RepoEntity`/`RepoField`/`RepoValueSource` metadata + `BeautyQCatalogDeclaration`/`BeautyQCatalogGraph` materialization |
 | new document field (static/selector-derived) | `BeautyQVariantSearchDocumentContract.Fields` + document spec |
 | new dynamic or computed field | explicit computed/dynamic field in `BeautyQVariantSearchDocumentContract` |
 | new intent phrase or rule | `BeautyQSearchIntentVocabulary` |
@@ -184,12 +184,11 @@ They are not the single source of truth for all search metadata:
 ## Repo / data loading
 
 Repo/data loading is model-first. Scala case-class models drive repo entity metadata through
-Mirror-derived metadata. Repo field metadata is selector-derived through typed `RepoField` handles.
-The BeautyQ catalog graph is currently declared in `BeautyQRepoGraph` through typed entity nodes,
-value sources, and relations. `BeautyQRepoGraph` is a current/legacy compatibility surface, not the
-future declaration owner — see the legacy compatibility retirement matrix in
-`docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` for its target replacement and removal
-conditions.
+Mirror-derived metadata; repo field metadata is selector-derived through typed `RepoField` handles.
+The BeautyQ catalog graph is currently materialized by `BeautyQCatalogGraph` from the pure
+`BeautyQCatalogDeclaration.declaration`, repository companion entity/valueSource metadata, and
+`BeautyQCatalogGraph.Evidence`. Aggregate value sources use explicit `RepoValueSource.derived` vals
+and explicit `CatalogValue` evidence, not automatic derivation.
 
 `BeautyQSearchCatalogSnapshotLoader.FromRepositories` and seed-scoped loading go through the shared
 repo graph/loading layer. Existing loading behavior is preserved: preorder category traversal, root
