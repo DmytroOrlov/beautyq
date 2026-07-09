@@ -5,16 +5,12 @@
 * `../README.md` — current coordinator focus and BeautyQ route truth.
 * `BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` — locked BeautyQ local/test Qdrant supplement gate.
 * `SEARCH_SUPPLEMENT_ARCHITECTURE.md` — reusable baseline-plus-supplement architecture.
-* `SEARCH_DOMAIN_ONBOARDING.md` — how to start a new domain without repeating the BeautyQ loop.
+* `search/NEW_DOMAIN_ONBOARDING.md` — how to start a new domain: generic derivation surfaces vs.
+  business-policy surfaces, catalog-declaration/value-source examples, and the measured local
+  supplement gate.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
 * `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — BeautyQ search contract/module split plan, current closeout status, phase history, guardrails, and anti-scope-drift rules.
-* `search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` — current coordinator handoff for catalog declaration derivation: accepted state through Phase F2, remaining tautology inventory, and the recommended next patch.
-* `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — historical A–F phase log for catalog declaration simplification and Scala 3 derivation; see the handoff doc above for current/active work.
-
-## BeautyQ search contract/module split
-
-* `search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md` — BeautyQ search contract/module split plan, current closeout status, phase history, guardrails, and anti-scope-drift rules.
-* `search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` — current coordinator handoff for catalog declaration derivation: accepted state through Phase F2, remaining tautology inventory, and the recommended next patch.
+* `search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` — current coordinator handoff for catalog declaration derivation: current catalog declaration derivation closeout state, owner notes, and remaining explicit-policy boundaries.
 * `search/CATALOG_DECLARATION_DERIVATION_ROADMAP.md` — historical A–F phase log for catalog declaration simplification and Scala 3 derivation; see the handoff doc above for current/active work.
 
 ## BeautyQ search architecture

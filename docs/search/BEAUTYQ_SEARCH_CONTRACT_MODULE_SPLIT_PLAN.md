@@ -2419,8 +2419,9 @@ change to its physical path was reverted before this record was written.
 Current docs and current command examples (README's module map, `docs/beautyq-search-dsl-v1.md`'s
 current ownership tables/notes, this plan's top Status section and Dependency DAG note,
 `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`, `docs/DISTAGE_HTTP_TESTING.md`,
-`docs/SEARCH_DOMAIN_ONBOARDING.md`, and `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`) were
-updated to the new module name, and current-state wording that called the module "temporary
+`docs/SEARCH_DOMAIN_ONBOARDING.md` (later deleted; superseded by
+`docs/search/NEW_DOMAIN_ONBOARDING.md`), and `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`)
+were updated to the new module name, and current-state wording that called the module "temporary
 legacy-named" with an "out-of-band" final rename was corrected, since that rename has now happened.
 
 Historical phase records (Phase 2 through Phase 44, and the older Phase 7b-7d/8d-8j records) were

@@ -17,22 +17,15 @@ trait ServiceVariantSchemas[F[_, _]] {
 }
 
 object ServiceVariantSchemas {
-  /** Model-derived entity metadata for the physical schema item rows. The
-    * physical table stores one row per schema item, so the source name is
-    * derived from [[ServiceVariantSchemaItem]] rather than the aggregate.
-    */
-  val itemEntity: RepoEntity[ServiceVariantSchemaItem] = RepoEntity.derived[ServiceVariantSchemaItem]
-
   /** Typed value source for the [[ServiceVariantSchema]] aggregate: keyed by
-    * `serviceId`, physically sourced from the [[ServiceVariantSchemaItem]] rows.
-    * The aggregate is not claimed to share the physical item-row columns.
+    * `serviceId`, physically sourced from the [[ServiceVariantSchemaItem]] rows
+    * (the physical table stores one row per schema item, so the row source
+    * name comes from [[ServiceVariantSchemaItem]], not the aggregate). Derived
+    * via [[RepoValueSource.derived]] - the aggregate is not claimed to share
+    * the physical item-row columns; only the row type is a real [[RepoEntity]].
     */
   val valueSource: RepoValueSource[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
-    RepoValueSource(
-      valueModelName = "ServiceVariantSchema",
-      rowSource      = itemEntity,
-      keyField       = RepoField.derived[ServiceVariantSchema, ServiceId](_.serviceId),
-    )
+    RepoValueSource.derived[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem](_.serviceId)
 
   private type ServiceVariantSchemaRow       = (String, Boolean)
   private type ServiceVariantSchemaInsertRow = (ServiceId, String, Boolean)

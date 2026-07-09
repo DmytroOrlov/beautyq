@@ -12,37 +12,12 @@ package object model {
   type Score             = Long
   type AttributeMap[A]   = Impl[A, AttributeDefinition[A]]
 
-  /** Dependency-free abstraction shared by every BeautyQ id that is a
-    * nominal (opaque) wrapper around a `UUID`. Each id's companion extends
-    * this once (`object ServiceId extends UuidBackedId[ServiceId]`) to get
-    * `fromString` and the `.value` extension "for free" - the trait's own
-    * `extension (id: A) def value` becomes an inherited member of each id's
-    * companion object, so `someServiceId.value` resolves exactly like
-    * before (companion-object extension scope), no import needed anywhere.
-    * Each companion also has a `given UuidBackedId[X] = X` member (extending
-    * the trait alone does not make a plain object an implicit candidate;
-    * it must be registered separately) - declared *inside* the companion,
-    * not as a sibling, so it is part of that id's own companion-object
-    * implicit scope and is found from every module without an import, the
-    * same way the id's own codec already is. Layer-local modules (Doobie in
-    * beautyq-search-repositories; Tapir in app-http; Scalacheck in the test
-    * tree) each derive one generic adapter from that evidence instead of
-    * repeating a per-id adapter body.
-    *
-    * The primitive accessor is named `unwrap`, not `value`: a trait cannot
-    * declare both an abstract `def value(id: A): UUID` and a concrete
-    * `extension (id: A) def value: UUID` in the same body (same erased
-    * signature, so it's a duplicate definition, not an override). Naming the
-    * abstract member differently sidesteps that while keeping the public
-    * call-site spelling (`id.value`) unchanged.
-    */
-  trait UuidBackedId[A] {
-    def apply(value: UUID): A
-    def unwrap(id: A): UUID
-    def fromString(value: String): A = apply(UUID.fromString(value))
-
-    extension (id: A) def value: UUID = unwrap(id)
-  }
+  // `UuidBackedId[A]` itself lives in `leaderboard-core`
+  // (`leaderboard.model.UuidBackedId`) - dependency-free and shared across
+  // domains, so a future domain's model module can depend on it directly
+  // without depending on BeautyQ's own model internals. It is used here,
+  // unqualified, via the same `leaderboard.model` package (no import
+  // needed): `beautyq-model` depends on `leaderboard-core`.
 
   // Captured once, at the top of the package object, and referenced by name
   // (never re-summoned) from `uuidBackedIdCodec`: every opaque id declared
@@ -52,11 +27,14 @@ package object model {
   // once here (ambiguous) - unlike Doobie/Tapir/Scalacheck, which derive
   // their adapters from files outside this transparent scope, where the ids
   // are not interchangeable. A plain helper function (called once per id,
-  // not searched for implicitly) sidesteps that opaque-scope ambiguity.
+  // not searched for implicitly) sidesteps that opaque-scope ambiguity. Kept
+  // here (not in leaderboard-core) because it is Circe/model-local - Circe
+  // is a `beautyq-model` dependency, not a `leaderboard-core` one - and
+  // `private` because every call site is this same package object file.
   private val uuidDecoder: Decoder[UUID] = Decoder[UUID]
   private val uuidEncoder: Encoder[UUID] = Encoder[UUID]
 
-  def uuidBackedIdCodec[A](id: UuidBackedId[A]): Codec[A] =
+  private def uuidBackedIdCodec[A](id: UuidBackedId[A]): Codec[A] =
     Codec.from(
       uuidDecoder.map(id.apply),
       uuidEncoder.contramap(id.unwrap),

@@ -1,5 +1,8 @@
 # Catalog Declaration Derivation Handoff
 
+Owner: current catalog declaration derivation closeout state. For new-domain onboarding, link to
+`docs/search/NEW_DOMAIN_ONBOARDING.md`.
+
 ## Purpose
 
 This is the **current coordinator starting point** for catalog declaration / Scala 3 derivation
@@ -13,8 +16,7 @@ next".
 
 ## Current accepted state
 
-All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup/seed root-key cleanup/nominal BeautyQ
-ID migration/Seed F2/Nodes-projection boundary cleanup besides:
+All of Phases A–F are done. The follow-up closeout patches are also done:
 
 ```text
 A:         root key moved into catalog declaration
@@ -89,7 +91,12 @@ Nothing in the sections below authorizes reaching into layer 3. Projection, runt
 Qdrant/ES activation policy, and HTTP/DI wiring are **not** to be inferred, derived, or refactored
 as a side effect of catalog derivation work. See "Known non-goals" below.
 
-## Current remaining tautology inventory
+## Tautology inventory (closed out)
+
+Named "remaining" for most of this initiative's life; kept the same cluster numbering below for
+continuity, but renamed now that every cluster has resolved to either `DONE_*` or a deliberate
+`KEEP_*` - there is no `BLOCKED_*` or `PATCH_READY_*` entry left. This is a closed-out record, not a
+todo list.
 
 ```text
 1. CatalogValue / CatalogValueEdge evidence
@@ -111,7 +118,8 @@ CatalogValue:
 
 SeedScopedFromRepositories:
   DONE_SEED_F1_EXTRACTED_SEED_LOADING_HELPERS
-  BLOCKED_SEED_TO_SNAPSHOT_BY_DEDUP_POLICY
+  DONE_SEED_F2_RAW_SNAPSHOT_ASSEMBLY_NO_DEDUP
+  KEEP_SEED_TO_SNAPSHOT_FORBIDDEN_BY_DEDUP_POLICY
 
 Repo wrappers:
   DONE_WRAPPER_ZERO_USAGE_CLEANUP_FOR_ID_KEYED_WRAPPERS
@@ -179,31 +187,38 @@ had claimed the seed-scoped loader was still a caller.
 5. Nominal BeautyQ ID migration: opaque ids, removing the last ambiguous wrappers. [done]
 6. Seed F2: assemble the seed-scoped snapshot via a generic, no-dedup LoadedCatalog helper. [done]
 7. Nodes/projection boundary cleanup: remove BeautyQCatalogGraph.Nodes, localize projection metadata. [done]
-8. D2B/value-source DSL: separate policy decision.
+8. D2B value-source construction helper: RepoValueSource.derived; CatalogValue stays explicit. [done]
 ```
 
-Recommended next patch: **D2B/value-source DSL decision**.
+Recommended next patch: **none - no catalog/materialization derivation blocker remains.** Further
+work here is either (a) the genuine `CatalogValue`-identity-derivation policy decision, still
+deliberately `KEEP_EXPLICIT_VALUE_SOURCE_POLICY_FOR_NOW`, not attempted by any patch above, or (b)
+extracting shared *projection* helpers (row metadata, join patterns) - deliberately deferred until a
+second domain, or a repeated pattern within this one, actually appears; see
+`docs/search/NEW_DOMAIN_ONBOARDING.md` for what a new domain reuses today versus still declares.
 
 Rationale: D2A, Seed F1, wrapper cleanup, seed root-key cleanup, the nominal BeautyQ ID migration,
-Seed F2, and the Nodes/projection boundary cleanup are all landed. `CategoryId`/`ServiceId`/
-`MasterId`/`MasterLocationId`/`MasterServiceOfferId`/`MasterServiceOfferVariantId` are now opaque
-UUID-backed types (not transparent aliases of the same underlying `UUID`), so
-`CatalogMany.derivedFromRepositories` now disambiguates `Master -> MasterServiceOffer` (by
-`MasterId`) and `MasterServiceOffer -> MasterServiceOfferVariant` (by `MasterServiceOfferId`)
-purely by type/signature - the last two explicit `CatalogMany.Aux` givens in
+Seed F2, the Nodes/projection boundary cleanup, and the D2B value-source construction helper are all
+landed. `CategoryId`/`ServiceId`/`MasterId`/`MasterLocationId`/`MasterServiceOfferId`/
+`MasterServiceOfferVariantId` are now opaque UUID-backed types (not transparent aliases of the same
+underlying `UUID`), so `CatalogMany.derivedFromRepositories` now disambiguates `Master ->
+MasterServiceOffer` (by `MasterId`) and `MasterServiceOffer -> MasterServiceOfferVariant` (by
+`MasterServiceOfferId`) purely by type/signature - the last two explicit `CatalogMany.Aux` givens in
 `BeautyQCatalogGraph.Evidence`, and the `MasterServiceOffers.byMaster`/
 `MasterServiceOfferVariants.byOffer` wrappers they called, were removed. See "Nominal BeautyQ ID
 migration scope" below for the full typeclass-surface record (Circe/Doobie/Tapir).
 `SeedScopedFromRepositories`'s manual `BeautyQSearchCatalogSnapshot(...)` constructor - the last
 hand-written residual left after Seed F1 - was also removed; see "Seed F2 scope" below.
 `BeautyQCatalogGraph.Nodes` - the last piece kept explicit purely for the search projection layer's
-convenience, not for catalog materialization itself - has now been removed too; see "Nodes/projection
-boundary cleanup scope" below. With that resolved, every entry in the tautology inventory above is
-now `DONE_*` or a deliberate `KEEP_EXPLICIT_*`/`BLOCKED_*`; there is no remaining catalog-declaration-
-side cleanup item to sequence next. D2B/value-source DSL is the one remaining item in the tautology
-inventory (`CatalogValue: KEEP_EXPLICIT_VALUE_SOURCE_POLICY_FOR_NOW`) and is a separate, independent
-policy decision (whether/how to derive `CatalogValue` identity evidence itself, not just the edge
-loader) - not advanced by any of the patches above, and not attempted by this one either.
+convenience, not for catalog materialization itself - was removed too; see "Nodes/projection
+boundary cleanup scope" below. `ServiceVariantSchemas.valueSource`'s own hand-written
+`valueModelName`/`RepoField.derived` construction - the last hand-rolled `RepoValueSource` in the
+repo - now goes through `RepoValueSource.derived` (repo-core); see "D2B value-source helper scope"
+below. `CatalogValue` identity evidence itself stays explicit, unchanged in kind: deriving it
+automatically (e.g. from a repository companion's implicit scope) remains a deliberate, separate
+policy decision, not attempted here or by any patch above. With all of that resolved, every entry in
+the tautology inventory above is now `DONE_*` or a deliberate `KEEP_*`; there is no remaining
+catalog-declaration-side cleanup item to sequence next.
 
 ## D2A scope
 
@@ -415,7 +430,9 @@ Doobie (beautyq-search-repositories): one generic given [A](using UuidBackedId[A
 Tapir  (app-http):                   one generic given [A](using UuidBackedId[A]):
                                       Codec[String, A, CodecFormat.TextPlain] and one generic
                                       given [A](using UuidBackedId[A]): Schema[A], in
-                                      leaderboard.http.tapir.BeautyQIdTapirSupport, each a `.map`
+                                      leaderboard.http.tapir.BeautyQIdTapirSupport (renamed to
+                                      UuidBackedIdTapirSupport by the later D2B patch - see
+                                      "D2B value-source helper scope" below), each a `.map`
                                       adaptation of Tapir's own Codec.uuid / Schema.schemaForUUID
                                       (imported into the six BeautyQ tapir endpoint files); route
                                       paths and JSON wire shape unchanged.
@@ -583,6 +600,83 @@ Forbidden:
 - do not change SearchDocumentProjection semantics, projection join order, or missing-entity messages;
 - do not change the full loader, the seed loader, toSnapshot, or toRawSnapshot;
 - do not change repository traits, nominal id helpers, or API/runtime/search backend wiring.
+```
+
+## D2B value-source helper scope
+
+Status: implemented (helper only - `CatalogValue` identity derivation itself remains a separate,
+undecided policy question, unchanged by this patch). `RepoValueSource.derived[A, K, Row](_.key)`
+(repo-core, `RepoEntity.scala`) is the value-source counterpart to the existing
+`RepoEntity.derived[A]`: it derives `valueModelName` from `A`'s own model label, `rowSource` from
+`RepoEntity.derived[Row]`, and `keyField` from the selector - the same `Mirror`/`constValue` style
+`RepoEntity.derived` already used, no new macro. `ServiceVariantSchemas.valueSource`'s hand-written
+`RepoValueSource(valueModelName = "ServiceVariantSchema", rowSource = itemEntity, keyField =
+RepoField.derived[...](_.serviceId))` construction - the last raw-string `valueModelName` and
+manually-assembled `RepoValueSource` anywhere in the repo - is now `RepoValueSource.derived
+[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem](_.serviceId)`; the now-redundant
+`itemEntity` val (only ever used to build that one `rowSource` field) was removed along with it.
+`repo-core/src/test/scala/leaderboard/repo/RepoValueSourceDerivationSpec.scala` proves the derivation
+in isolation (aggregate model name, row source model/source name, key field label/column, all
+without a raw table/column string).
+
+`BeautyQCatalogGraph.Evidence`'s `given CatalogValue.Aux[ServiceVariantSchema, ServiceId,
+ServiceVariantSchemaItem] = CatalogValue.from(ServiceVariantSchemas.valueSource)` is byte-for-byte
+unchanged - same explicit given, same value, one fewer indirection internally
+(`ServiceVariantSchemas.valueSource` no longer hand-rolls its own construction). Automatic
+`CatalogValue` discovery (e.g. searching a repository companion's implicit scope for a value source)
+was **not** attempted, per this patch's own scope: `ServiceVariantSchemas` is a repository companion,
+not `ServiceVariantSchema`'s own companion, so hiding this wiring behind implicit scope would be
+clever but harder to debug for a new domain than one explicit line.
+
+`UuidBackedId[A]` (the generic UUID-backed nominal-id trait) moved from `beautyq-model` to
+`leaderboard-core` (`leaderboard.model.UuidBackedId`), so a future domain's own model module can
+depend on it directly without depending on BeautyQ's own model internals - `beautyq-model` now
+`.dependsOn(`leaderboard-core`)` in `build.sbt` (no library dependency added). The trait itself,
+each id's `object X extends UuidBackedId[X]` companion, and each companion's `given UuidBackedId[X]
+= this` registration are otherwise unchanged - same cross-module same-package visibility mechanism
+already used elsewhere in this codebase (e.g. `QueryFailure` in `leaderboard-core`'s own
+`leaderboard.model` package), no import needed from `beautyq-model`. `uuidBackedIdCodec` (the
+Circe-specific plain-function codec builder - see "Nominal BeautyQ ID migration scope" above for why
+it is a plain function, not a `given`) stays in `beautyq-model` and is now `private`, since every
+call site is that same package object file. `UserId` is untouched.
+
+The generic Tapir support object was renamed `BeautyQIdTapirSupport` -> `UuidBackedIdTapirSupport`
+(`app-http/src/main/scala/leaderboard/http/tapir/UuidBackedIdTapirSupport.scala`, new file; the old
+file was deleted, no compatibility alias) to match its now-generic, cross-domain naming - its two
+generic givens (`Codec[String, A, CodecFormat.TextPlain]`/`Schema[A]` for any `UuidBackedId[A]`) are
+unchanged in behavior. All six BeautyQ Tapir endpoint files' `import
+leaderboard.http.tapir.BeautyQIdTapirSupport.given` became `import
+leaderboard.http.tapir.UuidBackedIdTapirSupport.given`; route paths and wire shape unchanged. Doobie
+(`beautyq-search-repositories`'s generic `given Meta[A]`) and Scalacheck (the generic `given
+Arbitrary[A]` in `leaderboard-app-shell`'s `Rnd.scala`) needed no code change - both already
+reference `UuidBackedId` by its unqualified, unchanged fully-qualified name
+(`leaderboard.model.UuidBackedId`), and both modules already depended on `leaderboard-core`
+transitively before this patch - only comments mentioning "beautyq-model" as `UuidBackedId`'s home
+were updated to say "leaderboard-core".
+
+For new-domain onboarding (what is generic vs. what a domain still declares, catalog-declaration and
+value-source examples), see `docs/search/NEW_DOMAIN_ONBOARDING.md` - the sole owner for that
+checklist; this document does not repeat it.
+
+Original scope, kept for reference:
+
+```text
+Goal:
+- reduce ServiceVariantSchemas.valueSource's construction boilerplate via RepoValueSource.derived,
+  without moving row-source policy into the pure catalog declaration;
+- move UuidBackedId[A] to leaderboard-core so future domains don't depend on BeautyQ model internals;
+- rename the generic Tapir support object away from BeautyQ naming;
+- add a new-domain onboarding guide.
+
+Forbidden:
+- do not derive CatalogValue automatically through implicit search;
+- do not move ServiceVariantSchemaItem row-type policy into BeautyQCatalogDeclaration;
+- do not change .value[ServiceVariantSchema](_.serviceId) in the pure catalog declaration;
+- do not change BeautyQCatalogGraph.graph, repository traits, SQL schema, or Dummy/Postgres behavior;
+- do not change the full loader, seed loader, toSnapshot, or toRawSnapshot;
+- do not change projection logic, runtime/backend routing, or API route shapes;
+- do not migrate UserId;
+- do not add library dependencies or create a new module.
 ```
 
 ## Bundle / coordinator workflow rules

@@ -1,7 +1,7 @@
 package leaderboard.http.tapir
 
 import leaderboard.http.HttpApiFailure
-import leaderboard.http.tapir.BeautyQIdTapirSupport.given
+import leaderboard.http.tapir.UuidBackedIdTapirSupport.given
 import leaderboard.model.{MasterId, MasterServiceOffer, MasterServiceOfferId, ServiceId}
 import sttp.tapir.*
 import sttp.tapir.generic.auto.*

@@ -141,6 +141,7 @@ lazy val beautyqModel = project
   .pipe(lightweightSettings(Seq(
     Deps.circeGeneric,
   )))
+  .dependsOn(`leaderboard-core`)
 
 lazy val beautyqSearchContract = project
   .in(file("beautyq-search-contract"))

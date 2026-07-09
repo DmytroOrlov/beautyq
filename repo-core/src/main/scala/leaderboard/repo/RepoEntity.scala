@@ -79,6 +79,28 @@ final case class RepoValueSource[A, K, Row](
   keyField: RepoField[A, K],
 )
 
+object RepoValueSource {
+
+  /** Derive a [[RepoValueSource]] for aggregate `A` keyed by `K` via a direct
+    * field selector, physically sourced from `Row` rows - the value-source
+    * counterpart to [[RepoEntity.derived]]. `valueModelName` comes from `A`'s
+    * own model label, `rowSource` from `Row`'s own [[RepoEntity.derived]], and
+    * `keyField` from the selector: no raw table/column string is ever needed
+    * by the caller. `A` is deliberately never claimed to be a [[RepoEntity]]
+    * of its own physical columns - only `Row` is (see [[RepoValueSource]]'s
+    * own doc).
+    */
+  inline def derived[A, K, Row](inline key: A => K)(using
+    valueMirror: Mirror.ProductOf[A],
+    rowMirror: Mirror.ProductOf[Row],
+  ): RepoValueSource[A, K, Row] =
+    RepoValueSource(
+      valueModelName = constValue[valueMirror.MirroredLabel],
+      rowSource      = RepoEntity.derived[Row],
+      keyField       = RepoField.derived[A, K](key),
+    )
+}
+
 /** Model-derived entity/source metadata.
   *
   * All physical identifiers are derived from the Scala model through a

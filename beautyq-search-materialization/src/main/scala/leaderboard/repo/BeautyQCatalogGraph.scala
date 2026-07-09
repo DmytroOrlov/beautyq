@@ -68,6 +68,20 @@ object BeautyQCatalogGraph {
     // entity automatically at materialization time too - the free-`K`/`CK`
     // problem Phase C.1/C.2/C.2b diagnosed no longer arises, because nothing
     // ever asks for `CatalogEntity.Aux[A, K]` with a free `K`.
+    //
+    // CatalogValue itself (the value-source *identity* evidence, as opposed
+    // to the edge loader D2A already derives) stays explicit here, wired
+    // directly from `ServiceVariantSchemas.valueSource` - internally that
+    // value is now built by `RepoValueSource.derived` (repo-core, D2B), so it
+    // no longer hand-writes its own `valueModelName`/`RepoField.derived` call,
+    // but the aggregate row type (`ServiceVariantSchemaItem`) remains explicit
+    // business/materialization policy, not something the pure catalog
+    // declaration derives or even knows about. Automatic `CatalogValue`
+    // discovery (e.g. searching repo companions' implicit scope for a value
+    // source) is deliberately not attempted: `ServiceVariantSchemas` is a
+    // repository companion, not `ServiceVariantSchema`'s own companion, so
+    // hiding this wiring behind implicit scope would be clever but harder to
+    // debug for a new domain than one explicit line here.
     given CatalogValue.Aux[ServiceVariantSchema, ServiceId, ServiceVariantSchemaItem] =
       CatalogValue.from(ServiceVariantSchemas.valueSource)
 

@@ -1,5 +1,8 @@
 # BeautyQ Nominal ID Migration
 
+Owner: nominal BeautyQ ID migration details. For reusable domain onboarding, link to
+`docs/search/NEW_DOMAIN_ONBOARDING.md`.
+
 ## Problem
 
 `CategoryId`, `ServiceId`, `MasterId`, `MasterLocationId`, `MasterServiceOfferId`, and
@@ -19,9 +22,19 @@ in an otherwise fully-derived catalog materialization layer.
 ## Chosen nominal ID representation
 
 Scala 3 `opaque type` over `UUID`, one per id. A single dependency-free `UuidBackedId[A]`
-abstraction (`beautyq-model`) captures what every id needs, so each id's own companion only
-supplies the two primitive operations and picks up everything else (`fromString`, the `.value`
-extension, and a typeclass-search registration) by extending it:
+abstraction captures what every id needs, so each id's own companion only supplies the two
+primitive operations and picks up everything else (`fromString`, the `.value` extension, and a
+typeclass-search registration) by extending it:
+
+**Update (later patch):** `UuidBackedId[A]` itself now lives in `leaderboard-core`
+(`leaderboard.model.UuidBackedId`), not `beautyq-model` - moved there by a later D2B patch so a
+future domain's own model module can depend on it directly without depending on BeautyQ's own model
+internals (`beautyq-model` now `.dependsOn(`leaderboard-core`)`). The trait's own shape, every id's
+companion, and every layer's generic adapter are otherwise unchanged; see the handoff doc's "D2B
+value-source helper scope" for the full record, including the generic Tapir support object's rename
+(`BeautyQIdTapirSupport` -> `UuidBackedIdTapirSupport`). The Circe codec helper (`uuidBackedIdCodec`,
+below) stays in `beautyq-model`, unmoved - it is Circe/model-local, and (per the scoping gotchas
+below) must live in the very file that declares the opaque ids themselves.
 
 ```scala
 trait UuidBackedId[A] {
@@ -109,7 +122,7 @@ written. Doobie/Tapir/Scalacheck don't have this problem because they live outsi
 |---|---|---|
 | Circe | `beautyq-model` | `implicit val codec: Codec[X] = uuidBackedIdCodec(X)` per id (one line, in the id's own companion) - `uuidBackedIdCodec[A](id: UuidBackedId[A]): Codec[A]` is the single shared `Codec.from(uuidDecoder.map(id.apply), uuidEncoder.contramap(id.unwrap))` body. Not a `given`, for the opaque-scope-ambiguity reason above. Encodes/decodes exactly as a UUID string, no JSON field name or shape change. |
 | Doobie | `beautyq-search-repositories` | One `given [A](using id: UuidBackedId[A]): Meta[A] = Meta[UUID].timap(id.apply)(id.unwrap)` in the `leaderboard.repo` package object, replacing all six per-id declarations. SQL columns stay `uuid`; `rootCategoryIdSqlLiteral` renders `rootCategoryId.value`. |
-| Tapir | `app-http` | One `given [A](using UuidBackedId[A]): Codec[String, A, CodecFormat.TextPlain]` and one `given [A](using UuidBackedId[A]): Schema[A]` in `leaderboard.http.tapir.BeautyQIdTapirSupport` (each a `.map` adaptation of Tapir's own `Codec.uuid`/`Schema.schemaForUUID`), imported into the six BeautyQ tapir endpoint files exactly as before (`import leaderboard.http.tapir.BeautyQIdTapirSupport.given`). Route paths and JSON wire shape unchanged. |
+| Tapir | `app-http` | One `given [A](using UuidBackedId[A]): Codec[String, A, CodecFormat.TextPlain]` and one `given [A](using UuidBackedId[A]): Schema[A]` in `leaderboard.http.tapir.UuidBackedIdTapirSupport` (renamed from `BeautyQIdTapirSupport` by a later D2B patch; each a `.map` adaptation of Tapir's own `Codec.uuid`/`Schema.schemaForUUID`), imported into the six BeautyQ tapir endpoint files (`import leaderboard.http.tapir.UuidBackedIdTapirSupport.given`). Route paths and JSON wire shape unchanged. |
 | Scalacheck | `leaderboard-app-shell` test tree | One `given [A](using id: UuidBackedId[A]): Arbitrary[A] = Arbitrary(Arbitrary.arbitrary[java.util.UUID].map(id.apply))` at the top level of `package leaderboard` in `Rnd.scala`, replacing all six per-id declarations. |
 
 All four fully generic designs (Doobie/Tapir/Scalacheck, plus the Circe *helper function*)
