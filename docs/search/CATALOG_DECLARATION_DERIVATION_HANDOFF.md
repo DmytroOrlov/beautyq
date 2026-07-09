@@ -14,7 +14,7 @@ next".
 ## Current accepted state
 
 All of Phases A–F are done, and D2A/Seed F1/wrapper cleanup/seed root-key cleanup/nominal BeautyQ
-ID migration besides:
+ID migration/Seed F2 besides:
 
 ```text
 A:         root key moved into catalog declaration
@@ -30,6 +30,8 @@ Seed root-key cleanup: seed-scoped root filtering derived from the materialized 
 Nominal BeautyQ ID migration: CategoryId/ServiceId/MasterId/MasterLocationId/MasterServiceOfferId/
   MasterServiceOfferVariantId became opaque UUID-backed types; the last explicit ambiguous
   CatalogMany evidence + repo wrappers (byMaster/byOffer) were removed as a result
+Seed F2:   seed-scoped snapshot assembly now goes through a generic, no-dedup LoadedCatalog helper
+  (toRawSnapshot) instead of a manual BeautyQSearchCatalogSnapshot(...) constructor call
 ```
 
 The BeautyQ full loader (`BeautyQSearchCatalogSnapshotLoader.FromRepositories.load()`) is now:
@@ -46,17 +48,21 @@ snapshot case class from that `LoadedCatalog` via `Mirror.ProductOf`, deduplicat
 whichever evidence the domain declared (`CatalogValue` for aggregate/value fields,
 conventional-`id` `CatalogEntity` derivation otherwise).
 
-**Seed-scoped loading keeps its exact semantics, but no longer hand-wires per-entity wrapper calls.**
+**Seed-scoped loading keeps its exact semantics, but no longer hand-wires per-entity wrapper calls,
+and no longer hand-writes the final snapshot constructor either.**
 `BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories.load()` now calls
 `GraphLoading.seedRequiredById[F, Repo[F], A](items, repo)` /
 `GraphLoading.seedValuesByKey[F, Repo[F], K, V](keys, repo)` (repo-core, Seed F1) instead of manually
-writing `GraphLoading.seedRequired(items, X.entity.modelName, _.id, X.byId(repo))` per entity. Same
-canonical missing-entity message, same seed item order, same manual
-`BeautyQSearchCatalogSnapshot(...)` constructor, same no-dedup behavior - Seed F1 changed *how* the
-per-entity loader/model-name/id-selector triple is obtained, not any of the seed-scoped semantics
-themselves. No phase has touched, or should touch without a deliberate decision, its missing-entity
-behavior, its ordering, or its dedup policy (it doesn't deduplicate - seed input is assumed
-already-distinct).
+writing `GraphLoading.seedRequired(items, X.entity.modelName, _.id, X.byId(repo))` per entity, then
+assembles the seven loaded lists into `BeautyQSearchCatalogSnapshot` via
+`LoadedCatalog(...).toRawSnapshot[BeautyQSearchCatalogSnapshot]` (repo-core, Seed F2) instead of a
+manual `BeautyQSearchCatalogSnapshot(categories = ..., services = ..., ...)` constructor call. Same
+canonical missing-entity message, same seed item order, same no-dedup behavior - Seed F1 changed
+*how* the per-entity loader/model-name/id-selector triple is obtained, and Seed F2 changed *how* the
+loaded lists are assembled into the snapshot case class, neither touched any of the seed-scoped
+semantics themselves. No phase has touched, or should touch without a deliberate decision, its
+missing-entity behavior, its ordering, or its dedup policy (it doesn't deduplicate - seed input is
+assumed already-distinct). See "Seed F2 scope" below for why `toRawSnapshot`, not `toSnapshot`.
 
 ## Current architecture boundaries
 
@@ -169,14 +175,15 @@ had claimed the seed-scoped loader was still a caller.
 3. Wrapper zero-usage cleanup: remove the zero-usage repo companion wrappers.   [done]
 4. Seed root-key cleanup: derive root filtering from declaration root where safe. [done]
 5. Nominal BeautyQ ID migration: opaque ids, removing the last ambiguous wrappers. [done]
-6. Nodes/projection boundary audit: separate scope decision.
-7. D2B/value-source DSL: separate policy decision.
+6. Seed F2: assemble the seed-scoped snapshot via a generic, no-dedup LoadedCatalog helper. [done]
+7. Nodes/projection boundary audit: separate scope decision.
+8. D2B/value-source DSL: separate policy decision.
 ```
 
 Recommended next patch: **Nodes/projection boundary audit**.
 
-Rationale: D2A, Seed F1, wrapper cleanup, seed root-key cleanup, and the nominal BeautyQ ID
-migration are all landed. `CategoryId`/`ServiceId`/`MasterId`/`MasterLocationId`/
+Rationale: D2A, Seed F1, wrapper cleanup, seed root-key cleanup, the nominal BeautyQ ID migration,
+and Seed F2 are all landed. `CategoryId`/`ServiceId`/`MasterId`/`MasterLocationId`/
 `MasterServiceOfferId`/`MasterServiceOfferVariantId` are now opaque UUID-backed types (not
 transparent aliases of the same underlying `UUID`), so `CatalogMany.derivedFromRepositories` now
 disambiguates `Master -> MasterServiceOffer` (by `MasterId`) and `MasterServiceOffer ->
@@ -184,12 +191,14 @@ MasterServiceOfferVariant` (by `MasterServiceOfferId`) purely by type/signature 
 explicit `CatalogMany.Aux` givens in `BeautyQCatalogGraph.Evidence`, and the
 `MasterServiceOffers.byMaster`/`MasterServiceOfferVariants.byOffer` wrappers they called, were
 removed. See "Nominal BeautyQ ID migration scope" below for the full typeclass-surface record
-(Circe/Doobie/Tapir). With that resolved, every entry in the tautology inventory above is now
-`DONE_*` or a deliberate `KEEP_EXPLICIT_*`; the next open item is auditing whether
-`BeautyQCatalogGraph.Nodes` (kept explicit for the search projection layer) can also be simplified
-now that entity evidence derives automatically, without pulling projection/runtime concerns into
-this initiative (see "Known non-goals"). D2B/value-source DSL remains a separate, independent
-policy decision, not advanced by any of the patches above.
+(Circe/Doobie/Tapir). `SeedScopedFromRepositories`'s manual `BeautyQSearchCatalogSnapshot(...)`
+constructor - the last hand-written residual left after Seed F1 - was also removed; see "Seed F2
+scope" below. With that resolved, every entry in the tautology inventory above is now `DONE_*` or a
+deliberate `KEEP_EXPLICIT_*`; the next open item is auditing whether `BeautyQCatalogGraph.Nodes`
+(kept explicit for the search projection layer) can also be simplified now that entity evidence
+derives automatically, without pulling projection/runtime concerns into this initiative (see "Known
+non-goals"). D2B/value-source DSL remains a separate, independent policy decision, not advanced by
+any of the patches above.
 
 ## D2A scope
 
@@ -451,6 +460,59 @@ Forbidden:
 - do not implement selector-guided fallback;
 - do not change SQL storage column types, JSON field names/shape, or HTTP route paths;
 - do not change catalog declaration / full loader / seed loader semantics.
+```
+
+## Seed F2 scope
+
+Status: implemented. `SeedScopedFromRepositories.load()`'s manual
+`BeautyQSearchCatalogSnapshot(categories = ..., services = ..., ...)` constructor - the one
+hand-written residual Seed F1 deliberately left alone (see "Seed F1 scope" above: "do not replace
+seed constructor with `toSnapshot` until dedup policy is decided") - is now
+`LoadedCatalog(loadedCategories *: loadedServices *: ... *: EmptyTuple).toRawSnapshot
+[BeautyQSearchCatalogSnapshot]` (repo-core, `CatalogSnapshotAssembly.scala`). The seven
+`seedRequiredById`/`seedValuesByKey` calls that produce those seven lists are completely unchanged -
+this patch only changed how the already-loaded lists become the snapshot case class.
+
+This is deliberately **not** `toSnapshot`: that open policy question from Seed F1 remains open and
+unresolved, on purpose. `toSnapshot` deduplicates each field (by `CatalogValue` key for
+aggregate/value fields, by conventional `id` otherwise) - the full loader's policy, not the seed
+loader's. `toRawSnapshot` is a new, separate `LoadedCatalog` extension (same file) that assembles a
+snapshot case class through the exact same `Mirror.ProductOf`/`TupleSelect` machinery but performs
+*no* deduplication at all, and needs neither `CatalogValue` nor `CatalogEntity` evidence to do
+it - it cannot silently change seed dedup policy because it has no dedup mechanism to invoke.
+`GraphLoading`/`LoadedCatalog` themselves, seed order, key order (`seedScope.services.map(_.id)` for
+schemas), root filtering (the category self-tree's own materialized `rootKey`), and the canonical
+missing-entity message are all untouched - confirmed by the existing `BeautyQRepoGraphLoaderSpec`
+"BeautyQ seed-scoped graph loader" block (unchanged assertions, all still passing) plus one added
+test proving a duplicate seed item now produces a duplicate snapshot entry end-to-end, and by
+`GraphLoadingSpec`'s existing `seedRequiredById`/`seedValuesByKey` no-dedup coverage (also
+unchanged). The full loader (`FromRepositories.load()`) is untouched: still
+`loadAll(repositories).map(_.toSnapshot[BeautyQSearchCatalogSnapshot])`.
+
+`repo-core/src/test/scala/leaderboard/repo/CatalogSnapshotAssemblySpec.scala` gained a parallel
+`toRawSnapshot` block (mirroring the existing `toSnapshot` coverage: field order follows the
+snapshot constructor, not `LoadedCatalog`'s storage order; entity and aggregate/value duplicates are
+both preserved; a non-`List[A]` field still fails to compile) plus a direct `toSnapshot` vs.
+`toRawSnapshot` contrast on the same `LoadedCatalog`, including a fixture with neither a conventional
+`id` field nor `CatalogValue` evidence, proving `toRawSnapshot` needs neither (`toSnapshot` fails to
+compile for that same fixture; `toRawSnapshot` does not).
+
+Original scope, kept for reference:
+
+```text
+Goal:
+- add a generic, no-dedup LoadedCatalog -> Snapshot assembly helper (toRawSnapshot);
+- use it in SeedScopedFromRepositories, replacing the manual snapshot constructor;
+- preserve seed order and no-dedup semantics exactly.
+
+Forbidden:
+- do not change GraphLoading or LoadedCatalog raw semantics;
+- do not change toSnapshot's dedup behavior;
+- do not use toSnapshot in the seed loader;
+- do not deduplicate seed snapshot fields;
+- do not change seed order, the missing-entity message, the schema key source, or root filtering;
+- do not change the full loader;
+- do not derive seed traversal from the catalog relation tuple in this patch.
 ```
 
 ## Bundle / coordinator workflow rules

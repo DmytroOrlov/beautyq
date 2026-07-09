@@ -3,7 +3,7 @@ package leaderboard.search.document
 import izumi.functional.bio.Error2
 import leaderboard.model.*
 import leaderboard.model.Category.CategoryId
-import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Relation, ServiceVariantSchemas, Services, loadAll, toSnapshot}
+import leaderboard.repo.{BeautyQCatalogGraph, Categories, GraphLoading, LoadedCatalog, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Relation, ServiceVariantSchemas, Services, loadAll, toRawSnapshot, toSnapshot}
 
 /** Materialization-owned loader for [[BeautyQSearchCatalogSnapshot]].
   * `beautyq-search-materialization` must not depend on seed data: the
@@ -103,14 +103,15 @@ object BeautyQSearchCatalogSnapshotLoader {
         loadedLocations  <- GraphLoading.seedRequiredById[F, MasterLocations[F], MasterLocation](seedScope.masterLocations, masterLocations)
         loadedOffers     <- GraphLoading.seedRequiredById[F, MasterServiceOffers[F], MasterServiceOffer](seedScope.masterServiceOffers, masterServiceOffers)
         loadedVariants   <- GraphLoading.seedRequiredById[F, MasterServiceOfferVariants[F], MasterServiceOfferVariant](seedScope.masterServiceOfferVariants, masterServiceOfferVariants)
-      } yield BeautyQSearchCatalogSnapshot(
-        categories                 = loadedCategories,
-        services                   = loadedServices,
-        serviceVariantSchemas      = loadedSchemas,
-        masters                    = loadedMasters,
-        masterLocations            = loadedLocations,
-        masterServiceOffers        = loadedOffers,
-        masterServiceOfferVariants = loadedVariants,
-      )
+      } yield LoadedCatalog(
+        loadedCategories *:
+        loadedServices *:
+        loadedSchemas *:
+        loadedMasters *:
+        loadedLocations *:
+        loadedOffers *:
+        loadedVariants *:
+        EmptyTuple
+      ).toRawSnapshot[BeautyQSearchCatalogSnapshot]
   }
 }

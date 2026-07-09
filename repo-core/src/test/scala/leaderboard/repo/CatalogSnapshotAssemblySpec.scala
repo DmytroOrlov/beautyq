@@ -20,6 +20,13 @@ final case class SnapAssemblySnapshot(
 
 final case class SnapAssemblyBadSnapshot(count: Int)
 
+// --- fixture with neither a conventional `id` field nor CatalogValue
+// evidence: proves toRawSnapshot needs neither CatalogEntity nor CatalogValue
+// evidence, unlike toSnapshot (which would need one or the other to resolve
+// a dedup key). ---
+final case class SnapAssemblyPlainItem(label: String)
+final case class SnapAssemblyPlainSnapshot(items: List[SnapAssemblyPlainItem])
+
 final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
 
   private val e1 = SnapAssemblyEntity(SnapAssemblyEntityId("e1"), "e1")
@@ -30,6 +37,10 @@ final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
   private val v2 = SnapAssemblyValueItem(SnapAssemblyValueParentId("p2"), "v2")
   private val rawValues = List(v1, v2, v1)
 
+  private val p1 = SnapAssemblyPlainItem("p1")
+  private val p2 = SnapAssemblyPlainItem("p2")
+  private val rawPlainItems = List(p1, p2, p1)
+
   given CatalogValue.Aux[SnapAssemblyValueItem, SnapAssemblyValueParentId, SnapAssemblyValueItem] =
     CatalogValue.from(RepoValueSource[SnapAssemblyValueItem, SnapAssemblyValueParentId, SnapAssemblyValueItem](
       valueModelName = "SnapAssemblyValueItem",
@@ -38,6 +49,7 @@ final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
     ))
 
   private val loaded = LoadedCatalog(rawEntities *: rawValues *: EmptyTuple)
+  private val plainLoaded = LoadedCatalog(rawPlainItems *: EmptyTuple)
 
   "LoadedCatalog.toSnapshot (generic snapshot assembly)" should {
     "build a product snapshot case class from a LoadedCatalog, following the snapshot's own field order" in {
@@ -72,6 +84,66 @@ final class CatalogSnapshotAssemblySpec extends AnyWordSpec {
 
     "not support a non-List[A] snapshot field" in {
       assertDoesNotCompile("loaded.toSnapshot[SnapAssemblyBadSnapshot]")
+    }
+  }
+
+  "LoadedCatalog.toRawSnapshot (generic raw snapshot assembly)" should {
+    "build a product snapshot case class from a LoadedCatalog, following the snapshot's own field order" in {
+      val snapshot = loaded.toRawSnapshot[SnapAssemblySnapshot]
+
+      assert(snapshot.entities == rawEntities)
+      assert(snapshot.values == rawValues)
+    }
+
+    "preserve entity duplicates instead of deduplicating by conventional id" in {
+      val snapshot = loaded.toRawSnapshot[SnapAssemblySnapshot]
+
+      assert(snapshot.entities == List(e1, e2, e1))
+      assert(snapshot.entities.size == 3)
+    }
+
+    "preserve aggregate value duplicates instead of deduplicating by CatalogValue's key field" in {
+      val snapshot = loaded.toRawSnapshot[SnapAssemblySnapshot]
+
+      assert(snapshot.values == List(v1, v2, v1))
+      assert(snapshot.values.size == 3)
+    }
+
+    "not mutate the original LoadedCatalog raw lists" in {
+      loaded.toRawSnapshot[SnapAssemblySnapshot]
+
+      assert(loaded.values[List[SnapAssemblyEntity]] == rawEntities)
+      assert(loaded.values[List[SnapAssemblyValueItem]] == rawValues)
+    }
+
+    "not require CatalogValue or CatalogEntity evidence for a field with neither" in {
+      val snapshot = plainLoaded.toRawSnapshot[SnapAssemblyPlainSnapshot]
+
+      assert(snapshot.items == rawPlainItems)
+      assert(snapshot.items.size == 3)
+    }
+
+    "not support a non-List[A] snapshot field" in {
+      assertDoesNotCompile("loaded.toRawSnapshot[SnapAssemblyBadSnapshot]")
+    }
+  }
+
+  "toSnapshot vs toRawSnapshot" should {
+    "dedup via toSnapshot but preserve every duplicate via toRawSnapshot, from the very same LoadedCatalog" in {
+      val deduped = loaded.toSnapshot[SnapAssemblySnapshot]
+      val raw     = loaded.toRawSnapshot[SnapAssemblySnapshot]
+
+      assert(deduped.entities == List(e1, e2))
+      assert(raw.entities == List(e1, e2, e1))
+      assert(deduped.values == List(v1, v2))
+      assert(raw.values == List(v1, v2, v1))
+    }
+
+    "require CatalogEntity/CatalogValue-derivable evidence for toSnapshot but not for toRawSnapshot, on the same plain field" in {
+      val raw = plainLoaded.toRawSnapshot[SnapAssemblyPlainSnapshot]
+      assert(raw.items == rawPlainItems)
+
+      assertDoesNotCompile("plainLoaded.toSnapshot[SnapAssemblyPlainSnapshot]")
     }
   }
 }

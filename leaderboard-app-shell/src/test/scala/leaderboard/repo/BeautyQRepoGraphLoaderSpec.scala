@@ -187,6 +187,24 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
       assert(seedSnapshot.serviceVariantSchemas.map(_.serviceId) == List(serviceB.id, serviceA.id))
     }
 
+    "preserve duplicate seed items in the resulting snapshot instead of deduplicating them (Seed F2: LoadedCatalog.toRawSnapshot)" in {
+      val duplicateSeedScope = seedScope.copy(masters = List(master, master))
+      val duplicateLoader = new BeautyQSearchCatalogSnapshotLoader.SeedScopedFromRepositories[IO](
+        duplicateSeedScope,
+        new StubCategories,
+        new StubServices,
+        new StubServiceVariantSchemas,
+        new StubMasters,
+        new StubMasterLocations,
+        new StubMasterServiceOffers,
+        new StubMasterServiceOfferVariants,
+      )
+
+      val duplicateSnapshot = runIO(duplicateLoader.load())
+
+      assert(duplicateSnapshot.masters == List(master, master))
+    }
+
     "produce a seed-scoped snapshot the document schema can fully project" in {
       BeautyQVariantSearchDocumentMaterialization.project(seedSnapshot) match {
         case Right(documents) =>

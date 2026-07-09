@@ -105,3 +105,54 @@ extension [Items <: Tuple](loaded: LoadedCatalog[Items]) {
   ): Snapshot =
     mirror.fromProduct(assemble(loaded.items))
 }
+
+/** Assembles one raw, never-deduplicated snapshot field (`List[A]`) from a
+  * [[LoadedCatalog]]'s raw lists - the no-dedup counterpart to
+  * [[AssembleSnapshotField]]. Requires only [[TupleSelect]]: unlike
+  * [[AssembleSnapshotField]], it never needs [[CatalogValue]]/[[CatalogEntity]]
+  * evidence, since there is no dedup key to resolve.
+  */
+private[repo] trait AssembleRawSnapshotField[Items <: Tuple, Field] {
+  def apply(items: Items): Field
+}
+private[repo] object AssembleRawSnapshotField {
+  given fromRawList[Items <: Tuple, A](using
+    raw: TupleSelect[Items, List[A]],
+  ): AssembleRawSnapshotField[Items, List[A]] =
+    items => raw(items)
+}
+
+/** Recursively assembles an entire raw snapshot field-type tuple, one
+  * [[AssembleRawSnapshotField]] per field, in the snapshot's own declared
+  * field order, independent of [[LoadedCatalog.items]]'s storage order - the
+  * no-dedup counterpart to [[AssembleSnapshotFields]].
+  */
+private[repo] trait AssembleRawSnapshotFields[Items <: Tuple, Fields <: Tuple] {
+  def apply(items: Items): Fields
+}
+private[repo] object AssembleRawSnapshotFields {
+  given nil[Items <: Tuple]: AssembleRawSnapshotFields[Items, EmptyTuple] =
+    _ => EmptyTuple
+
+  given cons[Items <: Tuple, Field, FieldsTail <: Tuple](using
+    head: AssembleRawSnapshotField[Items, Field],
+    tail: AssembleRawSnapshotFields[Items, FieldsTail],
+  ): AssembleRawSnapshotFields[Items, Field *: FieldsTail] =
+    items => head(items) *: tail(items)
+}
+
+/** `loaded.toRawSnapshot[Snapshot]`: builds a product snapshot case class
+  * (every field `List[A]`) from a [[LoadedCatalog]] exactly like [[toSnapshot]]
+  * - same field-order-follows-`Snapshot`-constructor behavior - but *without*
+  * deduplicating any field. For callers whose own policy is that duplicates
+  * are never introduced upstream (e.g. seed-scoped loading, where seed input
+  * is assumed already-distinct and any duplicate is a caller error, not
+  * something to silently absorb here).
+  */
+extension [Items <: Tuple](loaded: LoadedCatalog[Items]) {
+  inline def toRawSnapshot[Snapshot](using
+    mirror: Mirror.ProductOf[Snapshot],
+    assemble: AssembleRawSnapshotFields[Items, mirror.MirroredElemTypes],
+  ): Snapshot =
+    mirror.fromProduct(assemble(loaded.items))
+}
