@@ -283,6 +283,12 @@ enum CatalogStep {
     case Edge(parent, child, EdgeKind.Many, key)   => s"many:$parent->$child:$key"
     case Edge(parent, child, EdgeKind.Value, key)  => s"value:$parent->$child:$key"
   }
+
+  /** The entity/value type introduced by this declaration step, in declaration order. */
+  def introducedEntity: String = this match {
+    case Root(entity, _, _)     => entity
+    case Edge(_, child, _, _) => child
+  }
 }
 
 private[repo] def decapitalize(name: String): String =
