@@ -1,6 +1,6 @@
 package leaderboard.repo
 
-import leaderboard.model.{Category, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema}
+import leaderboard.model.{Category, CategoryCode, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema}
 import leaderboard.model.Category.CategoryId
 import leaderboard.repo.RepoOp.ManyByKey
 import org.scalatest.wordspec.AnyWordSpec
@@ -16,16 +16,28 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
     "derive Category.parentId as parentId / parent_id and select the value" in {
       val field   = Categories.entity.field(_.parentId)
       val parent  = CategoryId(uuid("0000000000a1"))
-      val category = Category(CategoryId(uuid("0000000000a2")), parent, 1, "child")
+      val category = Category(CategoryId(uuid("0000000000a2")), CategoryCode.unsafeFromString("category_test_child"), parent, 1, "child")
       assert(field.label == "parentId")
       assert(field.column == "parent_id")
       assert(field.select(category) == parent)
+    }
+
+    "derive Category.code as code / code" in {
+      val field = Categories.entity.field(_.code)
+      assert(field.label == "code")
+      assert(field.column == "code")
     }
 
     "derive Service.categoryId as categoryId / category_id" in {
       val field = Services.entity.field(_.categoryId)
       assert(field.label == "categoryId")
       assert(field.column == "category_id")
+    }
+
+    "derive Service.code as code / code" in {
+      val field = Services.entity.field(_.code)
+      assert(field.label == "code")
+      assert(field.column == "code")
     }
 
     "derive MasterServiceOfferVariant.masterServiceOfferId as masterServiceOfferId / master_service_offer_id" in {

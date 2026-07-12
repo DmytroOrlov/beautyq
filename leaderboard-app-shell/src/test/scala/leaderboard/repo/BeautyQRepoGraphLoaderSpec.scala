@@ -12,13 +12,19 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
 
   private def uuid(suffix: String): UUID = UUID.fromString(s"00000000-0000-0000-0000-$suffix")
 
-  // --- deterministic immutable fixture graph ---
-  private val categoryA      = Category(CategoryId(uuid("0000000000a1")), rootCategoryId, 0, "Category A")
-  private val categoryB      = Category(CategoryId(uuid("0000000000b1")), rootCategoryId, 0, "Category B")
-  private val categoryAChild = Category(CategoryId(uuid("0000000000a2")), categoryA.id, 1, "Category A Child")
+  private def testCategoryCode(id: CategoryId): CategoryCode =
+    CategoryCode.unsafeFromString(s"category_${id.toString.replace("-", "")}")
 
-  private val serviceA = Service(ServiceId(uuid("000000005e01")), categoryAChild.id, "Service A")
-  private val serviceB = Service(ServiceId(uuid("000000005e02")), categoryB.id, "Service B")
+  private def testServiceCode(id: ServiceId): ServiceCode =
+    ServiceCode.unsafeFromString(s"service_${id.toString.replace("-", "")}")
+
+  // --- deterministic immutable fixture graph ---
+  private val categoryA      = Category(CategoryId(uuid("0000000000a1")), testCategoryCode(CategoryId(uuid("0000000000a1"))), rootCategoryId, 0, "Category A")
+  private val categoryB      = Category(CategoryId(uuid("0000000000b1")), testCategoryCode(CategoryId(uuid("0000000000b1"))), rootCategoryId, 0, "Category B")
+  private val categoryAChild = Category(CategoryId(uuid("0000000000a2")), testCategoryCode(CategoryId(uuid("0000000000a2"))), categoryA.id, 1, "Category A Child")
+
+  private val serviceA = Service(ServiceId(uuid("000000005e01")), testServiceCode(ServiceId(uuid("000000005e01"))), categoryAChild.id, "Service A")
+  private val serviceB = Service(ServiceId(uuid("000000005e02")), testServiceCode(ServiceId(uuid("000000005e02"))), categoryB.id, "Service B")
 
   private val master   = Master(MasterId(uuid("00000000a501")), "Master One")
   private val location = MasterLocation(MasterLocationId(uuid("00000010c001")), master.id, "Location One", "Address One", BigDecimal("52.5"), BigDecimal("13.4"))
@@ -62,7 +68,7 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
   // and the root is still filtered out - now via the category self-tree's
   // own root key, read off the materialized catalog declaration/relation,
   // not a seed-scope-local `nonRootCategories` method (Seed root-key cleanup).
-  private val rootCategoryEntry = Category(rootCategoryId, rootCategoryId, 0, "Root")
+  private val rootCategoryEntry = Category(rootCategoryId, testCategoryCode(rootCategoryId), rootCategoryId, 0, "Root")
 
   private val seedScope = BeautyQSearchCatalogSeedScope(
     categories                 = List(categoryB, rootCategoryEntry, categoryAChild, categoryA),
@@ -249,9 +255,10 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
     private val byId: Map[CategoryId, Category] =
       List(categoryA, categoryB, categoryAChild).iterator.map(category => category.id -> category).toMap
 
-    def upsertCategory(category: Category): IO[QueryFailure, Unit]          = ZIO.unit
-    def getCategory(id: CategoryId): IO[QueryFailure, Option[Category]]     = ZIO.succeed(byId.get(id))
-    def getChildren(parentId: CategoryId): IO[QueryFailure, List[Category]] = ZIO.succeed(childrenByParent.getOrElse(parentId, Nil))
+    def upsertCategory(category: Category): IO[QueryFailure, Unit]              = ZIO.unit
+    def getCategory(id: CategoryId): IO[QueryFailure, Option[Category]]         = ZIO.succeed(byId.get(id))
+    def getCategoryByCode(code: CategoryCode): IO[QueryFailure, Option[Category]] = ZIO.succeed(byId.values.find(_.code == code))
+    def getChildren(parentId: CategoryId): IO[QueryFailure, List[Category]]     = ZIO.succeed(childrenByParent.getOrElse(parentId, Nil))
   }
 
   private final class StubServices extends Services[IO] {
@@ -262,8 +269,9 @@ final class BeautyQRepoGraphLoaderSpec extends AnyWordSpec {
     private val byId: Map[ServiceId, Service] =
       List(serviceA, serviceB).iterator.map(service => service.id -> service).toMap
 
-    def upsertService(service: Service): IO[QueryFailure, Unit]                       = ZIO.unit
-    def getService(id: ServiceId): IO[QueryFailure, Option[Service]]                  = ZIO.succeed(byId.get(id))
+    def upsertService(service: Service): IO[QueryFailure, Unit]                        = ZIO.unit
+    def getService(id: ServiceId): IO[QueryFailure, Option[Service]]                   = ZIO.succeed(byId.get(id))
+    def getServiceByCode(code: ServiceCode): IO[QueryFailure, Option[Service]]         = ZIO.succeed(byId.values.find(_.code == code))
     def getServicesByCategory(categoryId: CategoryId): IO[QueryFailure, List[Service]] = ZIO.succeed(byCategory.getOrElse(categoryId, Nil))
   }
 

@@ -3,7 +3,7 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.CategoryApi
 import leaderboard.http.tapir.CategoryTapirEndpoints
-import leaderboard.model.{Category, QueryFailure}
+import leaderboard.model.{Category, CategoryCode, QueryFailure}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import leaderboard.repo.Categories
 import org.http4s.Status
@@ -14,18 +14,22 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
   private def categoryApi(state: CategoryApiContractState): CategoryApi[IO] =
     new CategoryApi[IO](state.categories, CategoryTapirEndpoints)
 
+  private def testCategoryCode(id: CategoryId): CategoryCode =
+    CategoryCode.unsafeFromString(s"category_${id.toString.replace("-", "")}")
+
   "CategoryApi current http4s contracts" should {
     "return 200 and exact category json for an existing entity" in {
       val categoryId = CategoryId.fromString("11111111-2222-3333-4444-555555555555")
       val parentId   = CategoryId.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
-      val category   = Category(categoryId, parentId, 1, "Hair")
+      val code       = testCategoryCode(categoryId)
+      val category   = Category(categoryId, code, parentId, 1, "Hair")
 
       for {
         state    <- CategoryApiContractState.make
         _        <- state.setGetCategoryResult(Right(Some(category)))
         response <- observe(combineApis(categoryApi(state)), get(s"/category/$categoryId"))
         _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === s"""{"id":"$categoryId","parentId":"$parentId","depth":1,"name":"Hair"}""")
+        _        <- assertIO(response.body === s"""{"id":"$categoryId","code":"${code.value}","parentId":"$parentId","depth":1,"name":"Hair"}""")
       } yield ()
     }
 
@@ -43,8 +47,10 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
 
     "return 200 and exact json array for the children endpoint" in {
       val parentId = CategoryId.fromString("12345678-1234-1234-1234-123456789abc")
-      val first    = Category(CategoryId.fromString("00000000-0000-0000-0000-000000000001"), parentId, 1, "Alpha")
-      val second   = Category(CategoryId.fromString("00000000-0000-0000-0000-000000000002"), parentId, 1, "Beta")
+      val firstId  = CategoryId.fromString("00000000-0000-0000-0000-000000000001")
+      val secondId = CategoryId.fromString("00000000-0000-0000-0000-000000000002")
+      val first    = Category(firstId, testCategoryCode(firstId), parentId, 1, "Alpha")
+      val second   = Category(secondId, testCategoryCode(secondId), parentId, 1, "Beta")
 
       for {
         state    <- CategoryApiContractState.make
@@ -52,13 +58,14 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
         response <- observe(combineApis(categoryApi(state)), get(s"/category/$parentId/children"))
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(
-          response.body === s"""[{"id":"${first.id}","parentId":"$parentId","depth":1,"name":"Alpha"},{"id":"${second.id}","parentId":"$parentId","depth":1,"name":"Beta"}]"""
+          response.body === s"""[{"id":"${first.id}","code":"${first.code.value}","parentId":"$parentId","depth":1,"name":"Alpha"},{"id":"${second.id}","code":"${second.code.value}","parentId":"$parentId","depth":1,"name":"Beta"}]"""
         )
       } yield ()
     }
 
     "return 200 and exact json array for the root endpoint" in {
-      val rootChild = Category(CategoryId.fromString("99999999-0000-0000-0000-000000000001"), rootCategoryId, 0, "Root")
+      val rootChildId = CategoryId.fromString("99999999-0000-0000-0000-000000000001")
+      val rootChild   = Category(rootChildId, testCategoryCode(rootChildId), rootCategoryId, 0, "Root")
 
       for {
         state    <- CategoryApiContractState.make
@@ -66,7 +73,7 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
         response <- observe(combineApis(categoryApi(state)), get("/category/root"))
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(
-          response.body === s"""[{"id":"${rootChild.id}","parentId":"$rootCategoryId","depth":0,"name":"Root"}]"""
+          response.body === s"""[{"id":"${rootChild.id}","code":"${rootChild.code.value}","parentId":"$rootCategoryId","depth":0,"name":"Root"}]"""
         )
       } yield ()
     }
@@ -74,7 +81,8 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
     "return 200 with empty body and capture the posted category payload" in {
       val categoryId = CategoryId.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
       val parentId   = CategoryId.fromString("01010101-0202-0303-0404-050505050505")
-      val payload    = s"""{"id":"$categoryId","parentId":"$parentId","depth":2,"name":"Coloring"}"""
+      val code       = testCategoryCode(categoryId)
+      val payload    = s"""{"id":"$categoryId","code":"${code.value}","parentId":"$parentId","depth":2,"name":"Coloring"}"""
 
       for {
         state    <- CategoryApiContractState.make
@@ -83,7 +91,21 @@ class CategoryApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContr
         upserts  <- state.upserts
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(response.body === "")
-        _        <- assertIO(upserts === Vector(Category(categoryId, parentId, 2, "Coloring")))
+        _        <- assertIO(upserts === Vector(Category(categoryId, code, parentId, 2, "Coloring")))
+      } yield ()
+    }
+
+    "return 400 Bad Request and capture nothing for an invalid category code" in {
+      val categoryId = CategoryId.fromString("cccccccc-dddd-eeee-ffff-000000000000")
+      val parentId   = CategoryId.fromString("11223344-5566-7788-99aa-bbccddeeff00")
+      val payload    = s"""{"id":"$categoryId","code":"Invalid Category","parentId":"$parentId","depth":1,"name":"Invalid"}"""
+
+      for {
+        state    <- CategoryApiContractState.make
+        response <- observe(combineApis(categoryApi(state)), postJson("/category", payload))
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.BadRequest)
+        _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
@@ -134,6 +156,9 @@ class CategoryApiContractState private (
 
     def getCategory(id: CategoryId): IO[QueryFailure, Option[Category]] =
       getCategoryResultRef.get.flatMap(ZIO.fromEither(_))
+
+    def getCategoryByCode(code: CategoryCode): IO[QueryFailure, Option[Category]] =
+      ZIO.succeed(None)
 
     def getChildren(parentId: CategoryId): IO[QueryFailure, List[Category]] =
       childrenResultsRef.get.flatMap {

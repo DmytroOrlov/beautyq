@@ -1,6 +1,7 @@
 package leaderboard.http.tapir
 
 import leaderboard.http.HttpApiFailure
+import leaderboard.http.tapir.StableCodeTapirSupport.given
 import leaderboard.http.tapir.UuidBackedIdTapirSupport.given
 import leaderboard.model.Category.CategoryId
 import leaderboard.model.{Service, ServiceId}

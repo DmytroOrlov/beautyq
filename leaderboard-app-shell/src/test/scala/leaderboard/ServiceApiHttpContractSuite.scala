@@ -3,7 +3,7 @@ package leaderboard
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.api.ServiceApi
 import leaderboard.http.tapir.ServiceTapirEndpoints
-import leaderboard.model.{QueryFailure, Service, ServiceId}
+import leaderboard.model.{QueryFailure, Service, ServiceCode, ServiceId}
 import leaderboard.model.Category.CategoryId
 import leaderboard.repo.Services
 import org.http4s.Status
@@ -14,18 +14,22 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
   private def serviceApi(state: ServiceApiContractState): ServiceApi[IO] =
     new ServiceApi[IO](state.services, ServiceTapirEndpoints)
 
+  private def testServiceCode(id: ServiceId): ServiceCode =
+    ServiceCode.unsafeFromString(s"service_${id.toString.replace("-", "")}")
+
   "ServiceApi current http4s contracts" should {
     "return 200 and exact service json for an existing entity" in {
       val serviceId  = ServiceId.fromString("11111111-1111-1111-1111-111111111111")
       val categoryId = CategoryId.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-      val service    = Service(serviceId, categoryId, "Cut")
+      val code       = testServiceCode(serviceId)
+      val service    = Service(serviceId, code, categoryId, "Cut")
 
       for {
         state    <- ServiceApiContractState.make
         _        <- state.setGetServiceResult(Right(Some(service)))
         response <- observe(combineApis(serviceApi(state)), get(s"/service/$serviceId"))
         _        <- assertIO(response.status === Status.Ok)
-        _        <- assertIO(response.body === s"""{"id":"$serviceId","categoryId":"$categoryId","name":"Cut"}""")
+        _        <- assertIO(response.body === s"""{"id":"$serviceId","code":"${code.value}","categoryId":"$categoryId","name":"Cut"}""")
       } yield ()
     }
 
@@ -43,8 +47,10 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
 
     "return 200 and exact json array for the category endpoint" in {
       val categoryId = CategoryId.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-      val first      = Service(ServiceId.fromString("00000000-0000-0000-0000-000000000001"), categoryId, "Alpha")
-      val second     = Service(ServiceId.fromString("00000000-0000-0000-0000-000000000002"), categoryId, "Beta")
+      val firstId    = ServiceId.fromString("00000000-0000-0000-0000-000000000001")
+      val secondId   = ServiceId.fromString("00000000-0000-0000-0000-000000000002")
+      val first      = Service(firstId, testServiceCode(firstId), categoryId, "Alpha")
+      val second     = Service(secondId, testServiceCode(secondId), categoryId, "Beta")
 
       for {
         state    <- ServiceApiContractState.make
@@ -52,7 +58,7 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         response <- observe(combineApis(serviceApi(state)), get(s"/service/category/$categoryId"))
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(
-          response.body === s"""[{"id":"${first.id}","categoryId":"$categoryId","name":"Alpha"},{"id":"${second.id}","categoryId":"$categoryId","name":"Beta"}]"""
+          response.body === s"""[{"id":"${first.id}","code":"${first.code.value}","categoryId":"$categoryId","name":"Alpha"},{"id":"${second.id}","code":"${second.code.value}","categoryId":"$categoryId","name":"Beta"}]"""
         )
       } yield ()
     }
@@ -60,7 +66,8 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
     "return 200 with empty body and capture the posted service payload" in {
       val serviceId  = ServiceId.fromString("33333333-3333-3333-3333-333333333333")
       val categoryId = CategoryId.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc")
-      val payload    = s"""{"id":"$serviceId","categoryId":"$categoryId","name":"Color"}"""
+      val code       = testServiceCode(serviceId)
+      val payload    = s"""{"id":"$serviceId","code":"${code.value}","categoryId":"$categoryId","name":"Color"}"""
 
       for {
         state    <- ServiceApiContractState.make
@@ -69,7 +76,21 @@ class ServiceApiHttpContractSuite extends SpecZIO with AssertZIO with HttpContra
         upserts  <- state.upserts
         _        <- assertIO(response.status === Status.Ok)
         _        <- assertIO(response.body === "")
-        _        <- assertIO(upserts === Vector(Service(serviceId, categoryId, "Color")))
+        _        <- assertIO(upserts === Vector(Service(serviceId, code, categoryId, "Color")))
+      } yield ()
+    }
+
+    "return 400 Bad Request and capture nothing for an invalid service code" in {
+      val serviceId  = ServiceId.fromString("44444444-5555-6666-7777-888888888888")
+      val categoryId = CategoryId.fromString("99998888-7777-6666-5555-444433332222")
+      val payload    = s"""{"id":"$serviceId","code":"Invalid Service","categoryId":"$categoryId","name":"Invalid"}"""
+
+      for {
+        state    <- ServiceApiContractState.make
+        response <- observe(combineApis(serviceApi(state)), postJson("/service", payload))
+        upserts  <- state.upserts
+        _        <- assertIO(response.status === Status.BadRequest)
+        _        <- assertIO(upserts.isEmpty)
       } yield ()
     }
 
@@ -122,6 +143,9 @@ class ServiceApiContractState private (
 
     def getService(id: leaderboard.model.ServiceId): IO[QueryFailure, Option[Service]] =
       getServiceResultRef.get.flatMap(ZIO.fromEither(_))
+
+    def getServiceByCode(code: ServiceCode): IO[QueryFailure, Option[Service]] =
+      ZIO.succeed(None)
 
     def getServicesByCategory(categoryId: CategoryId): IO[QueryFailure, List[Service]] =
       servicesByCategoryResultsRef.get.flatMap {

@@ -5,7 +5,7 @@ import doobie.Fragment
 import doobie.implicits.*
 import izumi.functional.bio.{Error2, F, Primitives2}
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
-import leaderboard.model.{QueryFailure, Service, ServiceId}
+import leaderboard.model.{QueryFailure, Service, ServiceCode, ServiceId}
 import leaderboard.runtime.QueryFailureToThrowable
 import leaderboard.sql.SQL
 import logstage.LogIO2
@@ -15,6 +15,7 @@ import scala.annotation.unused
 trait Services[F[_, _]] {
   def upsertService(service: Service): F[QueryFailure, Unit]
   def getService(id: ServiceId): F[QueryFailure, Option[Service]]
+  def getServiceByCode(code: ServiceCode): F[QueryFailure, Option[Service]]
   def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]]
 }
 
@@ -27,6 +28,12 @@ object Services {
 
   private def rootCategoryCannotOwnServices: QueryFailure =
     QueryFailure.domain(s"Root category $rootCategoryId is synthetic and must not own services")
+
+  private def duplicateServiceCode(code: ServiceCode, existingId: ServiceId): QueryFailure =
+    QueryFailure.domain(s"Service code '${code.value}' is already used by service $existingId")
+
+  private def immutableServiceCode(id: ServiceId, existingCode: ServiceCode, requestedCode: ServiceCode): QueryFailure =
+    QueryFailure.domain(s"Service $id code is immutable: existing '${existingCode.value}', requested '${requestedCode.value}'")
 
   class Dummy[F[+_, +_]: Error2: Primitives2](
     categories: Categories[F]
@@ -41,7 +48,28 @@ object Services {
             } else {
               categories.getCategory(service.categoryId).flatMap {
                 case Some(_) =>
-                  state.update_(_ + (service.id -> service))
+                  state
+                    .modify[Either[QueryFailure, Unit]] {
+                      current =>
+                        val immutabilityViolation: Option[QueryFailure] =
+                          current.get(service.id) match {
+                            case Some(existing) if existing.code != service.code =>
+                              Some(immutableServiceCode(service.id, existing.code, service.code))
+                            case _ =>
+                              None
+                          }
+
+                        val collisionViolation: Option[QueryFailure] =
+                          current.values.find(other => other.id != service.id && other.code == service.code) match {
+                            case Some(other) => Some(duplicateServiceCode(service.code, other.id))
+                            case None        => None
+                          }
+
+                        immutabilityViolation.orElse(collisionViolation) match {
+                          case Some(failure) => Left(failure) -> current
+                          case None          => Right(()) -> (current + (service.id -> service))
+                        }
+                    }.fromEither
                 case None =>
                   F.fail(categoryNotFound(service.categoryId))
               }
@@ -50,6 +78,9 @@ object Services {
 
           def getService(id: ServiceId): F[QueryFailure, Option[Service]] =
             state.get.map(_.get(id))
+
+          def getServiceByCode(code: ServiceCode): F[QueryFailure, Option[Service]] =
+            state.get.map(_.values.find(_.code == code))
 
           def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]] =
             state.get.map(
@@ -74,6 +105,7 @@ object Services {
             .const("""
               create table if not exists service (
                 id uuid not null,
+                code text not null,
                 category_id uuid not null,
                 name text not null,
                 primary key (id),
@@ -89,6 +121,12 @@ object Services {
               on service(category_id)
           """.update.run
         })
+        _ <- QueryFailureToThrowable.lift(sql.execute("service-code-unique-index") {
+          sql"""
+            create unique index if not exists service_code_uidx
+              on service(code)
+          """.update.run
+        })
       } yield new Services[F] {
         def upsertService(service: Service): F[QueryFailure, Unit] = {
           if (service.categoryId == rootCategoryId) {
@@ -99,16 +137,26 @@ object Services {
                 if (!exists) {
                   F.fail(categoryNotFound(service.categoryId))
                 } else {
-                  sql
-                    .execute("upsert-service") {
-                      sql"""
-                      insert into service (id, category_id, name)
-                      values (${service.id}, ${service.categoryId}, ${service.name})
-                      on conflict (id) do update set
-                        category_id = excluded.category_id,
-                        name = excluded.name
-                    """.update.run
-                    }.void
+                  getService(service.id).flatMap {
+                    case Some(existing) if existing.code != service.code =>
+                      F.fail(immutableServiceCode(service.id, existing.code, service.code))
+                    case _ =>
+                      getServiceByCode(service.code).flatMap {
+                        case Some(other) if other.id != service.id =>
+                          F.fail(duplicateServiceCode(service.code, other.id))
+                        case _ =>
+                          sql
+                            .execute("upsert-service") {
+                              sql"""
+                              insert into service (id, code, category_id, name)
+                              values (${service.id}, ${service.code}, ${service.categoryId}, ${service.name})
+                              on conflict (id) do update set
+                                category_id = excluded.category_id,
+                                name = excluded.name
+                            """.update.run
+                            }.void
+                      }
+                  }
                 }
             }
           }
@@ -117,16 +165,25 @@ object Services {
         def getService(id: ServiceId): F[QueryFailure, Option[Service]] =
           sql.execute("get-service") {
             sql"""
-              select id, category_id, name
+              select id, code, category_id, name
               from service
               where id = $id
+            """.query[Service].option
+          }
+
+        def getServiceByCode(code: ServiceCode): F[QueryFailure, Option[Service]] =
+          sql.execute("get-service-by-code") {
+            sql"""
+              select id, code, category_id, name
+              from service
+              where code = $code
             """.query[Service].option
           }
 
         def getServicesByCategory(categoryId: CategoryId): F[QueryFailure, List[Service]] =
           sql.execute("get-services-by-category") {
             sql"""
-              select id, category_id, name
+              select id, code, category_id, name
               from service
               where category_id = $categoryId
               order by name asc

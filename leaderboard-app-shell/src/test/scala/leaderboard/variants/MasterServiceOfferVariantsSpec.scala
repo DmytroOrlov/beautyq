@@ -25,9 +25,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offer-variant-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offer-variant-category-$categoryId")
           master      = Master(masterId, s"offer-variant-master-$masterId")
-          service     = Service(serviceId, categoryId, s"offer-variant-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"offer-variant-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -66,9 +66,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offer-variant-attrs-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offer-variant-attrs-category-$categoryId")
           master      = Master(masterId, s"offer-variant-attrs-master-$masterId")
-          service     = Service(serviceId, categoryId, s"offer-variant-attrs-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"offer-variant-attrs-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -150,9 +150,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"missing-location-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"missing-location-category-$categoryId")
           master      = Master(masterId, s"missing-location-master-$masterId")
-          service     = Service(serviceId, categoryId, s"missing-location-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"missing-location-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
@@ -221,9 +221,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"variant-schema-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variant-schema-category-$categoryId")
           master      = Master(masterId, s"variant-schema-master-$masterId")
-          service     = Service(serviceId, categoryId, s"variant-schema-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"variant-schema-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -279,9 +279,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"variant-required-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variant-required-category-$categoryId")
           master      = Master(masterId, s"variant-required-master-$masterId")
-          service     = Service(serviceId, categoryId, s"variant-required-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"variant-required-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -329,10 +329,10 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"mismatch-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"mismatch-category-$categoryId")
           master1     = Master(master1Id, s"mismatch-master-a-$master1Id")
           master2     = Master(master2Id, s"mismatch-master-b-$master2Id")
-          service     = Service(serviceId, categoryId, s"mismatch-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"mismatch-service-$serviceId")
           offer       = MasterServiceOffer(offerId, master1Id, serviceId)
           location    = MasterLocation(
             locationId,
@@ -376,9 +376,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           location2Id <- rnd[MasterLocationId]
           variant1Id  <- rnd[MasterServiceOfferVariantId]
           variant2Id  <- rnd[MasterServiceOfferVariantId]
-          category     = Category(categoryId, rootCategoryId, 0, s"variants-by-offer-category-$categoryId")
+          category     = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-by-offer-category-$categoryId")
           master       = Master(masterId, s"variants-by-offer-master-$masterId")
-          service      = Service(serviceId, categoryId, s"variants-by-offer-service-$serviceId")
+          service      = Service(serviceId, testServiceCode(serviceId), categoryId, s"variants-by-offer-service-$serviceId")
           offer        = MasterServiceOffer(offerId, masterId, serviceId)
           location1    = MasterLocation(
             location1Id,
@@ -430,10 +430,10 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           locationId <- rnd[MasterLocationId]
           variant1Id <- rnd[MasterServiceOfferVariantId]
           variant2Id <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"variants-by-location-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-by-location-category-$categoryId")
           master      = Master(masterId, s"variants-by-location-master-$masterId")
-          service1    = Service(service1Id, categoryId, s"variants-by-location-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"variants-by-location-service-b-$service2Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"variants-by-location-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"variants-by-location-service-b-$service2Id")
           offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
           location    = MasterLocation(
@@ -482,10 +482,10 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           variant1Id  <- rnd[MasterServiceOfferVariantId]
           variant2Id  <- rnd[MasterServiceOfferVariantId]
           otherId     <- rnd[MasterServiceOfferVariantId]
-          category     = Category(categoryId, rootCategoryId, 0, s"variants-filter-offer-category-$categoryId")
+          category     = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-filter-offer-category-$categoryId")
           master       = Master(masterId, s"variants-filter-offer-master-$masterId")
-          service1     = Service(service1Id, categoryId, s"variants-filter-offer-service-a-$service1Id")
-          service2     = Service(service2Id, categoryId, s"variants-filter-offer-service-b-$service2Id")
+          service1     = Service(service1Id, testServiceCode(service1Id), categoryId, s"variants-filter-offer-service-a-$service1Id")
+          service2     = Service(service2Id, testServiceCode(service2Id), categoryId, s"variants-filter-offer-service-b-$service2Id")
           offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
           location1    = MasterLocation(
@@ -553,10 +553,10 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           variant1Id  <- rnd[MasterServiceOfferVariantId]
           variant2Id  <- rnd[MasterServiceOfferVariantId]
           otherId     <- rnd[MasterServiceOfferVariantId]
-          category     = Category(categoryId, rootCategoryId, 0, s"variants-filter-location-category-$categoryId")
+          category     = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-filter-location-category-$categoryId")
           master       = Master(masterId, s"variants-filter-location-master-$masterId")
-          service1     = Service(service1Id, categoryId, s"variants-filter-location-service-a-$service1Id")
-          service2     = Service(service2Id, categoryId, s"variants-filter-location-service-b-$service2Id")
+          service1     = Service(service1Id, testServiceCode(service1Id), categoryId, s"variants-filter-location-service-a-$service1Id")
+          service2     = Service(service2Id, testServiceCode(service2Id), categoryId, s"variants-filter-location-service-b-$service2Id")
           offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
           location1    = MasterLocation(
@@ -611,9 +611,9 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           location1Id <- rnd[MasterLocationId]
           location2Id <- rnd[MasterLocationId]
           location3Id <- rnd[MasterLocationId]
-          category     = Category(categoryId, rootCategoryId, 0, s"variants-sort-offer-category-$categoryId")
+          category     = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-sort-offer-category-$categoryId")
           master       = Master(masterId, s"variants-sort-offer-master-$masterId")
-          service      = Service(serviceId, categoryId, s"variants-sort-offer-service-$serviceId")
+          service      = Service(serviceId, testServiceCode(serviceId), categoryId, s"variants-sort-offer-service-$serviceId")
           offer        = MasterServiceOffer(offerId, masterId, serviceId)
           location1    = MasterLocation(
             location1Id,
@@ -679,11 +679,11 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           offer2Id   <- rnd[MasterServiceOfferId]
           offer3Id   <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
-          category    = Category(categoryId, rootCategoryId, 0, s"variants-sort-location-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-sort-location-category-$categoryId")
           master      = Master(masterId, s"variants-sort-location-master-$masterId")
-          service1    = Service(service1Id, categoryId, s"variants-sort-location-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"variants-sort-location-service-b-$service2Id")
-          service3    = Service(service3Id, categoryId, s"variants-sort-location-service-c-$service3Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"variants-sort-location-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"variants-sort-location-service-b-$service2Id")
+          service3    = Service(service3Id, testServiceCode(service3Id), categoryId, s"variants-sort-location-service-c-$service3Id")
           offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
           offer3      = MasterServiceOffer(offer3Id, masterId, service3Id)
@@ -738,10 +738,10 @@ abstract class MasterServiceOfferVariantsSpec extends LeaderboardTest with Varia
           location1Id <- rnd[MasterLocationId]
           location2Id <- rnd[MasterLocationId]
           variantId   <- rnd[MasterServiceOfferVariantId]
-          category     = Category(categoryId, rootCategoryId, 0, s"variants-overwrite-category-$categoryId")
+          category     = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variants-overwrite-category-$categoryId")
           master       = Master(masterId, s"variants-overwrite-master-$masterId")
-          service1     = Service(service1Id, categoryId, s"variants-overwrite-service-a-$service1Id")
-          service2     = Service(service2Id, categoryId, s"variants-overwrite-service-b-$service2Id")
+          service1     = Service(service1Id, testServiceCode(service1Id), categoryId, s"variants-overwrite-service-a-$service1Id")
+          service2     = Service(service2Id, testServiceCode(service2Id), categoryId, s"variants-overwrite-service-b-$service2Id")
           offer1       = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2       = MasterServiceOffer(offer2Id, masterId, service2Id)
           location1    = MasterLocation(

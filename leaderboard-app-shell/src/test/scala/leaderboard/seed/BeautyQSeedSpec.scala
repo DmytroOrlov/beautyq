@@ -28,6 +28,119 @@ abstract class BeautyQSeedSpec extends LeaderboardTest {
   private val knownOfferId = MasterServiceOfferId(UUID.fromString("73a9fc17-4f0d-5417-b04d-a65f8fdb2399"))
   private val knownVariantId = MasterServiceOfferVariantId(UUID.fromString("1fcd6e17-c6bb-5901-9f63-205668897659"))
 
+  private val expectedCategories: List[Category] = List(
+    Category(Category.rootCategoryId, CategoryCode.unsafeFromString("all_services"), Category.rootCategoryId, 0, "Все услуги"),
+    Category(
+      Category.CategoryId(UUID.fromString("e1558eb7-8f7d-5b71-844d-71cc37a192e8")),
+      CategoryCode.unsafeFromString("nails"),
+      Category.rootCategoryId,
+      1,
+      "Ногти, маникюр и педикюр",
+    ),
+    Category(
+      Category.CategoryId(UUID.fromString("9d44c82f-2255-55de-a18a-3252e4549e92")),
+      CategoryCode.unsafeFromString("lashes_brows_pmu"),
+      Category.rootCategoryId,
+      1,
+      "Ресницы, брови и permanent make-up",
+    ),
+    Category(
+      Category.CategoryId(UUID.fromString("ee6edda9-8181-568b-b29f-2bcdb0f756ae")),
+      CategoryCode.unsafeFromString("facial_care"),
+      Category.rootCategoryId,
+      1,
+      "Косметология лица и уход",
+    ),
+    Category(
+      Category.CategoryId(UUID.fromString("877ea49e-6600-564f-983e-e319025b8ad0")),
+      CategoryCode.unsafeFromString("hair_removal"),
+      Category.rootCategoryId,
+      1,
+      "Удаление волос",
+    ),
+  )
+
+  private val expectedServices: List[Service] = List(
+    Service(
+      ServiceId(UUID.fromString("a1085253-a9bf-517c-80c4-262b0bf9a5a4")),
+      ServiceCode.unsafeFromString("manicure"),
+      Category.CategoryId(UUID.fromString("e1558eb7-8f7d-5b71-844d-71cc37a192e8")),
+      "Маникюр",
+    ),
+    Service(
+      ServiceId(UUID.fromString("a9d6911c-f69a-5b3b-86c7-8241d13272ec")),
+      ServiceCode.unsafeFromString("pedicure"),
+      Category.CategoryId(UUID.fromString("e1558eb7-8f7d-5b71-844d-71cc37a192e8")),
+      "Педикюр",
+    ),
+    Service(
+      ServiceId(UUID.fromString("9587c0ce-951e-5dae-8dae-a522e189567b")),
+      ServiceCode.unsafeFromString("nail_modeling"),
+      Category.CategoryId(UUID.fromString("e1558eb7-8f7d-5b71-844d-71cc37a192e8")),
+      "Наращивание и моделирование ногтей",
+    ),
+    Service(
+      ServiceId(UUID.fromString("3e6816cc-1b0d-5420-9113-f13d78802a5e")),
+      ServiceCode.unsafeFromString("lashes"),
+      Category.CategoryId(UUID.fromString("9d44c82f-2255-55de-a18a-3252e4549e92")),
+      "Ресницы",
+    ),
+    Service(
+      ServiceId(UUID.fromString("504424ba-7d46-5cc9-a6b7-1ee064e610fd")),
+      ServiceCode.unsafeFromString("brows"),
+      Category.CategoryId(UUID.fromString("9d44c82f-2255-55de-a18a-3252e4549e92")),
+      "Брови",
+    ),
+    Service(
+      ServiceId(UUID.fromString("5fc44f25-2cbb-56e3-a336-41b10a63569b")),
+      ServiceCode.unsafeFromString("pmu"),
+      Category.CategoryId(UUID.fromString("9d44c82f-2255-55de-a18a-3252e4549e92")),
+      "Permanent Make-Up",
+    ),
+    Service(
+      ServiceId(UUID.fromString("8d2f6611-e23b-5626-848c-9022f6e7d76c")),
+      ServiceCode.unsafeFromString("hair_removal"),
+      Category.CategoryId(UUID.fromString("877ea49e-6600-564f-983e-e319025b8ad0")),
+      "Удаление волос",
+    ),
+    Service(
+      ServiceId(UUID.fromString("bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d")),
+      ServiceCode.unsafeFromString("facial"),
+      Category.CategoryId(UUID.fromString("ee6edda9-8181-568b-b29f-2bcdb0f756ae")),
+      "Косметология лица",
+    ),
+    Service(
+      ServiceId(UUID.fromString("51b23898-5baf-5a7a-8a00-52868181b650")),
+      ServiceCode.unsafeFromString("mobile_beauty"),
+      Category.CategoryId(UUID.fromString("ee6edda9-8181-568b-b29f-2bcdb0f756ae")),
+      "Выездной уход и мини-группы",
+    ),
+  )
+
+  private def loadRawSeedJsonOrDie: IO[Nothing, Json] = {
+    val result = for {
+      input <- Option(getClass.getClassLoader.getResourceAsStream(BeautyQSeedLoader.DefaultResourcePath))
+        .toRight(s"Resource ${BeautyQSeedLoader.DefaultResourcePath} not found")
+      content <- Using(input)(stream => new String(stream.readAllBytes(), StandardCharsets.UTF_8)).toEither.left.map(_.getMessage)
+      json <- parse(content).left.map(_.getMessage)
+    } yield json
+
+    result match {
+      case Right(value) =>
+        ZIO.succeed(value)
+      case Left(error) =>
+        ZIO.die(new RuntimeException(error))
+    }
+  }
+
+  private def loadServiceLabelsOrDie(json: Json): IO[Nothing, Set[String]] =
+    json.hcursor.downField("sourceMaps").downField("variantLabels").as[Map[String, Map[String, String]]] match {
+      case Right(labels) =>
+        ZIO.succeed(labels.values.flatMap(_.get("service")).toSet)
+      case Left(error) =>
+        ZIO.die(new RuntimeException(error.getMessage))
+    }
+
   private def loadSkippedRecordsFromResourceOrDie: IO[Nothing, List[Json]] = {
     val result = for {
       input <- Option(getClass.getClassLoader.getResourceAsStream(BeautyQSeedLoader.DefaultResourcePath))
@@ -144,6 +257,34 @@ abstract class BeautyQSeedSpec extends LeaderboardTest {
       } yield ()
     }
 
+    "expose the exact accepted categories and services, unchanged apart from the added code" in {
+      for {
+        seed <- loadSeedOrDie
+        _ <- assertIO(seed.categories == expectedCategories)
+        _ <- assertIO(seed.services == expectedServices)
+      } yield ()
+    }
+
+    "keep category and service codes unique" in {
+      for {
+        seed <- loadSeedOrDie
+        categoryCodes = seed.categories.map(_.code)
+        serviceCodes = seed.services.map(_.code)
+        _ <- assertIO(categoryCodes.distinct.size == categoryCodes.size)
+        _ <- assertIO(serviceCodes.distinct.size == serviceCodes.size)
+      } yield ()
+    }
+
+    "match every source-map service label to an accepted service code" in {
+      for {
+        seed <- loadSeedOrDie
+        rawJson <- loadRawSeedJsonOrDie
+        labeledCodes <- loadServiceLabelsOrDie(rawJson)
+        acceptedCodes = seed.services.map(_.code.value).toSet
+        _ <- assertIO(labeledCodes == acceptedCodes)
+      } yield ()
+    }
+
     "insert seed into repositories and keep known records readable" in {
       (
         inserter: BeautyQSeedInserter[IO],
@@ -171,6 +312,23 @@ abstract class BeautyQSeedSpec extends LeaderboardTest {
           _ <- assertIO(offer.nonEmpty)
           variant <- variants.getMasterServiceOfferVariant(knownVariantId)
           _ <- assertIO(variant.nonEmpty)
+        } yield ()
+    }
+
+    "look up the known category and service by their accepted code after seed insertion" in {
+      (
+        inserter: BeautyQSeedInserter[IO],
+        categories: Categories[IO],
+        services: Services[IO],
+        variants: MasterServiceOfferVariants[IO],
+      ) =>
+        for {
+          seed <- loadSeedOrDie
+          _ <- ensureSeedLoaded(seed, inserter, variants)
+          categoryByCode <- categories.getCategoryByCode(CategoryCode.unsafeFromString("nails"))
+          serviceByCode <- services.getServiceByCode(ServiceCode.unsafeFromString("manicure"))
+          _ <- assertIO(categoryByCode == expectedCategories.find(_.code.value == "nails"))
+          _ <- assertIO(serviceByCode == expectedServices.find(_.code.value == "manicure"))
         } yield ()
     }
 
