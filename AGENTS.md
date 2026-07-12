@@ -26,6 +26,14 @@
 * If preserving behavior requires domain names in a reusable layer, stop and report the boundary conflict.
 * Prefer small explicit adapters over broad "generic" code that secretly knows one domain.
 
+### Business-facing declaration DSLs
+
+* Business/domain declarations explicitly state choices that may legitimately differ: topology, identity selection, String keyword/text meaning, capabilities, public names, dynamic inventories, projection joins, invariants, and backend policy.
+* Reusable layers derive tautological evidence: nominal codecs/type IDs, direct value type/path/default ID/semantic, extraction presence, unambiguous non-String kind, registration order, identity exclusion, document assembly, and structural rendering.
+* "Explicit" means business policy is explicit; it does not mean repeating facts already fixed by a selector, type, or declaration order.
+* Repeated name/type/path/semantic literals, parallel ordered field lists, manual document folds, or domain-owned generic renderers are review red flags: improve the reusable authoring boundary before accepting the domain declaration.
+* Low-level constructors may remain platform escape hatches, but they are not the canonical new-domain example.
+
 ## Verification
 
 Labels:
@@ -45,28 +53,39 @@ Do not call a patch commit-ready from focused checks alone when the task touches
 ## sbt rules
 
 * Do not run sbt commands in parallel; run one chained sbt command.
-* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run requested focused sbt tasks from the repo working directory with `sbt --batch --no-global -Dsbt.server=false`, and keep sbt tasks quoted.
+* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run requested focused sbt tasks from the repo working directory, keep sbt tasks quoted, and use the sandbox-safe launcher options documented below.
+* Scope compilation and tests to the owning sbt subproject. A root aggregate `Test/compile` is not a focused prerequisite for one spec and may initialize unrelated application graphs or socket-using compile-time checks.
 * If the requested command is full-suite verification, do not run it as a delegated agent. Report `VERIFICATION BLOCKED` by agent policy and ask coordinator/user to run it.
 * Do not run malformed or diagnostic variants such as `sbt Test/compile ...`, `sbt about`, `sbt ... | tail`, `sbt ... | head`, `sbt ... | tee`, or any command that rewrites, wraps, filters, or decomposes the requested validation command.
 * Do not run setup probes (`type/which sbt`, `java -version`, `echo $JAVA_HOME`, `echo $SBT_OPTS`, `ls/cat .sbtopts .jvmopts`), inspect sbt wrapper/launcher lines, or read resolved tool paths outside the repo unless the exact command fails with a missing-command/setup error.
-* If sbt hits local cache permission failures, request the needed access only for `~/.sbt/boot`, `~/.sbt/1.0`, or `~/.ivy2`, then retry the same command once.
-* If escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
+* Sandboxed agents must not request write access to home-directory sbt or Ivy caches. Before their first sbt command, create the ignored repo-local directory `target/codex-sbt/ivy2`, then add `-Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2` to the normal command. `-Dsbt.server=false` alone does not bypass the sbt launcher boot socket.
+* If dependency resolution also fails because the shared Coursier cache is read-only, use the official sandboxed Coursier setup `COURSIER_CACHE=target/codex-sbt/coursier-cache` for the same command. Network approval may still be required to download an artifact that is not already cached; do not request home-directory write access instead.
+* If sbt reaches the requested test or compile task and that project code itself fails to bind a Unix or TCP socket with `Operation not permitted`, the launcher/cache workaround has succeeded. Request sandbox escalation only when that exact focused task genuinely requires socket access; do not change source to evade the sandbox.
+* If required socket or network escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
 * Do not edit source to work around sbt locks.
 * If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup: clean target directories, then rerun the same command. Report it as cleanup, not source change.
 
 Preferred focused shape:
 
 ```bash
-sbt --batch --no-global -Dsbt.server=false 'Test/compile' 'testOnly package.SomeSpec'
+mkdir -p target/codex-sbt/ivy2
+sbt --batch --no-global -Dsbt.server=false -Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2 'projectName/testOnly package.SomeSpec'
 ```
 
-## Cleanup / reset policy
+## Database schema and reset policy
 
-* Do not run Docker cleanup, database reset, broad target deletion, or cold reset as a first response to unexplained failures.
-* Use the smallest relevant reset only when the failure indicates stale generated state, stale build artifacts, stale containers, or stale database schema/data state, especially after schema or migration-related changes.
-* Report the reset as environment/state cleanup, not as a source fix.
-* Rerun the same validation command after cleanup.
-* Do not use cleanup to hide a reproducible source/test failure.
+* This repository has no persistent production BeautyQ database that requires forward schema migration.
+* Do not add `ALTER TABLE`, data backfills, legacy fallback values, migration stages, or a migration framework for application schema changes.
+* Change the fresh `CREATE TABLE` schema, seed data, repositories, and tests directly.
+* Reused Distage Docker containers may retain stale schema or data after an intentional schema change. Reset them with:
+
+```bash
+docker rm -f $(docker ps -a -q -f "label=distage.type") || true
+```
+
+* Run this reset only for confirmed stale Distage container/schema state, not as a response to an unexplained source or test failure.
+* After the reset, rerun the same validation command.
+* Report the reset as environment cleanup, not as a source fix.
 
 ## DI, lifecycle, and graph rules
 

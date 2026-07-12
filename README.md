@@ -8,25 +8,22 @@ This repository currently includes BeautyQ search work inside the broader distag
 Start here:
 
 * `AGENTS.md` for agent rules in the repository
-* `docs/README.md` for the docs map
+* [Documentation map](docs/README.md)
+* [BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) for the current plan and authoritative live implementation state
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for the locked BeautyQ local/test Qdrant supplement gate
 * `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline-plus-supplement architecture
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator workflow and anti-scope-drift rules
 
 Current coordinator focus:
 
-The module split and catalog/materialization derivation closeout are done.
+BeautyQ Search Framework Gen2 is the active project. Gen2 will be built side by side in a separate
+module DAG, followed by one final cutover and removal of Gen1 search modules.
 
-Current coordinator state:
+Current search-framework work is tracked in the
+[BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md).
 
-* `docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md` is the closeout owner.
-* It records that no catalog/materialization derivation blocker remains.
-* `docs/search/NEW_DOMAIN_ONBOARDING.md` is the owner for starting new domains from the generic
-  surfaces.
-* Any next large code patch must start from a fresh source-truth bundle and an explicit
-  policy/code surface, not from an assumed remaining catalog-derivation task.
-
-The handoff includes the accepted A–F/closeout summary.
+The earlier catalog/materialization closeout and new-domain onboarding documents remain reference
+material, not the owner of the current coordinator task.
 
 The route/Qdrant sections below are current operational truth.
 
