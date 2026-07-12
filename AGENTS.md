@@ -45,19 +45,23 @@ Do not call a patch commit-ready from focused checks alone when the task touches
 ## sbt rules
 
 * Do not run sbt commands in parallel; run one chained sbt command.
-* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run requested focused sbt tasks from the repo working directory with `sbt --batch --no-global -Dsbt.server=false`, and keep sbt tasks quoted.
+* If a repo-local validation wrapper is provided, run it exactly unless it is full-suite verification. Otherwise run requested focused sbt tasks from the repo working directory, keep sbt tasks quoted, and use the sandbox-safe launcher options documented below.
+* Scope compilation and tests to the owning sbt subproject. A root aggregate `Test/compile` is not a focused prerequisite for one spec and may initialize unrelated application graphs or socket-using compile-time checks.
 * If the requested command is full-suite verification, do not run it as a delegated agent. Report `VERIFICATION BLOCKED` by agent policy and ask coordinator/user to run it.
 * Do not run malformed or diagnostic variants such as `sbt Test/compile ...`, `sbt about`, `sbt ... | tail`, `sbt ... | head`, `sbt ... | tee`, or any command that rewrites, wraps, filters, or decomposes the requested validation command.
 * Do not run setup probes (`type/which sbt`, `java -version`, `echo $JAVA_HOME`, `echo $SBT_OPTS`, `ls/cat .sbtopts .jvmopts`), inspect sbt wrapper/launcher lines, or read resolved tool paths outside the repo unless the exact command fails with a missing-command/setup error.
-* If sbt hits local cache permission failures, request the needed access only for `~/.sbt/boot`, `~/.sbt/1.0`, or `~/.ivy2`, then retry the same command once.
-* If escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
+* Sandboxed agents must not request write access to home-directory sbt or Ivy caches. Before their first sbt command, create the ignored repo-local directory `target/codex-sbt/ivy2`, then add `-Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2` to the normal command. `-Dsbt.server=false` alone does not bypass the sbt launcher boot socket.
+* If dependency resolution also fails because the shared Coursier cache is read-only, use the official sandboxed Coursier setup `COURSIER_CACHE=target/codex-sbt/coursier-cache` for the same command. Network approval may still be required to download an artifact that is not already cached; do not request home-directory write access instead.
+* If sbt reaches the requested test or compile task and that project code itself fails to bind a Unix or TCP socket with `Operation not permitted`, the launcher/cache workaround has succeeded. Request sandbox escalation only when that exact focused task genuinely requires socket access; do not change source to evade the sandbox.
+* If required socket or network escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
 * Do not edit source to work around sbt locks.
 * If sbt fails with stale recursive target / `File name too long`, treat it as build-artifact cleanup: clean target directories, then rerun the same command. Report it as cleanup, not source change.
 
 Preferred focused shape:
 
 ```bash
-sbt --batch --no-global -Dsbt.server=false 'Test/compile' 'testOnly package.SomeSpec'
+mkdir -p target/codex-sbt/ivy2
+sbt --batch --no-global -Dsbt.server=false -Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2 'projectName/testOnly package.SomeSpec'
 ```
 
 ## Cleanup / reset policy
