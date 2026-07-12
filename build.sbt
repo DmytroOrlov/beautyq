@@ -140,6 +140,7 @@ lazy val beautyqModel = project
   .settings(name := "beautyq-model")
   .pipe(lightweightSettings(Seq(
     Deps.circeGeneric,
+    Deps.scalatest % Test,
   )))
   .dependsOn(`leaderboard-core`)
 
@@ -178,6 +179,72 @@ lazy val beautyqSearchWiring = project
   )))
   .dependsOn(beautyqSearchContract, beautyqSearchMaterialization, `search-elasticsearch`, `search-qdrant`)
 
+// --- BeautyQ Search Gen2 (side by side with Gen1; see docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) ---
+// Independent module DAG. No Gen2 project may depend on a Gen1 search project; enforced by
+// SearchGen2ModuleFirewallSpec. Brick 0 adds only the module graph and firewall, no search behavior.
+
+lazy val searchGen2Contract = project
+  .in(file("search-gen2-contract"))
+  .settings(name := "search-gen2-contract")
+  .pipe(lightweightSettings(Seq(
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(`leaderboard-core`)
+
+lazy val searchGen2Core = project
+  .in(file("search-gen2-core"))
+  .settings(name := "search-gen2-core")
+  .pipe(lightweightSettings(Seq(
+    Deps.distageCore,
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(searchGen2Contract)
+
+lazy val searchGen2Elasticsearch = project
+  .in(file("search-gen2-elasticsearch"))
+  .settings(name := "search-gen2-elasticsearch")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(searchGen2Contract, searchGen2Core)
+
+lazy val searchGen2Qdrant = project
+  .in(file("search-gen2-qdrant"))
+  .settings(name := "search-gen2-qdrant")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(searchGen2Contract, searchGen2Core)
+
+lazy val beautyqSearchGen2Contract = project
+  .in(file("beautyq-search-gen2-contract"))
+  .settings(name := "beautyq-search-gen2-contract")
+  .pipe(lightweightSettings(Seq(
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(searchGen2Contract, repoCore, beautyqModel)
+
+lazy val beautyqSearchGen2Materialization = project
+  .in(file("beautyq-search-gen2-materialization"))
+  .settings(name := "beautyq-search-gen2-materialization")
+  .pipe(lightweightSettings(Seq(
+    Deps.distageCore,
+    Deps.doobie,
+    Deps.doobiePostgres,
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(beautyqSearchGen2Contract, searchGen2Core, beautyqSearchRepositories, repoCore, beautyqModel)
+
+lazy val beautyqSearchGen2Wiring = project
+  .in(file("beautyq-search-gen2-wiring"))
+  .settings(name := "beautyq-search-gen2-wiring")
+  .pipe(lightweightSettings(Seq(
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(beautyqSearchGen2Contract, beautyqSearchGen2Materialization, searchGen2Core, searchGen2Elasticsearch, searchGen2Qdrant)
+
+lazy val beautyqSearchGen2Eval = project
+  .in(file("beautyq-search-gen2-eval"))
+  .settings(name := "beautyq-search-gen2-eval")
+  .pipe(lightweightSettings(Nil))
+  .dependsOn(beautyqSearchGen2Wiring)
+
 lazy val appServices = project
   .in(file("app-services"))
   .settings(name := "app-services")
@@ -205,6 +272,7 @@ lazy val appHttp = project
 lazy val `leaderboard-app-shell` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
   .dependsOn(beautyqSearchWiring, appHttp, appServices)
+  .dependsOn(beautyqSearchGen2Materialization % "test->compile")
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))
@@ -224,6 +292,14 @@ lazy val `distage-example` = project
     beautyqSearchRepositories,
     beautyqSearchMaterialization,
     beautyqSearchWiring,
+    searchGen2Contract,
+    searchGen2Core,
+    searchGen2Elasticsearch,
+    searchGen2Qdrant,
+    beautyqSearchGen2Contract,
+    beautyqSearchGen2Materialization,
+    beautyqSearchGen2Wiring,
+    beautyqSearchGen2Eval,
     appHttp,
     appServices,
     `leaderboard-app-shell`,
