@@ -9,19 +9,19 @@ import doobie.util.fragments
 import leaderboard.model.{AttributeDefinition, AttributeMap, BigDecimalAttributeDefinition, BooleanAttributeDefinition, CodedEnumValue, EnumAttributeDefinition, IntAttributeDefinition, MasterServiceOfferVariant, MasterServiceOfferVariantAttributes, MasterServiceOfferVariantId, QueryFailure}
 import leaderboard.model.AttributeDefinition.AnyAttributeDefinition
 
-private[repo] case class MasterServiceOfferVariantAdditionalAttributes(
+private[leaderboard] case class MasterServiceOfferVariantAdditionalAttributes(
   intAttributes: Map[String, Int],
   bigDecimalAttributes: Map[String, BigDecimal],
   enumAttributes: Map[String, CodedEnumValue],
   booleanAttributes: Map[String, Boolean],
 )
 
-private[repo] object MasterServiceOfferVariantAdditionalAttributes {
+private[leaderboard] object MasterServiceOfferVariantAdditionalAttributes {
   val empty: MasterServiceOfferVariantAdditionalAttributes =
     MasterServiceOfferVariantAdditionalAttributes(Map.empty, Map.empty, Map.empty, Map.empty)
 }
 
-private[repo] object MasterServiceOfferVariantAttributesRepository {
+private[leaderboard] object MasterServiceOfferVariantAttributesRepository {
   private def unknownAttributeCode(queryName: String, attributeCode: String): QueryFailure =
     QueryFailure.operation(queryName, s"Unknown MasterServiceOfferVariant attribute code: $attributeCode")
 
