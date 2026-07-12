@@ -4,7 +4,7 @@ import leaderboard.model.*
 import leaderboard.model.Category.{CategoryId, rootCategoryId}
 import doobie.implicits.*
 import leaderboard.repo.given
-import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
+import leaderboard.repo.{Categories, MasterLocations, MasterServiceOfferVariantAttributesRepository, MasterServiceOfferVariants, MasterServiceOffers, Masters, ServiceVariantSchemas, Services}
 import leaderboard.sql.SQL
 import zio.{IO, ZIO}
 
@@ -29,9 +29,9 @@ abstract class VariantAttributeStorageSpec extends LeaderboardTest with VariantT
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"variant-enum-mismatch-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variant-enum-mismatch-category-$categoryId")
           master      = Master(masterId, s"variant-enum-mismatch-master-$masterId")
-          service     = Service(serviceId, categoryId, s"variant-enum-mismatch-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"variant-enum-mismatch-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -112,6 +112,58 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
       )
       .mapError(error => QueryFailure.operation("make-master-service-offer-variant", error.message))
 
+  // Inserts (or upserts) one malformed numeric-attribute row, selects every numeric row for the target
+  // variant, and deletes the inserted row - all inside the one `SQL.execute` transaction, so the
+  // malformed row is visible only within this probe's own transaction and is gone again before commit.
+  // Decoding happens afterward, outside the transaction, through the exact production decoders so the
+  // test still proves the real decode-failure behavior against rows it selected itself.
+  private def probeStoredNumericAttributes(
+    db: SQL[IO],
+    variantId: MasterServiceOfferVariantId,
+    attributeCode: String,
+    value: BigDecimal,
+    operationName: String,
+  ): IO[QueryFailure, Either[QueryFailure, MasterServiceOfferVariantAttributes]] =
+    db.execute(operationName) {
+      for {
+        _ <- sql"""
+          insert into master_service_offer_variant_numeric_attributes (
+            master_service_offer_variant_id,
+            attribute_code,
+            value
+          )
+          values (
+            $variantId,
+            $attributeCode,
+            $value
+          )
+          on conflict (master_service_offer_variant_id, attribute_code) do update set
+            value = excluded.value
+        """.update.run
+
+        rows <- sql"""
+          select attribute_code, value
+          from master_service_offer_variant_numeric_attributes
+          where master_service_offer_variant_id = $variantId
+          order by attribute_code asc
+        """.query[(String, BigDecimal)].to[List]
+
+        _ <- sql"""
+          delete from master_service_offer_variant_numeric_attributes
+          where master_service_offer_variant_id = $variantId
+            and attribute_code = $attributeCode
+        """.update.run
+      } yield rows
+    }.map {
+      rows =>
+        MasterServiceOfferVariantAttributesRepository
+          .decodeStoredNumericAttributes("load-master-service-offer-variant-attributes", rows.toMap)
+          .flatMap(
+            MasterServiceOfferVariantAttributesRepository
+              .decodeStoredAttributes("load-master-service-offer-variant-attributes", _)
+          )
+    }
+
   "MasterServiceOfferVariants numeric attribute storage" should {
     "store Int attributes in the numeric table and load them back as typed Int values" in {
       (rnd: Rnd[IO],
@@ -131,9 +183,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-int-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-int-category-$categoryId")
           master      = Master(masterId, s"numeric-int-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-int-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-int-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -182,9 +234,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-decimal-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-decimal-category-$categoryId")
           master      = Master(masterId, s"numeric-decimal-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-decimal-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-decimal-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -238,9 +290,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-mixed-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-mixed-category-$categoryId")
           master      = Master(masterId, s"numeric-mixed-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-mixed-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-mixed-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -306,9 +358,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-enum-hair-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-enum-hair-category-$categoryId")
           master      = Master(masterId, s"numeric-enum-hair-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-enum-hair-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-enum-hair-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -365,9 +417,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-enum-nail-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-enum-nail-category-$categoryId")
           master      = Master(masterId, s"numeric-enum-nail-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-enum-nail-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-enum-nail-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -424,9 +476,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-mixed-all-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-mixed-all-category-$categoryId")
           master      = Master(masterId, s"numeric-mixed-all-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-mixed-all-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-mixed-all-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -502,9 +554,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-bool-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-bool-category-$categoryId")
           master      = Master(masterId, s"numeric-bool-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-bool-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-bool-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -569,9 +621,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-new-enums-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-new-enums-category-$categoryId")
           master      = Master(masterId, s"numeric-new-enums-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-new-enums-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-new-enums-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -659,9 +711,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-mixed-full-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-mixed-full-category-$categoryId")
           master      = Master(masterId, s"numeric-mixed-full-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-mixed-full-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-mixed-full-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -738,9 +790,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           location2Id <- rnd[MasterLocationId]
           variant1Id  <- rnd[MasterServiceOfferVariantId]
           variant2Id  <- rnd[MasterServiceOfferVariantId]
-          category     = Category(categoryId, rootCategoryId, 0, s"numeric-loadmany-category-$categoryId")
+          category     = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-loadmany-category-$categoryId")
           master       = Master(masterId, s"numeric-loadmany-master-$masterId")
-          service      = Service(serviceId, categoryId, s"numeric-loadmany-service-$serviceId")
+          service      = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-loadmany-service-$serviceId")
           offer        = MasterServiceOffer(offerId, masterId, serviceId)
           location1    = MasterLocation(
             location1Id,
@@ -809,9 +861,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-invalid-int-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-invalid-int-category-$categoryId")
           master      = Master(masterId, s"numeric-invalid-int-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-invalid-int-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-invalid-int-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -830,22 +882,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-invalid-master-service-offer-variant-numeric-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${AttributeDefinition.SessionCount.code},
-                 |  ${BigDecimal("3.5")}
-                 |)
-                 |on conflict (master_service_offer_variant_id, attribute_code) do update set
-                 |  value = excluded.value
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            AttributeDefinition.SessionCount.code,
+            BigDecimal("3.5"),
+            "probe-invalid-int-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(
             result.left.exists {
               case QueryFailure.OperationFailure(operationName, message) =>
@@ -876,9 +919,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-out-of-range-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-out-of-range-category-$categoryId")
           master      = Master(masterId, s"numeric-out-of-range-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-out-of-range-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-out-of-range-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -897,22 +940,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-out-of-range-master-service-offer-variant-numeric-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${AttributeDefinition.SessionCount.code},
-                 |  ${BigDecimal("2147483648")}
-                 |)
-                 |on conflict (master_service_offer_variant_id, attribute_code) do update set
-                 |  value = excluded.value
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            AttributeDefinition.SessionCount.code,
+            BigDecimal("2147483648"),
+            "probe-out-of-range-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(
             result.left.exists {
               case QueryFailure.OperationFailure(operationName, message) =>
@@ -946,9 +980,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-invalid-bool-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-invalid-bool-category-$categoryId")
           master      = Master(masterId, s"numeric-invalid-bool-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-invalid-bool-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-invalid-bool-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -967,22 +1001,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-invalid-master-service-offer-variant-boolean-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${AttributeDefinition.WithRemoval.code},
-                 |  ${BigDecimal("2")}
-                 |)
-                 |on conflict (master_service_offer_variant_id, attribute_code) do update set
-                 |  value = excluded.value
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            AttributeDefinition.WithRemoval.code,
+            BigDecimal("2"),
+            "probe-invalid-boolean-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(result.left.exists(_.isInstanceOf[QueryFailure.OperationFailure]))
         } yield ()
     }
@@ -1005,9 +1030,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-invalid-bool-decimal-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-invalid-bool-decimal-category-$categoryId")
           master      = Master(masterId, s"numeric-invalid-bool-decimal-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-invalid-bool-decimal-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-invalid-bool-decimal-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -1026,22 +1051,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-invalid-master-service-offer-variant-boolean-decimal-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${AttributeDefinition.WithRemoval.code},
-                 |  ${BigDecimal("0.5")}
-                 |)
-                 |on conflict (master_service_offer_variant_id, attribute_code) do update set
-                 |  value = excluded.value
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            AttributeDefinition.WithRemoval.code,
+            BigDecimal("0.5"),
+            "probe-invalid-boolean-decimal-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(result.left.exists(_.isInstanceOf[QueryFailure.OperationFailure]))
         } yield ()
     }
@@ -1064,9 +1080,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-unknown-enum-code-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-unknown-enum-code-category-$categoryId")
           master      = Master(masterId, s"numeric-unknown-enum-code-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-unknown-enum-code-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-unknown-enum-code-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -1085,22 +1101,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-unknown-enum-code-master-service-offer-variant-numeric-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${AttributeDefinition.HairRemovalMethodAttribute.code},
-                 |  ${BigDecimal("999")}
-                 |)
-                 |on conflict (master_service_offer_variant_id, attribute_code) do update set
-                 |  value = excluded.value
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            AttributeDefinition.HairRemovalMethodAttribute.code,
+            BigDecimal("999"),
+            "probe-unknown-enum-code-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(
             result.left.exists {
               case QueryFailure.OperationFailure(operationName, message) =>
@@ -1133,9 +1140,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-non-integer-enum-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-non-integer-enum-category-$categoryId")
           master      = Master(masterId, s"numeric-non-integer-enum-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-non-integer-enum-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-non-integer-enum-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -1154,22 +1161,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-non-integer-enum-master-service-offer-variant-numeric-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${AttributeDefinition.HairRemovalMethodAttribute.code},
-                 |  ${BigDecimal("2.5")}
-                 |)
-                 |on conflict (master_service_offer_variant_id, attribute_code) do update set
-                 |  value = excluded.value
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            AttributeDefinition.HairRemovalMethodAttribute.code,
+            BigDecimal("2.5"),
+            "probe-non-integer-enum-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(
             result.left.exists {
               case QueryFailure.OperationFailure(operationName, message) =>
@@ -1202,9 +1200,9 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"numeric-unknown-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"numeric-unknown-category-$categoryId")
           master      = Master(masterId, s"numeric-unknown-master-$masterId")
-          service     = Service(serviceId, categoryId, s"numeric-unknown-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"numeric-unknown-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,
@@ -1221,20 +1219,13 @@ abstract class MasterServiceOfferVariantsStorageValidationTest extends Leaderboa
           _       <- offers.upsertMasterServiceOffer(offer)
           _       <- masterLocations.upsertMasterLocation(location)
           _       <- variants.upsertMasterServiceOfferVariant(variant)
-          _       <- db.execute("insert-unknown-master-service-offer-variant-numeric-attribute") {
-            sql"""insert into master_service_offer_variant_numeric_attributes (
-                 |  master_service_offer_variant_id,
-                 |  attribute_code,
-                 |  value
-                 |)
-                 |values (
-                 |  $variantId,
-                 |  ${"unknown_attribute_code"},
-                 |  ${BigDecimal("2.0")}
-                 |)
-                 |""".stripMargin.update.run
-          }
-          result <- variants.getMasterServiceOfferVariant(variantId).either
+          result  <- probeStoredNumericAttributes(
+            db,
+            variantId,
+            "unknown_attribute_code",
+            BigDecimal("2.0"),
+            "probe-unknown-master-service-offer-variant-numeric-attribute",
+          )
           _      <- assertIO(
             result.left.exists {
               case QueryFailure.OperationFailure(operationName, message) =>

@@ -76,6 +76,18 @@ object ServiceVariantSchemas {
           } yield decoded :: current
       }.map(items => ServiceVariantSchema.fromItems(serviceId, items.reverse))
 
+  /** Decodes already-selected `(attribute_code, required)` rows into a [[ServiceVariantSchema]], using
+    * the exact same decoder [[getServiceVariantSchema]] uses. Exposed narrowly so a transaction-local
+    * storage probe can decode rows it selected and deleted itself, without duplicating the decode logic
+    * or starting the separate transaction `getServiceVariantSchema` always opens.
+    */
+  private[leaderboard] def decodeStoredSchema(
+    queryName: String,
+    serviceId: ServiceId,
+    rows: List[(String, Boolean)],
+  ): Either[QueryFailure, ServiceVariantSchema] =
+    schemaFromRows(queryName, serviceId, rows)
+
   private def serviceExists[F[+_, +_]](sql: SQL[F])(serviceId: ServiceId): F[QueryFailure, Boolean] =
     sql.execute("service-exists") {
       sql"""
@@ -174,7 +186,7 @@ object ServiceVariantSchemas {
                    |""".stripMargin.query[ServiceVariantSchemaRow].to[List]
             }.flatMap {
               rows =>
-                liftEither[F, ServiceVariantSchema](schemaFromRows("get-service-variant-schema", serviceId, rows))
+                liftEither[F, ServiceVariantSchema](decodeStoredSchema("get-service-variant-schema", serviceId, rows))
             }
       }
     )
