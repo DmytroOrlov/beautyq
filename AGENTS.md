@@ -64,13 +64,20 @@ mkdir -p target/codex-sbt/ivy2
 sbt --batch --no-global -Dsbt.server=false -Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2 'projectName/testOnly package.SomeSpec'
 ```
 
-## Cleanup / reset policy
+## Database schema and reset policy
 
-* Do not run Docker cleanup, database reset, broad target deletion, or cold reset as a first response to unexplained failures.
-* Use the smallest relevant reset only when the failure indicates stale generated state, stale build artifacts, stale containers, or stale database schema/data state, especially after schema or migration-related changes.
-* Report the reset as environment/state cleanup, not as a source fix.
-* Rerun the same validation command after cleanup.
-* Do not use cleanup to hide a reproducible source/test failure.
+* This repository has no persistent production BeautyQ database that requires forward schema migration.
+* Do not add `ALTER TABLE`, data backfills, legacy fallback values, migration stages, or a migration framework for application schema changes.
+* Change the fresh `CREATE TABLE` schema, seed data, repositories, and tests directly.
+* Reused Distage Docker containers may retain stale schema or data after an intentional schema change. Reset them with:
+
+```bash
+docker rm -f $(docker ps -a -q -f "label=distage.type") || true
+```
+
+* Run this reset only for confirmed stale Distage container/schema state, not as a response to an unexplained source or test failure.
+* After the reset, rerun the same validation command.
+* Report the reset as environment cleanup, not as a source fix.
 
 ## DI, lifecycle, and graph rules
 

@@ -15,8 +15,8 @@ abstract class CategoriesTest extends LeaderboardTest {
         for {
           parentId <- rnd[CategoryId]
           childId  <- rnd[CategoryId]
-          parent    = Category(parentId, rootCategoryId, 0, s"parent-$parentId")
-          child     = Category(childId, parentId, 1, s"child-$childId")
+          parent    = Category(parentId, testCategoryCode(parentId), rootCategoryId, 0, s"parent-$parentId")
+          child     = Category(childId, testCategoryCode(childId), parentId, 1, s"child-$childId")
           _        <- categories.upsertCategory(parent)
           _        <- categories.upsertCategory(child)
           res      <- categories.getCategory(child.id)
@@ -28,7 +28,7 @@ abstract class CategoriesTest extends LeaderboardTest {
       (rnd: Rnd[IO], categories: Categories[IO]) =>
         for {
           id      <- rnd[CategoryId]
-          category = Category(id, rootCategoryId, 0, s"top-$id")
+          category = Category(id, testCategoryCode(id), rootCategoryId, 0, s"top-$id")
           _       <- categories.upsertCategory(category)
           res     <- categories.getCategory(category.id)
           _       <- assertIO(res.contains(category))
@@ -39,7 +39,7 @@ abstract class CategoriesTest extends LeaderboardTest {
       (rnd: Rnd[IO], categories: Categories[IO]) =>
         for {
           parentId <- rnd[CategoryId]
-          result   <- categories.upsertCategory(Category(rootCategoryId, parentId, 1, "illegal-root")).either
+          result   <- categories.upsertCategory(Category(rootCategoryId, testCategoryCode(rootCategoryId), parentId, 1, "illegal-root")).either
           _        <- assertIO(result.isLeft)
         } yield ()
     }
@@ -49,7 +49,7 @@ abstract class CategoriesTest extends LeaderboardTest {
         for {
           id       <- rnd[CategoryId]
           parentId <- rnd[CategoryId]
-          result   <- categories.upsertCategory(Category(id, parentId, 1, s"orphan-$id")).either
+          result   <- categories.upsertCategory(Category(id, testCategoryCode(id), parentId, 1, s"orphan-$id")).either
           _        <- assertIO(result.isLeft)
         } yield ()
     }
@@ -63,11 +63,11 @@ abstract class CategoriesTest extends LeaderboardTest {
           child2Id  <- rnd[CategoryId]
           otherId   <- rnd[CategoryId]
 
-          parent1 = Category(parent1Id, rootCategoryId, 0, s"parent-a-$parent1Id")
-          parent2 = Category(parent2Id, rootCategoryId, 0, s"parent-b-$parent2Id")
-          child1  = Category(child1Id, parent1Id, 1, s"child-a-$child1Id")
-          child2  = Category(child2Id, parent1Id, 1, s"child-b-$child2Id")
-          other   = Category(otherId, parent2Id, 1, s"child-c-$otherId")
+          parent1 = Category(parent1Id, testCategoryCode(parent1Id), rootCategoryId, 0, s"parent-a-$parent1Id")
+          parent2 = Category(parent2Id, testCategoryCode(parent2Id), rootCategoryId, 0, s"parent-b-$parent2Id")
+          child1  = Category(child1Id, testCategoryCode(child1Id), parent1Id, 1, s"child-a-$child1Id")
+          child2  = Category(child2Id, testCategoryCode(child2Id), parent1Id, 1, s"child-b-$child2Id")
+          other   = Category(otherId, testCategoryCode(otherId), parent2Id, 1, s"child-c-$otherId")
 
           _   <- categories.upsertCategory(parent1)
           _   <- categories.upsertCategory(parent2)
@@ -88,10 +88,10 @@ abstract class CategoriesTest extends LeaderboardTest {
           id2      <- rnd[CategoryId]
           id3      <- rnd[CategoryId]
 
-          parent = Category(parentId, rootCategoryId, 0, s"parent-sort-$parentId")
-          c1     = Category(id1, parentId, 1, "beta")
-          c2     = Category(id2, parentId, 1, "alpha")
-          c3     = Category(id3, parentId, 2, "aardvark")
+          parent = Category(parentId, testCategoryCode(parentId), rootCategoryId, 0, s"parent-sort-$parentId")
+          c1     = Category(id1, testCategoryCode(id1), parentId, 1, "beta")
+          c2     = Category(id2, testCategoryCode(id2), parentId, 1, "alpha")
+          c3     = Category(id3, testCategoryCode(id3), parentId, 2, "aardvark")
 
           _   <- categories.upsertCategory(parent)
           _   <- categories.upsertCategory(c1)
@@ -100,6 +100,72 @@ abstract class CategoriesTest extends LeaderboardTest {
           res <- categories.getChildren(parentId)
 
           _ <- assertIO(res == List(c2, c1, c3))
+        } yield ()
+    }
+
+    "round-trip the code field and return the complete category by code" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          id      <- rnd[CategoryId]
+          category = Category(id, testCategoryCode(id), rootCategoryId, 0, s"code-roundtrip-$id")
+          _       <- categories.upsertCategory(category)
+          byId    <- categories.getCategory(id)
+          byCode  <- categories.getCategoryByCode(category.code)
+          _       <- assertIO(byId.contains(category))
+          _       <- assertIO(byCode.contains(category))
+        } yield ()
+    }
+
+    "return None for an unknown category code" in {
+      (categories: Categories[IO]) =>
+        for {
+          result <- categories.getCategoryByCode(CategoryCode.unsafeFromString("unknown_category_code_zzz"))
+          _      <- assertIO(result.isEmpty)
+        } yield ()
+    }
+
+    "reject a duplicate category code owned by another id" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          id1       <- rnd[CategoryId]
+          id2       <- rnd[CategoryId]
+          sharedCode = testCategoryCode(id1)
+          first      = Category(id1, sharedCode, rootCategoryId, 0, s"dup-code-a-$id1")
+          second     = Category(id2, sharedCode, rootCategoryId, 0, s"dup-code-b-$id2")
+          _         <- categories.upsertCategory(first)
+          result    <- categories.upsertCategory(second).either
+          _         <- assertIO(result == Left(QueryFailure.domain(s"Category code '${sharedCode.value}' is already used by category $id1")))
+        } yield ()
+    }
+
+    "reject changing the code of an existing category id" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          id            <- rnd[CategoryId]
+          originalCode   = testCategoryCode(id)
+          requestedCode  = CategoryCode.unsafeFromString(s"${originalCode.value}_renamed")
+          original       = Category(id, originalCode, rootCategoryId, 0, s"immutable-code-$id")
+          requested      = original.copy(code = requestedCode)
+          _             <- categories.upsertCategory(original)
+          result        <- categories.upsertCategory(requested).either
+          _             <- assertIO(result == Left(QueryFailure.domain(s"Category $id code is immutable: existing '${originalCode.value}', requested '${requestedCode.value}'")))
+        } yield ()
+    }
+
+    "allow updating mutable fields for the same id and same code" in {
+      (rnd: Rnd[IO], categories: Categories[IO]) =>
+        for {
+          parentId <- rnd[CategoryId]
+          id       <- rnd[CategoryId]
+          parent    = Category(parentId, testCategoryCode(parentId), rootCategoryId, 0, s"same-code-parent-$parentId")
+          code      = testCategoryCode(id)
+          original  = Category(id, code, rootCategoryId, 0, s"same-code-original-$id")
+          updated   = Category(id, code, parentId, 1, s"same-code-updated-$id")
+          _        <- categories.upsertCategory(parent)
+          _        <- categories.upsertCategory(original)
+          _        <- categories.upsertCategory(updated)
+          res      <- categories.getCategory(id)
+          _        <- assertIO(res.contains(updated))
         } yield ()
     }
 
@@ -116,8 +182,8 @@ abstract class ServicesTest extends LeaderboardTest {
         for {
           categoryId <- rnd[CategoryId]
           serviceId  <- rnd[ServiceId]
-          category    = Category(categoryId, rootCategoryId, 0, s"service-parent-$categoryId")
-          service     = Service(serviceId, categoryId, s"service-$serviceId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"service-parent-$categoryId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"service-$serviceId")
           _          <- categories.upsertCategory(category)
           _          <- services.upsertService(service)
           res        <- services.getService(service.id)
@@ -129,7 +195,7 @@ abstract class ServicesTest extends LeaderboardTest {
       (rnd: Rnd[IO], services: Services[IO]) =>
         for {
           serviceId <- rnd[ServiceId]
-          result    <- services.upsertService(Service(serviceId, rootCategoryId, "illegal-root-service")).either
+          result    <- services.upsertService(Service(serviceId, testServiceCode(serviceId), rootCategoryId, "illegal-root-service")).either
           _         <- assertIO(result.isLeft)
         } yield ()
     }
@@ -139,7 +205,7 @@ abstract class ServicesTest extends LeaderboardTest {
         for {
           serviceId  <- rnd[ServiceId]
           categoryId <- rnd[CategoryId]
-          result     <- services.upsertService(Service(serviceId, categoryId, s"orphan-service-$serviceId")).either
+          result     <- services.upsertService(Service(serviceId, testServiceCode(serviceId), categoryId, s"orphan-service-$serviceId")).either
           _          <- assertIO(result.isLeft)
         } yield ()
     }
@@ -149,8 +215,8 @@ abstract class ServicesTest extends LeaderboardTest {
         for {
           categoryId <- rnd[CategoryId]
           serviceId  <- rnd[ServiceId]
-          category    = Category(categoryId, rootCategoryId, 0, s"existing-category-$categoryId")
-          service     = Service(serviceId, categoryId, s"existing-service-$serviceId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"existing-category-$categoryId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"existing-service-$serviceId")
           _          <- categories.upsertCategory(category)
           _          <- services.upsertService(service)
           res        <- services.getService(service.id)
@@ -167,11 +233,11 @@ abstract class ServicesTest extends LeaderboardTest {
           service2Id  <- rnd[ServiceId]
           otherId     <- rnd[ServiceId]
 
-          category1 = Category(category1Id, rootCategoryId, 0, s"services-parent-a-$category1Id")
-          category2 = Category(category2Id, rootCategoryId, 0, s"services-parent-b-$category2Id")
-          service1  = Service(service1Id, category1Id, s"service-a-$service1Id")
-          service2  = Service(service2Id, category1Id, s"service-b-$service2Id")
-          other     = Service(otherId, category2Id, s"service-c-$otherId")
+          category1 = Category(category1Id, testCategoryCode(category1Id), rootCategoryId, 0, s"services-parent-a-$category1Id")
+          category2 = Category(category2Id, testCategoryCode(category2Id), rootCategoryId, 0, s"services-parent-b-$category2Id")
+          service1  = Service(service1Id, testServiceCode(service1Id), category1Id, s"service-a-$service1Id")
+          service2  = Service(service2Id, testServiceCode(service2Id), category1Id, s"service-b-$service2Id")
+          other     = Service(otherId, testServiceCode(otherId), category2Id, s"service-c-$otherId")
 
           _   <- categories.upsertCategory(category1)
           _   <- categories.upsertCategory(category2)
@@ -192,10 +258,10 @@ abstract class ServicesTest extends LeaderboardTest {
           id2        <- rnd[ServiceId]
           id3        <- rnd[ServiceId]
 
-          category = Category(categoryId, rootCategoryId, 0, s"services-sort-$categoryId")
-          s1       = Service(id1, categoryId, "gamma")
-          s2       = Service(id2, categoryId, "alpha")
-          s3       = Service(id3, categoryId, "beta")
+          category = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"services-sort-$categoryId")
+          s1       = Service(id1, testServiceCode(id1), categoryId, "gamma")
+          s2       = Service(id2, testServiceCode(id2), categoryId, "alpha")
+          s3       = Service(id3, testServiceCode(id3), categoryId, "beta")
 
           _   <- categories.upsertCategory(category)
           _   <- services.upsertService(s1)
@@ -204,6 +270,84 @@ abstract class ServicesTest extends LeaderboardTest {
           res <- services.getServicesByCategory(categoryId)
 
           _ <- assertIO(res == List(s2, s3, s1))
+        } yield ()
+    }
+
+    "round-trip the code field and return the complete service by code" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          serviceId  <- rnd[ServiceId]
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"service-code-roundtrip-category-$categoryId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"service-code-roundtrip-$serviceId")
+          _          <- categories.upsertCategory(category)
+          _          <- services.upsertService(service)
+          byId       <- services.getService(serviceId)
+          byCode     <- services.getServiceByCode(service.code)
+          _          <- assertIO(byId.contains(service))
+          _          <- assertIO(byCode.contains(service))
+        } yield ()
+    }
+
+    "return None for an unknown service code" in {
+      (services: Services[IO]) =>
+        for {
+          result <- services.getServiceByCode(ServiceCode.unsafeFromString("unknown_service_code_zzz"))
+          _      <- assertIO(result.isEmpty)
+        } yield ()
+    }
+
+    "reject a duplicate service code owned by another id" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          categoryId <- rnd[CategoryId]
+          id1        <- rnd[ServiceId]
+          id2        <- rnd[ServiceId]
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"service-dup-code-category-$categoryId")
+          sharedCode  = testServiceCode(id1)
+          first       = Service(id1, sharedCode, categoryId, s"dup-code-a-$id1")
+          second      = Service(id2, sharedCode, categoryId, s"dup-code-b-$id2")
+          _          <- categories.upsertCategory(category)
+          _          <- services.upsertService(first)
+          result     <- services.upsertService(second).either
+          _          <- assertIO(result == Left(QueryFailure.domain(s"Service code '${sharedCode.value}' is already used by service $id1")))
+        } yield ()
+    }
+
+    "reject changing the code of an existing service id" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          categoryId    <- rnd[CategoryId]
+          id            <- rnd[ServiceId]
+          category       = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"service-immutable-code-category-$categoryId")
+          originalCode   = testServiceCode(id)
+          requestedCode  = ServiceCode.unsafeFromString(s"${originalCode.value}_renamed")
+          original       = Service(id, originalCode, categoryId, s"immutable-code-$id")
+          requested      = original.copy(code = requestedCode)
+          _             <- categories.upsertCategory(category)
+          _             <- services.upsertService(original)
+          result        <- services.upsertService(requested).either
+          _             <- assertIO(result == Left(QueryFailure.domain(s"Service $id code is immutable: existing '${originalCode.value}', requested '${requestedCode.value}'")))
+        } yield ()
+    }
+
+    "allow updating mutable fields for the same id and same code" in {
+      (rnd: Rnd[IO], categories: Categories[IO], services: Services[IO]) =>
+        for {
+          category1Id <- rnd[CategoryId]
+          category2Id <- rnd[CategoryId]
+          id          <- rnd[ServiceId]
+          category1    = Category(category1Id, testCategoryCode(category1Id), rootCategoryId, 0, s"service-same-code-category-a-$category1Id")
+          category2    = Category(category2Id, testCategoryCode(category2Id), rootCategoryId, 0, s"service-same-code-category-b-$category2Id")
+          code         = testServiceCode(id)
+          original     = Service(id, code, category1Id, s"same-code-original-$id")
+          updated      = Service(id, code, category2Id, s"same-code-updated-$id")
+          _           <- categories.upsertCategory(category1)
+          _           <- categories.upsertCategory(category2)
+          _           <- services.upsertService(original)
+          _           <- services.upsertService(updated)
+          res         <- services.getService(id)
+          _           <- assertIO(res.contains(updated))
         } yield ()
     }
 
@@ -405,9 +549,9 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           masterId   <- rnd[MasterId]
           serviceId  <- rnd[ServiceId]
           offerId    <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offer-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offer-category-$categoryId")
           master      = Master(masterId, s"offer-master-$masterId")
-          service     = Service(serviceId, categoryId, s"offer-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"offer-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           _          <- categories.upsertCategory(category)
           _          <- masters.upsertMaster(master)
@@ -425,8 +569,8 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           masterId   <- rnd[MasterId]
           serviceId  <- rnd[ServiceId]
           offerId    <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"missing-master-category-$categoryId")
-          service     = Service(serviceId, categoryId, s"missing-master-service-$serviceId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"missing-master-category-$categoryId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"missing-master-service-$serviceId")
           _          <- categories.upsertCategory(category)
           _          <- services.upsertService(service)
           result     <- offers.upsertMasterServiceOffer(MasterServiceOffer(offerId, masterId, serviceId)).either
@@ -456,10 +600,10 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           service2Id <- rnd[ServiceId]
           offer1Id   <- rnd[MasterServiceOfferId]
           offer2Id   <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-master-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-master-category-$categoryId")
           master      = Master(masterId, s"offers-master-$masterId")
-          service1    = Service(service1Id, categoryId, s"offers-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"offers-service-b-$service2Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"offers-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"offers-service-b-$service2Id")
           offer1      = MasterServiceOffer(offer1Id, masterId, service1Id)
           offer2      = MasterServiceOffer(offer2Id, masterId, service2Id)
           _          <- categories.upsertCategory(category)
@@ -482,10 +626,10 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           serviceId  <- rnd[ServiceId]
           offer1Id   <- rnd[MasterServiceOfferId]
           offer2Id   <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-service-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-service-category-$categoryId")
           master1     = Master(master1Id, s"offers-master-a-$master1Id")
           master2     = Master(master2Id, s"offers-master-b-$master2Id")
-          service     = Service(serviceId, categoryId, s"offers-shared-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"offers-shared-service-$serviceId")
           offer1      = MasterServiceOffer(offer1Id, master1Id, serviceId)
           offer2      = MasterServiceOffer(offer2Id, master2Id, serviceId)
           _          <- categories.upsertCategory(category)
@@ -510,11 +654,11 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           offer1Id   <- rnd[MasterServiceOfferId]
           offer2Id   <- rnd[MasterServiceOfferId]
           otherId    <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-by-master-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-by-master-category-$categoryId")
           master1     = Master(master1Id, s"offers-master-filter-a-$master1Id")
           master2     = Master(master2Id, s"offers-master-filter-b-$master2Id")
-          service1    = Service(service1Id, categoryId, s"offers-master-filter-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"offers-master-filter-service-b-$service2Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"offers-master-filter-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"offers-master-filter-service-b-$service2Id")
           offer1      = MasterServiceOffer(offer1Id, master1Id, service1Id)
           offer2      = MasterServiceOffer(offer2Id, master1Id, service2Id)
           other       = MasterServiceOffer(otherId, master2Id, service1Id)
@@ -542,11 +686,11 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           offer1Id   <- rnd[MasterServiceOfferId]
           offer2Id   <- rnd[MasterServiceOfferId]
           otherId    <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-by-service-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-by-service-category-$categoryId")
           master1     = Master(master1Id, s"offers-service-filter-a-$master1Id")
           master2     = Master(master2Id, s"offers-service-filter-b-$master2Id")
-          service1    = Service(service1Id, categoryId, s"offers-service-filter-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"offers-service-filter-service-b-$service2Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"offers-service-filter-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"offers-service-filter-service-b-$service2Id")
           offer1      = MasterServiceOffer(offer1Id, master1Id, service1Id)
           offer2      = MasterServiceOffer(offer2Id, master2Id, service1Id)
           other       = MasterServiceOffer(otherId, master1Id, service2Id)
@@ -571,11 +715,11 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           service1Id <- rnd[ServiceId]
           service2Id <- rnd[ServiceId]
           service3Id <- rnd[ServiceId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-sort-master-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-sort-master-category-$categoryId")
           master      = Master(masterId, s"offers-sort-master-$masterId")
-          service1    = Service(service1Id, categoryId, s"offers-sort-master-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"offers-sort-master-service-b-$service2Id")
-          service3    = Service(service3Id, categoryId, s"offers-sort-master-service-c-$service3Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"offers-sort-master-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"offers-sort-master-service-b-$service2Id")
+          service3    = Service(service3Id, testServiceCode(service3Id), categoryId, s"offers-sort-master-service-c-$service3Id")
           id1         = MasterServiceOfferId.fromString("10000000-0000-0000-0000-000000000002")
           id2         = MasterServiceOfferId.fromString("10000000-0000-0000-0000-000000000001")
           id3         = MasterServiceOfferId.fromString("10000000-0000-0000-0000-000000000003")
@@ -603,11 +747,11 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           master2Id  <- rnd[MasterId]
           master3Id  <- rnd[MasterId]
           serviceId  <- rnd[ServiceId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-sort-service-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-sort-service-category-$categoryId")
           master1     = Master(master1Id, s"offers-sort-service-master-a-$master1Id")
           master2     = Master(master2Id, s"offers-sort-service-master-b-$master2Id")
           master3     = Master(master3Id, s"offers-sort-service-master-c-$master3Id")
-          service     = Service(serviceId, categoryId, s"offers-sort-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"offers-sort-service-$serviceId")
           id1         = MasterServiceOfferId.fromString("20000000-0000-0000-0000-000000000002")
           id2         = MasterServiceOfferId.fromString("20000000-0000-0000-0000-000000000001")
           id3         = MasterServiceOfferId.fromString("20000000-0000-0000-0000-000000000003")
@@ -636,11 +780,11 @@ abstract class MasterServiceOffersTest extends LeaderboardTest {
           service1Id <- rnd[ServiceId]
           service2Id <- rnd[ServiceId]
           offerId    <- rnd[MasterServiceOfferId]
-          category    = Category(categoryId, rootCategoryId, 0, s"offers-overwrite-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"offers-overwrite-category-$categoryId")
           master1     = Master(master1Id, s"offers-overwrite-master-a-$master1Id")
           master2     = Master(master2Id, s"offers-overwrite-master-b-$master2Id")
-          service1    = Service(service1Id, categoryId, s"offers-overwrite-service-a-$service1Id")
-          service2    = Service(service2Id, categoryId, s"offers-overwrite-service-b-$service2Id")
+          service1    = Service(service1Id, testServiceCode(service1Id), categoryId, s"offers-overwrite-service-a-$service1Id")
+          service2    = Service(service2Id, testServiceCode(service2Id), categoryId, s"offers-overwrite-service-b-$service2Id")
           initial     = MasterServiceOffer(offerId, master1Id, service1Id)
           updated     = MasterServiceOffer(offerId, master2Id, service2Id)
           _          <- categories.upsertCategory(category)

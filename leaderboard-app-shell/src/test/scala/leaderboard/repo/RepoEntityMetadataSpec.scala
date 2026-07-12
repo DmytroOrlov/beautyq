@@ -24,14 +24,14 @@ final class RepoEntityMetadataSpec extends AnyWordSpec {
       val entity = RepoEntity.derived[Category]
       assert(entity.sourceName == "category")
       assert(entity.idColumn.contains("id"))
-      assert(entity.dataColumns == List("parent_id", "depth", "name"))
+      assert(entity.dataColumns == List("code", "parent_id", "depth", "name"))
     }
 
     "derive Service source, id column and data columns" in {
       val entity = RepoEntity.derived[Service]
       assert(entity.sourceName == "service")
       assert(entity.idColumn.contains("id"))
-      assert(entity.dataColumns == List("category_id", "name"))
+      assert(entity.dataColumns == List("code", "category_id", "name"))
     }
 
     "derive the schema item row source" in {

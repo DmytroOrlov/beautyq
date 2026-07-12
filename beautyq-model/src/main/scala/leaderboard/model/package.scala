@@ -85,13 +85,13 @@ package object model {
     given UuidBackedId[MasterServiceOfferVariantId] = this
   }
 
-  case class Service(id: ServiceId, categoryId: CategoryId, name: String)
+  case class Service(id: ServiceId, code: ServiceCode, categoryId: CategoryId, name: String)
 
   object Service {
     implicit val codec: Codec.AsObject[Service] = semiauto.deriveCodec
   }
 
-  case class Category(id: CategoryId, parentId: CategoryId, depth: Int, name: String)
+  case class Category(id: CategoryId, code: CategoryCode, parentId: CategoryId, depth: Int, name: String)
 
   object Category {
     opaque type CategoryId = UUID
@@ -104,6 +104,7 @@ package object model {
     }
 
     val rootCategoryId: CategoryId = CategoryId(UUID.fromString("73ba445e-edf0-4ecf-a02b-91d0932e1f10"))
+    val rootCategoryCode: CategoryCode = CategoryCode.unsafeFromString("all_services")
 
     implicit val codec: Codec.AsObject[Category] = semiauto.deriveCodec
   }

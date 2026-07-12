@@ -380,9 +380,9 @@ abstract class VariantAttributeJsonSpec extends LeaderboardTest with VariantTest
           offerId    <- rnd[MasterServiceOfferId]
           locationId <- rnd[MasterLocationId]
           variantId  <- rnd[MasterServiceOfferVariantId]
-          category    = Category(categoryId, rootCategoryId, 0, s"variant-type-category-$categoryId")
+          category    = Category(categoryId, testCategoryCode(categoryId), rootCategoryId, 0, s"variant-type-category-$categoryId")
           master      = Master(masterId, s"variant-type-master-$masterId")
-          service     = Service(serviceId, categoryId, s"variant-type-service-$serviceId")
+          service     = Service(serviceId, testServiceCode(serviceId), categoryId, s"variant-type-service-$serviceId")
           offer       = MasterServiceOffer(offerId, masterId, serviceId)
           location    = MasterLocation(
             locationId,

@@ -6,6 +6,7 @@ import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
 import leaderboard.model.*
+import leaderboard.model.Category.CategoryId
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import zio.{IO, ZIO}
 import leaderboard.model.AttributeMap
@@ -35,6 +36,12 @@ abstract class LeaderboardTest extends SpecZIO with AssertZIO {
       DIKey[Services[IO]],
     ),
   )
+
+  protected final def testServiceCode(id: ServiceId): ServiceCode =
+    ServiceCode.unsafeFromString(s"service_${id.toString.replace("-", "")}")
+
+  protected final def testCategoryCode(id: CategoryId): CategoryCode =
+    CategoryCode.unsafeFromString(s"category_${id.toString.replace("-", "")}")
 }
 
 trait DummyTest extends LeaderboardTest {
