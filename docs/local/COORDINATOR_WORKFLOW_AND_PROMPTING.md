@@ -102,6 +102,14 @@ Return CONTINUE_SAME_PATCH or REJECT when policy is unreachable from the canonic
 generic code contains domain concepts, a domain copies reusable lookup/matching/validation mechanics,
 or a generated view becomes a second policy owner.
 
+## 1.3.1 No speculative defenses
+
+Require a concrete reachable failure or real persistence, wire, backend, cursor, fingerprint, or public compatibility contract before adding safeguards.
+
+Do not defend trusted Scala code against overridden enum `toString`, reflection, malicious same-package callers, type-impossible nulls/states, or unspecified future changes.
+
+Diagnostics should use ordinary enum rendering. Reject stable labels/IDs, identity matches, wrappers, or collision checks added only to freeze diagnostic output. Return `CONTINUE_SAME_PATCH` or `REJECT`.
+
 ## 1.4 No fake green
 
 Unavailable external resources may cancel/resource-gate only when the test cannot verify its stated contract another valid way.
@@ -281,6 +289,8 @@ Historical milestone context belongs in coordinator review, not in every delegat
 Do not hand agents broad grep-anchor lists as the implementation map when exact seams are known.
 
 Do not include model recommendations inside delegated prompts.
+
+Every delegated prompt inherits section 1.3.1; do not restate speculative safeguards as task requirements.
 
 ## 4.3 Metrics, unsafe extraction, and test style
 

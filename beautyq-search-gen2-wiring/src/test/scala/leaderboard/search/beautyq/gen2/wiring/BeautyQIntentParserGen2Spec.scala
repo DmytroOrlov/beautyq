@@ -70,7 +70,10 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       BeautyQIntentParserGen2.parse(request(Some("manicure nearby"), Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4")))), BeautyQIntentVocabulary.value) match {
         case Right(intent) =>
           assert(intent.softSignals.size == 1)
-          assert(intent.softSignals.headOption.exists(_.isInstanceOf[PlannedSignal.GeoProximitySignal[?]]))
+          assert(intent.softSignals.headOption.exists {
+            case _: PlannedSignal.GeoProximitySignal[?] => true
+            case _ => false
+          })
           assert(intent.hardConstraints.forall {
             case SourcedConstraint(PlannedConstraint.GeoDistanceFilter(_, _, _), _) => false
             case _ => true
@@ -290,7 +293,10 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         case Right(intent) =>
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r001"), IntentRuleId("r087")))
           assert(intent.softSignals.size == 1)
-          assert(intent.softSignals.headOption.exists(_.isInstanceOf[PlannedSignal.GeoProximitySignal[?]]))
+          assert(intent.softSignals.headOption.exists {
+            case _: PlannedSignal.GeoProximitySignal[?] => true
+            case _ => false
+          })
           assert(intent.hardConstraints.exists(_.constraint match {
             case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("manicure")
             case _ => false

@@ -135,7 +135,10 @@ with a different neutral/tracer shape in the same slice; the fixture alone must 
 
 ### G-8 - `Fields`/outer-alias class-initialization hazard
 
-**Status: open; avoided by the supported authoring pattern, not prevented by the framework.**
+**Status: the specific BeautyQ policy/root cycle is fixed; the general unsupported sibling-capture hazard
+remains open.** `BeautyQSearchDeclarations.structure` is lazy, and fresh-JVM tests prove both first-touch
+orders (`BeautyQSearchPlanPolicy` first and `BeautyQSearchDeclarations.structure` first). The framework
+still does not prevent arbitrary sibling captures in other roots.
 
 The production root and the tracer both use this shape:
 
@@ -230,6 +233,69 @@ validated `SearchPlan`. This slice adds no backend compiler, route, JSON codec, 
 dependency. Gen1 vocabulary/parser sources are evidence only and are not dependencies of either Gen2
 module. G-3 multi-value fields remains open.
 
+## Brick 4F — Plan-input resolution and compilation
+
+`search-gen2-contract` and `search-gen2-core` now own the reusable mechanics a domain compiler uses
+while combining an already-validated public request and parsed intent into one validated `SearchPlan`:
+
+- `PublicSortClause` (`search-gen2-contract`) — the generic typed sort-decoding result, mirroring
+  `PublicFilterClause`'s already-planned/geo-origin-pending split;
+- `ConstraintSlot`/`CanonicalConstraintView` (`search-gen2-core`) — the `FieldId`-and-kind-only identity
+  two constraints compete under, and the single conversion from a typed `PlannedConstraint` to its
+  canonical form and slot. `CanonicalPlanView` (Brick 4C) delegates its own constraint conversion here
+  rather than keeping a second implementation, so `PlanIdentity` and Brick 4F precedence can never
+  disagree about one constraint's canonical value;
+- `ConstraintPrecedenceResolver` (`search-gen2-core`) — same-priority first-seen-anchor scan per tier,
+  then cross-priority suppression of surviving lower-tier values against the higher tier's applied map;
+  the caller supplies which tier is higher, never inferred from `ConstraintProvenance`;
+- `PublicPlanInputResolver` (`search-gen2-core`) — generic public filter/sort geo-origin resolution
+  through `PublicFilterPlanView`/`PublicSortPlanView` adapters, so the resolver never depends on a
+  domain's concrete decoded-filter/decoded-sort wrapper type;
+- `FacetPlanRegistry`/`FacetPlanDeclaration` (`search-gen2-contract`) — one validated, ordered facet
+  declaration registry a domain resolves requested facet IDs against, with declaration-time errors and
+  a narrowed request-time `UnknownRequestedFacet` error. The validated public-request boundary resolves
+  IDs once and carries typed `FacetRequest` values into compilation. A declaration holds only a
+  `FacetRequest`; `FacetRequest.fieldHandles` derives the field(s) a reviewer/presentation view needs
+  from it, so a domain never repeats the same handle(s) in a second vector. `FacetSize.unsafeFrom` and
+  `FacetPlanRegistry.unsafeFrom` are the framework-owned static-declaration constructors for a domain's
+  literal facet policy - a domain file never hand-rolls its own `getOrElse(throw ...)` or manual
+  registry-validation match/throw;
+- `ConstraintPrecedence` (`search-gen2-contract`) — one typed source order that derives executable
+  `ConstraintPriorityTiers` from one complete typed source-to-constraints function; a domain does not
+  keep a separate display-order list, tier implementation or partial map with empty defaults;
+- `SearchPlanCompilationKernel` (`search-gen2-core`) — `prepare` returns an opaque value containing one
+  exact input and its `ConstraintResolution`; a domain may inspect that resolution and call
+  `prepared.assemble(finalNotices)` once. The framework-private constructor prevents forging a
+  resolution or pairing it with another input, and the one notices vector is the sole assembly authority.
+
+`ConstraintPriorityTiers` (`search-gen2-contract`, alongside `SourcedConstraint`) is a framework-private
+constructor result derived by `ConstraintPrecedence`; domain code cannot construct it directly. Exactly
+two ordered source tiers are supported in this kernel, and the resolver itself still performs all
+conflict, suppression and ordering mechanics.
+
+Proven with two structurally different neutral fixtures unrelated to BeautyQ's document shape or
+vocabulary: `InventoryDocument` (`CanonicalConstraintViewSpec`, `ConstraintPrecedenceSpec`, `ConstraintPrecedenceResolverSpec`,
+`FacetPlanRegistrySpec`, `SearchPlanCompilationKernelSpec`) and `TrailDocument` (`PublicSortClauseSpec`,
+`PublicPlanInputResolverSpec`).
+
+The BeautyQ contract module owns only `BeautyQSearchPlanPolicy` together with its typed
+`BeautyQConstraintSource` choice (each case declares an explicit stable ID) and `ConstraintPrecedence`
+value (constraint-source precedence - the reviewer-readable order and higher/lower tier assignment
+derive from one typed value) and
+`BeautyQGeoOriginPolicy` (the
+geo-origin source - a stable id *and* the actual `request -> Option[GeoPoint]` resolution, on the one
+concrete value `RequestUserLocation`). `BeautyQSearchPlanPolicy` also declares the four facet
+declarations, the explicit empty group policy, the default-browse notice and plan-mode classification.
+The wiring module owns only `BeautyQSearchPlanCompiler` (a thin composition obtaining its tiers and geo
+origin only through those policy values - never a separately hardcoded argument order, per-call policy
+substitution or a direct `request.userLocation` read) and `BeautyQSearchPlanCompilationTrace` (a diagnostic trace
+whose policy section renders `BeautyQSearchPlanPolicy`'s own values). `BeautyQSearchPlanPolicy.facetRegistry`
+directly owns public facet IDs and lookup, and `BeautyQSearchDeclarations.variants.plan` exposes the same typed policy values
+- not only their rendered summaries - as a reviewer-readable branch of the canonical root.
+
+This slice adds no semantic query text, `CandidatePlan`, cursor validation, backend compiler, route or
+Gen1 runtime dependency; those remain Brick 4G. G-3 multi-value fields remains open.
+
 ## Domain-authoring conformance
 
 The reusable Gen2 framework follows
@@ -248,9 +314,10 @@ Deliberate, not gaps:
   These stay explicit business authoring per `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md`'s
   business-authoring gate; the kernel only derives tautological evidence.
 - **A generic constraint/plan algebra before Brick 4 existed.** Brick 4A (`PlannedConstraint`/
-  `PlannedSignal`/`PlannedSort`), Brick 4B (`SearchPlan`, facets, groups, provenance) and Brick 4C
-  (`PlanIdentity`, canonical encoding and cursor envelope) have since landed in their owning modules.
-  Request decoding, precedence, default browse behavior and backend compilation remain Brick 4D+ scope
+  `PlannedSignal`/`PlannedSort`), Brick 4B (`SearchPlan`, facets, groups, provenance), Brick 4C
+  (`PlanIdentity`, canonical encoding and cursor envelope) and Brick 4F (constraint precedence, public
+  plan-input resolution, facet lookup and plan compilation) have since landed in their owning modules.
+  Semantic query text, `CandidatePlan`, cursor validation and backend compilation remain Brick 4G+ scope
   and do not belong in this document until they exist.
 - **Backend-specific (Elasticsearch/Qdrant) representation concerns in the generic kernel.** Field kinds,
   capabilities and codecs stay backend-neutral by construction; mapping/analyzer/payload policy is each

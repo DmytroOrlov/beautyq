@@ -276,12 +276,12 @@ final class SearchPlanSpec extends AnyWordSpec {
       val duplicateRatingFacet = ratingRangeFacet.copy(id = departmentTermsFacet.id)
       val plan                 = basePlan(facets = Vector(departmentTermsFacet, duplicateRatingFacet, stockIntervalFacet))
       SearchPlan.validate(plan) match {
-        case Left(errors) => assert(errors.toVector == Vector(SearchPlanError.DuplicateFacetId(departmentTermsFacet.id)))
+        case Left(errors) => assert(errors.toVector == Vector(SearchPlanError.DuplicateFacetId(departmentTermsFacet.id, firstIndex = 0, duplicateIndex = 1)))
         case Right(value) => fail(s"expected rejection, got: $value")
       }
     }
 
-    "report multiple duplicated FacetIds sorted by canonical FacetId value, independent of vector position" in {
+    "report every later duplicated FacetId in vector encounter order with both indexes" in {
       val zebraFacet1 = departmentTermsFacet.copy(id = FacetId("zebra"))
       val zebraFacet2 = ratingRangeFacet.copy(id = FacetId("zebra"))
       val alphaFacet1 = stockIntervalFacet.copy(id = FacetId("alpha"))
@@ -290,7 +290,12 @@ final class SearchPlanSpec extends AnyWordSpec {
       val plan = basePlan(facets = facets)
       SearchPlan.validate(plan) match {
         case Left(errors) =>
-          assert(errors.toVector == Vector(SearchPlanError.DuplicateFacetId(FacetId("alpha")), SearchPlanError.DuplicateFacetId(FacetId("zebra"))))
+          assert(
+            errors.toVector == Vector(
+              SearchPlanError.DuplicateFacetId(FacetId("zebra"), firstIndex = 0, duplicateIndex = 1),
+              SearchPlanError.DuplicateFacetId(FacetId("alpha"), firstIndex = 2, duplicateIndex = 3),
+            )
+          )
         case Right(value) => fail(s"expected rejection, got: $value")
       }
     }
@@ -350,7 +355,7 @@ final class SearchPlanSpec extends AnyWordSpec {
                 SearchPlanError.InvalidConstraint(0, PlanConstraintError.UnsupportedFilterOperator(title.id, SearchFieldKind.Text, Vector(FilterOperator.Equal, FilterOperator.In))),
                 SearchPlanError.InvalidSort(0, PlanConstraintError.UnsupportedSortMode(stockMin.id, SearchFieldKind.Integer, SortMode.Value)),
                 SearchPlanError.InvalidFacet(1, FacetRequestError.UnsupportedFacetMode(FacetId("seller"), seller.id, SearchFieldKind.Keyword, FacetMode.Terms)),
-                SearchPlanError.DuplicateFacetId(departmentTermsFacet.id),
+                SearchPlanError.DuplicateFacetId(departmentTermsFacet.id, firstIndex = 0, duplicateIndex = 2),
                 SearchPlanError.InvalidGroup(2, GroupRequestError.UnsupportedGroupMode(GroupId("invalidSellers"), seller.id, SearchFieldKind.Keyword)),
                 SearchPlanError.DuplicateGroupId(sellersGroup.id),
               )

@@ -60,3 +60,12 @@ object PublicFilterClause {
   final case class Constraint[Document](value: PlannedConstraint[Document]) extends PublicFilterClause[Document]
   final case class GeoRadius[Document](field: SearchField[Document, GeoPoint], radius: Distance) extends PublicFilterClause[Document]
 }
+
+/** The generic typed result of public sort decoding, mirroring [[PublicFilterClause]]'s split between
+  * an already-planned sort and one that still needs a geo origin resolved from the request. A domain
+  * may alias this to its document type or wrap it with additional domain response policy. */
+sealed trait PublicSortClause[Document]
+object PublicSortClause {
+  final case class Planned[Document](value: PlannedSort[Document]) extends PublicSortClause[Document]
+  final case class GeoDistance[Document](field: SearchField[Document, GeoPoint], direction: SortDirection) extends PublicSortClause[Document]
+}

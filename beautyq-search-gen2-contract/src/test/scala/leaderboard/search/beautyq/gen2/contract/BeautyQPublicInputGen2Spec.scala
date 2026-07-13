@@ -71,6 +71,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
           assert(validated.userLocation.nonEmpty)
           assert(validated.filters.isEmpty)
           assert(validated.sort.isEmpty)
+          assert(validated.facets.map(_.id) == Vector(FacetId("service")))
         case Left(errors) => fail(s"valid request rejected: ${errors.toVector}")
       }
     }
@@ -90,7 +91,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
     "point at the executable registries and validated vocabulary" in {
       assert(BeautyQSearchDeclarations.variants.request.publicFilters eq BeautyQPublicFilterRegistry.fields)
       assert(BeautyQSearchDeclarations.variants.request.publicSorts eq BeautyQPublicSortRegistry.names)
-      assert(BeautyQSearchDeclarations.variants.request.publicFacets eq BeautyQPublicFacetRegistry.ids)
+      assert(BeautyQSearchDeclarations.variants.request.publicFacets eq BeautyQSearchPlanPolicy.facetRegistry.ids)
       assert(BeautyQSearchDeclarations.variants.intent.vocabulary eq BeautyQIntentVocabulary.value)
     }
   }

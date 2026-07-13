@@ -24,7 +24,8 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 4F — combine public request and parsed intent into a validated SearchPlan
+- **Active brick:** Brick 4G — semantic query text, `CandidatePlan` and cursor validation over the
+  compiled `SearchPlan`
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
   - Brick 1 — generic field/document declaration kernel
@@ -39,15 +40,39 @@ summaries must remain short and point here.
     exercised through the complete declaration/materialization path owned by `search-gen2-contract`/
     `search-gen2-core`; see
     [reusable-framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md) for the resulting gap ledger
-  - Brick 4D+4E — generic public-input registries and intent matching primitives, plus the BeautyQ
-    public input contract, stable-code vocabulary and deterministic intent adapter; request and parsed
-    intent remain separate inbound values until 4F
+  - Brick 4A — constraint, signal and sort algebra: `PlannedConstraint`/`PlannedSignal`/`PlannedSort`
+    plus `Bound`/`RangeBounds`, with deterministic diagnostics and an explicit-enum-label algebra trace
+  - Brick 4B — `SearchPlan`, facets, groups, page, provenance and diagnostics: typed facet/group/page/
+    provenance/diagnostic values, `SearchPlan` validation and its diagnostic generated view
+  - Brick 4C — `PlanIdentity` and the cursor envelope: the value-only projection from a validated
+    `SearchPlan`, versioned canonical identity encoding, the SHA-256 `PlanIdentityHash`, and the
+    versioned cursor envelope
+  - Brick 4D+4E — public input and intent interpretation: generic public-input registries and intent
+    matching primitives, plus the BeautyQ public input contract, stable-code vocabulary and
+    deterministic intent adapter; request and parsed intent remain separate inbound values until 4F
+  - Brick 4F — plan compilation: generic canonical-constraint/precedence/geo-input-resolution/
+    facet-registry/plan-compilation mechanics, plus the BeautyQ plan policy, compiler and diagnostic
+    trace that compose them into a validated `SearchPlan[VariantSearchDocumentGen2]`; semantic query
+    text, `CandidatePlan` and cursor validation remain out of scope until 4G
+
+  Compact Brick 4 status:
+
+  ```text
+  4A completed
+  4B completed
+  4C completed
+  4D completed
+  4E completed
+  4F completed
+  4G active
+  ```
 - **Authoring facade:** `BeautyQSearchDeclarations` is the canonical Gen2 business entry point.
-  Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request` and
-  `variants.intent`; projection/materialization stays in its owning module because the DAG must not
+  Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
+  and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
   reverse-depend from the contract layer.
-- **Next action:** Brick 4F — apply precedence, resolve location-dependent public geo values and
-  construct/validate the BeautyQ `SearchPlan`; backend and candidate-plan work remain later bricks
+- **Next action:** Brick 4G — compile semantic query text and `CandidatePlan` from the validated
+  `SearchPlan`, and validate inbound cursors against `PlanIdentity`; backend/route wiring remain later
+  bricks
 - **Blockers:** none
 
 Every brick that adds domain policy or reusable mechanics must satisfy the
@@ -681,14 +706,16 @@ use:
 - terms, number-range, interval-overlap and geo-distance-filter constraints;
 - separate geo proximity signal and distance sort;
 - filter/facet/group/sort/page IDs and inputs;
-- `SearchPlan` and value-only `PlanIdentity`/`CanonicalPlanView`;
+- the `SearchPlan` contract itself, `SourcedConstraint`/`ConstraintPriorityTiers` and `PublicSortClause`;
 - diagnostics, precision and typed unsupported-capability errors required by planning.
 
 In `search-gen2-core` add:
 
 - plan normalization and capability validation;
 - deterministic plan fingerprinting;
-- cursor envelope validation based on `PlanIdentity`;
+- value-only `PlanIdentity`/`CanonicalPlanView` and cursor envelope validation based on `PlanIdentity`;
+- Brick 4F's own resolution/compilation mechanics (`CanonicalConstraintView`, `ConstraintSlot`,
+  `ConstraintPrecedenceResolver`, `PublicPlanInputResolver`, `SearchPlanCompilationKernel`);
 - neutral fixtures for every added semantic distinction.
 
 In `beautyq-search-gen2-contract` and `beautyq-search-gen2-wiring` add:
@@ -1154,7 +1181,62 @@ The implemented opening sequence is:
     BeautyQ request adapter; it is not yet a generic claim. Any future extraction must be justified by
     a concrete domain requirement and neutral proof under the authoring principles.
 
-The next code change is **Brick 4F**: combine the two inbound sources with explicit precedence, resolve
-location-dependent public geo values and construct/validate the BeautyQ `SearchPlan`. Preserve the exact
-`variants.Fields` handles and stable codes; keep parser vocabulary and business semantics explicit, and do
-not wire ES/Qdrant or runtime ownership before the plan contract is proven.
+11. Brick 4F combined the validated public request and parsed intent into one validated
+    `SearchPlan[VariantSearchDocumentGen2]`. `search-gen2-core`/`search-gen2-contract` gained the
+    reusable mechanics: `CanonicalConstraintView` (typed constraint to `ConstraintSlot` projection,
+    extracted from `CanonicalPlanView.constraint` to give slot/canonical derivation one owner),
+    `ConstraintPrecedenceResolver` (a same-priority first-seen-anchor scan per tier, then a cross-tier
+    suppression pass, with applied filters ordered higher-then-lower and suppressed filters merged into
+    one true encounter-order sequence), `ConstraintPriorityTiers` (the resolver's higher/lower input,
+    constructed only by the precedence value), `ConstraintPrecedence` (one typed source order deriving
+    those tiers from one complete typed binding), `PublicPlanInputResolver` (generic public filter/sort
+    geo-origin resolution over `PublicFilterPlanView`/`PublicSortPlanView` adapters, so the resolver
+    never depends on a domain's concrete wrapper type), `FacetPlanRegistry`/`FacetRequest.fieldHandles`
+    (validated facet declaration/lookup behind one `FacetPlanRegistryError`, with field handles derived
+    from a request rather than repeated in a second vector, and `FacetSize.unsafeFrom`/
+    `FacetPlanRegistry.unsafeFrom` as the framework-owned static-declaration constructors), and
+    `SearchPlanCompilationKernel` (an opaque `prepare` result whose `assemble(finalNotices)` uses the
+    exact prepared input/resolution, so a domain derives its own mode before final validation without
+    being able to forge or pair a resolution). Each is proven by neutral fixtures unrelated to
+    BeautyQ's document shape or vocabulary (`InventoryDocument`, `TrailDocument`) as well as by BeautyQ.
+
+    BeautyQ added only `BeautyQSearchPlanPolicy` together with its typed `BeautyQConstraintSource` choice
+    and generic `ConstraintPrecedence` value (constraint-source precedence: `PublicRequest` above
+    `ParsedIntent`, exactly two ordered tiers) and `BeautyQGeoOriginPolicy` (the
+    geo-origin source path and the actual `request -> Option[GeoPoint]` resolution on one
+    concrete value, `RequestUserLocation`) - plus the four facet declarations carrying the Gen1-evidence
+    bucket tables, the explicit empty group policy, the default-browse notice and plan-mode
+    classification. `BeautyQSearchPlanCompiler` is a thin composition whose public API is exactly
+    `compile(request, intent)` and which always obtains its tiers and geo origin from those policy values:
+    generic geo-input resolution, then constraint-precedence resolution over the already-resolved facet
+    requests carried by the validated request;
+    mode classification and one final notices vector are derived from the opaque prepared resolution's
+    own applied filters and passed into `prepared.assemble(finalNotices)`, so the returned plan is always exactly
+    `SearchPlan.validate`'s own value, never copied afterward. `BeautyQSearchPlanCompilationTrace` is a
+    diagnostic trace whose policy section renders `BeautyQSearchPlanPolicy`'s own values, never a second
+    hand-maintained rendering. `BeautyQSearchPlanPolicy.facetRegistry` directly owns public facet IDs
+    and lookup; no second, separately editable literal facet list exists. `variants.plan` exposes those same typed policy values - not only their rendered
+    summaries - as a reviewer-readable branch of `BeautyQSearchDeclarations`. No semantic query text,
+    `CandidatePlan`, cursor validation, backend or route was added.
+
+    ```text
+    Domain policy added: BeautyQConstraintSource, ConstraintPrecedence, BeautyQGeoOriginPolicy,
+    BeautyQSearchPlanPolicy (the four facet declarations, empty group policy, the default-browse notice,
+    plan-mode classification).
+    Framework mechanics reused or extracted: CanonicalConstraintView, ConstraintPrecedenceResolver,
+    ConstraintPriorityTiers, PublicPlanInputResolver, FacetPlanRegistry, FacetRequest.fieldHandles,
+    FacetSize.unsafeFrom, SearchPlanCompilationKernel (search-gen2-core/contract).
+    Neutral proof: InventoryDocument (CanonicalConstraintViewSpec, ConstraintPrecedenceSpec, ConstraintPrecedenceResolverSpec,
+    FacetPlanRegistrySpec, SearchPlanCompilationKernelSpec) and TrailDocument (PublicSortClauseSpec,
+    PublicPlanInputResolverSpec), both unrelated to BeautyQ's document shape or vocabulary.
+    Canonical entry-point update: BeautyQSearchDeclarations.variants.plan.
+    Derived-view proof: BeautyQSearchPlanPolicySpec pins variants.plan against BeautyQSearchPlanPolicy's
+    own values and proves the typed precedence value drives both rendering and tiering; the compiler and
+    trace specs pin the fixed policy and `compile(request, intent)` API across 12 golden compilation traces whose
+    policy section is rendered from BeautyQSearchPlanPolicy directly.
+    ```
+
+The next code change is **Brick 4G**: compile semantic query text and `CandidatePlan` from the validated
+`SearchPlan`, and validate inbound cursors against `PlanIdentity`. Preserve the exact `variants.Fields`
+handles, stable codes and the Brick 4F plan-compilation gate order; keep candidate eligibility and cursor
+semantics explicit, and do not wire ES/Qdrant or runtime ownership before the candidate contract is proven.

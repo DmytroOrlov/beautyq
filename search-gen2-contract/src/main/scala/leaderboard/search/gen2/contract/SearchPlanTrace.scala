@@ -18,25 +18,22 @@ object SearchPlanTrace {
   def facet[Document](value: FacetRequest[Document]): String =
     value match {
       case terms: FacetRequest.Terms[Document, ?] =>
-        s"facet.terms id=${terms.id.value} field=${renderFieldRef(terms.field.id, terms.field.codec.typeId)} size=${terms.size.value} order=${renderTermsFacetOrder(terms.order)} counting=${renderCountingPolicy(terms.countingPolicy)}"
+        s"facet.terms id=${terms.id.value} field=${renderFieldRef(terms.field.id, terms.field.codec.typeId)} size=${terms.size.value} order=${terms.order} counting=${terms.countingPolicy}"
 
       case numberRange: FacetRequest.NumberRange[Document, ?] =>
-        s"facet.number-range id=${numberRange.id.value} field=${renderFieldRef(numberRange.field.id, numberRange.field.codec.typeId)} counting=${renderCountingPolicy(numberRange.countingPolicy)} buckets=${renderBuckets(numberRange.field, numberRange.buckets)}"
+        s"facet.number-range id=${numberRange.id.value} field=${renderFieldRef(numberRange.field.id, numberRange.field.codec.typeId)} counting=${numberRange.countingPolicy} buckets=${renderBuckets(numberRange.field, numberRange.buckets)}"
 
       case intervalOverlap: FacetRequest.IntervalOverlap[Document, ?] =>
-        s"facet.interval-overlap id=${intervalOverlap.id.value} from=${renderFieldRef(intervalOverlap.from.id, intervalOverlap.from.codec.typeId)} to=${renderFieldRef(intervalOverlap.to.id, intervalOverlap.to.codec.typeId)} counting=${renderCountingPolicy(intervalOverlap.countingPolicy)} buckets=${renderBuckets(intervalOverlap.from, intervalOverlap.buckets)}"
+        s"facet.interval-overlap id=${intervalOverlap.id.value} from=${renderFieldRef(intervalOverlap.from.id, intervalOverlap.from.codec.typeId)} to=${renderFieldRef(intervalOverlap.to.id, intervalOverlap.to.codec.typeId)} counting=${intervalOverlap.countingPolicy} buckets=${renderBuckets(intervalOverlap.from, intervalOverlap.buckets)}"
     }
 
   def group[Document](value: GroupRequest[Document, ?]): String =
-    s"group id=${value.id.value} key=${renderFieldRef(value.keyField.id, value.keyField.codec.typeId)} size=${value.size.value} representative=${renderRepresentative(value.representative)} metrics=${renderMetrics(value.metrics)} order=${renderOrder(value.order)} precision=${renderPrecision(value.precision)}"
+    s"group id=${value.id.value} key=${renderFieldRef(value.keyField.id, value.keyField.codec.typeId)} size=${value.size.value} representative=${renderRepresentative(value.representative)} metrics=${renderMetrics(value.metrics)} order=${renderOrder(value.order)} precision=${value.precision}"
 
   def provenance(value: ConstraintProvenance): String =
     value match {
-      case ConstraintProvenance.ExplicitUi         => "ExplicitUi"
       case ConstraintProvenance.FacetSelection(id) => s"FacetSelection(${id.value})"
-      case ConstraintProvenance.ParsedHard         => "ParsedHard"
-      case ConstraintProvenance.ParsedSoft         => "ParsedSoft"
-      case ConstraintProvenance.SystemDefault      => "SystemDefault"
+      case other                                   => other.toString
     }
 
   def error(value: SearchPlanError): String =
@@ -45,7 +42,7 @@ object SearchPlanTrace {
       case SearchPlanError.InvalidSort(index, error)        => s"plan-error.invalid-sort index=$index ${PlannedAlgebraTrace.error(error)}"
       case SearchPlanError.InvalidFacet(index, error)       => s"plan-error.invalid-facet index=$index ${renderFacetRequestError(error)}"
       case SearchPlanError.InvalidGroup(index, error)       => s"plan-error.invalid-group index=$index ${renderGroupRequestError(error)}"
-      case SearchPlanError.DuplicateFacetId(id)             => s"plan-error.duplicate-facet-id id=${id.value}"
+      case SearchPlanError.DuplicateFacetId(id, firstIndex, duplicateIndex) => s"plan-error.duplicate-facet-id id=${id.value} first-index=$firstIndex duplicate-index=$duplicateIndex"
       case SearchPlanError.DuplicateGroupId(id)              => s"plan-error.duplicate-group-id id=${id.value}"
     }
 
@@ -84,7 +81,7 @@ object SearchPlanTrace {
 
     val suppressedFilterLines =
       plan.diagnostics.suppressedFilters.zipWithIndex.map { case (suppressedFilter, index) =>
-        s"plan.diagnostics.suppressed-filter[$index] provenance=${provenance(suppressedFilter.source.provenance)} ${PlannedAlgebraTrace.constraint(suppressedFilter.source.constraint)} reason=${renderSuppressionReason(suppressedFilter.reason)}"
+        s"plan.diagnostics.suppressed-filter[$index] provenance=${provenance(suppressedFilter.source.provenance)} ${PlannedAlgebraTrace.constraint(suppressedFilter.source.constraint)} reason=${suppressedFilter.reason}"
       }
 
     val noticeLines =
@@ -140,20 +137,6 @@ object SearchPlanTrace {
       case Bound.Exclusive(value) => s"exclusive(${field.codec.encodeCanonical(value)})"
     }
 
-  private def renderTermsFacetOrder(order: TermsFacetOrder): String = order.toString
-
-  private def renderCountingPolicy(policy: FacetCountingPolicy): String = policy.toString
-
-  private def renderPrecision(policy: GroupPrecisionPolicy): String = policy.toString
-
-  private def renderSuppressionReason(reason: SuppressionReason): String = reason.toString
-
-  private def renderDirection(direction: SortDirection): String = direction.toString
-
-  private def renderKind(kind: SearchFieldKind): String = kind.toString
-
-  private def renderFacetMode(mode: FacetMode): String = mode.toString
-
   private def renderRepresentative[Document](representative: RepresentativeRequest[Document]): String =
     representative match {
       case RepresentativeRequest.IdentityOnly() =>
@@ -178,15 +161,15 @@ object SearchPlanTrace {
 
   private def renderOrderCriterion(criterion: GroupOrder): String =
     criterion match {
-      case GroupOrder.Metric(metricId, direction)      => s"metric(${metricId.value} ${renderDirection(direction)})"
-      case GroupOrder.MatchingDocumentCount(direction) => s"matching-document-count(${renderDirection(direction)})"
-      case GroupOrder.Key(direction)                   => s"key(${renderDirection(direction)})"
+      case GroupOrder.Metric(metricId, direction)      => s"metric(${metricId.value} $direction)"
+      case GroupOrder.MatchingDocumentCount(direction) => s"matching-document-count($direction)"
+      case GroupOrder.Key(direction)                   => s"key($direction)"
     }
 
   private def renderFacetRequestError(error: FacetRequestError): String =
     error match {
       case FacetRequestError.UnsupportedFacetMode(facetId, fieldId, kind, required) =>
-        s"error.unsupported-facet-mode facet=${facetId.value} field=${fieldId.value} kind=${renderKind(kind)} required=${renderFacetMode(required)}"
+        s"error.unsupported-facet-mode facet=${facetId.value} field=${fieldId.value} kind=$kind required=$required"
 
       case FacetRequestError.EmptyFacetBuckets(facetId) =>
         s"error.empty-facet-buckets facet=${facetId.value}"
@@ -204,7 +187,7 @@ object SearchPlanTrace {
   private def renderGroupRequestError(error: GroupRequestError): String =
     error match {
       case GroupRequestError.UnsupportedGroupMode(groupId, fieldId, kind) =>
-        s"error.unsupported-group-mode group=${groupId.value} field=${fieldId.value} kind=${renderKind(kind)}"
+        s"error.unsupported-group-mode group=${groupId.value} field=${fieldId.value} kind=$kind"
 
       case GroupRequestError.EmptyRepresentativeFields(groupId) =>
         s"error.empty-representative-fields group=${groupId.value}"

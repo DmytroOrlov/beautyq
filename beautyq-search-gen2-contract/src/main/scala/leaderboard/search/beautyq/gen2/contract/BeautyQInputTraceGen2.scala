@@ -15,25 +15,16 @@ object BeautySearchRequestTrace {
       }
       s"request.filter[$index] name=${BeautyQPublicFilterRegistry.publicNameOf(filter).value} provenance=${SearchPlanTrace.provenance(filter.provenance)} $clause"
     }
-    val sortLines = request.sort.zipWithIndex.map { case (sort, index) =>
-      val rendered = sort match {
+    val sortLines = request.sort.zipWithIndex.map { case (sortInput, index) =>
+      val rendered = sortInput.clause match {
         case DecodedBeautySort.Planned(value) => PlannedAlgebraTrace.sort(value)
-        case DecodedBeautySort.GeoDistance(field, direction) => s"geo-distance field=${field.id.value}:${field.codec.typeId.value} direction=${renderDirection(direction)} origin=unresolved"
+        case DecodedBeautySort.GeoDistance(field, direction) => s"geo-distance field=${field.id.value}:${field.codec.typeId.value} direction=$direction origin=unresolved"
       }
       s"request.sort[$index] $rendered"
     }
     val location = request.userLocation.map(point => SearchValueCodec.geoPoint.encodeCanonical(point)).getOrElse("absent")
     (Vector(s"request.query=$query") ++ filterLines ++ Vector(s"request.facets=${request.requestedFacets.map(_.value).mkString("[", ",", "]")}") ++ sortLines ++ Vector(s"request.cursor=${if (request.page.cursor.isDefined) "present" else "absent"}", s"request.page-size=${request.page.size.value}", s"request.user-location=$location")).mkString("\n")
   }
-
-  // Explicit stable label, matched case-by-case rather than delegated to SortDirection's own default
-  // toString - the same explicit-match idiom PlannedAlgebraTrace/SearchPlanTrace already use, so a
-  // future custom toString on the enum can never silently change this trace's output.
-  private def renderDirection(direction: SortDirection): String =
-    direction match {
-      case SortDirection.Asc  => "Asc"
-      case SortDirection.Desc => "Desc"
-    }
 
   private def escape(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
 }
@@ -59,16 +50,9 @@ object BeautyIntentTrace {
   */
 object BeautyIntentRuleTrace {
   def render(rule: BeautyIntentRule): String =
-    s"rule id=${rule.id.value} aliases=${renderAliases(rule.aliases)} mode=${renderMode(rule.mode)} hard=${renderActions(rule.hardActions)} semantic=${renderActions(rule.semanticActions)} requires=${renderActions(rule.requires)} excludes=${renderActions(rule.excludes)} noise=${rule.noise} label=${renderLabel(rule.canonicalSemanticLabel)}"
+    s"rule id=${rule.id.value} aliases=${renderAliases(rule.aliases)} mode=${rule.mode} hard=${renderActions(rule.hardActions)} semantic=${renderActions(rule.semanticActions)} requires=${renderActions(rule.requires)} excludes=${renderActions(rule.excludes)} noise=${rule.noise} label=${renderLabel(rule.canonicalSemanticLabel)}"
 
   private def renderAliases(aliases: Vector[String]): String = aliases.map(BeautyQIntentTextGen2.normalize).mkString("[", ",", "]")
-
-  private def renderMode(mode: IntentRuleMode): String =
-    mode match {
-      case IntentRuleMode.Independent => "Independent"
-      case IntentRuleMode.Contextual  => "Contextual"
-      case IntentRuleMode.SemanticOverlay => "SemanticOverlay"
-    }
 
   private def renderActions(actions: Vector[BeautyIntentAction]): String = actions.map(renderAction).mkString("[", ",", "]")
 

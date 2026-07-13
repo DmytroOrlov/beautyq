@@ -219,10 +219,11 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
       assert(topLevelBranchLines == Vector("├── catalog", "└── variants"))
     }
 
-    "render executable request and intent branches without future placeholders" in {
+    "render executable request, intent and plan branches without future placeholders" in {
       assert(renderStructure.contains("request"))
       assert(renderStructure.contains("intent-rules"))
-      val forbiddenTokens = Vector("plan", "groups", "response", "backends", "quality")
+      assert(renderStructure.contains("plan"))
+      val forbiddenTokens = Vector("response", "backends", "quality")
       forbiddenTokens.foreach(token => assert(!renderStructure.contains(token), s"unexpected placeholder token '$token' in rendered output"))
     }
   }
@@ -364,9 +365,11 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
 
       val lines = renderStructure.linesIterator.toVector
       val requestIndex = lines.indexWhere(_ == "    ├── request")
-      val intentIndex = lines.indexWhere(_ == "    └── intent-rules")
+      val intentIndex = lines.indexWhere(_ == "    ├── intent-rules")
+      val planIndex = lines.indexWhere(_ == "    └── plan")
       assert(requestIndex > 0)
       assert(intentIndex > requestIndex)
+      assert(planIndex > intentIndex)
 
       val expectedPublicFilters = Vector(
         "service",
@@ -414,12 +417,33 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
           )
       assert(lines.slice(requestIndex, intentIndex) == expectedRequest)
 
-      val expectedIntent = Vector("    └── intent-rules") ++ (1 to 87).map { index =>
+      val expectedIntent = Vector("    ├── intent-rules") ++ (1 to 87).map { index =>
         val connector = if (index == 87) "└── " else "├── "
         val ruleId = f"r$index%03d"
-        s"        $connector[${index - 1}] $ruleId"
+        s"    │   $connector[${index - 1}] $ruleId"
       }
-      assert(lines.slice(intentIndex, lines.size) == expectedIntent)
+      assert(lines.slice(intentIndex, planIndex) == expectedIntent)
+
+      val expectedPlan =
+        Vector(
+          "    └── plan",
+          "        ├── source-precedence",
+          "        │   ├── [0] PublicRequest",
+          "        │   └── [1] ParsedIntent",
+          "        ├── geo-origin: request.userLocation",
+          "        ├── facets",
+          "        │   ├── [0] service",
+          "        │   ├── [1] category",
+          "        │   ├── [2] price",
+          "        │   └── [3] durationMinutes",
+          "        ├── groups",
+          "        ├── modes",
+          "        │   ├── [0] SemanticSearch",
+          "        │   ├── [1] StructuredBrowse",
+          "        │   └── [2] DefaultBrowse",
+          "        └── default-browse-code: default-browse",
+        )
+      assert(lines.slice(planIndex, lines.size) == expectedPlan)
     }
   }
 

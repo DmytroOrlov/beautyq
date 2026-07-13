@@ -147,7 +147,7 @@ object CanonicalPlanView {
         PlanIdentity(
           contractFingerprint = contractFingerprint,
           normalizedQuery = cursorFree.residualText.map(NormalizedQueryText.apply),
-          hardConstraints = cursorFree.hardConstraints.map(CanonicalPlanView.constraint),
+          hardConstraints = cursorFree.hardConstraints.map(CanonicalConstraintView.apply),
           softSignals = cursorFree.softSignals.map(CanonicalPlanView.signal),
           sort = cursorFree.sort.map(CanonicalPlanView.sort),
           facets = cursorFree.facets.map(CanonicalPlanView.facet),
@@ -157,33 +157,7 @@ object CanonicalPlanView {
       }
     }
 
-  private def bound[A](field: SearchField[?, A], value: Bound[A]): CanonicalBound =
-    value match {
-      case Bound.Unbounded        => CanonicalBound.Unbounded
-      case Bound.Inclusive(item) => CanonicalBound.Inclusive(field.codec.encodeCanonical(item))
-      case Bound.Exclusive(item) => CanonicalBound.Exclusive(field.codec.encodeCanonical(item))
-    }
-
-  private def bounds[A](field: SearchField[?, A], value: RangeBounds[A]): CanonicalRangeBounds =
-    CanonicalRangeBounds(bound(field, value.lower), bound(field, value.upper))
-
-  private def geoPoint(value: GeoPoint): CanonicalGeoPoint =
-    CanonicalGeoPoint(SearchValueCodec.geoPoint.encodeCanonical(value))
-
-  private def distance(value: Distance): CanonicalDistance =
-    CanonicalDistance(SearchValueCodec.bigDecimal.encodeCanonical(value.meters))
-
-  private def constraint[Document](value: PlannedConstraint[Document]): CanonicalConstraint =
-    value match {
-      case PlannedConstraint.Terms(field, values) =>
-        CanonicalConstraint.Terms(field.id, values.iterator.map(field.codec.encodeCanonical).toVector.distinct.sorted)
-      case PlannedConstraint.NumberRange(field, range) =>
-        CanonicalConstraint.NumberRange(field.id, bounds(field, range))
-      case PlannedConstraint.IntervalOverlap(from, to, range) =>
-        CanonicalConstraint.IntervalOverlap(from.id, to.id, bounds(from, range))
-      case PlannedConstraint.GeoDistanceFilter(field, origin, radius) =>
-        CanonicalConstraint.GeoDistanceFilter(field.id, geoPoint(origin), distance(radius))
-    }
+  private def geoPoint(value: GeoPoint): CanonicalGeoPoint = CanonicalConstraintView.geoPoint(value)
 
   private def signal[Document](value: PlannedSignal[Document]): CanonicalSignal =
     value match {

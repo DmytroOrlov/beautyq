@@ -20,6 +20,18 @@ final case class SourcedConstraint[Document](
   provenance: ConstraintProvenance,
 )
 
+/** The two already-ordered tiers a domain's own constraint-source policy produces: `higher` outranks
+  * `lower`. A domain policy is the only place that decides which of its inbound sources plays which
+  * role; the generic precedence resolver never inspects [[ConstraintProvenance]] to infer it.
+  */
+final class ConstraintPriorityTiers[Document] private[contract] (
+  higher0: Vector[SourcedConstraint[Document]],
+  lower0: Vector[SourcedConstraint[Document]],
+) {
+  val higher: Vector[SourcedConstraint[Document]] = higher0
+  val lower: Vector[SourcedConstraint[Document]] = lower0
+}
+
 final case class AppliedFilter[Document](source: SourcedConstraint[Document])
 
 enum SuppressionReason {
@@ -82,7 +94,7 @@ object SearchPlanError {
   final case class InvalidSort(index: Int, error: PlanConstraintError) extends SearchPlanError
   final case class InvalidFacet(index: Int, error: FacetRequestError) extends SearchPlanError
   final case class InvalidGroup(index: Int, error: GroupRequestError) extends SearchPlanError
-  final case class DuplicateFacetId(id: FacetId) extends SearchPlanError
+  final case class DuplicateFacetId(id: FacetId, firstIndex: Int, duplicateIndex: Int) extends SearchPlanError
   final case class DuplicateGroupId(id: GroupId) extends SearchPlanError
 }
 
@@ -127,7 +139,7 @@ object SearchPlan {
       }
 
     val duplicateFacetIdErrors =
-      duplicateIds(plan.facets.map(_.id))(_.value).map(SearchPlanError.DuplicateFacetId.apply)
+      duplicateFacetIds(plan.facets)
 
     val groupErrors =
       plan.groups.zipWithIndex.flatMap { case (group, index) =>
@@ -143,12 +155,20 @@ object SearchPlan {
     constraintErrors ++ sortErrors ++ facetErrors ++ duplicateFacetIdErrors ++ groupErrors ++ duplicateGroupIdErrors
   }
 
-  // Each duplicated ID is reported once, ordered by its own canonical String value - independent of
-  // where in the vector the duplicate first or last appeared.
+  // Each later duplicate is reported once in declaration encounter order, retaining the first and
+  // duplicate positions so diagnostics remain deterministic and actionable.
+  private def duplicateFacetIds[Document](facets: Vector[FacetRequest[Document]]): Vector[SearchPlanError] = {
+    val (_, errors) =
+      facets.zipWithIndex.foldLeft((Map.empty[FacetId, Int], Vector.empty[SearchPlanError])) {
+        case ((firstIndexes, errors), (facet, index)) =>
+          firstIndexes.get(facet.id) match {
+            case Some(firstIndex) => (firstIndexes, errors :+ SearchPlanError.DuplicateFacetId(facet.id, firstIndex, index))
+            case None             => (firstIndexes.updated(facet.id, index), errors)
+          }
+      }
+    errors
+  }
+
   private def duplicateIds[Id](ids: Vector[Id])(canonicalValue: Id => String): Vector[Id] =
-    ids
-      .groupBy(identity)
-      .collect { case (id, occurrences) if occurrences.length > 1 => id }
-      .toVector
-      .sortBy(canonicalValue)
+    ids.groupBy(identity).collect { case (id, occurrences) if occurrences.length > 1 => id }.toVector.sortBy(canonicalValue)
 }

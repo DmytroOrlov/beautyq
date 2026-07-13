@@ -292,14 +292,88 @@ Opaque model wrappers are declared in the model scope and consumed from a separa
 scope, matching the production module boundary and keeping their nominal typeclass evidence
 unambiguous.
 
+### Plan-policy example (Brick 4F)
+
+Combining a domain's already-validated public request and parsed intent into one validated `SearchPlan`
+follows the same split: business policy stays explicit, everything mechanical is reused from
+`search-gen2-contract`/`search-gen2-core`.
+
+**Business/domain author writes explicitly:**
+
+- constraint-source precedence, as one executable policy value that carries *both* the stable,
+  reviewer-readable order *and* the actual higher/lower tier assignment - never a rendered label paired
+  with a separately hardcoded compiler argument order;
+- the geo-origin source, if the domain has a geo field, likewise as one executable policy value
+  carrying both a stable id and the actual `request -> Option[GeoPoint]` resolution (e.g.
+  `request.userLocation`);
+- facet declarations (one `FacetPlanDeclaration` per facet, holding only its `FacetRequest` - never a
+  second vector repeating that request's own field(s));
+- group policy (an explicit `Vector.empty` counts as a policy, not an omission);
+- the default-browse notice code;
+- plan-mode classification (a plain function over already-resolved plan pieces).
+
+**Framework derives/executes:**
+
+- canonical constraint identity and slot derivation (`CanonicalConstraintView`/`ConstraintSlot`);
+- constraint precedence resolution, including every duplicate/conflict/ordering rule
+  (`ConstraintPrecedenceResolver`), given the complete typed source binding produced by
+  (`ConstraintPrecedence`/`ConstraintPriorityTiers`);
+- public filter/sort geo-clause resolution against the declared origin (`PublicPlanInputResolver`);
+- field-handle derivation for any reviewer/presentation view that needs one (`FacetRequest.fieldHandles`);
+- facet-ID validation and one-time requested-facet lookup at the validated public-request boundary
+  (`FacetPlanRegistry`); the trusted request carries typed `FacetRequest` values into compilation, so
+  the compiler performs no second lookup, plus the framework-owned static
+  literal constructors a domain calls instead of hand-rolling its own unwrapping/throwing
+  (`FacetSize.unsafeFrom`, `FacetPlanRegistry.unsafeFrom`);
+- `SearchPlan` assembly, diagnostic attachment and validation through the opaque prepared-compilation
+  value returned by `SearchPlanCompilationKernel.prepare`; a domain may inspect its resolution and call
+  `prepared.assemble(finalNotices)` once, but cannot forge a resolution or pair it with another input.
+
+```scala
+enum WidgetConstraintSource {
+  case PublicRequest
+  case ParsedIntent
+}
+
+object WidgetSearchPlanPolicy {
+  val constraintPrecedence =
+    ConstraintPrecedence.unsafeAbove(WidgetConstraintSource.PublicRequest, WidgetConstraintSource.ParsedIntent)
+
+  private val declarations = Vector(
+    FacetPlanDeclaration(FacetRequest.Terms(FacetId("tag"), WidgetSearchDomain.tags, FacetSize.unsafeFrom(10), TermsFacetOrder.CountDescThenKeyAsc, FacetCountingPolicy.AllAppliedHardFilters))
+  )
+
+  val facetRegistry: FacetPlanRegistry[WidgetDocument] = FacetPlanRegistry.unsafeFrom(declarations)
+  val groups: Vector[GroupRequest[WidgetDocument, ?]] = Vector.empty
+  val defaultBrowseNotice = PlanDiagnostic(PlanDiagnosticCode("default-browse"), None)
+}
+```
+
+A domain compiler then composes the reusable mechanics as a thin, sequential gate pipeline: resolve
+public geo input through the domain's geo-origin policy, consume the trusted request's already-resolved
+facet requests, derive `ConstraintPriorityTiers` from the exhaustive typed function passed to
+`constraintPrecedence.tiers`, and
+call `SearchPlanCompilationKernel.prepare`. It may classify the plan from
+`prepared.resolution.appliedFilters`, then calls `prepared.assemble(finalNotices)` once. It never
+assembles or validates a `SearchPlan` by hand, never reimplements precedence, geo resolution or facet
+lookup, and never copies or mutates the plan returned by `assemble`.
+
+`ConstraintPrecedence`/`BeautyQGeoOriginPolicy`/`BeautyQSearchPlanPolicy`/
+`BeautyQSearchPlanCompiler`/`BeautyQSearchPlanCompilationTrace`
+(`beautyq-search-gen2-contract`/`beautyq-search-gen2-wiring`) are the golden reference for this authoring
+style at full scale, including geo-origin resolution and a four-facet registry with Gen1-evidence bucket
+tables. `BeautyQSearchDeclarations.variants.plan` exposes those same typed policy values - not only
+their rendered summaries - as a reviewer-readable branch of the canonical root, derived from
+`BeautyQSearchPlanPolicy` rather than restated.
+
 `BeautyQSearchDeclarations.variants.Fields` (`beautyq-search-gen2-contract`) is the golden reference for
 this authoring style at full scale: it declares 44 fields (24 direct, 20 dynamic across four map
 families) using only selectors, kind choices, and capabilities, with every mechanical piece above
 derived by the registry.
 
 For a business review, start at `BeautyQSearchDeclarations.scala` and read in this order:
-`catalog.topology`, `variants.Fields`, `variants.document`, `variants.request`, and
-`variants.intent`. Then read `BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and
+`catalog.topology`, `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`, and
+`variants.plan`. Then read `BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and
 `BeautyQVariantProjectionGen2` in the
 materialization module for the SQL snapshot, joins, invariants, and document-value policy. The latter
 files are deliberately outside the root because the module DAG must keep the generic contract layer

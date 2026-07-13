@@ -4,14 +4,17 @@ import leaderboard.model.*
 import leaderboard.search.gen2.contract.*
 
 /** The executable BeautyQ Gen2 business root. Read this file first when authoring or reviewing the
-  * domain: `catalog` defines the source topology; `variants.Fields` defines the document vocabulary
-  * and backend capabilities; `variants.document` closes the document contract; `variants.request`
-  * and `variants.intent` expose the public inbound policies. Projection/materialization remains the
-  * next stage after this declaration and is intentionally not hidden behind a second catalog tree.
+  * domain, in data-flow order: `catalog` defines the source topology; `variants.Fields` defines the
+  * document vocabulary and backend capabilities; `variants.document` closes the document contract;
+  * `variants.request` and `variants.intent` expose the public inbound policies; `variants.plan` exposes
+  * the executable plan policy (constraint-source precedence, geo-origin, facets, groups, plan modes and
+  * the default-browse notice) that `BeautyQSearchPlanCompiler` composes with reusable Gen2 mechanics.
+  * Backend/route wiring remains the next stage after this declaration and is intentionally not hidden
+  * behind a second catalog tree.
   *
-  * This is the real initial `catalog`/`variants` declaration, not a placeholder rendering of the
-  * eventual full tree. See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md
-  * for the section-by-section delivery order this root grows into, and
+  * This is the real, current `catalog`/`variants` declaration, not a placeholder rendering of a future
+  * tree. See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md
+  * for the section-by-section delivery order this root grew into, and
   * docs/search/NEW_DOMAIN_ONBOARDING.md for the low-boilerplate `searchFields[Document]` authoring DSL
   * that `variants.Fields` uses. Every field below declares only its selector, kind (or lets it be
   * inferred), and capabilities; the generic registry derives the rest.
@@ -262,17 +265,44 @@ object BeautyQSearchDeclarations {
       val publicFilters = BeautyQPublicFilterRegistry.fields
       /** See `BeautyQPublicSortRegistry` for public sort policy. */
       val publicSorts   = BeautyQPublicSortRegistry.names
-      /** See `BeautyQPublicFacetRegistry` for public facet policy. */
-      val publicFacets  = BeautyQPublicFacetRegistry.ids
+      /** Facet IDs are derived directly from the executable plan policy; no second public facet list. */
+      val publicFacets  = BeautyQSearchPlanPolicy.facetRegistry.ids
     }
 
     object intent {
       /** See `BeautyQIntentVocabulary.sourceRules` for aliases and contextual policy. */
       val vocabulary = BeautyQIntentVocabulary.value
     }
+
+    /** The plan branch links directly to `BeautyQSearchPlanPolicy`'s own typed policy values - not a
+      * second hand-maintained rendering - so a reviewer starting here can navigate straight to every
+      * actual declaration. Open `BeautyQSearchPlanPolicy` to edit constraint-source precedence,
+      * geo-origin policy, facet declarations, group policy or the default-browse notice. This root
+      * links business policy only; compilation itself (`BeautyQSearchPlanCompiler`) is wiring
+      * implementation and is never referenced from here. */
+    object plan {
+      // Direct typed references: the actual policy declarations a reviewer navigates to.
+      val constraintPrecedence: ConstraintPrecedence[BeautyQConstraintSource] = BeautyQSearchPlanPolicy.constraintPrecedence
+      val geoOriginPolicy: BeautyQGeoOriginPolicy                             = BeautyQSearchPlanPolicy.geoOriginPolicy
+      val facetRegistry: FacetPlanRegistry[VariantSearchDocumentGen2]        = BeautyQSearchPlanPolicy.facetRegistry
+      val groupPolicy: Vector[GroupRequest[VariantSearchDocumentGen2, ?]]     = BeautyQSearchPlanPolicy.groups
+      val defaultBrowsePolicy: PlanDiagnostic                                 = BeautyQSearchPlanPolicy.defaultBrowseNotice
+      val modeClassifier                                                     = BeautyQSearchPlanPolicy.classify _
+
+      // Derived summaries for the generated structure tree below - always computed from the typed
+      // policy values above, never a second hand-maintained rendering.
+      val sourcePrecedence  = constraintPrecedence.sourceOrder.map(_.toString)
+      val geoOrigin         = geoOriginPolicy.sourcePath
+      val facets            = facetRegistry.ids
+      val groups            = groupPolicy.map(_.id.value)
+      val modes             = BeautyQSearchPlanMode.values.toVector.map(_.toString)
+      val defaultBrowseCode = defaultBrowsePolicy.code.value
+    }
   }
 
-  val structure: SearchStructureTree =
+  /** Derived view is lazy so first touching policy values can initialize `variants.Fields` without
+    * re-entering this root through `variants.plan`; the reverse first-touch order is equally safe. */
+  lazy val structure: SearchStructureTree =
     SearchStructureTree(
       "BeautyQSearchDeclarations",
       Vector(
@@ -298,6 +328,17 @@ object BeautyQSearchDeclarations {
               ),
             ),
             SearchStructureNode.indexed("intent-rules", variants.intent.vocabulary.rules.map(_.id.value)),
+            SearchStructureNode.branch(
+              "plan",
+              Vector(
+                SearchStructureNode.indexed("source-precedence", variants.plan.sourcePrecedence),
+                SearchStructureNode.leaf(s"geo-origin: ${variants.plan.geoOrigin}"),
+                SearchStructureNode.indexed("facets", variants.plan.facets.map(_.value)),
+                SearchStructureNode.indexed("groups", variants.plan.groups),
+                SearchStructureNode.indexed("modes", variants.plan.modes),
+                SearchStructureNode.leaf(s"default-browse-code: ${variants.plan.defaultBrowseCode}"),
+              ),
+            ),
           ),
         ),
       ),

@@ -33,6 +33,13 @@ final case class FacetSize private (value: Int)
 object FacetSize {
   def from(value: Int): Either[PlanValueError, FacetSize] =
     if (value > 0) Right(new FacetSize(value)) else Left(PlanValueError.InvalidFacetSize(value))
+
+  /** For static domain-policy declarations only, where an invalid literal is a broken source invariant
+    * to fail loudly on, never a runtime input case. Domain files must call this rather than hand-roll
+    * their own `from(...).getOrElse(throw ...)`.
+    */
+  def unsafeFrom(value: Int): FacetSize =
+    from(value).getOrElse(throw new IllegalStateException(s"invalid source FacetSize literal '$value'"))
 }
 
 final case class GroupSize private (value: Int)

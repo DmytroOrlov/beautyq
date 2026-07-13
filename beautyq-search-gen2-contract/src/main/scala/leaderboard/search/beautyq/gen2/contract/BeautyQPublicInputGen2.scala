@@ -44,10 +44,12 @@ object DecodedPublicFilter {
     Some((value.clause, value.provenance))
 }
 
-sealed trait DecodedBeautySort
+// The unresolved/planned split is generic (PublicSortClause, mirroring PublicFilterClause); this
+// alias keeps the original BeautyQ contract package's name for source readability without a second,
+// independently defined sort algebra.
+type DecodedBeautySort = PublicSortClause[VariantSearchDocumentGen2]
 object DecodedBeautySort {
-  final case class Planned(value: PlannedSort[VariantSearchDocumentGen2]) extends DecodedBeautySort
-  final case class GeoDistance(field: SearchField[VariantSearchDocumentGen2, GeoPoint], direction: SortDirection) extends DecodedBeautySort
+  export PublicSortClause.{Planned, GeoDistance}
 }
 
 sealed trait BeautySortError
@@ -61,11 +63,6 @@ final case class BeautyQPublicField(
   fieldHandles: Vector[SearchField[VariantSearchDocumentGen2, ?]],
   acceptedOperators: Vector[PublicOperator],
 )
-
-final case class BeautyQPublicFacet(
-  id: FacetId,
-  fieldHandles: Vector[SearchField[VariantSearchDocumentGen2, ?]],
-) extends PublicFacetSpec[FacetId]
 
 object BeautyQPublicFilterRegistry {
   /** BeautyQ policy is declared in the ordered `staticSpecs`/`dynamicSpecs` inventory below:
@@ -276,22 +273,18 @@ object BeautyQPublicSortRegistry {
   private val registry = PublicSortRegistry[BeautySortInput, PublicSortName, DecodedBeautySort, BeautySortError](specs, _.name, BeautySortError.UnknownPublicSort.apply)
 
   val names: Vector[PublicSortName] = registry.names
-  def decode(input: BeautySortInput): Either[NonEmptyErrors[BeautySortError], DecodedBeautySort] = registry.decode(input)
+
+  // Pairs the decoded clause with its originating public name (BeautySortInput.name), the same fact
+  // DecodedPublicFilter already preserves for filters, since it is otherwise lost once decoding produces
+  // a bare DecodedBeautySort. Brick 4F's plan compiler needs the name to report exactly which public sort
+  // is missing a location.
+  def decode(input: BeautySortInput): Either[NonEmptyErrors[BeautySortError], DecodedBeautySortInput] =
+    registry.decode(input).map(clause => DecodedBeautySortInput(input.name, clause))
 }
 
-object BeautyQPublicFacetRegistry {
-  /** Business-facing facet ids and the document fields each facet reads. */
-  private val Fields = BeautyQSearchDeclarations.variants.Fields
-  val entries: Vector[BeautyQPublicFacet] = Vector(
-    BeautyQPublicFacet(FacetId("service"), Vector(Fields.serviceCode)),
-    BeautyQPublicFacet(FacetId("category"), Vector(Fields.categoryCode)),
-    BeautyQPublicFacet(FacetId("price"), Vector(Fields.priceFrom, Fields.priceTo)),
-    BeautyQPublicFacet(FacetId("durationMinutes"), Vector(Fields.durationMin)),
-  )
-  private val registry = PublicFacetRegistry[FacetId, BeautyQPublicFacet](entries)
-  val ids: Vector[FacetId] = registry.ids
-  def contains(id: FacetId): Boolean = registry.contains(id)
-}
+/** A decoded public sort clause paired with its originating public name, mirroring [[DecodedPublicFilter]]'s
+  * own name-preserving construction. */
+final case class DecodedBeautySortInput(name: PublicSortName, clause: DecodedBeautySort)
 
 sealed trait BeautySearchRequestError
 object BeautySearchRequestError {
@@ -317,11 +310,15 @@ final case class BeautySearchRequestGen2(
 final case class ValidatedBeautySearchRequestGen2 private[contract] (
   query: Option[String],
   filters: Vector[DecodedPublicFilter],
-  requestedFacets: Vector[FacetId],
-  sort: Vector[DecodedBeautySort],
+  facets: Vector[FacetRequest[VariantSearchDocumentGen2]],
+  sort: Vector[DecodedBeautySortInput],
   page: PageRequest,
   userLocation: Option[GeoPoint],
-)
+) {
+  /** Public IDs are a derived trace/presentation view; compilation consumes the already-resolved
+    * typed facet requests carried by this trusted boundary. */
+  def requestedFacets: Vector[FacetId] = facets.map(_.id)
+}
 
 object BeautySearchRequestGen2 {
   def validate(request: BeautySearchRequestGen2): Either[NonEmptyErrors[BeautySearchRequestError], ValidatedBeautySearchRequestGen2] = {
@@ -335,16 +332,34 @@ object BeautySearchRequestGen2 {
       case Left(errors) => errors.toVector.map(error => BeautySearchRequestError.InvalidSort(index, error))
       case Right(_)     => Vector.empty
     }}
-    val facetErrors = request.requestedFacets.flatMap(id => if (BeautyQPublicFacetRegistry.contains(id)) Vector.empty else Vector(BeautySearchRequestError.UnknownRequestedFacet(id)))
     val duplicateFacetErrors = request.requestedFacets.groupBy(identity).collect { case (id, values) if values.size > 1 => id }.toVector.sortBy(_.value).map(BeautySearchRequestError.DuplicateRequestedFacet.apply)
     val duplicateSortErrors = request.sort.groupBy(_.name).collect { case (name, values) if values.size > 1 => name }.toVector.sortBy(_.value).map(BeautySortError.DuplicatePublicSort.apply).map(error => BeautySearchRequestError.InvalidSort(request.sort.indexWhere(_.name == error.name), error))
-    val allErrors = filterErrors ++ sortErrors ++ duplicateSortErrors ++ facetErrors ++ duplicateFacetErrors
-    NonEmptyErrors.fromVector(allErrors) match {
-      case Some(errors) => Left(errors)
-      case None =>
-        val decodedFilters = filterResults.collect { case Right(value) => value }
-        val decodedSort = sortResults.collect { case Right(value) => value }
-        Right(ValidatedBeautySearchRequestGen2(request.query, decodedFilters, request.requestedFacets, decodedSort, request.page, request.userLocation))
+    val facetResolution = BeautyQSearchPlanPolicy.facetRegistry.resolve(request.requestedFacets)
+
+    facetResolution match {
+      case Left(facetErrors) =>
+        val requestFacetErrors = facetErrors.map(error => BeautySearchRequestError.UnknownRequestedFacet(error.id))
+        Left(prependErrors(filterErrors ++ sortErrors ++ duplicateSortErrors, requestFacetErrors, duplicateFacetErrors))
+
+      case Right(resolvedFacets) =>
+        val allErrors = filterErrors ++ sortErrors ++ duplicateSortErrors ++ duplicateFacetErrors
+        NonEmptyErrors.fromVector(allErrors) match {
+          case Some(errors) => Left(errors)
+          case None =>
+            val decodedFilters = filterResults.collect { case Right(value) => value }
+            val decodedSort = sortResults.collect { case Right(value) => value }
+            Right(ValidatedBeautySearchRequestGen2(request.query, decodedFilters, resolvedFacets, decodedSort, request.page, request.userLocation))
+        }
     }
   }
+
+  private def prependErrors(
+    prefix: Vector[BeautySearchRequestError],
+    middle: NonEmptyErrors[BeautySearchRequestError],
+    suffix: Vector[BeautySearchRequestError],
+  ): NonEmptyErrors[BeautySearchRequestError] =
+    prefix match {
+      case first +: rest => NonEmptyErrors.fromHead(first, rest ++ middle.toVector ++ suffix)
+      case _             => NonEmptyErrors.fromHead(middle.head, middle.tail ++ suffix)
+    }
 }

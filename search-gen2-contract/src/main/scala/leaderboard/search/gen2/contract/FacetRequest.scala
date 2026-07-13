@@ -84,6 +84,17 @@ object FacetRequest {
       case None         => Right(request)
     }
 
+  /** The one field(s) a facet request itself already reads: `field` for [[Terms]]/[[NumberRange]], or
+    * `from`/`to` for [[IntervalOverlap]]. A domain declaration never repeats these handles in a second
+    * vector; a reviewer/presentation view that needs field handles derives them from here.
+    */
+  def fieldHandles[Document](request: FacetRequest[Document]): Vector[SearchField[Document, ?]] =
+    request match {
+      case terms: Terms[Document, ?]                 => Vector(terms.field)
+      case numberRange: NumberRange[Document, ?]      => Vector(numberRange.field)
+      case intervalOverlap: IntervalOverlap[Document, ?] => Vector(intervalOverlap.from, intervalOverlap.to)
+    }
+
   // Deterministic order within one request: capability check(s) first (from, then to, for
   // IntervalOverlap), then cross-field codec-identity check, then bucket-vector checks in bucket
   // declaration order - never reordered by which check happens to fail.

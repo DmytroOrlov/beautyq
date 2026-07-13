@@ -9,6 +9,9 @@ final case class NonEmptyErrors[+Error] private[search] (
   tail: Vector[Error],
 ) {
   def toVector: Vector[Error] = head +: tail
+
+  def map[Other](f: Error => Other): NonEmptyErrors[Other] =
+    NonEmptyErrors.fromHead(f(head), tail.map(f))
 }
 
 object NonEmptyErrors {

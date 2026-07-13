@@ -143,6 +143,7 @@ The patch must not be accepted when:
 - a manually maintained inventory duplicates an executable declaration;
 - reusable behavior is proven only by BeautyQ without a neutral-shape explanation;
 - a generated tree, trace, ledger, fingerprint, or documentation table becomes a second policy owner.
+- speculative defensive code is added without a source-confirmed boundary or reachable failure.
 
 These gates apply to domain/framework work. Ordinary bug fixes and unrelated repository work do not
 need a synthetic authoring plan.

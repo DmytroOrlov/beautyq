@@ -47,22 +47,22 @@ object PlannedAlgebraTrace {
   def sort[Document](value: PlannedSort[Document]): String =
     value match {
       case PlannedSort.FieldValue(field, direction) =>
-        s"sort.field-value field=${renderField(field)} direction=${renderDirection(direction)}"
+        s"sort.field-value field=${renderField(field)} direction=$direction"
 
       case PlannedSort.GeoDistance(field, origin, direction) =>
-        s"sort.geo-distance field=${renderField(field)} origin=${renderGeoPoint(origin)} direction=${renderDirection(direction)}"
+        s"sort.geo-distance field=${renderField(field)} origin=${renderGeoPoint(origin)} direction=$direction"
     }
 
   def error(value: PlanConstraintError): String =
     value match {
       case PlanConstraintError.UnsupportedFilterOperator(fieldId, kind, accepted) =>
-        s"error.unsupported-filter-operator field=${fieldId.value} kind=${renderKind(kind)} accepted=[${accepted.map(renderFilterOperator).mkString(", ")}]"
+        s"error.unsupported-filter-operator field=${fieldId.value} kind=$kind accepted=[${accepted.mkString(", ")}]"
 
       case PlanConstraintError.MismatchedIntervalFields(fromFieldId, toFieldId, fromTypeId, toTypeId) =>
         s"error.mismatched-interval-fields from=${renderFieldRef(fromFieldId, fromTypeId)} to=${renderFieldRef(toFieldId, toTypeId)}"
 
       case PlanConstraintError.UnsupportedSortMode(fieldId, kind, required) =>
-        s"error.unsupported-sort-mode field=${fieldId.value} kind=${renderKind(kind)} required=${renderSortMode(required)}"
+        s"error.unsupported-sort-mode field=${fieldId.value} kind=$kind required=$required"
     }
 
   // Compact "id:typeId" field reference, built only from stable declaration metadata - never
@@ -90,11 +90,4 @@ object PlannedAlgebraTrace {
 
   private def renderDistance(distance: Distance): String = SearchValueCodec.bigDecimal.encodeCanonical(distance.meters)
 
-  private def renderDirection(direction: SortDirection): String = direction.toString
-
-  private def renderKind(kind: SearchFieldKind): String = kind.toString
-
-  private def renderFilterOperator(operator: FilterOperator): String = operator.toString
-
-  private def renderSortMode(mode: SortMode): String = mode.toString
 }

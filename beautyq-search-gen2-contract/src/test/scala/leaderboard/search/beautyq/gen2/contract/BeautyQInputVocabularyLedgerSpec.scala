@@ -19,7 +19,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
       assert(BeautyQPublicFilterRegistry.fields(3).acceptedOperators == Vector(PublicOperator.GreaterThan, PublicOperator.GreaterThanOrEqual, PublicOperator.LessThan, PublicOperator.LessThanOrEqual, PublicOperator.Between))
       assert(BeautyQPublicFilterRegistry.fields(4).acceptedOperators == Vector(PublicOperator.WithinDistance))
       assert(BeautyQPublicSortRegistry.names.map(_.value) == Vector("price", "durationMinutes", "distanceMeters"))
-      assert(BeautyQPublicFacetRegistry.ids.map(_.value) == Vector("service", "category", "price", "durationMinutes"))
+      assert(BeautyQSearchPlanPolicy.facetRegistry.ids.map(_.value) == Vector("service", "category", "price", "durationMinutes"))
     }
 
     "pin dynamic naming prefixes and stable rule IDs" in {

@@ -101,7 +101,7 @@ specification records only how BeautyQ applies it:
 - response projection.
 
 The canonical entry is `BeautyQSearchDeclarations`, read as
-`catalog → variants.Fields → variants.document → variants.request → variants.intent`, followed by
+`catalog → variants.Fields → variants.document → variants.request → variants.intent → variants.plan`, followed by
 the owning materialization/projection and plan/backend declarations as they are implemented.
 Executable declarations own policy; structure trees, inventories, traces, ledgers, and fingerprints
 are derived views. The framework derives only tautological evidence fixed by a selected type, direct
@@ -671,6 +671,182 @@ final case class CandidateSearchResult[Id](
 
 `CandidatePlan.semanticText` remains non-empty because an empty semantic query produces `Ineligible(NoSemanticQueryText)` before a plan is constructed. No unsupported facet/group/page placeholders are required in the Qdrant result.
 
+### 7.9 Plan-input resolution and compilation
+
+Combining a domain's already-validated public request and parsed intent into one validated `SearchPlan`
+is generic. Only constraint-source precedence, the geo-origin source, the facet inventory, group policy
+and plan-mode classification are domain policy (§10.2 documents BeautyQ's).
+
+Canonical constraint identity is keyed by slot, not by the full canonical value, so precedence
+resolution can detect "same thing, different value" independent of "same thing, same value". Slot
+identity uses `FieldId` only — never `SearchField` equality, path, capabilities, semantics or extractor
+identity — and a constraint's kind is part of its slot, so a `Terms` and a `NumberRange` constraint over
+the same field are different slots:
+
+```scala
+sealed trait ConstraintSlot
+object ConstraintSlot {
+  final case class Terms(fieldId: FieldId) extends ConstraintSlot
+  final case class NumberRange(fieldId: FieldId) extends ConstraintSlot
+  final case class IntervalOverlap(fromFieldId: FieldId, toFieldId: FieldId) extends ConstraintSlot
+  final case class GeoDistanceFilter(fieldId: FieldId) extends ConstraintSlot
+}
+
+object CanonicalConstraintView {
+  def apply[Document](constraint: PlannedConstraint[Document]): CanonicalConstraint
+  def slot(constraint: CanonicalConstraint): ConstraintSlot
+}
+```
+
+`PlanIdentity`'s own canonical-constraint projection (§7.3) delegates to `CanonicalConstraintView` rather
+than keeping a second conversion, so `PlanIdentity` and precedence resolution can never compute a
+different canonical value for the same constraint.
+
+Precedence resolution takes two already-ordered tiers — the caller's own domain policy decides which is
+higher, never inferred from `ConstraintProvenance` — and returns applied/suppressed filters or typed
+conflicts:
+
+```scala
+object ConstraintPrecedenceResolver {
+  def resolve[Document](
+    higherPriority: Vector[SourcedConstraint[Document]],
+    lowerPriority: Vector[SourcedConstraint[Document]],
+  ): Either[NonEmptyErrors[ConstraintResolutionError], ConstraintResolution[Document]]
+}
+```
+
+Rules:
+
+- within one tier, the first value seen in a slot is that slot's anchor; a later value in the same slot
+  is compared only against the anchor (never against other same-slot values) — an equivalent later value
+  is suppressed as `EquivalentDuplicate`, a non-equivalent later value is a typed
+  `ConflictingHigherPriority`/`ConflictingLowerPriority` error;
+- any same-tier conflict accumulates every such conflict from both tiers and returns `Left` with no
+  partial applied/suppressed result;
+- once both tiers resolve without conflict, each surviving lower-tier value is compared against the
+  higher tier's applied value in the same slot only: an equivalent match suppresses as
+  `EquivalentDuplicate`, a non-equivalent match suppresses as `OverriddenByHigherPrecedence`; different
+  slots all apply;
+- applied filters are ordered as unique higher-tier values in request order, then unique lower-tier
+  survivors in parser order; suppressed filters are ordered as higher-tier encounter order, then one
+  merged lower-tier encounter order across both same-tier-duplicate and cross-tier-suppression reasons,
+  by each value's own original position in `lowerPriority` — never grouped by reason.
+
+Public filter/sort geo-clause resolution is likewise generic, reached through narrow adapter views so the
+resolver never depends on a domain's concrete decoded-filter/decoded-sort wrapper type:
+
+```scala
+trait PublicFilterPlanView[Filter, Document, Name] {
+  def name(value: Filter): Name
+  def clause(value: Filter): PublicFilterClause[Document]
+  def provenance(value: Filter): ConstraintProvenance
+}
+
+trait PublicSortPlanView[Sort, Document, Name] {
+  def name(value: Sort): Name
+  def clause(value: Sort): PublicSortClause[Document]
+}
+
+object PublicPlanInputResolver {
+  def resolve[Filter, Sort, Document, FilterName, SortName](
+    filters: Vector[Filter],
+    sorts: Vector[Sort],
+    origin: Option[GeoPoint],
+    filterView: PublicFilterPlanView[Filter, Document, FilterName],
+    sortView: PublicSortPlanView[Sort, Document, SortName],
+  ): Either[NonEmptyErrors[PublicPlanInputResolutionError[FilterName, SortName]], ResolvedPublicPlanInput[Document]]
+}
+```
+
+A `PublicFilterClause.GeoRadius`/`PublicSortClause.GeoDistance` clause without a supplied origin is a
+typed `MissingLocationForFilter`/`MissingLocationForSort` error carrying the exact index and public name;
+missing-location errors accumulate across every filter in request order, then every sort in request
+order. Coordinates present with no geo clause requested activate no filter, sort or signal.
+
+Facet declarations are validated once into one lookup used by the public-request boundary, so a domain
+never maintains its own facet-ID list or lookup map. The trusted request carries the resolved typed
+facet requests into compilation. A declaration holds only a `FacetRequest`; it never
+repeats that request's own field(s) in a second vector, because `FacetRequest.fieldHandles` derives them:
+
+```scala
+object FacetRequest {
+  def fieldHandles[Document](request: FacetRequest[Document]): Vector[SearchField[Document, ?]]
+  // Terms/NumberRange -> one field; IntervalOverlap -> the from/to fields, in that order.
+}
+
+final case class FacetPlanDeclaration[Document](request: FacetRequest[Document]) {
+  def fieldHandles: Vector[SearchField[Document, ?]] // = FacetRequest.fieldHandles(request)
+}
+
+object FacetPlanRegistry {
+  def apply[Document](declarations: Vector[FacetPlanDeclaration[Document]]): Either[NonEmptyErrors[FacetPlanRegistryError], FacetPlanRegistry[Document]]
+
+  /** For static domain-policy declarations only: throws with every offending declaration's facet ID,
+    * index and validation error, rather than each domain hand-rolling its own match/throw. */
+  def unsafeFrom[Document](declarations: Vector[FacetPlanDeclaration[Document]]): FacetPlanRegistry[Document]
+}
+
+final class FacetPlanRegistry[Document] {
+  def ids: Vector[FacetId]
+  def contains(id: FacetId): Boolean
+  def resolve(requested: Vector[FacetId]): Either[NonEmptyErrors[FacetPlanRegistryError.UnknownRequestedFacet], Vector[FacetRequest[Document]]]
+}
+```
+
+Construction validates every declaration's `FacetRequest` and rejects duplicate facet IDs before a
+caller ever receives a usable registry; `resolve` preserves requested order independent of declaration
+order and reports an unknown requested ID as `UnknownRequestedFacet` rather than silently dropping it.
+`DuplicateFacetId(id, firstIndex, duplicateIndex)`, `InvalidFacetDeclaration` and
+`UnknownRequestedFacet` remain one `FacetPlanRegistryError` hierarchy; request resolution narrows its
+left type to `UnknownRequestedFacet` because declaration errors were rejected before the registry was
+constructed. Every later duplicate is emitted once in declaration encounter order and retains both indexes.
+`FacetSize.unsafeFrom(value: Int): FacetSize` is the equivalent framework-owned constructor for a
+declaration's literal facet size.
+
+Finally, one kernel resolves constraints, assembles the `SearchPlan`, attaches the resolver's
+suppressions as diagnostics, and validates the result, so a domain compiler can never observe an
+unvalidated plan - and never mutates an already-validated one. It exposes an opaque prepared value
+precisely so a domain can derive its own plan mode from the *resolved* applied filters and provide one
+final notices vector before validation, without forging a resolution or pairing it with another input:
+
+```scala
+final case class SearchPlanCompilationInput[Document](
+  constraintPriorityTiers: ConstraintPriorityTiers[Document],
+  residualText: Option[String],
+  softSignals: Vector[PlannedSignal[Document]],
+  sort: Vector[PlannedSort[Document]],
+  page: PageRequest,
+  facets: Vector[FacetRequest[Document]],
+  groups: Vector[GroupRequest[Document, ?]],
+)
+
+final class PreparedSearchPlanCompilation[Document] private[plan] (
+  private val input: SearchPlanCompilationInput[Document],
+  val resolution: ConstraintResolution[Document],
+) {
+  def assemble(finalNotices: Vector[PlanDiagnostic]): Either[NonEmptyErrors[SearchPlanCompilationError], SearchPlan[Document]]
+}
+
+object SearchPlanCompilationKernel {
+  def prepare[Document](input: SearchPlanCompilationInput[Document]): Either[NonEmptyErrors[SearchPlanCompilationError], PreparedSearchPlanCompilation[Document]]
+  def compile[Document](input: SearchPlanCompilationInput[Document], finalNotices: Vector[PlanDiagnostic] = Vector.empty): Either[NonEmptyErrors[SearchPlanCompilationError], SearchPlan[Document]]
+}
+```
+
+`ConstraintPrecedence.above(higher, lower)` owns one typed source order and returns a typed validation
+error when both tiers name the same source; static domain declarations use
+`ConstraintPrecedence.unsafeAbove(...)` as the fail-fast constructor. Its `tiers` method requires one
+complete typed `Source => Vector[SourcedConstraint[Document]]` function and constructs the
+framework-private `ConstraintPriorityTiers`; domain modules cannot construct that tier value directly.
+Diagnostic views render the ordinary source enum values directly. This kernel supports exactly two
+ordered source tiers.
+
+A resolver conflict is wrapped as `ConstraintResolutionFailed`; a `SearchPlan.validate` failure once
+resolution succeeds is wrapped as `InvalidSearchPlan`. The kernel knows nothing about any domain's plan
+modes, semantic labels, matched rule IDs, user-location source, public names or browse-default
+classification — those stay domain policy, applied by the domain compiler between `prepare` and
+`prepared.assemble(finalNotices)` (§10.2), never after `assemble`/`compile` already returned.
+
 ## 8. BeautyQ Gen2 executable root
 
 The root exists before backend implementation, not after runtime migration.
@@ -852,7 +1028,111 @@ Rules:
 - location without geo intent is accepted as data but does not change ranking;
 - plan compilation follows the accepted precedence ADR.
 
-### 10.2 Response
+### 10.2 Plan compilation
+
+`BeautyQSearchPlanCompiler.compile(request, intent)` combines the validated request and parsed intent
+into a `CompiledBeautyQSearchPlan`, composing §7.9's reusable mechanics. It always uses
+`BeautyQSearchPlanPolicy`'s typed precedence and geo-origin values; callers cannot substitute either
+policy per call or reverse BeautyQ's precedence:
+
+```scala
+type CompiledBeautyQSearchPlan = BeautyQSearchPlanCompiler.CompiledBeautyQSearchPlan
+
+object BeautyQSearchPlanCompiler {
+  final class CompiledBeautyQSearchPlan private[BeautyQSearchPlanCompiler] (
+    val plan: SearchPlan[VariantSearchDocumentGen2],
+    val mode: BeautyQSearchPlanMode,
+    val canonicalSemanticLabels: Vector[CanonicalSemanticLabel],
+    val matchedRuleIds: Vector[IntentRuleId],
+  )
+
+  def compile(
+    request: ValidatedBeautySearchRequestGen2,
+    intent: ParsedBeautyIntentGen2,
+  ): Either[NonEmptyErrors[BeautyQSearchPlanCompileError], CompiledBeautyQSearchPlan]
+}
+
+enum BeautyQSearchPlanMode {
+  case SemanticSearch, StructuredBrowse, DefaultBrowse
+}
+
+object BeautyQSearchPlanCompiler {
+  def compile(
+    request: ValidatedBeautySearchRequestGen2,
+    intent: ParsedBeautyIntentGen2,
+  ): Either[NonEmptyErrors[BeautyQSearchPlanCompileError], CompiledBeautyQSearchPlan]
+}
+```
+
+The corrected gate order - each gate's failure short-circuits the rest:
+
+1. **Gate 1 — public geo-input resolution**: `PublicPlanInputResolver.resolve` over the request's
+   decoded filters/sort and `BeautyQSearchPlanPolicy.geoOriginPolicy.resolve(request)`.
+2. **Validated-request boundary — facet policy lookup**: `BeautySearchRequestGen2.validate` resolves
+   `request.requestedFacets` once through `BeautyQSearchPlanPolicy.facetRegistry` and stores the typed
+   `FacetRequest` values in `ValidatedBeautySearchRequestGen2.facets`; compilation consumes that value
+   and never looks up facet IDs a second time.
+3. **Gate 2 — prepared constraint precedence**: `BeautyQSearchPlanPolicy.constraintPrecedence.tiers`
+   applies the exhaustive typed `PublicRequest`/`ParsedIntent` source-to-constraints function to derive
+   `ConstraintPriorityTiers`,
+   then `SearchPlanCompilationKernel.prepare` returns an opaque prepared value containing the exact
+   input and its `ConstraintResolution` (applied/suppressed filters). No caller can construct or pair a
+   different resolution with that input.
+4. **Mode and notice derivation** - using the prepared value's own `resolution.appliedFilters` (never a
+   post-assembly plan): mode classification runs over that resolution's applied filters together with
+   the parsed intent's residual text, soft signals, semantic labels and resolved sort — never the raw
+   request query, requested facets, cursor presence, suppressed-filter count or matched-rule count. A
+   `DefaultBrowse` result derives exactly one
+   `PlanDiagnostic(PlanDiagnosticCode("default-browse"), None)` as the final notices vector; every
+   other mode derives an empty vector.
+5. **Gate 3 — assembly and validation**: `prepared.assemble(finalNotices)` assembles the `SearchPlan`
+   from that exact prepared resolution and one notices vector, then validates it. `CompiledBeautyQSearchPlan.plan`
+   is exactly this call's own returned value - nothing copies or mutates it afterward.
+
+```scala
+def classify(
+  residualText: Option[String],
+  softSignals: Vector[PlannedSignal[VariantSearchDocumentGen2]],
+  canonicalSemanticLabels: Vector[CanonicalSemanticLabel],
+  appliedFilters: Vector[AppliedFilter[VariantSearchDocumentGen2]],
+  sort: Vector[PlannedSort[VariantSearchDocumentGen2]],
+): BeautyQSearchPlanMode
+```
+
+`SemanticSearch = residualText.isDefined || softSignals.nonEmpty || canonicalSemanticLabels.nonEmpty`;
+else `StructuredBrowse = appliedFilters.nonEmpty || sort.nonEmpty`; else `DefaultBrowse`. Requested
+facets alone never make a plan `StructuredBrowse`.
+
+BeautyQ's own policy, declared once in `BeautyQSearchPlanPolicy` and exposed for review at
+`BeautyQSearchDeclarations.variants.plan`:
+
+- **constraint-source precedence** — one generic `ConstraintPrecedence[BeautyQConstraintSource]`
+  orders the typed enum cases `PublicRequest` above `ParsedIntent`; its exhaustive `tiers` binding
+  derives from that same value. `ExplicitUi`/`FacetSelection` (public request, equal priority) therefore
+  sit strictly above `ParsedHard` (parsed intent);
+- **geo-origin policy** — `BeautyQGeoOriginPolicy.RequestUserLocation`: its `resolve` reads
+  `request.userLocation` for both the public geo filter and the public geo sort, with no server-side
+  default origin; its `sourcePath` exposes that choice in the declaration tree and diagnostic trace;
+- **facet inventory** — exactly `service` (`Terms` over `serviceCode`), `category` (`Terms` over
+  `categoryCode`), `price` (`IntervalOverlap` over `priceFrom`/`priceTo`) and `durationMinutes`
+  (`NumberRange` over `durationMin`), each with the Gen1-evidence bucket table, half-open finite buckets
+  and an upper-unbounded final bucket, declared via `FacetSize.unsafeFrom`/`FacetPlanRegistry.unsafeFrom`
+  (§7.9) rather than a hand-rolled `getOrElse(throw ...)` or manual match/throw;
+- **group policy** — explicitly empty; the current request has no group input;
+- **mode classification** — the `classify` function above.
+
+`BeautyQSearchPlanPolicy.facetRegistry` is the direct owner of public facet IDs and lookup; no compatibility
+registry or separately editable facet list is kept. `BeautyQSearchDeclarations.variants.plan` exposes the
+`constraintPrecedence`/`geoOriginPolicy`/`facetRegistry`/`groupPolicy`/`defaultBrowsePolicy` values
+directly - not only their rendered summaries - so a reviewer can navigate straight to every actual
+declaration; its summary fields derive from those same typed values rather than restating them.
+
+`BeautyQSearchPlanCompilationTrace.render` produces a deterministic, human-readable
+`request`/`intent`/`policy`/`compilation`/`plan` sectioned view of one compilation for review and golden
+tests; its policy section renders `BeautyQSearchPlanPolicy`'s own values directly rather than a second,
+hand-maintained rendering.
+
+### 10.3 Response
 
 The Gen2 response exposes:
 
