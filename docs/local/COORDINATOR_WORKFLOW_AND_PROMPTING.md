@@ -52,6 +52,10 @@ A happy-path implementation is not accepted when the original task required bran
 
 ## 1.3 Business authoring gate
 
+The repository-wide contract is
+[docs/search/DOMAIN_AUTHORING_PRINCIPLES.md](../search/DOMAIN_AUTHORING_PRINCIPLES.md). This
+section is the coordinator procedure for applying it; it does not restate the full principles.
+
 For a domain DSL or declaration patch, classify each requested line before writing the prompt:
 
 - `BUSINESS_CHOICE`: topology, identity selection, String keyword/text meaning, capabilities, public
@@ -78,6 +82,25 @@ domain module): which real domain requirement justifies the feature, and which s
 tracer/neutral usage challenges its reusable shape? The fixture calibrates representation; it does not
 invent production vocabulary. A BeautyQ-only representation without that calibration or an explicit
 single-consumer note is narrow-by-extraction rather than narrow-by-design and remains a review red flag.
+
+Every prompt that adds domain policy or reusable search mechanics must answer:
+
+```text
+Canonical entry point:
+  Where will the new business policy be read?
+Domain-owned differences:
+  Which choices legitimately vary by domain?
+Framework-derived mechanics:
+  Which repeated operations are reused or extracted?
+Reuse proof:
+  Which neutral fixture or neutral tracer, or a second unrelated domain shape challenges the boundary?
+Executable owner:
+  Which declaration owns the policy, and which outputs are derived views?
+```
+
+Return CONTINUE_SAME_PATCH or REJECT when policy is unreachable from the canonical entry point,
+generic code contains domain concepts, a domain copies reusable lookup/matching/validation mechanics,
+or a generated view becomes a second policy owner.
 
 ## 1.4 No fake green
 

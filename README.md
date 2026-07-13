@@ -9,6 +9,8 @@ Start here:
 
 * `AGENTS.md` for agent rules in the repository
 * [Documentation map](docs/README.md)
+* [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) for the normative
+  business-policy, reuse, and executable-source-of-truth contract
 * [BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) for the current plan and authoritative live implementation state
 * `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for the locked BeautyQ local/test Qdrant supplement gate
 * `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline-plus-supplement architecture
@@ -22,8 +24,9 @@ module DAG, followed by one final cutover and removal of Gen1 search modules.
 Current search-framework work is tracked in the
 [BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md).
 
-The earlier catalog/materialization closeout and new-domain onboarding documents remain reference
-material, not the owner of the current coordinator task.
+The new-domain onboarding document remains the practical authoring guide; the domain-authoring
+principles document owns the repository-wide contract, and the Gen2 implementation plan owns current
+delivery status.
 
 The route/Qdrant sections below are current operational truth.
 
