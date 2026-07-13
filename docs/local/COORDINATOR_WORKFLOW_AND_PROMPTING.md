@@ -50,7 +50,59 @@ Downstream options are only for new work after the current patch is complete.
 
 A happy-path implementation is not accepted when the original task required branch coverage, failure behavior, cancel behavior, compatibility behavior, or matrix behavior.
 
-## 1.3 No fake green
+## 1.3 Business authoring gate
+
+The repository-wide contract is
+[docs/search/DOMAIN_AUTHORING_PRINCIPLES.md](../search/DOMAIN_AUTHORING_PRINCIPLES.md). This
+section is the coordinator procedure for applying it; it does not restate the full principles.
+
+For a domain DSL or declaration patch, classify each requested line before writing the prompt:
+
+- `BUSINESS_CHOICE`: topology, identity selection, String keyword/text meaning, capabilities, public
+  names, dynamic inventory, projection/invariants, or backend policy;
+- `DERIVABLE_EVIDENCE`: facts already fixed by a type, direct selector, or declared inventory.
+
+The canonical domain diff must show the first category and avoid hand-writing the second. Reject or
+continue a patch when the business declaration still repeats selector/type/name/path/semantic facts,
+maintains parallel ordered field lists, manually folds the document, or owns generic tree mechanics.
+Low-level constructors may remain as platform escape hatches, but the onboarding example and golden
+domain declaration must use the low-boilerplate authoring surface. Generic mechanics belong in neutral
+tests; domain tests should focus on policy and the readable generated structure.
+
+The escape-hatch count in the golden domain declaration is a tracked metric, not a one-time check: note
+it (`rowWithSortParts`/`computedField`/`document` used instead of `completeDocument`, and any other
+documented low-level constructor) at every accepted patch that touches the golden domain. A count that
+increases without a recorded reason in the same patch is a review red flag - it means the low-boilerplate
+authoring surface stopped covering a case it used to, or a business author reached for the escape hatch
+out of habit rather than necessity.
+
+This gate is about one domain's own declaration. A separate, opposite-direction question applies when
+the patch changes the *reusable Gen2 kernel itself* (`search-gen2-contract`/`search-gen2-core`, not a
+domain module): which real domain requirement justifies the feature, and which structurally different
+tracer/neutral usage challenges its reusable shape? The fixture calibrates representation; it does not
+invent production vocabulary. A BeautyQ-only representation without that calibration or an explicit
+single-consumer note is narrow-by-extraction rather than narrow-by-design and remains a review red flag.
+
+Every prompt that adds domain policy or reusable search mechanics must answer:
+
+```text
+Canonical entry point:
+  Where will the new business policy be read?
+Domain-owned differences:
+  Which choices legitimately vary by domain?
+Framework-derived mechanics:
+  Which repeated operations are reused or extracted?
+Reuse proof:
+  Which neutral fixture or neutral tracer, or a second unrelated domain shape challenges the boundary?
+Executable owner:
+  Which declaration owns the policy, and which outputs are derived views?
+```
+
+Return CONTINUE_SAME_PATCH or REJECT when policy is unreachable from the canonical entry point,
+generic code contains domain concepts, a domain copies reusable lookup/matching/validation mechanics,
+or a generated view becomes a second policy owner.
+
+## 1.4 No fake green
 
 Unavailable external resources may cancel/resource-gate only when the test cannot verify its stated contract another valid way.
 
@@ -58,7 +110,7 @@ Reachable-but-broken resources fail red. Do not hide them behind saved data, fix
 
 If a selected path uses saved artifacts or fixtures, provenance must say so. Do not call it live coverage.
 
-## 1.4 Protected source-truth invariant
+## 1.5 Protected source-truth invariant
 
 This invariant is intentionally repeated. Do not remove, shorten, soften, or move it into `AGENTS.md`.
 
@@ -563,6 +615,8 @@ Before sending a delegated prompt:
 - Are read/edit files exact?
 - Are required facts inlined?
 - Is this edit bounded?
+- Have business choices been separated from tautological evidence?
+- Does the target domain example show the intended authoring surface rather than platform internals?
 - Are validation commands focused unless full test was explicitly requested?
 - Does the prompt stop with `NEED_BUNDLE` if listed files are insufficient?
 - Are model recommendations outside the prompt?
@@ -570,8 +624,16 @@ Before sending a delegated prompt:
 Before accepting a patch:
 
 - Is the original DoD complete?
+- Does the canonical domain declaration contain only business choices, with tautological evidence derived by the reusable layer?
+- Would a structurally similar new domain require copying per-type codecs, repeated IDs/paths/semantics, parallel lists, document folds, or renderer mechanics?
+- If the patch touches `search-gen2-contract`/`search-gen2-core`: is the feature justified by a real domain need and its reusable shape challenged by a different neutral/tracer usage, or explicitly marked single-consumer?
+- Did the escape-hatch count in the golden domain declaration increase without a recorded reason?
 - Are required tests/docs/validation/branch coverage done in this same patch?
 - If not, am I using `CONTINUE_SAME_PATCH` instead of `ACCEPT`?
 - Are downstream options only new work after current patch completion?
 - Are verification labels honest?
 - Is the commit message only for an accepted patch?
+- Does each commit have one cohesive architectural purpose that its subject names? Split independent
+  risk layers or unrelated "why" narratives, but do not mechanically split one coherent checkpoint by
+  file, test, documentation section or delegated D-item. A planned brick may be one commit or a small
+  cohesive series; post-hoc surgery is not a substitute for reviewable intent.

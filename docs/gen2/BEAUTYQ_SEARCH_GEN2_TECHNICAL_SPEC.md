@@ -87,7 +87,9 @@ query contract automatically.
 
 ### 4.2 Explicit business logic
 
-BeautyQ explicitly owns:
+The normative contract is
+[`docs/search/DOMAIN_AUTHORING_PRINCIPLES.md`](../search/DOMAIN_AUTHORING_PRINCIPLES.md). This
+specification records only how BeautyQ applies it:
 
 - joins and invariant checks;
 - stable business codes;
@@ -98,11 +100,12 @@ BeautyQ explicitly owns:
 - supplement eligibility;
 - response projection.
 
-Framework code may remove mechanical boilerplate but may not infer these decisions from case-class shape.
-The authoring boundary is normative: the domain writes business choices, while reusable code derives
-only tautological evidence already fixed by a selected type, direct selector, or declared inventory.
-"Explicit" therefore means that policy is visible, not that a business author repeats a selector's
-name as an ID, path, semantic, extractor, or type argument.
+The canonical entry is `BeautyQSearchDeclarations`, read as
+`catalog → variants.Fields → variants.document → variants.request → variants.intent`, followed by
+the owning materialization/projection and plan/backend declarations as they are implemented.
+Executable declarations own policy; structure trees, inventories, traces, ledgers, and fingerprints
+are derived views. The framework derives only tautological evidence fixed by a selected type, direct
+selector, or declared inventory.
 
 ### 4.3 Shared semantics, backend-specific realization
 

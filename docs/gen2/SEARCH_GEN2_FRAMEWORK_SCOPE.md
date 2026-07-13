@@ -224,17 +224,19 @@ geo-origin requirement and semantic-label policy while delegating phrase selecti
 Both reuse the authoritative `BeautyQSearchDeclarations.variants.Fields` handles; public names are never
 derived from field paths.
 
-For BeautyQ authoring, `BeautyQSearchDeclarations` is the canonical entry point: its
-`variants.request` and `variants.intent` branches expose the executable inventories, while the
-policy lists remain in `BeautyQPublicInputGen2` and `BeautyQIntentVocabularyGen2`. Those files are
-the business-policy surfaces; generic lookup and matching stay in this module and are not copied into
-the domain declaration.
-
 Public filters and parsed intent are separate inbound sources until Brick 4F applies precedence,
 conflict/deduplication policy, resolves location-dependent geo radius/sort values and constructs the
 validated `SearchPlan`. This slice adds no backend compiler, route, JSON codec, candidate plan or runtime
 dependency. Gen1 vocabulary/parser sources are evidence only and are not dependencies of either Gen2
 module. G-3 multi-value fields remains open.
+
+## Domain-authoring conformance
+
+The reusable Gen2 framework follows
+[`DOMAIN_AUTHORING_PRINCIPLES.md`](../search/DOMAIN_AUTHORING_PRINCIPLES.md).
+Generic modules own repeated mechanics and are proven with neutral fixtures. Domain modules own only
+legitimate business differences. An extraction is incomplete while a second domain would still need
+to copy domain-local lookup, validation, matching, canonicalization, or materialization mechanics.
 
 ## Non-goals
 

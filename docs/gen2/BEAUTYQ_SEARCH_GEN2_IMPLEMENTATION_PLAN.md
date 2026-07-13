@@ -14,6 +14,8 @@ Normative companion documents:
 - [reusable-framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md) for what `search-gen2-contract`/
   `search-gen2-core` actually support beyond the BeautyQ extraction, calibrated by an executable
   non-BeautyQ tracer - supported shapes, tracked gaps, resolved checkpoints and non-goals.
+- [domain authoring principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md) for the repository-wide
+  business-policy, reuse, and executable-source-of-truth acceptance contract.
 
 ## Current implementation state
 
@@ -47,6 +49,24 @@ summaries must remain short and point here.
 - **Next action:** Brick 4F — apply precedence, resolve location-dependent public geo values and
   construct/validate the BeautyQ `SearchPlan`; backend and candidate-plan work remain later bricks
 - **Blockers:** none
+
+Every brick that adds domain policy or reusable mechanics must satisfy the
+[Domain Authoring Principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md). A brick is not
+framework-complete merely because BeautyQ works: domain differences must remain explicit, reusable
+mechanics must be reused or extracted, neutral proof must exist, and generated views must derive
+from one executable declaration. If the current implementation still has an extraction gap, name its
+owner and next boundary in this plan or in the framework-scope ledger instead of claiming the gap is
+already generic.
+
+Future brick closeouts add this compact authoring result:
+
+```text
+Domain policy added:
+Framework mechanics reused or extracted:
+Neutral proof:
+Canonical entry-point update:
+Derived-view proof:
+```
 
 Brick 3 is delivered in `beautyq-search-gen2-materialization`: the PostgreSQL source reads all required
 tables through one repeatable-read, read-only boundary, reuses the repository decoders for stored
@@ -1130,7 +1150,9 @@ The implemented opening sequence is:
     those primitives. It retained server-only provenance assignment, parsed hard constraints,
     `GeoProximitySignal`, residual text, semantic labels and readable traces. `variants.request` and
     `variants.intent` are derived from executable values; no plan compiler, precedence, geo-origin
-    resolution, backend or route was added.
+    resolution, backend or route was added. Standard scalar/many/range/geo decoding remains in the
+    BeautyQ request adapter; it is not yet a generic claim. Any future extraction must be justified by
+    a concrete domain requirement and neutral proof under the authoring principles.
 
 The next code change is **Brick 4F**: combine the two inbound sources with explicit precedence, resolve
 location-dependent public geo values and construct/validate the BeautyQ `SearchPlan`. Preserve the exact

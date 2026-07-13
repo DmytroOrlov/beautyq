@@ -26,6 +26,28 @@
 * If preserving behavior requires domain names in a reusable layer, stop and report the boundary conflict.
 * Prefer small explicit adapters over broad "generic" code that secretly knows one domain.
 
+### Business-facing declaration DSLs
+
+Search-domain work follows
+[docs/search/DOMAIN_AUTHORING_PRINCIPLES.md](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md).
+Before editing a domain or reusable search component, verify:
+
+* new business policy is reachable from the canonical domain entry point;
+* domain code declares policy while repeated mechanics remain framework-owned;
+* the reusable boundary is challenged by a neutral fixture or neutral tracer, or a second unrelated domain shape;
+* registries, trees, traces, ledgers, fingerprints, and docs derive from one executable declaration.
+
+Business/domain declarations explicitly state choices that may legitimately differ: topology, identity
+selection, String keyword/text meaning, capabilities, public names, dynamic inventories, projection
+joins, invariants, and backend policy. Reusable layers derive tautological evidence: nominal codecs/type
+IDs, direct value type/path/default ID/semantic, extraction presence, unambiguous non-String kind,
+registration order, identity exclusion, document assembly, and structural rendering.
+
+"Explicit" means business policy is explicit; it does not mean repeating facts already fixed by a
+selector, type, or declaration order. Repeated name/type/path/semantic literals, parallel ordered
+field lists, manual document folds, or domain-owned generic renderers are review red flags. Low-level
+constructors may remain platform escape hatches, but they are not the canonical new-domain example.
+
 ## Verification
 
 Labels:

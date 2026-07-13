@@ -4,9 +4,10 @@ Owner: new-domain onboarding, including the future-domain supplement-gate checkl
 generic supplement architecture/policy is owned by `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`.
 
 A concise guide for adding a new domain (nominal ids, a repo layer, a catalog declaration, a full/seed
-loader, and a projection) after the derivation work recorded in
-`docs/search/CATALOG_DECLARATION_DERIVATION_HANDOFF.md`. It distinguishes what is now generic and
-reusable as-is from what every domain still writes itself as deliberate business policy.
+loader, and a projection). The repository-wide authoring contract is
+[DOMAIN_AUTHORING_PRINCIPLES.md](DOMAIN_AUTHORING_PRINCIPLES.md). This guide distinguishes what is
+now generic and reusable as-is from what every domain still writes itself as deliberate business
+policy.
 
 BeautyQ is this repository's only production consumer of the Search Gen2 declaration/materialization
 kernel today, so it is the richest worked example below. The kernel's supported mechanics are also
@@ -23,6 +24,25 @@ This is not a claim that a new domain is zero-code. It still needs nominal ids, 
 repository implementations, a pure catalog declaration, a loader, a seed policy, and a projection -
 this guide tells you which of those are now thin (a few lines, generically derived) and which are
 full business logic you write yourself.
+
+BeautyQ is the full-scale reference for declaration shape and validation depth, not a code template.
+Do not copy its registries, adapters, matching loops, projection traversals, or backend wiring.
+Compose the generic components listed below and declare only the new domain's policy.
+
+Before coding, write down:
+
+- one canonical business root and its reading order;
+- topology, snapshot policy, document type, and typed fields;
+- projection joins, invariants, text policy, and public names;
+- deliberate capability narrowing, intent actions/aliases/labels, and backend policy;
+- a neutral fixture or neutral tracer, or a second unrelated domain shape that proves any reusable extraction.
+
+A new domain must not implement locally:
+
+- registry lookup maps or reverse field lookup;
+- standard decoding and validation mechanics already supported by the generic API;
+- generic intent matching phases, canonical framing, or materialization orchestration;
+- a copied declaration inventory from another domain.
 
 ## What is generic now
 
@@ -163,6 +183,22 @@ behind implicit scope would be clever but harder to debug than one explicit line
   coordinator decision).
 - Persistence/SQL constraints (foreign keys, uniqueness, check constraints) - these belong in the
   repository's own `Postgres` implementation, not inferred from the catalog declaration.
+
+## Catalog/materialization invariants
+
+The catalog/materialization derivation closeout is complete. A new domain should preserve these
+semantic distinctions while reusing the listed helpers:
+
+- the full repository loader traverses the materialized declaration in order and may deduplicate into
+  the domain snapshot;
+- the seed loader preserves seed order and intentionally does not deduplicate;
+- `CatalogValue` identity/value-source evidence remains an explicit domain choice, while ordinary
+  repository relation evidence is derived by exact type/signature;
+- projection remains the domain's owner of joins, missing-entity errors, stored-data validation,
+  normalization, and document-value/text policy.
+
+This is the current contract, not a phase log. The implementation plan owns active Gen2 delivery
+status; source and focused tests own the exact derivation behavior.
 
 ## Search Gen2 domain declaration
 
