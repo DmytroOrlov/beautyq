@@ -1,14 +1,19 @@
 package leaderboard.search.beautyq.gen2.contract
 
 import leaderboard.model.*
-import leaderboard.model.Category.CategoryId
 import leaderboard.search.gen2.contract.*
 
-/** The executable BeautyQ Gen2 root: the real initial `catalog`/`variants` declaration, not a
-  * placeholder rendering of the eventual full tree. See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md
+/** The executable BeautyQ Gen2 business root. Read this file first when authoring or reviewing the
+  * domain: `catalog` defines the source topology; `variants.Fields` defines the document vocabulary
+  * and backend capabilities; `variants.document` closes the document contract; `variants.request`
+  * and `variants.intent` expose the public inbound policies. Projection/materialization remains the
+  * next stage after this declaration and is intentionally not hidden behind a second catalog tree.
+  *
+  * This is the real initial `catalog`/`variants` declaration, not a placeholder rendering of the
+  * eventual full tree. See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md
   * for the section-by-section delivery order this root grows into, and
   * docs/search/NEW_DOMAIN_ONBOARDING.md for the low-boilerplate `searchFields[Document]` authoring DSL
-  * `variants.Fields` is built from - every field below declares only its selector, kind (or lets it be
+  * that `variants.Fields` uses. Every field below declares only its selector, kind (or lets it be
   * inferred), and capabilities; the generic registry derives the rest.
   */
 object BeautyQSearchDeclarations {
@@ -248,6 +253,23 @@ object BeautyQSearchDeclarations {
 
     val identity = Fields.variantId
     val document = Fields.document
+
+    /** Public request and intent branches are executable inventories, not a second hand-maintained
+      * rendering. Open the referenced declarations to edit policy; these values expose the same
+      * registries/vocabulary consumed by inbound validation. */
+    object request {
+      /** See `BeautyQPublicFilterRegistry.staticSpecs/dynamicSpecs` for public filter policy. */
+      val publicFilters = BeautyQPublicFilterRegistry.fields
+      /** See `BeautyQPublicSortRegistry` for public sort policy. */
+      val publicSorts   = BeautyQPublicSortRegistry.names
+      /** See `BeautyQPublicFacetRegistry` for public facet policy. */
+      val publicFacets  = BeautyQPublicFacetRegistry.ids
+    }
+
+    object intent {
+      /** See `BeautyQIntentVocabulary.sourceRules` for aliases and contextual policy. */
+      val vocabulary = BeautyQIntentVocabulary.value
+    }
   }
 
   val structure: SearchStructureTree =
@@ -263,9 +285,20 @@ object BeautyQSearchDeclarations {
             )
           ),
         ),
-        SearchStructureNode.document(
-          variants.document.id.value,
-          variants.document,
+        SearchStructureNode.branch(
+          "variants",
+          Vector(
+            SearchStructureNode.document("document", variants.document),
+            SearchStructureNode.branch(
+              "request",
+              Vector(
+                SearchStructureNode.indexed("public-filters", variants.request.publicFilters.map(_.name.value)),
+                SearchStructureNode.indexed("public-sorts", variants.request.publicSorts.map(_.value)),
+                SearchStructureNode.indexed("public-facets", variants.request.publicFacets.map(_.value)),
+              ),
+            ),
+            SearchStructureNode.indexed("intent-rules", variants.intent.vocabulary.rules.map(_.id.value)),
+          ),
         ),
       ),
     )

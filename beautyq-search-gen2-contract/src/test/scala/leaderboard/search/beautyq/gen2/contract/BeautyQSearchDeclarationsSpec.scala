@@ -219,8 +219,10 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
       assert(topLevelBranchLines == Vector("├── catalog", "└── variants"))
     }
 
-    "never render a placeholder request/intent/plan/facets/groups/response/backends/quality branch" in {
-      val forbiddenTokens = Vector("request", "intent", "plan", "facets", "groups", "response", "backends", "quality")
+    "render executable request and intent branches without future placeholders" in {
+      assert(renderStructure.contains("request"))
+      assert(renderStructure.contains("intent-rules"))
+      val forbiddenTokens = Vector("plan", "groups", "response", "backends", "quality")
       forbiddenTokens.foreach(token => assert(!renderStructure.contains(token), s"unexpected placeholder token '$token' in rendered output"))
     }
   }
@@ -356,32 +358,68 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
       assert(renderStructure == SearchStructureRenderer.render(structure))
     }
 
-    "render the exact deterministic catalog/identity/Fields prefix and generic document subtree from one structure" in {
-      val topologyLines = expectedCatalogStepSummaries.zipWithIndex.map {
-        case (summary, index) =>
-          val connector = if (index == expectedCatalogStepSummaries.size - 1) "│       └── " else "│       ├── "
-          s"$connector[$index] $summary"
-      }
-      val fieldsLines = expectedFieldIdSequence.zipWithIndex.map {
-        case (id, index) =>
-          val connector = if (index == expectedFieldIdSequence.size - 1) "    │   └── " else "    │   ├── "
-          s"$connector[$index] $id -> $id"
-      }
-      val expectedPrefix =
-        (Vector("BeautyQSearchDeclarations", "├── catalog", "│   └── topology") ++
-          topologyLines ++
-          Vector("└── variants", "    ├── identity: variantId", "    ├── Fields") ++
-          fieldsLines ++
-          Vector("    └── document")).mkString("\n")
+    "render the catalog, canonical document and executable inbound branches from one structure" in {
+      assert(renderStructure.startsWith("BeautyQSearchDeclarations\n├── catalog"))
+      assert(renderStructure.contains("document variants"))
 
-      assert(renderStructure.startsWith(expectedPrefix))
+      val lines = renderStructure.linesIterator.toVector
+      val requestIndex = lines.indexWhere(_ == "    ├── request")
+      val intentIndex = lines.indexWhere(_ == "    └── intent-rules")
+      assert(requestIndex > 0)
+      assert(intentIndex > requestIndex)
 
-      val genericLines = variants.document.renderStructure.linesIterator.toVector
-      val embeddedLines = genericLines match {
-        case head +: tail => ("        └── " + head) +: tail.map("            " + _)
-        case _             => Vector.empty
+      val expectedPublicFilters = Vector(
+        "service",
+        "category",
+        "price",
+        "durationMinutes",
+        "distanceMeters",
+        "attribute.int.session_count",
+        "attribute.int.included_corrections_count",
+        "attribute.int.max_clients",
+        "attribute.decimal.deposit_amount",
+        "attribute.decimal.home_visit_surcharge",
+        "attribute.decimal.materials_surcharge",
+        "attribute.decimal.fixed_discount_amount",
+        "attribute.enum.hair_removal_method",
+        "attribute.enum.nail_coating_type",
+        "attribute.enum.nail_service_type",
+        "attribute.enum.lash_service_type",
+        "attribute.enum.lash_volume",
+        "attribute.enum.brow_service_type",
+        "attribute.enum.pmu_area",
+        "attribute.enum.facial_treatment_type",
+        "attribute.enum.body_area",
+        "attribute.boolean.with_removal",
+        "attribute.boolean.with_design",
+        "attribute.boolean.with_tinting",
+        "attribute.boolean.with_correction",
+      )
+      val expectedRequest =
+        Vector("    ├── request", "    │   ├── public-filters") ++
+          expectedPublicFilters.zipWithIndex.map { case (name, index) =>
+            val connector = if (index == expectedPublicFilters.size - 1) "└── " else "├── "
+            s"    │   │   $connector[$index] $name"
+          } ++
+          Vector(
+            "    │   ├── public-sorts",
+            "    │   │   ├── [0] price",
+            "    │   │   ├── [1] durationMinutes",
+            "    │   │   └── [2] distanceMeters",
+            "    │   └── public-facets",
+            "    │       ├── [0] service",
+            "    │       ├── [1] category",
+            "    │       ├── [2] price",
+            "    │       └── [3] durationMinutes",
+          )
+      assert(lines.slice(requestIndex, intentIndex) == expectedRequest)
+
+      val expectedIntent = Vector("    └── intent-rules") ++ (1 to 87).map { index =>
+        val connector = if (index == 87) "└── " else "├── "
+        val ruleId = f"r$index%03d"
+        s"        $connector[${index - 1}] $ruleId"
       }
-      assert(renderStructure.linesIterator.toVector.endsWith(embeddedLines))
+      assert(lines.slice(intentIndex, lines.size) == expectedIntent)
     }
   }
 
