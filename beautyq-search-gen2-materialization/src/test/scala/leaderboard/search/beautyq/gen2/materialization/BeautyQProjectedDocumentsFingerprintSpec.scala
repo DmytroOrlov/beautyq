@@ -1,7 +1,7 @@
 package leaderboard.search.beautyq.gen2.materialization
 
 import leaderboard.model.*
-import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDomainGen2, VariantSearchDocumentGen2}
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, VariantSearchDocumentGen2}
 import leaderboard.search.gen2.contract.GeoPoint
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -103,7 +103,7 @@ final class BeautyQProjectedDocumentsFingerprintSpec extends AnyWordSpec {
     }
 
     "own exactly 44 field handles on the root document" in {
-      assert(BeautyQSearchDomainGen2.variants.document.allFields.size == 44)
+      assert(BeautyQSearchDeclarations.variants.document.allFields.size == 44)
     }
 
     "include the document identity in the fingerprint" in {
@@ -112,7 +112,7 @@ final class BeautyQProjectedDocumentsFingerprintSpec extends AnyWordSpec {
     }
 
     // No second, independently maintained field inventory exists: `BeautyQProjectedDocumentsFingerprint.compute`
-    // reads its field vector directly from `BeautyQSearchDomainGen2.variants.document.allFields` (verified by source
+    // reads its field vector directly from `BeautyQSearchDeclarations.variants.document.allFields` (verified by source
     // inspection and by the Brick 3 rg source scan), so the 44-handle count above is the single source of truth -
     // every field-family test in this suite (ids, codes, names, coordinates, price/duration, all four attribute
     // families, composed text, presence/absence) changes the fingerprint through that same one inventory.

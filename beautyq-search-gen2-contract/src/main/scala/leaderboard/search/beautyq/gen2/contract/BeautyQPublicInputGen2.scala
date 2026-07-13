@@ -68,7 +68,10 @@ final case class BeautyQPublicFacet(
 ) extends PublicFacetSpec[FacetId]
 
 object BeautyQPublicFilterRegistry {
-  private val Fields = BeautyQSearchDomainGen2.variants.Fields
+  /** BeautyQ policy is declared in the ordered `staticSpecs`/`dynamicSpecs` inventory below:
+    * public names, field handles and intentionally accepted operators. The decoder and registry
+    * after that inventory are reusable mechanics and should not be copied into a new domain. */
+  private val Fields = BeautyQSearchDeclarations.variants.Fields
 
   private def publicOperators(field: SearchField[VariantSearchDocumentGen2, ?]): Vector[PublicOperator] =
     PublicOperator.fromFilterCapabilities(field.capabilities.filterOperators.toVector)
@@ -141,6 +144,7 @@ object BeautyQPublicFilterRegistry {
       }
   }
 
+  // Business-facing public filter policy: names intentionally differ from storage field ids.
   private val staticSpecs: Vector[Spec] = Vector(
     ValueSpec(PublicFieldName("service"), Fields.serviceCode, None),
     ValueSpec(PublicFieldName("category"), Fields.categoryCode, None),
@@ -158,6 +162,7 @@ object BeautyQPublicFilterRegistry {
   ): Vector[Spec] =
     definitions.toVector.flatMap(definition => fields.get(definition.code).map(field => ValueSpec(PublicFieldName(s"$prefix.${definition.code}"), field, ordering, operators)))
 
+  // Business-facing dynamic inventory: stable attribute codes define public names and order.
   private def dynamicSpecs: Vector[Spec] =
     dynamicValueSpecs(AttributeDefinition.intDefinitions, Fields.intAttributesByCode, "attribute.int", Some(summon[Ordering[Int]])) ++
       dynamicValueSpecs(AttributeDefinition.bigDecimalDefinitions, Fields.decimalAttributesByCode, "attribute.decimal", Some(summon[Ordering[BigDecimal]])) ++
@@ -255,7 +260,8 @@ object BeautyQPublicFilterRegistry {
 }
 
 object BeautyQPublicSortRegistry {
-  private val Fields = BeautyQSearchDomainGen2.variants.Fields
+  /** Business-facing sort names and their typed field policy. Registry lookup is generic mechanics. */
+  private val Fields = BeautyQSearchDeclarations.variants.Fields
 
   private final case class SortSpec(name: PublicSortName, decoder: BeautySortInput => Either[NonEmptyErrors[BeautySortError], DecodedBeautySort]) extends PublicSortSpec[BeautySortInput, PublicSortName, DecodedBeautySort, BeautySortError] {
     def decode(input: BeautySortInput): Either[NonEmptyErrors[BeautySortError], DecodedBeautySort] = decoder(input)
@@ -274,7 +280,8 @@ object BeautyQPublicSortRegistry {
 }
 
 object BeautyQPublicFacetRegistry {
-  private val Fields = BeautyQSearchDomainGen2.variants.Fields
+  /** Business-facing facet ids and the document fields each facet reads. */
+  private val Fields = BeautyQSearchDeclarations.variants.Fields
   val entries: Vector[BeautyQPublicFacet] = Vector(
     BeautyQPublicFacet(FacetId("service"), Vector(Fields.serviceCode)),
     BeautyQPublicFacet(FacetId("category"), Vector(Fields.categoryCode)),

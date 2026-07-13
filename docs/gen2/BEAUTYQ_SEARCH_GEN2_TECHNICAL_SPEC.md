@@ -76,7 +76,7 @@ The architecture has three semantic views, but they are not three copies of the 
 The single business-visible root therefore has two top-level branches, not three sibling stores:
 
 ```text
-BeautyQSearchDomainGen2
+BeautyQSearchDeclarations
 ├── catalog       normalized source topology and snapshot requirements
 └── variants      document-centred search view, request, intent, plan and output policy
 ```
@@ -135,7 +135,7 @@ Documentation views are generated from executable sections or wrap them lossless
 ### 4.6 `VariantDocument.Fields` is the search-view semantic hub
 
 The catalog is upstream source topology; it is not the central search DSL. The exact typed handles
-owned by `BeautyQSearchDomainGen2.variants.Fields` are reused by every document-centred declaration:
+owned by `BeautyQSearchDeclarations.variants.Fields` are reused by every document-centred declaration:
 
 ```text
 consistent snapshot --explicit projection--> VariantSearchDocumentGen2
@@ -673,7 +673,7 @@ final case class CandidateSearchResult[Id](
 The root exists before backend implementation, not after runtime migration.
 
 ```text
-BeautyQSearchDomainGen2
+BeautyQSearchDeclarations
 ├── catalog
 │   ├── topology
 │   ├── snapshotPolicy
@@ -1162,7 +1162,7 @@ Gen2 is complete when:
 1. all runtime code lives in the new Gen2 DAG;
 2. no Gen2 module depends on a Gen1 search module;
 3. one executable BeautyQ root owns all runtime declarations;
-4. `BeautyQSearchDomainGen2.variants.Fields` is the single document-field handle owner used by
+4. `BeautyQSearchDeclarations.variants.Fields` is the single document-field handle owner used by
    document, intent, facets/groups, backend policies and response descriptions;
 5. stable service/category codes are persisted and validated;
 6. repository snapshots are transactionally consistent and content-versioned;

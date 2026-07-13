@@ -40,6 +40,10 @@ summaries must remain short and point here.
   - Brick 4D+4E — generic public-input registries and intent matching primitives, plus the BeautyQ
     public input contract, stable-code vocabulary and deterministic intent adapter; request and parsed
     intent remain separate inbound values until 4F
+- **Authoring facade:** `BeautyQSearchDeclarations` is the canonical Gen2 business entry point.
+  Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request` and
+  `variants.intent`; projection/materialization stays in its owning module because the DAG must not
+  reverse-depend from the contract layer.
 - **Next action:** Brick 4F — apply precedence, resolve location-dependent public geo values and
   construct/validate the BeautyQ `SearchPlan`; backend and candidate-plan work remain later bricks
 - **Blockers:** none
@@ -86,10 +90,10 @@ The next coordinator must preserve this distinction:
 3. `variants.intent` and `SearchPlan` describe requested operations over document fields and are not
    another stored copy of the catalog.
 
-`BeautyQSearchDomainGen2` is one business-visible facade with two top-level branches:
+`BeautyQSearchDeclarations` is one business-visible facade with two top-level branches:
 
 ```text
-BeautyQSearchDomainGen2
+BeautyQSearchDeclarations
 ├── catalog       normalized topology/snapshot requirements
 └── variants      document-centred search contract plus executable request/intent inventories
 ```
@@ -99,7 +103,7 @@ money, duration and geo values), not normalized entity case classes or paths. Ex
 connects snapshot entities to `VariantSearchDocumentGen2`. Stable codes connect catalog identity,
 document values and intent vocabulary.
 
-Within the search branch, `BeautyQSearchDomainGen2.variants.Fields` is the semantic hub. The exact
+Within the search branch, `BeautyQSearchDeclarations.variants.Fields` is the semantic hub. The exact
 typed handles declared there are reused by document, constraints, facets, groups, sorts, ES policy,
 Qdrant payload/filter policy and response descriptions. No downstream section recreates a field or
 derives a public query name from `SearchField.path`.
@@ -114,6 +118,12 @@ constraints, canonical semantic labels and the one `GeoProximitySignal`. Noise w
 requirements remains in the independent matching phase; the Gen2-only NearUser rule is an explicit
 semantic overlay with a hair-removal exclusion. Neither branch constructs a `SearchPlan`, resolves
 geo origins, applies precedence or talks to a backend.
+
+The canonical root intentionally stops at the contract-module boundary. Projection and materialization
+are implemented in `beautyq-search-gen2-materialization`, whose next files to read are
+`BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and `BeautyQVariantProjectionGen2`;
+they consume this root but cannot be nested
+under it without reversing the module DAG. This is a dependency boundary, not a second business root.
 
 The implementation must not begin by rebuilding catalog topology as an isolated vertical. Catalog
 cannot determine document joins, normalization, text/embedding composition, price-overlap semantics,
@@ -161,7 +171,7 @@ This commit is reviewed as a shared domain/persistence/API schema change, not as
 
 ### Commit 3B — BeautyQ root and complete Variant fields (`Brick 2` declaration slice)
 
-- create `BeautyQSearchDomainGen2` with visible `catalog` and `variants` branches;
+- create `BeautyQSearchDeclarations` with visible `catalog` and `variants` branches;
 - add `VariantSearchDocumentGen2`;
 - declare the complete `variants.Fields` set and document declaration using the generic kernel;
 - generate the deterministic BeautyQ declaration tree and assert the same structure directly;
@@ -225,7 +235,7 @@ authoritative.
 
 | Existing neutral source | Gen2 use | Limit |
 |---|---|---|
-| [`repo-core` catalog declaration and relation algebra](../../repo-core/src/main/scala/leaderboard/repo/RepoGraph.scala) | `beautyq-search-gen2-contract.catalog` and materialized relation evidence | Reuse the algebra, not `BeautyQSearchDeclarations` or `BeautyQCatalogGraph` from Gen1 modules. |
+| [`repo-core` catalog declaration and relation algebra](../../repo-core/src/main/scala/leaderboard/repo/RepoGraph.scala) | `beautyq-search-gen2-contract.catalog` and materialized relation evidence | Reuse the algebra, not the Gen1 `beautyq-search-contract` declarations or `BeautyQCatalogGraph`. |
 | [`CatalogLoadedGraph`](../../repo-core/src/main/scala/leaderboard/repo/CatalogLoadedGraph.scala) and [`CatalogSnapshotAssembly`](../../repo-core/src/main/scala/leaderboard/repo/CatalogSnapshotAssembly.scala) | load a declared relation tuple and assemble typed snapshot values | These helpers do not create a repeatable-read transaction; Gen2 must provide that boundary. |
 | [`RepoSnapshotProjection`](../../repo-core/src/main/scala/leaderboard/repo/RepoSnapshotProjection.scala) | pure indexing, required joins, invariant checks and deterministic root projection | Reuse helpers; keep BeautyQ joins, normalization and text construction explicit in Gen2 materialization. |
 | `beautyq-model` and `beautyq-search-repositories` | shared domain values, accepted stable codes and repository interfaces | These are approved shared foundations, not permission to import any BeautyQ Gen1 search module. |
@@ -463,7 +473,7 @@ In shared BeautyQ domain/persistence code, add:
 In `beautyq-search-gen2-contract`, add:
 
 ```text
-BeautyQSearchDomainGen2
+BeautyQSearchDeclarations
 ├── catalog
 └── variants
     ├── identity
@@ -496,7 +506,7 @@ dependency order after `Fields`.
 
 ### Forbidden
 
-- dependency on `BeautyQSearchDeclarations` or another Gen1 search contract;
+- dependency on any Gen1 search contract (including the old `beautyq-search-contract` declarations);
 - behavioral changes to V1 search declarations, parser, ranking, indexing or response assembly;
 - describing Gen1 as byte-for-byte unchanged outside search: the additive shared domain/API code-field change is intentional and must be documented;
 - copying the lossy `SearchDomainSpec` projection as the Gen2 root;
@@ -1081,7 +1091,7 @@ The implemented opening sequence is:
    duplicated production support.
 3. Commit 3A added shared stable codes through the model, fresh-schema persistence, seed,
    repositories and API schema without a Gen2 declaration.
-4. Commit 3B added the real `BeautyQSearchDomainGen2` root containing
+4. Commit 3B added the real `BeautyQSearchDeclarations` root containing
    `catalog` and `variants.identity/Fields/document`, without request, backend or runtime work.
 5. Brick 3 added the repository-backed consistent snapshot, explicit validated Variant projection and
    source/projected fingerprints in the side-by-side materialization module. Its focused pure suites and

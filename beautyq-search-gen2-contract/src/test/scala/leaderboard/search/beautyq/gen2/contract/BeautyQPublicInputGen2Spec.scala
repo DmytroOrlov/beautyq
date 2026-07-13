@@ -13,7 +13,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
     "keep the explicit static public names and authoritative handles" in {
       val staticFields = BeautyQPublicFilterRegistry.fields.take(5)
       assert(staticFields.map(_.name.value) == Vector("service", "category", "price", "durationMinutes", "distanceMeters"))
-      val fields = BeautyQSearchDomainGen2.variants.Fields
+      val fields = BeautyQSearchDeclarations.variants.Fields
       staticFields match {
         case Vector(service, category, price, _, distance) =>
           assert(service.fieldHandles match {
@@ -40,7 +40,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
       val input = PublicFilterInput(PublicFieldName("service"), PublicOperator.Equal, PublicFilterValue.Scalar("manicure"), None)
       BeautyQPublicFilterRegistry.decode(input) match {
         case Right(decoded @ DecodedPublicFilter(BeautyPublicFilterClause.Constraint(PlannedConstraint.Terms(field, values)), ConstraintProvenance.ExplicitUi)) =>
-          assert(field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode)
+          assert(field eq BeautyQSearchDeclarations.variants.Fields.serviceCode)
           assert(values.toVector.map(field.codec.encodeCanonical) == Vector("manicure"))
           assert(BeautyQPublicFilterRegistry.publicNameOf(decoded) == PublicFieldName("service"))
         case other => fail(s"unexpected decode result: $other")
@@ -51,12 +51,12 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
       val price = PublicFilterInput(PublicFieldName("price"), PublicOperator.LessThanOrEqual, PublicFilterValue.Scalar("50"), None)
       assert(BeautyQPublicFilterRegistry.decode(price).exists(_.clause match {
         case BeautyPublicFilterClause.Constraint(PlannedConstraint.IntervalOverlap(from, to, RangeBounds(Bound.Unbounded, Bound.Inclusive(value)))) =>
-          (from eq BeautyQSearchDomainGen2.variants.Fields.priceFrom) && (to eq BeautyQSearchDomainGen2.variants.Fields.priceTo) && value == BigDecimal(50)
+          (from eq BeautyQSearchDeclarations.variants.Fields.priceFrom) && (to eq BeautyQSearchDeclarations.variants.Fields.priceTo) && value == BigDecimal(50)
         case _ => false
       }))
       val distance = PublicFilterInput(PublicFieldName("distanceMeters"), PublicOperator.WithinDistance, PublicFilterValue.Scalar("1000"), None)
       assert(BeautyQPublicFilterRegistry.decode(distance).exists(_.clause match {
-        case BeautyPublicFilterClause.GeoRadius(field, radius) => (field eq BeautyQSearchDomainGen2.variants.Fields.location) && radius.meters == BigDecimal(1000)
+        case BeautyPublicFilterClause.GeoRadius(field, radius) => (field eq BeautyQSearchDeclarations.variants.Fields.location) && radius.meters == BigDecimal(1000)
         case _ => false
       }))
     }
@@ -86,12 +86,12 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
     }
   }
 
-  "BeautyQSearchDomainGen2 inbound branches" should {
+  "BeautyQSearchDeclarations inbound branches" should {
     "point at the executable registries and validated vocabulary" in {
-      assert(BeautyQSearchDomainGen2.variants.request.publicFilters eq BeautyQPublicFilterRegistry.fields)
-      assert(BeautyQSearchDomainGen2.variants.request.publicSorts eq BeautyQPublicSortRegistry.names)
-      assert(BeautyQSearchDomainGen2.variants.request.publicFacets eq BeautyQPublicFacetRegistry.ids)
-      assert(BeautyQSearchDomainGen2.variants.intent.vocabulary eq BeautyQIntentVocabulary.value)
+      assert(BeautyQSearchDeclarations.variants.request.publicFilters eq BeautyQPublicFilterRegistry.fields)
+      assert(BeautyQSearchDeclarations.variants.request.publicSorts eq BeautyQPublicSortRegistry.names)
+      assert(BeautyQSearchDeclarations.variants.request.publicFacets eq BeautyQPublicFacetRegistry.ids)
+      assert(BeautyQSearchDeclarations.variants.intent.vocabulary eq BeautyQIntentVocabulary.value)
     }
   }
 
@@ -148,7 +148,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
 
   "BeautyQPublicFilterRegistry indexed In decoding" should {
     "accumulate every decoding error with its exact index, not stopping at the first invalid value" in {
-      val serviceCode = BeautyQSearchDomainGen2.variants.Fields.serviceCode
+      val serviceCode = BeautyQSearchDeclarations.variants.Fields.serviceCode
       val raw0 = "Not_Valid"
       val raw2 = "123"
       val error0 = serviceCode.codec.decodeCanonical(raw0) match {
@@ -183,7 +183,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
     }
 
     "not report a spurious duplicate when a decode error is also present" in {
-      val serviceCode = BeautyQSearchDomainGen2.variants.Fields.serviceCode
+      val serviceCode = BeautyQSearchDeclarations.variants.Fields.serviceCode
       val raw = "Not_Valid"
       val error = serviceCode.codec.decodeCanonical(raw) match {
         case Left(error) => error
@@ -199,7 +199,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
 
   "BeautyQPublicFilterRegistry dynamic field matrix" should {
     "pin the exact complete dynamic name list, authoritative handles and accepted operators per family" in {
-      val fields = BeautyQSearchDomainGen2.variants.Fields
+      val fields = BeautyQSearchDeclarations.variants.Fields
       val expectedIntNames      = Vector("session_count", "included_corrections_count", "max_clients").map(code => s"attribute.int.$code")
       val expectedDecimalNames  = Vector("deposit_amount", "home_visit_surcharge", "materials_surcharge", "fixed_discount_amount").map(code => s"attribute.decimal.$code")
       val expectedEnumNames     =
@@ -230,7 +230,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
     }
 
     "prove public names are independent of field path/id/display text" in {
-      val fields = BeautyQSearchDomainGen2.variants.Fields
+      val fields = BeautyQSearchDeclarations.variants.Fields
       assert(BeautyQPublicFilterRegistry.fields.find(_.name.value == "durationMinutes").exists(_.fieldHandles == Vector(fields.durationMin)))
       assert("durationMinutes" != fields.durationMin.id.value)
       assert("durationMinutes" != fields.durationMin.path.value)
@@ -252,7 +252,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
         val input = PublicFilterInput(PublicFieldName("durationMinutes"), operator, PublicFilterValue.Scalar("30"), None)
         BeautyQPublicFilterRegistry.decode(input) match {
           case Right(DecodedPublicFilter(BeautyPublicFilterClause.Constraint(PlannedConstraint.NumberRange(field, bounds)), _)) =>
-            assert(field eq BeautyQSearchDomainGen2.variants.Fields.durationMin)
+            assert(field eq BeautyQSearchDeclarations.variants.Fields.durationMin)
             assert(bounds == expectedBounds, s"unexpected bounds for $operator")
           case other => fail(s"unexpected decode result for $operator: $other")
         }
@@ -300,7 +300,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
       val positive = PublicFilterInput(PublicFieldName("distanceMeters"), PublicOperator.WithinDistance, PublicFilterValue.Scalar("500"), None)
       BeautyQPublicFilterRegistry.decode(positive) match {
         case Right(DecodedPublicFilter(BeautyPublicFilterClause.GeoRadius(field, radius), _)) =>
-          assert(field eq BeautyQSearchDomainGen2.variants.Fields.location)
+          assert(field eq BeautyQSearchDeclarations.variants.Fields.location)
           assert(radius.meters == BigDecimal(500))
         case other => fail(s"unexpected decode result: $other")
       }
@@ -426,7 +426,7 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
     // all yet. The trace format's "present" branch (request.cursor=present, never opaqueValue) is
     // exercised directly at the search-gen2-contract layer once Brick 4C exists.
     "render the exact golden trace for a complete request" in {
-      val fields = BeautyQSearchDomainGen2.variants.Fields
+      val fields = BeautyQSearchDeclarations.variants.Fields
       val request =
         BeautySearchRequestGen2(
           Some("gel \"polish\" under 50"),

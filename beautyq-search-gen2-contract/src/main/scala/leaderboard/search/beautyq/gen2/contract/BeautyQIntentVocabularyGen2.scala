@@ -83,7 +83,7 @@ object BeautyQIntentActionCompiler {
     fields.getOrElse(code, throw new IllegalStateException(s"validated BeautyQ intent refers to unknown attribute '$code'"))
 
   def hardConstraints(action: BeautyIntentAction): Vector[SourcedConstraint[VariantSearchDocumentGen2]] = {
-    val fields = BeautyQSearchDomainGen2.variants.Fields
+    val fields = BeautyQSearchDeclarations.variants.Fields
     val constraint = action match {
       case BeautyIntentAction.Service(code) => Some(PlannedConstraint.Terms(fields.serviceCode, Set(code)))
       case BeautyIntentAction.ServiceAny(codes) => Some(PlannedConstraint.Terms(fields.serviceCode, codes.toSet))
@@ -156,7 +156,10 @@ object BeautyIntentVocabularyError {
 final case class BeautyQIntentVocabulary private (rules: Vector[BeautyIntentRule])
 
 object BeautyQIntentVocabulary {
-  private val Fields = BeautyQSearchDomainGen2.variants.Fields
+  /** The ordered BeautyQ intent vocabulary is the business policy: aliases, stable actions,
+    * contextual requirements and semantic overlays. Matching/selection is generic; these rules and
+    * the action-to-field compiler are not inferred from the document shape. */
+  private val Fields = BeautyQSearchDeclarations.variants.Fields
 
   private def service(value: String): BeautyIntentAction.Service = codeService(value)
   private def category(value: String): BeautyIntentAction.Category = codeCategory(value)
@@ -190,6 +193,7 @@ object BeautyQIntentVocabulary {
       noise = true,
     )
 
+  // Business-facing intent policy starts here; keep aliases and stable codes readable in one list.
   private val sourceRules: Vector[BeautyIntentRule] = Vector(
     rule("r001", "маникюр", "манекюр")(service("manicure"), enumAttr("nail_service_type", "manicure")),
     rule("r002", "обычный маникюр")(service("manicure"), enumAttr("nail_service_type", "manicure")),

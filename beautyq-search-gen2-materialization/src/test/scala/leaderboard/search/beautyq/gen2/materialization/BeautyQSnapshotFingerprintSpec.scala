@@ -3,7 +3,7 @@ package leaderboard.search.beautyq.gen2.materialization
 import leaderboard.model.*
 import leaderboard.search.gen2.core.materialization.VersionedSnapshot
 import org.scalatest.wordspec.AnyWordSpec
-import leaderboard.search.beautyq.gen2.contract.BeautyQSearchDomainGen2
+import leaderboard.search.beautyq.gen2.contract.BeautyQSearchDeclarations
 
 import java.time.Instant
 
@@ -26,7 +26,7 @@ final class BeautyQSnapshotFingerprintSpec extends AnyWordSpec {
     "derive the exact catalog entity inventory from the snapshot product" in {
       assert(
         BeautyQSnapshotFingerprint.SourceNames ==
-          BeautyQSearchDomainGen2.catalog.topology.steps.map(_.introducedEntity)
+          BeautyQSearchDeclarations.catalog.topology.steps.map(_.introducedEntity)
       )
     }
 

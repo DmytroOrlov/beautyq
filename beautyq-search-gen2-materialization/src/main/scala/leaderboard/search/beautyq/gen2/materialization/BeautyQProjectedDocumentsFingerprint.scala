@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.gen2.materialization
 
-import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDomainGen2, VariantSearchDocumentGen2}
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, VariantSearchDocumentGen2}
 import leaderboard.search.gen2.core.materialization.{ProjectedDocumentsFingerprint, SearchProjectedDocumentsFingerprint}
 
 /** Thin BeautyQ binding over the generic [[SearchProjectedDocumentsFingerprint]]: supplies BeautyQ's
@@ -14,7 +14,7 @@ object BeautyQProjectedDocumentsFingerprint {
     SearchProjectedDocumentsFingerprint.compute(
       encodingVersion = EncodingVersion,
       projectionFormatVersion = BeautyQVariantProjectionGen2.projectionFormatVersion,
-      declaration = BeautyQSearchDomainGen2.variants.document,
+      declaration = BeautyQSearchDeclarations.variants.document,
       documents = documents,
     )
 }

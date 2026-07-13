@@ -5,8 +5,10 @@ import leaderboard.search.gen2.contract.*
 
 import scala.util.Try
 
-/** Pure inbound interpretation. It deliberately stops at typed parsed intent; Brick 4F is the only
-  * layer that combines this source with public filters and constructs a SearchPlan. */
+/** Pure BeautyQ inbound interpretation. Budget extraction, location requirements and semantic-label
+  * policy are domain choices here; phrase selection is delegated to the generic matcher. It
+  * deliberately stops at typed parsed intent; Brick 4F is the only layer that combines this source
+  * with public filters and constructs a SearchPlan. */
 object BeautyQIntentParserGen2 {
   private val BudgetPattern = java.util.regex.Pattern.compile("(?i)\\b(?:under|below|up\\s+to)\\s+(\\d+(?:[.,]\\d+)?)(k)?\\b")
 
@@ -24,7 +26,7 @@ object BeautyQIntentParserGen2 {
       BeautyQIntentRuleView,
       BeautyIntentAction.covers,
     )
-    val budgetConstraint = budget.toVector.map(bounds => PlannedConstraint.IntervalOverlap(BeautyQSearchDomainGen2.variants.Fields.priceFrom, BeautyQSearchDomainGen2.variants.Fields.priceTo, bounds))
+    val budgetConstraint = budget.toVector.map(bounds => PlannedConstraint.IntervalOverlap(BeautyQSearchDeclarations.variants.Fields.priceFrom, BeautyQSearchDeclarations.variants.Fields.priceTo, bounds))
     val translated = matches.flatMap(value => value.hardActions ++ value.semanticActions)
     val nearUserRequested = translated.contains(BeautyIntentAction.NearUser)
     val nearUserWithoutLocation = nearUserRequested && request.userLocation.isEmpty
@@ -34,7 +36,7 @@ object BeautyQIntentParserGen2 {
       // values (which compare structurally on plain codes/strings) - never signals.distinct, which would
       // depend on SearchField/extractor equality inside PlannedSignal.GeoProximitySignal.
       val signals: Vector[PlannedSignal[VariantSearchDocumentGen2]] =
-        if (nearUserRequested) request.userLocation.map(origin => PlannedSignal.GeoProximitySignal(BeautyQSearchDomainGen2.variants.Fields.location, origin)).toVector
+        if (nearUserRequested) request.userLocation.map(origin => PlannedSignal.GeoProximitySignal(BeautyQSearchDeclarations.variants.Fields.location, origin)).toVector
         else Vector.empty
       val hardActions = matches.flatMap(value => value.hardActions.flatMap(BeautyQIntentActionCompiler.hardConstraints))
       val hardConstraints = (hardActions ++ budgetConstraint.map(value => SourcedConstraint(value, ConstraintProvenance.ParsedHard))).toVector

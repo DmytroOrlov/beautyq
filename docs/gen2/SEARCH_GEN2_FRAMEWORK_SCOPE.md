@@ -221,8 +221,14 @@ The BeautyQ contract module owns explicit public field/sort/facet names, public 
 stable-code intent rules, typed action-to-constraint policy, parsed-intent values and server-only public
 provenance assignment. The wiring module owns BeautyQ-only budget extraction, normalization selection,
 geo-origin requirement and semantic-label policy while delegating phrase selection to the generic matcher.
-Both reuse the authoritative `BeautyQSearchDomainGen2.variants.Fields` handles; public names are never
+Both reuse the authoritative `BeautyQSearchDeclarations.variants.Fields` handles; public names are never
 derived from field paths.
+
+For BeautyQ authoring, `BeautyQSearchDeclarations` is the canonical entry point: its
+`variants.request` and `variants.intent` branches expose the executable inventories, while the
+policy lists remain in `BeautyQPublicInputGen2` and `BeautyQIntentVocabularyGen2`. Those files are
+the business-policy surfaces; generic lookup and matching stay in this module and are not copied into
+the domain declaration.
 
 Public filters and parsed intent are separate inbound sources until Brick 4F applies precedence,
 conflict/deduplication policy, resolves location-dependent geo radius/sort values and constructs the

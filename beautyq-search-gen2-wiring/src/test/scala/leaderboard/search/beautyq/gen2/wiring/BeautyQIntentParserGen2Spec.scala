@@ -27,12 +27,12 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       BeautyQIntentParserGen2.parse(request(Some("маникюр under 50")), BeautyQIntentVocabulary.value) match {
         case Right(intent) =>
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.toVector.map(field.codec.encodeCanonical) == Vector("manicure")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.toVector.map(field.codec.encodeCanonical) == Vector("manicure")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
             case PlannedConstraint.IntervalOverlap(from, to, RangeBounds(Bound.Unbounded, Bound.Inclusive(value))) =>
-              (from eq BeautyQSearchDomainGen2.variants.Fields.priceFrom) && (to eq BeautyQSearchDomainGen2.variants.Fields.priceTo) && value == BigDecimal(50)
+              (from eq BeautyQSearchDeclarations.variants.Fields.priceFrom) && (to eq BeautyQSearchDeclarations.variants.Fields.priceTo) && value == BigDecimal(50)
             case _ => false
           }))
           assert(intent.residualText.isEmpty)
@@ -46,7 +46,7 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       BeautyQIntentParserGen2.parse(request(Some("volume2_d Wandsbek lashes")), BeautyQIntentVocabulary.value) match {
         case Right(intent) =>
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
             case _ => false
           }))
           assert(intent.residualText.contains("wandsbek"))
@@ -59,7 +59,7 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         case Right(intent) =>
           assert(intent.hardConstraints.exists(_.constraint match {
             case PlannedConstraint.Terms(field, values) =>
-              (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes", "brows")
+              (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes", "brows")
             case _ => false
           }))
         case Left(errors) => fail(s"parse failed: ${errors.toVector}")
@@ -102,15 +102,15 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r005"), IntentRuleId("r032")))
           assert(intent.hardConstraints.size == 3)
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("nail_modeling")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("nail_modeling")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_service_type")) && values == Set("extension")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_service_type")) && values == Set("extension")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("gel")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("gel")
             case _ => false
           }))
           assert(intent.residualText.isEmpty)
@@ -125,16 +125,16 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           // The refill/correction rule produces nail_service_type=refill (not extension), so the acrylic
           // gate (extension) is not satisfied: r033 never fires, "acrylic" stays residual.
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_service_type")) && values == Set("refill")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_service_type")) && values == Set("refill")
             case _ => false
           }))
           assert(!intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("acrylic")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("acrylic")
             case _ => false
           }))
           // the existing gel coating constraint from r029 is preserved
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("gel")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("gel")
             case _ => false
           }))
           assert(intent.residualText.contains("acrylic"))
@@ -148,11 +148,11 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r026")))
           // removal context (nail_service_type=removal) does not satisfy the extension-only gate
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_service_type")) && values == Set("removal")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_service_type")) && values == Set("removal")
             case _ => false
           }))
           assert(!intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("acrylic")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_coating_type")) && values == Set("acrylic")
             case _ => false
           }))
           assert(intent.residualText.contains("acrylic"))
@@ -165,11 +165,11 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         case Right(intent) =>
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r018"), IntentRuleId("r035")))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes", "brows")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes", "brows")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
             case _ => false
           }))
           assert(intent.residualText.isEmpty)
@@ -183,15 +183,15 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r035"), IntentRuleId("r006"), IntentRuleId("r038")))
           assert(intent.hardConstraints.size == 3)
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("lash_service_type")) && values == Set("extension")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("lash_service_type")) && values == Set("extension")
             case _ => false
           }))
           assert(intent.residualText.isEmpty)
@@ -205,11 +205,11 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r065")))
           assert(intent.hardConstraints.size == 3)
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("body_area")) && values == Set("face_neck_decollete")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("body_area")) && values == Set("face_neck_decollete")
             case _ => false
           }))
           assert(!intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("body_area")) && values == Set("face")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("body_area")) && values == Set("face")
             case _ => false
           }))
           assert(intent.residualText.contains("face"))
@@ -223,19 +223,19 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(intent.matchedRuleIds == Vector(IntentRuleId("r023")))
           assert(intent.hardConstraints.size == 4)
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("lashes")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("lash_volume")) && values == Set("volume2_d")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.enumAttributesByCode("lash_service_type")) && values == Set("refill")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("lash_service_type")) && values == Set("refill")
             case _ => false
           }))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.booleanAttributesByCode("with_correction")) && values == Set(true)
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.booleanAttributesByCode("with_correction")) && values == Set(true)
             case _ => false
           }))
           assert(intent.residualText.isEmpty)
@@ -266,7 +266,7 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(!intent.matchedRuleIds.contains(IntentRuleId("r087")))
           assert(intent.softSignals.isEmpty)
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("hair_removal")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("hair_removal")
             case _ => false
           }))
           assert(intent.residualText.isEmpty)
@@ -292,7 +292,7 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           assert(intent.softSignals.size == 1)
           assert(intent.softSignals.headOption.exists(_.isInstanceOf[PlannedSignal.GeoProximitySignal[?]]))
           assert(intent.hardConstraints.exists(_.constraint match {
-            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDomainGen2.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("manicure")
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("manicure")
             case _ => false
           }))
           // no geo hard filter or sort is ever produced by the parser
@@ -458,7 +458,7 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
 
     "reject direct construction of DecodedPublicFilter from outside the contract package, at compile time" in {
       assertDoesNotCompile(
-        """DecodedPublicFilter(BeautyPublicFilterClause.GeoRadius(BeautyQSearchDomainGen2.variants.Fields.location, Distance(500)), ConstraintProvenance.ParsedHard)"""
+        """DecodedPublicFilter(BeautyPublicFilterClause.GeoRadius(BeautyQSearchDeclarations.variants.Fields.location, Distance(500)), ConstraintProvenance.ParsedHard)"""
       )
     }
   }

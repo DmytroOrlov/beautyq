@@ -256,10 +256,18 @@ Opaque model wrappers are declared in the model scope and consumed from a separa
 scope, matching the production module boundary and keeping their nominal typeclass evidence
 unambiguous.
 
-`BeautyQSearchDomainGen2.variants.Fields` (`beautyq-search-gen2-contract`) is the golden reference for
+`BeautyQSearchDeclarations.variants.Fields` (`beautyq-search-gen2-contract`) is the golden reference for
 this authoring style at full scale: it declares 44 fields (24 direct, 20 dynamic across four map
 families) using only selectors, kind choices, and capabilities, with every mechanical piece above
 derived by the registry.
+
+For a business review, start at `BeautyQSearchDeclarations.scala` and read in this order:
+`catalog.topology`, `variants.Fields`, `variants.document`, `variants.request`, and
+`variants.intent`. Then read `BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and
+`BeautyQVariantProjectionGen2` in the
+materialization module for the SQL snapshot, joins, invariants, and document-value policy. The latter
+files are deliberately outside the root because the module DAG must keep the generic contract layer
+independent of repositories and database effects.
 
 Before assuming a value type or document/snapshot shape is unsupported, check
 `docs/gen2/SEARCH_GEN2_FRAMEWORK_SCOPE.md` - it is the authoritative list of what is proven to
@@ -268,7 +276,7 @@ this section does not have to restate it and drift out of date.
 
 **Authoring hazard when nesting a `Fields` object under a domain root:** if the enclosing root object
 also aliases `Fields`'s output (`val document = Fields.document`, the pattern shown above and used by
-`BeautyQSearchDomainGen2`), every input `Fields` itself needs (attribute/definition inventories
+`BeautyQSearchDeclarations`), every input `Fields` itself needs (attribute/definition inventories
 included) must be either declared inside `Fields` or imported from a scope entirely outside the
 enclosing root object - never a sibling `private val` of that same root. Violating this is a genuine
 Scala/JVM nested-singleton class-initialization hazard, not a search-DSL defect: the outer alias can

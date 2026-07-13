@@ -515,7 +515,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
 
       val rejectedBeautyQGen2InGeneric = forbiddenImportViolations(
         "synthetic/Gen2Generic.scala",
-        "import leaderboard.search.beautyq.gen2.contract.BeautyQSearchDomainGen2",
+        "import leaderboard.search.beautyq.gen2.contract.BeautyQSearchDeclarations",
         genericDomainForbiddenImports,
         Nil,
       )

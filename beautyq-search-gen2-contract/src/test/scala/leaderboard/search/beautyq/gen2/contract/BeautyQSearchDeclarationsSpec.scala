@@ -12,9 +12,9 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
-final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
-  import BeautyQSearchDomainGen2.*
-  import BeautyQSearchDomainGen2.variants.Fields
+final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
+  import BeautyQSearchDeclarations.*
+  import BeautyQSearchDeclarations.variants.Fields
 
   private def attributePrefix(definition: AttributeDefinition[?]): String =
     definition match {
@@ -198,7 +198,7 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
     locationText = "downtown studio 1 main st nails",
   )
 
-  "BeautyQSearchDomainGen2.catalog.topology" should {
+  "BeautyQSearchDeclarations.catalog.topology" should {
     "be named beautyq" in {
       assert(catalog.topology.name == "beautyq")
     }
@@ -212,7 +212,7 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
     }
   }
 
-  "BeautyQSearchDomainGen2 root shape" should {
+  "BeautyQSearchDeclarations root shape" should {
     "expose only the catalog and variants top-level branches" in {
       val lines               = renderStructure.linesIterator.toVector
       val topLevelBranchLines = lines.drop(1).filter(line => line.startsWith("├── ") || line.startsWith("└── "))
@@ -359,7 +359,7 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
     }
 
     "render the catalog, canonical document and executable inbound branches from one structure" in {
-      assert(renderStructure.startsWith("BeautyQSearchDomainGen2\n├── catalog"))
+      assert(renderStructure.startsWith("BeautyQSearchDeclarations\n├── catalog"))
       assert(renderStructure.contains("document variants"))
 
       val lines = renderStructure.linesIterator.toVector
@@ -424,9 +424,9 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
   }
 
   "source-level anti-tautology proof" should {
-    "keep BeautyQSearchDomainGen2.scala free of manual codecs, low-level field declarations, and domain-owned rendering, with exactly one searchFields[VariantSearchDocumentGen2](\"variants\") registry" in {
+    "keep BeautyQSearchDeclarations.scala free of manual codecs, low-level field declarations, and domain-owned rendering, with exactly one searchFields[VariantSearchDocumentGen2](\"variants\") registry" in {
       val mainRoot   = repoRoot.resolve("beautyq-search-gen2-contract/src/main/scala")
-      val rootFile   = mainRoot.resolve("leaderboard/search/beautyq/gen2/contract/BeautyQSearchDomainGen2.scala")
+      val rootFile   = mainRoot.resolve("leaderboard/search/beautyq/gen2/contract/BeautyQSearchDeclarations.scala")
       val rootSource = Files.readString(rootFile, StandardCharsets.UTF_8)
 
       val forbiddenTokens = Vector(
@@ -449,7 +449,7 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
         "graftRenderedBlock",
       )
       val violations = forbiddenTokens.filter(rootSource.contains)
-      assert(violations.isEmpty, s"unexpected tokens in BeautyQSearchDomainGen2.scala: $violations")
+      assert(violations.isEmpty, s"unexpected tokens in BeautyQSearchDeclarations.scala: $violations")
 
       val registryMarker = "searchFields[VariantSearchDocumentGen2](\"variants\")"
       val registryCount   = rootSource.sliding(registryMarker.length).count(_ == registryMarker)
@@ -460,7 +460,7 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
       assert(documentSource.contains("final case class VariantSearchDocumentGen2("), "VariantSearchDocumentGen2 must remain an explicit case class")
     }
 
-    "declare no field outside BeautyQSearchDomainGen2.scala within beautyq-search-gen2-contract's main sources, and retain no ModuleMarker" in {
+    "declare no field outside BeautyQSearchDeclarations.scala within beautyq-search-gen2-contract's main sources, and retain no ModuleMarker" in {
       val mainRoot = repoRoot.resolve("beautyq-search-gen2-contract/src/main/scala")
       val files = Using.resource(Files.walk(mainRoot)) {
         stream => stream.iterator.asScala.toList.filter(path => Files.isRegularFile(path) && path.toString.endsWith(".scala"))
@@ -471,7 +471,7 @@ final class BeautyQSearchDomainGen2Spec extends AnyWordSpec {
           val relativeName = mainRoot.relativize(path).toString
           val content       = Files.readString(path, StandardCharsets.UTF_8)
           val declaresField = content.contains("field[") || content.contains("computedField[")
-          if (declaresField && path.getFileName.toString != "BeautyQSearchDomainGen2.scala") List(relativeName) else Nil
+          if (declaresField && path.getFileName.toString != "BeautyQSearchDeclarations.scala") List(relativeName) else Nil
       }
       assert(fieldDeclarationViolations.isEmpty, s"unexpected field[/computedField[ declarations outside the root: $fieldDeclarationViolations")
 

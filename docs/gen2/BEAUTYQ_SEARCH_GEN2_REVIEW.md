@@ -33,7 +33,7 @@ The correct delivery model is side-by-side construction in a new module DAG, fol
 
 | Claim | Verdict | Evidence / correction |
 |---|---|---|
-| The system is not one business tree interpreted into all backends | Confirmed | `BeautyQSearchDeclarations` currently owns catalog + `VariantDocument`, while intent, facets, runtime, response and quality remain elsewhere. `beautyq-search-contract/.../BeautyQSearchDeclarations.scala:17-125`; `BeautySearchSpecV1.scala:6-73`. |
+| The system is not one business tree interpreted into all backends | Confirmed | The Gen1 `beautyq-search-contract` `BeautyQSearchDeclarations` owns catalog + `VariantDocument`, while intent, facets, runtime, response and quality remain elsewhere. `beautyq-search-contract/.../BeautyQSearchDeclarations.scala:17-125`; `BeautySearchSpecV1.scala:6-73`. |
 | Catalog declaration is not the full persistence model | Confirmed | The declaration contains read topology only. Seed insert order is separately hand-written. `BeautyQSearchDeclarations.scala:19-31`; `leaderboard-app-shell/.../BeautyQSeedInserter.scala:28-38`. |
 | Seed-backed indexing does not round-trip through SQL/repositories | Confirmed | `fromSeedLoader` projects a snapshot constructed directly from `BeautyQSeedData`. `BeautySearchCatalogBackendModules.scala:141-157`. A repository-backed snapshot loader exists but is not used by this seed path. `BeautyQSearchCatalogSnapshotLoader.scala:28-54`. |
 | Document projection is explicit business logic and should remain explicit | Confirmed | Joins, cross-master invariant, schema validation and text construction are hand-written. `BeautyQVariantSearchDocumentMaterialization.scala:49-127,130-183`. |
@@ -336,7 +336,7 @@ No Gen2 module may depend on a Gen1 search module. Reusable clients must live in
 ### Executable BeautyQ root
 
 ```text
-BeautyQSearchDomainGen2
+BeautyQSearchDeclarations
 ├── catalog
 │   ├── topology
 │   ├── snapshotPolicy
