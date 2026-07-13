@@ -248,6 +248,18 @@ object BeautyQSearchDomainGen2 {
 
     val identity = Fields.variantId
     val document = Fields.document
+
+    /** Public request and intent branches are executable inventories, not a second hand-maintained
+      * rendering. They point at the same registry/vocabulary values consumed by inbound validation. */
+    object request {
+      val publicFilters = BeautyQPublicFilterRegistry.fields
+      val publicSorts   = BeautyQPublicSortRegistry.names
+      val publicFacets  = BeautyQPublicFacetRegistry.ids
+    }
+
+    object intent {
+      val vocabulary = BeautyQIntentVocabulary.value
+    }
   }
 
   val structure: SearchStructureTree =
@@ -263,9 +275,20 @@ object BeautyQSearchDomainGen2 {
             )
           ),
         ),
-        SearchStructureNode.document(
-          variants.document.id.value,
-          variants.document,
+        SearchStructureNode.branch(
+          "variants",
+          Vector(
+            SearchStructureNode.document("document", variants.document),
+            SearchStructureNode.branch(
+              "request",
+              Vector(
+                SearchStructureNode.indexed("public-filters", variants.request.publicFilters.map(_.name.value)),
+                SearchStructureNode.indexed("public-sorts", variants.request.publicSorts.map(_.value)),
+                SearchStructureNode.indexed("public-facets", variants.request.publicFacets.map(_.value)),
+              ),
+            ),
+            SearchStructureNode.indexed("intent-rules", variants.intent.vocabulary.rules.map(_.id.value)),
+          ),
         ),
       ),
     )

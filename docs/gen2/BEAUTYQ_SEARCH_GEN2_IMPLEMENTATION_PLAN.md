@@ -22,7 +22,7 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 4 — Gen2 request, intent and plan compilation
+- **Active brick:** Brick 4F — combine public request and parsed intent into a validated SearchPlan
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
   - Brick 1 — generic field/document declaration kernel
@@ -37,8 +37,11 @@ summaries must remain short and point here.
     exercised through the complete declaration/materialization path owned by `search-gen2-contract`/
     `search-gen2-core`; see
     [reusable-framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md) for the resulting gap ledger
-- **Next action:** Brick 4 — add the typed request, intent and plan algebra and compile BeautyQ policy
-  into it, under the two-shape authoring rule recorded in Brick 4's own section below
+  - Brick 4D+4E — generic public-input registries and intent matching primitives, plus the BeautyQ
+    public input contract, stable-code vocabulary and deterministic intent adapter; request and parsed
+    intent remain separate inbound values until 4F
+- **Next action:** Brick 4F — apply precedence, resolve location-dependent public geo values and
+  construct/validate the BeautyQ `SearchPlan`; backend and candidate-plan work remain later bricks
 - **Blockers:** none
 
 Brick 3 is delivered in `beautyq-search-gen2-materialization`: the PostgreSQL source reads all required
@@ -88,7 +91,7 @@ The next coordinator must preserve this distinction:
 ```text
 BeautyQSearchDomainGen2
 ├── catalog       normalized topology/snapshot requirements
-└── variants      document-centred search contract and request-to-response flow
+└── variants      document-centred search contract plus executable request/intent inventories
 ```
 
 The shared bricks across the boundary are stable typed values (`ServiceCode`, `CategoryCode`, IDs,
@@ -100,6 +103,17 @@ Within the search branch, `BeautyQSearchDomainGen2.variants.Fields` is the seman
 typed handles declared there are reused by document, constraints, facets, groups, sorts, ES policy,
 Qdrant payload/filter policy and response descriptions. No downstream section recreates a field or
 derives a public query name from `SearchField.path`.
+
+The completed 4D+4E inbound boundary is visible under the same branch: `variants.request` exposes
+the authoritative public filter/sort/facet registries and `variants.intent` exposes the validated
+stable-code vocabulary. Generic lookup/operator gating, ordered sort/facet inventories and the
+longest-match/contextual/overlay engine live in `search-gen2-contract`; BeautyQ declares only public
+names, typed field policy, stable actions, aliases and domain translation/label policy. The validated
+request assigns `ExplicitUi`/`FacetSelection` provenance on the server; the parser emits `ParsedHard`
+constraints, canonical semantic labels and the one `GeoProximitySignal`. Noise without contextual
+requirements remains in the independent matching phase; the Gen2-only NearUser rule is an explicit
+semantic overlay with a hair-removal exclusion. Neither branch constructs a `SearchPlan`, resolves
+geo origins, applies precedence or talks to a backend.
 
 The implementation must not begin by rebuilding catalog topology as an isolated vertical. Catalog
 cannot determine document joins, normalization, text/embedding composition, price-overlap semantics,
@@ -649,7 +663,7 @@ In `search-gen2-core` add:
 
 In `beautyq-search-gen2-contract` and `beautyq-search-gen2-wiring` add:
 
-- `BeautySearchRequestGen2`;
+- `BeautySearchRequestGen2` and its validated inbound form;
 - one unified public `filters` collection without trusted internal provenance;
 - requested facet IDs;
 - sort inputs;
@@ -657,14 +671,10 @@ In `beautyq-search-gen2-contract` and `beautyq-search-gen2-wiring` add:
 - optional user location;
 - public filter decoder that receives field, operator and value;
 - intent vocabulary keyed by stable service/category codes;
-- parser output with hard constraints, soft signals, residual text and canonical semantic labels;
-- request + parser -> normalized `SearchPlan` compiler with server-assigned `SourcedConstraint` provenance;
-- applied/suppressed filter diagnostics;
-- default browse plan;
-- `SemanticQueryTextPolicy` using normalized residual text plus canonical parser labels;
-- `SearchPlan -> CandidatePlanDecision` compiler that returns `NoSemanticQueryText` for filter-only/default-browse requests instead of constructing an empty plan;
-- `PlanIdentity` construction and cursor validation with the current cursor removed;
-- `SearchPlan -> CandidatePlan` compilation only after supplement eligibility succeeds.
+- parser output with hard constraints, the one geo soft signal, residual text and canonical semantic labels;
+- deterministic request and parsed-intent traces;
+- request + parser -> normalized `SearchPlan` compiler, precedence, browse defaults, semantic text and
+  candidate eligibility (Brick 4F/4G, not part of the completed 4D+4E slice);
 
 `CandidatePlan`/`CandidatePlanDecision` are introduced here because semantic-text and eligibility
 compilation produce them. Purpose-specific `FullPlan`/`FullSearchResult` and
@@ -1105,8 +1115,14 @@ The implemented opening sequence is:
    assumed-immutable to reviewed change-detectors, since no persistent production database makes them
    load-bearing. Full detail: `SEARCH_GEN2_FRAMEWORK_SCOPE.md`.
 
-The next code change is **Brick 4**: add the typed request, intent and `SearchPlan` algebra and compile
-BeautyQ policy into it, under this document's two-shape authoring rule (Brick 4's own section, above) rather
-than the BeautyQ-first-extract-later sequencing Bricks 1-3 used. Preserve the exact `variants.Fields`
-handles and stable codes; keep parser vocabulary and business semantics explicit, and do not wire ES/
-Qdrant or runtime ownership before the plan contract is proven.
+10. Brick 4D+4E added the generic public-input registry and intent-matching primitives, then rewrote the
+    BeautyQ boundary as explicit public names/typed field policies, stable-code actions and aliases over
+    those primitives. It retained server-only provenance assignment, parsed hard constraints,
+    `GeoProximitySignal`, residual text, semantic labels and readable traces. `variants.request` and
+    `variants.intent` are derived from executable values; no plan compiler, precedence, geo-origin
+    resolution, backend or route was added.
+
+The next code change is **Brick 4F**: combine the two inbound sources with explicit precedence, resolve
+location-dependent public geo values and construct/validate the BeautyQ `SearchPlan`. Preserve the exact
+`variants.Fields` handles and stable codes; keep parser vocabulary and business semantics explicit, and do
+not wire ES/Qdrant or runtime ownership before the plan contract is proven.

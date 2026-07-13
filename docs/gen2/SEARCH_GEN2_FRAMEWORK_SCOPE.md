@@ -209,6 +209,27 @@ contract fingerprint. The cursor stores only envelope version, plan hash and opa
 Validation reconstructs identity from `plan.withoutCursor`, preventing recursive cursor identity;
 backend-state semantics remain backend-owned.
 
+## BeautyQ inbound boundary (Brick 4D+4E)
+
+`search-gen2-contract` now owns the domain-neutral inbound mechanics: public input value/operator
+types, ordered lookup/operator gating (`PublicInputRegistry`), capability-to-public-operator projection,
+sort/facet inventories and the deterministic independent/contextual/semantic-overlay matcher
+(`SearchIntentMatcher`). Neutral contract tests prove these mechanics with action and field names that
+are not BeautyQ names.
+
+The BeautyQ contract module owns explicit public field/sort/facet names, public request values,
+stable-code intent rules, typed action-to-constraint policy, parsed-intent values and server-only public
+provenance assignment. The wiring module owns BeautyQ-only budget extraction, normalization selection,
+geo-origin requirement and semantic-label policy while delegating phrase selection to the generic matcher.
+Both reuse the authoritative `BeautyQSearchDomainGen2.variants.Fields` handles; public names are never
+derived from field paths.
+
+Public filters and parsed intent are separate inbound sources until Brick 4F applies precedence,
+conflict/deduplication policy, resolves location-dependent geo radius/sort values and constructs the
+validated `SearchPlan`. This slice adds no backend compiler, route, JSON codec, candidate plan or runtime
+dependency. Gen1 vocabulary/parser sources are evidence only and are not dependencies of either Gen2
+module. G-3 multi-value fields remains open.
+
 ## Non-goals
 
 Deliberate, not gaps:

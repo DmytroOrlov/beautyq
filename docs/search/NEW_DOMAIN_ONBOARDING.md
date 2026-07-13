@@ -61,6 +61,14 @@ automatically once your types have the right shape:
   seed-scoped list - see "What a new domain still declares" below) assembled into your snapshot via
   `LoadedCatalog(...).toRawSnapshot[YourSnapshot]` - same generic `Mirror.ProductOf` assembly as
   `toSnapshot`, but with no dedup, matching seed input's already-distinct assumption.
+- Public inbound mechanics in `search-gen2-contract`: `PublicInputRegistry` centralizes ordered
+  public-field lookup and operator gating, while capability projection supplies the default public
+  operator matrix; `PublicSortRegistry` and `PublicFacetRegistry` derive their inventories from one
+  declaration vector.
+- `SearchIntentMatcher` in `search-gen2-contract`: deterministic longest-alias selection, contextual
+  fixed-point rounds, semantic overlays, `requires`/`excludes`, occupied-token protection and residual
+  token calculation are reusable; a domain supplies only its rule view, action coverage and text
+  normalization/tokenization policy.
 
 ## What a new domain still declares
 
@@ -89,6 +97,12 @@ These are business-policy surfaces. Nothing above infers, derives, or guesses th
   `valueSource` vals) as local implementation detail - it is not, and should not become, a shared
   catalog-graph facade (see "Nodes/projection boundary cleanup scope" in the handoff doc for why one
   used to exist and was removed).
+- Public request policy: caller-facing filter/sort/facet names, any deliberate narrowing of the
+  capability-derived operator matrix, typed field/interval/geo choices and domain-specific value
+  decoding.
+- Intent policy: stable action identities, aliases, `requires`/`excludes`, action-to-constraint/signal
+  translation, canonical labels and any domain-specific extraction such as a budget phrase. The
+  generic matcher supplies the algorithm; it does not invent business vocabulary.
 - API/runtime/search backend policy: route shapes, response shapes, backend routing/activation,
   ranking/fusion.
 
