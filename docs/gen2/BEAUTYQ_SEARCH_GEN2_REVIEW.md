@@ -1,8 +1,9 @@
 # BeautyQ Search Gen2 — evidence-backed review
 
-Status: **static review of clean `HEAD`**  
-Reviewed commit: `e1a9f03a8204ef54d2f82cae5b2e88946816fdc8`  
-Evidence bundle: `beautyq-search-gen2-review-20260710-084938-29407.zip`  
+Status: **source review retained; delivery strategy corrected for side-by-side Gen2**
+Source evidence commit: `e1a9f03a8204ef54d2f82cae5b2e88946816fdc8`
+Planning revision baseline: clean `923cdfac` (the intervening change contains only the four Gen2 documents)
+Evidence bundle: `beautyq-search-gen2-review-20260710-084938-29407.zip`
 Scope: source, tests, docs, build topology and recent Git history. No `sbt`, Docker, Elasticsearch, Qdrant, Postgres or HTTP probes were executed.
 
 ## Executive conclusion
@@ -24,13 +25,15 @@ The central issue is not “missing DSL syntax”. It is that the same business 
 11. a separate descriptive `SearchDomainSpec` projection;
 12. readiness/eval/activation scaffolding.
 
-Gen2 should therefore be framed as an **executable-contract and semantic-convergence migration**, not as a builder refactor.
+Gen2 should therefore be framed as an **independent executable-contract rebuild with semantic convergence**, not as a builder refactor and not as a gradual V1 runtime migration.
+
+The correct delivery model is side-by-side construction in a new module DAG, followed by one final cutover and Gen1 deletion.
 
 ## Review of the original claims
 
 | Claim | Verdict | Evidence / correction |
 |---|---|---|
-| The system is not one business tree interpreted into all backends | Confirmed | `BeautyQSearchDeclarations` currently owns catalog + `VariantDocument`, while intent, facets, runtime, response and quality remain elsewhere. `beautyq-search-contract/.../BeautyQSearchDeclarations.scala:17-125`; `BeautySearchSpecV1.scala:6-73`. |
+| The system is not one business tree interpreted into all backends | Confirmed | The Gen1 `beautyq-search-contract` `BeautyQSearchDeclarations` owns catalog + `VariantDocument`, while intent, facets, runtime, response and quality remain elsewhere. `beautyq-search-contract/.../BeautyQSearchDeclarations.scala:17-125`; `BeautySearchSpecV1.scala:6-73`. |
 | Catalog declaration is not the full persistence model | Confirmed | The declaration contains read topology only. Seed insert order is separately hand-written. `BeautyQSearchDeclarations.scala:19-31`; `leaderboard-app-shell/.../BeautyQSeedInserter.scala:28-38`. |
 | Seed-backed indexing does not round-trip through SQL/repositories | Confirmed | `fromSeedLoader` projects a snapshot constructed directly from `BeautyQSeedData`. `BeautySearchCatalogBackendModules.scala:141-157`. A repository-backed snapshot loader exists but is not used by this seed path. `BeautyQSearchCatalogSnapshotLoader.scala:28-54`. |
 | Document projection is explicit business logic and should remain explicit | Confirmed | Joins, cross-master invariant, schema validation and text construction are hand-written. `BeautyQVariantSearchDocumentMaterialization.scala:49-127,130-183`. |
@@ -64,7 +67,7 @@ Severity: **P0**
 - total result count is unavailable to the API;
 - ES performs work that serving ignores.
 
-This is the highest-value first Gen2 vertical because it creates the missing backend result contract.
+This is a high-value Gen2 correctness vertical, but it is not the first code change. The module firewall, generic role-specific result algebra and BeautyQ Gen2 root must exist first. Elasticsearch then implements `FullSearchResult`; Qdrant does not share that output contract.
 
 ### G-02 — Search-index data is not guaranteed to reflect persisted state
 
@@ -83,7 +86,7 @@ It does not prove:
 SQL/repositories -> catalog snapshot -> search documents -> indexes
 ```
 
-A generic repository-backed loader exists, so the migration does not require inventing the loading model. It requires changing the index source and adding parity/freshness evidence.
+A generic repository-backed loader exists in Gen1 and proves the loading concept, but Gen2 must implement its own repository-backed consistent snapshot in the new materialization module. The Gen2 index source is repository state from the beginning; no V1 index-source migration is required.
 
 ### G-03 — No closed UI facet/filter loop
 
@@ -210,7 +213,7 @@ Recent commits centralized canonical declarations, but production code still com
 - `BeautyQVariantSearchDocumentContract`;
 - top-level `BeautyQSearchDeclarations.querySchema`.
 
-For example, `BeautyQCatalogGraph` imports the catalog facade and `BeautySearchSpecV1` imports the document facade. This is acceptable during migration but should have an explicit deletion milestone.
+For example, `BeautyQCatalogGraph` imports the catalog facade and `BeautySearchSpecV1` imports the document facade. These aliases remain a Gen1 concern while Gen2 is built independently. They are removed together with the rest of Gen1 in the final cutover change set, not gradually deprecated through Gen2 adapters.
 
 ### G-13 — Applied filter naming is misleading
 
@@ -218,7 +221,7 @@ Severity: **P2**
 
 `BeautySearchResponse.inferredFilters` includes explicit parser constraints first and inferred filters second. `SearchResponseAssembler.scala:117-135`; `BeautySearchModels.scala:271-279`.
 
-The internal Gen2 name should be `appliedFilters`, with origin metadata. V1 JSON can keep `inferredFilters` through an adapter until an API version change.
+The Gen2 name is `appliedFilters`, with origin metadata. Gen2 defines its own request/response contract directly; no V1 codec adapter is required before the final cutover.
 
 ### G-14 — Intent vocabulary is coupled to display names
 
@@ -228,9 +231,72 @@ Service/category constraints use names, so renames can drift across seed/catalog
 
 ### G-15 — Pagination, sorting and result totals are absent from the public request/response
 
-Severity: **P2**
+Severity: **P0**
 
-The current API supports only `limit`. This blocks reliable browsing and makes backend-specific pagination impossible to model.
+The current API supports only `limit`. This blocks reliable browsing and makes backend-specific pagination impossible to model. Pagination is also inseparable from supplement correctness: without a cursor and an explicit first-page policy, a semantically appended result may reappear on a later Elasticsearch page or violate a non-relevance sort.
+
+
+### G-16 — The original implementation plan encodes the wrong delivery strategy
+
+Severity: **P0 planning blocker**
+
+The first plan describes vertical ownership migration inside Gen1: shadow decoding, V1-to-V2 adapters, rollback bindings, compatibility aliases and late root creation. That is appropriate for a live production migration, but it is unnecessary here and delays the architectural result.
+
+Gen2 must be built in new modules while V1 remains unchanged. There is exactly one migration moment: final application cutover plus Gen1 deletion.
+
+### G-17 — Gen2 cannot be placed in Gen1 modules
+
+Severity: **P0 planning blocker**
+
+Adding `SearchPlan`, result algebra and compilers to `search-contract-core`, `search-core`, `search-elasticsearch`, `search-qdrant` and existing BeautyQ modules creates a hidden dependency on the architecture that Gen2 is supposed to replace.
+
+A separate sbt DAG and an automated module/import firewall are required before semantic implementation begins.
+
+### G-18 — One backend result type would collapse different backend roles
+
+Severity: **P0 design blocker**
+
+Elasticsearch owns a full baseline result: hits, totals, facets, groups and page state. Qdrant owns candidate IDs and semantic scores only.
+
+A single `BackendSearchResult` either becomes a lowest-common-denominator structure or accumulates permanently unsupported sections. Gen2 needs `FullSearchResult` and `CandidateSearchResult`, with a compiled `CandidatePlan` for Qdrant.
+
+### G-19 — Price facets require interval-overlap semantics
+
+Severity: **P0 semantic blocker**
+
+If offers are intervals `[priceFrom, priceTo]`, a half-open bucket `[min,max)` matches with:
+
+```text
+priceFrom < max AND priceTo >= min
+```
+
+A normal range aggregation over `priceFrom` is incorrect. Gen2 needs an explicit `IntervalOverlapFacet` compiled to a filters aggregation in Elasticsearch and two payload conditions in Qdrant.
+
+### G-20 — Geo behavior is three operations, not one optional-radius constraint
+
+Severity: **P0 semantic blocker**
+
+Proximity scoring, radius filtering and distance sorting have different user-visible meanings. Coordinates alone must not activate any of them. `NearUser` should produce an explicit soft proximity signal; hard radius and distance sort remain explicit request operations.
+
+### G-21 — Existing ES group aggregation is insufficient for UI carousels
+
+Severity: **P0 design blocker**
+
+A plain `terms` aggregation returns only group key and count. BeautyQ provider/service carousels also require representative document data, best score, sample IDs and potentially distance/proximity metrics.
+
+Group semantics and ordering must be declared separately and compiled to `top_hits`/`top_metrics` plus required metrics, or to a dedicated secondary group query. This is not merely a response-decoder task.
+
+### G-22 — Snapshot versioning needs transactional consistency and stable content identity
+
+Severity: **P0 correctness blocker**
+
+A `loadVersioned()` method does not guarantee that multiple repository reads observe one database state. Gen2 needs one repeatable-read snapshot boundary and separate metadata for content fingerprint, source revision and capture time. `capturedAt` must not affect the content fingerprint.
+
+### G-23 — Quality data must not become part of the serving root/classpath
+
+Severity: **P1**
+
+The visible domain tree may reference corpus IDs, metrics and gates, but the corpus, reports and historical tooling belong in `beautyq-search-gen2-eval`. Otherwise Gen2 repeats the Gen1 problem where evaluation history dominates runtime ownership.
 
 ## Current architecture that should be preserved
 
@@ -240,44 +306,76 @@ Gen2 must not discard the strongest Gen1 decisions:
 2. **Projection remains explicit business code.** Macro derivation may remove mechanical selectors but must not infer joins/text composition/invariants.
 3. **Generic backend modules remain domain-free.** No BeautyQ names in ES/Qdrant compilers.
 4. **Typed field handles remain canonical.** No raw field-path duplication in domain policies.
-5. **ES remains baseline during migration.** Qdrant cannot remove/reorder baseline results until a separately approved policy says otherwise.
+5. **Elasticsearch remains the full-result baseline.** Qdrant is candidate-only and cannot remove or reorder baseline hits under the initial policy.
 6. **Quality gates remain evidence, not route activation.**
-7. **V1 route JSON remains stable until a versioned API migration.**
+7. **V1 remains untouched until the one final cutover.** V1 behavior is historical evidence, not a mandatory Gen2 semantic oracle.
 
 ## Recommended target boundary
 
+### Independent module DAG
+
 ```text
-BeautyQSearchDomainV2
-├── catalog
-│   ├── topology
-│   └── snapshotSource
-└── searches
-    └── variants
-        ├── document
-        │   ├── fields
-        │   ├── projection
-        │   └── payload projections
-        ├── request
-        │   ├── public fields
-        │   ├── structured filters
-        │   ├── parser
-        │   └── plan compiler
-        ├── response
-        │   ├── hits
-        │   ├── facets
-        │   ├── groups
-        │   └── applied-filter policy
-        ├── backends
-        │   ├── elasticsearch policy
-        │   └── qdrant policy
-        └── quality
-            ├── corpus
-            ├── metrics
-            └── gates
+search-gen2-contract
+        ↓
+search-gen2-core
+   ┌────┴────────────────┐
+   ↓                     ↓
+search-gen2-elasticsearch  search-gen2-qdrant
+
+beautyq-search-gen2-contract
+        ↓
+beautyq-search-gen2-materialization
+        ↓
+beautyq-search-gen2-wiring
+
+beautyq-search-gen2-eval
 ```
 
-The root is executable only when interpreters consume these exact typed sections. Any flattened/descriptive documentation view must be generated from this root and must not become a second source of truth.
+No Gen2 module may depend on a Gen1 search module. Reusable clients must live in a neutral transport module or be implemented independently in Gen2.
+
+### Executable BeautyQ root
+
+```text
+BeautyQSearchDeclarations
+├── catalog
+│   ├── topology
+│   ├── snapshotPolicy
+│   └── validation
+└── variants
+    ├── identity
+    ├── Fields
+    ├── document
+    ├── request
+    ├── intent
+    ├── plan
+    ├── facets
+    ├── groups
+    ├── response
+    ├── backends
+    │   ├── elasticsearch
+    │   └── qdrant
+    └── quality references
+```
+
+The root is executable only when Gen2 runtime services consume these exact typed sections. Any descriptive documentation view is generated from the root and cannot become a second source of truth.
+
+The quality branch stores references and gate policy; corpora and reports remain in the eval module.
 
 ## Decision
 
-Proceed with Gen2 in small vertical slices. Do **not** begin by replacing every V1 DTO or introducing a large builder. The first implementation milestone should be typed ES response decoding and a generic `BackendSearchResult`, because it closes a real correctness gap while establishing the abstraction all later iterations need.
+Proceed with an independent side-by-side Gen2 build.
+
+The implementation order is:
+
+1. accept semantics and establish the module/import firewall;
+2. build the generic Gen2 algebra in new modules;
+3. create the BeautyQ Gen2 root early;
+4. implement repository snapshot and explicit projection;
+5. implement the real Gen2 request, parser and plan compiler;
+6. complete the ES full-result vertical;
+7. complete the Qdrant candidate vertical;
+8. implement baseline-plus-supplement orchestration;
+9. run and evaluate Gen2 independently;
+10. perform one cutover and delete Gen1.
+
+Do not add Gen2 abstractions to Gen1 modules, do not create production V1-to-V2 adapters, and do not switch runtime ownership incrementally.

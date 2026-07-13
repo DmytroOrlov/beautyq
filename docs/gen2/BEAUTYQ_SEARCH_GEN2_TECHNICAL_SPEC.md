@@ -1,202 +1,487 @@
-# BeautyQ Search Framework Gen2 — technical specification
+# BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: proposed  
-Scope: additive Gen2 architecture in the existing repository  
-Compatibility rule: V1 `/beauty-search` behavior and JSON remain available through adapters until an explicitly versioned migration.
+Status: **accepted architecture baseline; implementation pending**
+Scope: an independent Gen2 module graph built beside Gen1
+Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
 ## 1. Goal
 
-Build a second-generation search framework in which one lossless, typed domain declaration is compiled into:
+Build a second-generation search framework in new modules without depending on the existing Gen1 search framework.
 
-- catalog snapshot loading;
-- search-document projection and validation;
-- public request/filter schema;
-- intent parsing and plan compilation;
-- Elasticsearch mapping, ingestion, request and response handling;
-- Qdrant collection/payload, indexing, filter and search handling;
-- domain response projection;
-- fingerprints, compatibility validation and documentation views;
-- quality/evaluation inputs and gates.
+Gen2 must expose one typed, executable domain facade from which domain-free compilers and runtime services obtain:
 
-The framework must remove mechanical duplication while keeping true business decisions explicit.
+- catalog snapshot requirements;
+- explicit search-document projection and validation;
+- public request/filter/facet/sort/page schema;
+- intent vocabulary and plan compilation;
+- Elasticsearch mapping, ingestion, request and full response decoding;
+- Qdrant collection, payload indexing, filtered candidate retrieval and decoding;
+- baseline-plus-supplement orchestration;
+- BeautyQ response projection and provenance;
+- contract and content fingerprints;
+- generated documentation views;
+- references to quality corpora, metrics and gates.
 
-## 2. Non-goals
+The Gen1 search runtime remains buildable and runnable and is not modified to host Gen2 abstractions or adapters. Accepted additive changes to shared domain models and their derived HTTP JSON, such as stable service/category codes, are allowed before cutover.
+
+## 2. Delivery model
+
+```text
+Gen1 search runtime remains untouched;
+accepted shared domain/API additions are allowed
+        │
+        ├── Gen2 is constructed in a separate module DAG
+        │   and can be run/evaluated independently
+        │
+        └── after the Gen2 cutover gate passes:
+            one application binding/route cutover
+            + deletion of Gen1 search modules and aliases
+```
+
+Small implementation bricks are required. Incremental ownership migration inside Gen1 is forbidden.
+
+## 3. Non-goals
 
 Gen2 does not initially require:
 
 - automatic derivation of document projection from catalog topology;
-- CDC/outbox implementation in the first milestone;
-- Qdrant-only production serving;
+- CDC/outbox/event streaming before the snapshot architecture is complete;
+- Qdrant-owned facets, groups or public pagination;
+- Qdrant-only serving;
 - cross-backend score fusion or reranking;
-- route JSON breakage;
-- raw ES/Qdrant JSON in domain declarations;
-- automatic generation of intent vocabulary from catalog names;
-- a single physical source file containing every declaration.
+- raw Elasticsearch or Qdrant JSON in BeautyQ declarations;
+- automatic vocabulary generation from display names;
+- compatibility adapters that route V1 runtime through Gen2;
+- byte-for-byte V1 request/response parity where the semantic delta ADR declares a change;
+- preserving historical M8–M21 evaluation scaffolding in the serving classpath.
 
-## 3. Architectural principles
+## 4. Architectural principles
 
-### 3.1 One executable contract, multiple semantic branches
+### 4.1 Separate normalized and denormalized branches
 
-The domain root must expose two separate concepts:
+The domain root exposes both:
 
-- normalized catalog topology/snapshot source;
+- normalized catalog topology/snapshot policy;
 - denormalized search contract.
 
-They are visible under one root but are not collapsed into one graph.
+They are visible under one facade but remain semantically distinct.
 
-### 3.2 Common semantic plan, backend-specific policy
+The architecture has three semantic views, but they are not three copies of the same data:
 
-Common semantics define what the request means. Backend policy defines how a backend realizes it.
+1. the normalized domain/catalog is the persisted business fact model;
+2. the denormalized search document is an explicit read model projected from a consistent snapshot;
+3. parsed intent and `SearchPlan` describe operations requested over document fields, not another
+   stored representation.
+
+The single business-visible root therefore has two top-level branches, not three sibling stores:
+
+```text
+BeautyQSearchDeclarations
+├── catalog       normalized source topology and snapshot requirements
+└── variants      document-centred search view, request, intent, plan and output policy
+```
+
+Stable business values such as `ServiceCode`, `CategoryCode`, IDs, money, duration and geo values
+cross these boundaries. Normalized entity case classes and storage paths do not become the public
+query contract automatically.
+
+### 4.2 Explicit business logic
+
+BeautyQ explicitly owns:
+
+- joins and invariant checks;
+- stable business codes;
+- document text composition;
+- intent aliases and constraint meaning;
+- facet and group presentation policy;
+- ranking policy values;
+- supplement eligibility;
+- response projection.
+
+Framework code may remove mechanical boilerplate but may not infer these decisions from case-class shape.
+The authoring boundary is normative: the domain writes business choices, while reusable code derives
+only tautological evidence already fixed by a selected type, direct selector, or declared inventory.
+"Explicit" therefore means that policy is visible, not that a business author repeats a selector's
+name as an ID, path, semantic, extractor, or type argument.
+
+### 4.3 Shared semantics, backend-specific realization
 
 ```text
 public request + parsed intent
-          ↓
-       SearchPlan
-          ↓
- ┌────────┴────────┐
- ES compiler     Qdrant compiler
+              ↓
+          SearchPlan
+        ┌─────┴─────┐
+        ↓           ↓
+ ES FullPlan     CandidatePlan
+        ↓           ↓
+FullSearchResult CandidateSearchResult
+        └─────┬─────┘
+              ↓
+      BeautyQ orchestration
 ```
 
-Backend-specific features must remain typed extensions rather than being forced into a lowest-common-denominator model.
+Backend-specific capabilities remain typed. Gen2 is not a lowest-common-denominator abstraction.
 
-### 3.3 Lossless documentation views
+### 4.4 Fail closed
 
-A `SearchDomainSpec`-like documentation model may exist only as:
+A compiler must return a typed unsupported-capability or validation error when it cannot faithfully realize a plan element.
 
-- a generated view of the executable contract; or
-- a lossless wrapper around executable sections.
+Silent omission and implicit degradation are forbidden.
 
-No manually maintained projection may silently drop semantics.
+### 4.5 Lossless documentation
 
-### 3.4 Explicit projection
+Documentation views are generated from executable sections or wrap them losslessly. A manually maintained descriptive shadow contract is not authoritative.
 
-The domain owns:
+### 4.6 `VariantDocument.Fields` is the search-view semantic hub
 
-- joins;
-- invariants;
-- schema validation;
-- text composition;
-- stable IDs/codes;
-- display fields;
-- embedding source composition.
+The catalog is upstream source topology; it is not the central search DSL. The exact typed handles
+owned by `BeautyQSearchDeclarations.variants.Fields` are reused by every document-centred declaration:
 
-Framework helpers may supply indexing, joins and error accumulation but must not guess business meaning.
+```text
+consistent snapshot --explicit projection--> VariantSearchDocumentGen2
+                                             │
+                                  VariantDocument.Fields
+                                  ├── document declaration
+                                  ├── public filters and parsed intent
+                                  ├── constraints, signals and sorts
+                                  ├── facets and groups
+                                  ├── Elasticsearch mapping/request policy
+                                  ├── Qdrant payload/filter policy
+                                  └── response/applied-filter descriptions
+```
 
-## 4. Proposed module ownership
+This reuse is by typed field handle and stable value type. A catalog node is not reused as a
+`SearchField`, because normalized relationships and denormalized searchable values have different
+semantics. Explicit projection is the bridge between them; stable codes are the identity bridge
+between catalog facts, document values and intent vocabulary.
 
-### `search-contract-core`
+The initial declaration review must make this traceability visible:
 
-Owns stable domain-independent contract types:
+| Business concept | Normalized source | Variant document | Intent/plan use | Backend/UI use |
+|---|---|---|---|---|
+| service identity | `Service(code, name, categoryId)` | `serviceCode`, `serviceName` | exact code constraint plus text semantics | ES text/keyword, Qdrant payload, applied filter |
+| category identity | `Category(code, parentId)` | `categoryCode`, `categoryName` | exact code constraint plus aliases | ES text/keyword, Qdrant payload, category facet |
+| price | offer/schema/variant values | `priceFrom`, `priceTo` | explicit interval overlap | ES filters aggregation, Qdrant range conditions, price facet |
+| duration | variant/offer values | `durationMin` | numeric range/sort | ES field, optional Qdrant payload, applied filter |
+| location | master locations | typed document geo value(s) | proximity signal, radius filter or distance sort | ES geo operations, Qdrant geo payload/filter, distance presentation |
 
-- field capabilities;
-- public filter schema;
-- constraint algebra;
-- search plan;
-- backend result algebra;
-- facet/group result algebra;
-- compile diagnostics;
-- generated documentation model.
+This table explains ownership; executable declarations and generated views remain authoritative for
+the final field set and exact policy.
 
-It must not depend on ES, Qdrant, BeautyQ, repositories or HTTP.
+Starting implementation with catalog topology alone is forbidden as the search-framework vertical:
 
-### `search-core`
+- catalog relationships cannot determine joins, normalization, search text or embedding text;
+- public filter/facet names must not be derived from SQL or document paths;
+- price overlap, geo signal/filter/sort and group representatives are search semantics, not catalog
+  edges;
+- some catalog data is not searchable and some searchable values are derived rather than catalog
+  nodes.
 
-Owns executable generic helpers:
+The Gen2 root still owns a visible `catalog` branch early, using the neutral `repo-core` catalog
+algebra. The implementation priority is the typed document/field kernel because projection, intent
+and both backend compilers converge there.
 
-- plan compilation primitives;
-- field extraction/validation;
-- result normalization;
-- pagination abstractions;
-- fingerprinting;
-- generic supplement policy.
+### 4.7 Human-reviewable executable declarations
 
-### `search-elasticsearch`
+Tapir-style means immutable typed declaration values assembled fluently and interpreted by
+domain-free code. It does not mean forcing the catalog, document and request pipeline into one
+homogeneous builder chain. The canonical domain declaration must be readable without platform
+internals: low-level constructors remain escape hatches, not the new-domain example.
 
-Owns:
+The business authoring budget is:
 
-- ES mapping compiler;
-- ingestion compiler;
-- `SearchPlan -> ES request` compiler;
-- `ES response -> BackendSearchResult` decoder;
-- ES-specific typed policy;
-- compatibility validation.
+| Domain author writes | Framework derives |
+|---|---|
+| document case class and catalog topology | nominal codecs and logical type IDs |
+| identity selection | direct value type, path, default field ID/semantic and required extraction |
+| String keyword/text choice | unambiguous non-String kind |
+| capabilities, public names, dynamic inventories and explicit ignored members | registration order, exhaustive product coverage, identity exclusion and document assembly |
+| projection joins and invariants | deterministic structural rendering |
 
-### `search-qdrant`
+The derived defaults remain overrideable when a legitimate contract differs: public request/filter/
+facet IDs are separate business policy and are never derived from `FieldPath`.
 
-Owns:
+Every declaration layer must provide a deterministic, human-readable structural view generated from
+the executable value. At minimum the document view shows field ID, value type, path, semantic role
+and capabilities. Later views show request-to-intent-to-plan decisions and backend compilation.
 
-- collection/payload-index compiler;
-- document point compiler;
-- `SearchPlan -> Qdrant filter/vector request` compiler;
-- hit decoder;
-- Qdrant-specific typed policy;
-- compatibility validation.
+Checked-in golden views or inline expected trees are allowed only when generated from the executable
+root and paired with structural assertions. They must not become manually maintained shadow
+contracts. A declaration change should produce a reviewable diff such as:
 
-### BeautyQ modules
+```text
+serviceCode: ServiceCode
+├── filter: equal, in
+├── facet: terms
+└── qdrantPayload: true
 
-Own:
+price: [Money, Money]
+├── filter: interval-overlap
+├── facet: interval-overlap
+└── sort: minimum-price
+```
 
-- catalog topology and repository evidence;
-- snapshot source selection;
-- variant projection;
-- field semantics;
-- constraint meaning;
-- intent vocabulary;
-- response composition;
-- backend policy values;
-- quality corpus and thresholds.
+Business-scenario tests use readable stages rather than opaque implementation probes:
 
-### `search-eval` or test/tooling module
+```text
+public request -> parsed intent -> SearchPlan -> backend plan/result role -> public response
+```
 
-Move offline M8–M21 scaffolding and report-generation code out of `beautyq-search-wiring` main runtime dependency unless it is required by serving.
+Generic declaration code is proved with a neutral sample document. BeautyQ tests prove the concrete
+business declaration and scenarios. Generic modules must contain no BeautyQ name or policy.
 
-## 5. Core Gen2 types
+### 4.8 End-to-end path and optimization boundary
 
-The names below are normative concepts; exact Scala names may change during implementation.
+Indexing and request execution are separate pipelines joined by the document contract:
 
-### 5.1 Field declaration
+```text
+SQL/repositories
+  -> repeatable-read normalized snapshot
+  -> explicit BeautyQ projection and invariant validation
+  -> VariantSearchDocumentGen2
+  -> ES source/mapping compiler and Qdrant point/payload/embedding compiler
+
+public request
+  -> validation and intent parsing
+  -> one normalized SearchPlan over variants.Fields
+  -> ES FullPlan and optional Qdrant CandidatePlan
+  -> FullSearchResult and CandidateSearchResult
+  -> BeautyQ orchestration and public response
+```
+
+The performance/correctness boundary is deliberate:
+
+- joins and expensive normalization happen once during materialization rather than per search;
+- query meaning is normalized once into `SearchPlan`, then realized by domain-free backend compilers;
+- Elasticsearch owns exact full-result behavior, totals, facets, groups and page state;
+- Qdrant owns filtered semantic candidate retrieval only;
+- typed capabilities reject unsupported uses before a backend silently drops semantics;
+- source, projected-document, contract, projection/compiler/index-format and embedding identities
+  prevent incorrect resource reuse while avoiding rebuilds for unchanged inputs.
+
+## 5. New module graph
+
+Normative project names may use the repository naming convention, but ownership and dependency direction are fixed.
+
+```text
+search-gen2-contract
+        ↓
+search-gen2-core
+   ┌────┴────────────────┐
+   ↓                     ↓
+search-gen2-elasticsearch  search-gen2-qdrant
+
+beautyq-search-gen2-contract
+        ↓
+beautyq-search-gen2-materialization
+        ↓
+beautyq-search-gen2-wiring
+
+beautyq-search-gen2-eval
+        ↑
+may depend on Gen2 serving modules;
+no serving module may depend on eval
+```
+
+More explicitly:
+
+```text
+search-gen2-contract
+  └─ no backend, BeautyQ, repository or HTTP dependency
+
+search-gen2-core
+  └─ depends on search-gen2-contract
+
+search-gen2-elasticsearch
+  └─ depends on search-gen2-contract/core and a neutral ES transport
+
+search-gen2-qdrant
+  └─ depends on search-gen2-contract/core and a neutral Qdrant transport
+
+beautyq-search-gen2-contract
+  └─ depends on search-gen2-contract, repo-core and beautyq-model
+     (`repo-core` supplies the catalog declaration algebra owned by the Gen2 root)
+
+beautyq-search-gen2-materialization
+  └─ depends on BeautyQ Gen2 contract, search-gen2-core, repo-core,
+     beautyq-search-repositories and approved model modules
+     (`search-gen2-core` supplies the reusable materialization kernel; see §9.4)
+
+beautyq-search-gen2-wiring
+  └─ depends on all required Gen2 runtime modules
+
+beautyq-search-gen2-eval
+  └─ depends on Gen2 modules, fixtures and evaluation libraries
+```
+
+### 5.1 Allowed shared dependencies
+
+Gen2 may depend on neutral/shared project foundations such as:
+
+- `leaderboard-core`;
+- `repo-core`;
+- `beautyq-model`;
+- `beautyq-search-repositories`;
+- generic JSON/HTTP/effect/logging libraries already used by the repository;
+- a newly extracted neutral transport/client module.
+
+### 5.2 Forbidden Gen1 dependencies
+
+No Gen2 module may depend on or import from:
+
+```text
+search-contract-core
+search-core
+search-elasticsearch
+search-qdrant
+beautyq-search-contract
+beautyq-search-materialization
+beautyq-search-wiring
+```
+
+The rule applies to main and test sources, except for an explicitly named comparison fixture module that is not on any Gen2 runtime classpath.
+
+### 5.3 Neutral clients
+
+If reusable ES/Qdrant transport code currently lives inside Gen1 backend modules, Gen2 must not depend on those modules.
+
+Allowed solutions:
+
+1. introduce a new neutral transport module used by Gen2;
+2. implement the minimal client in the Gen2 backend module;
+3. copy a small transport implementation temporarily and delete the duplicate with Gen1.
+
+Moving V1 runtime through the new transport is optional and must not block Gen2.
+
+### 5.4 Gen1 references are classified, not dependencies
+
+The implementation plan's [Gen1 evidence and reuse map](BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md#gen1-evidence-and-reuse-map)
+is the coordinator index for existing source/tests. Every referenced item is explicitly classified as:
+
+- allowed direct reuse from a neutral/shared module;
+- evidence-only reading with a fresh Gen2 implementation;
+- extract-first transport code.
+
+Being generic in Scala type parameters does not make a class reusable across the module firewall. A
+symbol located in `search-core`, `search-elasticsearch`, `search-qdrant` or a BeautyQ Gen1 search
+module remains forbidden until it is extracted into an approved neutral module. Tests and business
+fixtures may be ported as semantic evidence, but imports from Gen2 main/test source to those projects
+remain forbidden except for the explicitly isolated comparison fixture module described above.
+
+## 6. Module/import firewall
+
+The first Gen2 code change adds automated checks that:
+
+- inspect declared sbt project dependencies;
+- scan Gen2 imports for forbidden package prefixes;
+- reject BeautyQ symbols in generic Gen2 modules;
+- reject eval dependencies from serving modules;
+- reject cyclic dependencies in the Gen2 DAG.
+
+A firewall violation fails CI.
+
+## 7. Core Gen2 algebra
+
+Exact Scala syntax may evolve, but semantic distinctions are normative.
+
+### 7.1 Typed fields
 
 ```scala
-final case class SearchFieldV2[Document, Value](
+final case class SearchField[Document, Value](
   id: FieldId,
   path: FieldPath,
   extract: Document => Option[Value],
   codec: SearchValueCodec[Value],
   semantic: Option[FieldSemantic],
   capabilities: FieldCapabilities,
-  text: Option[TextFieldPolicy],
+  textPolicy: Option[TextFieldPolicy],
 )
 
 final case class FieldCapabilities(
   searchable: Boolean,
   filterOperators: Set[FilterOperator],
-  facetable: Set[FacetMode],
-  sortable: Boolean,
-  groupable: Boolean,
+  facetModes: Set[FacetMode],
+  sortModes: Set[SortMode],
+  groupModes: Set[GroupMode],
   payloadEligible: Boolean,
 )
 ```
 
-Validation must reject policies that reference unsupported capabilities.
+Validation rejects any policy referencing an unsupported capability.
 
-### 5.2 Domain constraints
-
-Business constraints remain explicit and domain-owned. They compile into a reusable backend-neutral algebra.
+Field declarations are first-class immutable values. The fluent API is additive and finishes as an
+ordinary typed contract model; interpreters do not know whether that model was assembled with a
+builder. The intended business-facing shape is:
 
 ```scala
+private val declarations = searchFields[VariantSearchDocumentGen2]("variants")
+
+val variantId = declarations.inferred(_.variantId).payloadEligible.declare
+val serviceCode = declarations.inferred(_.serviceCode)
+  .filterable(Equal, In).facetable(TermsFacet).payloadEligible.declare
+val serviceName = declarations.keyword(_.serviceName).declare
+val document = declarations.completeDocument(variantId)
+```
+
+Exact method names may change during implementation, but these constraints are normative:
+
+- `FieldId` remains a stable observable contract value; a direct selector may supply its default ID
+  when that equality is tautological, and an explicit override remains available;
+- public request/filter/facet names are separate explicit IDs and are not derived from `FieldPath`;
+- the document type and field value type are preserved by the handle;
+- capabilities are visible at the field declaration and validated wherever referenced;
+- field order and generated structural output are deterministic;
+- every search-document product member is a declared field/dynamic family or an explicit `.ignore`;
+- `Fields.*` values are reused directly rather than reconstructed in intent or backend sections;
+- field extractors/codecs are excluded from canonical cursor identity while their versioned effects
+  are covered by contract/projection/compiler fingerprints.
+
+### 7.2 Bounds and constraints
+
+```scala
+sealed trait Bound[+A]
+object Bound {
+  case object Unbounded
+  final case class Inclusive[A](value: A)
+  final case class Exclusive[A](value: A)
+}
+
+final case class RangeBounds[A](lower: Bound[A], upper: Bound[A])
+
 sealed trait PlannedConstraint[Document]
 object PlannedConstraint {
-  final case class Terms[Document, A](field: SearchFieldV2[Document, A], values: Set[A])
-  final case class NumberRange[Document, A](field: SearchFieldV2[Document, A], bounds: RangeBounds[A])
-  final case class IntervalOverlap[Document, A](from: SearchFieldV2[Document, A], to: SearchFieldV2[Document, A], bounds: RangeBounds[A])
-  final case class BooleanTerm[Document](field: SearchFieldV2[Document, Boolean], value: Boolean)
-  final case class GeoDistance[Document](field: SearchFieldV2[Document, GeoPoint], origin: GeoPoint, radius: Option[Distance])
+  final case class Terms[Document, A](
+    field: SearchField[Document, A],
+    values: Set[A],
+  ) extends PlannedConstraint[Document]
+
+  final case class NumberRange[Document, A](
+    field: SearchField[Document, A],
+    bounds: RangeBounds[A],
+  ) extends PlannedConstraint[Document]
+
+  final case class IntervalOverlap[Document, A](
+    from: SearchField[Document, A],
+    to: SearchField[Document, A],
+    bounds: RangeBounds[A],
+  ) extends PlannedConstraint[Document]
+
+  final case class GeoDistanceFilter[Document](
+    field: SearchField[Document, GeoPoint],
+    origin: GeoPoint,
+    radius: Distance,
+  ) extends PlannedConstraint[Document]
 }
 ```
 
-`RangeBounds` must encode inclusivity explicitly.
+Geo scoring and sorting are separate types:
 
-### 5.3 Search plan
+```scala
+GeoProximitySignal
+GeoDistanceSort
+```
+
+### 7.3 Search plan and stable plan identity
 
 ```scala
 final case class SearchPlan[Document](
@@ -205,248 +490,691 @@ final case class SearchPlan[Document](
   softSignals: Vector[PlannedSignal[Document]],
   sort: Vector[PlannedSort[Document]],
   page: PageRequest,
-  requestedFacets: Vector[FacetRequest[Document]],
-  requestedGroups: Vector[GroupRequest[Document]],
+  facets: Vector[FacetRequest[Document]],
+  groups: Vector[GroupRequest[Document]],
+  appliedFilters: Vector[AppliedFilter],
   diagnostics: PlanDiagnostics,
 )
 ```
 
-The plan is the single input to backend compilers.
+`SearchPlan` is an executable runtime value and is **not** encoded directly as cursor identity. In particular, the current cursor, diagnostics, extractors, codecs and other function-valued/runtime members must not participate in equality or canonical encoding.
 
-### 5.4 Backend result
+Gen2 defines a separate value-only projection:
 
 ```scala
-final case class BackendSearchResult[Document, Id](
+final case class PlanIdentity(
+  contractFingerprint: ContractFingerprint,
+  normalizedQuery: Option[NormalizedQueryText],
+  hardConstraints: Vector[CanonicalConstraint],
+  softSignals: Vector[CanonicalSignal],
+  sort: Vector[CanonicalSort],
+  facets: Vector[CanonicalFacetRequest],
+  groups: Vector[CanonicalGroupRequest],
+  pageSize: PageSize,
+)
+
+trait CanonicalPlanView[Document] {
+  def identityOf(plan: SearchPlan[Document]): PlanIdentity
+}
+```
+
+`PlanIdentity` includes stable field IDs, typed normalized values, effective query text, geo values when they affect execution, sort, facets, groups, page size and contract fingerprint. It excludes:
+
+- the current `PageRequest.cursor`;
+- diagnostics and timings;
+- function-valued field extractors/codecs;
+- backend client objects and runtime handles;
+- non-semantic request metadata.
+
+A `SearchField` is identified canonically by `FieldId`, not by case-class/function equality. `FieldPath` and physical backend mapping are protected by the contract fingerprint.
+
+The cursor envelope stores the `PlanIdentity` hash plus backend pagination state and deterministic sort tie-breakers. Cursor validation first reconstructs `PlanIdentity` from the new request with `cursor = None`, then compares that hash with the envelope. This avoids recursive cursor identity.
+
+### 7.4 Facets
+
+Gen2 supports distinct facet semantics:
+
+```scala
+sealed trait FacetRequest[Document]
+
+TermsFacet(field, size, order, countingPolicy)
+NumberRangeFacet(field, buckets, countingPolicy)
+IntervalOverlapFacet(fromField, toField, buckets, countingPolicy)
+```
+
+Every bucket has a stable ID independent of display label.
+
+Facet results carry:
+
+- requested facet ID;
+- bucket IDs and typed values;
+- counts;
+- counting policy;
+- precision/exactness metadata;
+- diagnostics.
+
+### 7.5 Groups
+
+A group request is richer than a `terms` aggregation:
+
+```scala
+final case class GroupRequest[Document, Key](
+  id: GroupId,
+  keyField: SearchField[Document, Key],
+  size: Int,
+  representative: RepresentativeRequest[Document],
+  metrics: Vector[GroupMetricRequest[Document]],
+  order: Vector[GroupOrder],
+  precision: GroupPrecisionPolicy,
+)
+```
+
+`GroupResult` contains:
+
+- key;
+- matching document count;
+- representative document data or ID;
+- requested metrics such as best score and minimum distance;
+- precision metadata.
+
+### 7.6 Pagination
+
+```scala
+final case class PageRequest(
+  cursor: Option[SearchCursor],
+  size: PageSize,
+)
+
+final case class PageResult(
+  nextCursor: Option[SearchCursor],
+  hasMore: Boolean,
+)
+```
+
+There is no second `limit` field.
+
+### 7.7 Public filters and trusted provenance
+
+The external JSON model does not accept internal parser/system provenance:
+
+```scala
+final case class PublicFilterInput(
+  field: PublicFieldName,
+  operator: PublicOperator,
+  value: PublicFilterValue,
+  presentationId: Option[FacetSelectionId],
+)
+
+final case class PublicFilterField[Constraint](
+  name: PublicFieldName,
+  operators: Set[PublicOperator],
+  decode: PublicFilterInput => Either[FilterError, Constraint],
+)
+```
+
+The server assigns public provenance deterministically:
+
+- `presentationId = None` becomes `ExplicitUi`;
+- `presentationId = Some(...)` becomes `FacetSelection` after validating the facet/bucket identity.
+
+Parser and system provenance is internal only:
+
+```scala
+final case class SourcedConstraint[Constraint](
+  constraint: Constraint,
+  provenance: ConstraintProvenance, // ExplicitUi | FacetSelection | ParsedHard | ParsedSoft | SystemDefault
+)
+```
+
+`ParsedHard`, `ParsedSoft` and `SystemDefault` are never accepted from the public codec.
+
+### 7.8 Role-specific backend plans and results
+
+Elasticsearch compiles the full plan:
+
+```scala
+FullSearchResult[Document, Id](
   hits: Vector[BackendHit[Document, Id]],
   total: TotalHits,
   facets: Map[FacetId, FacetResult],
-  groups: Map[GroupId, GroupResult[Id]],
+  groups: Map[GroupId, GroupResult],
   page: PageResult,
   diagnostics: BackendDiagnostics,
 )
 ```
 
-The ES decoder must populate all requested sections. Qdrant may return unsupported sections only when the plan/compiler explicitly marks them unsupported; silent omission is forbidden.
-
-### 5.5 Public filter schema
+Qdrant receives a candidate plan only after semantic-text and eligibility compilation succeeds:
 
 ```scala
-final case class PublicFilterField[Constraint](
-  name: PublicFieldName,
-  operators: Set[PublicOperator],
-  decode: PublicFilterValue => Either[FilterError, Constraint],
+final case class CandidatePlan[Document](
+  semanticText: NonEmptyString,
+  hardConstraints: Vector[PlannedConstraint[Document]],
+  topK: CandidateLimit,
+  threshold: Option[SemanticScoreThreshold],
+  oversampling: OversamplingPolicy,
+)
+
+sealed trait CandidatePlanDecision[+Plan]
+object CandidatePlanDecision {
+  final case class Eligible[Plan](plan: Plan) extends CandidatePlanDecision[Plan]
+  final case class Ineligible(reason: SupplementIneligibility) extends CandidatePlanDecision[Nothing]
+}
+
+final case class CandidateSearchResult[Id](
+  candidates: Vector[CandidateHit[Id]],
+  diagnostics: BackendDiagnostics,
 )
 ```
 
-The public name is used by a real request codec, not only fingerprint/tests.
+`CandidatePlan.semanticText` remains non-empty because an empty semantic query produces `Ineligible(NoSemanticQueryText)` before a plan is constructed. No unsupported facet/group/page placeholders are required in the Qdrant result.
 
-## 6. BeautyQ request V2
+## 8. BeautyQ Gen2 executable root
 
-Add an internal/request model with at least:
+The root exists before backend implementation, not after runtime migration.
+
+```text
+BeautyQSearchDeclarations
+├── catalog
+│   ├── topology
+│   ├── snapshotPolicy
+│   └── validation
+└── variants
+    ├── identity
+    ├── Fields
+    ├── document
+    ├── request
+    ├── intent
+    ├── plan
+    ├── facets
+    ├── groups
+    ├── response
+    ├── backends
+    │   ├── elasticsearch
+    │   └── qdrant
+    └── quality
+        ├── corpusRef
+        ├── metricSet
+        └── gates
+```
+
+The root references executable typed sections. Generated documentation is a view of this root.
+
+### 8.1 Stable identities
+
+Add and validate `ServiceCode` and `CategoryCode` as specified by the ADR.
+
+The accepted implementation places these codes in the shared BeautyQ domain/persistence models, not in a Gen2-only sidecar. This may add code fields to derived Service/Category HTTP JSON before search cutover. The side-by-side guarantee is therefore: Gen1 search runtime semantics and ownership remain unchanged; shared domain/API schemas may receive this documented additive change.
+
+The variant document contains both internal IDs and stable codes where search/filter/intent behavior requires them.
+
+### 8.2 Explicit document projection
+
+Projection remains domain code and must perform:
+
+- snapshot indexing by IDs/codes;
+- joins;
+- cross-owner invariant checks;
+- service variant schema validation;
+- attribute normalization;
+- search text and embedding source construction;
+- deterministic error accumulation;
+- deterministic document ordering.
+
+## 9. Snapshot and materialization
+
+### 9.1 Consistent repository snapshot
 
 ```scala
-final case class BeautySearchRequestV2(
-  query: String,
-  filters: List[PublicFilterInput],
-  selectedFacets: List[SelectedFacetInput],
-  sort: List[SortInput],
-  page: PageInput,
-  userLocation: Option[GeoPoint],
-  limit: Int,
+trait SearchSnapshotSource[Snapshot] {
+  def load: IO[SnapshotLoadError, VersionedSnapshot[Snapshot]]
+}
+
+final case class VersionedSnapshot[A](
+  value: A,
+  contentFingerprint: ContentFingerprint,
+  sourceRevision: Option[SourceRevision],
+  capturedAt: Instant,
+)
+```
+
+Requirements:
+
+- all repository reads occur in one repeatable-read transaction or equivalent;
+- content fingerprint uses canonical content only;
+- timestamps do not alter content fingerprint;
+- identical data yields identical fingerprint;
+- projection fails before index activation on missing/inconsistent entities.
+
+### 9.2 Catalog and write-order validation
+
+Catalog topology may validate declared read dependencies. It does not infer the full SQL insertion order.
+
+Seed insertion order, if automated, is based on an explicit repository/persistence write dependency graph. A validation step compares applicable catalog edges and foreign-key/repository evidence with that graph.
+
+### 9.3 Projected-document and generation identity
+
+After explicit projection and validation, the materializer computes:
+
+```scala
+final case class ProjectedDocumentsFingerprint(value: String)
+```
+
+The fingerprint is calculated over the canonical projected documents:
+
+- documents are ordered by stable document ID;
+- each document uses a versioned canonical value encoding;
+- all projected field values that can affect ES indexed source, Qdrant payload or embedding source text are included;
+- volatile metadata such as capture/build timestamps and diagnostics is excluded;
+- identical projected document values produce the same fingerprint regardless of repository iteration order.
+
+This fingerprint detects document changes caused by projection logic, field extraction, normalization or text composition even when the SQL/source snapshot fingerprint is unchanged.
+
+The generation identity also contains explicit implementation/format versions:
+
+```scala
+final case class GenerationIdentity(
+  sourceContentFingerprint: ContentFingerprint,
+  projectedDocumentsFingerprint: ProjectedDocumentsFingerprint,
+  contractFingerprint: ContractFingerprint,
+  projectionFormatVersion: ProjectionFormatVersion,
+  backendCompilerVersion: BackendCompilerVersion,
+  backendIndexFormatVersion: BackendIndexFormatVersion,
+  embeddingModel: Option[EmbeddingModelIdentity],
 )
 ```
 
 Rules:
 
-1. V1 `UserSearchInput` adapts to V2 with empty structured fields.
-2. Explicit UI filters have higher authority than parser-inferred constraints.
-3. Conflicts must produce deterministic validation errors or a documented precedence result.
-4. The response must return `appliedFilters` internally with origin:
-   - `explicit_ui`;
-   - `parsed_text`;
-   - `inferred_response`.
-5. V1 adapter maps the internal structure back to the existing `inferredFilters` JSON field.
+- `projectionFormatVersion` is bumped when projection, extractor, canonical document encoding, normalization or text-composition semantics can change, even when the current fixture corpus happens to produce identical documents;
+- `backendCompilerVersion` is bumped when mapping, ingestion, payload or point compilation behavior can change without a declarative contract change;
+- `backendIndexFormatVersion` identifies the concrete ES mapping/index format or Qdrant collection/payload format;
+- `EmbeddingModelIdentity` includes model/provider identity, model version, vector dimensions and relevant normalization/configuration version;
+- ES and Qdrant may use backend-specific compiler and index-format version types;
+- build timestamp, generation ID and `capturedAt` are metadata and never part of reusable content identity.
 
-## 7. Elasticsearch Gen2 requirements
+Every generated ES index and Qdrant collection records:
 
-### 7.1 Mapping
+- the complete `GenerationIdentity` applicable to that backend;
+- generation ID and build timestamp;
+- document count and validation summary.
 
-Typed ES policy must support:
+A physical index or collection may be reused only when its complete generation identity matches the requested build. Generation reuse therefore depends on:
 
-- analyzer/search-analyzer;
-- keyword/text multi-fields where declared;
-- numeric/boolean/geo mappings;
-- dynamic attribute object policy;
-- mapping/index settings supplied by policy, not hard-coded globally;
-- versioned physical index name and stable alias.
-
-### 7.2 Request compilation
-
-Compile the plan into:
-
-- lexical query;
-- hard filters;
-- soft scoring signals;
-- geo scoring/filtering;
-- typed facets;
-- typed groups;
-- sort;
-- pagination/search-after;
-- total-hits policy.
-
-The compiler must reject unsupported combinations with a typed error.
-
-### 7.3 Response decoding
-
-Decode:
-
-- hits and score;
-- exact/relation total hits;
-- every requested terms/range facet;
-- every requested group aggregation;
-- search-after cursor where applicable;
-- optional diagnostics.
-
-Unknown/missing requested aggregation names must fail with a useful error rather than silently returning empty counts.
-
-### 7.4 Response ownership
-
-BeautyQ response projection consumes `BackendSearchResult`. It may apply domain presentation/ranking policy, but it must not recompute ES-owned facet counts from the hit window.
-
-## 8. Qdrant Gen2 requirements
-
-### 8.1 Payload projection
-
-Declare a dedicated Qdrant payload projection containing all fields required for pushed-down constraints. At minimum for current BeautyQ constraints:
-
-- variant ID;
-- service/category stable ID or code;
-- price-from and price-to;
-- duration;
-- dynamic enum/boolean/int/decimal attributes;
-- location if geo filtering is enabled.
-
-Display names may remain payload fields when useful but must not be primary filter identity.
-
-### 8.2 Payload indexes
-
-The Qdrant compiler must emit/validate required payload indexes for fields used by filter compilation.
-
-### 8.3 Filter compilation
-
-Compile supported `PlannedConstraint` values into Qdrant filters before vector retrieval. Unsupported constraints must be reported explicitly. Post-hydration checks remain a defense-in-depth verification, not the primary filter.
-
-### 8.4 Candidate retrieval
-
-Policy must declare:
-
-- vector name;
-- embedding source;
-- top-K;
-- oversampling;
-- score threshold;
-- hydration requirements;
-- supplement budget;
-- deduplication key.
-
-The existing no-harm top-1 supplement remains the initial serving policy.
-
-## 9. Catalog and index-source requirements
-
-Introduce:
-
-```scala
-trait SearchSnapshotSource[F[_, _], Snapshot] {
-  def loadVersioned(): F[QueryFailure, VersionedSnapshot[Snapshot]]
-}
+```text
+source content
++ projected canonical documents
++ Gen2 contract
++ projection format
++ backend compiler/index format
++ embedding model/version when applicable
 ```
 
-A version contains at least:
+A mismatch requires a new physical generation followed by normal validation and atomic activation. Matching source and contract fingerprints alone is never sufficient.
 
-- source identifier;
-- snapshot version/fingerprint;
-- captured timestamp;
-- record counts.
+### 9.4 Generic materialization kernel
 
-Required first implementation:
+`search-gen2-core` owns only domain-neutral snapshot metadata, canonical
+row/token framing and ordering, document-declaration traversal and
+materialization orchestration. A domain selects the canonical source fields
+and values once; the kernel derives the emitted token block and deterministic
+row sort key (including self-sized nested groups, never parallel size vectors).
+It has no SQL, repository, BeautyQ or backend dependency.
 
-1. seed is inserted into repositories;
-2. search snapshot is loaded back through repositories/catalog loader;
-3. projection runs on the loaded snapshot;
-4. parity test compares repository-loaded documents with direct-seed documents during migration;
-5. index metadata stores the snapshot fingerprint;
-6. physical index/collection is built under a versioned name;
-7. alias/active pointer switches only after readiness checks.
+Each domain owns its transaction-local SQL/source adapter and pure business projection. Consistent
+transaction acquisition is an adapter responsibility; the generic kernel
+does not prescribe PostgreSQL or Doobie.
 
-CDC/outbox remains a later implementation behind the same source/update interface.
+## 10. BeautyQ request and response
 
-## 10. Semantic decisions that must be recorded before implementation
+### 10.1 Request
 
-The Gen2 ADR must choose exact semantics for:
+```scala
+final case class BeautySearchRequestGen2(
+  query: Option[String],
+  filters: Vector[PublicFilterInput],
+  requestedFacets: Vector[FacetId],
+  sort: Vector[SortInput],
+  page: PageRequest,
+  userLocation: Option[GeoPoint],
+)
+```
 
-1. `PriceRange`: `priceFrom` containment, full interval containment, or interval overlap.
-2. Numeric range boundaries: inclusive/exclusive per side.
-3. Facet counts under selected filters: all filters, self-excluding/disjunctive, or another explicit policy.
-4. Geo intent: coordinates always influence ranking, only `NearUser`, or explicit UI sort/filter.
-5. Stable service/category identity: ID or domain code.
-6. Parser/UI-filter conflict precedence.
-7. Empty residual query behavior.
-8. Total-hits exactness threshold.
-9. Pagination model for ES and supplement composition.
-10. Whether Qdrant may ever own facets/groups; initial answer should be no.
+Rules:
 
-## 11. Compatibility and migration rules
+- selected facets are represented in `filters`; provenance is assigned by the server from the validated presentation ID;
+- the public codec cannot submit `ParsedHard`, `ParsedSoft` or `SystemDefault`;
+- requested facet descriptors identify which facets should be returned;
+- invalid field/operator/value combinations return typed validation errors;
+- one request cannot contain conflicting pagination sizes;
+- location without geo intent is accepted as data but does not change ranking;
+- plan compilation follows the accepted precedence ADR.
 
-- V1 route remains ES-owned and behavior-locked until the ES Gen2 parity gate passes.
-- V2 core can run behind V1 adapters.
-- No alias/facade deletion in the same diff that changes serving behavior.
-- No Qdrant payload expansion and serving activation in the same diff.
-- Every behavior-changing iteration requires a rollback path to the previous compiler/adapter.
-- Generated docs/fingerprint changes must be reviewed independently from runtime activation.
+### 10.2 Response
 
-## 12. Required validation
+The Gen2 response exposes:
 
-### Pure tests
+- baseline hits and provenance;
+- optional appended semantic hit and provenance;
+- exact baseline total and total relation;
+- supplement count separately;
+- typed facets and precision;
+- typed provider/service groups and precision;
+- applied and suppressed filters with origin;
+- next cursor;
+- execution diagnostics safe for the API profile.
 
+External JSON names are selected for Gen2 directly. They do not need V1 codec aliases.
+
+## 11. Elasticsearch Gen2 requirements
+
+### 11.1 Mapping and ingestion
+
+The compiler derives mappings from typed fields and ES-specific policy.
+
+It must validate:
+
+- analyzer availability;
+- exact/filter subfields;
+- sortable field representation;
+- geo field type;
+- interval fields used by overlap constraints/facets;
+- document IDs;
+- source encoding.
+
+### 11.2 Request compilation
+
+Compile:
+
+- residual text and weighted text fields;
+- exact terms;
+- explicit-bound numeric ranges;
+- interval-overlap predicates;
+- geo signal/filter/sort independently;
+- stable deterministic sorts and tie-breakers;
+- cursor/search-after state;
+- exact totals;
+- requested facets;
+- requested group representatives and metrics.
+
+Aggregation names use stable typed IDs, not normalized field paths alone.
+
+### 11.3 Response decoding
+
+Decode into `FullSearchResult`:
+
+- hits and scores;
+- exact/qualified total hits;
+- terms, numeric range and interval-overlap facet buckets;
+- group buckets, representative data and metrics;
+- pagination state;
+- precision/error metadata;
+- unknown/missing aggregation diagnostics.
+
+A requested section missing from the response is a typed error unless the request explicitly allowed degradation.
+
+### 11.4 Group implementation
+
+A plain `terms` aggregation is not sufficient.
+
+The compiler must request the representative data and every ordering metric declared by the BeautyQ group policy. Candidate implementations include `terms` plus `top_hits`/`top_metrics` and metric sub-aggregations, or a dedicated secondary group query when that produces clearer correctness.
+
+The selected mechanism must pass exact fixture tests for:
+
+- representative document;
+- matching count;
+- best score;
+- optional proximity metric;
+- deterministic bucket order.
+
+### 11.5 Lifecycle
+
+Gen2 uses versioned physical indexes and a stable alias:
+
+```text
+build -> validate -> count/fingerprint check -> atomic alias switch
+```
+
+A failed build never changes the active alias. Previous generation retention is policy-driven.
+
+## 12. Qdrant Gen2 requirements
+
+### 12.1 Semantic query text policy
+
+Embedding input is produced by an explicit `SemanticQueryTextPolicy`; the Qdrant compiler does not choose between raw and residual query text.
+
+Initial BeautyQ policy is:
+
+```text
+semantic text =
+  normalized residual text
+  + canonical human-readable labels emitted by parser-recognized semantic clauses
+```
+
+Rules:
+
+- do not embed the raw original query verbatim after parsing;
+- include normalized residual text first;
+- append deduplicated canonical labels for parser-derived service, category, attribute, provider or location semantics;
+- canonical labels come from Gen2 declarations keyed by stable codes, not mutable request strings;
+- exclude explicit UI filters, facet selections, numeric price/duration bounds, geo coordinates, sort instructions and system defaults from semantic text;
+- use deterministic ordering and normalization so the same semantic request produces the same embedding input;
+- when both residual text and canonical semantic labels are empty, return `Ineligible(NoSemanticQueryText)`;
+- a filter-only request or default-browse request therefore skips Qdrant supplementation without error.
+
+The policy returns `Option[NonEmptyString]` (or an equivalent eligibility result). `CandidatePlan` is created only for `Some`.
+
+### 12.2 Point and payload projection
+
+The point contains:
+
+- stable variant ID;
+- named vector(s);
+- all payload fields required by candidate hard constraints;
+- payload schema/version;
+- generation identity, including source, projected-document, contract, projection, compiler/format and embedding identities where practical.
+
+### 12.3 Payload indexes
+
+The collection compiler declares and validates payload indexes for all pushed-down filter fields.
+
+A CandidatePlan cannot be activated if a required payload field or index is missing.
+
+### 12.4 Candidate compilation
+
+Compile:
+
+- semantic query vector;
+- terms and numeric constraints;
+- interval-overlap price constraints;
+- geo radius filters when explicitly requested;
+- topK, threshold and oversampling;
+- payload return policy.
+
+Qdrant does not receive facets, groups or public page requests.
+
+### 12.5 Candidate decoding and hydration
+
+Decode to `CandidateSearchResult`, then hydrate via the Gen2 document store/snapshot view.
+
+Post-hydration constraint checking remains an assertion and diagnostic. It is not the primary filter implementation.
+
+## 13. Baseline-plus-supplement orchestration
+
+The orchestrator receives:
+
+```text
+baseline: FullSearchResult
+supplement: CandidateSearchResult
+```
+
+Policy is defined by the ADR:
+
+- first page only;
+- default relevance sort only;
+- append-only maximum one;
+- no baseline reorder or removal;
+- all hard constraints satisfied;
+- baseline-set membership guard prevents later-page duplicates;
+- ES retains ownership of total, facets and groups;
+- supplement count/provenance is separate.
+
+Failure behavior is fixed rather than left as a future configuration branch:
+
+- Elasticsearch baseline availability is mandatory. Startup/readiness fails when the ES baseline, Gen2 document lookup or required baseline index is unavailable.
+- Qdrant unavailability does not prevent baseline serving. The application starts or remains serving in explicit `baseline_only` mode with `supplementReady = false`.
+- the full-search/cutover readiness gate still fails while the configured supplement backend is unavailable;
+- a request-time Qdrant timeout, transport error or backend error returns the successful Elasticsearch baseline unchanged and sets supplement status to `supplement_failed` with a stable reason code and diagnostics;
+- the response does not silently claim a successful hybrid execution;
+- plan compilation errors, unsupported capabilities and hydration invariant violations are not graceful Qdrant failures: they fail validation/request handling or mark the composition unhealthy according to their scope.
+
+No automatic fallback candidate backend or hidden retry path is introduced.
+
+## 14. Independent Gen2 application composition
+
+Before cutover, Gen2 is runnable through an independent local/test composition:
+
+- separate role, command or endpoint;
+- separate ES index alias and Qdrant collection names;
+- separate complete generation identities and physical resource namespaces;
+- no shadow decoder or adapter inside the V1 backend;
+- no production request fan-out from V1 to Gen2.
+
+Comparison occurs in `beautyq-search-gen2-eval` or integration tests.
+
+## 15. Quality and evaluation
+
+`beautyq-search-gen2-eval` owns:
+
+- labeled query corpus;
+- boundary datasets;
+- V1 observation fixtures where useful;
+- cross-backend semantic fixtures;
+- relevance metrics;
+- no-harm supplement reports;
+- latency and freshness reports;
+- cutover report generation.
+
+Serving modules contain only quality references and gate policies.
+
+Required gates include:
+
+- zero hard-constraint violations;
+- exact facet counts on authoritative fixtures;
+- deterministic group ordering on fixtures;
+- stable cursor behavior;
+- no cross-page supplement duplicate;
+- no baseline hit removal/reorder;
+- acceptable relevance metrics;
+- index/collection generation-identity consistency, including projected-document and compiler/format versions;
+- module firewall clean;
+- no Gen1 runtime dependency.
+
+## 16. Isolation and cutover rules
+
+### 16.1 Before cutover
+
+- V1 runtime source is not modified to consume Gen2;
+- Gen2 uses separate resources/namespaces;
+- no V1-to-V2 production adapter is created;
+- V1 fixtures may be read only from eval/test code;
+- every Gen2 brick is independently testable.
+
+### 16.2 Cutover gate
+
+Cutover is allowed only when:
+
+1. accepted ADR has no unresolved P0 decision;
+2. all Gen2 modules and firewall checks pass;
+3. repository snapshot, projection and index lifecycle are proven;
+4. ES full result tests pass for hits/totals/facets/groups/page;
+5. Qdrant candidate filtering and hydration tests pass;
+6. supplement page/sort/no-duplicate policy passes;
+7. independent Gen2 endpoint/role passes end-to-end tests;
+8. semantic delta ledger is reflected in API/eval fixtures;
+9. deletion plan shows no required capability exists only in Gen1.
+
+### 16.3 One cutover change set
+
+The final cutover change set:
+
+- switches application binding/route ownership to Gen2;
+- switches operational resource names/aliases as planned;
+- removes V1 route/wiring/contracts/interpreters and compatibility aliases;
+- removes obsolete Gen1 sbt projects and dependencies;
+- removes historical serving-time eval scaffolding not retained in Gen2 eval;
+- updates documentation to make Gen2 the only architecture.
+
+The change set is reverted as a unit if the cutover gate or post-merge smoke tests fail.
+
+## 17. Required tests
+
+### 17.1 Pure tests
+
+- typed document builder preserves declared field order and exact `Fields.*` handles;
+- field IDs and public request/filter/facet IDs remain explicit and are not derived from paths;
+- a field from the wrong document type does not compile;
 - field capability validation;
-- constraint semantics, especially interval/range boundaries;
-- request-to-plan precedence;
-- ES/Qdrant compiler golden JSON;
-- ES response decoding including totals/facets/groups;
-- V1/V2 adapter parity;
-- generated documentation view losslessness;
-- fingerprint sensitivity.
+- deterministic human-readable declaration tree matches the executable root metadata;
+- the generated tree and structural reachability assertions cover the same declaration sections;
+- readable business scenarios expose public request, parsed intent, normalized plan and eligibility;
+- stable code validation;
+- explicit bound semantics;
+- interval overlap boundaries;
+- geo signal/filter/sort separation;
+- filter operator decoding;
+- constraint precedence/provenance;
+- plan normalization/fingerprint;
+- ES and Qdrant golden compilation;
+- full and candidate result decoding;
+- generated documentation losslessness;
+- module/import firewall.
 
-### Integration tests
+### 17.2 Integration tests
 
-- repository snapshot -> projection parity;
-- ES mapping/index/search/facet/group/total behavior;
-- Qdrant payload indexes/filtering/search;
-- versioned rebuild + alias switch;
-- startup failure leaves previous active index intact.
+- repeatable-read repository snapshot consistency;
+- unchanged-data source fingerprint stability;
+- deterministic projected-document fingerprint stability and change detection;
+- projection/compiler/index-format version invalidation;
+- snapshot -> projection invariants;
+- ES mapping/ingestion/search/totals/facets/groups/cursor;
+- ES versioned index activation safety;
+- Qdrant payload indexes and filtered candidate retrieval;
+- hydration assertion;
+- first-page supplement and baseline membership guard;
+- independent Gen2 HTTP/role composition.
 
-### Quality gates
+### 17.3 Evaluation tests
 
-- no lost/reordered ES baseline IDs for supplement policy;
-- exact facet count parity against an authoritative test dataset;
-- structured-filter round trip;
+- semantic delta ledger fixtures;
 - zero constraint violations;
-- duplicate rate;
-- Recall@K/NDCG/MRR where expected labels exist;
+- exact facet fixture parity;
+- group ordering fixture parity;
+- Recall@K, NDCG and MRR where labels exist;
+- zero-result and duplicate rates;
+- no-harm supplement gate;
 - p50/p95 latency;
-- index freshness/fingerprint consistency.
+- source/index freshness.
 
-## 13. Definition of done
+## 18. Definition of done
 
 Gen2 is complete when:
 
-1. serving compiles one executable BeautyQ contract into backend behavior;
-2. no manually maintained lossy `SearchDomainSpec` projection is authoritative;
-3. ES response totals/facets/groups come from decoded ES results;
-4. public structured filters complete the UI round trip;
-5. index documents are derived from a versioned repository snapshot;
-6. Qdrant hard constraints are pushed into payload filters where supported;
-7. V1 compatibility is supplied by an adapter, not duplicate implementation;
-8. evaluation scaffolding is separated from the serving dependency graph;
-9. compatibility aliases have an explicit deprecation/removal state;
-10. architecture docs are generated from or directly reference the executable declaration.
+1. all runtime code lives in the new Gen2 DAG;
+2. no Gen2 module depends on a Gen1 search module;
+3. one executable BeautyQ root owns all runtime declarations;
+4. `BeautyQSearchDeclarations.variants.Fields` is the single document-field handle owner used by
+   document, intent, facets/groups, backend policies and response descriptions;
+5. stable service/category codes are persisted and validated;
+6. repository snapshots are transactionally consistent and content-versioned;
+7. explicit projection produces deterministic validated documents and a canonical `ProjectedDocumentsFingerprint`;
+8. ES/Qdrant generation reuse requires equality of source, projected-document, contract, projection, compiler/index-format and applicable embedding identities;
+9. structured filters, facets, sort and cursor pagination form a closed API loop;
+10. Elasticsearch returns decoded full results including totals, facets and groups;
+11. Qdrant returns filtered candidate-only results only for requests with eligible non-empty semantic query text;
+12. cursor validation uses value-only `PlanIdentity` and never includes the current cursor or runtime/function values;
+13. supplement orchestration obeys first-page/default-sort/no-duplicate policy and the accepted explicit Qdrant failure policy;
+14. serving modules do not depend on evaluation corpus/report code;
+15. generated structural documentation and readable scenario views remain deterministic views of the executable root rather than shadow contracts;
+16. the independent Gen2 composition passes the cutover gate, including full-search readiness with Qdrant available;
+17. the final cutover removes Gen1 search modules, routes, aliases and obsolete scaffolding;
+18. repository documentation describes Gen2 as the sole search framework.
