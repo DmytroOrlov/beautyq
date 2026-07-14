@@ -106,9 +106,12 @@ or a generated view becomes a second policy owner.
 
 Require a concrete reachable failure or real persistence, wire, backend, cursor, fingerprint, or public compatibility contract before adding safeguards.
 
-Do not defend trusted Scala code against overridden enum `toString`, reflection, malicious same-package callers, type-impossible nulls/states, or unspecified future changes.
+Do not add defenses for overridden enum `toString`, reflection, malicious same-package callers,
+impossible nulls/states, or unspecified future changes.
 
-Diagnostics should use ordinary enum rendering. Reject stable labels/IDs, identity matches, wrappers, or collision checks added only to freeze diagnostic output. Return `CONTINUE_SAME_PATCH` or `REJECT`.
+Apply the enum-text rule in `AGENTS.md`: preserve task-defined typed IDs/codes and active order used by
+contract views; use `toString` only for incidental diagnostics. Reject speculative labels or wrappers,
+not named contract values. Return `CONTINUE_SAME_PATCH` or `REJECT`.
 
 ## 1.4 No fake green
 

@@ -249,7 +249,7 @@ event match {
 * Before running validation or compilation, prune unused imports, params, locals, helper methods, and dead code, and qualify/import nested object members consistently.
 * Report pruning prompt-provided unused symbols as a normal compile-safety step, not as a behavior deviation.
 * In Scala 3 tests, avoid discarded-value fixes by making Unit-returning lambdas, callbacks, and match branches explicitly return `Unit`. Do not leave `assert(...)` as the final discarded value in a context typed as `Unit`; add a final `(): Unit` or otherwise make the branch return `Unit` before running validation.
-* Use normal enum toString in diagnostics. Add stable codes or validation only for a real persistence, wire, backend, public compatibility, or reachable invalid-input boundary.
+* Enum text: ordinary `toString` is fine for incidental diagnostics. If task/source truth names stable IDs/codes or explicit active order used by a root, trace, ledger, wire or public contract, keep those typed values and derive views from them; do not replace them with `toString`/`values`. Do not generalize that exception to unrelated enums.
 
 ## HTTP / Tapir rules
 

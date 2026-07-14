@@ -441,9 +441,22 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
           "        │   ├── [0] SemanticSearch",
           "        │   ├── [1] StructuredBrowse",
           "        │   └── [2] DefaultBrowse",
-          "        └── default-browse-code: default-browse",
+          "        ├── default-browse-code: default-browse",
+          "        └── candidate",
+          "            ├── semanticTextParts",
+          "            │   ├── [0] residual-text",
+          "            │   └── [1] canonical-semantic-labels",
+          "            └── eligibilityGates",
+          "                ├── [0] semantic-query-text",
+          "                ├── [1] first-page",
+          "                └── [2] default-sort",
         )
       assert(lines.slice(planIndex, lines.size) == expectedPlan)
+    }
+
+    "expose variants.plan.candidate as the exact same typed candidate-policy values a reviewer would navigate to in BeautyQSemanticCandidatePolicy, not copies" in {
+      assert(variants.plan.candidate.semanticTextParts eq BeautyQSemanticCandidatePolicy.semanticTextParts)
+      assert(variants.plan.candidate.eligibilityGates eq BeautyQSemanticCandidatePolicy.eligibilityGates)
     }
   }
 

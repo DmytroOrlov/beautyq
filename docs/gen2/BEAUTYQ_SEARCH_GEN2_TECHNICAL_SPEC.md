@@ -646,21 +646,21 @@ FullSearchResult[Document, Id](
 )
 ```
 
-Qdrant receives a candidate plan only after semantic-text and eligibility compilation succeeds:
+Qdrant receives a candidate plan only after semantic-text and eligibility compilation succeeds. Brick 4G-A
+owns the backend-neutral candidate contract itself, in `search-gen2-contract`:
 
 ```scala
+opaque type SemanticQueryText = String // SemanticQueryText.from rejects empty/whitespace-only input
+
 final case class CandidatePlan[Document](
-  semanticText: NonEmptyString,
+  semanticText: SemanticQueryText,
   hardConstraints: Vector[PlannedConstraint[Document]],
-  topK: CandidateLimit,
-  threshold: Option[SemanticScoreThreshold],
-  oversampling: OversamplingPolicy,
 )
 
-sealed trait CandidatePlanDecision[+Plan]
+sealed trait CandidatePlanDecision[+Plan, +Reason]
 object CandidatePlanDecision {
-  final case class Eligible[Plan](plan: Plan) extends CandidatePlanDecision[Plan]
-  final case class Ineligible(reason: SupplementIneligibility) extends CandidatePlanDecision[Nothing]
+  final case class Eligible[Plan](plan: Plan) extends CandidatePlanDecision[Plan, Nothing]
+  final case class Ineligible[Reason](reason: Reason) extends CandidatePlanDecision[Nothing, Reason]
 }
 
 final case class CandidateSearchResult[Id](
@@ -669,7 +669,65 @@ final case class CandidateSearchResult[Id](
 )
 ```
 
-`CandidatePlan.semanticText` remains non-empty because an empty semantic query produces `Ineligible(NoSemanticQueryText)` before a plan is constructed. No unsupported facet/group/page placeholders are required in the Qdrant result.
+`CandidatePlan` is a plain generic value; the canonical BeautyQ compiler supplies the compiled plan's
+hard constraints, but the generic constructor does not enforce their provenance. It carries no retrieval
+knob: `topK`, threshold and oversampling policy are Brick 6's
+`CandidatePlan -> Qdrant request` compiler concern, not this contract type. `CandidatePlanDecision` is
+generic in `Reason`: the generic contract declares no ineligibility vocabulary of its own (no
+`NoSemanticQueryText`/`NotFirstPage`/`NonDefaultSort` case lives here). BeautyQ's own three-case
+`BeautyQCandidateIneligibility` enum (`beautyq-search-gen2-contract`) is the `Reason` BeautyQ's compiler
+produces. `CandidatePlan.semanticText` remains non-empty because an empty semantic query produces
+`Ineligible(BeautyQCandidateIneligibility.NoSemanticQueryText)` before a plan is constructed. No
+unsupported facet/group/page placeholders are required in the Qdrant result.
+
+Candidate eligibility is evaluated through one typed error boundary:
+
+```scala
+// search-gen2-contract
+enum CandidateGateOutcome[+Reason] { case Passed; case Rejected(reason: Reason) }
+final case class CandidateGateResult[Gate, Reason](gate: Gate, outcome: CandidateGateOutcome[Reason])
+def evaluate[Gate, Plan, Reason](
+  gates: Vector[Gate],
+  semanticText: Either[SemanticQueryTextError, SemanticQueryText],
+  evaluateGate: (Gate, Either[SemanticQueryTextError, SemanticQueryText]) => CandidateGateOutcome[Reason],
+  eligiblePlan: SemanticQueryText => Plan,
+): Either[CandidateEvaluationError, CandidateEvaluation[Gate, Plan, Reason]]
+
+// beautyq-search-gen2-wiring
+def compile(compiled: CompiledBeautyQSearchPlan): Either[CandidateEvaluationError, CompiledCandidateEvaluation]
+```
+
+Ordinary ineligibility (`NoSemanticQueryText`, `NotFirstPage`, `NonDefaultSort`) comes only from an active,
+declared domain gate failing during the ordinary gate walk, never from a detached fallback.
+`CandidateEvaluationError.MissingSemanticTextAfterAllGatesPassed` is a distinct, generic malformed-policy
+evaluation error, not a BeautyQ business reason: it reports that every declared gate passed while semantic
+text was still missing - meaning no active gate actually tracked it - and preserves the original
+`SemanticQueryTextError` unmodified. BeautyQ's own `eligibilityGates` never triggers it, since its
+`SemanticQueryText` gate's predicate checks exactly `semanticText.isRight`, so missing text always fails
+that gate first. Only `Right` produces the compiler-bound `CompiledCandidateEvaluation` that
+`BeautyQCandidatePlanTrace.render` accepts; a `Left` propagates unchanged and is never rendered as
+ineligibility. This boundary leaves Brick 4G-B cursor validation and Brick 6 backend retrieval knobs
+unaffected.
+
+`CandidateEvaluation[Gate, Plan, Reason]` itself is a read-only, framework-produced result: it is a type
+alias for `SemanticCandidateEvaluation.Result`, whose constructor is private to
+`SemanticCandidateEvaluation`. The aggregate stores only its typed gate outcomes and final decision, and
+the evaluator derives the first rejection and eligible plan from those same values. A caller cannot supply
+separate pass/reason callbacks, independently replace the plan, or use `copy`/a public factory to create an
+inconsistent result. `CandidateEvaluationError` remains the sole distinct `Left` boundary for a malformed
+evaluation policy.
+
+For BeautyQ 4G-A, the domain contract additionally fixes the reviewer-visible identities and order:
+
+- semantic parts: `residual-text`, then `canonical-semantic-labels`;
+- eligibility gates: `semantic-query-text`, `first-page`, then `default-sort`;
+- ineligibility reason codes: `no-semantic-query-text`, `not-first-page`, and
+  `non-default-sort`.
+
+`BeautyQSemanticCandidatePolicy` owns these typed IDs/codes and the two explicit active vectors. The
+compiler, canonical declaration branch, trace and vocabulary ledger consume those values; none may read
+enum case names or discover active order from enum inventory. This is a BeautyQ contract requirement,
+not a generic stable-label requirement for unrelated domains.
 
 ### 7.9 Plan-input resolution and compilation
 
@@ -1223,7 +1281,9 @@ A failed build never changes the active alias. Previous generation retention is 
 
 ### 12.1 Semantic query text policy
 
-Embedding input is produced by an explicit `SemanticQueryTextPolicy`; the Qdrant compiler does not choose between raw and residual query text.
+Embedding input is produced by `BeautyQSemanticCandidatePolicy`; the Qdrant compiler does not choose
+between raw and residual query text. BeautyQ owns semantic composition and eligibility, while the
+backend compiler consumes only an eligible `CandidatePlan`.
 
 Initial BeautyQ policy is:
 
@@ -1237,14 +1297,25 @@ Rules:
 
 - do not embed the raw original query verbatim after parsing;
 - include normalized residual text first;
-- append deduplicated canonical labels for parser-derived service, category, attribute, provider or location semantics;
+- append the canonical labels emitted by parser-derived service, category, attribute, provider or location
+  semantics. The parser deduplicates labels by `stableKey`, preserving the first occurrence and its order;
+  semantic composition consumes that resulting vector in order and does not deduplicate again by display
+  text, so distinct stable keys with identical display text both remain in the embedding input;
 - canonical labels come from Gen2 declarations keyed by stable codes, not mutable request strings;
 - exclude explicit UI filters, facet selections, numeric price/duration bounds, geo coordinates, sort instructions and system defaults from semantic text;
 - use deterministic ordering and normalization so the same semantic request produces the same embedding input;
-- when both residual text and canonical semantic labels are empty, return `Ineligible(NoSemanticQueryText)`;
+- when both residual text and canonical semantic labels are empty, semantic-text construction returns
+  `Left(SemanticQueryTextError.EmptyOrBlank)` and the active `SemanticQueryText` gate produces
+  `Ineligible(BeautyQCandidateIneligibility.NoSemanticQueryText)`;
 - a filter-only request or default-browse request therefore skips Qdrant supplementation without error.
 
-The policy returns `Option[NonEmptyString]` (or an equivalent eligibility result). `CandidatePlan` is created only for `Some`.
+The semantic-text boundary is
+`Either[SemanticQueryTextError, SemanticQueryText]`. `SemanticCandidateEvaluation` then evaluates the
+declared typed gates once and returns
+`Either[CandidateEvaluationError, CandidateEvaluation[Gate, Plan, Reason]]`, deriving the typed
+`CandidatePlanDecision` from those stored outcomes. A `CandidatePlan` exists only inside an eligible
+decision; ineligible decisions carry the domain's reason instead. `CandidateEvaluationError` remains a
+distinct malformed-policy error and is never translated into BeautyQ business ineligibility.
 
 ### 12.2 Point and payload projection
 

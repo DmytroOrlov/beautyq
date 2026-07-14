@@ -112,6 +112,12 @@ reconstruct policy.
 When a declaration, test, and documentation statement disagree, report the mismatch and resolve it
 explicitly. Do not silently choose one layer as a substitute for another.
 
+### Stable identity and explicit order
+
+Use ordinary `toString` only for incidental diagnostics. A task-defined stable ID/code or active subset/
+order is typed domain policy; all views derive from it, and it must not be replaced with `toString` or
+enum inventory. Do not add stable labels to unrelated enums.
+
 ## Coordinator and reviewer gate
 
 Before issuing a prompt or accepting a patch that changes domain policy or reusable search mechanics,

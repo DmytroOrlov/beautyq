@@ -85,6 +85,20 @@ final class SearchGen2VocabularyLedgerSpec extends AnyWordSpec {
     }
   }
 
+  "the candidate-evaluation payload shapes" should {
+    "pin the current generic success, rejection and malformed-policy forms" in {
+      val emptyOrBlank = SemanticQueryTextError.EmptyOrBlank
+      val passed: CandidateGateOutcome[String] = CandidateGateOutcome.Passed
+      val rejected: CandidateGateOutcome[String] = CandidateGateOutcome.Rejected("pin")
+      val malformed = CandidateEvaluationError.MissingSemanticTextAfterAllGatesPassed(emptyOrBlank)
+
+      assert(emptyOrBlank == SemanticQueryTextError.EmptyOrBlank)
+      assert(passed == CandidateGateOutcome.Passed)
+      assert(rejected == CandidateGateOutcome.Rejected("pin"))
+      assert(malformed == CandidateEvaluationError.MissingSemanticTextAfterAllGatesPassed(SemanticQueryTextError.EmptyOrBlank))
+    }
+  }
+
   // See docs/gen2/SEARCH_GEN2_FRAMEWORK_SCOPE.md, gap G-3: a Vector[A]-valued searchable/filterable
   // field has no SearchFieldKind, SearchValueCodec, or FieldExtraction shape today.
   // LibraryTracerDomainSpec proves the practical consequence (completeDocument forces an explicit

@@ -24,7 +24,7 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 4G — semantic query text, `CandidatePlan` and cursor validation over the
+- **Active brick:** Brick 4G-B — inbound cursor decoding/validation against `PlanIdentity` over the
   compiled `SearchPlan`
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
@@ -54,6 +54,13 @@ summaries must remain short and point here.
     facet-registry/plan-compilation mechanics, plus the BeautyQ plan policy, compiler and diagnostic
     trace that compose them into a validated `SearchPlan[VariantSearchDocumentGen2]`; semantic query
     text, `CandidatePlan` and cursor validation remain out of scope until 4G
+  - Brick 4G-A — semantic candidate planning: generic backend-neutral `SemanticQueryText`/`CandidatePlan`/
+    `CandidatePlanDecision[Plan, Reason]`/`SemanticCandidateEvaluation`, plus BeautyQ's own
+    `BeautyQCandidateIneligibility` reason vocabulary, semantic-text-part and eligibility-gate policy,
+    compiler and diagnostic trace that compose them into one bound candidate evaluation over the compiled
+    `SearchPlan`; the named stable IDs/codes, explicit active vectors, semantic-part trace evidence and
+    vocabulary pins are part of the accepted BeautyQ contract. Cursor decoding/validation remains out of
+    scope until 4G-B.
 
   Compact Brick 4 status:
 
@@ -64,15 +71,16 @@ summaries must remain short and point here.
   4D completed
   4E completed
   4F completed
-  4G active
+  4G-A completed
+  4G-B active
   ```
 - **Authoring facade:** `BeautyQSearchDeclarations` is the canonical Gen2 business entry point.
   Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
   and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
   reverse-depend from the contract layer.
-- **Next action:** Brick 4G — compile semantic query text and `CandidatePlan` from the validated
-  `SearchPlan`, and validate inbound cursors against `PlanIdentity`; backend/route wiring remain later
-  bricks
+- **Next action:** validate inbound cursors against `PlanIdentity` over the compiled `SearchPlan`, and
+  prove the candidate compiler/trace against a real decoded second-page cursor; backend/route wiring and
+  Brick 6 retrieval knobs remain later bricks
 - **Blockers:** none
 
 Every brick that adds domain policy or reusable mechanics must satisfy the
@@ -1236,7 +1244,17 @@ The implemented opening sequence is:
     policy section is rendered from BeautyQSearchPlanPolicy directly.
     ```
 
-The next code change is **Brick 4G**: compile semantic query text and `CandidatePlan` from the validated
-`SearchPlan`, and validate inbound cursors against `PlanIdentity`. Preserve the exact `variants.Fields`
-handles, stable codes and the Brick 4F plan-compilation gate order; keep candidate eligibility and cursor
-semantics explicit, and do not wire ES/Qdrant or runtime ownership before the candidate contract is proven.
+12. Brick 4G-A — semantic candidate planning — is complete. The generic algebra and its neutral proof are
+    owned by `search-gen2-contract`; exact API details live in the
+    [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md), reusable-shape limits in
+    [framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md), and the minimal new-domain path in
+    [onboarding](../search/NEW_DOMAIN_ONBOARDING.md). BeautyQ's canonical entry point is
+    `BeautyQSearchDeclarations.variants.plan.candidate`; its typed stable IDs, explicit active vectors,
+    compiler-bound semantic-part evidence and gate/reason trace are covered by the focused contract and
+    wiring specs. No cursor, backend, route or retrieval-knob work was added.
+
+The next code change is **Brick 4G-B**: validate inbound cursors against `PlanIdentity` over the compiled
+`SearchPlan`, and prove `BeautyQCandidatePlanCompiler`/`BeautyQCandidatePlanTrace` end to end against a
+real, decoded second-page cursor. Preserve the exact `variants.Fields` handles, stable codes, the Brick 4F
+plan-compilation gate order and the Brick 4G-A candidate contract; keep cursor semantics explicit, and do
+not wire ES/Qdrant, retrieval knobs, or runtime ownership before cursor validation is proven.

@@ -297,6 +297,13 @@ object BeautyQSearchDeclarations {
       val groups            = groupPolicy.map(_.id.value)
       val modes             = BeautyQSearchPlanMode.values.toVector.map(_.toString)
       val defaultBrowseCode = defaultBrowsePolicy.code.value
+
+      /** Direct typed references to the executable candidate policy (Brick 4G-A). Compilation itself
+        * (`BeautyQCandidatePlanCompiler`) is wiring implementation and is never referenced from here. */
+      object candidate {
+        val semanticTextParts: Vector[BeautyQSemanticTextPart] = BeautyQSemanticCandidatePolicy.semanticTextParts
+        val eligibilityGates: Vector[BeautyQCandidateEligibilityGate] = BeautyQSemanticCandidatePolicy.eligibilityGates
+      }
     }
   }
 
@@ -337,6 +344,13 @@ object BeautyQSearchDeclarations {
                 SearchStructureNode.indexed("groups", variants.plan.groups),
                 SearchStructureNode.indexed("modes", variants.plan.modes),
                 SearchStructureNode.leaf(s"default-browse-code: ${variants.plan.defaultBrowseCode}"),
+                SearchStructureNode.branch(
+                  "candidate",
+                  Vector(
+                    SearchStructureNode.indexed("semanticTextParts", variants.plan.candidate.semanticTextParts.map(_.stableId)),
+                    SearchStructureNode.indexed("eligibilityGates", variants.plan.candidate.eligibilityGates.map(_.stableId)),
+                  ),
+                ),
               ),
             ),
           ),

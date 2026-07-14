@@ -394,6 +394,131 @@ silently observe a stale/default value the first time it is read from a differen
 direct `Fields.document` access works. See `SEARCH_GEN2_FRAMEWORK_SCOPE.md`'s open gap G-8 for the
 mechanism, the supported authoring rule and the remaining lack of a framework-level prevention.
 
+### Candidate-policy example (Brick 4G-A)
+
+Turning an already-compiled `SearchPlan` into a semantic-supplement decision follows the same split:
+business policy stays explicit, everything mechanical is reused from `search-gen2-contract`.
+`CandidatePlanDecision[Plan, Reason]` is generic in both type parameters - the generic contract declares
+no ineligibility vocabulary of its own, so a new domain's reasons are entirely its own enum, never
+BeautyQ's.
+
+**Business/domain author writes explicitly:**
+
+- its own ineligibility-reason enum. Use `toString` only for incidental diagnostics; contract reason codes
+  belong on the typed cases;
+- its semantic-part and eligibility-gate vectors explicitly, in business order. Each selected part owns
+  extraction; each selected gate owns `outcome(...)`. Do not derive active order or contract IDs from enum
+  inventory or `toString`.
+
+**Framework derives/executes:**
+
+- the non-blank `SemanticQueryText` invariant (`SemanticQueryText.from` rejects empty/whitespace-only
+  input and preserves every other input exactly; being an opaque type, not a wrapped case class, callers
+  have no `copy` or String-level operation that bypasses the public construction boundary);
+- the backend-neutral `CandidatePlan`/`CandidatePlanDecision` shapes themselves. `CandidatePlan` is a
+  plain value whose canonical compiler supplies hard constraints; its generic constructor does not prove
+  provenance. It has no retrieval knob (`topK`, threshold, oversampling and collection/vector
+  configuration stay a later backend module's own policy);
+- the repeated component-traversal/normalized-empty-elimination/`SemanticQueryText`-construction mechanic
+  (`SemanticCandidateEvaluation.semanticText`, which always goes through `SemanticQueryText.from` and
+  returns rather than discards its `SemanticQueryTextError`) and the repeated ordered-gate-traversal/
+  typed-result-collection/first-failure-selection mechanic (`SemanticCandidateEvaluation.evaluate`) - a
+  domain calls both, once each, rather than hand-rolling its own `flatMap`/`filter`/`find` loop or
+  assuming any one gate's position (no `.head`/`.tail`/`.last`/index into a declared gate or part vector);
+- `CandidateEvaluationError` (`SemanticCandidateEvaluation.evaluate`'s own `Left` case), for the one state a
+  domain's declared gates cannot represent: every declared gate passing while semantic text is still
+  missing, meaning no active gate was actually declared to track it. This is a malformed evaluation policy,
+  never an ordinary domain ineligibility, and is never translated into one; a domain whose gate vector
+  genuinely includes a gate tracking `semanticText.isRight` (as every gate declaration in this framework
+  does) never observes it in practice, since that gate itself fails first during the ordinary walk.
+
+```scala
+enum WidgetSemanticTextPart {
+  case ResidualText
+
+  def rawComponents(residualText: Option[String]): Vector[String] =
+    this match {
+      case WidgetSemanticTextPart.ResidualText => residualText.toVector
+    }
+}
+
+enum WidgetCandidateIneligibility {
+  case NoSemanticQueryText
+  case NotFirstPage
+}
+
+enum WidgetCandidateEligibilityGate(val ineligibility: WidgetCandidateIneligibility) {
+  case SemanticQueryText
+      extends WidgetCandidateEligibilityGate(WidgetCandidateIneligibility.NoSemanticQueryText)
+  case FirstPage
+      extends WidgetCandidateEligibilityGate(WidgetCandidateIneligibility.NotFirstPage)
+
+  def passes(semanticText: Either[SemanticQueryTextError, SemanticQueryText], firstPage: Boolean): Boolean =
+    this match {
+      case WidgetCandidateEligibilityGate.SemanticQueryText => semanticText.isRight
+      case WidgetCandidateEligibilityGate.FirstPage         => firstPage
+    }
+
+  def outcome(semanticText: Either[SemanticQueryTextError, SemanticQueryText], firstPage: Boolean): CandidateGateOutcome[WidgetCandidateIneligibility] =
+    if (passes(semanticText, firstPage)) CandidateGateOutcome.Passed
+    else CandidateGateOutcome.Rejected(ineligibility)
+}
+
+object WidgetSemanticCandidatePolicy {
+  // Explicit vectors are policy: they select the active vocabulary and its business order.
+  val semanticTextParts: Vector[WidgetSemanticTextPart] = Vector(
+    WidgetSemanticTextPart.ResidualText,
+  )
+  val eligibilityGates: Vector[WidgetCandidateEligibilityGate] = Vector(
+    WidgetCandidateEligibilityGate.SemanticQueryText,
+    WidgetCandidateEligibilityGate.FirstPage,
+  )
+
+  def semanticText(residualText: Option[String]): Either[SemanticQueryTextError, SemanticQueryText] =
+    SemanticCandidateEvaluation.semanticText[WidgetSemanticTextPart](semanticTextParts, _.rawComponents(residualText), identity)
+
+  // One call evaluates the complete declared vector and the callback returns one complete typed outcome
+  // per gate. The framework derives the first rejection and the eligible Plan from those same values.
+  def evaluate[Plan](residualText: Option[String], firstPage: Boolean, eligiblePlan: SemanticQueryText => Plan): Either[CandidateEvaluationError, CandidateEvaluation[WidgetCandidateEligibilityGate, Plan, WidgetCandidateIneligibility]] = {
+    val text = semanticText(residualText)
+    SemanticCandidateEvaluation.evaluate[WidgetCandidateEligibilityGate, Plan, WidgetCandidateIneligibility](
+      eligibilityGates,
+      text,
+      (gate, semanticText) => gate.outcome(semanticText, firstPage),
+      eligiblePlan,
+    )
+  }
+}
+```
+
+A domain compiler then composes the policy as a thin function over its own already-compiled plan: derive
+`firstPage`/`defaultSort` as tautological facts from the plan's own `page.cursor.isEmpty`/`sort.isEmpty`,
+call the domain policy's `evaluate` exactly once, and - through `Either.map` over its result - map a
+`Right`'s `Eligible` `SemanticQueryText` into a `CandidatePlan` carrying the plan's own `hardConstraints`
+unchanged, while a `Left(CandidateEvaluationError)` propagates through completely unchanged, never hidden,
+reinterpreted, or turned into a fake domain reason. It never re-decodes, re-parses, re-resolves precedence,
+or re-validates the plan it was given, never calls a gate's predicate more than once, and never throws or
+unsafely extracts a value it already holds through a typed pattern match. A declared ineligibility reason
+(like `NoSemanticQueryText`) is written exactly once, on its owning gate; nothing else in the domain policy
+repeats it as a second, detached fallback value, and `CandidateEvaluationError` - distinct from both
+`CandidatePlanDecision` and the domain's own reason type - is never translated into one.
+
+`BeautyQCandidateIneligibility`/`BeautyQSemanticTextPart`/`BeautyQCandidateEligibilityGate`/
+`BeautyQSemanticCandidatePolicy`/`BeautyQCandidatePlanCompiler`/`BeautyQCandidatePlanTrace`
+(`beautyq-search-gen2-contract`/`beautyq-search-gen2-wiring`) are the golden reference for this authoring
+style at full scale, including BeautyQ's own two-part text order, three-gate eligibility order and typed
+reason cases. `BeautyQCandidatePlanCompiler.compile` calls `BeautyQSemanticCandidatePolicy.evaluate`
+exactly once and returns `Either[CandidateEvaluationError, CompiledCandidateEvaluation]` - one bound
+`CompiledCandidateEvaluation` on the `Right` - the compiled plan and one underlying evaluation whose typed
+`CandidateGateResult` values and final decision are exposed read-only, all produced together by that one
+call - and `BeautyQCandidatePlanTrace.render` accepts only that one bound value, never the error, so a plan
+compiled for one request and a decision produced for another can never be rendered together, and rendered
+gate evidence can never come from a second, separate predicate execution.
+`BeautyQSearchDeclarations.variants.plan.candidate` exposes those same typed policy values - not only
+their rendered summaries - as a reviewer-readable branch of the canonical root. A new domain composes this
+same generic algebra and its own typed parts/gates/reasons; it never copies BeautyQ's vocabulary, cursor
+policy, or a Brick 6 backend knob.
+
 ## Materialization
 
 Reuse from the generic Gen2 modules:

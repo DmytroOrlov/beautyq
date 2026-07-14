@@ -5,7 +5,7 @@
 * [Repository README](../README.md) — coordinator entry point, current project focus, and BeautyQ route truth.
 * [Domain authoring principles](search/DOMAIN_AUTHORING_PRINCIPLES.md) — normative contract for
   domain-facing declarations, framework derivation, cross-domain reuse, and executable source-of-truth
-  ownership.
+  ownership, including the enum-text rule.
 * [BeautyQ Search Gen2 implementation plan](gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) — current plan and the single authoritative live implementation state.
 * `BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` — locked BeautyQ local/test Qdrant supplement gate.
 * `SEARCH_SUPPLEMENT_ARCHITECTURE.md` — reusable baseline-plus-supplement architecture.

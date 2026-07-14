@@ -296,6 +296,23 @@ directly owns public facet IDs and lookup, and `BeautyQSearchDeclarations.varian
 This slice adds no semantic query text, `CandidatePlan`, cursor validation, backend compiler, route or
 Gen1 runtime dependency; those remain Brick 4G. G-3 multi-value fields remains open.
 
+## Brick 4G-A — Semantic candidate planning
+
+The generic candidate algebra is owned by `search-gen2-contract`; its exact API and neutral proof are
+owned by the technical specification and this scope ledger's supported-shape entries. BeautyQ is the
+single current consumer, so this remains a single-consumer extraction rather than a universal-shape claim.
+
+BeautyQ owns the candidate reason vocabulary, the exact stable IDs/codes required by its contract, and two
+explicit vectors selecting semantic-part and eligibility-gate order. The canonical declaration branch,
+compiler-bound aggregate, trace and ledger derive from those same typed values. The generic framework owns
+only semantic-text validation, ordered traversal, typed outcome collection, first-failure selection and
+malformed-policy errors. It owns no BeautyQ reasons or labels.
+
+Neutral proof is `ArticleDocument` in `SemanticCandidatePlanSpec`; it covers construction boundaries,
+blank-text rejection, gate reordering, typed malformed-policy errors and read-only aggregate behavior.
+Exact BeautyQ API, IDs/codes and golden traces belong to the technical specification and focused contract/
+wiring specs; they are not duplicated here. G-3 multi-value fields remains open.
+
 ## Domain-authoring conformance
 
 The reusable Gen2 framework follows
@@ -315,10 +332,11 @@ Deliberate, not gaps:
   business-authoring gate; the kernel only derives tautological evidence.
 - **A generic constraint/plan algebra before Brick 4 existed.** Brick 4A (`PlannedConstraint`/
   `PlannedSignal`/`PlannedSort`), Brick 4B (`SearchPlan`, facets, groups, provenance), Brick 4C
-  (`PlanIdentity`, canonical encoding and cursor envelope) and Brick 4F (constraint precedence, public
-  plan-input resolution, facet lookup and plan compilation) have since landed in their owning modules.
-  Semantic query text, `CandidatePlan`, cursor validation and backend compilation remain Brick 4G+ scope
-  and do not belong in this document until they exist.
+  (`PlanIdentity`, canonical encoding and cursor envelope), Brick 4F (constraint precedence, public
+  plan-input resolution, facet lookup and plan compilation) and Brick 4G-A (`SemanticQueryText`,
+  `CandidatePlan`, `CandidatePlanDecision[Plan, Reason]`, `SemanticCandidateEvaluation`) have since landed
+  in their owning modules. Cursor validation and backend compilation remain Brick 4G-B/6 scope and do not
+  belong in this document until they exist.
 - **Backend-specific (Elasticsearch/Qdrant) representation concerns in the generic kernel.** Field kinds,
   capabilities and codecs stay backend-neutral by construction; mapping/analyzer/payload policy is each
   backend module's own concern.
