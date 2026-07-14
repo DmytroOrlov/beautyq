@@ -11,10 +11,8 @@ import org.scalatest.wordspec.AnyWordSpec
   *      field) still fails to compile today, so the moment it is closed, this file itself forces an
   *      update rather than staying silently stale.
   *
-  * Gaps with no code surface yet (interval-overlap constraints, the geo proximity/filter/sort triad -
-  * both planned for Brick 4's request/intent/plan algebra) have nothing to pin here; they are tracked
-  * as prose in docs/gen2/SEARCH_GEN2_FRAMEWORK_SCOPE.md instead, which is the authoritative gap ledger.
-  * This file only pins what is mechanically checkable today.
+  * This file pins only mechanically testable vocabulary and compile gaps. Current open extraction gaps
+  * and their future owners belong to docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md.
   */
 final class SearchGen2VocabularyLedgerSpec extends AnyWordSpec {
 
@@ -99,8 +97,8 @@ final class SearchGen2VocabularyLedgerSpec extends AnyWordSpec {
     }
   }
 
-  // See docs/gen2/SEARCH_GEN2_FRAMEWORK_SCOPE.md, gap G-3: a Vector[A]-valued searchable/filterable
-  // field has no SearchFieldKind, SearchValueCodec, or FieldExtraction shape today.
+  // See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md, G-3: a Vector[A]-valued searchable/
+  // filterable field has no SearchFieldKind, SearchValueCodec, or FieldExtraction shape today.
   // LibraryTracerDomainSpec proves the practical consequence (completeDocument forces an explicit
   // .ignore); these two assertions are the minimal generic, BeautyQ-free compile-time proof that no
   // inferred authoring or the representative explicit String-kind choice can express it, independent

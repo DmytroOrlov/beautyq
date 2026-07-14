@@ -12,8 +12,8 @@ import java.util.UUID
 /** Deliberately non-domain-specific-shaped executable calibration example for the reusable Gen2
   * declaration and materialization kernel, exercising its mechanics beyond the one production domain
   * the kernel was extracted from without pretending to be a second production consumer.
-  * See docs/gen2/SEARCH_GEN2_FRAMEWORK_SCOPE.md for the gap ledger this tracer feeds and the rationale
-  * for keeping it a second, structurally different worked example rather than a compile-only probe.
+  * It calibrates the supported shapes recorded in
+  * docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md rather than serving as a compile-only probe.
   *
   * Deliberately divergent shape:
   *  - `Long`/`Instant`-valued fields (the original domain has neither);
@@ -44,8 +44,8 @@ object LibraryTracerModel {
     given UuidBackedId[BranchId]     = this
   }
 
-  // Gap G-6 (see SEARCH_GEN2_FRAMEWORK_SCOPE.md, resolved): `leaderboard.model.StableCodeCompanion` now
-  // lives in leaderboard-core and is public, so it is genuinely reachable from here. Isbn still writes
+  // `leaderboard.model.StableCodeCompanion` lives in leaderboard-core and is public, so it is genuinely
+  // reachable from here. Isbn still writes
   // its own minimal CanonicalStringValue instance instead of extending it, because
   // StableCodeCompanion's accepted grammar is fixed to lowercase snake_case (ServiceCode/CategoryCode's
   // own shape), not a real ISBN's digits-and-hyphens shape - a deliberate, different-grammar case, not
@@ -185,7 +185,7 @@ object LibraryTracerProjection {
 object LibraryTracerSearchDomain {
   import LibraryTracerModel.*
 
-  // Open authoring hazard G-8 (see SEARCH_GEN2_FRAMEWORK_SCOPE.md): Fields' own inputs are kept fully local to Fields
+  // Open authoring hazard G-8 (see docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md): Fields' own inputs are kept fully local to Fields
   // (never a private val of the enclosing object it closes over). A nested Fields object that captures
   // an outer private val, combined with the enclosing object's own `val document = Fields.document`
   // alias, is a reentrant JVM class-initialization hazard: the outer alias can observe a stale/default
@@ -246,7 +246,7 @@ object LibraryTracerSearchDomain {
         .searchable
         .declare
 
-    // Gap G-3 (tracked, not resolved - see SEARCH_GEN2_FRAMEWORK_SCOPE.md): a Vector[String]-valued
+    // Gap G-3 (tracked in docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md): a Vector[String]-valued
     // field has no expressible SearchFieldKind or FieldExtraction today. completeDocument's exhaustive
     // product coverage forces this decision to be explicit instead of silently missing.
     declarations.ignore(_.tags)

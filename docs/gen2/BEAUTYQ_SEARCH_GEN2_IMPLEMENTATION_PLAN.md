@@ -11,9 +11,6 @@ Normative companion documents:
 - [semantics ADR](BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md) for accepted business/search decisions;
 - [evidence-backed Gen1 review](BEAUTYQ_SEARCH_GEN2_REVIEW.md) for the source-confirmed problems Gen2
   addresses;
-- [reusable-framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md) for what `search-gen2-contract`/
-  `search-gen2-core` actually support beyond the BeautyQ extraction, calibrated by an executable
-  non-BeautyQ tracer - supported shapes, tracked gaps, resolved checkpoints and non-goals.
 - [domain authoring principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md) for the repository-wide
   business-policy, reuse, and executable-source-of-truth acceptance contract.
 
@@ -24,8 +21,8 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 4G-B — inbound cursor decoding/validation against `PlanIdentity` over the
-  compiled `SearchPlan`
+- **Active brick:** Brick 4G-B — planned, not yet implemented: inbound cursor decoding/validation
+  against `PlanIdentity` over the compiled `SearchPlan`
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
   - Brick 1 — generic field/document declaration kernel
@@ -38,8 +35,8 @@ summaries must remain short and point here.
   - Commit 3F — cross-brick reusable authoring audit closeout
   - Commit 3G — reusable-framework generality checkpoint: a non-BeautyQ-shaped executable tracer
     exercised through the complete declaration/materialization path owned by `search-gen2-contract`/
-    `search-gen2-core`; see
-    [reusable-framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md) for the resulting gap ledger
+    `search-gen2-core`; supported shapes are recorded in the technical specification and remaining
+    gaps below
   - Brick 4A — constraint, signal and sort algebra: `PlannedConstraint`/`PlannedSignal`/`PlannedSort`
     plus `Bound`/`RangeBounds`, with deterministic diagnostics and an explicit-enum-label algebra trace
   - Brick 4B — `SearchPlan`, facets, groups, page, provenance and diagnostics: typed facet/group/page/
@@ -78,18 +75,29 @@ summaries must remain short and point here.
   Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
   and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
   reverse-depend from the contract layer.
-- **Next action:** validate inbound cursors against `PlanIdentity` over the compiled `SearchPlan`, and
-  prove the candidate compiler/trace against a real decoded second-page cursor; backend/route wiring and
-  Brick 6 retrieval knobs remain later bricks
+- **Next action:** close the cursor boundary as one vertical: legal untrusted transport ingress,
+  declaration-derived contract fingerprint, one framework-owned plan/cursor binding, BeautyQ compiler
+  integration, and a real validated second-page candidate/trace proof. Backend JSON, route wiring and
+  Brick 6 retrieval knobs remain later bricks.
 - **Blockers:** none
+
+### Open reusable-framework gaps
+
+- **G-3 — multi-valued searchable/filterable fields: open.** `Vector[A]` has no generic field kind,
+  codec, extraction or filter/facet semantics. The future owner is a dedicated contract/plan brick tied
+  to a real domain requirement and neutral proof, before either backend accepts the shape. Current
+  representation limits are in technical specification §7.1.
+- **G-8 — sibling-capture/class-initialization hazard: open.** The BeautyQ first-touch cycle is fixed,
+  but a nested `Fields` object capturing a sibling value of the root that aliases `Fields.document`
+  remains unsupported. A future authoring-kernel brick owns any constructive API prevention; technical
+  specification §7.1 and onboarding record the supported shape meanwhile.
 
 Every brick that adds domain policy or reusable mechanics must satisfy the
 [Domain Authoring Principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md). A brick is not
 framework-complete merely because BeautyQ works: domain differences must remain explicit, reusable
 mechanics must be reused or extracted, neutral proof must exist, and generated views must derive
 from one executable declaration. If the current implementation still has an extraction gap, name its
-owner and next boundary in this plan or in the framework-scope ledger instead of claiming the gap is
-already generic.
+owner and next boundary in this plan instead of claiming the gap is already generic.
 
 Future brick closeouts add this compact authoring result:
 
@@ -130,9 +138,8 @@ wrapper base that is reusable in name only (`private[model]`, outside the two ge
 The tracer is an executable calibration fixture, not a second production consumer. It deliberately
 does not duplicate catalog topology: the neutral catalog algebra is a separate `repo-core` boundary
 proven by its own contract suites, while `search-gen2-core` must not acquire a reverse dependency on
-`repo-core`. Full detail, evidence and the current gap ledger live in
-[`SEARCH_GEN2_FRAMEWORK_SCOPE.md`](SEARCH_GEN2_FRAMEWORK_SCOPE.md); this paragraph is a pointer, not a
-duplicate status owner.
+`repo-core`. Current supported shapes are owned by technical specification §§7.1 and 9.4; the two
+remaining extraction gaps are owned by this plan's open-gap section.
 
 ## Coordinator starting model
 
@@ -686,7 +693,7 @@ Create the real Gen2 input contract and compile it directly into accepted semant
 Bricks 1-3's reusable layers (field/document declaration, materialization kernel) were each built
 BeautyQ-first and only proven generic later, by a Commit 3G tracer domain built after the fact. That
 sequencing worked, but it means every generic type in those layers took BeautyQ's shape by default and
-had to be corrected retroactively (see `SEARCH_GEN2_FRAMEWORK_SCOPE.md`'s gap ledger). Brick 4 introduces
+had to be corrected retroactively (see the open reusable-framework gaps above). Brick 4 introduces
 a materially larger generic surface - `Bound`/`RangeBounds`, constraint/signal/sort/facet/group types,
 `SearchPlan`, `PlanIdentity` - where the same mistake would be far more expensive to correct after ES/
 Qdrant compilers in Bricks 5-6 have already been built against it.
@@ -1136,125 +1143,86 @@ beautyq-search-gen2: add independent application composition
 search: cut over to Gen2 and remove Gen1
 ```
 
-## Implemented opening sequence and current handoff
+## Current handoff — Brick 4G-B
 
-The implemented opening sequence is:
+Completed work is summarized once in **Current implementation state** above. Exact accepted API and
+supported shapes live in the technical specification; commit chronology is available from Git and is
+not repeated here.
 
-1. Brick 0 established the isolated Gen2 module DAG and automated firewalls without search behavior.
-2. Brick 1 added the generic typed field/document kernel. Validation and structural rendering fit in
-   the pure contract module; `search-gen2-core` contains the sibling-module compile proof rather than
-   duplicated production support.
-3. Commit 3A added shared stable codes through the model, fresh-schema persistence, seed,
-   repositories and API schema without a Gen2 declaration.
-4. Commit 3B added the real `BeautyQSearchDeclarations` root containing
-   `catalog` and `variants.identity/Fields/document`, without request, backend or runtime work.
-5. Brick 3 added the repository-backed consistent snapshot, explicit validated Variant projection and
-   source/projected fingerprints in the side-by-side materialization module. Its focused pure suites and
-   the PostgreSQL repeatable-read/seed/torn-snapshot proof pass; backend and serving wiring remain out of
-   scope.
-6. Commit 3D extracted the domain-neutral snapshot/fingerprint/materialization mechanics from
-   `beautyq-search-gen2-materialization` into `search-gen2-core`.
-7. Commit 3E closes the authoring boundary: `BeautyQSnapshotCanonicalRows` declares each BeautyQ
-   source row's fields once; the generic canonical-row kernel derives token blocks, grouped nested
-   sort fragments and ordering from that declaration. BeautyQ materializer result/error types are
-   aliases of the generic kernel types. BeautyQ now owns transaction acquisition, snapshot shape,
-   persisted-data validation, source field/value selection, joins/projection errors, attribute/text
-   policy and encoding/version constants.
-8. Commit 3F applied the reusable-boundary review to every implemented Gen2 brick: direct canonical
-   row fields now use selectors, nested groups derive their own ordering without size vectors,
-   canonical snapshot traversal follows the snapshot product, deterministic indexing and non-empty
-   error accumulation are generic, the BeautyQ document uses exhaustive product coverage, and one
-   structural tree drives both typed root ownership and rendering. Stable-code Doobie/Tapir adapters
-   are derived from `CanonicalStringValue`; transaction-local SQL and business projection remain
-   explicit domain adapters.
-9. Commit 3G added the executable calibration checkpoint 3D-3F's single-domain extraction never had: a
-   tracer deliberately shaped differently from BeautyQ and exercised through the complete declaration/
-   materialization path owned by `search-gen2-contract`/`search-gen2-core`. It added support for
-   `Long`/date-time values, dynamic `Text` families and `CanonicalSnapshot.Single` sources; discovered
-   and avoided, but did not framework-prevent, a Scala/JVM nested-object initialization hazard; and
-   added a shape-firewall
-   (test-source import scan, exact-vocabulary drift pins, an executable multi-value-gap compile proof),
-   and left two gaps deliberately open with a stated reason rather than freehanded: a multi-valued field
-   (deferred to Brick 4's own constraint algebra) and the non-reusable `StableCodeCompanion` base
-   (deferred as an out-of-scope `beautyq-model` change). Golden fingerprints were reclassified from
-   assumed-immutable to reviewed change-detectors, since no persistent production database makes them
-   load-bearing. Full detail: `SEARCH_GEN2_FRAMEWORK_SCOPE.md`.
+### Source-confirmed starting state
 
-10. Brick 4D+4E added the generic public-input registry and intent-matching primitives, then rewrote the
-    BeautyQ boundary as explicit public names/typed field policies, stable-code actions and aliases over
-    those primitives. It retained server-only provenance assignment, parsed hard constraints,
-    `GeoProximitySignal`, residual text, semantic labels and readable traces. `variants.request` and
-    `variants.intent` are derived from executable values; no plan compiler, precedence, geo-origin
-    resolution, backend or route was added. Standard scalar/many/range/geo decoding remains in the
-    BeautyQ request adapter; it is not yet a generic claim. Any future extraction must be justified by
-    a concrete domain requirement and neutral proof under the authoring principles.
+- `SearchCursorEnvelope` already owns versioned encoding, strict decoding, `PlanIdentityHash`
+  comparison and opaque backend-state carriage, with two neutral plan shapes in
+  `SearchCursorEnvelopeSpec`.
+- `SearchCursor.fromOpaque` is `private[gen2]`. Consequently the BeautyQ public-input boundary cannot
+  construct a cursor received from transport; its focused tests can only use `cursor = None`.
+- No production BeautyQ `CanonicalPlanView` or contract-fingerprint declaration exists.
+- `BeautyQSearchPlanCompiler.compile(request, intent)` currently passes `request.page` through without
+  validating its cursor. `BeautyQCandidatePlanCompiler` infers first page directly from cursor presence,
+  so its end-to-end tests cannot yet prove `NotFirstPage` from a decoded valid cursor.
+- `search-gen2-elasticsearch`, `search-gen2-qdrant` and `beautyq-search-gen2-eval` still contain only
+  module markers. Brick 4G-B must not pretend backend or runtime work exists.
 
-11. Brick 4F combined the validated public request and parsed intent into one validated
-    `SearchPlan[VariantSearchDocumentGen2]`. `search-gen2-core`/`search-gen2-contract` gained the
-    reusable mechanics: `CanonicalConstraintView` (typed constraint to `ConstraintSlot` projection,
-    extracted from `CanonicalPlanView.constraint` to give slot/canonical derivation one owner),
-    `ConstraintPrecedenceResolver` (a same-priority first-seen-anchor scan per tier, then a cross-tier
-    suppression pass, with applied filters ordered higher-then-lower and suppressed filters merged into
-    one true encounter-order sequence), `ConstraintPriorityTiers` (the resolver's higher/lower input,
-    constructed only by the precedence value), `ConstraintPrecedence` (one typed source order deriving
-    those tiers from one complete typed binding), `PublicPlanInputResolver` (generic public filter/sort
-    geo-origin resolution over `PublicFilterPlanView`/`PublicSortPlanView` adapters, so the resolver
-    never depends on a domain's concrete wrapper type), `FacetPlanRegistry`/`FacetRequest.fieldHandles`
-    (validated facet declaration/lookup behind one `FacetPlanRegistryError`, with field handles derived
-    from a request rather than repeated in a second vector, and `FacetSize.unsafeFrom`/
-    `FacetPlanRegistry.unsafeFrom` as the framework-owned static-declaration constructors), and
-    `SearchPlanCompilationKernel` (an opaque `prepare` result whose `assemble(finalNotices)` uses the
-    exact prepared input/resolution, so a domain derives its own mode before final validation without
-    being able to forge or pair a resolution). Each is proven by neutral fixtures unrelated to
-    BeautyQ's document shape or vocabulary (`InventoryDocument`, `TrailDocument`) as well as by BeautyQ.
+### One-commit objective
 
-    BeautyQ added only `BeautyQSearchPlanPolicy` together with its typed `BeautyQConstraintSource` choice
-    and generic `ConstraintPrecedence` value (constraint-source precedence: `PublicRequest` above
-    `ParsedIntent`, exactly two ordered tiers) and `BeautyQGeoOriginPolicy` (the
-    geo-origin source path and the actual `request -> Option[GeoPoint]` resolution on one
-    concrete value, `RequestUserLocation`) - plus the four facet declarations carrying the Gen1-evidence
-    bucket tables, the explicit empty group policy, the default-browse notice and plan-mode
-    classification. `BeautyQSearchPlanCompiler` is a thin composition whose public API is exactly
-    `compile(request, intent)` and which always obtains its tiers and geo origin from those policy values:
-    generic geo-input resolution, then constraint-precedence resolution over the already-resolved facet
-    requests carried by the validated request;
-    mode classification and one final notices vector are derived from the opaque prepared resolution's
-    own applied filters and passed into `prepared.assemble(finalNotices)`, so the returned plan is always exactly
-    `SearchPlan.validate`'s own value, never copied afterward. `BeautyQSearchPlanCompilationTrace` is a
-    diagnostic trace whose policy section renders `BeautyQSearchPlanPolicy`'s own values, never a second
-    hand-maintained rendering. `BeautyQSearchPlanPolicy.facetRegistry` directly owns public facet IDs
-    and lookup; no second, separately editable literal facet list exists. `variants.plan` exposes those same typed policy values - not only their rendered
-    summaries - as a reviewer-readable branch of `BeautyQSearchDeclarations`. No semantic query text,
-    `CandidatePlan`, cursor validation, backend or route was added.
+Close cursor ingress and plan binding before any backend compiler is added:
 
-    ```text
-    Domain policy added: BeautyQConstraintSource, ConstraintPrecedence, BeautyQGeoOriginPolicy,
-    BeautyQSearchPlanPolicy (the four facet declarations, empty group policy, the default-browse notice,
-    plan-mode classification).
-    Framework mechanics reused or extracted: CanonicalConstraintView, ConstraintPrecedenceResolver,
-    ConstraintPriorityTiers, PublicPlanInputResolver, FacetPlanRegistry, FacetRequest.fieldHandles,
-    FacetSize.unsafeFrom, SearchPlanCompilationKernel (search-gen2-core/contract).
-    Neutral proof: InventoryDocument (CanonicalConstraintViewSpec, ConstraintPrecedenceSpec, ConstraintPrecedenceResolverSpec,
-    FacetPlanRegistrySpec, SearchPlanCompilationKernelSpec) and TrailDocument (PublicSortClauseSpec,
-    PublicPlanInputResolverSpec), both unrelated to BeautyQ's document shape or vocabulary.
-    Canonical entry-point update: BeautyQSearchDeclarations.variants.plan.
-    Derived-view proof: BeautyQSearchPlanPolicySpec pins variants.plan against BeautyQSearchPlanPolicy's
-    own values and proves the typed precedence value drives both rendering and tiering; the compiler and
-    trace specs pin the fixed policy and `compile(request, intent)` API across 12 golden compilation traces whose
-    policy section is rendered from BeautyQSearchPlanPolicy directly.
-    ```
+```text
+untrusted transport cursor
+→ validated BeautyQ request
+→ compiled SearchPlan
+→ framework-owned PlanIdentity/cursor validation
+→ one read-only bound compilation result
+→ candidate decision and trace
+```
 
-12. Brick 4G-A — semantic candidate planning — is complete. The generic algebra and its neutral proof are
-    owned by `search-gen2-contract`; exact API details live in the
-    [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md), reusable-shape limits in
-    [framework scope](SEARCH_GEN2_FRAMEWORK_SCOPE.md), and the minimal new-domain path in
-    [onboarding](../search/NEW_DOMAIN_ONBOARDING.md). BeautyQ's canonical entry point is
-    `BeautyQSearchDeclarations.variants.plan.candidate`; its typed stable IDs, explicit active vectors,
-    compiler-bound semantic-part evidence and gate/reason trace are covered by the focused contract and
-    wiring specs. No cursor, backend, route or retrieval-knob work was added.
+The generic boundary owns cursor carriage, canonical contract-fingerprint derivation, envelope
+decode/identity comparison and the unforgeable plan/cursor binding. BeautyQ declares only the explicit
+contract version at `BeautyQSearchDeclarations.variants.plan` and composes the generic kernel from
+`BeautyQSearchPlanCompiler.compile(request, intent)`; it must not implement a second codec, hash or
+identity projection.
 
-The next code change is **Brick 4G-B**: validate inbound cursors against `PlanIdentity` over the compiled
-`SearchPlan`, and prove `BeautyQCandidatePlanCompiler`/`BeautyQCandidatePlanTrace` end to end against a
-real, decoded second-page cursor. Preserve the exact `variants.Fields` handles, stable codes, the Brick 4F
-plan-compilation gate order and the Brick 4G-A candidate contract; keep cursor semantics explicit, and do
-not wire ES/Qdrant, retrieval knobs, or runtime ownership before cursor validation is proven.
+The final contract fingerprint must derive from the executable document declaration plus the explicit
+domain version. A handwritten final hash or a fingerprint reconstructed from a rendered tree is a
+second authority. The derivation needs a neutral document proof and must leave a clear additive seam for
+Brick 5's backend mapping policy to contribute to the contract identity.
+
+The generic cursor result must bind the exact validated plan, its `PlanIdentity`/hash and optional
+decoded backend state. Its construction is framework-owned and read-only. Cursor issuance must use that
+same bound identity; APIs that independently accept a plan and an arbitrary prevalidated cursor result
+are not accepted.
+
+`BeautyQSearchPlanCompiler.compile(request, intent)` remains the only production BeautyQ construction
+path and keeps its exact public parameters. Cursor failure becomes a typed compiler error. The compiled
+result exposes the bound pagination context needed by later backend compilation, and
+`BeautyQCandidatePlanCompiler` derives first-page eligibility from that context. A real issued,
+transport-carried and validated second-page cursor must produce `NotFirstPage` without re-parsing the
+envelope or re-evaluating candidate policy.
+
+### Required proof
+
+- neutral contract-fingerprint derivation changes on every document-structure component and explicit
+  version, while remaining independent of rendered diagnostic text;
+- neutral cursor ingress/issue/validation round trip plus the existing malformed/version/hash/state and
+  every-identity-component mismatch matrix;
+- compile-negative proof that the bound plan/cursor result cannot be constructed, copied or subclassed
+  outside its framework owner;
+- BeautyQ first-page compile remains unchanged;
+- a cursor issued from the first compiled context can enter through the public request, validate against
+  the second compiled plan and preserve opaque backend state;
+- that exact second-page result drives candidate `NotFirstPage` and deterministic trace evidence;
+- changed query, filters, sort, facets, page size or contract version returns the typed cursor error;
+- `BeautyQSearchDeclarations.structure` derives the declared cursor-contract version from the canonical
+  root without duplicating the computed fingerprint.
+
+### Explicit non-scope
+
+No Elasticsearch/Qdrant JSON, `search_after` interpretation, signing/HMAC, route/Tapir codec, DI,
+lifecycle, retrieval knobs, orchestration or eval work. The backend state remains opaque and
+unauthenticated at this layer; Brick 5 owns its typed Elasticsearch representation and deterministic
+tie-breakers. Do not add offsets, a second page-size authority, per-call cursor policy/fingerprint
+substitution, or stable labels unrelated to a real compatibility boundary.
+
+On acceptance, mark 4G-B complete and make Brick 5A the active brick in **Current implementation
+state** in the same commit. Update the technical specification to the exact implemented cursor API and
+keep onboarding to the minimal domain declaration/composition path.

@@ -439,6 +439,31 @@ Exact method names may change during implementation, but these constraints are n
 - field extractors/codecs are excluded from canonical cursor identity while their versioned effects
   are covered by contract/projection/compiler fingerprints.
 
+Current backend-neutral field/value support is:
+
+| Scala value | `SearchFieldKind` |
+|---|---|
+| `String` | explicit `Keyword` or `Text` |
+| `Int`, `Long`, `BigDecimal`, `Boolean`, `java.time.Instant`, `GeoPoint` | `Integer`, `Long`, `Decimal`, `Boolean`, `DateTime`, `GeoPoint` |
+| `UuidBackedId[A]`, `CanonicalStringValue[A]` | derived `Keyword` |
+
+`DateTime` currently supports range filtering, range faceting and value sorting; exact/in filters,
+terms facets and grouping are not part of the accepted generic capability matrix. Dynamic families
+support `Map[String, Value]` plus an ordered definition inventory and definition-code accessor for any
+direct-field-kind-eligible `Value`, including `.text`; non-`String` map keys and collection-valued
+members are unsupported.
+
+Document derivation supports flat product types. Every product member must be a declared direct field,
+a declared dynamic family, or an explicit `.ignore`. Nested searchable sub-documents are a deliberate
+non-goal and direct nested selectors are rejected. Multi-valued fields such as `Vector[String]` have no
+generic kind, codec, extraction or filter/facet semantics yet; their live gap is tracked in the
+implementation plan.
+
+A domain root may expose `val document = Fields.document`, but `Fields` must not capture sibling values
+from that same enclosing object. Such a capture can create a JVM reentrant singleton-initialization cycle
+and let the outer alias observe a default value. Inputs belong inside `Fields` or in a scope outside the
+root; the general API does not yet prevent the unsupported cyclic shape.
+
 ### 7.2 Bounds and constraints
 
 ```scala
@@ -489,16 +514,18 @@ GeoDistanceSort
 ```scala
 final case class SearchPlan[Document](
   residualText: Option[String],
-  hardConstraints: Vector[PlannedConstraint[Document]],
+  appliedFilters: Vector[AppliedFilter[Document]],
   softSignals: Vector[PlannedSignal[Document]],
   sort: Vector[PlannedSort[Document]],
   page: PageRequest,
   facets: Vector[FacetRequest[Document]],
-  groups: Vector[GroupRequest[Document]],
-  appliedFilters: Vector[AppliedFilter],
-  diagnostics: PlanDiagnostics,
+  groups: Vector[GroupRequest[Document, ?]],
+  diagnostics: PlanDiagnostics[Document],
 )
 ```
+
+`hardConstraints` is derived from `appliedFilters`; execution constraints and their trusted
+provenance are not stored in parallel vectors.
 
 `SearchPlan` is an executable runtime value and is **not** encoded directly as cursor identity. In particular, the current cursor, diagnostics, extractors, codecs and other function-valued/runtime members must not participate in equality or canonical encoding.
 
@@ -513,7 +540,7 @@ final case class PlanIdentity(
   sort: Vector[CanonicalSort],
   facets: Vector[CanonicalFacetRequest],
   groups: Vector[CanonicalGroupRequest],
-  pageSize: PageSize,
+  pageSize: Int,
 )
 
 trait CanonicalPlanView[Document] {
@@ -531,7 +558,11 @@ trait CanonicalPlanView[Document] {
 
 A `SearchField` is identified canonically by `FieldId`, not by case-class/function equality. `FieldPath` and physical backend mapping are protected by the contract fingerprint.
 
-The cursor envelope stores the `PlanIdentity` hash plus backend pagination state and deterministic sort tie-breakers. Cursor validation first reconstructs `PlanIdentity` from the new request with `cursor = None`, then compares that hash with the envelope. This avoids recursive cursor identity.
+The cursor envelope stores the `PlanIdentity` hash plus one opaque backend-pagination state. Cursor
+validation first reconstructs `PlanIdentity` from the new request with `cursor = None`, then compares
+that hash with the envelope. This avoids recursive cursor identity. The Elasticsearch compiler must
+encode its deterministic `search_after` values, including tie-breakers, inside that opaque state; the
+generic envelope does not interpret or authenticate them.
 
 ### 7.4 Facets
 
@@ -1060,6 +1091,20 @@ It has no SQL, repository, BeautyQ or backend dependency.
 Each domain owns its transaction-local SQL/source adapter and pure business projection. Consistent
 transaction acquisition is an adapter responsibility; the generic kernel
 does not prescribe PostgreSQL or Doobie.
+
+`CanonicalSnapshotTuple` supports any product composed of `Vector[Entity]` members and
+`CanonicalSnapshot.Single[Entity]` members in any order. `Single` is a distinct wrapper so its typeclass
+resolution stays unambiguous even when an entity type is itself collection-shaped. Bare singleton
+values and `Option`/`Map`/`Set` snapshot members are unsupported and fail given resolution rather than
+receiving an implicit encoding.
+
+Canonical source rows use
+`canonicalRow(prefix, source).field(...).group(...).build`; a domain selects fields, nested groups and
+values, while the kernel derives framing and deterministic row ordering for registered codecs.
+
+Catalog relations remain a separate generic `repo-core` boundary. `search-gen2-core` owns snapshot,
+projection and materialization mechanics and must not acquire a reverse dependency on `repo-core` merely
+to combine their tests. A domain module composes the two boundaries and proves their declarations agree.
 
 ## 10. BeautyQ request and response
 

@@ -514,6 +514,10 @@ Use `$HOME` or external paths only when the user explicitly asks.
 
 Before changing docs, identify the canonical owner of the fact.
 
+Search Gen2 exact API and supported technical shapes belong to the technical specification; live gaps
+and sequencing belong to the implementation plan; practical domain authoring belongs to onboarding.
+Do not recreate a separate framework-scope ledger.
+
 Keep:
 
 - stable repo behavior in `AGENTS.md`;

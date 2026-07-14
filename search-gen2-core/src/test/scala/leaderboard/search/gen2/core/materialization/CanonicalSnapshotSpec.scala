@@ -36,8 +36,8 @@ final class CanonicalSnapshotSpec extends AnyWordSpec {
   }
 
   // A snapshot is not always a product of Vector-of-many members: a singleton configuration/global
-  // row alongside sibling collections is a real shape (see docs/gen2/SEARCH_GEN2_FRAMEWORK_SCOPE.md),
-  // not only the all-Vector shape BeautyQ happens to use.
+  // row alongside sibling collections is a supported shape beyond BeautyQ's all-Vector example; see
+  // docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md, section 9.4.
   "CanonicalSnapshot with a Single-cardinality member" should {
     final case class Config(schemaVersion: Int)
     final case class MixedSnapshot(first: Vector[First], config: CanonicalSnapshot.Single[Config])
