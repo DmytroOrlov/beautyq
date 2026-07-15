@@ -21,8 +21,8 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 5A — planned, not yet implemented: the pure Elasticsearch index contract,
-  mapping/source compilers and generation artifact
+- **Active brick:** Brick 5B — planned, not yet implemented: pure baseline-page request/result
+  compilation and the Elasticsearch cursor protocol
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
   - Brick 1 — generic field/document declaration kernel
@@ -72,15 +72,60 @@ summaries must remain short and point here.
   4G-A completed
   4G-B completed
   ```
+  - Brick 5A — pure Elasticsearch index contract and generation artifact: `search-gen2-elasticsearch`'s
+    `ElasticsearchIndexPolicy` (validated analyzer assignment over a domain's declared searchable text
+    fields, plus the domain's explicit `ElasticsearchPolicyVersion` and the framework-owned
+    `ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` `.Current` values - never a domain
+    constructor parameter), the shared dotted-path mapping/source
+    compilers (`ElasticsearchMappingCompiler`, `ElasticsearchDocumentCompiler`), the one derived
+    `elasticsearch` plan-contract contribution and `ElasticsearchGenerationIdentity`, and the
+    compiler-bound `CompiledElasticsearchGeneration` artifact; plus BeautyQ's own compact
+    `BeautyQElasticsearchPolicy` (five text fields, standard analyzer, `beautyq-elasticsearch-v1`) and
+    thin `BeautyQElasticsearchGeneration` composition. `BeautyQSearchPlanCompiler`'s cursor-bound
+    identity now shares this one policy's derived contract fingerprint, replacing the prior `Map.empty`
+    contribution.
+
+  Compact Brick 5 status:
+
+  ```text
+  5A completed
+  5B planned
+  5C planned
+  5D planned
+  ```
+
+  ```text
+  Domain policy added: BeautyQElasticsearchPolicy (five canonical text-field analyzer assignments, the
+  explicit beautyq-elasticsearch-v1 policy version) and BeautyQElasticsearchGeneration (thin composition
+  delegating to the generic generation compiler).
+  Framework mechanics reused or extracted: ElasticsearchAnalyzerName, ElasticsearchTextFieldMapping,
+  ElasticsearchPolicyVersion/ElasticsearchCompilerVersion/ElasticsearchIndexFormatVersion,
+  ElasticsearchIndexPolicy (validated analyzer-assignment policy plus derived elasticsearch
+  contribution/contract fingerprint), ElasticsearchDottedPathTree (shared nested-JSON path assembly),
+  ElasticsearchMappingCompiler, ElasticsearchIndexedDocument/ElasticsearchDocumentCompiler,
+  ElasticsearchGenerationIdentity and ElasticsearchGenerationCompiler/CompiledElasticsearchGeneration
+  (search-gen2-elasticsearch).
+  Neutral proof: BookDocument (ElasticsearchIndexPolicySpec, ElasticsearchMappingCompilerSpec,
+  ElasticsearchDocumentCompilerSpec, ElasticsearchGenerationCompilerSpec), unrelated to BeautyQ's
+  document shape or vocabulary, covering all eight SearchFieldKinds, dotted dynamic nesting, decimal/geo
+  precision, a genuine leaf/object path conflict and the sealed CompiledElasticsearchGeneration
+  construction boundary.
+  Canonical entry-point update: BeautyQSearchPlanCompiler's cursor-bound identity now consumes
+  BeautyQElasticsearchPolicy.contractFingerprint directly, replacing the local Map.empty contribution.
+  Derived-view proof: BeautyQElasticsearchPolicySpec/BeautyQElasticsearchGenerationSpec pin the five
+  exact text handles/order, complete searchable-field coverage, the non-empty derived contribution, that
+  the plan compiler and ES generation share one contract fingerprint, and that a representative BeautyQ
+  document compiles through the real declaration with no manual encoder.
+  ```
 - **Authoring facade:** `BeautyQSearchDeclarations` is the canonical Gen2 business entry point.
   Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
   and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
   reverse-depend from the contract layer.
-- **Next action:** implement Brick 5A without transport or live resources: declare the minimal BeautyQ
-  Elasticsearch index policy over the canonical `variants.Fields`, derive mapping and indexed source
-  from `variants.document`, bind the Elasticsearch contract contribution into plan identity, and
-  produce one immutable generation artifact from materialized documents. Brick 5B then owns the pure
-  request/result/cursor protocol; 5C owns live index lifecycle and baseline execution; 5D owns groups.
+- **Next action:** implement Brick 5B without transport or live resources: extend
+  `BeautyQElasticsearchPolicy` with only the ranking/query choices it actually needs, compile
+  `CompiledBeautyQSearchPlan.boundPlan` into a deterministic Elasticsearch request carrying a typed
+  `search_after` codec, and decode the response into the baseline page (hits, exact total, facets, next
+  cursor). Brick 5C then owns live index lifecycle and baseline execution; 5D owns groups.
 - **Blockers:** none
 
 ### Open reusable-framework gaps
@@ -868,7 +913,7 @@ In BeautyQ Gen2 wiring add:
 - `BeautyQElasticsearchPolicy`, declaring only the actual BeautyQ analyzer/index choices over
   `BeautyQSearchDeclarations.variants.Fields` and the explicit compatibility choice;
 - one shared BeautyQ contract-identity composition used by both `BeautyQSearchPlanCompiler` and the ES
-  generation compiler, replacing the current `Map.empty` contribution call;
+  generation compiler, replacing the prior `Map.empty` contribution call;
 - pure compilation from `MaterializedBeautyQVariantDocuments` to the generic generation artifact.
 
 Do not add query weights, geo scoring parameters or result types in 5A unless they are consumed by the
@@ -963,7 +1008,9 @@ same `BoundSearchPlan`, never from independent plan/hash facts.
 #### Purpose
 
 Execute the accepted 5A/5B artifacts against an independent Gen2 Elasticsearch resource without moving
-semantic compilation into transport code.
+semantic compilation into transport code. This is where complete live Elasticsearch acceptance - backend
+limits such as the `_id` size cap and configured analyzer/mapping availability - is owned; Brick 5A
+validates only document shape (`EmptyDocumentId`/`ValueEncoding`).
 
 #### Diff
 
@@ -1337,21 +1384,3 @@ beautyq-search-gen2: add no-harm supplement orchestration
 beautyq-search-gen2: add independent application composition
 search: cut over to Gen2 and remove Gen1
 ```
-
-## 4G-B closeout and next boundary
-
-Brick 4G-B now owns the generic cursor ingress/binding boundary. `SearchCursor.fromTransport` carries an
-untrusted token; `SearchCursorEnvelope.bind` derives identity from the executable document declaration,
-checks the versioned envelope and returns one framework-owned `BoundSearchPlan`. The opaque
-`PlanContractFingerprint` is composed from the declaration, explicit contract version and a unique-ID
-typed compatibility map; BeautyQ currently supplies no extra contribution. Its compiler keeps the
-public `(request, intent)` API and returns the bound value. Candidate eligibility and trace consume that
-bound pagination context, with real transport round-trip and mismatch proofs.
-
-The typed contribution map is the additive cursor/execution-compatibility seam for Brick 5; complete
-physical index/collection reuse remains a `GenerationIdentity` decision rather than a handwritten hash.
-
-The next reviewable unit is Brick 5A. Its acceptance surface is the technical specification §11 and
-the Brick 5A section above: pure ES index policy, mapping/source compilation, contract contribution and
-one bound generation artifact. Do not pull query/result/cursor compilation (5B), live client/lifecycle
-(5C), groups/carousels (5D), Qdrant retrieval (6), route/DI wiring or evaluation into 5A.

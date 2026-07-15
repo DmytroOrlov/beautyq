@@ -578,9 +578,11 @@ It derives field/path/type/presence/capability identity from the executable decl
 explicit `PlanContractVersion`, and canonicalizes the unique typed contribution map by ID. The returned
 `ContractFingerprint` is framework-produced and has no public string constructor; its package-scoped
 internal constructor is available only inside `leaderboard.search.gen2.core.plan`, not to backend
-packages. BeautyQ currently passes `Map.empty`; Brick 5 may add an Elasticsearch execution/mapping contribution without
-introducing a second hash protocol or changing the public compiler API. The fingerprint does not hash a
-rendered tree.
+packages. BeautyQ now contributes the one `elasticsearch`-keyed entry `BeautyQElasticsearchPolicy` derives
+from its analyzer assignments and framework-owned compiler/index-format versions (Brick 5A);
+`BeautyQSearchPlanCompiler`'s cursor-bound plan identity and the Elasticsearch generation artifact consume
+that exact same contribution and fingerprint value, never a second hash protocol or an independently
+maintained one. The fingerprint does not hash a rendered tree.
 
 The cursor boundary is one bound value, not independently supplied facts:
 
@@ -1293,29 +1295,73 @@ aggregation names, identity tie-breakers, contract fingerprint input and structu
 from that policy plus the canonical document/plan declarations. Operational host credentials and alias
 retention are configuration, not business declaration fields.
 
-### 11.1 Mapping and ingestion
+### 11.1 Mapping and ingestion (implemented, Brick 5A)
 
-The compiler derives mappings from typed fields and ES-specific policy.
+`ElasticsearchIndexPolicy[Document, Id]` binds one `SearchDocumentDeclaration[Document, Id]`, its
+`PlanContractVersion`, an explicit `ElasticsearchPolicyVersion`, and the domain's ordered
+`ElasticsearchTextFieldMapping[Document]` analyzer assignments for its declared searchable text fields.
+`ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` are framework-owned: every constructed
+policy carries exactly `ElasticsearchCompilerVersion.Current`/`ElasticsearchIndexFormatVersion.Current`,
+and neither `ElasticsearchIndexPolicy.apply` nor `.unsafeFrom` accepts either as a parameter - a domain
+cannot substitute one. Its only construction paths are `ElasticsearchIndexPolicy.apply` (returning
+`Either[ElasticsearchIndexPolicyErrors, ElasticsearchIndexPolicy[Document, Id]]`) and
+`ElasticsearchIndexPolicy.unsafeFrom` for static domain declarations. It validates:
 
-It must validate:
+- every declared searchable `Text` field has exactly one analyzer assignment (a missing one is reported
+  in document declaration order);
+- no duplicate assignment (reported with its first/duplicate index);
+- no assignment to an undeclared, foreign-document, or non-searchable/non-`Text` handle - a `SearchField`
+  belonging to another document type fails to compile rather than reaching this runtime check.
 
-- analyzer availability;
-- exact/filter subfields;
-- sortable field representation;
-- geo field type;
-- interval fields used by overlap constraints/facets;
-- document IDs;
-- source encoding.
+Live-cluster analyzer availability is a Brick 5C concern; Brick 5A only preserves the typed analyzer name
+in the compiled mapping.
 
-Every stored field and `_id` is compiled by traversing `SearchDocumentDeclaration`; BeautyQ supplies no
-parallel encoder or field inventory. Dotted dynamic-field paths compile into deterministic nested
-objects, optional extraction omits the leaf, and logical values use their declared canonical codec with
-the ES representation selected by `SearchFieldKind`. Prefix conflicts or unrepresentable values are
-typed compilation errors.
+`ElasticsearchMappingCompiler.compile` and `ElasticsearchDocumentCompiler.compile` both traverse
+`SearchDocumentDeclaration.allFields` in declaration order through the shared, domain-neutral
+`ElasticsearchDottedPathTree`; BeautyQ supplies no parallel encoder or field inventory. Dotted
+dynamic-field paths compile into deterministic nested objects; optional extraction omits the leaf, and an
+entirely absent optional parent is never emitted. Every logical value uses its declared canonical
+`SearchValueCodec` with the ES representation selected by `SearchFieldKind` (`keyword`; `text` plus the
+policy analyzer; `integer`; `long`; `double`; `boolean`; `date` with `strict_date_optional_time`; or
+`geo_point` as an exact `{lat, lon}` decimal object - `BigDecimal` values are never converted through
+`Double`). Every declared field - identity included - is extracted and canonically encoded exactly once
+per document, through one shared field-compilation path; the identity's one compiled value is reused for
+both the document's `_id` and its `_source` entry, never re-extracted. A path conflict - one declaration
+path that cannot coexist with another already-built object/leaf path - is a typed
+`ElasticsearchPathConflict`; an empty canonical identity value is a typed `EmptyDocumentId`. The
+document compiler does not report a "missing required value" error - `FieldExtraction.Required` always
+extracts a value by construction, so that state is unreachable through the exposed API - but it does
+report a typed `ElasticsearchDocumentCompileError.ValueEncoding` (carrying the document index, field ID
+and declared kind) when a field's own codec produces canonical text that the standard codec for its
+declared `SearchFieldKind` cannot decode, for example a custom `Int`-kind codec whose `encodeCanonical`
+returns `"one"`; this is a reachable state (a caller-suppliable codec is only guaranteed to round-trip
+through itself, never to match its field's declared backend kind), so it is a typed `Left`, never thrown.
+For the identity field specifically, emptiness is checked on its extracted canonical value before
+backend-kind decoding ever runs, so an empty identity is always `EmptyDocumentId`, never `ValueEncoding`,
+regardless of the identity field's declared kind. `EmptyDocumentId` and `ValueEncoding` are the complete
+Brick 5A document-shape validation surface; complete live Elasticsearch acceptance - including backend
+limits such as the 512-byte `_id` size cap and configured analyzer/mapping availability - is a Brick 5C
+concern, not implemented here.
 
-The pure compiler returns one bound generation artifact containing the mapping, ordered indexed
-documents and complete ES generation identity. HTTP bulk encoding and alias activation consume that
-artifact later; they do not rebuild it.
+`ElasticsearchGenerationCompiler.compile` calls both compilers exactly once each over the same policy and
+`MaterializedSearchDocuments`, and derives one `ElasticsearchGenerationIdentity` (source content,
+projected-documents and contract fingerprints, plus projection-format/compiler/index-format versions)
+directly from those inputs. It returns the one compiler-bound `CompiledElasticsearchGeneration[Document,
+Id]` - a `final` class whose constructor is private to the compiler, with no public
+`apply`/`copy`/subclassing path - binding the compiled mapping, ordered indexed documents and identity
+together, so a caller cannot independently pair a different declaration, contract fingerprint, projected
+fingerprint, or independently compiled mapping/document vector. HTTP bulk encoding and alias activation
+(Brick 5C) consume that artifact later; they do not rebuild it.
+
+BeautyQ's own `BeautyQElasticsearchPolicy` declares only its five canonical searchable text fields
+(`Fields.allText`/`serviceText`/`attributeText`/`providerText`/`locationText`), all using the standard
+analyzer, under the explicit `beautyq-elasticsearch-v1` policy version; `BeautyQElasticsearchGeneration`
+is a thin composition from `MaterializedBeautyQVariantDocuments` to the generic generation compiler. The
+Elasticsearch contribution to `PlanContractContributions` - one `elasticsearch`-keyed entry, derived
+canonically from the policy/compiler/index-format versions and every searchable text field's declaration
+identity and analyzer - is the exact same value `BeautyQSearchPlanCompiler`'s cursor-bound plan identity
+and the ES generation artifact both consume; no handwritten final fingerprint or second hash protocol
+exists.
 
 ### 11.2 Request compilation
 

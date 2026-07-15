@@ -480,7 +480,7 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
         PlanContractFingerprint.compute(
           PlanContractVersion("beautyq-variant-search-v2"),
           BeautyQSearchDeclarations.variants.document,
-          contributions = Map.empty,
+          contributions = BeautyQElasticsearchPolicy.contributions,
         )
       )
       val alternateBound = SearchCursorEnvelope.bind(first.plan, alternateView) match {

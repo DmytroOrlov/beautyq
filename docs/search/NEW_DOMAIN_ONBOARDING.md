@@ -446,6 +446,37 @@ A thin domain compiler derives facts such as first-page/default-sort from its co
 eligible `CandidatePlan`, and propagates `CandidateEvaluationError`. Do not copy BeautyQ reasons, cursor
 policy or backend retrieval knobs.
 
+### Elasticsearch index-policy example (Brick 5A)
+
+A domain supplies only its already-declared document, plan-contract version, one explicit Elasticsearch
+policy version, and an analyzer choice for each of its own declared searchable text fields:
+
+```scala
+val index: ElasticsearchIndexPolicy[WidgetDocument, WidgetId] =
+  ElasticsearchIndexPolicy.unsafeFrom(
+    declaration = WidgetSearchDomain.document,
+    planContractVersion = PlanContractVersion("widget-plan-v1"),
+    policyVersion = ElasticsearchPolicyVersion("widget-elasticsearch-v1"),
+    textFields = Vector(
+      ElasticsearchTextFieldMapping(WidgetSearchDomain.name, ElasticsearchAnalyzerName.Standard)
+    ),
+  )
+```
+
+Everything else is derived by `search-gen2-elasticsearch`: the declaration-driven mapping and `_id`/
+`_source` compilation (traversing `declaration.allFields` in declared order, never a domain-owned fold),
+the framework-owned `ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` (always `.Current` -
+`ElasticsearchIndexPolicy.unsafeFrom` does not accept either as a parameter, so a domain cannot substitute
+one), the one `elasticsearch`-keyed `PlanContractContributions` entry and its `ContractFingerprint` - the same
+fingerprint value a domain's plan compiler binds into cursor identity - and the complete
+`ElasticsearchGenerationIdentity` bound together with the compiled mapping and documents into one
+`CompiledElasticsearchGeneration`, producible only by `ElasticsearchGenerationCompiler.compile`. A domain
+never recreates a field handle, mapping/source traversal, or a second contribution fingerprint;
+`BeautyQElasticsearchPolicy`/`BeautyQElasticsearchGeneration` (`beautyq-search-gen2-wiring`) are the
+golden reference at full scale. Query weights, ranking and live index lifecycle remain later bricks. The
+framework normalizes analyzer assignments into document declaration order; vector order is not a separate
+business policy.
+
 ## Materialization
 
 Reuse from the generic Gen2 modules:

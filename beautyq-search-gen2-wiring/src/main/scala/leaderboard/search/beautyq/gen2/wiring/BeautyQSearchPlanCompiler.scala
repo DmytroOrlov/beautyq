@@ -39,13 +39,7 @@ object BeautyQSearchPlanCompileError {
 object BeautyQSearchPlanCompiler {
 
   private lazy val canonicalPlanView: CanonicalPlanView[VariantSearchDocumentGen2] =
-    CanonicalPlanView(
-      PlanContractFingerprint.compute(
-        BeautyQSearchDeclarations.variants.plan.contractVersion,
-        BeautyQSearchDeclarations.variants.document,
-        contributions = Map.empty,
-      )
-    )
+    CanonicalPlanView(BeautyQElasticsearchPolicy.contractFingerprint)
 
   private object FilterView extends PublicFilterPlanView[DecodedPublicFilter, VariantSearchDocumentGen2, PublicFieldName] {
     def name(value: DecodedPublicFilter): PublicFieldName = value.publicName
