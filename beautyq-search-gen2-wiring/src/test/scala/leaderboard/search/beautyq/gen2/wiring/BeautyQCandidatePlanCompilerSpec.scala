@@ -2,15 +2,16 @@ package leaderboard.search.beautyq.gen2.wiring
 
 import leaderboard.search.beautyq.gen2.contract.*
 import leaderboard.search.gen2.contract.{PublicOperator as _, *}
+import leaderboard.search.gen2.core.plan.*
 import org.scalatest.wordspec.AnyWordSpec
 
 /** BeautyQCandidatePlanCompiler proofs built exclusively from real, validated requests
   * (`BeautySearchRequestGen2.validate`), real parsed intents (`BeautyQIntentParserGen2.parse`) and real
   * compiled plans (`BeautyQSearchPlanCompiler.compile`) - never a directly-constructed
-  * `CompiledBeautyQSearchPlan`, which Brick 4G-A cannot forge (its constructor stays private to
-  * `BeautyQSearchPlanCompiler`). Every request here has no cursor (first page always) since a cursor
-  * cannot be forged before Brick 4G-B; `NotFirstPage` and full gate-order precedence are proven at the
-  * policy level in `BeautyQSemanticCandidatePolicySpec`. `BeautyQCandidatePlanCompiler.compile` returns
+  * `CompiledBeautyQSearchPlan`, whose constructor stays private to `BeautyQSearchPlanCompiler`; pagination
+  * eligibility is derived from its framework-owned bound cursor context.
+  * `NotFirstPage` now has an end-to-end proof from a valid bound cursor; full gate-order precedence is
+  * also proven at the policy level in `BeautyQSemanticCandidatePolicySpec`. `BeautyQCandidatePlanCompiler.compile` returns
   * `Either[CandidateEvaluationError, CompiledCandidateEvaluation]`; every fixture here always resolves
   * `Right`, since a real compiled plan's `SemanticQueryText` gate genuinely tracks `semanticText.isRight` -
   * `CandidateEvaluationError`'s own reachability is proven generically in `SemanticCandidatePlanSpec`
@@ -25,8 +26,9 @@ final class BeautyQCandidatePlanCompilerSpec extends AnyWordSpec {
     query: Option[String] = None,
     filters: Vector[PublicFilterInput] = Vector.empty,
     sort: Vector[BeautySortInput] = Vector.empty,
+    pageRequest: PageRequest = page,
   ): BeautySearchRequestGen2 =
-    BeautySearchRequestGen2(query, filters, Vector.empty, sort, page, None)
+    BeautySearchRequestGen2(query, filters, Vector.empty, sort, pageRequest, None)
 
   private def compiled(request: BeautySearchRequestGen2): CompiledBeautyQSearchPlan = {
     val validated = BeautySearchRequestGen2.validate(request) match {
@@ -71,6 +73,17 @@ final class BeautyQCandidatePlanCompilerSpec extends AnyWordSpec {
     "return Ineligible(NoSemanticQueryText) for a filter-only request with no query text" in {
       val result = compileOrFail(compiled(rawRequest(filters = Vector(serviceFilter("manicure")))))
       assert(result.decision == CandidatePlanDecision.Ineligible(BeautyQCandidateIneligibility.NoSemanticQueryText))
+    }
+
+    "return Ineligible(NotFirstPage) for a valid decoded second-page cursor" in {
+      val first = compiled(rawRequest(query = Some("ресницы")))
+      val cursor = SearchCursor.fromTransport(SearchCursorEnvelope.issue(first.boundPlan, "elasticsearch.search-after.v1").opaqueValue)
+      val second = compiled(rawRequest(query = Some("ресницы"), pageRequest = page.copy(cursor = Some(cursor))))
+
+      compileOrFail(second).decision match {
+        case CandidatePlanDecision.Ineligible(reason) => assert(reason == BeautyQCandidateIneligibility.NotFirstPage)
+        case other                                    => fail(s"expected NotFirstPage, got $other")
+      }
     }
 
     "return Ineligible(NonDefaultSort) when semantic text is present but an explicit sort is set" in {

@@ -54,26 +54,19 @@ final class PlanValueSpec extends AnyWordSpec {
   }
 
   "SearchCursor construction" should {
-    // A negative-compile test confined to this file cannot itself simulate code physically outside the
-    // gen2 package tree: Scala resolves `private[gen2]` structurally from the file's own package, and
-    // this spec's package (leaderboard.search.gen2.contract) is already inside that boundary. What this
-    // file can prove, and what actually matters for "unrelated public code cannot manufacture a trusted
-    // cursor", is that SearchCursor exposes no public apply/constructor at all: the only way to produce
-    // one is the restricted fromOpaque, which compiles here only because this file itself sits inside
-    // the gen2 boundary that fromOpaque is scoped to reach.
     "expose no public apply constructor" in {
       assertDoesNotCompile("""SearchCursor("token")""")
     }
 
-    "remain constructible through fromOpaque from within the Gen2 package boundary" in {
-      assertCompiles("""SearchCursor.fromOpaque("token")""")
+    "remain constructible as an untrusted transport carrier" in {
+      assertCompiles("""SearchCursor.fromTransport("token")""")
     }
   }
 
   "PageRequest.withoutCursor" should {
     "preserve size and clear only the cursor" in {
       val size    = PageSize.from(20).getOrElse(fail("expected a valid PageSize"))
-      val cursor  = SearchCursor.fromOpaque("opaque-token")
+      val cursor  = SearchCursor.fromTransport("opaque-token")
       val request = PageRequest(Some(cursor), size)
 
       val result = request.withoutCursor

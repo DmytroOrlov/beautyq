@@ -282,6 +282,7 @@ object BeautyQSearchDeclarations {
       * implementation and is never referenced from here. */
     object plan {
       // Direct typed references: the actual policy declarations a reviewer navigates to.
+      val contractVersion: PlanContractVersion = PlanContractVersion("beautyq-variant-search-v1")
       val constraintPrecedence: ConstraintPrecedence[BeautyQConstraintSource] = BeautyQSearchPlanPolicy.constraintPrecedence
       val geoOriginPolicy: BeautyQGeoOriginPolicy                             = BeautyQSearchPlanPolicy.geoOriginPolicy
       val facetRegistry: FacetPlanRegistry[VariantSearchDocumentGen2]        = BeautyQSearchPlanPolicy.facetRegistry
@@ -338,6 +339,7 @@ object BeautyQSearchDeclarations {
             SearchStructureNode.branch(
               "plan",
               Vector(
+                SearchStructureNode.leaf(s"contract-version: ${variants.plan.contractVersion.value}"),
                 SearchStructureNode.indexed("source-precedence", variants.plan.sourcePrecedence),
                 SearchStructureNode.leaf(s"geo-origin: ${variants.plan.geoOrigin}"),
                 SearchStructureNode.indexed("facets", variants.plan.facets.map(_.value)),

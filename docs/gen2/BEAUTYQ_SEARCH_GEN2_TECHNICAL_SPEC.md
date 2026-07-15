@@ -556,13 +556,58 @@ trait CanonicalPlanView[Document] {
 - backend client objects and runtime handles;
 - non-semantic request metadata.
 
-A `SearchField` is identified canonically by `FieldId`, not by case-class/function equality. `FieldPath` and physical backend mapping are protected by the contract fingerprint.
+A `SearchField` is identified canonically by `FieldId`, not by case-class/function equality. `FieldPath`
+is protected by the declaration-derived contract fingerprint. Physical backend mapping compatibility
+has an additive typed contribution seam; complete physical generation reuse remains owned by
+`GenerationIdentity`.
 
-The cursor envelope stores the `PlanIdentity` hash plus one opaque backend-pagination state. Cursor
-validation first reconstructs `PlanIdentity` from the new request with `cursor = None`, then compares
-that hash with the envelope. This avoids recursive cursor identity. The Elasticsearch compiler must
-encode its deterministic `search_after` values, including tie-breakers, inside that opaque state; the
-generic envelope does not interpret or authenticate them.
+The generic fingerprint owner is:
+
+```scala
+type PlanContractContributions =
+  Map[PlanContractContributionId, PlanContractContributionVersion]
+
+PlanContractFingerprint.compute(
+  version,
+  documentDeclaration,
+  contributions = Map.empty,
+): ContractFingerprint
+```
+
+It derives field/path/type/presence/capability identity from the executable declaration, mixes in one
+explicit `PlanContractVersion`, and canonicalizes the unique typed contribution map by ID. The returned
+`ContractFingerprint` is framework-produced and has no public string constructor; its package-scoped
+internal constructor is available only inside `leaderboard.search.gen2.core.plan`, not to backend
+packages. BeautyQ currently passes `Map.empty`; Brick 5 may add an Elasticsearch execution/mapping contribution without
+introducing a second hash protocol or changing the public compiler API. The fingerprint does not hash a
+rendered tree.
+
+The cursor boundary is one bound value, not independently supplied facts:
+
+```scala
+final class BoundSearchPlan[Document] private (
+  val plan: SearchPlan[Document],
+  val identity: PlanIdentity,
+  val identityHash: PlanIdentityHash,
+  val backendState: Option[BackendCursorState],
+) {
+  def isFirstPage: Boolean
+}
+
+object SearchCursorEnvelope {
+  def bind[Document](
+    plan: SearchPlan[Document],
+    view: CanonicalPlanView[Document],
+  ): Either[SearchCursorError, BoundSearchPlan[Document]]
+
+  def issue[Document](bound: BoundSearchPlan[Document], backendState: String): SearchCursor
+}
+```
+
+`SearchCursor.fromTransport` only wraps an untrusted transport token. `bind` strips the current cursor
+from identity, decodes the envelope, compares its hash and returns the bound result. The envelope stores
+one opaque backend-pagination state; Elasticsearch later owns its deterministic `search_after` contents
+and tie-breakers. The generic envelope neither interprets nor authenticates that state.
 
 ### 7.4 Facets
 
@@ -618,14 +663,12 @@ final case class PageRequest(
   cursor: Option[SearchCursor],
   size: PageSize,
 )
-
-final case class PageResult(
-  nextCursor: Option[SearchCursor],
-  hasMore: Boolean,
-)
 ```
 
 There is no second `limit` field.
+
+Backend page-result and next-cursor types are introduced with the Elasticsearch vertical; they are not
+implemented by the current contract/core modules.
 
 ### 7.7 Public filters and trusted provenance
 
@@ -737,8 +780,8 @@ text was still missing - meaning no active gate actually tracked it - and preser
 `SemanticQueryText` gate's predicate checks exactly `semanticText.isRight`, so missing text always fails
 that gate first. Only `Right` produces the compiler-bound `CompiledCandidateEvaluation` that
 `BeautyQCandidatePlanTrace.render` accepts; a `Left` propagates unchanged and is never rendered as
-ineligibility. This boundary leaves Brick 4G-B cursor validation and Brick 6 backend retrieval knobs
-unaffected.
+ineligibility. Cursor binding is already owned by Brick 4G-B; Brick 6 still owns backend retrieval
+knobs.
 
 `CandidateEvaluation[Gate, Plan, Reason]` itself is a read-only, framework-produced result: it is a type
 alias for `SemanticCandidateEvaluation.Result`, whose constructor is private to
@@ -1115,7 +1158,7 @@ final case class BeautySearchRequestGen2(
   query: Option[String],
   filters: Vector[PublicFilterInput],
   requestedFacets: Vector[FacetId],
-  sort: Vector[SortInput],
+  sort: Vector[BeautySortInput],
   page: PageRequest,
   userLocation: Option[GeoPoint],
 )
@@ -1143,11 +1186,13 @@ type CompiledBeautyQSearchPlan = BeautyQSearchPlanCompiler.CompiledBeautyQSearch
 
 object BeautyQSearchPlanCompiler {
   final class CompiledBeautyQSearchPlan private[BeautyQSearchPlanCompiler] (
-    val plan: SearchPlan[VariantSearchDocumentGen2],
+    val boundPlan: BoundSearchPlan[VariantSearchDocumentGen2],
     val mode: BeautyQSearchPlanMode,
     val canonicalSemanticLabels: Vector[CanonicalSemanticLabel],
     val matchedRuleIds: Vector[IntentRuleId],
-  )
+  ) {
+    def plan: SearchPlan[VariantSearchDocumentGen2] = boundPlan.plan
+  }
 
   def compile(
     request: ValidatedBeautySearchRequestGen2,
@@ -1158,16 +1203,9 @@ object BeautyQSearchPlanCompiler {
 enum BeautyQSearchPlanMode {
   case SemanticSearch, StructuredBrowse, DefaultBrowse
 }
-
-object BeautyQSearchPlanCompiler {
-  def compile(
-    request: ValidatedBeautySearchRequestGen2,
-    intent: ParsedBeautyIntentGen2,
-  ): Either[NonEmptyErrors[BeautyQSearchPlanCompileError], CompiledBeautyQSearchPlan]
-}
 ```
 
-The corrected gate order - each gate's failure short-circuits the rest:
+The compiler's gate order is:
 
 1. **Gate 1 — public geo-input resolution**: `PublicPlanInputResolver.resolve` over the request's
    decoded filters/sort and `BeautyQSearchPlanPolicy.geoOriginPolicy.resolve(request)`.
@@ -1175,32 +1213,19 @@ The corrected gate order - each gate's failure short-circuits the rest:
    `request.requestedFacets` once through `BeautyQSearchPlanPolicy.facetRegistry` and stores the typed
    `FacetRequest` values in `ValidatedBeautySearchRequestGen2.facets`; compilation consumes that value
    and never looks up facet IDs a second time.
-3. **Gate 2 — prepared constraint precedence**: `BeautyQSearchPlanPolicy.constraintPrecedence.tiers`
-   applies the exhaustive typed `PublicRequest`/`ParsedIntent` source-to-constraints function to derive
-   `ConstraintPriorityTiers`,
-   then `SearchPlanCompilationKernel.prepare` returns an opaque prepared value containing the exact
-   input and its `ConstraintResolution` (applied/suppressed filters). No caller can construct or pair a
-   different resolution with that input.
-4. **Mode and notice derivation** - using the prepared value's own `resolution.appliedFilters` (never a
-   post-assembly plan): mode classification runs over that resolution's applied filters together with
-   the parsed intent's residual text, soft signals, semantic labels and resolved sort — never the raw
-   request query, requested facets, cursor presence, suppressed-filter count or matched-rule count. A
-   `DefaultBrowse` result derives exactly one
-   `PlanDiagnostic(PlanDiagnosticCode("default-browse"), None)` as the final notices vector; every
-   other mode derives an empty vector.
-5. **Gate 3 — assembly and validation**: `prepared.assemble(finalNotices)` assembles the `SearchPlan`
-   from that exact prepared resolution and one notices vector, then validates it. `CompiledBeautyQSearchPlan.plan`
-   is exactly this call's own returned value - nothing copies or mutates it afterward.
+3. **Gate 2 — prepared constraint precedence**: the typed `PublicRequest`/`ParsedIntent` binding feeds
+   `ConstraintPrecedence.tiers`, then `SearchPlanCompilationKernel.prepare` owns the exact input and
+   resolution. A caller cannot pair another resolution with it.
+4. **Mode and notice derivation**: the prepared resolution's applied filters plus parsed intent facts
+   classify the mode and derive one final notices vector. Raw query, requested facets, cursor presence,
+   suppressed-filter count and matched-rule count are not classification inputs.
+5. **Gate 3 — assembly and validation**: `prepared.assemble(finalNotices)` returns the validated plan.
+6. **Gate 4 — cursor binding**: `SearchCursorEnvelope.bind` validates the assembled plan's cursor
+   against the declaration-derived `PlanIdentity`. Only then is the compiler-owned result returned.
 
-```scala
-def classify(
-  residualText: Option[String],
-  softSignals: Vector[PlannedSignal[VariantSearchDocumentGen2]],
-  canonicalSemanticLabels: Vector[CanonicalSemanticLabel],
-  appliedFilters: Vector[AppliedFilter[VariantSearchDocumentGen2]],
-  sort: Vector[PlannedSort[VariantSearchDocumentGen2]],
-): BeautyQSearchPlanMode
-```
+`BeautyQSearchPlanPolicy.classify` owns the mode rule: semantic facts first, then applied filters or
+explicit sort for structured browse, otherwise default browse. Requested facets alone do not make a
+plan structured.
 
 `SemanticSearch = residualText.isDefined || softSignals.nonEmpty || canonicalSemanticLabels.nonEmpty`;
 else `StructuredBrowse = appliedFilters.nonEmpty || sort.nonEmpty`; else `DefaultBrowse`. Requested
@@ -1222,7 +1247,9 @@ BeautyQ's own policy, declared once in `BeautyQSearchPlanPolicy` and exposed for
   and an upper-unbounded final bucket, declared via `FacetSize.unsafeFrom`/`FacetPlanRegistry.unsafeFrom`
   (§7.9) rather than a hand-rolled `getOrElse(throw ...)` or manual match/throw;
 - **group policy** — explicitly empty; the current request has no group input;
-- **mode classification** — the `classify` function above.
+- **cursor contract version** — `BeautyQSearchDeclarations.variants.plan.contractVersion` is the
+  explicit BeautyQ compatibility choice mixed into the generic declaration-derived fingerprint;
+- **mode classification** — the policy's executable classifier described above.
 
 `BeautyQSearchPlanPolicy.facetRegistry` is the direct owner of public facet IDs and lookup; no compatibility
 registry or separately editable facet list is kept. `BeautyQSearchDeclarations.variants.plan` exposes the
@@ -1253,6 +1280,19 @@ External JSON names are selected for Gen2 directly. They do not need V1 codec al
 
 ## 11. Elasticsearch Gen2 requirements
 
+`search-gen2-elasticsearch` owns domain-neutral compilers and lifecycle mechanics.
+`beautyq-search-gen2-wiring` owns one compact `BeautyQElasticsearchPolicy` over the exact handles from
+`BeautyQSearchDeclarations.variants.Fields`, plus composition with materialization and resource names.
+The backend module must not know BeautyQ; the domain module must not recreate mapping/source/request/
+response traversal.
+
+The Elasticsearch policy is one executable source for the legitimate domain choices used across the
+index and query paths: text analyzers, text weights/ranking parameters, geo scoring parameters,
+exactness requirements and the explicit compatibility contribution. Mapping, indexed source,
+aggregation names, identity tie-breakers, contract fingerprint input and structural test views derive
+from that policy plus the canonical document/plan declarations. Operational host credentials and alias
+retention are configuration, not business declaration fields.
+
 ### 11.1 Mapping and ingestion
 
 The compiler derives mappings from typed fields and ES-specific policy.
@@ -1266,6 +1306,16 @@ It must validate:
 - interval fields used by overlap constraints/facets;
 - document IDs;
 - source encoding.
+
+Every stored field and `_id` is compiled by traversing `SearchDocumentDeclaration`; BeautyQ supplies no
+parallel encoder or field inventory. Dotted dynamic-field paths compile into deterministic nested
+objects, optional extraction omits the leaf, and logical values use their declared canonical codec with
+the ES representation selected by `SearchFieldKind`. Prefix conflicts or unrepresentable values are
+typed compilation errors.
+
+The pure compiler returns one bound generation artifact containing the mapping, ordered indexed
+documents and complete ES generation identity. HTTP bulk encoding and alias activation consume that
+artifact later; they do not rebuild it.
 
 ### 11.2 Request compilation
 
@@ -1284,6 +1334,11 @@ Compile:
 
 Aggregation names use stable typed IDs, not normalized field paths alone.
 
+The request compiler accepts a cursor-validated `BoundSearchPlan`, not a raw `SearchPlan`. It appends
+the declared document identity as the final deterministic sort tie-breaker and alone owns the typed
+encoding/decoding of Elasticsearch `search_after` values carried by the generic cursor envelope's opaque
+backend state. Offset pagination is unsupported.
+
 ### 11.3 Response decoding
 
 Decode into `FullSearchResult`:
@@ -1297,6 +1352,11 @@ Decode into `FullSearchResult`:
 - unknown/missing aggregation diagnostics.
 
 A requested section missing from the response is a typed error unless the request explicitly allowed degradation.
+
+Facet counts are decoded from Elasticsearch aggregations over the complete matching set, never recounted
+from the returned hit page. The decoder compares requested typed facet/group IDs with returned stable
+aggregation IDs and reports missing or unknown sections deterministically. It issues a next cursor only
+from the same bound plan and the last returned stable sort tuple.
 
 ### 11.4 Group implementation
 
@@ -1321,6 +1381,11 @@ build -> validate -> count/fingerprint check -> atomic alias switch
 ```
 
 A failed build never changes the active alias. Previous generation retention is policy-driven.
+
+The active physical index records the source/projected-document/contract/projection/compiler/index-
+format identity used to build it. Complete identity equality is required for reuse. Mapping, bulk,
+refresh, metadata/count/fingerprint validation and baseline search use a neutral transport client; the
+client owns HTTP only and contains no interpreter or domain policy.
 
 ## 12. Qdrant Gen2 requirements
 

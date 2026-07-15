@@ -6,7 +6,7 @@ import org.scalatest.wordspec.AnyWordSpec
 /** Pins BeautyQ's semantic-candidate policy against independent expected literals, proving semantic-text
   * composition and gate precedence directly from typed facts - never through a compiled plan or a forged
   * cursor, per Brick 4G-A's own scope (`NotFirstPage`'s full precedence position is proven here at the
-  * policy level; end-to-end cursor-bearing proof is Brick 4G-B).
+  * policy level; the wiring suite proves the cursor-bearing `NotFirstPage` path end to end).
   */
 final class BeautyQSemanticCandidatePolicySpec extends AnyWordSpec {
 

@@ -22,8 +22,9 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
     requestedFacets: Vector[FacetId],
     sort: Vector[BeautySortInput],
     userLocation: Option[GeoPoint],
+    pageRequest: PageRequest,
   ): BeautySearchRequestGen2 =
-    BeautySearchRequestGen2(query, filters, requestedFacets, sort, page, userLocation)
+    BeautySearchRequestGen2(query, filters, requestedFacets, sort, pageRequest, userLocation)
 
   private def validate(request: BeautySearchRequestGen2): ValidatedBeautySearchRequestGen2 =
     BeautySearchRequestGen2.validate(request) match {
@@ -43,8 +44,9 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
     requestedFacets: Vector[FacetId] = Vector.empty,
     sort: Vector[BeautySortInput] = Vector.empty,
     userLocation: Option[GeoPoint] = None,
+    pageRequest: PageRequest = page,
   ): (ValidatedBeautySearchRequestGen2, ParsedBeautyIntentGen2) = {
-    val validated = validate(rawRequest(query, filters, requestedFacets, sort, userLocation))
+    val validated = validate(rawRequest(query, filters, requestedFacets, sort, userLocation, pageRequest))
     (validated, parse(validated))
   }
 
@@ -60,6 +62,35 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
       case Right(value) => fail(s"expected compilation failure, got $value")
     }
 
+  private def transportCursor(bound: BoundSearchPlan[VariantSearchDocumentGen2], backendState: String): SearchCursor =
+    SearchCursor.fromTransport(SearchCursorEnvelope.issue(bound, backendState).opaqueValue)
+
+  private def expectCursorMismatch(
+    label: String,
+    first: BeautySearchRequestGen2,
+    changed: BeautySearchRequestGen2,
+  ): Unit = {
+    val firstValidated = validate(first)
+    val firstIntent = parse(firstValidated)
+    val firstCompiled = compile(firstValidated, firstIntent)
+    val cursor = transportCursor(firstCompiled.boundPlan, s"transport.$label")
+    val changedWithCursor = changed.copy(page = changed.page.copy(cursor = Some(cursor)))
+    val changedValidated = validate(changed)
+    val changedIntent = parse(changedValidated)
+    val changedWithCursorValidated = validate(changedWithCursor)
+    val changedWithCursorIntent = parse(changedWithCursorValidated)
+    val expectedChanged = compile(changedValidated, changedIntent)
+    assert(
+      compileErrors(changedWithCursorValidated, changedWithCursorIntent) ==
+        Vector(BeautyQSearchPlanCompileError.CursorValidationFailed(SearchCursorError.PlanIdentityMismatch(
+          expected = expectedChanged.boundPlan.identityHash,
+          actual = firstCompiled.boundPlan.identityHash,
+        ))),
+      label,
+    )
+    (): Unit
+  }
+
   private def distanceFilter(meters: String): PublicFilterInput = PublicFilterInput(PublicFieldName("distanceMeters"), PublicOperator.WithinDistance, PublicFilterValue.Scalar(meters), None)
   private def serviceFilter(value: String): PublicFilterInput = PublicFilterInput(PublicFieldName("service"), PublicOperator.Equal, PublicFilterValue.Scalar(value), None)
 
@@ -70,6 +101,29 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
 
     "reject subclassing outside BeautyQSearchPlanCompiler" in {
       assertDoesNotCompile("""final class ForgedPlan extends BeautyQSearchPlanCompiler.CompiledBeautyQSearchPlan""")
+    }
+  }
+
+  "BoundSearchPlan" should {
+    "reject direct construction outside the framework owner" in {
+      assertDoesNotCompile(
+        """new BoundSearchPlan[VariantSearchDocumentGen2](null, null, null, None)"""
+      )
+    }
+
+    "reject subclassing outside the framework owner" in {
+      assertDoesNotCompile(
+        """final class ForgedBound extends BoundSearchPlan[VariantSearchDocumentGen2](null, null, null, None)"""
+      )
+    }
+
+    "reject the framework factory and case-class-style copying outside the framework owner" in {
+      assertDoesNotCompile(
+        """BoundSearchPlan.create[VariantSearchDocumentGen2](null, null, null, None)"""
+      )
+      assertDoesNotCompile(
+        """def forge(bound: BoundSearchPlan[VariantSearchDocumentGen2]) = bound.copy(plan = bound.plan)"""
+      )
     }
   }
 
@@ -352,13 +406,107 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
       assert(compile(request, intent).plan.page.size == page.size)
     }
 
-    "carry the page value through unchanged - the compiler never constructs, decodes, or validates a cursor" in {
-      // SearchCursor is opaque with construction restricted to search-gen2-core (only
-      // SearchCursorEnvelope may mint one); BeautyQ's compiler only ever receives request.page and must
-      // pass it through as-is, which this equality on the whole PageRequest value proves independent of
-      // whether a cursor happens to be present.
+    "carry the page value through unchanged after cursor binding" in {
       val (request, intent) = build()
       assert(compile(request, intent).plan.page == request.page)
+    }
+
+    "validate a real second-page cursor against the compiled plan identity" in {
+      val (firstRequest, firstIntent) = build(query = Some("ресницы"))
+      val first = compile(firstRequest, firstIntent)
+      val cursor = transportCursor(first.boundPlan, "elasticsearch.search-after.v1")
+      val (secondRequest, secondIntent) = build(query = Some("ресницы"), pageRequest = page.copy(cursor = Some(cursor)))
+
+      val result = compile(secondRequest, secondIntent)
+      assert(!result.boundPlan.isFirstPage)
+      assert(result.boundPlan.backendState.map(_.opaqueValue) == Some("elasticsearch.search-after.v1"))
+    }
+
+    "reject a cursor issued for a different compiled plan" in {
+      val (firstRequest, firstIntent) = build(query = Some("ресницы"))
+      val first = compile(firstRequest, firstIntent)
+      val cursor = transportCursor(first.boundPlan, "state")
+      val (changedRequest, changedIntent) = build(query = Some("маникюр"), pageRequest = page.copy(cursor = Some(cursor)))
+      val (changedFirstRequest, changedFirstIntent) = build(query = Some("маникюр"))
+      val changedFirst = compile(changedFirstRequest, changedFirstIntent)
+
+      assert(
+        compileErrors(changedRequest, changedIntent) ==
+          Vector(BeautyQSearchPlanCompileError.CursorValidationFailed(SearchCursorError.PlanIdentityMismatch(
+            expected = changedFirst.boundPlan.identityHash,
+            actual = first.boundPlan.identityHash,
+          )))
+      )
+    }
+
+    "reject cursor mismatches for every BeautyQ plan identity input" in {
+      expectCursorMismatch(
+        "query",
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, page),
+        rawRequest(Some("маникюр"), Vector.empty, Vector.empty, Vector.empty, None, page),
+      )
+      expectCursorMismatch(
+        "filter",
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, page),
+        rawRequest(Some("ресницы"), Vector(serviceFilter("manicure")), Vector.empty, Vector.empty, None, page),
+      )
+      expectCursorMismatch(
+        "sort",
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, page),
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector(BeautySortInput(PublicSortName("price"), SortDirection.Asc)), None, page),
+      )
+      expectCursorMismatch(
+        "facet",
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, page),
+        rawRequest(Some("ресницы"), Vector.empty, Vector(FacetId("service")), Vector.empty, None, page),
+      )
+      val largerPage = PageSize.from(25) match {
+        case Right(value) => PageRequest(None, value)
+        case Left(error)  => fail(s"expected a valid alternate PageSize, got $error")
+      }
+      expectCursorMismatch(
+        "page-size",
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, page),
+        rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, largerPage),
+      )
+    }
+
+    "reject a cursor bound under a different contract version through the production compiler" in {
+      val raw = rawRequest(Some("ресницы"), Vector.empty, Vector.empty, Vector.empty, None, page)
+      val request = validate(raw)
+      val intent = parse(request)
+      val first = compile(request, intent)
+      val alternateView = CanonicalPlanView[VariantSearchDocumentGen2](
+        PlanContractFingerprint.compute(
+          PlanContractVersion("beautyq-variant-search-v2"),
+          BeautyQSearchDeclarations.variants.document,
+          contributions = Map.empty,
+        )
+      )
+      val alternateBound = SearchCursorEnvelope.bind(first.plan, alternateView) match {
+        case Right(value) => value
+        case Left(error)  => fail(s"expected alternate contract version to bind, got $error")
+      }
+      val cursor = SearchCursor.fromTransport(SearchCursorEnvelope.issue(alternateBound, "transport.contract-version").opaqueValue)
+      val changedRaw = raw.copy(page = raw.page.copy(cursor = Some(cursor)))
+      val changedRequest = validate(changedRaw)
+      val changedIntent = parse(changedRequest)
+
+      assert(
+        compileErrors(changedRequest, changedIntent) ==
+          Vector(BeautyQSearchPlanCompileError.CursorValidationFailed(SearchCursorError.PlanIdentityMismatch(
+            expected = first.boundPlan.identityHash,
+            actual = alternateBound.identityHash,
+          )))
+      )
+    }
+
+    "return a typed cursor error for a malformed transport token" in {
+      val (request, intent) = build(query = Some("ресницы"), pageRequest = page.copy(cursor = Some(SearchCursor.fromTransport("malformed"))))
+      assert(
+        compileErrors(request, intent) ==
+          Vector(BeautyQSearchPlanCompileError.CursorValidationFailed(SearchCursorError.MalformedEnvelope(1)))
+      )
     }
 
     "preserve requested facet order" in {

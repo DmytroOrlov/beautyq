@@ -216,7 +216,7 @@ final class PlanIdentityCanonicalEncodingSpec extends AnyWordSpec {
 
     "change the hash for every major canonical identity section" in {
       val variants = Vector(
-        identityA.copy(contractFingerprint = ContractFingerprint("changed-contract")),
+        identityA.copy(contractFingerprint = testContractFingerprint("changed-contract")),
         identityA.copy(normalizedQuery = Some(NormalizedQueryText("different"))),
         identityA.copy(hardConstraints = Vector(CanonicalConstraint.NumberRange(FieldId("quality"), CanonicalRangeBounds(CanonicalBound.Unbounded, CanonicalBound.Inclusive("3"))))),
         identityA.copy(softSignals = Vector(CanonicalSignal.GeoProximity(FieldId("coordinates"), CanonicalGeoPoint("50,30")))),
@@ -241,7 +241,7 @@ final class PlanIdentityCanonicalEncodingSpec extends AnyWordSpec {
       val intervalIdentity = identityA.copy(hardConstraints = Vector(interval))
       val geoIdentity = identityB.copy(hardConstraints = Vector(geo))
 
-      assertIdentityChanges("contract fingerprint", identityA, identityA.copy(contractFingerprint = ContractFingerprint("contract-v2")))
+      assertIdentityChanges("contract fingerprint", identityA, identityA.copy(contractFingerprint = testContractFingerprint("contract-v2")))
       assertIdentityChanges("query absent versus present", identityB.copy(normalizedQuery = None), identityB.copy(normalizedQuery = Some(NormalizedQueryText("query"))))
       assertIdentityChanges("query value", identityA, identityA.copy(normalizedQuery = Some(NormalizedQueryText("different query"))))
       assertIdentityChanges("page size", identityA, identityA.copy(pageSize = 26))

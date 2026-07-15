@@ -4,6 +4,8 @@ import leaderboard.search.gen2.contract.*
 import org.scalatest.wordspec.AnyWordSpec
 
 object PlanIdentityFixtures {
+  def testContractFingerprint(value: String): ContractFingerprint = ContractFingerprint.fromCanonicalHash(value)
+
   final case class InventoryDocument(
     department: String,
     availabilityStart: Int,
@@ -11,6 +13,7 @@ object PlanIdentityFixtures {
     quality: Int,
     supplier: String,
     headline: String,
+    alternateLabel: String,
   )
 
   final case class TrailDocument(
@@ -189,8 +192,8 @@ object PlanIdentityFixtures {
     diagnostics = PlanDiagnostics.empty,
   )
 
-  val viewA: CanonicalPlanView[InventoryDocument] = CanonicalPlanView(ContractFingerprint("inventory-contract-v1"))
-  val viewB: CanonicalPlanView[TrailDocument] = CanonicalPlanView(ContractFingerprint("trail-contract-v1"))
+  val viewA: CanonicalPlanView[InventoryDocument] = CanonicalPlanView(testContractFingerprint("inventory-contract-v1"))
+  val viewB: CanonicalPlanView[TrailDocument] = CanonicalPlanView(testContractFingerprint("trail-contract-v1"))
 
   def right[A, B](value: Either[A, B]): B =
     value match {

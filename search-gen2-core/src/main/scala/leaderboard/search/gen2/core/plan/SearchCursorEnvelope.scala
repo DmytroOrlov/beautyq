@@ -15,7 +15,26 @@ object BackendCursorState {
   private[gen2] def fromOpaque(value: String): BackendCursorState = value
 }
 
-final case class ValidatedSearchCursor(backendState: BackendCursorState)
+/** One executable owner of a validated plan/cursor pair. The plan, identity and decoded backend state
+  * are intentionally bound together so a caller cannot pair a cursor result with another plan. */
+final class BoundSearchPlan[Document] private (
+  val plan: SearchPlan[Document],
+  val identity: PlanIdentity,
+  val identityHash: PlanIdentityHash,
+  val backendState: Option[BackendCursorState],
+) {
+  def isFirstPage: Boolean = backendState.isEmpty
+}
+
+object BoundSearchPlan {
+  private[gen2] def create[Document](
+    plan: SearchPlan[Document],
+    identity: PlanIdentity,
+    identityHash: PlanIdentityHash,
+    backendState: Option[BackendCursorState],
+  ): BoundSearchPlan[Document] =
+    new BoundSearchPlan(plan, identity, identityHash, backendState)
+}
 
 sealed trait SearchCursorError extends Product with Serializable
 
@@ -31,32 +50,28 @@ object SearchCursorError {
 object SearchCursorEnvelope {
   val EnvelopeVersion: String = "search-cursor-envelope-v1"
 
-  def issue[Document](
+  def bind[Document](
     plan: SearchPlan[Document],
     view: CanonicalPlanView[Document],
-    backendState: BackendCursorState,
-  ): Either[SearchCursorError, SearchCursor] =
-    compileIdentity(plan, view).map { identity =>
-      val hash = PlanIdentityHash.compute(identity)
-      val state = encodeBackendState(backendState.opaqueValue)
-      SearchCursor.fromOpaque(s"$EnvelopeVersion.${hash.value}.$state")
-    }
-
-  def validate[Document](
-    plan: SearchPlan[Document],
-    view: CanonicalPlanView[Document],
-  ): Either[SearchCursorError, Option[ValidatedSearchCursor]] =
-    plan.page.cursor match {
-      case None => Right(None)
-      case Some(cursor) =>
-        compileIdentity(plan.withoutCursor, view).flatMap { identity =>
+  ): Either[SearchCursorError, BoundSearchPlan[Document]] =
+    compileIdentity(plan, view).flatMap { identity =>
+      val expected = PlanIdentityHash.compute(identity)
+      plan.page.cursor match {
+        case None => Right(BoundSearchPlan.create(plan, identity, expected, None))
+        case Some(cursor) =>
           decode(cursor.opaqueValue).flatMap { case (storedHash, backendState) =>
-            val expected = PlanIdentityHash.compute(identity)
-            if (expected == storedHash) Right(Some(ValidatedSearchCursor(backendState)))
+            if (expected == storedHash) Right(BoundSearchPlan.create(plan, identity, expected, Some(backendState)))
             else Left(SearchCursorError.PlanIdentityMismatch(expected, storedHash))
           }
-        }
+      }
     }
+
+  /** Issues a cursor from the exact identity previously bound by [[bind]]. The backend state remains
+    * an opaque string; only the backend that produced it may interpret its contents. */
+  def issue[Document](bound: BoundSearchPlan[Document], backendState: String): SearchCursor = {
+    val state = encodeBackendState(backendState)
+    SearchCursor.fromOpaque(s"$EnvelopeVersion.${bound.identityHash.value}.$state")
+  }
 
   private def compileIdentity[Document](
     plan: SearchPlan[Document],

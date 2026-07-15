@@ -422,10 +422,8 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
   }
 
   "BeautySearchRequestTrace" should {
-    // page.cursor is deliberately None: SearchCursor.fromOpaque is private[gen2] to search-gen2-core's
-    // future Brick 4C cursor codec, so no cursor value is constructible from this BeautyQ-level test at
-    // all yet. The trace format's "present" branch (request.cursor=present, never opaqueValue) is
-    // exercised directly at the search-gen2-contract layer once Brick 4C exists.
+    // A transport cursor is only an untrusted carrier; plan identity validation belongs to the wiring
+    // compiler. The trace format renders only presence, never opaqueValue.
     "render the exact golden trace for a complete request" in {
       val fields = BeautyQSearchDeclarations.variants.Fields
       val request =

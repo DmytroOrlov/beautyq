@@ -120,7 +120,7 @@ final class SearchPlanSpec extends AnyWordSpec {
   ): SearchPlan[CatalogDocument] =
     SearchPlan(residualText, appliedFilters, softSignals, sort, page, facets, groups, diagnostics)
 
-  private val venueCursor = SearchCursor.fromOpaque("venue-cursor-token")
+  private val venueCursor = SearchCursor.fromTransport("venue-cursor-token")
 
   private val venuePlan: SearchPlan[VenueDocument] =
     SearchPlan(
@@ -194,7 +194,7 @@ final class SearchPlanSpec extends AnyWordSpec {
 
   "SearchPlan.withoutCursor" should {
     "clear only the cursor, preserving every other field exactly" in {
-      val cursor = SearchCursor.fromOpaque("token")
+      val cursor = SearchCursor.fromTransport("token")
       val plan   = basePlan(page = PageRequest(Some(cursor), validPageSize))
       val result = plan.withoutCursor
 

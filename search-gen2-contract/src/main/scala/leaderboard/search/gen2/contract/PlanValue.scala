@@ -10,6 +10,18 @@ final case class FacetSelectionId(value: String)
 final case class GroupId(value: String)
 final case class GroupMetricId(value: String)
 
+/** Explicit domain version mixed into the derived plan-contract fingerprint. The version is a
+  * deliberate compatibility choice; the fingerprint mechanics derive the remaining value from the
+  * executable document declaration. */
+final case class PlanContractVersion(value: String)
+
+/** A typed compatibility component contributed by a backend/compiler boundary. Components are sorted
+  * by ID by the generic fingerprint owner, so their declaration order is not an accidental identity. */
+final case class PlanContractContributionId(value: String)
+final case class PlanContractContributionVersion(value: String)
+/** One version per typed contribution ID. The fingerprint owner canonicalizes the map by ID. */
+type PlanContractContributions = Map[PlanContractContributionId, PlanContractContributionVersion]
+
 sealed trait PlanValueError
 
 object PlanValueError {
@@ -49,17 +61,18 @@ object GroupSize {
     if (value > 0) Right(new GroupSize(value)) else Left(PlanValueError.InvalidGroupSize(value))
 }
 
-/** Opaque carriage for one backend cursor token: no parsing, no encoding, no plan-hash, no identity
-  * validation. `search-gen2-core`'s Brick 4C owns the actual cursor envelope/codec and is the only
-  * intended caller of [[SearchCursor.fromOpaque]] (hence `private[gen2]`, not `private[contract]`);
-  * every other caller may only carry a cursor through unopened or read it back via
-  * [[SearchCursor.opaqueValue]] for transport.
-  */
+/** Opaque carriage for one backend cursor token. This value is deliberately untrusted: transport code
+  * may carry it through request validation, while `search-gen2-core` validates its envelope and plan
+  * identity before any backend consumes it. It performs no parsing, encoding or identity validation. */
 opaque type SearchCursor = String
 
 object SearchCursor {
   extension (cursor: SearchCursor) def opaqueValue: String = cursor
 
+  /** Wrap a transport token without claiming that it is valid for any plan. */
+  def fromTransport(value: String): SearchCursor = value
+
+  /** Internal envelope construction; issued values still require plan validation by the envelope. */
   private[gen2] def fromOpaque(value: String): SearchCursor = value
 }
 

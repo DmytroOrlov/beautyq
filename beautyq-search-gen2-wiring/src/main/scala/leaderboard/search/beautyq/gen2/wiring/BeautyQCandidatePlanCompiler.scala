@@ -24,7 +24,7 @@ type CompiledCandidateEvaluation = BeautyQCandidatePlanCompiler.CompiledCandidat
 object BeautyQCandidatePlanCompiler {
 
   def compile(compiled: CompiledBeautyQSearchPlan): Either[CandidateEvaluationError, CompiledCandidateEvaluation] = {
-    val firstPage = compiled.plan.page.cursor.isEmpty
+    val firstPage = compiled.boundPlan.isFirstPage
     val defaultSort = compiled.plan.sort.isEmpty
     BeautyQSemanticCandidatePolicy
       .evaluate(

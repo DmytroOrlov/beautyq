@@ -2,6 +2,7 @@ package leaderboard.search.beautyq.gen2.wiring
 
 import leaderboard.search.beautyq.gen2.contract.*
 import leaderboard.search.gen2.contract.*
+import leaderboard.search.gen2.core.plan.*
 import org.scalatest.wordspec.AnyWordSpec
 
 /** Exact golden traces built from real validated requests, parsed intents, compiled plans and the bound
@@ -18,8 +19,9 @@ final class BeautyQCandidatePlanTraceSpec extends AnyWordSpec {
     query: Option[String] = None,
     sort: Vector[BeautySortInput] = Vector.empty,
     userLocation: Option[GeoPoint] = None,
+    pageRequest: PageRequest = page,
   ): BeautySearchRequestGen2 =
-    BeautySearchRequestGen2(query, Vector.empty, Vector.empty, sort, page, userLocation)
+    BeautySearchRequestGen2(query, Vector.empty, Vector.empty, sort, pageRequest, userLocation)
 
   private def traceOf(request: BeautySearchRequestGen2): String = {
     val validated = BeautySearchRequestGen2.validate(request) match {
@@ -111,6 +113,38 @@ final class BeautyQCandidatePlanTraceSpec extends AnyWordSpec {
             |
             |=== decision ===
             |decision.ineligible reason=non-default-sort""".stripMargin
+      )
+    }
+
+    "render a valid second-page cursor as ineligible before default-sort evaluation" in {
+      val firstRequest = rawRequest(query = Some("ресницы"))
+      val validated = BeautySearchRequestGen2.validate(firstRequest) match {
+        case Right(value) => value
+        case Left(errors) => fail(s"fixture request failed to validate: ${errors.toVector}")
+      }
+      val intent = BeautyQIntentParserGen2.parse(validated, vocabulary) match {
+        case Right(value) => value
+        case Left(errors) => fail(s"fixture intent failed to parse: ${errors.toVector}")
+      }
+      val first = BeautyQSearchPlanCompiler.compile(validated, intent) match {
+        case Right(value) => value
+        case Left(errors) => fail(s"fixture failed to compile: ${errors.toVector}")
+      }
+      val cursor = SearchCursor.fromTransport(SearchCursorEnvelope.issue(first.boundPlan, "elasticsearch.search-after.v1").opaqueValue)
+
+      assert(
+        traceOf(rawRequest(query = Some("ресницы"), pageRequest = page.copy(cursor = Some(cursor))) ) ==
+          """=== semantic ===
+            |semantic.part[0] id=residual-text
+            |semantic.part[1] id=canonical-semantic-labels
+            |
+            |=== eligibility ===
+            |eligibility.gate[0] id=semantic-query-text outcome=passed
+            |eligibility.gate[1] id=first-page outcome=rejected reason=not-first-page
+            |eligibility.gate[2] id=default-sort outcome=passed
+            |
+            |=== decision ===
+            |decision.ineligible reason=not-first-page""".stripMargin
       )
     }
 

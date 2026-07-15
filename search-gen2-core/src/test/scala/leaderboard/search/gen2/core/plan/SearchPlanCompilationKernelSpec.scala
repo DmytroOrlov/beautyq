@@ -13,9 +13,9 @@ final class SearchPlanCompilationKernelSpec extends AnyWordSpec {
 
   private final case class InventoryDocument(id: UUID, department: String, supplier: String, stockMin: Int)
 
-  private enum InputSource(val stableId: String) extends ConstraintSourceIdentity {
-    case Higher extends InputSource("higher")
-    case Lower  extends InputSource("lower")
+  private enum InputSource {
+    case Higher
+    case Lower
   }
 
   private val precedence = ConstraintPrecedence.unsafeAbove(InputSource.Higher, InputSource.Lower)

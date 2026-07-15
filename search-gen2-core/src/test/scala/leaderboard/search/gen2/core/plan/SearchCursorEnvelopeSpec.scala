@@ -10,15 +10,13 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
   import PlanIdentityFixtures.*
   import PlanIdentityAssertions.*
 
-  private def state(value: String): BackendCursorState = BackendCursorState.fromOpaque(value)
-
   private def issuedA(
     plan: SearchPlan[InventoryDocument] = planA,
     backendState: String = "backend.state:\n\tПривет",
   ): SearchCursor =
-    SearchCursorEnvelope.issue(plan, viewA, state(backendState)) match {
-      case Right(cursor) => cursor
-      case Left(error)   => fail(s"expected cursor issue success, got $error")
+    SearchCursorEnvelope.bind(plan, viewA) match {
+      case Right(bound) => SearchCursorEnvelope.issue(bound, backendState)
+      case Left(error)  => fail(s"expected cursor binding success, got $error")
     }
 
   private def withCursor[Document](plan: SearchPlan[Document], cursor: SearchCursor): SearchPlan[Document] =
@@ -35,7 +33,7 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
       case _ => fail(s"$label fixture cursor has an invalid envelope")
     }
     val expected = PlanIdentityHash.compute(view.identityOf(changedPlan.withoutCursor))
-    assert(SearchCursorEnvelope.validate(withCursor(changedPlan, cursor), view) == Left(SearchCursorError.PlanIdentityMismatch(expected, actual)), label)
+    assert(SearchCursorEnvelope.bind(withCursor(changedPlan, cursor), view) == Left(SearchCursorError.PlanIdentityMismatch(expected, actual)), label)
     (): Unit
   }
 
@@ -46,42 +44,50 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
     }
 
   private def expectMalformed[Document](raw: String, expected: SearchCursorError): Unit = {
-    val result = SearchCursorEnvelope.validate(withCursor(planA, SearchCursor.fromOpaque(raw)), viewA)
+    val result = SearchCursorEnvelope.bind(withCursor(planA, SearchCursor.fromTransport(raw)), viewA)
     assert(result == Left(expected))
     (): Unit
   }
 
   "SearchCursorEnvelope" should {
-    "issue and validate a deterministic cursor while round-tripping opaque state" in {
+    "issue and bind a deterministic cursor while round-tripping opaque state" in {
       val cursor = issuedA()
       assert(cursor.opaqueValue == "search-cursor-envelope-v1.cc53c4c361afc858fe55bcd2adcf9583b6e46cef37025ece45a2dfd88a8bc3fa.YmFja2VuZC5zdGF0ZToKCdCf0YDQuNCy0LXRgg")
-      assert(SearchCursorEnvelope.issue(planA, viewA, state("backend.state:\n\tПривет")) == Right(cursor))
+      val bound = SearchCursorEnvelope.bind(withCursor(planA, cursor), viewA)
+      assert(bound.isRight)
 
-      SearchCursorEnvelope.validate(withCursor(planA, cursor), viewA) match {
-        case Right(Some(validated)) => assert(validated.backendState.opaqueValue == "backend.state:\n\tПривет")
-        case other                  => fail(s"expected validated cursor, got $other")
+      bound match {
+        case Right(bound) =>
+          bound.backendState match {
+            case Some(value) => assert(value.opaqueValue == "backend.state:\n\tПривет")
+            case None        => fail("expected a bound backend state")
+          }
+        case other => fail(s"expected bound cursor, got $other")
       }
     }
 
     "round-trip empty and delimiter/unicode backend state without interpreting it" in {
       Vector("", "a.b:c\n\tПривет", "opaque/search-after value").foreach { value =>
         val cursor = issuedA(backendState = value)
-        SearchCursorEnvelope.validate(withCursor(planA, cursor), viewA) match {
-          case Right(Some(validated)) => assert(validated.backendState.opaqueValue == value)
-          case other                  => fail(s"expected state '$value' to validate, got $other")
+        SearchCursorEnvelope.bind(withCursor(planA, cursor), viewA) match {
+          case Right(bound) =>
+            bound.backendState match {
+              case Some(state) => assert(state.opaqueValue == value)
+              case None        => fail(s"expected backend state for '$value'")
+            }
+          case other                  => fail(s"expected state '$value' to bind, got $other")
         }
       }
     }
 
     "exclude the current cursor recursively from identity" in {
-      val cursor = SearchCursorEnvelope.issue(planA, viewA, state("state")) match {
-        case Right(value) => value
-        case Left(error)  => fail(s"expected issue success, got $error")
-      }
+      val cursor = issuedA(backendState = "state")
       val cursorBearing = withCursor(planA, cursor)
       assertIdentityUnchanged("current cursor", viewA.identityOf(planA), viewA.identityOf(cursorBearing))
-      assert(SearchCursorEnvelope.issue(cursorBearing, viewA, state("state")) == Right(cursor))
-      assert(SearchCursorEnvelope.validate(cursorBearing, viewA).isRight)
+      SearchCursorEnvelope.bind(cursorBearing, viewA) match {
+        case Right(bound) => assert(SearchCursorEnvelope.issue(bound, "state") == cursor)
+        case Left(error)  => fail(s"expected cursor binding success, got $error")
+      }
     }
 
     "exclude diagnostic notices, suppressed filters and provenance while retaining the same plan identity" in {
@@ -105,8 +111,8 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
 
       assertIdentityUnchanged("diagnostic notices", viewA.identityOf(planA), viewA.identityOf(changedNotices))
       assertIdentityUnchanged("suppressed filters", viewA.identityOf(planA), viewA.identityOf(changedSuppressed))
-      assert(SearchCursorEnvelope.validate(withCursor(changedNotices, cursor), viewA).isRight)
-      assert(SearchCursorEnvelope.validate(withCursor(changedSuppressed, cursor), viewA).isRight)
+      assert(SearchCursorEnvelope.bind(withCursor(changedNotices, cursor), viewA).isRight)
+      assert(SearchCursorEnvelope.bind(withCursor(changedSuppressed, cursor), viewA).isRight)
 
       Vector[(String, ConstraintProvenance)](
         "ParsedHard" -> ConstraintProvenance.ParsedHard,
@@ -121,7 +127,7 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
           )
         )
         assertIdentityUnchanged(label, viewA.identityOf(planA), viewA.identityOf(changedProvenance))
-        assert(SearchCursorEnvelope.validate(withCursor(changedProvenance, cursor), viewA).isRight, label)
+        assert(SearchCursorEnvelope.bind(withCursor(changedProvenance, cursor), viewA).isRight, label)
       }
     }
 
@@ -146,45 +152,50 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
       expectMismatch("group", planA.copy(groups = planA.groups.updated(0, changedGroup)), cursorA, viewA)
       expectMismatch("page size", planA.copy(page = planA.page.copy(size = right(PageSize.from(26)))), cursorA, viewA)
 
-      val cursorB = SearchCursorEnvelope.issue(planB, viewB, state("state")) match {
-        case Right(value) => value
-        case Left(error)  => fail(s"expected Shape B issue success, got $error")
+      val cursorB = SearchCursorEnvelope.bind(planB, viewB) match {
+        case Right(bound) => SearchCursorEnvelope.issue(bound, "state")
+        case Left(error)  => fail(s"expected Shape B binding success, got $error")
       }
       expectMismatch("soft signal", planB.copy(softSignals = Vector(PlannedSignal.GeoProximitySignal(coordinates, GeoPoint(BigDecimal("51"), BigDecimal("30"))))), cursorB, viewB)
       expectMismatch("geo sort", planB.copy(sort = Vector(PlannedSort.GeoDistance(coordinates, GeoPoint(BigDecimal("51"), BigDecimal("30")), SortDirection.Asc))), cursorB, viewB)
-      expectMismatch("contract fingerprint", planA, cursorA, CanonicalPlanView(ContractFingerprint("changed-contract")))
+      expectMismatch("contract fingerprint", planA, cursorA, CanonicalPlanView(testContractFingerprint("changed-contract")))
     }
 
     "round-trip Shape B and re-issue identically from its cursor-bearing plan" in {
-      val cursor = SearchCursorEnvelope.issue(planB, viewB, state("trail.backend:state")) match {
-        case Right(value) => value
-        case Left(error)  => fail(s"expected Shape B issue success, got $error")
+      val cursor = SearchCursorEnvelope.bind(planB, viewB) match {
+        case Right(bound) => SearchCursorEnvelope.issue(bound, "trail.backend:state")
+        case Left(error)  => fail(s"expected Shape B binding success, got $error")
       }
-      SearchCursorEnvelope.validate(withCursor(planB, cursor), viewB) match {
-        case Right(Some(validated)) => assert(validated.backendState.opaqueValue == "trail.backend:state")
-        case other                  => fail(s"expected Shape B validation success, got $other")
+      SearchCursorEnvelope.bind(withCursor(planB, cursor), viewB) match {
+        case Right(bound) =>
+          bound.backendState match {
+            case Some(value) => assert(value.opaqueValue == "trail.backend:state")
+            case None        => fail("expected Shape B backend state")
+          }
+        case other                  => fail(s"expected Shape B binding success, got $other")
       }
-      assert(SearchCursorEnvelope.issue(withCursor(planB, cursor), viewB, state("trail.backend:state")) == Right(cursor))
+      SearchCursorEnvelope.bind(withCursor(planB, cursor), viewB) match {
+        case Right(bound) => assert(SearchCursorEnvelope.issue(bound, "trail.backend:state") == cursor)
+        case Left(error)  => fail(s"expected Shape B cursor binding success, got $error")
+      }
     }
 
-    "validate a cursor-free plan as Right(None)" in {
-      assert(SearchCursorEnvelope.validate(planA, viewA) == Right(None))
+    "bind a cursor-free plan as a first-page result" in {
+      SearchCursorEnvelope.bind(planA, viewA) match {
+        case Right(bound) => assert(bound.isFirstPage)
+        case Left(error)  => fail(s"expected first-page binding success, got $error")
+      }
     }
 
     "return InvalidPlan before parsing a cursor envelope" in {
       val invalidPlan = planB.copy(
         sort = Vector(PlannedSort.FieldValue(trailType, SortDirection.Asc)),
-        page = PageRequest(Some(SearchCursor.fromOpaque("malformed")), pageB),
+        page = PageRequest(Some(SearchCursor.fromTransport("malformed")), pageB),
       )
-      SearchCursorEnvelope.validate(invalidPlan, viewB) match {
+      SearchCursorEnvelope.bind(invalidPlan, viewB) match {
         case Left(SearchCursorError.InvalidPlan(errors)) =>
           assert(errors.toVector == Vector(SearchPlanError.InvalidSort(0, PlanConstraintError.UnsupportedSortMode(trailType.id, trailType.kind, SortMode.Value))))
         case other => fail(s"expected InvalidPlan, got $other")
-      }
-      SearchCursorEnvelope.issue(invalidPlan, viewB, state("state")) match {
-        case Left(SearchCursorError.InvalidPlan(errors)) =>
-          assert(errors.toVector == Vector(SearchPlanError.InvalidSort(0, PlanConstraintError.UnsupportedSortMode(trailType.id, trailType.kind, SortMode.Value))))
-        case other => fail(s"expected InvalidPlan from issue, got $other")
       }
     }
 
@@ -211,14 +222,18 @@ final class SearchCursorEnvelopeSpec extends AnyWordSpec {
       expectMalformed(s"${SearchCursorEnvelope.EnvelopeVersion}.$validHash.$invalidUtf8", SearchCursorError.InvalidBackendStateEncoding(invalidUtf8))
     }
 
-    "leave backend state opaque and unauthenticated in Brick 4C" in {
+    "leave backend state opaque and unauthenticated at the generic cursor boundary" in {
       val cursor = issuedA(backendState = "original")
       val segments = cursor.opaqueValue.split("\\.", -1)
       val changedState = Base64.getUrlEncoder.withoutPadding().encodeToString("changed".getBytes(StandardCharsets.UTF_8))
-      val forgedButHashMatching = SearchCursor.fromOpaque(s"${segments(0)}.${segments(1)}.$changedState")
+      val forgedButHashMatching = SearchCursor.fromTransport(s"${segments(0)}.${segments(1)}.$changedState")
 
-      SearchCursorEnvelope.validate(withCursor(planA, forgedButHashMatching), viewA) match {
-        case Right(Some(validated)) => assert(validated.backendState.opaqueValue == "changed")
+      SearchCursorEnvelope.bind(withCursor(planA, forgedButHashMatching), viewA) match {
+        case Right(bound) =>
+          bound.backendState match {
+            case Some(value) => assert(value.opaqueValue == "changed")
+            case None        => fail("expected changed backend state")
+          }
         case other                  => fail(s"expected changed opaque state to remain valid, got $other")
       }
     }

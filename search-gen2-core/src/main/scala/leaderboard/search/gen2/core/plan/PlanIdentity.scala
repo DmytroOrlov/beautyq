@@ -3,12 +3,6 @@ package leaderboard.search.gen2.core.plan
 import leaderboard.search.gen2.contract.*
 import leaderboard.search.gen2.core.materialization.CanonicalFingerprint
 
-/** Separately supplied fingerprint of the declared field/document contract. Brick 4C does not
-  * compute this value; field paths, types and mappings are represented by the caller-supplied
-  * contract fingerprint rather than duplicated in PlanIdentity.
-  */
-final case class ContractFingerprint(value: String)
-
 /** A trusted value wrapper. Brick 4D/4F supplies the already normalized residual query text; this
   * type deliberately performs no trimming, case folding, tokenization or other normalization.
   */

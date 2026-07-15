@@ -21,8 +21,8 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 4G-B — planned, not yet implemented: inbound cursor decoding/validation
-  against `PlanIdentity` over the compiled `SearchPlan`
+- **Active brick:** Brick 5A — planned, not yet implemented: the pure Elasticsearch index contract,
+  mapping/source compilers and generation artifact
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
   - Brick 1 — generic field/document declaration kernel
@@ -49,15 +49,16 @@ summaries must remain short and point here.
     deterministic intent adapter; request and parsed intent remain separate inbound values until 4F
   - Brick 4F — plan compilation: generic canonical-constraint/precedence/geo-input-resolution/
     facet-registry/plan-compilation mechanics, plus the BeautyQ plan policy, compiler and diagnostic
-    trace that compose them into a validated `SearchPlan[VariantSearchDocumentGen2]`; semantic query
-    text, `CandidatePlan` and cursor validation remain out of scope until 4G
+    trace that compose them into a validated `SearchPlan[VariantSearchDocumentGen2]`
   - Brick 4G-A — semantic candidate planning: generic backend-neutral `SemanticQueryText`/`CandidatePlan`/
     `CandidatePlanDecision[Plan, Reason]`/`SemanticCandidateEvaluation`, plus BeautyQ's own
     `BeautyQCandidateIneligibility` reason vocabulary, semantic-text-part and eligibility-gate policy,
     compiler and diagnostic trace that compose them into one bound candidate evaluation over the compiled
     `SearchPlan`; the named stable IDs/codes, explicit active vectors, semantic-part trace evidence and
-    vocabulary pins are part of the accepted BeautyQ contract. Cursor decoding/validation remains out of
-    scope until 4G-B.
+    vocabulary pins are part of the accepted BeautyQ contract.
+  - Brick 4G-B — cursor boundary: untrusted transport ingress, declaration-derived contract
+    fingerprint, framework-owned plan/cursor binding, BeautyQ compiler integration and a validated
+    second-page candidate/trace proof. Backend state remains opaque until the Elasticsearch vertical.
 
   Compact Brick 4 status:
 
@@ -69,16 +70,17 @@ summaries must remain short and point here.
   4E completed
   4F completed
   4G-A completed
-  4G-B active
+  4G-B completed
   ```
 - **Authoring facade:** `BeautyQSearchDeclarations` is the canonical Gen2 business entry point.
   Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
   and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
   reverse-depend from the contract layer.
-- **Next action:** close the cursor boundary as one vertical: legal untrusted transport ingress,
-  declaration-derived contract fingerprint, one framework-owned plan/cursor binding, BeautyQ compiler
-  integration, and a real validated second-page candidate/trace proof. Backend JSON, route wiring and
-  Brick 6 retrieval knobs remain later bricks.
+- **Next action:** implement Brick 5A without transport or live resources: declare the minimal BeautyQ
+  Elasticsearch index policy over the canonical `variants.Fields`, derive mapping and indexed source
+  from `variants.document`, bind the Elasticsearch contract contribution into plan identity, and
+  produce one immutable generation artifact from materialized documents. Brick 5B then owns the pure
+  request/result/cursor protocol; 5C owns live index lifecycle and baseline execution; 5D owns groups.
 - **Blockers:** none
 
 ### Open reusable-framework gaps
@@ -798,72 +800,263 @@ Delete the Gen2 request/parser/compiler. Gen1 route remains unchanged.
 
 Make Elasticsearch the independent owner of the full Gen2 baseline result.
 
-### Brick 5A — Mapping, ingestion, hits, totals and facets
+### Fixed ownership and execution path
+
+Brick 5 is four reviewable slices because mapping/source compilation, query/result semantics, live
+resource activation and groups fail in different ways. They compose in this order:
+
+```text
+MaterializedSearchDocuments + variants.document + BeautyQ Elasticsearch index policy
+  -> 5A compiled mapping/source/generation artifact
+  -> 5C physical-index build, validation and atomic alias activation
+
+CompiledBeautyQSearchPlan.boundPlan + BeautyQ Elasticsearch query policy
+  -> 5B compiled request with typed search_after state
+  -> 5C transport execution
+  -> 5B decoded hits/exact total/facets/page
+  -> BeautyQ baseline result projection
+
+BeautyQ group policy
+  -> 5D explicit group request/result extension
+```
+
+`search-gen2-elasticsearch` owns domain-neutral mapping, source, request, cursor-state, response and
+lifecycle mechanics. It must contain no BeautyQ symbol. `beautyq-search-gen2-wiring` owns the minimal
+Elasticsearch policy and composition for `VariantSearchDocumentGen2`; it reuses the exact handles from
+`BeautyQSearchDeclarations.variants.Fields` and never recreates fields or maintains a parallel document
+inventory.
+
+The contract module cannot expose backend-specific values without reversing the accepted module DAG.
+The canonical domain reading path is therefore:
+
+```text
+BeautyQSearchDeclarations.variants.Fields/document/plan
+  -> BeautyQElasticsearchPolicy in beautyq-search-gen2-wiring
+  -> generic search-gen2-elasticsearch compilers
+```
+
+This physical split is not permission for a second business root. The wiring policy contains only
+choices that can legitimately differ by domain (analyzers, text weights/ranking parameters, exactness
+requirements and compatibility version); declaration traversal, JSON/source encoding, typed lookup,
+stable tie-breakers, fingerprint composition and lifecycle sequencing remain framework-owned.
+
+### Brick 5A — Pure index contract and generation artifact
+
+#### Purpose
+
+Establish the executable mapping/indexed-document boundary before any HTTP client or live index exists.
+This is the authoring surface on which the rest of Brick 5 depends.
 
 #### Diff
 
 In `search-gen2-elasticsearch` add:
 
-- neutral ES transport/client if not already separate;
-- purpose-specific `FullPlan` and `FullSearchResult` contracts if not already required by a prior
-  executable slice;
-- mapping compiler;
-- document ingestion compiler;
-- versioned physical index and stable alias lifecycle;
-- `SearchPlan -> ES request` compiler for text, constraints, geo, sort and cursor;
-- exact total tracking;
-- terms/range/interval-overlap facet aggregations;
-- response decoder for hits, totals, facets and page state;
-- typed errors for missing/unknown sections.
+- the smallest typed Elasticsearch index-policy algebra actually consumed by this slice;
+- a validated policy/declaration composition that requires an analyzer assignment for every declared
+  searchable text field and rejects duplicate, undeclared or incomplete assignments;
+- declaration-driven mapping compilation for every currently supported `SearchFieldKind`, required and
+  optional fields, dotted dynamic paths and deterministic field order;
+- declaration-driven `_source` and document-ID compilation using each field's extractor and canonical
+  codec, with typed path/encoding errors rather than a domain-owned JSON encoder/fold;
+- explicit backend compiler/index-format identity and the one typed Elasticsearch plan-contract
+  contribution consumed by `PlanContractFingerprint`;
+- one read-only compiled generation artifact binding mapping, ordered indexed documents and complete ES
+  generation identity to the exact materialized input and executable policy that produced them.
 
 In BeautyQ Gen2 wiring add:
 
-- index build from repository-backed Gen2 documents;
-- validation/count/fingerprint checks;
-- independent Gen2 alias names;
-- BeautyQ full-result-to-response projection without groups initially.
+- `BeautyQElasticsearchPolicy`, declaring only the actual BeautyQ analyzer/index choices over
+  `BeautyQSearchDeclarations.variants.Fields` and the explicit compatibility choice;
+- one shared BeautyQ contract-identity composition used by both `BeautyQSearchPlanCompiler` and the ES
+  generation compiler, replacing the current `Map.empty` contribution call;
+- pure compilation from `MaterializedBeautyQVariantDocuments` to the generic generation artifact.
+
+Do not add query weights, geo scoring parameters or result types in 5A unless they are consumed by the
+implemented mapping/source path. Those belong to 5B. Do not add a client, NDJSON transport, alias
+lifecycle, DI binding or live Elasticsearch test in 5A; those belong to 5C.
 
 #### Proof
 
-- mapping golden tests;
-- interval-overlap filter and facet boundary tests;
-- exact totals beyond 256 hits;
-- facet counts over the complete result set;
-- cursor pagination with deterministic tie-breakers;
-- failed build leaves old Gen2 alias active;
-- successful build atomically activates validated generation.
+- neutral mapping/source goldens cover keyword, text, integer, long, decimal, boolean, date-time,
+  geo-point, optional extraction and a dotted dynamic path;
+- policy validation proves complete searchable-text coverage and typed rejection of duplicate/foreign
+  handles without adding speculative validation for impossible Scala states;
+- source compilation proves canonical scalar/geo values, absent optional fields, nested object shape,
+  identity reuse and declaration order;
+- policy/mapping/document changes alter the appropriate contract or generation identity, while repeated
+  compilation of identical input is byte-stable;
+- a neutral fixture proves the generic compiler; BeautyQ tests prove the concrete five text fields,
+  dynamic attributes and exact declaration identities;
+- `BeautyQSearchPlanCompiler` and the generation artifact consume the same Elasticsearch contract
+  contribution value; no handwritten final fingerprint exists.
 
-### Brick 5B — Provider and service groups/carousels
+#### Forbidden
+
+- importing or copying Gen1 Elasticsearch interpreters;
+- a BeautyQ name, field list or default in `search-gen2-elasticsearch`;
+- a domain-owned manual fold over `VariantSearchDocumentGen2`;
+- deriving analyzer policy from `FieldSemantic`, public names or enum inventory;
+- raw final fingerprint construction or a second mapping/source inventory;
+- placeholder `FullSearchResult`, client or lifecycle APIs not executed by 5A.
+
+### Brick 5B — Pure baseline-page request/result and cursor protocol
+
+#### Purpose
+
+Compile a cursor-bound validated plan into one deterministic ES request and decode its response into the
+baseline page (hits, total, facets and next cursor). Keep the slice pure so semantic errors are separated
+from transport/resource failures; the final `FullSearchResult` aggregate is introduced only when 5D
+adds its real group component.
 
 #### Diff
 
-- implement group request compilation with representative data and declared metrics;
-- decode `GroupResult` including count, representative, best score and optional proximity;
-- implement deterministic ordering from the accepted group policy;
-- project groups into BeautyQ provider/service carousels.
+In `search-gen2-elasticsearch` add:
 
-A dedicated secondary ES query is allowed if it gives clearer exact semantics than one complex aggregation request.
+- the role-specific hit, exact/qualified total, facet, page and backend-diagnostic result types actually
+  returned by this decoder; do not introduce an empty group slot or Qdrant placeholder;
+- the query-policy portion consumed by this slice: weighted searchable fields, text operator, explicit
+  geo scoring parameters, exact-total requirement and default relevance/tie-break policy;
+- `BoundSearchPlan -> Elasticsearch request` compilation for residual text, terms, numeric/date ranges,
+  interval overlap, geo signal/filter/sort, explicit field sorts, exact totals and requested facets;
+- stable aggregation names derived from typed facet IDs, never normalized field paths;
+- a typed Elasticsearch `search_after` codec carried inside Brick 4G-B's opaque backend cursor state;
+- response decoding for source hits, scores, exact total/relation, terms/range/interval facet buckets,
+  requested-section completeness and the next page cursor;
+- typed errors for unsupported plan elements, malformed cursor state, malformed hits, missing requested
+  sections, unknown aggregation IDs and non-exact totals when policy requires exactness.
+
+In BeautyQ wiring:
+
+- extend `BeautyQElasticsearchPolicy` only with the ranking/query choices actually consumed here;
+- compile only `CompiledBeautyQSearchPlan.boundPlan`, never a raw or independently reconstructed plan;
+- decode the initial BeautyQ baseline result without groups or public HTTP projection.
+
+Pagination uses deterministic sort tuples and the declared identity as the final tie-breaker. The request
+fetches enough information to determine whether a next cursor exists; the next cursor is issued from the
+same `BoundSearchPlan`, never from independent plan/hash facts.
+
+#### Proof
+
+- exact JSON goldens for text, terms, every bound shape, interval overlap and the three independent geo
+  operations;
+- facet aggregation/decoder fixtures for terms, number ranges and interval-overlap buckets, including
+  half-open boundaries and a missing/unknown requested section;
+- default and explicit sorts end in the identity tie-breaker and round-trip a real
+  `issue -> opaque transport -> fromTransport -> bind -> search_after` sequence;
+- changed query/filter/sort/facet/page size/contract contribution rejects an old cursor through the
+  existing typed plan-identity boundary;
+- result decoding preserves exact totals beyond the hit window and facet counts independently of the
+  returned page size in fixture responses;
+- neutral compiler/decoder fixtures plus BeautyQ policy goldens; no mutable call-count spies.
+
+#### Forbidden
+
+- compiling an unbound `SearchPlan` or interpreting cursor envelope details in the domain module;
+- offset/from pagination;
+- coordinate presence implicitly enabling geo scoring/filter/sort;
+- counting facets from returned hits;
+- silently dropping unsupported constraints/facets or missing response sections;
+- live client/lifecycle code or group/carousel behavior.
+
+### Brick 5C — Physical index lifecycle and independent baseline service
+
+#### Purpose
+
+Execute the accepted 5A/5B artifacts against an independent Gen2 Elasticsearch resource without moving
+semantic compilation into transport code.
+
+#### Diff
+
+- add or extract a minimal neutral JSON/NDJSON Elasticsearch client; carry only transport concerns and
+  its focused client tests, with no Gen1 interpreter or BeautyQ policy dependency;
+- compile bulk ingestion from the 5A generation artifact and record its complete generation identity and
+  build metadata in the physical index;
+- implement `build -> ingest -> refresh -> validate mapping/metadata/count/fingerprint -> atomic alias
+  switch`, plus explicit previous-generation retention policy;
+- implement baseline request execution by sending the 5B request and passing the raw response back to the
+  5B decoder;
+- compose the repository-backed BeautyQ materializer, independent Gen2 resource names, lifecycle and
+  baseline service in `beautyq-search-gen2-wiring` without adding a V1 route or production fan-out.
+
+Physical generation reuse requires the complete ES generation identity. A matching source fingerprint
+alone is insufficient. Alias mutation is one atomic Elasticsearch aliases operation performed only after
+every validation succeeds.
+
+#### Proof
+
+- scripted client contract tests prove endpoint/method/body semantics and typed failures;
+- lifecycle tests prove failed create/ingest/validation leaves the old alias untouched and successful
+  validation performs one atomic remove/add activation;
+- generation mismatch creates a new physical index; complete identity match permits reuse;
+- a resource-backed default-local Elasticsearch fixture proves mapping, bulk ingestion, exact totals
+  beyond 256 documents, complete-set facet counts, cursor pagination and alias activation; it cancels
+  with a useful reason when the external resource is unavailable;
+- focused BeautyQ composition proves materialization -> generation -> activation -> baseline search with
+  separate Gen2 names. Coordinator/user full verification remains required for production graph/readiness.
+
+#### Forbidden
+
+- alias activation before count/fingerprint/mapping validation;
+- in-place mutation of the active physical index;
+- a boolean environment gate for the normal local resource-backed test;
+- whole-plugin test modules, Gen1 resource names or V1 request fan-out;
+- recomputing mapping, source, request or response semantics inside the lifecycle service.
+
+### Brick 5D — Exact provider/service groups and carousels
+
+#### Purpose
+
+Complete the Elasticsearch-owned baseline result with the explicit group semantics accepted by ADR §15.
+
+#### Diff
+
+- replace BeautyQ's intentionally empty pre-5D group policy with explicit provider/location and service
+  group requests using the canonical `Fields.*` handles;
+- compile representative projection, matching count, best score, optional declared geo metric, exactness
+  policy and complete deterministic order tuple;
+- decode typed `GroupResult` values and precision metadata;
+- project the two results into BeautyQ provider/service carousel values;
+- use a dedicated secondary ES group query when it gives a clearer exact contract than one combined
+  aggregation request.
 
 #### Forbidden
 
 - pretending a plain `terms` bucket contains representative document data;
-- silently accepting approximate counts where exact fixture policy is required;
-- moving group ownership to in-memory hit-window recounting.
+- silently accepting approximate counts where `RequireExact` is declared;
+- recounting groups from the returned hit window;
+- implicitly adding geo ordering because a location or geo signal exists;
+- recreating provider/service field handles or maintaining a parallel group ID list.
 
 #### Proof
 
-- representative document fixture tests;
-- matching count fixtures with more than the hit window;
-- best-score and stable-key order fixtures;
-- geo-active group ordering fixture when proximity is declared;
-- group precision is surfaced.
+- representative document fixtures;
+- matching counts with more documents than the hit window;
+- best-score, matching-count and stable-key ordering fixtures;
+- geo-active ordering only when the group request declares the proximity metric/order;
+- precision surfaced in the decoded result and BeautyQ projection;
+- real Elasticsearch fixture for the selected group implementation.
+
+### Brick 5 closeout gate
+
+Brick 5 is complete only when:
+
+1. the BeautyQ authoring surface consists of one compact ES policy over canonical `Fields.*` plus
+   operational resource/retention configuration;
+2. generic modules contain no BeautyQ names and neutral fixtures cover mapping, source, request, result,
+   cursor and lifecycle mechanics;
+3. one executable policy supplies every mapping/query choice and its contract contribution; generated
+   mapping, trace/goldens and generation identity are derived views;
+4. the independent BeautyQ baseline returns hits, exact total, facets, groups and next cursor from ES;
+5. failed builds cannot change the active alias and physical reuse requires complete generation identity;
+6. Gen1 runtime/routes/resources remain untouched.
 
 ### Expected diff shape
 
 ```text
-search-gen2-elasticsearch/src/main/...              new compiler/decoder/lifecycle
-search-gen2-elasticsearch/src/test/...              golden + integration tests
-beautyq-search-gen2-wiring/...                      ES service/projection
+search-gen2-elasticsearch/src/main/...              policy + pure compilers + client/lifecycle
+search-gen2-elasticsearch/src/test/...              neutral goldens + lifecycle/resource proofs
+beautyq-search-gen2-wiring/...                      BeautyQ ES policy/composition/projection
+beautyq-search-gen2-wiring/src/test/...             concrete policy + baseline/group scenarios
 ```
 
 ### Rollback
@@ -1135,94 +1328,30 @@ beautyq-model: add stable service and category codes
 beautyq-search-gen2: add domain root and variant fields
 beautyq-search-gen2: materialize consistent repository snapshots
 search-gen2: add query plan algebra and BeautyQ intent compilation
-search-gen2-es: implement full baseline vertical
-search-gen2-es: implement typed group projections
+search-gen2-es: compile deterministic index generations
+search-gen2-es: compile baseline requests and full results
+search-gen2-es: activate validated index generations
+search-gen2-es: implement exact group projections
 search-gen2-qdrant: implement filtered candidate vertical
 beautyq-search-gen2: add no-harm supplement orchestration
 beautyq-search-gen2: add independent application composition
 search: cut over to Gen2 and remove Gen1
 ```
 
-## Current handoff — Brick 4G-B
+## 4G-B closeout and next boundary
 
-Completed work is summarized once in **Current implementation state** above. Exact accepted API and
-supported shapes live in the technical specification; commit chronology is available from Git and is
-not repeated here.
+Brick 4G-B now owns the generic cursor ingress/binding boundary. `SearchCursor.fromTransport` carries an
+untrusted token; `SearchCursorEnvelope.bind` derives identity from the executable document declaration,
+checks the versioned envelope and returns one framework-owned `BoundSearchPlan`. The opaque
+`PlanContractFingerprint` is composed from the declaration, explicit contract version and a unique-ID
+typed compatibility map; BeautyQ currently supplies no extra contribution. Its compiler keeps the
+public `(request, intent)` API and returns the bound value. Candidate eligibility and trace consume that
+bound pagination context, with real transport round-trip and mismatch proofs.
 
-### Source-confirmed starting state
+The typed contribution map is the additive cursor/execution-compatibility seam for Brick 5; complete
+physical index/collection reuse remains a `GenerationIdentity` decision rather than a handwritten hash.
 
-- `SearchCursorEnvelope` already owns versioned encoding, strict decoding, `PlanIdentityHash`
-  comparison and opaque backend-state carriage, with two neutral plan shapes in
-  `SearchCursorEnvelopeSpec`.
-- `SearchCursor.fromOpaque` is `private[gen2]`. Consequently the BeautyQ public-input boundary cannot
-  construct a cursor received from transport; its focused tests can only use `cursor = None`.
-- No production BeautyQ `CanonicalPlanView` or contract-fingerprint declaration exists.
-- `BeautyQSearchPlanCompiler.compile(request, intent)` currently passes `request.page` through without
-  validating its cursor. `BeautyQCandidatePlanCompiler` infers first page directly from cursor presence,
-  so its end-to-end tests cannot yet prove `NotFirstPage` from a decoded valid cursor.
-- `search-gen2-elasticsearch`, `search-gen2-qdrant` and `beautyq-search-gen2-eval` still contain only
-  module markers. Brick 4G-B must not pretend backend or runtime work exists.
-
-### One-commit objective
-
-Close cursor ingress and plan binding before any backend compiler is added:
-
-```text
-untrusted transport cursor
-→ validated BeautyQ request
-→ compiled SearchPlan
-→ framework-owned PlanIdentity/cursor validation
-→ one read-only bound compilation result
-→ candidate decision and trace
-```
-
-The generic boundary owns cursor carriage, canonical contract-fingerprint derivation, envelope
-decode/identity comparison and the unforgeable plan/cursor binding. BeautyQ declares only the explicit
-contract version at `BeautyQSearchDeclarations.variants.plan` and composes the generic kernel from
-`BeautyQSearchPlanCompiler.compile(request, intent)`; it must not implement a second codec, hash or
-identity projection.
-
-The final contract fingerprint must derive from the executable document declaration plus the explicit
-domain version. A handwritten final hash or a fingerprint reconstructed from a rendered tree is a
-second authority. The derivation needs a neutral document proof and must leave a clear additive seam for
-Brick 5's backend mapping policy to contribute to the contract identity.
-
-The generic cursor result must bind the exact validated plan, its `PlanIdentity`/hash and optional
-decoded backend state. Its construction is framework-owned and read-only. Cursor issuance must use that
-same bound identity; APIs that independently accept a plan and an arbitrary prevalidated cursor result
-are not accepted.
-
-`BeautyQSearchPlanCompiler.compile(request, intent)` remains the only production BeautyQ construction
-path and keeps its exact public parameters. Cursor failure becomes a typed compiler error. The compiled
-result exposes the bound pagination context needed by later backend compilation, and
-`BeautyQCandidatePlanCompiler` derives first-page eligibility from that context. A real issued,
-transport-carried and validated second-page cursor must produce `NotFirstPage` without re-parsing the
-envelope or re-evaluating candidate policy.
-
-### Required proof
-
-- neutral contract-fingerprint derivation changes on every document-structure component and explicit
-  version, while remaining independent of rendered diagnostic text;
-- neutral cursor ingress/issue/validation round trip plus the existing malformed/version/hash/state and
-  every-identity-component mismatch matrix;
-- compile-negative proof that the bound plan/cursor result cannot be constructed, copied or subclassed
-  outside its framework owner;
-- BeautyQ first-page compile remains unchanged;
-- a cursor issued from the first compiled context can enter through the public request, validate against
-  the second compiled plan and preserve opaque backend state;
-- that exact second-page result drives candidate `NotFirstPage` and deterministic trace evidence;
-- changed query, filters, sort, facets, page size or contract version returns the typed cursor error;
-- `BeautyQSearchDeclarations.structure` derives the declared cursor-contract version from the canonical
-  root without duplicating the computed fingerprint.
-
-### Explicit non-scope
-
-No Elasticsearch/Qdrant JSON, `search_after` interpretation, signing/HMAC, route/Tapir codec, DI,
-lifecycle, retrieval knobs, orchestration or eval work. The backend state remains opaque and
-unauthenticated at this layer; Brick 5 owns its typed Elasticsearch representation and deterministic
-tie-breakers. Do not add offsets, a second page-size authority, per-call cursor policy/fingerprint
-substitution, or stable labels unrelated to a real compatibility boundary.
-
-On acceptance, mark 4G-B complete and make Brick 5A the active brick in **Current implementation
-state** in the same commit. Update the technical specification to the exact implemented cursor API and
-keep onboarding to the minimal domain declaration/composition path.
+The next reviewable unit is Brick 5A. Its acceptance surface is the technical specification §11 and
+the Brick 5A section above: pure ES index policy, mapping/source compilation, contract contribution and
+one bound generation artifact. Do not pull query/result/cursor compilation (5B), live client/lifecycle
+(5C), groups/carousels (5D), Qdrant retrieval (6), route/DI wiring or evaluation into 5A.

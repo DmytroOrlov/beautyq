@@ -14,6 +14,7 @@ sealed trait BeautyQSearchPlanCompileError
 object BeautyQSearchPlanCompileError {
   final case class PublicInputResolutionFailed(error: PublicPlanInputResolutionError[PublicFieldName, PublicSortName]) extends BeautyQSearchPlanCompileError
   final case class PlanCompilationFailed(error: SearchPlanCompilationError) extends BeautyQSearchPlanCompileError
+  final case class CursorValidationFailed(error: SearchCursorError) extends BeautyQSearchPlanCompileError
 }
 
 /** Thin composition layer combining an already-validated public request
@@ -29,11 +30,22 @@ object BeautyQSearchPlanCompileError {
   * and derives one final notices vector from that prepared resolution's own applied filters - never from
   * a post-assembly plan - then assembles and validates the final `SearchPlan`. The value returned as
   * `CompiledBeautyQSearchPlan.plan` is exactly `SearchPlan.validate`'s own return value; nothing copies
-  * or mutates it afterward. A `DefaultBrowse` result has
+  * or mutates it afterward. Gate 4 binds that plan to the declaration-derived cursor identity before
+  * exposing it through the compiler-owned `boundPlan`; later pagination code consumes that binding rather
+  * than inferring page state from raw cursor presence. A `DefaultBrowse` result has
   * [[BeautyQSearchPlanPolicy.defaultBrowseNotice]] among the notices assembled into the plan before that
   * validation; every other mode assembles no extra notice.
   */
 object BeautyQSearchPlanCompiler {
+
+  private lazy val canonicalPlanView: CanonicalPlanView[VariantSearchDocumentGen2] =
+    CanonicalPlanView(
+      PlanContractFingerprint.compute(
+        BeautyQSearchDeclarations.variants.plan.contractVersion,
+        BeautyQSearchDeclarations.variants.document,
+        contributions = Map.empty,
+      )
+    )
 
   private object FilterView extends PublicFilterPlanView[DecodedPublicFilter, VariantSearchDocumentGen2, PublicFieldName] {
     def name(value: DecodedPublicFilter): PublicFieldName = value.publicName
@@ -87,20 +99,30 @@ object BeautyQSearchPlanCompiler {
 
             prepared.assemble(notices) match {
               case Left(errors) => Left(wrap(errors)(BeautyQSearchPlanCompileError.PlanCompilationFailed.apply))
-              case Right(plan)  => Right(new CompiledBeautyQSearchPlan(plan, mode, intent.canonicalSemanticLabels, intent.matchedRuleIds))
+              case Right(plan)  =>
+                SearchCursorEnvelope.bind(plan, canonicalPlanView) match {
+                  case Left(error)    => Left(single(error)(BeautyQSearchPlanCompileError.CursorValidationFailed.apply))
+                  case Right(boundPlan) => Right(new CompiledBeautyQSearchPlan(boundPlan, mode, intent.canonicalSemanticLabels, intent.matchedRuleIds))
+                }
             }
         }
     }
 
   /** Final read-only result owned by this compiler. A private constructor and no companion object
-    * make the compiler the only production construction path; consumers can only inspect the values. */
+    * make the compiler the only production construction path; the bound plan/cursor context is the
+    * single source for both the exposed plan and later pagination state. */
   final class CompiledBeautyQSearchPlan private[BeautyQSearchPlanCompiler] (
-    val plan: SearchPlan[VariantSearchDocumentGen2],
+    val boundPlan: BoundSearchPlan[VariantSearchDocumentGen2],
     val mode: BeautyQSearchPlanMode,
     val canonicalSemanticLabels: Vector[CanonicalSemanticLabel],
     val matchedRuleIds: Vector[IntentRuleId],
-  )
+  ) {
+    def plan: SearchPlan[VariantSearchDocumentGen2] = boundPlan.plan
+  }
 
   private def wrap[A, B](errors: NonEmptyErrors[A])(f: A => B): NonEmptyErrors[B] =
     NonEmptyErrors.fromHead(f(errors.head), errors.tail.map(f))
+
+  private def single[A, B](value: A)(f: A => B): NonEmptyErrors[B] =
+    NonEmptyErrors.fromHead(f(value), Vector.empty)
 }

@@ -427,6 +427,7 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
       val expectedPlan =
         Vector(
           "    └── plan",
+          "        ├── contract-version: beautyq-variant-search-v1",
           "        ├── source-precedence",
           "        │   ├── [0] PublicRequest",
           "        │   └── [1] ParsedIntent",
