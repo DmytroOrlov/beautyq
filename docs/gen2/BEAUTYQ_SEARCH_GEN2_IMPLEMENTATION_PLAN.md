@@ -11,6 +11,8 @@ Normative companion documents:
 - [semantics ADR](BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md) for accepted business/search decisions;
 - [evidence-backed Gen1 review](BEAUTYQ_SEARCH_GEN2_REVIEW.md) for the source-confirmed problems Gen2
   addresses;
+- [Gen2 promise audit](BEAUTYQ_SEARCH_GEN2_PROMISE_AUDIT.md) for the cross-cutting 5C→5D evidence,
+  ownership, invariant and deviation gate;
 - [domain authoring principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md) for the repository-wide
   business-policy, reuse, and executable-source-of-truth acceptance contract.
 
@@ -21,8 +23,11 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress
-- **Active brick:** Brick 5C — physical index lifecycle and independent baseline service, built on the
-  accepted 5B prepared-request, lifecycle-authorization and typed-response boundary.
+- **Active gate:** Gen2 promise audit between Bricks 5C and 5D. Brick 5C is implementation-complete and
+  its acceptance evidence is closed and owner-accepted: the promise audit's D-05 retains the owner's
+  full-suite run (2,097 tests, 0 failed/canceled, 2026-07-16 — the local resource spec executed and
+  passed inside it) plus two reproduced raw-output runs of the unchanged communication spec against
+  8.14.3. Brick 5D must not start until the audit's remaining `fix before 5D` decisions close.
 - **Completed bricks:**
   - Brick 0 — module DAG and firewall
   - Brick 1 — generic field/document declaration kernel
@@ -85,18 +90,20 @@ summaries must remain short and point here.
     generation references, and `BaselineSearchPage` with bounded hit decoding, object sources, typed term
     facets, precision evidence and retained diagnostics. The accepted focused boundary is ready for 5C;
     physical lifecycle ownership remains a separate brick.
-  - Brick 5C implementation is present under review: validated synchronous transport, canonical persisted
+  - Brick 5C implementation is present: validated synchronous transport, canonical persisted
     generation metadata/name, bounded bulk ingestion, strict reuse validation, atomic alias activation,
     lifecycle authorization, generic baseline execution and thin BeautyQ composition. Pure/scripted
-    focused tests pass; the default-local full resource proof is currently canceled because localhost
-    Elasticsearch is unavailable, so the brick remains active.
+    focused tests pass; the original local-resource run was canceled, while a later independent audit
+    reported the exact 257-document test green and the requested unchanged rerun is retained in the
+    promise audit's D-05.
 
   Compact Brick 5 status:
 
   ```text
   5A completed
   5B completed
-  5C active
+  5C implementation and resource proof complete; audit-gate acceptance pending
+  promise audit active
   5D planned
   ```
 
@@ -123,15 +130,21 @@ summaries must remain short and point here.
   through the real declaration and compiled plan with no manual encoder or hand-maintained parallel request.
   Response decoding and cursor pagination are proved by the neutral Elasticsearch decoder/lifecycle fixtures.
   ```
-- **Authoring facade:** `BeautyQSearchDeclarations` is the canonical Gen2 business entry point.
+- **Contract authoring facade:** `BeautyQSearchDeclarations` is the canonical backend-neutral contract
+  entry point.
   Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
-  and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
-  reverse-depend from the contract layer.
-- **Next action:** review 5C and run its default-local full resource proof with Elasticsearch available;
-  after that proof passes, close 5C and activate 5D. No architecture decision is delegated to an
-  implementation agent.
-- **Blockers:** local Elasticsearch availability for the required 5C resource proof; pure/scripted focused
-  verification is green.
+  and `variants.plan`. The promise audit found that the full business composition entry point over
+  contract, materialization and backend policy is still missing; add it in the downstream wiring module
+  without reversing the DAG or copying policy.
+- **Next action:** close the promise audit's pre-5D decisions: materialization trusted-result ownership and
+  identity uniqueness; one wiring-owned composition facade; lean current-vs-target docs; removal of the
+  non-executable retention-policy parameter; and the count-diagnostic/order-wording corrections. The
+  Elasticsearch evidence item is already closed and owner-accepted (audit D-05). Then close the audit and
+  activate 5D. No architecture decision is delegated to an implementation agent.
+- **Blockers:** the pre-5D structural/authoring decisions in
+  `BEAUTYQ_SEARCH_GEN2_PROMISE_AUDIT.md`. Test greenness is closed and owner-accepted: the owner's
+  full-suite run (2,097 tests, 0 failed/canceled) is retained in the audit's D-05, alongside two
+  reproduced runs of the unchanged local Elasticsearch communication spec.
 
 ### Open reusable-framework gaps
 
@@ -202,7 +215,7 @@ The next coordinator must preserve this distinction:
 3. `variants.intent` and `SearchPlan` describe requested operations over document fields and are not
    another stored copy of the catalog.
 
-`BeautyQSearchDeclarations` is one business-visible facade with two top-level branches:
+`BeautyQSearchDeclarations` is the backend-neutral contract root with two top-level branches:
 
 ```text
 BeautyQSearchDeclarations
@@ -231,11 +244,13 @@ requirements remains in the independent matching phase; the Gen2-only NearUser r
 semantic overlay with a hair-removal exclusion. Neither branch constructs a `SearchPlan`, resolves
 geo origins, applies precedence or talks to a backend.
 
-The canonical root intentionally stops at the contract-module boundary. Projection and materialization
+The contract root intentionally stops at the contract-module boundary. Projection and materialization
 are implemented in `beautyq-search-gen2-materialization`, whose next files to read are
 `BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and `BeautyQVariantProjectionGen2`;
 they consume this root but cannot be nested
-under it without reversing the module DAG. This is a dependency boundary, not a second business root.
+under it without reversing the module DAG. The full business/reviewer composition facade is still
+missing and is a pre-5D audit correction owned by downstream wiring; it must reference these exact
+values rather than copy them or reverse the module DAG.
 
 The implementation must not begin by rebuilding catalog topology as an isolated vertical. Catalog
 cannot determine document joins, normalization, text/embedding composition, price-overlap semantics,
@@ -611,8 +626,8 @@ Declare:
 
 Brick 2 is implemented as the executable root shown above. `variants.Fields` owns 24 required static
 fields and 20 optional dynamic attribute fields: 44 handles in total, with `variantId` used once as
-the document identity and the remaining 43 handles preserved in declaration order as ordinary
-fields. The root contains no request, intent, plan, facet, group, response, backend or quality
+the document identity and the remaining 43 handles exposed as ordinary fields in static declaration
+order followed by dynamic-family order. The root contains no request, intent, plan, facet, group, response, backend or quality
 placeholder branches. These concrete counts refine the delivered proof without changing the planned
 dependency order after `Fields`.
 
@@ -1018,8 +1033,9 @@ same `BoundSearchPlan`, never from independent plan/hash facts.
 
 Execute the accepted 5A/5B artifacts against an independent Gen2 Elasticsearch resource without moving
 semantic compilation into transport code. This is where complete live Elasticsearch acceptance - backend
-limits such as the `_id` size cap and configured analyzer/mapping availability - is owned; Brick 5A
-validates only document shape (`EmptyDocumentId`/`ValueEncoding`).
+limits such as the `_id` size cap and acceptance of the emitted mapping with BeautyQ's built-in
+`standard` analyzer - is owned; Brick 5A validates only document shape
+(`EmptyDocumentId`/`ValueEncoding`). Custom-analyzer settings/availability remain a D-09 pre-runtime gap.
 
 #### Diff
 
@@ -1028,7 +1044,8 @@ validates only document shape (`EmptyDocumentId`/`ValueEncoding`).
 - compile bulk ingestion from the 5A generation artifact and record its complete generation identity and
   build metadata in the physical index;
 - implement `build -> ingest -> refresh -> validate mapping/metadata/count/fingerprint -> atomic alias
-  switch`, plus explicit previous-generation retention policy;
+  switch`, retaining previous validated generations for pinned cursors; no configurable retention policy
+  exists until a second executable behavior is designed;
 - implement baseline request execution by sending the 5B request and passing the raw response back to the
   5B decoder;
 - compose the independent Gen2 resource names, lifecycle and baseline service in
@@ -1100,7 +1117,7 @@ Complete the Elasticsearch-owned baseline result with the explicit group semanti
 Brick 5 is complete only when:
 
 1. the BeautyQ authoring surface consists of one compact ES policy over canonical `Fields.*` plus
-   operational resource/retention configuration;
+   operational resource configuration and the fixed pinned-cursor-safe retention behavior;
 2. generic modules contain no BeautyQ names and neutral fixtures cover mapping, source, request, result,
    cursor and lifecycle mechanics;
 3. one executable policy supplies every mapping/query choice and its contract contribution; generated
