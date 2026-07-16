@@ -66,10 +66,33 @@ final class ElasticsearchGenerationLifecycleSpec extends AnyWordSpec {
       val generation = compiledGeneration
       val setup = creationSetup(generation, liveCount = 3L)
       val client = new ScriptedClient(setup.provisionExchanges :+ Delete(s"/${setup.name}", Right(())))
-      setup.lifecycle(client).activate(generation) match {
-        case Left(_: ElasticsearchGenerationLifecycleError.DocumentCountMismatch) => assert(client.isComplete)
-        case other => fail(s"expected count mismatch and exact cleanup, got $other")
-      }
+      assert(setup.lifecycle(client).activate(generation) ==
+        Left(ElasticsearchGenerationLifecycleError.LiveDocumentCountMismatch(expected = 2L, metadata = 2L, live = 3L)))
+      client.assertComplete()
+    }
+
+    "report a persisted metadata count mismatch without inventing a live count" in {
+      val generation = compiledGeneration
+      val persisted = ElasticsearchPersistedGenerationIdentity.fromTrusted(generation.identity)
+      val id = ElasticsearchGenerationNaming.generationId(persisted)
+      val name = ElasticsearchGenerationNaming.physicalIndexName("books_", persisted).map(_.value).getOrElse(fail("expected name"))
+      val metadata = ElasticsearchGenerationMetadata(
+        ElasticsearchGenerationMetadataSchemaVersion.Current,
+        id,
+        Instant.parse("2026-01-01T00:00:00Z"),
+        documentCount = 3L,
+        persisted,
+      )
+      val mapping = generation.mapping.json.asObject.getOrElse(fail("expected mapping"))
+      val mappingResponse = Json.obj(name -> Json.obj("mappings" -> Json.fromJsonObject(mapping.add("_meta", ElasticsearchGenerationMetadataCodec.encode(metadata)))))
+      val client = new ScriptedClient(Vector(Get(s"/$name/_mapping", Right(mappingResponse))))
+      val batching = ElasticsearchBulkBatchingPolicy.create(10, 10000L).getOrElse(fail("expected batching"))
+      val config = ElasticsearchGenerationLifecycleConfig.create("books", "books_", ElasticsearchGenerationRetentionPolicy.KeepAll, batching).getOrElse(fail("expected config"))
+      val lifecycle = new ElasticsearchGenerationLifecycle(client, config, Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC))
+
+      assert(lifecycle.activate(generation) ==
+        Left(ElasticsearchGenerationLifecycleError.MetadataDocumentCountMismatch(expected = 2L, metadata = 3L)))
+      client.assertComplete()
     }
 
     "retain a validated generation when alias activation fails" in {

@@ -11,7 +11,8 @@ import scala.deriving.Mirror
   * capabilities, identity selection, and dynamic definition inventories; this registry derives every
   * mechanical piece - logical codecs via [[SearchValueCodec]] givens, default [[SearchFieldKind]] via
   * [[DefaultSearchFieldKind]], [[FieldPath]]/default [[FieldId]]/default [[FieldSemantic]] via the same
-  * direct-selector macro [[field]] already uses, required/optional extraction, declaration order,
+  * direct-selector macro [[field]] already uses, required/optional extraction, deterministic
+  * static-then-dynamic field order,
   * identity exclusion, and document construction.
   */
 def searchFields[Document](documentId: String): SearchFieldDeclarations[Document] =
@@ -52,7 +53,9 @@ final class SearchFieldDeclarations[Document] private[contract] (documentId: Str
   /** Immutable snapshot of every dynamic field declared so far, in declaration order. */
   def dynamicFields: Vector[SearchField[Document, ?]] = dynamicBuffer.toVector
 
-  /** Always `staticFields ++ dynamicFields`. */
+  /** Static declaration order followed by dynamic-family declaration order; always
+    * `staticFields ++ dynamicFields`.
+    */
   def allFields: Vector[SearchField[Document, ?]] = staticFields ++ dynamicFields
 
   /** Declares a direct field whose [[SearchFieldKind]] is derived from [[DefaultSearchFieldKind]]
@@ -137,7 +140,8 @@ final class SearchFieldDeclarations[Document] private[contract] (documentId: Str
 
   /** Requires `identity` to be one of this registry's own registered static handles (by reference),
     * freezes the registry, and delegates to [[SearchDocumentDeclaration.validate]] with every other
-    * static field plus every dynamic field, in declaration order, as the ordinary field list.
+    * static field in static declaration order followed by every dynamic field in dynamic-family order,
+    * as the ordinary field list.
     */
   def validateDocument[Id](identity: SearchField[Document, Id]): Either[SearchDeclarationErrors, SearchDocumentDeclaration[Document, Id]] = {
     if (!staticFields.exists(_ eq identity)) {

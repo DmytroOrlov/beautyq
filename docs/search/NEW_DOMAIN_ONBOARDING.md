@@ -228,7 +228,8 @@ mechanical, tautological evidence is derived.
   `Long`, `BigDecimal`, `Boolean`, `java.time.Instant`, and `GeoPoint` out of the box;
 - a dynamic map field's path/id/semantic (`<mapPrefix>.<definitionCode>`) and its optional extraction -
   including a dynamic family declared `.text` (searchable), not only `.keyword` or a numeric kind;
-- field declaration order and the static/dynamic registries built from it;
+- deterministic field order: static declaration order followed by dynamic-family declaration order,
+  with both registries derived from those declarations;
 - exhaustive document-product coverage (`field`/`dynamicMap`/explicit `ignore`), identity exclusion,
   ordinary-field ordering and validation;
 - one deterministic structural tree and renderer.
@@ -366,21 +367,19 @@ this authoring style at full scale: it declares 44 fields (24 direct, 20 dynamic
 families) using only selectors, kind choices, and capabilities, with every mechanical piece above
 derived by the registry.
 
-For a business review, start at `BeautyQSearchDeclarations.scala` and read in this order:
+For a complete implemented business review, start at `BeautyQSearchGen2` in the wiring module. It links
+directly to the canonical contract, materialization, plan/group and Elasticsearch owners without copying
+their policy. Follow its `contract` branch into `BeautyQSearchDeclarations`, then read
 `catalog.topology`, `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`, and
-`variants.plan`. Then read `BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and
-`BeautyQVariantProjectionGen2` in the
-materialization module for the SQL snapshot, joins, invariants, and document-value policy. The latter
-files are deliberately outside the root because the module DAG must keep the generic contract layer
-independent of repositories and database effects.
+`variants.plan`.
 
-Before assuming a value type or document/snapshot shape is unsupported, check technical specification
-§§7.1 and 9.4. Current open gaps and their future owner are in the implementation plan.
+Before assuming a value type or document/snapshot shape is supported, check technical specification
+§§7.1 and 9.4. Delivery status and exact next tasks are in the implementation plan.
 
 **Authoring hazard when nesting a `Fields` object under a domain root:** if the enclosing root object
 also aliases `Fields.document`, keep every dependency either inside `Fields` or outside the enclosing
-root; do not capture a sibling root value. The unsupported cycle is tracked as G-8 in the implementation
-plan, with the supported shape specified in technical specification §7.1.
+root; do not capture a sibling root value. This cyclic shape is unsupported; see technical specification
+§7.1.
 
 ### Candidate-policy example (Brick 4G-A)
 
@@ -463,12 +462,13 @@ val index: ElasticsearchIndexPolicy[WidgetDocument, WidgetId] =
 ```
 
 Everything else is derived by `search-gen2-elasticsearch`: the declaration-driven mapping and `_id`/
-`_source` compilation (traversing `declaration.allFields` in declared order, never a domain-owned fold),
+`_source` compilation (traversing `declaration.allFields` in its deterministic contract order, never a
+domain-owned fold),
 and the framework-owned `ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` (always
 `.Current` - `ElasticsearchIndexPolicy.unsafeFrom` does not accept either as a parameter, so a domain
 cannot substitute one). A domain never recreates a field handle or mapping/source traversal; the
-framework normalizes analyzer assignments into document declaration order - vector order is not a
-separate business policy.
+framework normalizes analyzer assignments into the same static-then-dynamic document order - vector
+order is not a separate business policy.
 
 ### Elasticsearch search-policy example (Brick 5B)
 

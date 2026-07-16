@@ -7,7 +7,7 @@ import leaderboard.search.gen2.core.materialization.{CanonicalFingerprint, Canon
   * duplicate ordering. The generic kernel owns row framing, token emission and sorting; this object
   * owns only which persisted values participate in each BeautyQ row.
   */
-private[materialization] object BeautyQSnapshotCanonicalRows {
+object BeautyQSnapshotCanonicalRows {
   given CanonicalSourceRows[Category] = CanonicalSourceRows("category")(category)
   given CanonicalSourceRows[Service] = CanonicalSourceRows("service")(service)
   given CanonicalSourceRows[ServiceVariantSchema] = CanonicalSourceRows("serviceVariantSchema")(schema)

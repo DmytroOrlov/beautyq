@@ -1,0 +1,39 @@
+package leaderboard.search.beautyq.gen2.wiring
+
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy}
+import leaderboard.search.beautyq.gen2.materialization.{
+  BeautyQSearchSnapshotSource,
+  BeautyQSnapshotCanonicalRows,
+  BeautyQVariantMaterializer,
+  BeautyQVariantProjectionGen2,
+}
+
+/** Navigation facade for the complete implemented BeautyQ Search Gen2 composition.
+  *
+  * Every member is a direct reference to its owning declaration or executable composition. This
+  * object owns no policy and grows only when another implementation branch becomes real.
+  */
+object BeautyQSearchGen2 {
+  val contract = BeautyQSearchDeclarations
+
+  object materialization {
+    val snapshot      = BeautyQSearchSnapshotSource
+    val canonicalRows = BeautyQSnapshotCanonicalRows
+    val projection    = BeautyQVariantProjectionGen2
+    val materializer  = BeautyQVariantMaterializer
+  }
+
+  object plan {
+    val policy   = BeautyQSearchPlanPolicy
+    val groups   = BeautyQSearchPlanPolicy.groups
+    val compiler = BeautyQSearchPlanCompiler
+  }
+
+  object elasticsearch {
+    val policy     = BeautyQElasticsearchPolicy
+    val resources  = BeautyQSearchGen2ResourceNames
+    val generation = BeautyQElasticsearchGeneration
+    val baseline   = BeautyQElasticsearchBaseline
+    val service    = BeautyQElasticsearchBaselineService
+  }
+}

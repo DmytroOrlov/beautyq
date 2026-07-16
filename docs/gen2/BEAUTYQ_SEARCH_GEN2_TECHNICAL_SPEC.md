@@ -1,8 +1,11 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; implementation pending**
+Status: **accepted architecture baseline; implemented through Brick 5C, with pre-5D cleanup active**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
+
+Sections explicitly labelled implemented describe current source. Remaining backend/runtime sections
+describe the accepted target and are sequenced by the implementation plan.
 
 ## 1. Goal
 
@@ -59,12 +62,13 @@ Gen2 does not initially require:
 
 ### 4.1 Separate normalized and denormalized branches
 
-The domain root exposes both:
+The backend-neutral contract root exposes both:
 
-- normalized catalog topology/snapshot policy;
+- normalized catalog topology;
 - denormalized search contract.
 
-They are visible under one facade but remain semantically distinct.
+The downstream facade also links the snapshot/materialization owners. These concerns are visible from
+one starting point but remain semantically and physically distinct.
 
 The architecture has three semantic views, but they are not three copies of the same data:
 
@@ -77,8 +81,8 @@ The single business-visible root therefore has two top-level branches, not three
 
 ```text
 BeautyQSearchDeclarations
-├── catalog       normalized source topology and snapshot requirements
-└── variants      document-centred search view, request, intent, plan and output policy
+├── catalog       normalized source topology
+└── variants      document-centred search view, request, intent and plan policy
 ```
 
 Stable business values such as `ServiceCode`, `CategoryCode`, IDs, money, duration and geo values
@@ -100,9 +104,10 @@ specification records only how BeautyQ applies it:
 - supplement eligibility;
 - response projection.
 
-The canonical entry is `BeautyQSearchDeclarations`, read as
-`catalog → variants.Fields → variants.document → variants.request → variants.intent → variants.plan`, followed by
-the owning materialization/projection and plan/backend declarations as they are implemented.
+The complete implemented composition entry is wiring-owned `BeautyQSearchGen2`. Its `contract` branch
+references `BeautyQSearchDeclarations`, read as
+`catalog → variants.Fields → variants.document → variants.request → variants.intent → variants.plan`;
+its other branches reference the owning materialization, plan and Elasticsearch objects directly.
 Executable declarations own policy; structure trees, inventories, traces, ledgers, and fingerprints
 are derived views. The framework derives only tautological evidence fixed by a selected type, direct
 selector, or declared inventory.
@@ -456,13 +461,12 @@ members are unsupported.
 Document derivation supports flat product types. Every product member must be a declared direct field,
 a declared dynamic family, or an explicit `.ignore`. Nested searchable sub-documents are a deliberate
 non-goal and direct nested selectors are rejected. Multi-valued fields such as `Vector[String]` have no
-generic kind, codec, extraction or filter/facet semantics yet; their live gap is tracked in the
-implementation plan.
+generic kind, codec, extraction or filter/facet semantics in the initial supported shape.
 
 A domain root may expose `val document = Fields.document`, but `Fields` must not capture sibling values
 from that same enclosing object. Such a capture can create a JVM reentrant singleton-initialization cycle
 and let the outer alias observe a default value. Inputs belong inside `Fields` or in a scope outside the
-root; the general API does not yet prevent the unsupported cyclic shape.
+root. The cyclic shape is unsupported; Gen2 does not add defensive wrappers for it.
 
 ### 7.2 Bounds and constraints
 
@@ -981,36 +985,23 @@ modes, semantic labels, matched rule IDs, user-location source, public names or 
 classification — those stay domain policy, applied by the domain compiler between `prepare` and
 `prepared.assemble(finalNotices)` (§10.2), never after `assemble`/`compile` already returned.
 
-## 8. BeautyQ Gen2 executable root
+## 8. BeautyQ Gen2 executable composition
 
-The root exists before backend implementation, not after runtime migration.
+The contract root and downstream composition facade have different module-safe ownership:
 
 ```text
-BeautyQSearchDeclarations
-├── catalog
-│   ├── topology
-│   ├── snapshotPolicy
-│   └── validation
-└── variants
-    ├── identity
-    ├── Fields
-    ├── document
-    ├── request
-    ├── intent
-    ├── plan
-    ├── facets
-    ├── groups
-    ├── response
-    ├── backends
-    │   ├── elasticsearch
-    │   └── qdrant
-    └── quality
-        ├── corpusRef
-        ├── metricSet
-        └── gates
+BeautyQSearchGen2
+├── contract -> BeautyQSearchDeclarations
+│   ├── catalog.topology
+│   └── variants (Fields, document, request, intent, plan/candidate policy)
+├── materialization (snapshot, canonical-row, projection and materializer owners)
+├── plan (policy, groups and compiler owners)
+└── elasticsearch (policy, resources, generation, baseline and service owners)
 ```
 
-The root references executable typed sections. Generated documentation is a view of this root.
+Every facade member is a direct reference to an implemented owner; it contains no copied policy and no
+placeholder Qdrant, public-response, quality or evaluation branch. Future implemented branches are added
+to this facade without making the backend-neutral contract module depend on downstream modules.
 
 ### 8.1 Stable identities
 
@@ -1136,6 +1127,12 @@ It has no SQL, repository, BeautyQ or backend dependency.
 Each domain owns its transaction-local SQL/source adapter and pure business projection. Consistent
 transaction acquisition is an adapter responsibility; the generic kernel
 does not prescribe PostgreSQL or Doobie.
+
+`VersionedSnapshot` and `MaterializedSearchDocuments` remain simple internal immutable Scala values.
+The canonical production snapshot source computes the source fingerprint with the snapshot it returns,
+and `SearchMaterializer` computes the projected fingerprint from the exact projected vector it returns.
+No untrusted production caller supplies these aggregates, so no additional defensive construction layer
+is part of the accepted architecture.
 
 `CanonicalSnapshotTuple` supports any product composed of `Vector[Entity]` members and
 `CanonicalSnapshot.Single[Entity]` members in any order. `Single` is a distinct wrapper so its typeclass
@@ -1292,8 +1289,8 @@ The Elasticsearch policy is one executable source for the legitimate domain choi
 index and query paths: text analyzers, text weights/ranking parameters, geo scoring parameters,
 exactness requirements and the explicit compatibility contribution. Mapping, indexed source,
 aggregation names, identity tie-breakers, contract fingerprint input and structural test views derive
-from that policy plus the canonical document/plan declarations. Operational host credentials and alias
-retention are configuration, not business declaration fields.
+from that policy plus the canonical document/plan declarations. Operational host credentials are
+configuration; fixed superseded-generation cleanup is lifecycle mechanics, not business policy.
 
 ### 11.1 Mapping and ingestion (implemented, Brick 5A)
 
@@ -1308,18 +1305,21 @@ cannot substitute one. Its only construction paths are `ElasticsearchIndexPolicy
 `ElasticsearchIndexPolicy.unsafeFrom` for static domain declarations. It validates:
 
 - every declared searchable `Text` field has exactly one analyzer assignment (a missing one is reported
-  in document declaration order);
+  in the document declaration's deterministic field order);
 - no duplicate assignment (reported with its first/duplicate index);
 - no assignment to an undeclared, foreign-document, or non-searchable/non-`Text` handle - a `SearchField`
   belonging to another document type fails to compile rather than reaching this runtime check.
 
-Live-cluster analyzer availability is a Brick 5C concern; Brick 5A only preserves the typed analyzer name
-in the compiled mapping.
+Brick 5C live proof covers BeautyQ's built-in `standard` analyzer. Before 5D, Brick 5C-D closes the
+initial public analyzer algebra to framework-known built-ins and rejects arbitrary names before index
+creation; arbitrary custom analyzer support is not an initial framework feature.
 
 `ElasticsearchMappingCompiler.compile` and `ElasticsearchDocumentCompiler.compile` both traverse
-`SearchDocumentDeclaration.allFields` in declaration order through the shared, domain-neutral
-`ElasticsearchDottedPathTree`; BeautyQ supplies no parallel encoder or field inventory. Dotted
-dynamic-field paths compile into deterministic nested objects; optional extraction omits the leaf, and an
+`SearchDocumentDeclaration.allFields` in its contract order through the shared, domain-neutral
+`ElasticsearchDottedPathTree`; BeautyQ supplies no parallel encoder or field inventory. The
+low-boilerplate field DSL builds that order as static declaration order followed by dynamic-family
+declaration order. Dotted dynamic-field paths compile into deterministic nested objects; optional
+extraction omits the leaf, and an
 entirely absent optional parent is never emitted. Every logical value uses its declared canonical
 `SearchValueCodec` with the ES representation selected by `SearchFieldKind` (`keyword`; `text` plus the
 policy analyzer; `integer`; `long`; `double`; `boolean`; `date` with `strict_date_optional_time`; or
@@ -1526,7 +1526,12 @@ shape, reads and verifies persisted metadata, and only then constructs an execut
 Authorization compares the plan's trusted contract fingerprint with the persisted raw value. A failed
 build never changes the alias. A physical index created by the current call is cleaned up only before
 mapping/count validation succeeds; a concurrently existing or already validated generation is never
-blindly deleted. The initial retention policy is `KeepAll`.
+blindly deleted.
+
+The accepted pre-5D lifecycle target deletes every superseded exact Gen2 physical generation after a
+successful alias activation, retains only the newly active generation, reports cleanup failure as a typed
+observable/retryable error, and treats a cursor pinned to a deleted generation as a typed stale-generation
+failure. There is no configurable retention policy in the initial greenfield architecture.
 
 The neutral synchronous JDK client accepts an omitted endpoint port or an explicit port in `1..65535`,
 owns confined HTTP paths, timeouts, methods/content types, and maps request construction, connection,
@@ -1778,7 +1783,8 @@ Gen2 is complete when:
 
 1. all runtime code lives in the new Gen2 DAG;
 2. no Gen2 module depends on a Gen1 search module;
-3. one executable BeautyQ root owns all runtime declarations;
+3. `BeautyQSearchGen2` is the single navigation facade over the executable owners, while each declaration
+   remains owned by its module-safe canonical object;
 4. `BeautyQSearchDeclarations.variants.Fields` is the single document-field handle owner used by
    document, intent, facets/groups, backend policies and response descriptions;
 5. stable service/category codes are persisted and validated;

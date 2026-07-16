@@ -11,8 +11,6 @@ Normative companion documents:
 - [semantics ADR](BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md) for accepted business/search decisions;
 - [evidence-backed Gen1 review](BEAUTYQ_SEARCH_GEN2_REVIEW.md) for the source-confirmed problems Gen2
   addresses;
-- [Gen2 promise audit](BEAUTYQ_SEARCH_GEN2_PROMISE_AUDIT.md) for the cross-cutting 5C→5D evidence,
-  ownership, invariant and deviation gate;
 - [domain authoring principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md) for the repository-wide
   business-policy, reuse, and executable-source-of-truth acceptance contract.
 
@@ -22,140 +20,52 @@ This section is the single authoritative live status owner for Gen2 implementati
 the same commit that starts, completes, blocks, or materially re-scopes a brick. Root and docs-index
 summaries must remain short and point here.
 
-- **Overall:** implementation in progress
-- **Active gate:** Gen2 promise audit between Bricks 5C and 5D. Brick 5C is implementation-complete and
-  its acceptance evidence is closed and owner-accepted: the promise audit's D-05 retains the owner's
-  full-suite run (2,097 tests, 0 failed/canceled, 2026-07-16 — the local resource spec executed and
-  passed inside it) plus two reproduced raw-output runs of the unchanged communication spec against
-  8.14.3. Brick 5D must not start until the audit's remaining `fix before 5D` decisions close.
-- **Completed bricks:**
-  - Brick 0 — module DAG and firewall
-  - Brick 1 — generic field/document declaration kernel
-  - Brick 2 — stable BeautyQ identities and executable Variant declaration root
-  - Brick 3 — consistent repository snapshot and explicit projection
-- **Completed cross-cutting slices:**
-  - Commit 3C — low-boilerplate domain authoring DSL
-  - Commit 3D — reusable materialization kernel extraction
-  - Commit 3E — canonical source-row authoring and generic result aliases
-  - Commit 3F — cross-brick reusable authoring audit closeout
-  - Commit 3G — reusable-framework generality checkpoint: a non-BeautyQ-shaped executable tracer
-    exercised through the complete declaration/materialization path owned by `search-gen2-contract`/
-    `search-gen2-core`; supported shapes are recorded in the technical specification and remaining
-    gaps below
-  - Brick 4A — constraint, signal and sort algebra: `PlannedConstraint`/`PlannedSignal`/`PlannedSort`
-    plus `Bound`/`RangeBounds`, with deterministic diagnostics and an explicit-enum-label algebra trace
-  - Brick 4B — `SearchPlan`, facets, groups, page, provenance and diagnostics: typed facet/group/page/
-    provenance/diagnostic values, `SearchPlan` validation and its diagnostic generated view
-  - Brick 4C — `PlanIdentity` and the cursor envelope: the value-only projection from a validated
-    `SearchPlan`, versioned canonical identity encoding, the SHA-256 `PlanIdentityHash`, and the
-    versioned cursor envelope
-  - Brick 4D+4E — public input and intent interpretation: generic public-input registries and intent
-    matching primitives, plus the BeautyQ public input contract, stable-code vocabulary and
-    deterministic intent adapter; request and parsed intent remain separate inbound values until 4F
-  - Brick 4F — plan compilation: generic canonical-constraint/precedence/geo-input-resolution/
-    facet-registry/plan-compilation mechanics, plus the BeautyQ plan policy, compiler and diagnostic
-    trace that compose them into a validated `SearchPlan[VariantSearchDocumentGen2]`
-  - Brick 4G-A — semantic candidate planning: generic backend-neutral `SemanticQueryText`/`CandidatePlan`/
-    `CandidatePlanDecision[Plan, Reason]`/`SemanticCandidateEvaluation`, plus BeautyQ's own
-    `BeautyQCandidateIneligibility` reason vocabulary, semantic-text-part and eligibility-gate policy,
-    compiler and diagnostic trace that compose them into one bound candidate evaluation over the compiled
-    `SearchPlan`; the named stable IDs/codes, explicit active vectors, semantic-part trace evidence and
-    vocabulary pins are part of the accepted BeautyQ contract.
-  - Brick 4G-B — cursor boundary: untrusted transport ingress, declaration-derived contract
-    fingerprint, framework-owned plan/cursor binding, BeautyQ compiler integration and a validated
-    second-page candidate/trace proof. Backend state remains opaque until the Elasticsearch vertical.
+- **Overall:** implementation in progress.
+- **Live status:** Brick 5C is completed and its local Elasticsearch communication proof is verified.
+  The pre-5D cleanup patch is active. Brick 5D has not started.
+- **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C.
+- **Current cleanup:** remove the redundant audit document, keep materialization values as simple
+  internal immutable Scala values, add the wiring-owned `BeautyQSearchGen2` navigation facade, split
+  metadata/live document-count diagnostics, and state field order exactly.
+- **Materialization boundary decision:** the canonical production source and materializer compute their
+  fingerprints with the values they return. No untrusted production caller supplies those aggregates,
+  so no additional defensive construction framework is justified.
+- **Canonical reading path:** start at wiring-owned `BeautyQSearchGen2` for the complete implemented
+  composition. Its `contract` branch points to backend-neutral `BeautyQSearchDeclarations`; all other
+  branches are direct references to their downstream owners.
+- **Blocker for 5D:** finish the following two named pre-5D tasks and their focused proofs.
 
-  Compact Brick 4 status:
+### Exact pre-5D sequence
 
-  ```text
-  4A completed
-  4B completed
-  4C completed
-  4D completed
-  4E completed
-  4F completed
-  4G-A completed
-  4G-B completed
-  ```
-  - Brick 5A — pure Elasticsearch index contract and generation artifact: `search-gen2-elasticsearch`'s
-    `ElasticsearchIndexPolicy` (validated analyzer assignment, framework-owned compiler/index-format
-    versions), the shared dotted-path mapping/source compilers, the derived `elasticsearch` contract
-    contribution and `ElasticsearchGenerationIdentity`/`CompiledElasticsearchGeneration`; plus BeautyQ's
-    compact `BeautyQElasticsearchPolicy` (five text fields, standard analyzer) and thin
-    `BeautyQElasticsearchGeneration` composition.
-  - Brick 5B — pure baseline-page request/result compilation and cursor protocol: `ElasticsearchPolicy`
-    (the one complete, fingerprint-owning aggregate binding 5A's index policy to weighted text fields,
-    closed operator/finite numeric policy, geo scoring, identity-sort capability, total-hits and default
-    sort choices), compiler-owned prepared requests plus lifecycle-authorized targets, typed cursor
-    generation references, and `BaselineSearchPage` with bounded hit decoding, object sources, typed term
-    facets, precision evidence and retained diagnostics. The accepted focused boundary is ready for 5C;
-    physical lifecycle ownership remains a separate brick.
-  - Brick 5C implementation is present: validated synchronous transport, canonical persisted
-    generation metadata/name, bounded bulk ingestion, strict reuse validation, atomic alias activation,
-    lifecycle authorization, generic baseline execution and thin BeautyQ composition. Pure/scripted
-    focused tests pass; the original local-resource run was canceled, while a later independent audit
-    reported the exact 257-document test green and the requested unchanged rerun is retained in the
-    promise audit's D-05.
+1. **Brick 5C-D — generation cleanup and initial analyzer closure.** After successful alias activation,
+   enumerate exact physical Gen2 index names under the configured prefix and delete every superseded
+   generation except the newly active one, in deterministic order. Remove `KeepAll` and the retention
+   parameter entirely. Cleanup failure is a typed, observable error and a subsequent activation retries
+   it; the error preserves the exact failed old targets and the new active generation is never rolled
+   back. Cleanup uses validated exact names only: never a wildcard, never the active target, and never an
+   unrelated or malformed name. Failed pre-activation candidates keep their existing exact cleanup
+   behavior. A cursor pinned to a deleted generation returns a typed stale-generation failure that Brick
+   9 maps to restart pagination. Initial analyzer policy supports only framework-known built-ins
+   (BeautyQ uses `standard`) and rejects arbitrary names before index creation. Prove two successive
+   activations leave only the second generation, unrelated/malformed names are untouched, cleanup failure
+   is observable and retryable, stale cursors fail typed, no retention enum/config remains, built-in/
+   analyzer rejection is exact, and lifecycle/cursor/resource-backed tests cover the behavior.
+2. **Brick 5C-E — public authoring registry validation.** Replace last-wins public filter/sort lookup
+   construction with validated constructors that report duplicate public names with first and duplicate
+   positions. Bind every dynamic public filter declaration to the exact dynamic-family inventory and
+   return a typed static declaration error for a missing relation. Construct lookup maps once; add no
+   per-request scans. Prove the generic behavior with a neutral fixture and prove BeautyQ's complete
+   registries through the same validated path.
+3. **Brick 5D — exact groups/carousels.** Then continue with Bricks 6, 7, 8 and the atomic Brick 9 cutover.
 
-  Compact Brick 5 status:
+### Accepted initial limits, not live abstraction debt
 
-  ```text
-  5A completed
-  5B completed
-  5C implementation and resource proof complete; audit-gate acceptance pending
-  promise audit active
-  5D planned
-  ```
-
-  ```text
-  Domain policy added: BeautyQElasticsearchPolicy's index choices (5A: five canonical text-field analyzer
-  assignments) and query choices (5B: weighted text fields/operator, geo scoring parameters, exact-total
-  and default-sort policy); BeautyQElasticsearchGeneration and BeautyQElasticsearchBaseline are thin
-  compositions delegating to the generic generation/request/response compilers.
-  Framework mechanics reused or extracted: ElasticsearchIndexPolicy/ElasticsearchPolicy (validated,
-  fingerprint-owning index and query policies), ElasticsearchDottedPathTree, ElasticsearchMappingCompiler,
-  ElasticsearchDocumentCompiler, ElasticsearchGenerationCompiler, ElasticsearchScalarCompiler (one shared
-  kind-to-JSON mechanic for both indexed and query values), ElasticsearchSearchRequestCompiler,
-  ElasticsearchCursorStateCodec, ElasticsearchSearchResponseDecoder (search-gen2-elasticsearch).
-  Neutral proof: BookDocument fixture across eight spec files, unrelated to BeautyQ's document shape or
-  vocabulary, covering all eight SearchFieldKinds, dotted dynamic nesting, decimal/geo precision, every
-  hard-constraint/facet kind, independent geo scoring, cursor round-tripping and every construction
-  boundary (index policy, query policy, generation artifact, compiled request, decoded page).
-  Canonical entry-point update: BeautyQSearchPlanCompiler's cursor-bound identity, ElasticsearchGeneration
-  and ElasticsearchSearchRequestCompiler all consume the same BeautyQElasticsearchPolicy.contractFingerprint
-  - one fingerprint authority for index and query choices together.
-  Derived-view proof: BeautyQElasticsearchPolicySpec/BeautyQElasticsearchGenerationSpec/
-  BeautyQElasticsearchBaselineSpec pin the exact text handles/weights/geo params/sort directions, that
-  every consumer shares one contract fingerprint, and that a representative BeautyQ request compiles
-  through the real declaration and compiled plan with no manual encoder or hand-maintained parallel request.
-  Response decoding and cursor pagination are proved by the neutral Elasticsearch decoder/lifecycle fixtures.
-  ```
-- **Contract authoring facade:** `BeautyQSearchDeclarations` is the canonical backend-neutral contract
-  entry point.
-  Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
-  and `variants.plan`. The promise audit found that the full business composition entry point over
-  contract, materialization and backend policy is still missing; add it in the downstream wiring module
-  without reversing the DAG or copying policy.
-- **Next action:** close the promise audit's pre-5D decisions: materialization trusted-result ownership and
-  identity uniqueness; one wiring-owned composition facade; lean current-vs-target docs; removal of the
-  non-executable retention-policy parameter; and the count-diagnostic/order-wording corrections. The
-  Elasticsearch evidence item is already closed and owner-accepted (audit D-05). Then close the audit and
-  activate 5D. No architecture decision is delegated to an implementation agent.
-- **Blockers:** the pre-5D structural/authoring decisions in
-  `BEAUTYQ_SEARCH_GEN2_PROMISE_AUDIT.md`. Test greenness is closed and owner-accepted: the owner's
-  full-suite run (2,097 tests, 0 failed/canceled) is retained in the audit's D-05, alongside two
-  reproduced runs of the unchanged local Elasticsearch communication spec.
-
-### Open reusable-framework gaps
-
-- **G-3 — multi-valued searchable/filterable fields: open.** `Vector[A]` has no generic field kind,
-  codec, extraction or filter/facet semantics. The future owner is a dedicated contract/plan brick tied
-  to a real domain requirement and neutral proof, before either backend accepts the shape. Current
-  representation limits are in technical specification §7.1.
-- **G-8 — sibling-capture/class-initialization hazard: open.** The BeautyQ first-touch cycle is fixed,
-  but a nested `Fields` object capturing a sibling value of the root that aliases `Fields.document`
-  remains unsupported. A future authoring-kernel brick owns any constructive API prevention; technical
-  specification §7.1 and onboarding record the supported shape meanwhile.
+- Materialization aggregates remain ordinary internal immutable values until a real untrusted caller is
+  introduced.
+- Multi-valued search fields, a second production domain, CDC, authenticated cursors and arbitrary custom
+  analyzers are outside the initial Gen2 scope.
+- `Fields` must keep its dependencies local or outside its enclosing root; sibling capture is an
+  unsupported authoring shape, not a planned defensive wrapper project.
 
 Every brick that adds domain policy or reusable mechanics must satisfy the
 [Domain Authoring Principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md). A brick is not
@@ -163,48 +73,6 @@ framework-complete merely because BeautyQ works: domain differences must remain 
 mechanics must be reused or extracted, neutral proof must exist, and generated views must derive
 from one executable declaration. If the current implementation still has an extraction gap, name its
 owner and next boundary in this plan instead of claiming the gap is already generic.
-
-Future brick closeouts add this compact authoring result:
-
-```text
-Domain policy added:
-Framework mechanics reused or extracted:
-Neutral proof:
-Canonical entry-point update:
-Derived-view proof:
-```
-
-Brick 3 is delivered in `beautyq-search-gen2-materialization`: the PostgreSQL source reads all required
-tables through one repeatable-read, read-only boundary, reuses the repository decoders for stored
-schemas and variant attributes, rejects orphan/invalid stored rows instead of silently skipping them,
-and emits a versioned source snapshot with a canonical content fingerprint. The explicit Variant
-projection validates joins/schema ownership, resolves stable codes,
-normalizes attributes/text, accumulates deterministic errors, orders documents canonically, and emits a
-projected-document fingerprint from the declared `variants.document.allFields`. No Gen1 materialization,
-seed-as-serving-source, backend, request, or runtime wiring was added. Brick 3's reusable boundary is
-now closed: `search-gen2-core` owns snapshot/fingerprint/materialization mechanics, typed canonical-row
-authoring, snapshot-product traversal, canonical indexing and ordered token assembly. The contract DSL
-owns exhaustive product coverage and one structural renderer/root tree. BeautyQ owns transaction-local
-SQL acquisition, snapshot shape, persisted-data validation, source field/value selection, joins and
-projection errors, attribute/text policy and encoding/version constants.
-
-Commit 3G addressed a different risk than 3D-3F: 3D-3F extracted mechanics that BeautyQ had already
-proven for one domain, but a kernel extracted from exactly one consumer naturally takes that
-consumer's shape. 3G added a deliberately non-BeautyQ-shaped executable tracer
-(`search-gen2-core/src/test/scala/leaderboard/search/gen2/core/tracer/LibraryTracerDomain.scala`) and
-ran it through the complete declaration/materialization path owned by the two generic Search Gen2
-modules. It expanded the supported kernel shapes with `Long`/date-time values, dynamic `Text` families
-and singleton snapshot sources. It also discovered a genuine Scala/JVM nested-object initialization
-hazard in the `Fields`/outer-alias authoring pattern, avoided it in the supported tracer shape and
-recorded it as an open authoring hazard because the framework does not yet prevent it constructively.
-It left two other gaps deliberately open rather than freehanding under time pressure:
-a multi-valued (`Vector[A]`) field (intersects Brick 4's constraint algebra) and a canonical-String-
-wrapper base that is reusable in name only (`private[model]`, outside the two generic modules' scope).
-The tracer is an executable calibration fixture, not a second production consumer. It deliberately
-does not duplicate catalog topology: the neutral catalog algebra is a separate `repo-core` boundary
-proven by its own contract suites, while `search-gen2-core` must not acquire a reverse dependency on
-`repo-core`. Current supported shapes are owned by technical specification §§7.1 and 9.4; the two
-remaining extraction gaps are owned by this plan's open-gap section.
 
 ## Coordinator starting model
 
@@ -219,7 +87,7 @@ The next coordinator must preserve this distinction:
 
 ```text
 BeautyQSearchDeclarations
-├── catalog       normalized topology/snapshot requirements
+├── catalog       normalized topology
 └── variants      document-centred search contract plus executable request/intent inventories
 ```
 
@@ -244,13 +112,9 @@ requirements remains in the independent matching phase; the Gen2-only NearUser r
 semantic overlay with a hair-removal exclusion. Neither branch constructs a `SearchPlan`, resolves
 geo origins, applies precedence or talks to a backend.
 
-The contract root intentionally stops at the contract-module boundary. Projection and materialization
-are implemented in `beautyq-search-gen2-materialization`, whose next files to read are
-`BeautyQSearchSnapshotSource`, `BeautyQSnapshotCanonicalRows` and `BeautyQVariantProjectionGen2`;
-they consume this root but cannot be nested
-under it without reversing the module DAG. The full business/reviewer composition facade is still
-missing and is a pre-5D audit correction owned by downstream wiring; it must reference these exact
-values rather than copy them or reverse the module DAG.
+The contract root intentionally stops at the contract-module boundary. Wiring-owned
+`BeautyQSearchGen2` is the complete implemented navigation facade; it points to this contract root,
+the materialization owners and the Elasticsearch composition without copying them or reversing the DAG.
 
 The implementation must not begin by rebuilding catalog topology as an isolated vertical. Catalog
 cannot determine document joins, normalization, text/embedding composition, price-overlap semantics,
@@ -947,7 +811,7 @@ lifecycle, DI binding or live Elasticsearch test in 5A; those belong to 5C.
 - policy validation proves complete searchable-text coverage and typed rejection of duplicate/foreign
   handles without adding speculative validation for impossible Scala states;
 - source compilation proves canonical scalar/geo values, absent optional fields, nested object shape,
-  identity reuse and declaration order;
+  identity reuse and the document declaration's deterministic field order;
 - policy/mapping/document changes alter the appropriate contract or generation identity, while repeated
   compilation of identical input is byte-stable;
 - a neutral fixture proves the generic compiler; BeautyQ tests prove the concrete five text fields,
@@ -1035,7 +899,8 @@ Execute the accepted 5A/5B artifacts against an independent Gen2 Elasticsearch r
 semantic compilation into transport code. This is where complete live Elasticsearch acceptance - backend
 limits such as the `_id` size cap and acceptance of the emitted mapping with BeautyQ's built-in
 `standard` analyzer - is owned; Brick 5A validates only document shape
-(`EmptyDocumentId`/`ValueEncoding`). Custom-analyzer settings/availability remain a D-09 pre-runtime gap.
+(`EmptyDocumentId`/`ValueEncoding`). Brick 5C-D closes the initial analyzer vocabulary to
+framework-known built-ins before another analyzer can reach index creation.
 
 #### Diff
 
@@ -1044,8 +909,8 @@ limits such as the `_id` size cap and acceptance of the emitted mapping with Bea
 - compile bulk ingestion from the 5A generation artifact and record its complete generation identity and
   build metadata in the physical index;
 - implement `build -> ingest -> refresh -> validate mapping/metadata/count/fingerprint -> atomic alias
-  switch`, retaining previous validated generations for pinned cursors; no configurable retention policy
-  exists until a second executable behavior is designed;
+  switch`; Brick 5C-D removes the temporary retention parameter and deletes superseded exact Gen2
+  generations after activation;
 - implement baseline request execution by sending the 5B request and passing the raw response back to the
   5B decoder;
 - compose the independent Gen2 resource names, lifecycle and baseline service in
@@ -1117,7 +982,7 @@ Complete the Elasticsearch-owned baseline result with the explicit group semanti
 Brick 5 is complete only when:
 
 1. the BeautyQ authoring surface consists of one compact ES policy over canonical `Fields.*` plus
-   operational resource configuration and the fixed pinned-cursor-safe retention behavior;
+   operational resource configuration and the fixed post-activation superseded-generation cleanup;
 2. generic modules contain no BeautyQ names and neutral fixtures cover mapping, source, request, result,
    cursor and lifecycle mechanics;
 3. one executable policy supplies every mapping/query choice and its contract contribution; generated
@@ -1263,7 +1128,11 @@ Run Gen2 end to end beside V1 without integrating it into the V1 backend.
 ### Diff
 
 - add a separate local/test role, command or versioned endpoint;
-- wire Gen2 repositories, snapshot, projection, ES, Qdrant and orchestration;
+- wire the complete repository snapshot -> materializer -> generation compilation -> activation path;
+- suspend the synchronous Elasticsearch client behind the application effect/runtime blocking boundary;
+- cache the lifecycle-authorized active generation for first-page searches and invalidate that cache
+  only after activation; a normal first page must not perform mapping, count and alias discovery again;
+- wire Qdrant and baseline-plus-supplement orchestration;
 - use separate backend resources;
 - add end-to-end request/response tests;
 - build the evaluation corpus and cutover report in `beautyq-search-gen2-eval`;
@@ -1283,6 +1152,11 @@ The application shell may depend on both V1 and Gen2 only to expose separate com
 ### Proof
 
 - independent Gen2 endpoint/role passes end-to-end tests;
+- runtime tests prove snapshot materialization precedes generation compilation/activation and failures
+  cannot expose a partially activated generation;
+- repeated first-page requests reuse the cached active generation with no three-round-trip lifecycle
+  rediscovery; activation deterministically invalidates and replaces the cached value;
+- blocking Elasticsearch calls execute only on the declared blocking/suspended boundary;
 - semantic delta ledger fixtures pass;
 - exact facet and group authoritative fixtures pass;
 - pagination/supplement no-duplicate tests pass;
@@ -1341,6 +1215,11 @@ As one atomic merge/change set:
 9. rename Gen2 public artifacts to the canonical unversioned names where desired;
 10. update all architecture/onboarding/runbook documentation.
 
+The public boundary also owns pagination recovery and abuse limits: a typed stale-generation cursor
+failure becomes an explicit restart-pagination response rather than an internal error; request/query/
+cursor and response sizes plus rate limits are enforced before expensive backend work; route-level tests
+close the validated request -> plan -> baseline/supplement -> response loop before ownership switches.
+
 ### Forbidden
 
 - new relevance features;
@@ -1354,6 +1233,10 @@ As one atomic merge/change set:
 - clean build and all Gen2 tests pass after Gen1 project removal;
 - repository-wide import/dependency scan finds no Gen1 search references;
 - default route returns Gen2 response;
+- a stale cursor produces the documented restart-pagination contract, never an HTTP 500;
+- request/response size and rate-limit boundaries fail deterministically before backend execution;
+- route-level fixtures prove applied filters, facets, totals, groups, pagination and supplement
+  diagnostics survive the complete public response loop;
 - active ES/Qdrant resources match Gen2 fingerprints;
 - smoke tests pass from a clean environment;
 - documentation names only Gen2 as current architecture;

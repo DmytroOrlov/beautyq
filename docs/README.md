@@ -22,9 +22,6 @@
   exact generic APIs and supported technical shapes, backend roles, lifecycle, fingerprinting, and cutover requirements.
 * [Semantics ADR](gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md) — accepted search semantics and policy decisions.
 * [Gen1 architecture review](gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — evidence-backed review and the gaps addressed by Gen2.
-* [Gen2 promise audit](gen2/BEAUTYQ_SEARCH_GEN2_PROMISE_AUDIT.md) — the cross-cutting checkpoint between
-  Bricks 5C and 5D: Gen1→Gen2 evidence matrix, ownership map, invariant ledger, deviations and required
-  decisions. Live sequencing remains owned by the implementation plan.
 
 ## BeautyQ search architecture
 

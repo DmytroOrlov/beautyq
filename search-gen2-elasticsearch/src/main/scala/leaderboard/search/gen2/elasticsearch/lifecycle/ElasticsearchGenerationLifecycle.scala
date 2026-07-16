@@ -47,7 +47,8 @@ object ElasticsearchGenerationLifecycleError {
   final case class InvalidMappingResponse(message: String) extends ElasticsearchGenerationLifecycleError
   final case class PersistedIdentityMismatch(expected: ElasticsearchPersistedGenerationIdentity, actual: ElasticsearchPersistedGenerationIdentity) extends ElasticsearchGenerationLifecycleError
   final case class MappingMismatch(expected: Json, actual: Json) extends ElasticsearchGenerationLifecycleError
-  final case class DocumentCountMismatch(expected: Long, metadata: Long, live: Long) extends ElasticsearchGenerationLifecycleError
+  final case class MetadataDocumentCountMismatch(expected: Long, metadata: Long) extends ElasticsearchGenerationLifecycleError
+  final case class LiveDocumentCountMismatch(expected: Long, metadata: Long, live: Long) extends ElasticsearchGenerationLifecycleError
   final case class InvalidBulkResponse(batchStart: Int, message: String) extends ElasticsearchGenerationLifecycleError
   final case class InvalidBulkItem(
     globalDocumentIndex: Int,
@@ -165,11 +166,11 @@ final class ElasticsearchGenerationLifecycle(
       decoded <- decodeMappingResponse(name, mappingResponse)
       (metadata, properties) = decoded
       _ <- Either.cond(metadata.identity == expectedIdentity, (), PersistedIdentityMismatch(expectedIdentity, metadata.identity))
-      _ <- Either.cond(metadata.documentCount == expectedDocumentCount, (), DocumentCountMismatch(expectedDocumentCount, metadata.documentCount, metadata.documentCount))
+      _ <- Either.cond(metadata.documentCount == expectedDocumentCount, (), MetadataDocumentCountMismatch(expectedDocumentCount, metadata.documentCount))
       expectedProperties <- propertiesOf(expectedMapping).toRight(InvalidMappingResponse("compiled mapping has no properties object"))
       _ <- Either.cond(properties == expectedProperties, (), MappingMismatch(Json.fromJsonObject(expectedProperties), Json.fromJsonObject(properties)))
       liveCount <- count(name)
-      _ <- Either.cond(liveCount == metadata.documentCount, (), DocumentCountMismatch(metadata.documentCount, metadata.documentCount, liveCount))
+      _ <- Either.cond(liveCount == metadata.documentCount, (), LiveDocumentCountMismatch(expectedDocumentCount, metadata.documentCount, liveCount))
       target <- ElasticsearchGenerationNaming.validateReference(config.physicalIndexPrefix, ElasticsearchGenerationReference(name), metadata).left.map(Naming.apply)
     } yield new LifecycleResolvedElasticsearchGeneration(ElasticsearchGenerationReference(name), target, metadata)
 
@@ -181,7 +182,7 @@ final class ElasticsearchGenerationLifecycle(
       (metadata, _) = decoded
       target <- ElasticsearchGenerationNaming.validateReference(config.physicalIndexPrefix, reference, metadata).left.map(Naming.apply)
       liveCount <- count(target.value)
-      _ <- Either.cond(liveCount == metadata.documentCount, (), DocumentCountMismatch(metadata.documentCount, metadata.documentCount, liveCount))
+      _ <- Either.cond(liveCount == metadata.documentCount, (), LiveDocumentCountMismatch(metadata.documentCount, metadata.documentCount, liveCount))
     } yield new LifecycleResolvedElasticsearchGeneration(reference, target, metadata)
 
   private def resolveActive(): Either[ElasticsearchGenerationLifecycleError, LifecycleResolvedElasticsearchGeneration] =

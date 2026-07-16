@@ -157,7 +157,7 @@ final class SearchFieldDeclarationsSpec extends AnyWordSpec {
     }
   }
 
-  "declaration order and collection separation" should {
+  "static-then-dynamic field order and collection separation" should {
     "register static fields in declaration order" in {
       val declarations = searchFields[TestDocument]("testDocuments")
       val first          = declarations.inferred(_.id).declare
