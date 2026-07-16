@@ -141,6 +141,8 @@ Coordinator owns architecture, source-truth audit, patch strategy, decomposition
 
 Delegated agents own bounded edits, focused tests, mechanical verification, and narrow claim checks.
 
+The coordinator must resolve architecture before delegation; never leave an agent with `NEED_ARCHITECTURE_DECISION`.
+
 Read-only, audit, and source-truth work is coordinator-owned. Do not present it as a reusable delegated prompt.
 
 Do not create reusable read-only prompts by putting `Do not edit files` inside a prompt.

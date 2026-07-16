@@ -108,48 +108,11 @@ object ElasticsearchDocumentCompiler {
     field.extract(document).map(value => ExtractedCanonicalField(field.id, field.path, field.kind, field.codec.encodeCanonical(value)))
 
   // The one backend-kind conversion path every _id and _source value passes through after extraction:
-  // decodes the just-encoded canonical string with the standard SearchValueCodec for its declared
-  // SearchFieldKind, never the field's own (possibly custom) codec - a field's codec is only guaranteed to
-  // round-trip through itself (requireCanonicalRoundTrip), not to produce text compatible with its
-  // declared backend kind. Keyword/Text values are stored as-is, since any string is a valid keyword/text
-  // value; every other kind's canonical text must independently decode as that kind's standard backend
-  // representation; a mismatch is reported as a typed ValueEncoding error rather than thrown.
+  // delegates to the shared ElasticsearchScalarCompiler - the same mechanic query-value compilation
+  // uses - and wraps its neutral typed decode error with this compiler's own document/field context.
   private def compileBackend(documentIndex: Int, extracted: ExtractedCanonicalField): Either[ElasticsearchDocumentCompileError, CompiledField] =
-    backendJson(documentIndex, extracted.id, extracted.kind, extracted.canonical)
-      .map(json => CompiledField(extracted.id, extracted.path, extracted.canonical, json))
-
-  private def backendJson(
-    documentIndex: Int,
-    fieldId: FieldId,
-    kind: SearchFieldKind,
-    canonical: String,
-  ): Either[ElasticsearchDocumentCompileError, Json] =
-    kind match {
-      case SearchFieldKind.Keyword | SearchFieldKind.Text =>
-        Right(Json.fromString(canonical))
-      case SearchFieldKind.Integer =>
-        decodeOrTypedError(documentIndex, fieldId, kind, SearchValueCodec.int.decodeCanonical(canonical)).map(Json.fromInt)
-      case SearchFieldKind.Long =>
-        decodeOrTypedError(documentIndex, fieldId, kind, SearchValueCodec.long.decodeCanonical(canonical)).map(Json.fromLong)
-      case SearchFieldKind.Decimal =>
-        decodeOrTypedError(documentIndex, fieldId, kind, SearchValueCodec.bigDecimal.decodeCanonical(canonical)).map(Json.fromBigDecimal)
-      case SearchFieldKind.Boolean =>
-        decodeOrTypedError(documentIndex, fieldId, kind, SearchValueCodec.boolean.decodeCanonical(canonical)).map(Json.fromBoolean)
-      case SearchFieldKind.DateTime =>
-        // strict_date_optional_time requires a standard ISO-8601 instant; the canonical string itself -
-        // not the decoded Instant - is what gets stored, since Instant's own canonical spelling (enforced
-        // by requireCanonicalRoundTrip) is exactly that string.
-        decodeOrTypedError(documentIndex, fieldId, kind, SearchValueCodec.instant.decodeCanonical(canonical)).map(_ => Json.fromString(canonical))
-      case SearchFieldKind.GeoPoint =>
-        decodeOrTypedError(documentIndex, fieldId, kind, SearchValueCodec.geoPoint.decodeCanonical(canonical))
-          .map(point => Json.obj("lat" -> Json.fromBigDecimal(point.lat), "lon" -> Json.fromBigDecimal(point.lon)))
+    ElasticsearchScalarCompiler.toBackendJson(extracted.kind, extracted.canonical) match {
+      case Left(error) => Left(ElasticsearchDocumentCompileError.ValueEncoding(documentIndex, extracted.id, extracted.kind, error))
+      case Right(json) => Right(CompiledField(extracted.id, extracted.path, extracted.canonical, json))
     }
-
-  private def decodeOrTypedError[A](
-    documentIndex: Int,
-    fieldId: FieldId,
-    kind: SearchFieldKind,
-    decoded: Either[SearchValueDecodeError, A],
-  ): Either[ElasticsearchDocumentCompileError, A] =
-    decoded.left.map(error => ElasticsearchDocumentCompileError.ValueEncoding(documentIndex, fieldId, kind, error))
 }

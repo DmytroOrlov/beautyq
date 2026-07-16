@@ -39,6 +39,8 @@ final class ElasticsearchMappingCompilerSpec extends AnyWordSpec {
         "inPrint"       -> Json.obj("type" -> Json.fromString("boolean")),
         "publishedAt"   -> Json.obj("type" -> Json.fromString("date"), "format" -> Json.fromString("strict_date_optional_time")),
         "storeLocation" -> Json.obj("type" -> Json.fromString("geo_point")),
+        "stockFrom"     -> Json.obj("type" -> Json.fromString("double")),
+        "stockTo"       -> Json.obj("type" -> Json.fromString("double")),
         "editionRatings" -> Json.obj(
           "properties" -> Json.obj(
             "hardcover" -> Json.obj("type" -> Json.fromString("integer")),
@@ -57,11 +59,19 @@ final class ElasticsearchMappingCompilerSpec extends AnyWordSpec {
     // built with different insertion order can still compare equal), so property order is asserted
     // directly against JsonObject's own key vector, and repeated compilation is compared through exact
     // compact-JSON text (noSpaces), not just ADT equality.
+    //
+    // The declaration builder registers static fields and dynamic families into two separate buffers and
+    // always emits static-declared-order followed by dynamic-declared-order (never true interleaved
+    // declaration order), so `editionRatings` (the one dynamic family, declared before stockFrom/stockTo in
+    // source) is expected last, after every static field.
     "preserve exact root and nested property key order, matching declared field order" in {
       val rootProperties = propertiesOf(mappingOrFail().json)
       assert(
         rootProperties.toVector.map(_._1) ==
-          Vector("isbn", "title", "subtitle", "internalNote", "genre", "pageCount", "wordCount", "price", "inPrint", "publishedAt", "storeLocation", "editionRatings")
+          Vector(
+            "isbn", "title", "subtitle", "internalNote", "genre", "pageCount", "wordCount", "price", "inPrint", "publishedAt", "storeLocation", "stockFrom",
+            "stockTo", "editionRatings",
+          )
       )
 
       val nestedProperties = propertiesOf(rootProperties("editionRatings").getOrElse(fail("expected editionRatings in the mapping")))
@@ -86,7 +96,7 @@ final class ElasticsearchMappingCompilerSpec extends AnyWordSpec {
           case Left(error)  => fail(s"expected a valid conflict-fixture declaration, got $error")
         }
 
-      val conflictPolicy = ElasticsearchIndexPolicy.unsafeFrom(conflictDocument, PlanContractVersion("conflict-v1"), ElasticsearchPolicyVersion("conflict-es-v1"), Vector.empty)
+      val conflictPolicy = ElasticsearchIndexPolicy.unsafeFrom(conflictDocument, ElasticsearchPolicyVersion("conflict-es-v1"), Vector.empty)
 
       ElasticsearchMappingCompiler.compile(conflictPolicy) match {
         case Left(ElasticsearchMappingError(ElasticsearchPathConflict(fieldId, path))) =>

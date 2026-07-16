@@ -8,10 +8,12 @@ import leaderboard.search.gen2.elasticsearch.*
 type CompiledBeautyQElasticsearchGeneration = CompiledElasticsearchGeneration[VariantSearchDocumentGen2, MasterServiceOfferVariantId]
 
 /** Thin BeautyQ binding over the generic [[ElasticsearchGenerationCompiler]]: supplies
-  * [[BeautyQElasticsearchPolicy.index]] and the materialized BeautyQ variant documents. Never inspects
-  * `VariantSearchDocumentGen2` fields manually, rebuilds mapping/source, or reconstructs generation
-  * identity - the returned result is exactly the generic compiler's own artifact type. */
+  * [[BeautyQElasticsearchPolicy.value]] (the complete policy, not just its `index` component) and the
+  * materialized BeautyQ variant documents. Never inspects `VariantSearchDocumentGen2` fields manually,
+  * rebuilds mapping/source, or reconstructs generation identity - the returned result is exactly the
+  * generic compiler's own artifact type, and its `contractFingerprint` is the same complete fingerprint
+  * `BeautyQSearchPlanCompiler` and `BeautyQElasticsearchBaseline` consume. */
 object BeautyQElasticsearchGeneration {
   def compile(materialized: MaterializedBeautyQVariantDocuments): Either[ElasticsearchGenerationCompileError, CompiledBeautyQElasticsearchGeneration] =
-    ElasticsearchGenerationCompiler.compile(BeautyQElasticsearchPolicy.index, materialized)
+    ElasticsearchGenerationCompiler.compile(BeautyQElasticsearchPolicy.value, materialized)
 }

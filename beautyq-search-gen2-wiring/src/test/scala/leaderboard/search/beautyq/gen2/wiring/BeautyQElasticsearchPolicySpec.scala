@@ -42,13 +42,60 @@ final class BeautyQElasticsearchPolicySpec extends AnyWordSpec {
     "be complete for every searchable BeautyQ text field - the exact assignments construct without error" in {
       ElasticsearchIndexPolicy(
         BeautyQSearchDeclarations.variants.document,
-        BeautyQSearchDeclarations.variants.plan.contractVersion,
         ElasticsearchPolicyVersion("beautyq-elasticsearch-v1"),
         BeautyQElasticsearchPolicy.index.textFields,
       ) match {
         case Right(_)     => succeed
         case Left(errors) => fail(s"expected a complete, valid policy, got ${errors.toVector}")
       }
+    }
+  }
+
+  "BeautyQElasticsearchPolicy.value" should {
+    "declare exactly the five canonical text handles by identity, with their exact accepted weights, in declared order" in {
+      val mappings = BeautyQElasticsearchPolicy.value.queryTextFields
+      assert(mappings.map(_.field).zip(canonicalTextHandles).forall { case (declared, canonical) => declared eq canonical })
+      assert(mappings.map(_.weight.value) == Vector(4.0, 5.0, 4.0, 2.0, 2.5))
+    }
+
+    "use the accepted AND text operator" in {
+      assert(BeautyQElasticsearchPolicy.value.textOperator == ElasticsearchTextOperator.And)
+    }
+
+    "declare the exact accepted geo-proximity scoring parameters" in {
+      val geo = BeautyQElasticsearchPolicy.value.geoScoringPolicy.getOrElse(fail("expected a configured geo scoring policy"))
+      assert(geo.scale == Distance(BigDecimal(5000)))
+      assert(geo.offset == Distance(BigDecimal(0)))
+      assert(geo.decay == ElasticsearchGeoDecay(0.5))
+      assert(geo.weight == ElasticsearchQueryWeight(1.25))
+    }
+
+    "require exact total hits" in {
+      assert(BeautyQElasticsearchPolicy.value.totalHitsPolicy == ElasticsearchTotalHitsPolicy.ExactRequired)
+    }
+
+    "declare the exact accepted default sort/tie-break directions" in {
+      assert(BeautyQElasticsearchPolicy.value.defaultSortPolicy == ElasticsearchDefaultSortPolicy(SortDirection.Desc, SortDirection.Asc))
+    }
+
+    "change the derived contract fingerprint when a query-affecting choice changes" in {
+      val base = BeautyQElasticsearchPolicy.value
+
+      val changedWeights = base.queryTextFields.map { mapping =>
+        if (mapping.field eq Fields.allText) ElasticsearchWeightedTextField(mapping.field, ElasticsearchQueryWeight(9.0)) else mapping
+      }
+      val changed =
+        ElasticsearchPolicy.unsafeFrom(
+          base.planContractVersion,
+          base.index,
+          changedWeights,
+          base.textOperator,
+          base.geoScoringPolicy,
+          base.totalHitsPolicy,
+          base.defaultSortPolicy,
+        )
+
+      assert(changed.contractFingerprint != base.contractFingerprint)
     }
   }
 

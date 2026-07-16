@@ -28,7 +28,7 @@ final class ElasticsearchGenerationCompilerSpec extends AnyWordSpec {
 
   private def compileOrFail(
     materialized: MaterializedSearchDocuments[String, BookDocument] = materializedOf(),
-    usingPolicy: ElasticsearchIndexPolicy[BookDocument, String] = policy,
+    usingPolicy: ElasticsearchPolicy[BookDocument, String] = fullPolicy,
   ): CompiledElasticsearchGeneration[BookDocument, String] =
     ElasticsearchGenerationCompiler.compile(usingPolicy, materialized) match {
       case Right(compiled) => compiled
@@ -51,11 +51,11 @@ final class ElasticsearchGenerationCompilerSpec extends AnyWordSpec {
       assert(compiled.identity.projectionFormatVersion == ProjectionFormatVersion("book-projection-v9"))
     }
 
-    "use the policy's own exact derived contract fingerprint" in {
-      assert(compileOrFail().identity.contractFingerprint == policy.contractFingerprint)
+    "use the complete policy's own exact derived contract fingerprint" in {
+      assert(compileOrFail().identity.contractFingerprint == fullPolicy.contractFingerprint)
     }
 
-    "carry the policy's own compiler and index-format versions" in {
+    "carry the index policy's own compiler and index-format versions" in {
       val compiled = compileOrFail()
       assert(compiled.identity.compilerVersion == policy.compilerVersion)
       assert(compiled.identity.indexFormatVersion == policy.indexFormatVersion)
@@ -82,16 +82,27 @@ final class ElasticsearchGenerationCompilerSpec extends AnyWordSpec {
     }
 
     "alter identity when the policy's own version changes" in {
-      val base          = compileOrFail()
-      val changedPolicy = ElasticsearchIndexPolicy.unsafeFrom(document, planContractVersion, ElasticsearchPolicyVersion("book-elasticsearch-v9"), bothTextFields)
-      val changed       = compileOrFail(usingPolicy = changedPolicy)
+      val base = compileOrFail()
+
+      val changedIndex  = ElasticsearchIndexPolicy.unsafeFrom(document, ElasticsearchPolicyVersion("book-elasticsearch-v9"), bothTextFields)
+      val changedPolicy =
+        ElasticsearchPolicy.unsafeFrom(
+          planContractVersion,
+          changedIndex,
+          queryTextFields,
+          ElasticsearchTextOperator.Or,
+          Some(geoScoringPolicy),
+          ElasticsearchTotalHitsPolicy.ExactRequired,
+          defaultSortPolicy,
+        )
+      val changed = compileOrFail(usingPolicy = changedPolicy)
       assert(changed.identity.contractFingerprint != base.identity.contractFingerprint)
       assert(changed.identity != base.identity)
     }
 
     "bind mapping, documents and identity from one compiler-owned call" in {
-      val compiled         = compileOrFail()
-      val expectedMapping  = ElasticsearchMappingCompiler.compile(policy).getOrElse(fail("expected a valid mapping"))
+      val compiled          = compileOrFail()
+      val expectedMapping   = ElasticsearchMappingCompiler.compile(policy).getOrElse(fail("expected a valid mapping"))
       val expectedDocuments = ElasticsearchDocumentCompiler.compile(policy, Vector(bookA)).getOrElse(fail("expected valid documents"))
       assert(compiled.mapping == expectedMapping)
       assert(compiled.documents == expectedDocuments)
@@ -111,7 +122,7 @@ final class ElasticsearchGenerationCompilerSpec extends AnyWordSpec {
           |  leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationIdentity(
           |    leaderboard.search.gen2.core.materialization.ContentFingerprint(""),
           |    leaderboard.search.gen2.core.materialization.ProjectedDocumentsFingerprint(""),
-          |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.policy.contractFingerprint,
+          |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.fullPolicy.contractFingerprint,
           |    leaderboard.search.gen2.core.materialization.ProjectionFormatVersion(""),
           |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.policy.compilerVersion,
           |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.policy.indexFormatVersion,
@@ -135,7 +146,7 @@ final class ElasticsearchGenerationCompilerSpec extends AnyWordSpec {
           |  leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationIdentity(
           |    leaderboard.search.gen2.core.materialization.ContentFingerprint(""),
           |    leaderboard.search.gen2.core.materialization.ProjectedDocumentsFingerprint(""),
-          |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.policy.contractFingerprint,
+          |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.fullPolicy.contractFingerprint,
           |    leaderboard.search.gen2.core.materialization.ProjectionFormatVersion(""),
           |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.policy.compilerVersion,
           |    leaderboard.search.gen2.elasticsearch.ElasticsearchTestFixtures.policy.indexFormatVersion,

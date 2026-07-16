@@ -1363,46 +1363,128 @@ identity and analyzer - is the exact same value `BeautyQSearchPlanCompiler`'s cu
 and the ES generation artifact both consume; no handwritten final fingerprint or second hash protocol
 exists.
 
-### 11.2 Request compilation
+### 11.2 Request compilation (implemented, Brick 5B)
 
-Compile:
+`ElasticsearchPolicy[Document, Id]` is the one complete, fingerprint-owning executable policy: it binds
+one `ElasticsearchIndexPolicy` (Brick 5A's mapping/source concern, now index-only - it no longer carries
+`contributions`/`contractFingerprint` itself) to the domain's query choices - weighted searchable text
+fields (`ElasticsearchWeightedTextField`, each a declared searchable-text handle plus a positive
+`ElasticsearchQueryWeight`), an `ElasticsearchTextOperator`, an optional `ElasticsearchGeoScoringPolicy`
+(scale/offset as `Distance`, a decay strictly in `(0, 1)`, a positive weight), an
+`ElasticsearchTotalHitsPolicy`, and an `ElasticsearchDefaultSortPolicy` (relevance and identity
+tie-breaker directions). `ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` remain owned by
+the nested index policy; `ElasticsearchSearchCompilerVersion` is a new, separate framework-owned version
+token contributed by the query side alone and reused unchanged as
+`ElasticsearchCursorState.protocolVersion`, so cursor-state and query-fingerprint versioning share one
+protocol rather than two. `ElasticsearchPolicy.contributions`/`.contractFingerprint` is the one contract
+fingerprint now consumed by `ElasticsearchGenerationCompiler`, `BeautyQSearchPlanCompiler`'s bound-plan
+identity and `ElasticsearchSearchRequestCompiler` alike; changing any executable query choice - a weight,
+the operator, any geo parameter, the total-hits policy, either sort direction - changes it. Construction
+mirrors `ElasticsearchIndexPolicy`'s own `apply`/`unsafeFrom`/validate/normalize shape for this parallel
+concern, rather than a shared generic validator. `ElasticsearchTextOperator` is the closed `And`/`Or`
+algebra; query weights must be finite and positive, geo weight finite and positive, and geo decay finite
+in the open interval `(0, 1)`. Non-finite `Double` values are typed policy errors and can never reach
+request JSON. The identity declaration is also validated against the emitted value-sort tie-breaker:
+Text and GeoPoint identities are rejected before request compilation.
 
-- residual text and weighted text fields;
-- exact terms;
-- explicit-bound numeric ranges;
-- interval-overlap predicates;
-- geo signal/filter/sort independently;
-- stable deterministic sorts and tie-breakers;
-- cursor/search-after state;
-- exact totals;
-- requested facets;
-- requested group representatives and metrics.
+`ElasticsearchSearchRequestCompiler.compile(policy, boundPlan)` is the pure preparation entry point,
+returning `Either[ElasticsearchSearchRequestCompileError, PreparedElasticsearchSearchRequest[Document, Id]]`.
+It accepts only an already cursor-bound `BoundSearchPlan` - a raw `SearchPlan` does not
+type-check - and rejects a bound plan whose `contractFingerprint` differs from the policy's own
+(`ContractFingerprintMismatch`) before compiling anything. Brick 5B does not implement groups (see
+§11.4): a non-empty `plan.groups` is a typed `UnsupportedGroups`, never silently ignored.
 
-Aggregation names use stable typed IDs, not normalized field paths alone.
+The compiled request body is exact and deterministic: `_source: true`, `track_total_hits: true`,
+`track_scores: true`, `size` equal to `pageSize + 1` (one lookahead hit beyond the requested page, or a
+typed `UnrepresentablePageSize` if that would overflow), `query`, `sort`, `search_after` when a cursor is
+present, and `aggs` when facets are requested - `from` is never emitted, on the first page or any later
+one. The base query follows Elasticsearch's own standalone-query-type shape rather than a uniform `bool`
+wrapper: residual text alone compiles to a bare `multi_match` over the policy's weighted fields
+(`field^weight`) and operator; hard filters alone compile under `bool.filter` with no `must` key (filter
+context has no standalone top-level query type); both together compile to
+`bool{must: [multi_match], filter: [...]}`; neither present compiles to an explicit `match_all`, never an
+empty `bool`. Hard constraints compile per kind: `Terms` as `term` for a single canonical value or sorted
+`terms` for several (never dependent on `Set` iteration order), and `match_none` - never a dropped clause
+- for an empty set; `NumberRange` preserves every inclusive/exclusive/unbounded bound combination and
+uses `match_all` for both-unbounded bounds, with the canonical ISO instant string for `DateTime` fields;
+`IntervalOverlap` compiles the
+ADR's exact overlap-direction mapping (the request's lower bound constrains the indexed `to` field with
+`gte`/`gt`; the request's upper bound constrains the indexed `from` field with `lte`/`lt`), collapsing to
+`match_all` when fully unbounded; `GeoDistanceFilter` compiles with meters and explicit `distance_type:
+arc`. Geo scoring is independent of both hard filters and sorts: a `GeoProximitySignal` contributes one
+`gauss` function wrapped in `function_score` around the unmodified base query (`score_mode`/`boost_mode:
+sum`); a signal with no configured `geoScoringPolicy` is a typed `MissingGeoScoringPolicy` error and
+cannot produce a request, so no scoring signal disappears; a `GeoDistanceFilter`/`GeoDistanceSort`
+compiles with no scoring function at all. Sort compiles explicit plan clauses in order; when none exist,
+relevance (`_score`, the policy's relevance direction) is used only if scoring is active (residual text
+or a successfully compiled geo signal); the declared document identity is always appended as the final
+deterministic value-sort tie-breaker. Policy validation rejects Text and GeoPoint identities, which cannot
+support that emitted value sort, before request compilation. Facet aggregation names derive directly from the typed `FacetId` as
+`facet:<value>`, never from a normalized field path; `Terms`, `NumberRange` and `IntervalOverlap` facets
+all compile under the plan's complete `AllAppliedHardFilters` context with no self-exclusion, and the
+same shared overlap-predicate builder used for hard-constraint compilation is reused for
+`IntervalOverlap` facet buckets, so the ADR's direction mapping is expressed in exactly one place.
 
-The request compiler accepts a cursor-validated `BoundSearchPlan`, not a raw `SearchPlan`. It appends
-the declared document identity as the final deterministic sort tie-breaker and alone owns the typed
-encoding/decoding of Elasticsearch `search_after` values carried by the generic cursor envelope's opaque
-backend state. Offset pagination is unsupported.
+The prepared request contains no executable physical target. For a first page it carries
+`ElasticsearchGenerationRequirement.Active`; for a later page it carries the decoded, untrusted
+`ElasticsearchGenerationReference` from cursor state. The lifecycle owner must resolve/authorize that
+reference and produce an `AuthorizedElasticsearchSearchRequest` before transport or response decoding.
+`ElasticsearchSearchTarget` exists only on that lifecycle-selected generation; an untrusted cursor string
+never becomes an executable index name. `ElasticsearchCursorState(protocolVersion, generationReference,
+searchAfterValues)` is the versioned, typed backend state the generic `SearchCursorEnvelope` carries
+opaquely; its supported `search_after` scalar domain is exactly string/number/boolean/null
+(`ElasticsearchSearchAfterValue`; arrays/objects are rejected), `ElasticsearchCursorStateCodec` produces
+deterministic JSON with an explicit protocol version, never an offset/`from`, and decoding validates arity
+against the compiled sort vector. This module only encodes/decodes its own opaque payload string; parsing
+and binding the envelope itself remains solely `SearchCursorEnvelope`'s concern.
 
-### 11.3 Response decoding
+Query-value encoding reuses `ElasticsearchScalarCompiler.toBackendJson` - the same shared kind-to-JSON
+mechanic Brick 5A's document compiler uses for indexed source values - so a query value and an indexed
+value for the same field always follow the same backend representation rules; each caller wraps the
+shared `SearchValueDecodeError` with its own context (`ElasticsearchQueryValueContext.Constraint` or
+`.Facet`, versus the document compiler's `documentIndex`).
 
-Decode into `FullSearchResult`:
+`PreparedElasticsearchSearchRequest[Document, Id]` is the compiler-owned, private-constructor, `final`
+aggregate binding `generationRequirement`, `body`, `boundPlan`, `identityField`, `sortShape`,
+`requestedFacets`, `totalHitsPolicy` and `pageSize`. Lifecycle authorization wraps it in the equally
+closed `AuthorizedElasticsearchSearchRequest`, which adds the resolved generation target. Neither result
+has a public `apply`/`copy`/subclass path; the response decoder consumes only the authorized aggregate and
+never a separately supplied plan, facet list, sort shape, policy or target.
 
-- hits and scores;
-- exact/qualified total hits;
-- terms, numeric range and interval-overlap facet buckets;
-- group buckets, representative data and metrics;
-- pagination state;
-- precision/error metadata;
-- unknown/missing aggregation diagnostics.
+### 11.3 Response decoding (implemented, Brick 5B)
 
-A requested section missing from the response is a typed error unless the request explicitly allowed degradation.
+`ElasticsearchSearchResponseDecoder.decode(authorizedRequest, responseJson)` returns
+`Either[ElasticsearchSearchResponseErrors, BaselineSearchPage[Document, Id]]`. Only these role-specific
+Brick 5B types decode a response - never `FullSearchResult`, group/carousel structures, Qdrant candidate
+slots or an HTTP client's own response type. `BaselineSearchPage[Document, Id]` is a decoder-owned,
+private-constructor, `final` read-only aggregate (hits, exact/qualified total, typed facets, validated
+backend diagnostics and next cursor); it
+has no public `apply`/`copy`/subclass path either. A `timed_out` or shard-failure response is a typed
+partial-response error, never a trusted page.
 
-Facet counts are decoded from Elasticsearch aggregations over the complete matching set, never recounted
-from the returned hit page. The decoder compares requested typed facet/group IDs with returned stable
-aggregation IDs and reports missing or unknown sections deterministically. It issues a next cursor only
-from the same bound plan and the last returned stable sort tuple.
+Each hit decodes its typed identity from `_id` through the declaration's own identity codec - never a
+speculative `_id == _source.identity` check - while an object `_source` is preserved as the response's raw JSON,
+never reconstructed into a `Document`. A total-hits relation other than `eq` under an exact-total policy
+is a typed error. A hit's sort tuple is validated for both value shape and arity against the request's own
+compiled sort vector before use.
+
+Facet decoding compares the response's returned aggregation names against the compiled request's own
+recorded `requestedFacets` and reports every missing or unknown one deterministically; keyed range and
+interval-overlap buckets are restored into declared bucket order regardless of response order; dynamic
+`Terms` bucket keys remain typed through the requested field's codec (preferring `key_as_string`, with
+scalar string/number/boolean fallback), and per-bucket error bounds remain present. Precision is
+classified honestly as exact (`0`), bounded (positive), or unknown (`-1`/missing); values below `-1`,
+negative counts and negative `sum_other_doc_count` are malformed. Facet counts always come from
+Elasticsearch aggregations, never recounted from the returned hit page.
+
+Pagination rejects a raw hit array longer than `pageSize + 1` before decoding any hit, then returns only
+`pageSize`; `hasNext` is determined from whether that lookahead hit was present. Every hit must contain a
+JSON-object `_source`, which is preserved raw. When a lookahead exists, the next cursor is issued from the
+last *included* hit's sort tuple - never the lookahead hit itself - encoding the authorized generation
+reference via `SearchCursorEnvelope.issue` against the same bound plan; when it does not, no next cursor
+is issued at all.
+
+Group buckets, representative data and metrics are not decoded by Brick 5B; see §11.4.
 
 ### 11.4 Group implementation
 

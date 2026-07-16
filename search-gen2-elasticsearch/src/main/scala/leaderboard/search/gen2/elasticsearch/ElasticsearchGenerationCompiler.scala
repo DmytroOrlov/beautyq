@@ -25,23 +25,26 @@ object ElasticsearchGenerationCompileError {
 
 type CompiledElasticsearchGeneration[Document, Id] = ElasticsearchGenerationCompiler.CompiledElasticsearchGeneration[Document, Id]
 
-/** The one production entry point binding a validated [[ElasticsearchIndexPolicy]] and a
+/** The one production entry point binding a validated complete [[ElasticsearchPolicy]] and a
   * [[MaterializedSearchDocuments]] snapshot into one immutable [[CompiledElasticsearchGeneration]]: it
-  * calls [[ElasticsearchMappingCompiler.compile]] and [[ElasticsearchDocumentCompiler.compile]] exactly
-  * once each, over the exact same policy and materialized documents, and derives the complete
-  * [[ElasticsearchGenerationIdentity]] directly from those inputs - a caller cannot independently supply a
-  * different declaration, contract fingerprint, projected fingerprint, or independently compiled
-  * mapping/document vector. */
+  * derives `policy.index` internally and calls [[ElasticsearchMappingCompiler.compile]] and
+  * [[ElasticsearchDocumentCompiler.compile]] exactly once each, over the exact same index policy and
+  * materialized documents, and derives the complete [[ElasticsearchGenerationIdentity]] directly from
+  * those inputs - a caller cannot independently supply a different declaration, contract fingerprint,
+  * projected fingerprint, or independently compiled mapping/document vector. `contractFingerprint` is the
+  * one complete policy fingerprint (mapping, analyzers and query-affecting choices together) - the same
+  * value a domain's own cursor-bound plan identity and `ElasticsearchSearchRequestCompiler`
+  * consume. */
 object ElasticsearchGenerationCompiler {
 
   def compile[Snapshot, Document, Id](
-    policy: ElasticsearchIndexPolicy[Document, Id],
+    policy: ElasticsearchPolicy[Document, Id],
     materialized: MaterializedSearchDocuments[Snapshot, Document],
   ): Either[ElasticsearchGenerationCompileError, CompiledElasticsearchGeneration[Document, Id]] =
-    ElasticsearchMappingCompiler.compile(policy) match {
+    ElasticsearchMappingCompiler.compile(policy.index) match {
       case Left(error) => Left(ElasticsearchGenerationCompileError.Mapping(error))
       case Right(mapping) =>
-        ElasticsearchDocumentCompiler.compile(policy, materialized.documents) match {
+        ElasticsearchDocumentCompiler.compile(policy.index, materialized.documents) match {
           case Left(error) => Left(ElasticsearchGenerationCompileError.Document(error))
           case Right(documents) =>
             val identity =
@@ -50,8 +53,8 @@ object ElasticsearchGenerationCompiler {
                 projectedDocumentsFingerprint = materialized.projectedDocumentsFingerprint,
                 contractFingerprint = policy.contractFingerprint,
                 projectionFormatVersion = materialized.projectionFormatVersion,
-                compilerVersion = policy.compilerVersion,
-                indexFormatVersion = policy.indexFormatVersion,
+                compilerVersion = policy.index.compilerVersion,
+                indexFormatVersion = policy.index.indexFormatVersion,
               )
             Right(new CompiledElasticsearchGeneration[Document, Id](mapping, documents, identity))
         }

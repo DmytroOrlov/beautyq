@@ -205,6 +205,7 @@ lazy val searchGen2Elasticsearch = project
   .settings(name := "search-gen2-elasticsearch")
   .pipe(lightweightSettings(Seq(
     Deps.circeGeneric,
+    Deps.circeParser,
     Deps.scalatest % Test,
   )))
   .dependsOn(searchGen2Contract, searchGen2Core)

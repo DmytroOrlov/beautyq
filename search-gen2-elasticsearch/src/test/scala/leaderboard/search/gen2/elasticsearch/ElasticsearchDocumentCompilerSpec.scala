@@ -45,6 +45,8 @@ final class ElasticsearchDocumentCompilerSpec extends AnyWordSpec {
       "inPrint"        -> Json.fromBoolean(bookA.inPrint),
       "publishedAt"    -> Json.fromString(bookA.publishedAt.toString),
       "storeLocation"  -> Json.obj("lat" -> Json.fromBigDecimal(bookA.storeLocation.lat), "lon" -> Json.fromBigDecimal(bookA.storeLocation.lon)),
+      "stockFrom"      -> Json.fromBigDecimal(bookA.stockFrom),
+      "stockTo"        -> Json.fromBigDecimal(bookA.stockTo),
       "editionRatings" -> Json.obj("hardcover" -> Json.fromInt(5), "paperback" -> Json.fromInt(4)),
     )
 
@@ -122,12 +124,20 @@ final class ElasticsearchDocumentCompilerSpec extends AnyWordSpec {
     // JsonObject structural equality alone does not prove serialized property order, so order is
     // asserted directly against the object's own key vector, and repeated compilation is compared through
     // exact compact-JSON text (noSpaces), not just ADT equality.
+    //
+    // The declaration builder registers static fields and dynamic families into two separate buffers and
+    // always emits static-declared-order followed by dynamic-declared-order (never true interleaved
+    // declaration order), so `editionRatings` (the one dynamic family, declared before stockFrom/stockTo in
+    // source) is expected last, after every static field.
     "preserve exact root and nested source key order, matching declared field order" in {
       val compiled = compileOneOrFail(bookA)
       val rootKeys = compiled.source.asObject.getOrElse(fail("expected a source object")).toVector.map(_._1)
       assert(
         rootKeys ==
-          Vector("isbn", "title", "subtitle", "internalNote", "genre", "pageCount", "wordCount", "price", "inPrint", "publishedAt", "storeLocation", "editionRatings")
+          Vector(
+            "isbn", "title", "subtitle", "internalNote", "genre", "pageCount", "wordCount", "price", "inPrint", "publishedAt", "storeLocation", "stockFrom",
+            "stockTo", "editionRatings",
+          )
       )
 
       val nestedKeys =
@@ -183,7 +193,6 @@ final class ElasticsearchDocumentCompilerSpec extends AnyWordSpec {
       val fixturePolicy =
         ElasticsearchIndexPolicy.unsafeFrom(
           declaration,
-          PlanContractVersion("empty-canonical-identity-v1"),
           ElasticsearchPolicyVersion("empty-canonical-identity-es-v1"),
           Vector.empty,
         )
@@ -209,7 +218,7 @@ final class ElasticsearchDocumentCompilerSpec extends AnyWordSpec {
           case Left(error)  => fail(s"expected a valid mismatched-identity fixture declaration, got $error")
         }
       val fixturePolicy =
-        ElasticsearchIndexPolicy.unsafeFrom(declaration, PlanContractVersion("mismatched-identity-v1"), ElasticsearchPolicyVersion("mismatched-identity-es-v1"), Vector.empty)
+        ElasticsearchIndexPolicy.unsafeFrom(declaration, ElasticsearchPolicyVersion("mismatched-identity-es-v1"), Vector.empty)
       val expectedError = expectedStandardError(SearchValueCodec.int.decodeCanonical(identityCanonical))
 
       val actual = ElasticsearchDocumentCompiler.compile(fixturePolicy, Vector(MismatchedIdentityDocument(1, "note")))
@@ -280,7 +289,7 @@ final class ElasticsearchDocumentCompilerSpec extends AnyWordSpec {
             case Left(error)  => fail(s"$label: expected a valid custom-codec fixture declaration, got $error")
           }
         val fixturePolicy =
-          ElasticsearchIndexPolicy.unsafeFrom(declaration, PlanContractVersion("custom-codec-v1"), ElasticsearchPolicyVersion("custom-codec-es-v1"), Vector.empty)
+          ElasticsearchIndexPolicy.unsafeFrom(declaration, ElasticsearchPolicyVersion("custom-codec-es-v1"), Vector.empty)
 
         val actual = ElasticsearchDocumentCompiler.compile(fixturePolicy, Vector(CustomCodecDocument("fixture-id")))
         assert(

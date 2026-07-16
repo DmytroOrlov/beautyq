@@ -448,14 +448,13 @@ policy or backend retrieval knobs.
 
 ### Elasticsearch index-policy example (Brick 5A)
 
-A domain supplies only its already-declared document, plan-contract version, one explicit Elasticsearch
-policy version, and an analyzer choice for each of its own declared searchable text fields:
+A domain supplies only its already-declared document, one explicit Elasticsearch policy version, and an
+analyzer choice for each of its own declared searchable text fields:
 
 ```scala
 val index: ElasticsearchIndexPolicy[WidgetDocument, WidgetId] =
   ElasticsearchIndexPolicy.unsafeFrom(
     declaration = WidgetSearchDomain.document,
-    planContractVersion = PlanContractVersion("widget-plan-v1"),
     policyVersion = ElasticsearchPolicyVersion("widget-elasticsearch-v1"),
     textFields = Vector(
       ElasticsearchTextFieldMapping(WidgetSearchDomain.name, ElasticsearchAnalyzerName.Standard)
@@ -465,17 +464,49 @@ val index: ElasticsearchIndexPolicy[WidgetDocument, WidgetId] =
 
 Everything else is derived by `search-gen2-elasticsearch`: the declaration-driven mapping and `_id`/
 `_source` compilation (traversing `declaration.allFields` in declared order, never a domain-owned fold),
-the framework-owned `ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` (always `.Current` -
-`ElasticsearchIndexPolicy.unsafeFrom` does not accept either as a parameter, so a domain cannot substitute
-one), the one `elasticsearch`-keyed `PlanContractContributions` entry and its `ContractFingerprint` - the same
-fingerprint value a domain's plan compiler binds into cursor identity - and the complete
-`ElasticsearchGenerationIdentity` bound together with the compiled mapping and documents into one
-`CompiledElasticsearchGeneration`, producible only by `ElasticsearchGenerationCompiler.compile`. A domain
-never recreates a field handle, mapping/source traversal, or a second contribution fingerprint;
-`BeautyQElasticsearchPolicy`/`BeautyQElasticsearchGeneration` (`beautyq-search-gen2-wiring`) are the
-golden reference at full scale. Query weights, ranking and live index lifecycle remain later bricks. The
-framework normalizes analyzer assignments into document declaration order; vector order is not a separate
-business policy.
+and the framework-owned `ElasticsearchCompilerVersion`/`ElasticsearchIndexFormatVersion` (always
+`.Current` - `ElasticsearchIndexPolicy.unsafeFrom` does not accept either as a parameter, so a domain
+cannot substitute one). A domain never recreates a field handle or mapping/source traversal; the
+framework normalizes analyzer assignments into document declaration order - vector order is not a
+separate business policy.
+
+### Elasticsearch search-policy example (Brick 5B)
+
+The index policy above is only half of what a domain executes against Elasticsearch. Query-time choices -
+which text fields rank the query, how they're weighted, whether geo proximity contributes to score, how
+exact totals and default ordering behave - are a second, explicit policy layer binding the index policy to
+those choices:
+
+```scala
+val policy: ElasticsearchPolicy[WidgetDocument, WidgetId] =
+  ElasticsearchPolicy.unsafeFrom(
+    planContractVersion = PlanContractVersion("widget-plan-v1"),
+    index = index,
+    queryTextFields = Vector(ElasticsearchWeightedTextField(WidgetSearchDomain.name, ElasticsearchQueryWeight(3.0))),
+    textOperator = ElasticsearchTextOperator.And,
+    geoScoringPolicy = Some(
+      ElasticsearchGeoScoringPolicy(scale = Distance(BigDecimal(2000)), offset = Distance(BigDecimal(0)), decay = ElasticsearchGeoDecay(0.4), weight = ElasticsearchQueryWeight(1.5))
+    ),
+    totalHitsPolicy = ElasticsearchTotalHitsPolicy.ExactRequired,
+    defaultSortPolicy = ElasticsearchDefaultSortPolicy(relevanceDirection = SortDirection.Desc, identityTieBreakerDirection = SortDirection.Asc),
+  )
+```
+
+Everything else is derived: `ElasticsearchSearchRequestCompiler.compile(policy, boundPlan)` turns a
+cursor-bound plan into a prepared deterministic request JSON (text/terms/range/interval-overlap/geo
+compilation, sort and tie-breaker, facet aggregations, cursor `search_after` state - never `from`). A
+lifecycle owner resolves the prepared request's active or untrusted generation reference into an
+`AuthorizedElasticsearchSearchRequest`; only that authorized value reaches transport and
+`ElasticsearchSearchResponseDecoder.decode`, which returns the typed baseline page (hits, exact total,
+typed facets, diagnostics and next cursor). Policy construction rejects non-finite weights/decays and
+identity kinds that cannot support the emitted value-sort tie-breaker. `policy.contractFingerprint` is the
+one complete fingerprint - covering both index and query choices - that a domain's plan compiler, the
+generation compiler and the request compiler all consume; a domain never recreates request/response
+traversal, an aggregation name, or a second fingerprint. `BeautyQElasticsearchPolicy`/
+`BeautyQElasticsearchGeneration`/`BeautyQElasticsearchBaseline` (`beautyq-search-gen2-wiring`) are the
+golden reference at full scale. Live index lifecycle (build/ingest/alias activation) and group/carousel
+result types remain later bricks.
+Live index lifecycle (build/ingest/alias activation) and group/carousel result types remain later bricks.
 
 ## Materialization
 
