@@ -1,13 +1,14 @@
 package leaderboard.search.gen2.elasticsearch.lifecycle
 
 import leaderboard.search.gen2.elasticsearch.*
+import leaderboard.search.gen2.core.plan.ContractFingerprint.value
 
 /** A generation selected by the lifecycle owner. The constructor is scoped to this package so domain
   * wiring can carry the value but cannot invent a physical target or generation identity. */
 final class LifecycleResolvedElasticsearchGeneration private[lifecycle] (
   val reference: ElasticsearchGenerationReference,
   val physicalTarget: ElasticsearchSearchTarget,
-  val identity: ElasticsearchGenerationIdentity,
+  val persistedMetadata: ElasticsearchGenerationMetadata,
 )
 
 sealed trait ElasticsearchSearchRequestAuthorizationError
@@ -15,7 +16,7 @@ sealed trait ElasticsearchSearchRequestAuthorizationError
 object ElasticsearchSearchRequestAuthorizationError {
   final case class GenerationReferenceMismatch(expected: ElasticsearchGenerationReference, actual: ElasticsearchGenerationReference)
       extends ElasticsearchSearchRequestAuthorizationError
-  final case class GenerationContractFingerprintMismatch(expected: leaderboard.search.gen2.core.plan.ContractFingerprint, actual: leaderboard.search.gen2.core.plan.ContractFingerprint)
+  final case class GenerationContractFingerprintMismatch(expected: leaderboard.search.gen2.core.plan.ContractFingerprint, actualPersisted: String)
       extends ElasticsearchSearchRequestAuthorizationError
 }
 
@@ -37,11 +38,11 @@ object ElasticsearchSearchRequestAuthorization {
              case ElasticsearchGenerationRequirement.Pinned(expected) =>
                Left(ElasticsearchSearchRequestAuthorizationError.GenerationReferenceMismatch(expected, resolved.reference))
            }
-      _ <- if (prepared.boundPlan.identity.contractFingerprint == resolved.identity.contractFingerprint) Right(())
+      _ <- if (prepared.boundPlan.identity.contractFingerprint.value == resolved.persistedMetadata.identity.contractFingerprint) Right(())
            else Left(
              ElasticsearchSearchRequestAuthorizationError.GenerationContractFingerprintMismatch(
                prepared.boundPlan.identity.contractFingerprint,
-               resolved.identity.contractFingerprint,
+               resolved.persistedMetadata.identity.contractFingerprint,
              )
            )
     } yield new AuthorizedElasticsearchSearchRequest(prepared, resolved)

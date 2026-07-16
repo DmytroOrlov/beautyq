@@ -6,6 +6,8 @@ import leaderboard.search.gen2.core.plan.*
 import leaderboard.search.gen2.elasticsearch.*
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.time.Instant
+
 /** Contract proofs for the untrusted-cursor/reference to lifecycle-authorized-target boundary. */
 final class ElasticsearchSearchRequestAuthorizationSpec extends AnyWordSpec {
   import ElasticsearchTestFixtures.*
@@ -17,18 +19,27 @@ final class ElasticsearchSearchRequestAuthorizationSpec extends AnyWordSpec {
     SearchCursorEnvelope.bind(plan, CanonicalPlanView[BookDocument](fullPolicy.contractFingerprint)).getOrElse(fail("expected a bound plan"))
 
   private def resolved(reference: String, target: String, fingerprint: ContractFingerprint): LifecycleResolvedElasticsearchGeneration =
-    new LifecycleResolvedElasticsearchGeneration(
-      ElasticsearchGenerationReference(reference),
-      ElasticsearchSearchTarget(target),
-      ElasticsearchGenerationIdentity(
+    {
+      val persisted = ElasticsearchPersistedGenerationIdentity.fromTrusted(ElasticsearchGenerationIdentity(
         ContentFingerprint("source"),
         ProjectedDocumentsFingerprint("projected"),
         fingerprint,
         ProjectionFormatVersion("book-projection-v1"),
         fullPolicy.index.compilerVersion,
         fullPolicy.index.indexFormatVersion,
-      ),
-    )
+      ))
+      new LifecycleResolvedElasticsearchGeneration(
+        ElasticsearchGenerationReference(reference),
+        ElasticsearchSearchTarget(target),
+        ElasticsearchGenerationMetadata(
+          ElasticsearchGenerationMetadataSchemaVersion.Current,
+          ElasticsearchGenerationNaming.generationId(persisted),
+          Instant.parse("2026-01-01T00:00:00Z"),
+          1L,
+          persisted,
+        ),
+      )
+    }
 
   "ElasticsearchSearchRequestAuthorization" should {
     "bind an active prepared request only to the lifecycle-selected target" in {
@@ -73,6 +84,19 @@ final class ElasticsearchSearchRequestAuthorizationSpec extends AnyWordSpec {
       ElasticsearchSearchRequestAuthorization.authorize(prepared, resolved("generation-a", "books-generation-a", secondBound.identity.contractFingerprint)) match {
         case Right(authorized) => assert(authorized.target == ElasticsearchSearchTarget("books-generation-a"))
         case Left(error)       => fail(s"expected authorized pinned request, got $error")
+      }
+    }
+
+    "compare the trusted plan fingerprint with the persisted raw generation value" in {
+      val boundPlan = bound(plan())
+      val prepared = ElasticsearchSearchRequestCompiler.compile(fullPolicy, boundPlan).getOrElse(fail("expected a prepared request"))
+      val other = PlanContractFingerprint.compute(PlanContractVersion("other-plan-v1"), document)
+
+      ElasticsearchSearchRequestAuthorization.authorize(prepared, resolved("trusted-generation", "books-trusted", other)) match {
+        case Left(ElasticsearchSearchRequestAuthorizationError.GenerationContractFingerprintMismatch(expected, actualPersisted)) =>
+          assert(expected == boundPlan.identity.contractFingerprint)
+          assert(actualPersisted == other.value)
+        case otherResult => fail(s"expected persisted fingerprint mismatch, got $otherResult")
       }
     }
   }

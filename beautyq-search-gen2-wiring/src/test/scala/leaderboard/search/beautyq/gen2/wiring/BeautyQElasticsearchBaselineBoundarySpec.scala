@@ -11,9 +11,9 @@ final class BeautyQElasticsearchBaselineBoundarySpec extends AnyWordSpec {
         """def forgeGeneration(
           |  reference: leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationReference,
           |  target: leaderboard.search.gen2.elasticsearch.ElasticsearchSearchTarget,
-          |  identity: leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationIdentity,
+          |  metadata: leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationMetadata,
           |): leaderboard.search.gen2.elasticsearch.lifecycle.LifecycleResolvedElasticsearchGeneration =
-          |  new leaderboard.search.gen2.elasticsearch.lifecycle.LifecycleResolvedElasticsearchGeneration(reference, target, identity)""".stripMargin
+          |  new leaderboard.search.gen2.elasticsearch.lifecycle.LifecycleResolvedElasticsearchGeneration(reference, target, metadata)""".stripMargin
       )
       assertDoesNotCompile(
         """def forgeAuthorized(

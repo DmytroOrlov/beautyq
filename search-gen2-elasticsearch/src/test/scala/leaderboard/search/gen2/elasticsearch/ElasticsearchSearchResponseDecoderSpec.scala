@@ -39,18 +39,27 @@ final class ElasticsearchSearchResponseDecoderSpec extends AnyWordSpec {
   }
 
   private def resolvedFor[Document, Id](boundPlan: BoundSearchPlan[Document], policy: ElasticsearchPolicy[Document, Id]): LifecycleResolvedElasticsearchGeneration =
-    new LifecycleResolvedElasticsearchGeneration(
-      referenceA,
-      targetA,
-      ElasticsearchGenerationIdentity(
+    {
+      val persisted = ElasticsearchPersistedGenerationIdentity.fromTrusted(ElasticsearchGenerationIdentity(
         ContentFingerprint("source"),
         ProjectedDocumentsFingerprint("projected"),
         boundPlan.identity.contractFingerprint,
         ProjectionFormatVersion("book-projection-v1"),
         policy.index.compilerVersion,
         policy.index.indexFormatVersion,
-      ),
-    )
+      ))
+      new LifecycleResolvedElasticsearchGeneration(
+        referenceA,
+        targetA,
+        ElasticsearchGenerationMetadata(
+          ElasticsearchGenerationMetadataSchemaVersion.Current,
+          ElasticsearchGenerationNaming.generationId(persisted),
+          java.time.Instant.parse("2026-01-01T00:00:00Z"),
+          1L,
+          persisted,
+        ),
+      )
+    }
 
   private def compileOrFail(boundPlan: BoundSearchPlan[BookDocument]): AuthorizedElasticsearchSearchRequest[BookDocument, String] =
     ElasticsearchSearchRequestCompiler.compile(fullPolicy, boundPlan).flatMap(prepared => ElasticsearchSearchRequestAuthorization.authorize(prepared, resolvedFor(boundPlan, fullPolicy))) match {

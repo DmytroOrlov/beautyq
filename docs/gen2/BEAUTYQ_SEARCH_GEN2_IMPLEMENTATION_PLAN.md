@@ -85,6 +85,11 @@ summaries must remain short and point here.
     generation references, and `BaselineSearchPage` with bounded hit decoding, object sources, typed term
     facets, precision evidence and retained diagnostics. The accepted focused boundary is ready for 5C;
     physical lifecycle ownership remains a separate brick.
+  - Brick 5C implementation is present under review: validated synchronous transport, canonical persisted
+    generation metadata/name, bounded bulk ingestion, strict reuse validation, atomic alias activation,
+    lifecycle authorization, generic baseline execution and thin BeautyQ composition. Pure/scripted
+    focused tests pass; the default-local full resource proof is currently canceled because localhost
+    Elasticsearch is unavailable, so the brick remains active.
 
   Compact Brick 5 status:
 
@@ -122,10 +127,11 @@ summaries must remain short and point here.
   Read `catalog`, then `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`
   and `variants.plan`; projection/materialization stays in its owning module because the DAG must not
   reverse-depend from the contract layer.
-- **Next action:** implement 5C's physical-generation lifecycle and independent baseline service on top of
-  the prepared-request and lifecycle-authorization boundary; keep target resolution outside the pure
-  compiler. No architecture decision is delegated to an implementation agent.
-- **Blockers:** none for the accepted 5B boundary; 5C must preserve its trust and typed-response seams.
+- **Next action:** review 5C and run its default-local full resource proof with Elasticsearch available;
+  after that proof passes, close 5C and activate 5D. No architecture decision is delegated to an
+  implementation agent.
+- **Blockers:** local Elasticsearch availability for the required 5C resource proof; pure/scripted focused
+  verification is green.
 
 ### Open reusable-framework gaps
 
@@ -1025,8 +1031,10 @@ validates only document shape (`EmptyDocumentId`/`ValueEncoding`).
   switch`, plus explicit previous-generation retention policy;
 - implement baseline request execution by sending the 5B request and passing the raw response back to the
   5B decoder;
-- compose the repository-backed BeautyQ materializer, independent Gen2 resource names, lifecycle and
-  baseline service in `beautyq-search-gen2-wiring` without adding a V1 route or production fan-out.
+- compose the independent Gen2 resource names, lifecycle and baseline service in
+  `beautyq-search-gen2-wiring` without adding a V1 route or production fan-out. Repository loading and
+  materializer execution remain Brick 8 application-composition responsibilities; 5C starts from the
+  already materialized/compiled generation artifact.
 
 Physical generation reuse requires the complete ES generation identity. A matching source fingerprint
 alone is insufficient. Alias mutation is one atomic Elasticsearch aliases operation performed only after
@@ -1041,8 +1049,9 @@ every validation succeeds.
 - a resource-backed default-local Elasticsearch fixture proves mapping, bulk ingestion, exact totals
   beyond 256 documents, complete-set facet counts, cursor pagination and alias activation; it cancels
   with a useful reason when the external resource is unavailable;
-- focused BeautyQ composition proves materialization -> generation -> activation -> baseline search with
-  separate Gen2 names. Coordinator/user full verification remains required for production graph/readiness.
+- focused BeautyQ composition proves compiled generation -> activation -> baseline search with separate
+  Gen2 names. Brick 8 proves the preceding repository materialization composition. Coordinator/user full
+  verification remains required for production graph/readiness.
 
 #### Forbidden
 

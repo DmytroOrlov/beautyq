@@ -504,9 +504,8 @@ one complete fingerprint - covering both index and query choices - that a domain
 generation compiler and the request compiler all consume; a domain never recreates request/response
 traversal, an aggregation name, or a second fingerprint. `BeautyQElasticsearchPolicy`/
 `BeautyQElasticsearchGeneration`/`BeautyQElasticsearchBaseline` (`beautyq-search-gen2-wiring`) are the
-golden reference at full scale. Live index lifecycle (build/ingest/alias activation) and group/carousel
-result types remain later bricks.
-Live index lifecycle (build/ingest/alias activation) and group/carousel result types remain later bricks.
+golden reference at full scale. Reuse the generic physical-generation lifecycle and baseline service with
+domain resource names; group/carousel result types remain a later brick.
 
 ## Materialization
 

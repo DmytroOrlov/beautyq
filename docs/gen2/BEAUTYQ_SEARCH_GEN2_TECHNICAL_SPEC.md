@@ -1502,18 +1502,43 @@ The selected mechanism must pass exact fixture tests for:
 
 ### 11.5 Lifecycle
 
-Gen2 uses versioned physical indexes and a stable alias:
+Brick 5C uses deterministic versioned physical indexes and one stable alias:
 
 ```text
-build -> validate -> count/fingerprint check -> atomic alias switch
+compiled generation
+  -> canonical persisted identity and physical name
+  -> create/reuse
+  -> bounded sequential bulk + refresh
+  -> strict metadata/mapping/live-count validation
+  -> one atomic alias update
 ```
 
-A failed build never changes the active alias. Previous generation retention is policy-driven.
+The physical name is a non-empty configured prefix plus a full lowercase SHA-256 derived from the six
+persisted generation-identity strings through the repository's shared `CanonicalFingerprint` framing.
+Mapping `_meta` stores the complete metadata: schema version, generation ID, canonical build instant,
+document count and persisted identity. The lifecycle-resolved aggregate retains that exact decoded
+metadata. Reuse requires exact name, metadata identity, mapping `properties`, metadata count and a live
+`_count` whose shard diagnostics are complete and failure-free; `builtAt` is observation metadata and is
+excluded from reuse identity.
 
-The active physical index records the source/projected-document/contract/projection/compiler/index-
-format identity used to build it. Complete identity equality is required for reuse. Mapping, bulk,
-refresh, metadata/count/fingerprint validation and baseline search use a neutral transport client; the
-client owns HTTP only and contains no interpreter or domain policy.
+Cursor state remains untrusted. It carries only a generation reference; lifecycle validates its prefix/hash
+shape, reads and verifies persisted metadata, and only then constructs an executable physical target.
+Authorization compares the plan's trusted contract fingerprint with the persisted raw value. A failed
+build never changes the alias. A physical index created by the current call is cleaned up only before
+mapping/count validation succeeds; a concurrently existing or already validated generation is never
+blindly deleted. The initial retention policy is `KeepAll`.
+
+The neutral synchronous JDK client accepts an omitted endpoint port or an explicit port in `1..65535`,
+owns confined HTTP paths, timeouts, methods/content types, and maps request construction, connection,
+HTTP and JSON failures to typed errors carrying method and path. Bulk framing derives from compiled documents,
+respects document and UTF-8 byte limits, preserves order and is followed by exactly one refresh when
+non-empty; item failures retain global/local index, ID, target, status and raw error JSON. Create-race
+recovery recognizes only a parsed `error.type = resource_already_exists_exception` envelope. Alias
+activation removes sorted old targets only, never the already-present new target. The baseline
+service authorizes a prepared request through lifecycle, sends its unchanged JSON to the authorized
+physical target, and delegates the raw response to the existing typed decoder. BeautyQ declares only its
+resource names and composes these generic owners; repository materialization belongs to Brick 8 runtime
+composition.
 
 ## 12. Qdrant Gen2 requirements
 
