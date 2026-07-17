@@ -23,10 +23,17 @@ final class ElasticsearchIndexPolicySpec extends AnyWordSpec {
       assert(policy.textFields.map(_.field) == Vector(title, subtitle))
     }
 
+    "accept only framework-known analyzer names before mapping compilation" in {
+      assert(ElasticsearchAnalyzerName.from("standard") == Right(ElasticsearchAnalyzerName.Standard))
+      assert(ElasticsearchAnalyzerName.from("whitespace") == Right(ElasticsearchAnalyzerName.Whitespace))
+      assert(ElasticsearchAnalyzerName.from("custom_domain_analyzer") == Left(ElasticsearchAnalyzerNameError.Unsupported("custom_domain_analyzer")))
+      assertDoesNotCompile("""ElasticsearchAnalyzerName("custom_domain_analyzer")""")
+    }
+
     "normalize textFields into document declaration order for reversed input, preserving each assignment's exact analyzer and field handle" in {
       // Distinct analyzers per field (not both Standard) so a broken normalization that silently swapped
       // analyzers between fields, rather than genuinely reordering, would be caught.
-      val distinctAnalyzers = Vector(ElasticsearchTextFieldMapping(title, ElasticsearchAnalyzerName.Standard), ElasticsearchTextFieldMapping(subtitle, ElasticsearchAnalyzerName("whitespace")))
+      val distinctAnalyzers = Vector(ElasticsearchTextFieldMapping(title, ElasticsearchAnalyzerName.Standard), ElasticsearchTextFieldMapping(subtitle, ElasticsearchAnalyzerName.Whitespace))
       val reversed          = distinctAnalyzers.reverse
 
       val policyInOrder  = policyOrFail(distinctAnalyzers)
@@ -38,9 +45,9 @@ final class ElasticsearchIndexPolicySpec extends AnyWordSpec {
 
       // Each assignment's exact analyzer stays attached to its own field - normalization reorders
       // assignments, it never reassigns analyzers between fields.
-      assert(policyReversed.textFields.map(_.analyzer) == Vector(ElasticsearchAnalyzerName.Standard, ElasticsearchAnalyzerName("whitespace")))
+      assert(policyReversed.textFields.map(_.analyzer) == Vector(ElasticsearchAnalyzerName.Standard, ElasticsearchAnalyzerName.Whitespace))
       assert(policyReversed.analyzerOf(title) == Some(ElasticsearchAnalyzerName.Standard))
-      assert(policyReversed.analyzerOf(subtitle) == Some(ElasticsearchAnalyzerName("whitespace")))
+      assert(policyReversed.analyzerOf(subtitle) == Some(ElasticsearchAnalyzerName.Whitespace))
 
       // Exact handle identity survives normalization - fields are reordered, never recreated.
       assert(policyReversed.textFields.map(_.field).zip(Vector(title, subtitle)).forall { case (normalized, canonical) => normalized eq canonical })

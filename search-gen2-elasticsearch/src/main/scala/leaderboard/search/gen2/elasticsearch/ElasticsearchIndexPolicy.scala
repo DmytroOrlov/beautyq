@@ -2,10 +2,23 @@ package leaderboard.search.gen2.elasticsearch
 
 import leaderboard.search.gen2.contract.*
 
-final case class ElasticsearchAnalyzerName(value: String)
+enum ElasticsearchAnalyzerName(val value: String) {
+  case Standard extends ElasticsearchAnalyzerName("standard")
+  case Whitespace extends ElasticsearchAnalyzerName("whitespace")
+}
+
+sealed trait ElasticsearchAnalyzerNameError
+object ElasticsearchAnalyzerNameError {
+  final case class Unsupported(value: String) extends ElasticsearchAnalyzerNameError
+}
 
 object ElasticsearchAnalyzerName {
-  val Standard: ElasticsearchAnalyzerName = ElasticsearchAnalyzerName("standard")
+  def from(value: String): Either[ElasticsearchAnalyzerNameError, ElasticsearchAnalyzerName] =
+    value match {
+      case "standard"   => Right(Standard)
+      case "whitespace" => Right(Whitespace)
+      case other         => Left(ElasticsearchAnalyzerNameError.Unsupported(other))
+    }
 }
 
 /** One declared searchable text field's analyzer choice. `field` must be the exact handle owned by the

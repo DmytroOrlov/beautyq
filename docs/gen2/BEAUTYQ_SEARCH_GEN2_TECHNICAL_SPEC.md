@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; implemented through Brick 5C, with pre-5D cleanup active**
+Status: **accepted architecture baseline; Brick 5C implemented, Brick 5C-D active pending resource proof**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -1310,9 +1310,9 @@ cannot substitute one. Its only construction paths are `ElasticsearchIndexPolicy
 - no assignment to an undeclared, foreign-document, or non-searchable/non-`Text` handle - a `SearchField`
   belonging to another document type fails to compile rather than reaching this runtime check.
 
-Brick 5C live proof covers BeautyQ's built-in `standard` analyzer. Before 5D, Brick 5C-D closes the
-initial public analyzer algebra to framework-known built-ins and rejects arbitrary names before index
-creation; arbitrary custom analyzer support is not an initial framework feature.
+Brick 5C-D closes the initial public analyzer algebra to framework-known built-ins (`standard` and
+`whitespace`) and rejects arbitrary names before index creation; BeautyQ uses `standard`, and arbitrary
+custom analyzer support is not an initial framework feature.
 
 `ElasticsearchMappingCompiler.compile` and `ElasticsearchDocumentCompiler.compile` both traverse
 `SearchDocumentDeclaration.allFields` in its contract order through the shared, domain-neutral
@@ -1528,10 +1528,21 @@ build never changes the alias. A physical index created by the current call is c
 mapping/count validation succeeds; a concurrently existing or already validated generation is never
 blindly deleted.
 
-The accepted pre-5D lifecycle target deletes every superseded exact Gen2 physical generation after a
-successful alias activation, retains only the newly active generation, reports cleanup failure as a typed
-observable/retryable error, and treats a cursor pinned to a deleted generation as a typed stale-generation
-failure. There is no configurable retention policy in the initial greenfield architecture.
+Brick 5C-D implements deletion only for generations atomically marked by the lifecycle-owned
+`<active-alias>--superseded` alias. A metadata-valid, not-yet-active candidate has neither lifecycle
+alias and is therefore not a cleanup candidate. During activation, old active targets are moved to the
+superseded alias in the same exact `_aliases` operation that installs the new active target. Cleanup
+reads only that alias, validates each exact mapping `_meta` against the physical name and persisted
+identity, then sends one sorted exact `remove_index` action list. A later activation cannot delete the
+current active target: cleanup performs a read-side sole-active check and repeats the active relationship
+as a `must_exist` remove/add guard inside the same atomic `_aliases` request as every `remove_index` action.
+An active/superseded overlap or a failed guard therefore fails closed. Reactivation removes a stale
+superseded marker from the target becoming active in the same atomic alias mutation. A successful aliases response may omit
+`action_results`; when results are present they are decoded strictly in request order. A superseded
+target whose mapping has disappeared is treated as idempotently already removed, while other lookup
+transport failures remain typed. Cleanup failures are typed and retryable; a cursor pinned to a deleted
+generation is a typed stale-generation failure. Resource-backed acceptance remains the active Brick 5C-D
+gate. There is no configurable retention policy in the initial greenfield architecture.
 
 The neutral synchronous JDK client accepts an omitted endpoint port or an explicit port in `1..65535`,
 owns confined HTTP paths, timeouts, methods/content types, and maps request construction, connection,
@@ -1539,7 +1550,12 @@ HTTP and JSON failures to typed errors carrying method and path. Bulk framing de
 respects document and UTF-8 byte limits, preserves order and is followed by exactly one refresh when
 non-empty; item failures retain global/local index, ID, target, status and raw error JSON. Create-race
 recovery recognizes only a parsed `error.type = resource_already_exists_exception` envelope. Alias
-activation removes sorted old targets only, never the already-present new target. The baseline
+activation atomically moves sorted old targets to the lifecycle-owned superseded alias, removes any
+stale superseded marker from the new target, and never marks the new target superseded. Cleanup and
+activation responses accept Elasticsearch's normal acknowledged success without `action_results`; when
+present, results are accepted only in Elasticsearch's structured
+`action_results` shape (`action.type`, exact `action.indices`, optional `action.aliases`, integer
+`status`, and raw `error`), with declaration order preserved. The baseline
 service authorizes a prepared request through lifecycle, sends its unchanged JSON to the authorized
 physical target, and delegates the raw response to the existing typed decoder. BeautyQ declares only its
 resource names and composes these generic owners; repository materialization belongs to Brick 8 runtime

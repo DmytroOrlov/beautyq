@@ -45,7 +45,6 @@ object BeautyQElasticsearchBaselineService {
     ElasticsearchGenerationLifecycleConfig.create(
       alias = BeautyQSearchGen2ResourceNames.ElasticsearchAlias,
       physicalIndexPrefix = BeautyQSearchGen2ResourceNames.ElasticsearchPhysicalIndexPrefix,
-      retention = ElasticsearchGenerationRetentionPolicy.KeepAll,
       batching = batching,
     ).left.map(BeautyQElasticsearchBaselineServiceMakeError.LifecycleConfig.apply).map { config =>
       val lifecycle = new ElasticsearchGenerationLifecycle(client, config, clock)

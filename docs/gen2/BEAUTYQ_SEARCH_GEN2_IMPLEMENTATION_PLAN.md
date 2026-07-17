@@ -21,12 +21,11 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Brick 5C is completed and its local Elasticsearch communication proof is verified.
-  The pre-5D cleanup patch is active. Brick 5D has not started.
+- **Live status:** Brick 5C is completed; Brick 5C-D is active pending its real Elasticsearch cleanup
+  proof. Brick 5C-E is planned and Brick 5D has not started.
 - **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C.
-- **Current cleanup:** remove the redundant audit document, keep materialization values as simple
-  internal immutable Scala values, add the wiring-owned `BeautyQSearchGen2` navigation facade, split
-  metadata/live document-count diagnostics, and state field order exactly.
+- **Current cleanup:** finish ownership-safe, alias-guarded two-generation cleanup and its resource
+  proof; only then validate public filter/sort registries through one generic constructor path.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
@@ -37,19 +36,15 @@ summaries must remain short and point here.
 
 ### Exact pre-5D sequence
 
-1. **Brick 5C-D — generation cleanup and initial analyzer closure.** After successful alias activation,
-   enumerate exact physical Gen2 index names under the configured prefix and delete every superseded
-   generation except the newly active one, in deterministic order. Remove `KeepAll` and the retention
-   parameter entirely. Cleanup failure is a typed, observable error and a subsequent activation retries
-   it; the error preserves the exact failed old targets and the new active generation is never rolled
-   back. Cleanup uses validated exact names only: never a wildcard, never the active target, and never an
-   unrelated or malformed name. Failed pre-activation candidates keep their existing exact cleanup
-   behavior. A cursor pinned to a deleted generation returns a typed stale-generation failure that Brick
-   9 maps to restart pagination. Initial analyzer policy supports only framework-known built-ins
-   (BeautyQ uses `standard`) and rejects arbitrary names before index creation. Prove two successive
-   activations leave only the second generation, unrelated/malformed names are untouched, cleanup failure
-   is observable and retryable, stale cursors fail typed, no retention enum/config remains, built-in/
-   analyzer rejection is exact, and lifecycle/cursor/resource-backed tests cover the behavior.
+1. **Brick 5C-D — ownership-safe generation cleanup and resource proof.** The implementation now
+   marks old active targets with the lifecycle-owned `<active-alias>--superseded` alias, removes stale
+   markers when a generation is reactivated, validates persisted metadata before exact `remove_index`
+   actions, protects in-progress candidates and fails closed on an active/superseded overlap. It
+   accepts normal acknowledged aliases responses without `action_results`, treats a disappeared
+   superseded mapping as idempotent, preserves typed stale cursors and supports only built-in analyzers.
+   It remains active until the real local Elasticsearch scenario proves old-generation
+   deletion, active and in-progress-generation survival, stale-cursor failure, unowned-index survival
+   and retry.
 2. **Brick 5C-E — public authoring registry validation.** Replace last-wins public filter/sort lookup
    construction with validated constructors that report duplicate public names with first and duplicate
    positions. Bind every dynamic public filter declaration to the exact dynamic-family inventory and
@@ -899,8 +894,8 @@ Execute the accepted 5A/5B artifacts against an independent Gen2 Elasticsearch r
 semantic compilation into transport code. This is where complete live Elasticsearch acceptance - backend
 limits such as the `_id` size cap and acceptance of the emitted mapping with BeautyQ's built-in
 `standard` analyzer - is owned; Brick 5A validates only document shape
-(`EmptyDocumentId`/`ValueEncoding`). Brick 5C-D closes the initial analyzer vocabulary to
-framework-known built-ins before another analyzer can reach index creation.
+(`EmptyDocumentId`/`ValueEncoding`). Brick 5C-D now closes the initial analyzer vocabulary to
+framework-known built-ins before an analyzer can reach index creation.
 
 #### Diff
 
@@ -909,8 +904,7 @@ framework-known built-ins before another analyzer can reach index creation.
 - compile bulk ingestion from the 5A generation artifact and record its complete generation identity and
   build metadata in the physical index;
 - implement `build -> ingest -> refresh -> validate mapping/metadata/count/fingerprint -> atomic alias
-  switch`; Brick 5C-D removes the temporary retention parameter and deletes superseded exact Gen2
-  generations after activation;
+  switch -> discover only lifecycle-marked superseded generations -> exact cleanup` (Brick 5C-D active);
 - implement baseline request execution by sending the 5B request and passing the raw response back to the
   5B decoder;
 - compose the independent Gen2 resource names, lifecycle and baseline service in
@@ -926,7 +920,7 @@ every validation succeeds.
 
 - scripted client contract tests prove endpoint/method/body semantics and typed failures;
 - lifecycle tests prove failed create/ingest/validation leaves the old alias untouched and successful
-  validation performs one atomic remove/add activation;
+  validation performs one atomic activation that marks old targets superseded and installs the new active alias;
 - generation mismatch creates a new physical index; complete identity match permits reuse;
 - a resource-backed default-local Elasticsearch fixture proves mapping, bulk ingestion, exact totals
   beyond 256 documents, complete-set facet counts, cursor pagination and alias activation; it cancels

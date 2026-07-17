@@ -448,7 +448,8 @@ policy or backend retrieval knobs.
 ### Elasticsearch index-policy example (Brick 5A)
 
 A domain supplies only its already-declared document, one explicit Elasticsearch policy version, and an
-analyzer choice for each of its own declared searchable text fields:
+framework-known analyzer choice for each of its own declared searchable text fields (BeautyQ uses
+`Standard`; arbitrary custom analyzer names are not an initial Gen2 shape):
 
 ```scala
 val index: ElasticsearchIndexPolicy[WidgetDocument, WidgetId] =

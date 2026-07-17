@@ -18,7 +18,7 @@ final class ElasticsearchBaselineServiceSpec extends AnyWordSpec {
       val bound = SearchCursorEnvelope.bind(plan, CanonicalPlanView(fullPolicy.contractFingerprint)).getOrElse(fail("expected bound plan"))
       val prepared = ElasticsearchSearchRequestCompiler.compile(fullPolicy, bound).getOrElse(fail("expected prepared request"))
       val batching = ElasticsearchBulkBatchingPolicy.create(10, 10000L).getOrElse(fail("expected batching"))
-      val config = ElasticsearchGenerationLifecycleConfig.create("books", "books_", ElasticsearchGenerationRetentionPolicy.KeepAll, batching).getOrElse(fail("expected config"))
+      val config = ElasticsearchGenerationLifecycleConfig.create("books", "books_", batching).getOrElse(fail("expected config"))
       val lifecycle = new ElasticsearchGenerationLifecycle(new MissingAliasClient, config, Clock.systemUTC())
 
       new ElasticsearchBaselineService(lifecycle).search(prepared) match {
