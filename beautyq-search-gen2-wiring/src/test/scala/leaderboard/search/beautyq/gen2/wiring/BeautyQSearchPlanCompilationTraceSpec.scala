@@ -64,7 +64,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -75,6 +75,8 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |=== plan ===
             |plan.residual-text=absent
             |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
             |plan.diagnostics.notice[0] code=default-browse detail=absent""".stripMargin
       )
     }
@@ -100,7 +102,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -112,7 +114,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ExplicitUi constraint.terms field=serviceCode:ServiceCode values=[manicure]
             |plan.page cursor=absent size=20
-            |plan.facet[0] facet.terms id=service field=serviceCode:ServiceCode size=10 order=CountDescThenKeyAsc counting=AllAppliedHardFilters""".stripMargin
+            |plan.facet[0] facet.terms id=service field=serviceCode:ServiceCode size=10 order=CountDescThenKeyAsc counting=AllAppliedHardFilters
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -137,7 +141,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -148,7 +152,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |=== plan ===
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ExplicitUi constraint.geo-distance-filter field=location:geo-point origin=52.5,13.4 radius=2000
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -173,7 +179,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -184,7 +190,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |=== plan ===
             |plan.residual-text=absent
             |plan.sort[0] sort.field-value field=priceFrom:decimal direction=Asc
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -211,7 +219,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -223,6 +231,8 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ExplicitUi constraint.terms field=serviceCode:ServiceCode values=[manicure]
             |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
             |plan.diagnostics.suppressed-filter[0] provenance=FacetSelection(sel-1) constraint.terms field=serviceCode:ServiceCode values=[manicure] reason=EquivalentDuplicate""".stripMargin
       )
     }
@@ -248,7 +258,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -259,7 +269,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |=== plan ===
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ParsedHard constraint.terms field=serviceCode:ServiceCode values=[lashes]
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -285,7 +297,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -297,7 +309,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ExplicitUi constraint.terms field=serviceCode:ServiceCode values=[manicure]
             |plan.applied-filter[1] provenance=ParsedHard constraint.terms field=enumAttributes.nail_coating_type:string values=[shellac]
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -322,7 +336,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -333,7 +347,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |=== plan ===
             |plan.residual-text=absent
             |plan.soft-signal[0] signal.geo-proximity field=location:geo-point origin=52.5,13.4
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score), min-geo-distance(min-distance field=location:geo-point origin=52.5,13.4)] order=[metric(best-score Desc), matching-document-count(Desc), metric(min-distance Asc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -357,7 +373,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -367,7 +383,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |
             |=== plan ===
             |plan.residual-text="something entirely unmatched"
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -392,7 +410,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -403,7 +421,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |=== plan ===
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ParsedHard constraint.terms field=categoryCode:CategoryCode values=[nails]
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -430,7 +450,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -443,7 +463,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |plan.applied-filter[0] provenance=ParsedHard constraint.terms field=serviceCode:ServiceCode values=[manicure]
             |plan.applied-filter[1] provenance=ParsedHard constraint.terms field=enumAttributes.nail_service_type:string values=[manicure]
             |plan.applied-filter[2] provenance=ParsedHard constraint.interval-overlap from=priceFrom:decimal to=priceTo:decimal bounds=[unbounded, inclusive(50)]
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
 
@@ -469,7 +491,7 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |precedence=[PublicRequest,ParsedIntent]
             |geo-origin=request.userLocation
             |facets=[service,category,price,durationMinutes]
-            |groups=empty
+            |groups=[provider-carousel,service-intent-carousel]
             |default-browse-code=default-browse
             |
             |=== compilation ===
@@ -481,7 +503,9 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |plan.residual-text=absent
             |plan.applied-filter[0] provenance=ParsedHard constraint.terms field=serviceCode:ServiceCode values=[hair_removal]
             |plan.applied-filter[1] provenance=ParsedHard constraint.number-range field=intAttributes.session_count:int bounds=[inclusive(6), inclusive(6)]
-            |plan.page cursor=absent size=20""".stripMargin
+            |plan.page cursor=absent size=20
+            |plan.group[0] group id=provider-carousel key=masterLocationId:MasterLocationId size=10 representative=fields[masterId:MasterId, masterName:string, masterLocationId:MasterLocationId, locationName:string, address:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact
+            |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
   }

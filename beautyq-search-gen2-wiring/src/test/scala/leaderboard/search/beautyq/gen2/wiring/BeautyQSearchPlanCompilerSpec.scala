@@ -519,9 +519,9 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
       assert(compile(request, intent).plan.facets.map(_.id) == Vector(FacetId("service")))
     }
 
-    "compile with empty groups" in {
+    "compile with the declared groups" in {
       val (request, intent) = build()
-      assert(compile(request, intent).plan.groups.isEmpty)
+      assert(compile(request, intent).plan.groups.map(_.id) == Vector(BeautyQSearchPlanPolicy.ProviderGroupId, BeautyQSearchPlanPolicy.ServiceGroupId))
     }
 
     "attach resolver suppressions to plan diagnostics" in {

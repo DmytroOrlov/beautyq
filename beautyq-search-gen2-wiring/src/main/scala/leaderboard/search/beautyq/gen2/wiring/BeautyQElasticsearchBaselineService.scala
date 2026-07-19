@@ -10,6 +10,7 @@ object BeautyQElasticsearchBaselineServiceError {
   final case class Lifecycle(error: ElasticsearchGenerationLifecycleError) extends BeautyQElasticsearchBaselineServiceError
   final case class RequestCompile(error: ElasticsearchSearchRequestCompileError) extends BeautyQElasticsearchBaselineServiceError
   final case class Search(error: ElasticsearchBaselineServiceError) extends BeautyQElasticsearchBaselineServiceError
+  final case class Projection(error: BeautyQCarouselProjectionError) extends BeautyQElasticsearchBaselineServiceError
 }
 
 sealed trait BeautyQElasticsearchBaselineServiceMakeError
@@ -30,10 +31,11 @@ final class BeautyQElasticsearchBaselineService private (
 
   def search(
     compiledPlan: CompiledBeautyQSearchPlan,
-  ): Either[BeautyQElasticsearchBaselineServiceError, BeautyQBaselineSearchPage] =
+  ): Either[BeautyQElasticsearchBaselineServiceError, BeautyQElasticsearchSearchResult] =
     BeautyQElasticsearchBaseline.compileRequest(compiledPlan)
       .left.map(BeautyQElasticsearchBaselineServiceError.RequestCompile.apply)
       .flatMap(prepared => baseline.search(prepared).left.map(BeautyQElasticsearchBaselineServiceError.Search.apply))
+      .flatMap(result => BeautyQElasticsearchSearchResult.project(result).left.map(BeautyQElasticsearchBaselineServiceError.Projection.apply))
 }
 
 object BeautyQElasticsearchBaselineService {

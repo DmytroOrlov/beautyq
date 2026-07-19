@@ -69,6 +69,7 @@ object BeautyQSearchDeclarations {
       val serviceId =
         declarations
           .inferred(_.serviceId)
+          .groupable(GroupMode.Terms)
           .declare
 
       val serviceCode =

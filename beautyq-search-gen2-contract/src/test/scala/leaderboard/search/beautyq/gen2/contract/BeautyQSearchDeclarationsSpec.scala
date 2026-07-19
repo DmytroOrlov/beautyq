@@ -51,7 +51,7 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
     ExpectedField("masterServiceOfferId", SearchFieldKind.Keyword, "MasterServiceOfferId", FieldPresence.Required, FieldCapabilities()),
     ExpectedField("masterLocationId", SearchFieldKind.Keyword, "MasterLocationId", FieldPresence.Required, FieldCapabilities(groupModes = Set(GroupMode.Terms))),
     ExpectedField("masterId", SearchFieldKind.Keyword, "MasterId", FieldPresence.Required, FieldCapabilities()),
-    ExpectedField("serviceId", SearchFieldKind.Keyword, "ServiceId", FieldPresence.Required, FieldCapabilities()),
+    ExpectedField("serviceId", SearchFieldKind.Keyword, "ServiceId", FieldPresence.Required, FieldCapabilities(groupModes = Set(GroupMode.Terms))),
     ExpectedField(
       "serviceCode",
       SearchFieldKind.Keyword,
@@ -269,11 +269,11 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
   }
 
   "stable identity and capability ownership" should {
-    "give service public identity capabilities (filter/facet) to serviceCode only, not serviceName or serviceId" in {
+    "give service public identity capabilities (filter/facet) to serviceCode, and group identity to serviceId" in {
       assert(Fields.serviceCode.capabilities.filterOperators == Set(FilterOperator.Equal, FilterOperator.In))
       assert(Fields.serviceCode.capabilities.facetModes == Set(FacetMode.Terms))
       assert(Fields.serviceName.capabilities == FieldCapabilities())
-      assert(Fields.serviceId.capabilities == FieldCapabilities())
+      assert(Fields.serviceId.capabilities == FieldCapabilities(groupModes = Set(GroupMode.Terms)))
     }
 
     "give category public identity capabilities (filter/facet) to categoryCode only, not categoryName or categoryId" in {
@@ -283,13 +283,13 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
       assert(Fields.categoryId.capabilities == FieldCapabilities())
     }
 
-    "give the provider group capability only to masterLocationId" in {
+    "give group capability only to declared group keys" in {
       assert(Fields.masterLocationId.capabilities.groupModes == Set(GroupMode.Terms))
-      assert(Fields.all.filterNot(_ eq Fields.masterLocationId).filterNot(_ eq Fields.serviceCode).forall(_.capabilities.groupModes.isEmpty))
+      assert(Fields.all.filterNot(_ eq Fields.masterLocationId).filterNot(_ eq Fields.serviceId).filterNot(_ eq Fields.serviceCode).forall(_.capabilities.groupModes.isEmpty))
     }
 
-    "give the service group capability only to serviceCode" in {
-      assert(Fields.serviceCode.capabilities.groupModes == Set(GroupMode.Terms))
+    "give the service group capability only to serviceId" in {
+      assert(Fields.serviceId.capabilities.groupModes == Set(GroupMode.Terms))
     }
 
     "give the geo filter/sort capability only to location" in {
@@ -438,6 +438,8 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
           "        │   ├── [2] price",
           "        │   └── [3] durationMinutes",
           "        ├── groups",
+          "        │   ├── [0] provider-carousel",
+          "        │   └── [1] service-intent-carousel",
           "        ├── modes",
           "        │   ├── [0] SemanticSearch",
           "        │   ├── [1] StructuredBrowse",

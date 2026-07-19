@@ -1,5 +1,6 @@
 package leaderboard.search.beautyq.gen2.contract
 
+import leaderboard.model.{MasterLocationId, ServiceId}
 import leaderboard.search.gen2.contract.*
 
 /** Typed inbound source identities used by BeautyQ's one executable precedence value. */
@@ -80,9 +81,80 @@ object BeautyQSearchPlanPolicy {
 
   val facetRegistry: FacetPlanRegistry[VariantSearchDocumentGen2] = FacetPlanRegistry.unsafeFrom(declarations)
 
-  /** No group requests: the current public request has no group input. An explicit empty policy, not an
-    * omission. */
-  val groups: Vector[GroupRequest[VariantSearchDocumentGen2, ?]] = Vector.empty
+  val ProviderGroupId: GroupId = GroupId("provider-carousel")
+  val ServiceGroupId: GroupId  = GroupId("service-intent-carousel")
+  val BestScoreMetricId: GroupMetricId = GroupMetricId("best-score")
+  val MinDistanceMetricId: GroupMetricId = GroupMetricId("min-distance")
+
+  private val groupSize: GroupSize = GroupSize.from(10).fold(error => throw new IllegalStateException(s"invalid source GroupSize literal: $error"), identity)
+
+  private val providerRepresentative: RepresentativeRequest[VariantSearchDocumentGen2] =
+    RepresentativeRequest.Fields(
+      Vector(
+        Fields.masterId,
+        Fields.masterName,
+        Fields.masterLocationId,
+        Fields.locationName,
+        Fields.address,
+      )
+    )
+
+  private val serviceRepresentative: RepresentativeRequest[VariantSearchDocumentGen2] =
+    RepresentativeRequest.Fields(
+      Vector(
+        Fields.serviceId,
+        Fields.serviceName,
+        Fields.categoryId,
+        Fields.categoryName,
+      )
+    )
+
+  private val serviceGroup: GroupRequest[VariantSearchDocumentGen2, ServiceId] =
+    GroupRequest(
+      id = ServiceGroupId,
+      keyField = Fields.serviceId,
+      size = groupSize,
+      representative = serviceRepresentative,
+      metrics = Vector(GroupMetricRequest.BestScore(BestScoreMetricId)),
+      order = Vector(
+        GroupOrder.Metric(BestScoreMetricId, SortDirection.Desc),
+        GroupOrder.MatchingDocumentCount(SortDirection.Desc),
+        GroupOrder.Key(SortDirection.Asc),
+      ),
+      precision = GroupPrecisionPolicy.RequireExact,
+    )
+
+  private def providerGroup(origin: Option[GeoPoint]): GroupRequest[VariantSearchDocumentGen2, MasterLocationId] = {
+    val metrics: Vector[GroupMetricRequest[VariantSearchDocumentGen2]] =
+      Vector[GroupMetricRequest[VariantSearchDocumentGen2]](GroupMetricRequest.BestScore(BestScoreMetricId)) ++
+        origin.map(value => GroupMetricRequest.MinGeoDistance(MinDistanceMetricId, Fields.location, value))
+    val order = Vector(
+      GroupOrder.Metric(BestScoreMetricId, SortDirection.Desc),
+      GroupOrder.MatchingDocumentCount(SortDirection.Desc),
+    ) ++ origin.map(_ => GroupOrder.Metric(MinDistanceMetricId, SortDirection.Asc)) ++ Vector(GroupOrder.Key(SortDirection.Asc))
+    GroupRequest(
+      id = ProviderGroupId,
+      keyField = Fields.masterLocationId,
+      size = groupSize,
+      representative = providerRepresentative,
+      metrics = metrics,
+      order = order,
+      precision = GroupPrecisionPolicy.RequireExact,
+    )
+  }
+
+  /** The first declared location signal is the sole BeautyQ choice that enables provider distance
+    * grouping. Coordinates on the request without an executable signal do not change group policy. */
+  def groupsFor(softSignals: Vector[PlannedSignal[VariantSearchDocumentGen2]]): Vector[GroupRequest[VariantSearchDocumentGen2, ?]] = {
+    val geoOrigin = softSignals.collectFirst {
+      case PlannedSignal.GeoProximitySignal(field, origin) if field eq Fields.location => origin
+    }
+    Vector(providerGroup(geoOrigin), serviceGroup)
+  }
+
+  /** Reviewer-visible no-geo declaration; request compilation derives the same declarations with the
+    * optional explicitly declared distance metric when the plan contains a location signal. */
+  val groups: Vector[GroupRequest[VariantSearchDocumentGen2, ?]] = groupsFor(Vector.empty)
 
   val defaultBrowseNotice: PlanDiagnostic = PlanDiagnostic(PlanDiagnosticCode("default-browse"), None)
 

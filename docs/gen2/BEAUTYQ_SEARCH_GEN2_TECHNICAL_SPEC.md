@@ -646,7 +646,7 @@ A group request is richer than a `terms` aggregation:
 final case class GroupRequest[Document, Key](
   id: GroupId,
   keyField: SearchField[Document, Key],
-  size: Int,
+  size: GroupSize,
   representative: RepresentativeRequest[Document],
   metrics: Vector[GroupMetricRequest[Document]],
   order: Vector[GroupOrder],
@@ -713,10 +713,10 @@ final case class SourcedConstraint[Constraint](
 
 ### 7.8 Role-specific backend plans and results
 
-Elasticsearch compiles the full plan:
+Elasticsearch compiles the full plan into its role-specific aggregate:
 
 ```scala
-FullSearchResult[Document, Id](
+ElasticsearchFullSearchResult[Document, Id](
   hits: Vector[BackendHit[Document, Id]],
   total: TotalHits,
   facets: Map[FacetId, FacetResult],
@@ -1294,7 +1294,11 @@ BeautyQ's own policy, declared once in `BeautyQSearchPlanPolicy` and exposed for
   (`NumberRange` over `durationMin`), each with the Gen1-evidence bucket table, half-open finite buckets
   and an upper-unbounded final bucket, declared via `FacetSize.unsafeFrom`/`FacetPlanRegistry.unsafeFrom`
   (§7.9) rather than a hand-rolled `getOrElse(throw ...)` or manual match/throw;
-- **group policy** — explicitly empty; the current request has no group input;
+- **group policy** — two explicit `RequireExact` projections: provider/location grouped by
+  `masterLocationId` and service grouped by `serviceId`, each with representative fields, best-score
+  ordering, matching-count ordering and a stable-key tie-breaker. The provider projection adds its
+  declared minimum-distance metric only when the compiled plan contains the `location` proximity signal;
+  coordinates alone never change the group policy;
 - **cursor contract version** — `BeautyQSearchDeclarations.variants.plan.contractVersion` is the
   explicit BeautyQ compatibility choice mixed into the generic declaration-derived fingerprint;
 - **mode classification** — the policy's executable classifier described above.
@@ -1440,8 +1444,10 @@ Text and GeoPoint identities are rejected before request compilation.
 returning `Either[ElasticsearchSearchRequestCompileError, PreparedElasticsearchSearchRequest[Document, Id]]`.
 It accepts only an already cursor-bound `BoundSearchPlan` - a raw `SearchPlan` does not
 type-check - and rejects a bound plan whose `contractFingerprint` differs from the policy's own
-(`ContractFingerprintMismatch`) before compiling anything. Brick 5B does not implement groups (see
-§11.4): a non-empty `plan.groups` is a typed `UnsupportedGroups`, never silently ignored.
+(`ContractFingerprintMismatch`) before compiling anything. The prepared request carries the complete
+validated `plan.groups` vector. Elasticsearch executes each group through an exact composite traversal
+with explicit representative/metric sub-aggregations; group results are decoded separately from the
+hit window and then exposed by the full baseline result.
 
 The compiled request body is exact and deterministic: `_source: true`, `track_total_hits: true`,
 `track_scores: true`, `size` equal to `pageSize + 1` (one lookahead hit beyond the requested page, or a
@@ -1494,17 +1500,20 @@ shared `SearchValueDecodeError` with its own context (`ElasticsearchQueryValueCo
 `.Facet`, versus the document compiler's `documentIndex`).
 
 `PreparedElasticsearchSearchRequest[Document, Id]` is the compiler-owned, private-constructor, `final`
-aggregate binding `generationRequirement`, `body`, `boundPlan`, `identityField`, `sortShape`,
-`requestedFacets`, `totalHitsPolicy` and `pageSize`. Lifecycle authorization wraps it in the equally
+aggregate binding `generationRequirement`, `body`, `executionQuery`, `boundPlan`, `identityField`,
+`sortShape`, `requestedFacets`, `requestedGroups`, `totalHitsPolicy` and `pageSize`. Lifecycle authorization wraps it in the equally
 closed `AuthorizedElasticsearchSearchRequest`, which adds the resolved generation target. Neither result
 has a public `apply`/`copy`/subclass path; the response decoder consumes only the authorized aggregate and
 never a separately supplied plan, facet list, sort shape, policy or target.
 
-### 11.3 Response decoding (implemented, Brick 5B)
+### 11.3 Response decoding (baseline implemented, group extension in Brick 5D)
 
 `ElasticsearchSearchResponseDecoder.decode(authorizedRequest, responseJson)` returns
-`Either[ElasticsearchSearchResponseErrors, BaselineSearchPage[Document, Id]]`. Only these role-specific
-Brick 5B types decode a response - never `FullSearchResult`, group/carousel structures, Qdrant candidate
+`Either[ElasticsearchSearchResponseErrors, BaselineSearchPage[Document, Id]]`. The Brick 5D group executor
+decodes each requested composite traversal into an exact generic group result, and the full baseline
+aggregate joins the page and group values. Only these role-specific Elasticsearch types decode a response;
+BeautyQ adds its typed carousel projection in wiring, never a generic domain type. Brick 5B types decode
+the baseline response - never Qdrant candidate
 slots or an HTTP client's own response type. `BaselineSearchPage[Document, Id]` is a decoder-owned,
 private-constructor, `final` read-only aggregate (hits, exact/qualified total, typed facets, validated
 backend diagnostics and next cursor); it
@@ -1533,21 +1542,35 @@ last *included* hit's sort tuple - never the lookahead hit itself - encoding the
 reference via `SearchCursorEnvelope.issue` against the same bound plan; when it does not, no next cursor
 is issued at all.
 
-Group buckets, representative data and metrics are not decoded by Brick 5B; see §11.4.
+Group buckets, representative data and metrics are decoded by the Brick 5D group executor after the
+baseline page; they are not reconstructed from the returned hit window.
 
-### 11.4 Group implementation
+### 11.4 Group implementation (implemented, Brick 5D)
 
-A plain `terms` aggregation is not sufficient.
+A plain `terms` aggregation is not sufficient. The prepared request retains the typed group vector and
+the generic Elasticsearch owner executes one deterministic composite traversal per group with the same
+compiled execution query. The composite page size is framework-owned; `after_key` traversal continues
+until exhaustion, then all buckets are ordered by the declared tuple and truncated to the declared group
+size.
 
-The compiler must request the representative data and every ordering metric declared by the BeautyQ group policy. Candidate implementations include `terms` plus `top_hits`/`top_metrics` and metric sub-aggregations, or a dedicated secondary group query when that produces clearer correctness.
+The query requests `top_hits` representative data and every declared ordering metric. Keys are decoded
+through the exact declared field codec; representative fields are decoded through the exact requested
+handles; counts and diagnostics are validated; and the decoded precision is `Exact` for this composite
+implementation. A repeated `after_key`, duplicate key or malformed representative is a typed response
+error rather than a partial result.
 
-The selected mechanism must pass exact fixture tests for:
+The implementation passes exact fixture tests for:
 
 - representative document;
 - matching count;
 - best score;
 - optional proximity metric;
 - deterministic bucket order.
+
+BeautyQ declares provider/location and service groups in its plan policy. The provider group adds the
+minimum-distance metric only when a compiled `location` proximity signal exists; a location coordinate
+alone never adds geo ordering. BeautyQ wiring projects only typed provider/service carousel values and
+does not recreate field handles or group IDs.
 
 ### 11.5 Lifecycle
 

@@ -26,7 +26,7 @@ object BeautyQSearchPlanCompilationTrace {
       BeautyIntentTrace.render(intent),
       "",
       "=== policy ===",
-      renderPolicy,
+      renderPolicy(result),
       "",
       "=== compilation ===",
       renderCompilation(result),
@@ -35,12 +35,12 @@ object BeautyQSearchPlanCompilationTrace {
       SearchPlanTrace.render(result.plan),
     ).mkString("\n")
 
-  private def renderPolicy: String =
+  private def renderPolicy(result: CompiledBeautyQSearchPlan): String =
     Vector(
       s"precedence=${BeautyQSearchPlanPolicy.constraintPrecedence.sourceOrder.mkString("[", ",", "]")}",
       s"geo-origin=${BeautyQSearchPlanPolicy.geoOriginPolicy.sourcePath}",
       s"facets=${BeautyQSearchPlanPolicy.facetRegistry.ids.map(_.value).mkString("[", ",", "]")}",
-      s"groups=${if (BeautyQSearchPlanPolicy.groups.isEmpty) "empty" else BeautyQSearchPlanPolicy.groups.map(_.id.value).mkString("[", ",", "]")}",
+      s"groups=${result.plan.groups.map(_.id.value).mkString("[", ",", "]")}",
       s"default-browse-code=${BeautyQSearchPlanPolicy.defaultBrowseNotice.code.value}",
     ).mkString("\n")
 

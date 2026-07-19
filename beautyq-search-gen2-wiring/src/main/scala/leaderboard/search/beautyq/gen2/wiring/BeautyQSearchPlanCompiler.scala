@@ -73,7 +73,7 @@ object BeautyQSearchPlanCompiler {
             sort = resolvedInput.sort,
             page = request.page,
             facets = request.facets,
-            groups = BeautyQSearchPlanPolicy.groups,
+            groups = BeautyQSearchPlanPolicy.groupsFor(intent.softSignals),
           )
 
         SearchPlanCompilationKernel.prepare(compilationInput) match {

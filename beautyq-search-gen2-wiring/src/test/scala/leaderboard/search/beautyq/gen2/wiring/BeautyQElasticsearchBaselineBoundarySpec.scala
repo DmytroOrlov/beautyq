@@ -54,6 +54,26 @@ final class BeautyQElasticsearchBaselineBoundarySpec extends AnyWordSpec {
           |  leaderboard.model.MasterServiceOfferVariantId
           |](Vector.empty, 0L, Vector.empty, leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 1, 1, 0), None)""".stripMargin
       )
+      assertDoesNotCompile(
+        """def forgeFullResult(): leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult[
+          |  leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2,
+          |  leaderboard.model.MasterServiceOfferVariantId
+          |] = new leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult(null, Vector.empty)""".stripMargin
+      )
+      assertDoesNotCompile(
+        """final class ForgedFullResult extends leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult[
+          |  leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2,
+          |  leaderboard.model.MasterServiceOfferVariantId
+          |](null, Vector.empty)""".stripMargin
+      )
+      assertDoesNotCompile(
+        """def forgeFullResultCopy(
+          |  value: leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult[
+          |    leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2,
+          |    leaderboard.model.MasterServiceOfferVariantId
+          |  ]
+          |): Any = value.copy(page = value.page)""".stripMargin
+      )
     }
   }
 }

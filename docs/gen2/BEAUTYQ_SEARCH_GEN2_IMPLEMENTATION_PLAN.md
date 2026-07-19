@@ -21,10 +21,12 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 5C, 5C-D and 5C-E are completed; Brick 5D is planned and has not started.
-- **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C-E.
-- **Current cleanup:** none; the validated public filter/sort registry boundary and its neutral/BeautyQ
-  proofs are complete. Proceed to Brick 5D.
+- **Live status:** Bricks 5C, 5C-D and 5C-E are completed; Brick 5D is active pending its
+  resource-backed Elasticsearch proof.
+- **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C-E; the pure group policy, composite query compiler,
+  typed group decoder and BeautyQ carousel projection are implemented in the active 5D patch.
+- **Current cleanup:** run the focused neutral/BeautyQ group proofs and the local Elasticsearch resource
+  scenario; keep 5D active until the latter executes successfully.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
@@ -33,7 +35,7 @@ summaries must remain short and point here.
   branches are direct references to their downstream owners.
 - **Next:** Brick 5D exact groups/carousels; no 5C precondition remains open.
 
-### Exact pre-5D sequence
+### Exact 5D handoff
 
 1. **Brick 5C-D — ownership-safe generation cleanup and resource proof.** The implementation now
    marks old active targets with the lifecycle-owned `<active-alias>--superseded` alias, removes stale
@@ -48,7 +50,10 @@ summaries must remain short and point here.
    maps once, and derive BeautyQ dynamic public names directly from each `DynamicFieldFamily.entries`
    inventory. A missing dynamic relation is unrepresentable by this composition; no per-request scans
    or defensive missing-relation wrapper are added. Neutral and BeautyQ proofs share the same path.
-3. **Brick 5D — exact groups/carousels.** Then continue with Bricks 6, 7, 8 and the atomic Brick 9 cutover.
+3. **Brick 5D — exact groups/carousels (active).** The prepared request now carries the declared groups,
+   Elasticsearch owns composite traversal and typed group decoding, and BeautyQ owns only the final
+   provider/service projection. Close the brick with focused proofs and the real resource scenario,
+   then continue with Bricks 6, 7, 8 and the atomic Brick 9 cutover.
 
 ### Accepted initial limits, not live abstraction debt
 
@@ -818,7 +823,7 @@ lifecycle, DI binding or live Elasticsearch test in 5A; those belong to 5C.
 - a domain-owned manual fold over `VariantSearchDocumentGen2`;
 - deriving analyzer policy from `FieldSemantic`, public names or enum inventory;
 - raw final fingerprint construction or a second mapping/source inventory;
-- placeholder `FullSearchResult`, client or lifecycle APIs not executed by 5A.
+- placeholder full-result, client or lifecycle APIs not executed by 5A.
 
 ### Brick 5B — Pure baseline-page request/result and cursor protocol
 
@@ -826,15 +831,16 @@ lifecycle, DI binding or live Elasticsearch test in 5A; those belong to 5C.
 
 Compile a cursor-bound validated plan into one deterministic ES request and decode its response into the
 baseline page (hits, total, facets and next cursor). Keep the slice pure so semantic errors are separated
-from transport/resource failures; the final `FullSearchResult` aggregate is introduced only when 5D
-adds its real group component.
+from transport/resource failures; Brick 5D now adds the real generic group component and full-result
+aggregate without changing the baseline page contract.
 
 #### Diff
 
 In `search-gen2-elasticsearch` add:
 
 - the role-specific hit, exact/qualified total, facet, page and backend-diagnostic result types actually
-  returned by this decoder; do not introduce an empty group slot or Qdrant placeholder;
+  returned by this decoder; groups remain a separate Brick 5D execution/result component, not an empty
+  placeholder or a Qdrant slot;
 - the query-policy portion consumed by this slice: weighted searchable fields, text operator, explicit
   geo scoring parameters, exact-total requirement and default relevance/tie-break policy;
 - `BoundSearchPlan -> Elasticsearch request` compilation for residual text, terms, numeric/date ranges,
@@ -934,7 +940,7 @@ every validation succeeds.
 - whole-plugin test modules, Gen1 resource names or V1 request fan-out;
 - recomputing mapping, source, request or response semantics inside the lifecycle service.
 
-### Brick 5D — Exact provider/service groups and carousels
+### Brick 5D — Exact provider/service groups and carousels (active)
 
 #### Purpose
 
@@ -942,14 +948,12 @@ Complete the Elasticsearch-owned baseline result with the explicit group semanti
 
 #### Diff
 
-- replace BeautyQ's intentionally empty pre-5D group policy with explicit provider/location and service
-  group requests using the canonical `Fields.*` handles;
-- compile representative projection, matching count, best score, optional declared geo metric, exactness
-  policy and complete deterministic order tuple;
-- decode typed `GroupResult` values and precision metadata;
-- project the two results into BeautyQ provider/service carousel values;
-- use a dedicated secondary ES group query when it gives a clearer exact contract than one combined
-  aggregation request.
+- declare provider/location and service group requests using the canonical `Fields.*` handles;
+- compile each group through a dedicated composite ES query carrying the main execution query;
+- decode typed keys, representative fields, matching counts, best score, optional declared geo metric,
+  exactness policy and deterministic order;
+- project the generic results into BeautyQ provider/service carousel values;
+- finish the focused proof matrix and local Elasticsearch resource gate before marking the brick complete.
 
 #### Forbidden
 

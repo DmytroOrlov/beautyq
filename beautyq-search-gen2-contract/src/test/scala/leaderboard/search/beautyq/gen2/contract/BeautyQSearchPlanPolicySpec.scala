@@ -50,8 +50,33 @@ final class BeautyQSearchPlanPolicySpec extends AnyWordSpec {
   }
 
   "BeautyQSearchPlanPolicy.groups" should {
-    "declare an explicit empty group policy" in {
-      assert(BeautyQSearchPlanPolicy.groups.isEmpty)
+    "declare provider and service groups in business order" in {
+      assert(BeautyQSearchPlanPolicy.groups.map(_.id) == Vector(BeautyQSearchPlanPolicy.ProviderGroupId, BeautyQSearchPlanPolicy.ServiceGroupId))
+      assert(BeautyQSearchPlanPolicy.groups.forall(group => GroupRequest.validate(group).isRight))
+      BeautyQSearchPlanPolicy.groups match {
+        case Vector(provider, service) =>
+          assert(provider.keyField eq Fields.masterLocationId)
+          assert(service.keyField eq Fields.serviceId)
+          assert(provider.size.value == 10)
+          assert(service.size.value == 10)
+        case other => fail(s"expected provider and service groups, got $other")
+      }
+    }
+
+    "add provider distance ordering only for the compiled location signal" in {
+      val origin = GeoPoint(BigDecimal("52.5"), BigDecimal("13.4"))
+      val withoutSignal = BeautyQSearchPlanPolicy.groupsFor(Vector.empty)
+      val withSignal = BeautyQSearchPlanPolicy.groupsFor(Vector(PlannedSignal.GeoProximitySignal(Fields.location, origin)))
+      assert(withoutSignal.headOption.exists(_.metrics.forall(!_.isInstanceOf[GroupMetricRequest.MinGeoDistance[?]])))
+      withSignal match {
+        case Vector(provider, _) =>
+          assert(provider.metrics.exists {
+            case GroupMetricRequest.MinGeoDistance(id, field, value) => id == BeautyQSearchPlanPolicy.MinDistanceMetricId && (field eq Fields.location) && value == origin
+            case _ => false
+          })
+          assert(provider.order.contains(GroupOrder.Metric(BeautyQSearchPlanPolicy.MinDistanceMetricId, SortDirection.Asc)))
+        case other => fail(s"expected provider and service groups, got $other")
+      }
     }
   }
 
@@ -171,7 +196,7 @@ final class BeautyQSearchPlanPolicySpec extends AnyWordSpec {
   "BeautyQSearchDeclarations.variants.plan" should {
     "derive its inventory from BeautyQSearchPlanPolicy, exposing the same facet IDs and default-browse code" in {
       assert(BeautyQSearchDeclarations.variants.plan.facets == BeautyQSearchPlanPolicy.facetRegistry.ids)
-      assert(BeautyQSearchDeclarations.variants.plan.groups.isEmpty)
+      assert(BeautyQSearchDeclarations.variants.plan.groups == BeautyQSearchPlanPolicy.groups.map(_.id.value))
       assert(BeautyQSearchDeclarations.variants.plan.defaultBrowseCode == BeautyQSearchPlanPolicy.defaultBrowseNotice.code.value)
       assert(BeautyQSearchDeclarations.variants.plan.modes == Vector("SemanticSearch", "StructuredBrowse", "DefaultBrowse"))
     }
