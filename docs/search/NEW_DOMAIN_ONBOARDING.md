@@ -509,6 +509,15 @@ traversal, an aggregation name, or a second fingerprint. `BeautyQElasticsearchPo
 golden reference at full scale. Reuse the generic physical-generation lifecycle and baseline service with
 domain resource names; group/carousel result types remain a later brick.
 
+## Qdrant candidate policy (pure 6A boundary)
+
+After the document declaration and semantic candidate policy exist, a domain supplies only the
+identity field, searchable embedding field, named-vector/model identity, distance and retrieval
+knobs to its Qdrant policy. The generic policy derives payload fields, payload indexes, typed filter
+JSON, deterministic generation metadata and candidate response decoding from that declaration. Do not
+maintain a second payload/index list or call Gen1 Qdrant; transport, collection lifecycle and hydration
+are separate later bricks.
+
 ## Materialization
 
 Reuse from the generic Gen2 modules:

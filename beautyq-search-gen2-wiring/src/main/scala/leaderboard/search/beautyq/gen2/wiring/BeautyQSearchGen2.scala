@@ -36,4 +36,9 @@ object BeautyQSearchGen2 {
     val baseline   = BeautyQElasticsearchBaseline
     val service    = BeautyQElasticsearchBaselineService
   }
+
+  object qdrant {
+    val policy = BeautyQQdrantPolicy.policy
+    val resources = BeautyQSearchGen2ResourceNames
+  }
 }

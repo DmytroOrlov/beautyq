@@ -213,7 +213,11 @@ lazy val searchGen2Elasticsearch = project
 lazy val searchGen2Qdrant = project
   .in(file("search-gen2-qdrant"))
   .settings(name := "search-gen2-qdrant")
-  .pipe(lightweightSettings(Nil))
+  .pipe(lightweightSettings(Seq(
+    Deps.circeGeneric,
+    Deps.circeParser,
+    Deps.scalatest % Test,
+  )))
   .dependsOn(searchGen2Contract, searchGen2Core)
 
 lazy val beautyqSearchGen2Contract = project

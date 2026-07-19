@@ -21,39 +21,36 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 5C, 5C-D and 5C-E are completed; Brick 5D is active pending its
-  resource-backed Elasticsearch proof.
-- **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C-E; the pure group policy, composite query compiler,
-  typed group decoder and BeautyQ carousel projection are implemented in the active 5D patch.
-- **Current cleanup:** run the focused neutral/BeautyQ group proofs and the local Elasticsearch resource
-  scenario; keep 5D active until the latter executes successfully.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D and 6A are completed; Brick 6B-A is next.
+- **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
+  Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
+- **Next sequence:** 6B-A extracts the now-proven second-consumer JSON/HTTP mechanics into a neutral
+  transport project and adds the exact Qdrant 1.18.3 wire client. 6B-B adds the Qdrant generation
+  lifecycle, alias authorization, candidate execution and real-resource proof. 6C composes BeautyQ
+  query embedding and document hydration. Brick 7 then owns baseline-plus-supplement orchestration.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
 - **Canonical reading path:** start at wiring-owned `BeautyQSearchGen2` for the complete implemented
   composition. Its `contract` branch points to backend-neutral `BeautyQSearchDeclarations`; all other
   branches are direct references to their downstream owners.
-- **Next:** Brick 5D exact groups/carousels; no 5C precondition remains open.
 
-### Exact 5D handoff
+### Audit-derived acceptance gate for Bricks 6B–7
 
-1. **Brick 5C-D — ownership-safe generation cleanup and resource proof.** The implementation now
-   marks old active targets with the lifecycle-owned `<active-alias>--superseded` alias, removes stale
-   markers when a generation is reactivated, validates persisted metadata before exact `remove_index`
-   actions, protects in-progress candidates and fails closed on an active/superseded overlap. It
-   accepts normal acknowledged aliases responses without `action_results`, treats a disappeared
-   superseded mapping as idempotent, preserves typed stale cursors and supports only built-in analyzers.
-   User-verified full-suite execution proves old-generation deletion, active and in-progress-generation
-   survival, stale-cursor failure, unowned-index survival and retry.
-2. **Brick 5C-E — public authoring registry validation (completed).** Use one validated declaration index for
-   public filter/sort names, report every duplicate with first and duplicate positions, build lookup
-   maps once, and derive BeautyQ dynamic public names directly from each `DynamicFieldFamily.entries`
-   inventory. A missing dynamic relation is unrepresentable by this composition; no per-request scans
-   or defensive missing-relation wrapper are added. Neutral and BeautyQ proofs share the same path.
-3. **Brick 5D — exact groups/carousels (active).** The prepared request now carries the declared groups,
-   Elasticsearch owns composite traversal and typed group decoding, and BeautyQ owns only the final
-   provider/service projection. Close the brick with focused proofs and the real resource scenario,
-   then continue with Bricks 6, 7, 8 and the atomic Brick 9 cutover.
+This is the local application of the normative domain-authoring principles, not another audit ledger:
+
+1. **Ownership:** every persisted identity, authorized target and composed result has one executable
+   owner; facade, trace, fingerprint and docs remain derived views.
+2. **Totality at real boundaries:** validate untrusted HTTP, JSON and persisted resource state with
+   typed errors; do not wrap ordinary internal immutable values against impossible Scala callers.
+3. **Semantic integrity:** Elasticsearch remains the full-result owner and Qdrant remains candidate-only;
+   no transport or lifecycle path may drop a declared constraint or invent totals/facets/groups.
+4. **Authoring value and reuse:** BeautyQ declares only resource names, embedding/retrieval choices and
+   hydration policy. The framework owns repeated transport, lifecycle and execution mechanics, proved
+   with neutral fixtures rather than a renamed BeautyQ copy.
+5. **Proof and documentation honesty:** scripted fixtures use the real wire shape, communication tests
+   prove destructive/resource behavior, and this plan reports live status while the technical spec owns
+   exact API and supported shapes.
 
 ### Accepted initial limits, not live abstraction debt
 
@@ -940,37 +937,14 @@ every validation succeeds.
 - whole-plugin test modules, Gen1 resource names or V1 request fan-out;
 - recomputing mapping, source, request or response semantics inside the lifecycle service.
 
-### Brick 5D — Exact provider/service groups and carousels (active)
+### Brick 5D — Exact provider/service groups and carousels (completed)
 
-#### Purpose
-
-Complete the Elasticsearch-owned baseline result with the explicit group semantics accepted by ADR §15.
-
-#### Diff
-
-- declare provider/location and service group requests using the canonical `Fields.*` handles;
-- compile each group through a dedicated composite ES query carrying the main execution query;
-- decode typed keys, representative fields, matching counts, best score, optional declared geo metric,
-  exactness policy and deterministic order;
-- project the generic results into BeautyQ provider/service carousel values;
-- finish the focused proof matrix and local Elasticsearch resource gate before marking the brick complete.
-
-#### Forbidden
-
-- pretending a plain `terms` bucket contains representative document data;
-- silently accepting approximate counts where `RequireExact` is declared;
-- recounting groups from the returned hit window;
-- implicitly adding geo ordering because a location or geo signal exists;
-- recreating provider/service field handles or maintaining a parallel group ID list.
-
-#### Proof
-
-- representative document fixtures;
-- matching counts with more documents than the hit window;
-- best-score, matching-count and stable-key ordering fixtures;
-- geo-active ordering only when the group request declares the proximity metric/order;
-- precision surfaced in the decoded result and BeautyQ projection;
-- real Elasticsearch fixture for the selected group implementation.
+Elasticsearch now executes each declared group as a dedicated composite query over the already compiled
+main execution query and returns typed keys, representatives, counts, metrics, precision and deterministic
+order. BeautyQ declares the provider/location and service group policy through canonical `Fields.*` handles
+and owns only the final carousel projection. Counts are not reconstructed from the hit window, exactness is
+enforced, and geo ordering exists only when explicitly declared. Neutral, BeautyQ and real-resource proofs
+close the Brick 5 gate.
 
 ### Brick 5 closeout gate
 
@@ -999,68 +973,108 @@ beautyq-search-gen2-wiring/src/test/...             concrete policy + baseline/g
 
 Remove the independent Gen2 ES vertical/resources. V1 ES remains active and untouched.
 
-## Brick 6 — Build the complete Qdrant Gen2 candidate vertical
+## Brick 6A — Pure Qdrant candidate contract (completed)
 
 ### Purpose
 
-Provide filtered semantic candidates without forcing Qdrant into a full-result role.
+Define the backend-neutral Qdrant policy and deterministic artifacts without opening a network or
+resource lifecycle.
 
 ### Diff
 
-In `search-gen2-qdrant` add:
+Implemented in `search-gen2-qdrant`: closed distance/payload vocabulary, validated policy with
+declaration-derived payload indexes and separate collection/candidate fingerprints, typed embedding
+input/result boundaries, deterministic generation metadata and collection JSON, typed payload
+projection, filtered `CandidatePlan` request JSON, and candidate-only response decoding with
+order-preserving deduplication and diagnostics. BeautyQ exposes only its canonical variant fields,
+embedding model and retrieval choices through `BeautyQQdrantPolicy`.
 
-- neutral Qdrant transport/client if not already separate;
-- purpose-specific `CandidateSearchResult` and candidate diagnostics contracts;
-- collection compiler and lifecycle;
-- embedding/vector configuration;
-- typed payload projection;
-- payload index creation/validation;
-- point ingestion;
-- `CandidatePlan -> Qdrant request` compiler;
-- terms, numeric, interval-overlap and explicit geo radius filters;
-- topK/threshold/oversampling policy;
-- candidate response decoder.
+### Boundary kept explicit
 
-In BeautyQ Gen2 wiring add:
+- no Qdrant transport, collection lifecycle, HTTP client, hydration or route activation;
+- no Qdrant facet/group/page result ownership;
+- no dependence on Gen1 Qdrant interpreter or supplement policy.
 
-- embedding source projection;
-- independent Gen2 collection names;
-- candidate hydration against the Gen2 document view;
-- post-hydration assertion and diagnostics.
+### Focused proof
 
-### Forbidden
+- declaration-derived payload schema/index validation;
+- typed scalar payloads and filter JSON for terms, numeric, interval and geo constraints;
+- input/model/dimension and finite-vector binding;
+- deterministic generation identity and metadata;
+- candidate response status, hit-window, typed IDs, order and duplicate diagnostics.
 
-- Qdrant facet/group/page result placeholders;
-- primary filtering only after hydration;
-- dependence on Gen1 Qdrant interpreter or supplement policy;
-- route activation.
-
-### Proof
-
-- payload schema/index validation;
-- golden filter JSON for every supported hard constraint;
-- interval-overlap price filter boundaries;
-- candidate outside unfiltered topK is retrieved after filter pushdown;
-- zero post-hydration constraint violations;
-- deterministic candidate decoding and deduplication.
-
-### Expected diff shape
+### Delivered shape
 
 ```text
-search-gen2-qdrant/src/main/...                     new compiler/decoder/lifecycle
-search-gen2-qdrant/src/test/...                     golden + integration tests
-beautyq-search-gen2-wiring/...                      embedding/hydration service
+search-gen2-qdrant/src/main/...                     pure policy, compiler and decoder
+search-gen2-qdrant/src/test/...                     neutral contract proofs
+beautyq-search-gen2-wiring/...                      BeautyQ policy composition only
 ```
 
 ### Rollback
 
-Remove the independent Gen2 Qdrant vertical/resources. V1 remains untouched.
+Remove the pure Gen2 Qdrant policy/compiler branch. Gen1 Qdrant remains untouched.
+
+## Brick 6B — Qdrant transport, generation lifecycle and candidate execution (next)
+
+Brick 6B is delivered as two cohesive patches so transport extraction and resource mutation remain
+independently reviewable.
+
+### Brick 6B-A — Neutral JSON transport and exact Qdrant wire client
+
+The second Gen2 backend makes the endpoint/path/timeout/header/JSON/error mechanics currently embedded in
+the Elasticsearch client a source-confirmed second consumer. Add `search-gen2-transport`, move those
+domain- and backend-neutral mechanics there, and keep a thin Elasticsearch adapter with unchanged
+observable behavior. Both backend projects depend on the neutral transport project; `search-gen2-core`
+remains free of HTTP concerns.
+
+Add the Qdrant 1.18.3 wire client over that transport with exact methods for collection details, aliases,
+collection creation, payload-index creation, waited point upsert, exact count, atomic alias update and
+`POST /collections/{target}/points/query`. Query parameters and optional `api-key` are typed transport
+inputs; method/path/body choices are owned by the Qdrant adapter, not its callers. Scripted tests use the
+documented Qdrant response envelopes. Before that protocol becomes executable, include the Qdrant
+compiler and REST protocol versions in the candidate contract fingerprint. No lifecycle, embeddings,
+hydration or orchestration belongs here.
+
+### Brick 6B-B — Convergent physical lifecycle and candidate service
+
+Consume only the compiler-owned 6A generation and candidate artifacts. For one deterministic physical
+collection, create or validate its named-vector configuration and persisted `search_gen2` metadata,
+create only missing matching payload indexes, upsert the complete ordered point set with `wait=true`,
+require an exact point count, then atomically switch the configured alias. A partial compatible build is
+completed by retry; incompatible metadata, vector configuration, payload schema or count fails typed and
+never changes the alias.
+
+Successful physical generations are not automatically deleted in the initial Qdrant lifecycle. Qdrant's
+alias switch is atomic, but its collection deletion has no ES-style conditional alias guard; guessing that
+a non-active collection is safe would repeat the destructive lifecycle race found by the pre-5D audit.
+There is no retention enum or cleanup policy. The lifecycle also authorizes a candidate request only when
+its candidate fingerprint matches the policy and the alias resolves to one metadata-compatible physical
+collection. Candidate execution uses `/points/query` and delegates decoding to the 6A decoder.
+
+The communication proof runs against a separate local Qdrant 1.18.3 resource, while Gen1 remains on
+1.15.4 and `/points/search`. It proves create/retry/reuse, payload indexes, exact count, atomic alias switch,
+target authorization, filtered query execution and preservation of previously successful generations.
+
+## Brick 6C — BeautyQ query embedding and candidate hydration (planned)
+
+Compose the already accepted candidate evaluation with a typed embedding port, complete the 6A request,
+execute it through the authorized 6B service, and hydrate returned IDs from one generation-consistent Gen2
+document lookup. Reuse generic ordered lookup/dedup mechanics; BeautyQ owns only its embedding adapter,
+missing-document policy, post-hydration hard-constraint assertion and candidate provenance.
+
+The hydrated result remains candidate-only. Missing IDs, duplicate document identities, embedding mismatch
+and hard-constraint violations are typed integrity failures, not graceful Qdrant outages. No totals, facets,
+groups, public pagination, baseline fallback or append policy enters this brick.
 
 ## Brick 7 — Implement baseline-plus-supplement orchestration
 
 ### Purpose
 
 Combine role-specific backend outputs under the narrow accepted no-harm policy.
+
+Entry requires 6B's authorized candidate execution and 6C's generation-consistent hydrated candidate
+result. Brick 7 does not reopen their transport, lifecycle, embedding or hydration decisions.
 
 ### Diff
 

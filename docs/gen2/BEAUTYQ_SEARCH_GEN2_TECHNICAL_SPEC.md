@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; Brick 5C implemented, Brick 5C-D active pending resource proof**
+Status: **accepted architecture baseline; Brick 5D and Brick 6A implemented, Brick 6B next**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -275,9 +275,12 @@ Normative project names may use the repository naming convention, but ownership 
 search-gen2-contract
         ↓
 search-gen2-core
-   ┌────┴────────────────┐
-   ↓                     ↓
-search-gen2-elasticsearch  search-gen2-qdrant
+
+search-gen2-transport
+
+search-gen2-contract + search-gen2-core + search-gen2-transport
+   ├── search-gen2-elasticsearch
+   └── search-gen2-qdrant
 
 beautyq-search-gen2-contract
         ↓
@@ -300,11 +303,14 @@ search-gen2-contract
 search-gen2-core
   └─ depends on search-gen2-contract
 
+search-gen2-transport
+  └─ backend- and domain-neutral synchronous JSON/HTTP transport; no search-contract dependency
+
 search-gen2-elasticsearch
-  └─ depends on search-gen2-contract/core and a neutral ES transport
+  └─ depends on search-gen2-contract/core/transport
 
 search-gen2-qdrant
-  └─ depends on search-gen2-contract/core and a neutral Qdrant transport
+  └─ depends on search-gen2-contract/core/transport
 
 beautyq-search-gen2-contract
   └─ depends on search-gen2-contract, repo-core and beautyq-model
@@ -351,15 +357,11 @@ The rule applies to main and test sources, except for an explicitly named compar
 
 ### 5.3 Neutral clients
 
-If reusable ES/Qdrant transport code currently lives inside Gen1 backend modules, Gen2 must not depend on those modules.
-
-Allowed solutions:
-
-1. introduce a new neutral transport module used by Gen2;
-2. implement the minimal client in the Gen2 backend module;
-3. copy a small transport implementation temporarily and delete the duplicate with Gen1.
-
-Moving V1 runtime through the new transport is optional and must not block Gen2.
+Brick 6B-A introduces `search-gen2-transport` because endpoint validation, safe path/query assembly,
+timeouts, headers, synchronous JDK execution, JSON decoding and typed HTTP failures now have two real
+Gen2 backend consumers. Elasticsearch keeps a thin backend-named adapter; Qdrant owns only its exact
+REST method/path/body protocol. Transport contains no search semantics, backend resource lifecycle or
+BeautyQ policy. Gen1 remains unchanged.
 
 ### 5.4 Gen1 references are classified, not dependencies
 
@@ -751,7 +753,7 @@ final case class CandidateSearchResult[Id](
 
 `CandidatePlan` is a plain generic value; the canonical BeautyQ compiler supplies the compiled plan's
 hard constraints, but the generic constructor does not enforce their provenance. It carries no retrieval
-knob: `topK`, threshold and oversampling policy are Brick 6's
+knob: `topK`, threshold and oversampling policy are Brick 6A's
 `CandidatePlan -> Qdrant request` compiler concern, not this contract type. `CandidatePlanDecision` is
 generic in `Reason`: the generic contract declares no ineligibility vocabulary of its own (no
 `NoSemanticQueryText`/`NotFirstPage`/`NonDefaultSort` case lives here). BeautyQ's own three-case
@@ -786,8 +788,8 @@ text was still missing - meaning no active gate actually tracked it - and preser
 `SemanticQueryText` gate's predicate checks exactly `semanticText.isRight`, so missing text always fails
 that gate first. Only `Right` produces the compiler-bound `CompiledCandidateEvaluation` that
 `BeautyQCandidatePlanTrace.render` accepts; a `Left` propagates unchanged and is never rendered as
-ineligibility. Cursor binding is already owned by Brick 4G-B; Brick 6 still owns backend retrieval
-knobs.
+ineligibility. Cursor binding is already owned by Brick 4G-B; the pure Qdrant retrieval compiler is
+owned by Brick 6A, while transport and resource authorization remain the separate 6B boundary.
 
 `CandidateEvaluation[Gate, Plan, Reason]` itself is a read-only, framework-produced result: it is a type
 alias for `SemanticCandidateEvaluation.Result`, whose constructor is private to
@@ -1635,6 +1637,12 @@ composition.
 
 ## 12. Qdrant Gen2 requirements
 
+Brick 6A is the implemented pure boundary in `search-gen2-qdrant`: it has no HTTP client, Qdrant
+resource lifecycle or BeautyQ hydration. Brick 6B-A owns the shared neutral JSON transport and exact
+Qdrant 1.18.3 wire adapter; 6B-B owns collection lifecycle, authorization and candidate execution; 6C
+owns BeautyQ query embedding and candidate hydration. Gen1 Qdrant remains on v1.15.4 and is not changed
+by this vertical.
+
 ### 12.1 Semantic query text policy
 
 Embedding input is produced by `BeautyQSemanticCandidatePolicy`; the Qdrant compiler does not choose
@@ -1673,7 +1681,25 @@ declared typed gates once and returns
 decision; ineligible decisions carry the domain's reason instead. `CandidateEvaluationError` remains a
 distinct malformed-policy error and is never translated into BeautyQ business ineligibility.
 
-### 12.2 Point and payload projection
+### 12.2 Policy and deterministic collection artifacts (Brick 6A)
+
+`QdrantPolicy[Document, Id]` is one validated, declaration-owned policy. Its identity and embedding
+handles must belong to the same `SearchDocumentDeclaration`; the identity is keyword/integer/long,
+the embedding field is searchable text, model values are non-blank with a positive dimension, and
+all pushed-down filter capabilities must be payload-eligible and supported by the closed Qdrant
+schema vocabulary. Payload fields and payload indexes are derived from the declaration in order;
+BeautyQ supplies no parallel payload inventory. Collection and candidate fingerprints are separate
+typed contributions: collection compatibility excludes retrieval-only knobs, while candidate identity
+includes vector/model/distance/retrieval choices plus the compiler and REST protocol versions that define
+its executable wire shape.
+
+`QdrantGenerationCompiler.prepare` creates compiler-owned points sorted by canonical point identity and
+binds each embedding input to its subject/model fingerprint. `complete` accepts only matching finite
+vectors of the declared dimension, derives a deterministic generation identity and physical collection
+name, and emits collection metadata containing the complete identity plus exact payload-index requests.
+No constructor/copy path lets a caller pair a vector with another prepared input.
+
+### 12.3 Point and payload projection
 
 The point contains:
 
@@ -1683,13 +1709,13 @@ The point contains:
 - payload schema/version;
 - generation identity, including source, projected-document, contract, projection, compiler/format and embedding identities where practical.
 
-### 12.3 Payload indexes
+### 12.4 Payload indexes
 
 The collection compiler declares and validates payload indexes for all pushed-down filter fields.
 
 A CandidatePlan cannot be activated if a required payload field or index is missing.
 
-### 12.4 Candidate compilation
+### 12.5 Candidate compilation
 
 Compile:
 
@@ -1702,11 +1728,37 @@ Compile:
 
 Qdrant does not receive facets, groups or public page requests.
 
-### 12.5 Candidate decoding and hydration
+### 12.6 Candidate decoding (Brick 6A) and hydration (Brick 6C)
 
-Decode to `CandidateSearchResult`, then hydrate via the Gen2 document store/snapshot view.
+Brick 6A decodes the Qdrant response to the candidate-only
+`QdrantCandidateSearchResult[Id]`, retaining ordered typed hits and duplicate/elapsed diagnostics.
+Brick 6C will hydrate those IDs via the Gen2 document store/snapshot view.
 
 Post-hydration constraint checking remains an assertion and diagnostic. It is not the primary filter implementation.
+
+### 12.7 Transport and physical collection lifecycle (Brick 6B)
+
+The Qdrant wire adapter uses the neutral Gen2 JSON transport but owns its exact 1.18.3 paths and bodies:
+collection details and aliases, collection creation, waited payload-index creation, waited point upsert,
+exact count, atomic alias updates and `/points/query`. The optional `api-key` is transport configuration,
+never domain policy or a rendered diagnostic value.
+
+The lifecycle consumes only a compiler-owned `QdrantCompiledGeneration`. A deterministic physical
+collection is convergently created or completed, then accepted only when named-vector configuration,
+persisted `search_gen2` metadata, payload schema and exact point count match the compiled artifact. The
+configured alias changes atomically only after those checks pass. Existing incompatible state is a typed
+failure and is never mutated into apparent compatibility.
+
+Candidate execution accepts only a compiler-owned request whose candidate fingerprint matches the
+configured policy. It resolves the configured alias to one physical collection, validates that
+collection's persisted generation metadata against the policy, binds the trusted target internally and
+passes the raw `/points/query` response to the 6A decoder. Callers cannot supply a physical target.
+
+The initial lifecycle performs no automatic deletion of successfully built physical collections and
+exposes no retention policy. Qdrant aliases switch atomically, but collection deletion has no conditional
+alias guard equivalent to the accepted Elasticsearch cleanup protocol; deletion based on a prior alias
+read would reintroduce a destructive TOCTOU race. Partial compatible builds are completed by retry, and
+failed/incompatible state remains observable for an operator rather than being guessed safe to delete.
 
 ## 13. Baseline-plus-supplement orchestration
 
