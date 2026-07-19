@@ -11,19 +11,17 @@ trait PublicInputSpec[Input, Name, Operator, Clause, Error] {
 final case class PublicInputField[Name, Operator](name: Name, acceptedOperators: Vector[Operator])
 
 /** Generic registry mechanics for any typed public request. The declaration vector is ordered and
-  * is expected to contain one entry per public name; lookup follows that declaration order. The
-  * domain supplies only the input accessors and typed unknown/unsupported errors. */
+  * validated for unique public names before lookup is created; the domain supplies only the input
+  * accessors and typed unknown/unsupported errors. */
 final class PublicInputRegistry[Input, Name, Operator, Clause, Error] private (
-  specs: Vector[PublicInputSpec[Input, Name, Operator, Clause, Error]],
+  index: PublicDeclarationIndex[Name, PublicInputSpec[Input, Name, Operator, Clause, Error]],
   nameOf: Input => Name,
   operatorOf: Input => Operator,
   unknownField: Name => Error,
   unsupportedOperator: (Name, Operator, Vector[Operator]) => Error,
 ) {
-  val fields: Vector[PublicInputField[Name, Operator]] = specs.map(spec => PublicInputField(spec.name, spec.acceptedOperators))
-
-  private val specsByName: Map[Name, PublicInputSpec[Input, Name, Operator, Clause, Error]] =
-    specs.map(spec => spec.name -> spec).toMap
+  val fields: Vector[PublicInputField[Name, Operator]] =
+    index.declarations.map(spec => PublicInputField(spec.name, spec.acceptedOperators))
 
   def decode(input: Input): Either[NonEmptyErrors[Error], Clause] = {
     decodeNamed(input).map(_._2)
@@ -32,7 +30,7 @@ final class PublicInputRegistry[Input, Name, Operator, Clause, Error] private (
   def decodeNamed(input: Input): Either[NonEmptyErrors[Error], (Name, Clause)] = {
     val name = nameOf(input)
     val operator = operatorOf(input)
-    specsByName.get(name) match {
+    index.byName.get(name) match {
       case None => Left(NonEmptyErrors.fromHead(unknownField(name), Vector.empty))
       case Some(spec) if !spec.acceptedOperators.contains(operator) =>
         Left(NonEmptyErrors.fromHead(unsupportedOperator(name, operator, spec.acceptedOperators), Vector.empty))
@@ -48,6 +46,21 @@ object PublicInputRegistry {
     operatorOf: Input => Operator,
     unknownField: Name => Error,
     unsupportedOperator: (Name, Operator, Vector[Operator]) => Error,
+  ): Either[NonEmptyErrors[PublicDeclarationError[Name]], PublicInputRegistry[Input, Name, Operator, Clause, Error]] =
+    PublicDeclarationIndex(specs, _.name).map(index => new PublicInputRegistry(index, nameOf, operatorOf, unknownField, unsupportedOperator))
+
+  def unsafeFrom[Input, Name, Operator, Clause, Error](
+    specs: Vector[PublicInputSpec[Input, Name, Operator, Clause, Error]],
+    nameOf: Input => Name,
+    operatorOf: Input => Operator,
+    unknownField: Name => Error,
+    unsupportedOperator: (Name, Operator, Vector[Operator]) => Error,
   ): PublicInputRegistry[Input, Name, Operator, Clause, Error] =
-    new PublicInputRegistry(specs, nameOf, operatorOf, unknownField, unsupportedOperator)
+    new PublicInputRegistry(
+      PublicDeclarationIndex.unsafeFrom(specs, _.name),
+      nameOf,
+      operatorOf,
+      unknownField,
+      unsupportedOperator,
+    )
 }

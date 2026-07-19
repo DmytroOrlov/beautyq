@@ -896,6 +896,55 @@ object PublicPlanInputResolver {
 }
 ```
 
+Public filter and sort declarations use the same validated ordered index. Construction rejects every
+later duplicate before creating a lookup map, so duplicate names cannot become a last-wins runtime
+choice; `unsafeFrom` is reserved for static domain declarations whose invalid source is a startup
+failure:
+
+```scala
+sealed trait PublicDeclarationError[+Name]
+object PublicDeclarationError {
+  final case class DuplicateName[Name](name: Name, firstIndex: Int, duplicateIndex: Int)
+    extends PublicDeclarationError[Name]
+}
+
+object PublicInputRegistry {
+  def apply[Input, Name, Operator, Clause, Error](
+    specs: Vector[PublicInputSpec[Input, Name, Operator, Clause, Error]],
+    nameOf: Input => Name,
+    operatorOf: Input => Operator,
+    unknownField: Name => Error,
+    unsupportedOperator: (Name, Operator, Vector[Operator]) => Error,
+  ): Either[NonEmptyErrors[PublicDeclarationError[Name]], PublicInputRegistry[Input, Name, Operator, Clause, Error]]
+
+  def unsafeFrom[Input, Name, Operator, Clause, Error](
+    specs: Vector[PublicInputSpec[Input, Name, Operator, Clause, Error]],
+    nameOf: Input => Name,
+    operatorOf: Input => Operator,
+    unknownField: Name => Error,
+    unsupportedOperator: (Name, Operator, Vector[Operator]) => Error,
+  ): PublicInputRegistry[Input, Name, Operator, Clause, Error]
+}
+
+object PublicSortRegistry {
+  def apply[Input, Name, Decoded, Error](
+    specs: Vector[PublicSortSpec[Input, Name, Decoded, Error]],
+    nameOf: Input => Name,
+    unknownSort: Name => Error,
+  ): Either[NonEmptyErrors[PublicDeclarationError[Name]], PublicSortRegistry[Input, Name, Decoded, Error]]
+
+  def unsafeFrom[Input, Name, Decoded, Error](
+    specs: Vector[PublicSortSpec[Input, Name, Decoded, Error]],
+    nameOf: Input => Name,
+    unknownSort: Name => Error,
+  ): PublicSortRegistry[Input, Name, Decoded, Error]
+}
+```
+
+BeautyQ keeps public names and accepted operators explicit. Its dynamic public inventory is composed
+from the corresponding `DynamicFieldFamily.entries` in declaration order, so a declared dynamic field
+cannot silently disappear between the document family and the request registry.
+
 A `PublicFilterClause.GeoRadius`/`PublicSortClause.GeoDistance` clause without a supplied origin is a
 typed `MissingLocationForFilter`/`MissingLocationForSort` error carrying the exact index and public name;
 missing-location errors accumulate across every filter in request order, then every sort in request

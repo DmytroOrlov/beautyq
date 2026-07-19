@@ -21,18 +21,17 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Brick 5C is completed; Brick 5C-D is active pending its real Elasticsearch cleanup
-  proof. Brick 5C-E is planned and Brick 5D has not started.
-- **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C.
-- **Current cleanup:** finish ownership-safe, alias-guarded two-generation cleanup and its resource
-  proof; only then validate public filter/sort registries through one generic constructor path.
+- **Live status:** Bricks 5C, 5C-D and 5C-E are completed; Brick 5D is planned and has not started.
+- **Completed:** Bricks 0–3, 4A–4G-B and 5A–5C-E.
+- **Current cleanup:** none; the validated public filter/sort registry boundary and its neutral/BeautyQ
+  proofs are complete. Proceed to Brick 5D.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
 - **Canonical reading path:** start at wiring-owned `BeautyQSearchGen2` for the complete implemented
   composition. Its `contract` branch points to backend-neutral `BeautyQSearchDeclarations`; all other
   branches are direct references to their downstream owners.
-- **Blocker for 5D:** finish the following two named pre-5D tasks and their focused proofs.
+- **Next:** Brick 5D exact groups/carousels; no 5C precondition remains open.
 
 ### Exact pre-5D sequence
 
@@ -42,15 +41,13 @@ summaries must remain short and point here.
    actions, protects in-progress candidates and fails closed on an active/superseded overlap. It
    accepts normal acknowledged aliases responses without `action_results`, treats a disappeared
    superseded mapping as idempotent, preserves typed stale cursors and supports only built-in analyzers.
-   It remains active until the real local Elasticsearch scenario proves old-generation
-   deletion, active and in-progress-generation survival, stale-cursor failure, unowned-index survival
-   and retry.
-2. **Brick 5C-E — public authoring registry validation.** Replace last-wins public filter/sort lookup
-   construction with validated constructors that report duplicate public names with first and duplicate
-   positions. Bind every dynamic public filter declaration to the exact dynamic-family inventory and
-   return a typed static declaration error for a missing relation. Construct lookup maps once; add no
-   per-request scans. Prove the generic behavior with a neutral fixture and prove BeautyQ's complete
-   registries through the same validated path.
+   User-verified full-suite execution proves old-generation deletion, active and in-progress-generation
+   survival, stale-cursor failure, unowned-index survival and retry.
+2. **Brick 5C-E — public authoring registry validation (completed).** Use one validated declaration index for
+   public filter/sort names, report every duplicate with first and duplicate positions, build lookup
+   maps once, and derive BeautyQ dynamic public names directly from each `DynamicFieldFamily.entries`
+   inventory. A missing dynamic relation is unrepresentable by this composition; no per-request scans
+   or defensive missing-relation wrapper are added. Neutral and BeautyQ proofs share the same path.
 3. **Brick 5D — exact groups/carousels.** Then continue with Bricks 6, 7, 8 and the atomic Brick 9 cutover.
 
 ### Accepted initial limits, not live abstraction debt
@@ -904,7 +901,7 @@ framework-known built-ins before an analyzer can reach index creation.
 - compile bulk ingestion from the 5A generation artifact and record its complete generation identity and
   build metadata in the physical index;
 - implement `build -> ingest -> refresh -> validate mapping/metadata/count/fingerprint -> atomic alias
-  switch -> discover only lifecycle-marked superseded generations -> exact cleanup` (Brick 5C-D active);
+  switch -> discover only lifecycle-marked superseded generations -> exact cleanup` (Brick 5C-D completed);
 - implement baseline request execution by sending the 5B request and passing the raw response back to the
   5B decoder;
 - compose the independent Gen2 resource names, lifecycle and baseline service in

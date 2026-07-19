@@ -1,6 +1,5 @@
 package leaderboard.search.beautyq.gen2.contract
 
-import leaderboard.model.AttributeDefinition
 import leaderboard.search.gen2.contract.*
 
 // Compatibility view for the original BeautyQ contract package; the actual operator vocabulary is
@@ -151,27 +150,28 @@ object BeautyQPublicFilterRegistry {
   )
 
   private def dynamicValueSpecs[A](
-    definitions: Iterable[AttributeDefinition[?]],
-    fields: Map[String, SearchField[VariantSearchDocumentGen2, A]],
+    family: DynamicFieldFamily[VariantSearchDocumentGen2, A],
     prefix: String,
     ordering: Option[Ordering[A]],
     operators: Option[Vector[PublicOperator]] = None,
   ): Vector[Spec] =
-    definitions.toVector.flatMap(definition => fields.get(definition.code).map(field => ValueSpec(PublicFieldName(s"$prefix.${definition.code}"), field, ordering, operators)))
+    family.entries.map { case (code, field) =>
+      ValueSpec(PublicFieldName(s"$prefix.$code"), field, ordering, operators)
+    }
 
   // Business-facing dynamic inventory: stable attribute codes define public names and order.
   private def dynamicSpecs: Vector[Spec] =
-    dynamicValueSpecs(AttributeDefinition.intDefinitions, Fields.intAttributesByCode, "attribute.int", Some(summon[Ordering[Int]])) ++
-      dynamicValueSpecs(AttributeDefinition.bigDecimalDefinitions, Fields.decimalAttributesByCode, "attribute.decimal", Some(summon[Ordering[BigDecimal]])) ++
-      dynamicValueSpecs(AttributeDefinition.enumDefinitions, Fields.enumAttributesByCode, "attribute.enum", None: Option[Ordering[String]]) ++
-      dynamicValueSpecs(AttributeDefinition.booleanDefinitions, Fields.booleanAttributesByCode, "attribute.boolean", None: Option[Ordering[Boolean]], Some(Vector(PublicOperator.Equal)))
+    dynamicValueSpecs(Fields.intAttributes, "attribute.int", Some(summon[Ordering[Int]])) ++
+      dynamicValueSpecs(Fields.decimalAttributes, "attribute.decimal", Some(summon[Ordering[BigDecimal]])) ++
+      dynamicValueSpecs(Fields.enumAttributes, "attribute.enum", None: Option[Ordering[String]]) ++
+      dynamicValueSpecs(Fields.booleanAttributes, "attribute.boolean", None: Option[Ordering[Boolean]], Some(Vector(PublicOperator.Equal)))
 
-  // Keep the public inventory ordered: static names first, then the source AttributeDefinition inventories.
+  // Keep the public inventory ordered: static names first, then the declared dynamic-family entries.
   private val specs: Vector[Spec] = staticSpecs ++ dynamicSpecs
 
   val fields: Vector[BeautyQPublicField] = specs.map(_.public)
 
-  private val registry = PublicInputRegistry[PublicFilterInput, PublicFieldName, PublicOperator, BeautyPublicFilterClause, PublicFilterError](
+  private val registry = PublicInputRegistry.unsafeFrom[PublicFilterInput, PublicFieldName, PublicOperator, BeautyPublicFilterClause, PublicFilterError](
     specs,
     _.field,
     _.operator,
@@ -270,7 +270,7 @@ object BeautyQPublicSortRegistry {
     SortSpec(PublicSortName("distanceMeters"), input => Right(DecodedBeautySort.GeoDistance(Fields.location, input.direction))),
   )
 
-  private val registry = PublicSortRegistry[BeautySortInput, PublicSortName, DecodedBeautySort, BeautySortError](specs, _.name, BeautySortError.UnknownPublicSort.apply)
+  private val registry = PublicSortRegistry.unsafeFrom[BeautySortInput, PublicSortName, DecodedBeautySort, BeautySortError](specs, _.name, BeautySortError.UnknownPublicSort.apply)
 
   val names: Vector[PublicSortName] = registry.names
 

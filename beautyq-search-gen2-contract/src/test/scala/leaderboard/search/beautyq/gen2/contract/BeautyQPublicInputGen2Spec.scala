@@ -201,6 +201,9 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
   "BeautyQPublicFilterRegistry dynamic field matrix" should {
     "pin the exact complete dynamic name list, authoritative handles and accepted operators per family" in {
       val fields = BeautyQSearchDeclarations.variants.Fields
+      def dynamicHandle(family: DynamicFieldFamily[VariantSearchDocumentGen2, ?], code: String): SearchField[VariantSearchDocumentGen2, ?] =
+        family.entries.find(_._1 == code).map(_._2).getOrElse(fail(s"missing dynamic family entry: $code"))
+
       val expectedIntNames      = Vector("session_count", "included_corrections_count", "max_clients").map(code => s"attribute.int.$code")
       val expectedDecimalNames  = Vector("deposit_amount", "home_visit_surcharge", "materials_surcharge", "fixed_discount_amount").map(code => s"attribute.decimal.$code")
       val expectedEnumNames     =
@@ -224,10 +227,22 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
         assert(dynamicFields.find(_.name.value == name).exists(_.acceptedOperators == Vector(PublicOperator.Equal)), s"unexpected operators for $name")
       }
 
-      assert(dynamicFields.find(_.name.value == "attribute.int.session_count").exists(_.fieldHandles.headOption.exists(_ eq fields.intAttributesByCode("session_count"))))
-      assert(dynamicFields.find(_.name.value == "attribute.decimal.deposit_amount").exists(_.fieldHandles.headOption.exists(_ eq fields.decimalAttributesByCode("deposit_amount"))))
-      assert(dynamicFields.find(_.name.value == "attribute.enum.nail_coating_type").exists(_.fieldHandles.headOption.exists(_ eq fields.enumAttributesByCode("nail_coating_type"))))
-      assert(dynamicFields.find(_.name.value == "attribute.boolean.with_design").exists(_.fieldHandles.headOption.exists(_ eq fields.booleanAttributesByCode("with_design"))))
+      assert(dynamicFields.find(_.name.value == "attribute.int.session_count").exists(_.fieldHandles match {
+        case Vector(handle) => handle eq dynamicHandle(fields.intAttributes, "session_count")
+        case _              => false
+      }))
+      assert(dynamicFields.find(_.name.value == "attribute.decimal.deposit_amount").exists(_.fieldHandles match {
+        case Vector(handle) => handle eq dynamicHandle(fields.decimalAttributes, "deposit_amount")
+        case _              => false
+      }))
+      assert(dynamicFields.find(_.name.value == "attribute.enum.nail_coating_type").exists(_.fieldHandles match {
+        case Vector(handle) => handle eq dynamicHandle(fields.enumAttributes, "nail_coating_type")
+        case _              => false
+      }))
+      assert(dynamicFields.find(_.name.value == "attribute.boolean.with_design").exists(_.fieldHandles match {
+        case Vector(handle) => handle eq dynamicHandle(fields.booleanAttributes, "with_design")
+        case _              => false
+      }))
     }
 
     "prove public names are independent of field path/id/display text" in {

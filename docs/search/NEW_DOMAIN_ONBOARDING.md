@@ -76,10 +76,11 @@ automatically once your types have the right shape:
   seed-scoped list - see "What a new domain still declares" below) assembled into your snapshot via
   `LoadedCatalog(...).toRawSnapshot[YourSnapshot]` - same generic `Mirror.ProductOf` assembly as
   `toSnapshot`, but with no dedup, matching seed input's already-distinct assumption.
-- Public inbound mechanics in `search-gen2-contract`: `PublicInputRegistry` centralizes ordered
-  public-field lookup and operator gating, while capability projection supplies the default public
-  operator matrix; `PublicSortRegistry` and `PublicFacetRegistry` derive their inventories from one
-  declaration vector.
+- Public inbound mechanics in `search-gen2-contract`: validated `PublicInputRegistry` and
+  `PublicSortRegistry` reject duplicate names before building one lookup map and preserve declaration
+  order; capability projection supplies the default operator matrix. Dynamic public names should be
+  composed directly from each declared `DynamicFieldFamily.entries`, not from a second definition/map
+  join. See the technical specification for exact signatures.
 - `SearchIntentMatcher` in `search-gen2-contract`: deterministic longest-alias selection, contextual
   fixed-point rounds, semantic overlays, `requires`/`excludes`, occupied-token protection and residual
   token calculation are reusable; a domain supplies only its rule view, action coverage and text

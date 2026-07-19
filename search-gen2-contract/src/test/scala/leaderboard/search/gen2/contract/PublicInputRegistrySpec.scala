@@ -19,7 +19,7 @@ final class PublicInputRegistrySpec extends AnyWordSpec {
     "derive ordered inventory and centralize lookup/operator gating for a neutral input" in {
       val service = PublicFieldName("service")
       val category = PublicFieldName("category")
-      val registry = PublicInputRegistry[Input, PublicFieldName, PublicOperator, String, String](
+      val registry = PublicInputRegistry.unsafeFrom[Input, PublicFieldName, PublicOperator, String, String](
         Vector(
           Spec(service, Vector(PublicOperator.Equal), "service"),
           Spec(category, Vector(PublicOperator.In), "category"),
@@ -40,6 +40,49 @@ final class PublicInputRegistrySpec extends AnyWordSpec {
         case Left(errors) => assert(errors.toVector == Vector("unknown:missing"))
         case Right(value) => fail(s"expected unknown field, got $value")
       }
+    }
+
+    "reject duplicate public names with both declaration positions" in {
+      val duplicate = PublicInputRegistry[Input, PublicFieldName, PublicOperator, String, String](
+        Vector(
+          Spec(PublicFieldName("service"), Vector(PublicOperator.Equal), "first"),
+          Spec(PublicFieldName("category"), Vector(PublicOperator.Equal), "category"),
+          Spec(PublicFieldName("service"), Vector(PublicOperator.In), "second"),
+          Spec(PublicFieldName("service"), Vector(PublicOperator.Between), "third"),
+        ),
+        _.field,
+        _.operator,
+        name => s"unknown:${name.value}",
+        (name, operator, _) => s"unsupported:${name.value}:${operator}",
+      )
+
+      duplicate match {
+        case Left(errors) =>
+          assert(
+            errors.toVector == Vector(
+              PublicDeclarationError.DuplicateName(PublicFieldName("service"), 0, 2),
+              PublicDeclarationError.DuplicateName(PublicFieldName("service"), 0, 3),
+            )
+          )
+        case Right(registry) => fail(s"expected duplicate rejection, got ${registry.fields}")
+      }
+    }
+
+    "render unsafe duplicate failures with first and duplicate indexes" in {
+      val thrown = intercept[IllegalStateException] {
+        PublicInputRegistry.unsafeFrom[Input, PublicFieldName, PublicOperator, String, String](
+          Vector(
+            Spec(PublicFieldName("service"), Vector(PublicOperator.Equal), "first"),
+            Spec(PublicFieldName("service"), Vector(PublicOperator.Equal), "second"),
+          ),
+          _.field,
+          _.operator,
+          name => s"unknown:${name.value}",
+          (name, operator, _) => s"unsupported:${name.value}:${operator}",
+        )
+      }
+      assert(thrown.getMessage.contains("firstIndex=0"))
+      assert(thrown.getMessage.contains("duplicateIndex=1"))
     }
   }
 }
