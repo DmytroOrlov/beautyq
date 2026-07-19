@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.gen2.wiring
 
-import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy}
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy, BeautySearchRequestGen2}
 import leaderboard.search.beautyq.gen2.materialization.{
   BeautyQSearchSnapshotSource,
   BeautyQSnapshotCanonicalRows,
@@ -14,6 +14,9 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
     "reference every implemented composition owner without recreating policy" in {
       assert(BeautyQSearchGen2.contract eq BeautyQSearchDeclarations)
 
+      assert(BeautyQSearchGen2.input.request eq BeautySearchRequestGen2)
+      assert(BeautyQSearchGen2.input.intentParser eq BeautyQIntentParserGen2)
+
       assert(BeautyQSearchGen2.materialization.snapshot eq BeautyQSearchSnapshotSource)
       assert(BeautyQSearchGen2.materialization.canonicalRows eq BeautyQSnapshotCanonicalRows)
       assert(BeautyQSearchGen2.materialization.projection eq BeautyQVariantProjectionGen2)
@@ -22,6 +25,7 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
       assert(BeautyQSearchGen2.plan.policy eq BeautyQSearchPlanPolicy)
       assert(BeautyQSearchGen2.plan.groups eq BeautyQSearchPlanPolicy.groups)
       assert(BeautyQSearchGen2.plan.compiler eq BeautyQSearchPlanCompiler)
+      assert(BeautyQSearchGen2.plan.candidateCompiler eq BeautyQCandidatePlanCompiler)
 
       assert(BeautyQSearchGen2.elasticsearch.policy eq BeautyQElasticsearchPolicy)
       assert(BeautyQSearchGen2.elasticsearch.resources eq BeautyQSearchGen2ResourceNames)
@@ -31,6 +35,10 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
 
       assert(BeautyQSearchGen2.qdrant.hydrationPolicy eq BeautyQQdrantHydrationPolicy.policy)
       assert(BeautyQSearchGen2.qdrant.candidates eq BeautyQQdrantCandidatePipeline)
+      assert(BeautyQSearchGen2.qdrant.policy eq BeautyQQdrantPolicy.policy)
+      assert(BeautyQSearchGen2.qdrant.resources eq BeautyQSearchGen2ResourceNames)
+      assert(BeautyQSearchGen2.qdrant.runtime eq BeautyQQdrantRuntime)
+      assert(BeautyQSearchGen2.qdrant.candidatePolicy eq BeautyQQdrantPolicy)
     }
   }
 }

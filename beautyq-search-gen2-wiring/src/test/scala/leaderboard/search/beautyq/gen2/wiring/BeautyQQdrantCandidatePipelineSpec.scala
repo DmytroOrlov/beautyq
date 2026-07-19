@@ -50,9 +50,55 @@ final class BeautyQQdrantCandidatePipelineSpec extends AnyWordSpec {
         case Left(error) => fail(s"expected ineligible result, got $error")
       }
     }
+
+    "execute one eligible request from validation through authorized Qdrant hydration" in {
+      val request = BeautySearchRequestGen2(
+        Some("relaxing appointment"),
+        Vector(PublicFilterInput(PublicFieldName("service"), leaderboard.search.gen2.contract.PublicOperator.Equal, PublicFilterValue.Scalar("manicure"), None)),
+        Vector.empty,
+        Vector.empty,
+        page,
+        None,
+      )
+      val validated = BeautyQSearchRequestForTest.validated(request)
+      val intent = BeautyQSearchRequestForTest.intent(validated)
+      val compiled = BeautyQSearchRequestForTest.compiled(validated, intent)
+      val candidateEvaluation = BeautyQCandidatePlanCompiler.compile(compiled).getOrElse(fail("expected eligible candidate evaluation"))
+      candidateEvaluation.decision match {
+        case CandidatePlanDecision.Eligible(plan) =>
+          assert(plan.hardConstraints.nonEmpty)
+          val generation = compiledGeneration
+          val alias = QdrantResourceName.from(BeautyQSearchGen2ResourceNames.QdrantCollectionAlias).getOrElse(fail("expected alias"))
+          val config = QdrantCandidateServiceConfig.create(alias, BeautyQSearchGen2ResourceNames.QdrantPhysicalCollectionPrefix).getOrElse(fail("expected service config"))
+          val embeddingPort = new QdrantQueryEmbeddingPort[String] {
+            def embed(input: QdrantEmbeddingInput): Either[String, QdrantEmbeddingResult] =
+              QdrantEmbeddingResult.from(input, Vector.fill(input.modelValue.dimension)(0.1)).left.map(_.toString)
+          }
+          BeautyQQdrantCandidatePipeline.execute(candidateEvaluation, BeautyQElasticsearchTestFixtures.materialized, embeddingPort, new QdrantCandidateService(new AuthorizedBeautyQClient(generation, alias.value), config)) match {
+            case Right(result) =>
+              result.outcome match {
+                case Right(hydrated) =>
+                  assert(hydrated.candidates.map(_.id) == Vector(BeautyQElasticsearchTestFixtures.document.variantId))
+                  assert(hydrated.candidates.map(_.provenance) == Vector(BeautyQCandidateProvenance.SemanticSupplement))
+                  assert(hydrated.target.value == generation.physicalCollectionName)
+                  assert(hydrated.metadata == generation.metadata)
+                  assert(hydrated.diagnostics.rawCount == 1)
+                case Left(reason) => fail(s"expected hydrated candidates, got ineligibility $reason")
+              }
+            case Left(error) => fail(s"expected eligible pipeline result, got $error")
+          }
+        case CandidatePlanDecision.Ineligible(reason) => fail(s"expected eligible candidate plan, got $reason")
+      }
+    }
   }
 
-  private final class NoCallClient extends QdrantGen2Client {
+  private def compiledGeneration: QdrantCompiledGeneration = {
+    val prepared = QdrantGenerationCompiler.prepare(BeautyQQdrantPolicy.policy, BeautyQElasticsearchTestFixtures.materialized).getOrElse(fail("expected prepared generation"))
+    val embeddings = prepared.points.map(point => QdrantEmbeddingResult.from(point.embeddingInput, Vector.fill(point.embeddingInput.modelValue.dimension)(0.1)).getOrElse(fail("expected embedding")))
+    QdrantGenerationCompiler.complete(prepared, embeddings, BeautyQSearchGen2ResourceNames.QdrantPhysicalCollectionPrefix).getOrElse(fail("expected compiled generation"))
+  }
+
+  private class NoCallClient extends QdrantGen2Client {
     def getCollection(collection: QdrantResourceName) = Left(Gen2HttpTransportError.RequestFailed("GET", "unused", "must not be called"))
     def listAliases() = Left(Gen2HttpTransportError.RequestFailed("GET", "unused", "must not be called"))
     def createCollection(collection: QdrantResourceName, body: Json) = Left(Gen2HttpTransportError.RequestFailed("PUT", "unused", "must not be called"))
@@ -61,6 +107,38 @@ final class BeautyQQdrantCandidatePipelineSpec extends AnyWordSpec {
     def countPoints(collection: QdrantResourceName) = Left(Gen2HttpTransportError.RequestFailed("POST", "unused", "must not be called"))
     def updateAliases(body: Json) = Left(Gen2HttpTransportError.RequestFailed("POST", "unused", "must not be called"))
     def queryPoints(target: QdrantResourceName, body: Json) = Left(Gen2HttpTransportError.RequestFailed("POST", "unused", "must not be called"))
+  }
+
+  private final class AuthorizedBeautyQClient(generation: QdrantCompiledGeneration, alias: String) extends NoCallClient {
+    override def listAliases() = Right(Json.obj("status" -> Json.fromString("ok"), "result" -> Json.obj("aliases" -> Json.arr(Json.obj("alias_name" -> Json.fromString(alias), "collection_name" -> Json.fromString(generation.physicalCollectionName))))))
+
+    override def getCollection(collection: QdrantResourceName) = {
+      val vectors = generation.collectionJson.hcursor.downField("vectors").focus.getOrElse(Json.obj())
+      val metadata = generation.collectionJson.hcursor.downField("metadata").focus.getOrElse(Json.obj())
+      val payload = Json.obj(generation.payloadIndexRequests.flatMap { request =>
+        for {
+          obj <- request.asObject.toVector
+          field <- obj("field_name").flatMap(_.asString).toVector
+          schema <- obj("field_schema").flatMap(_.asString).toVector
+        } yield field -> Json.obj("data_type" -> Json.fromString(schema))
+      }*)
+      Right(Json.obj(
+        "status" -> Json.fromString("ok"),
+        "result" -> Json.obj(
+          "config" -> Json.obj("params" -> Json.obj("vectors" -> vectors), "metadata" -> metadata),
+          "payload_schema" -> payload,
+          "points_count" -> Json.fromInt(generation.metadata.pointCount),
+        ),
+      ))
+    }
+
+    override def queryPoints(target: QdrantResourceName, body: Json) = {
+      assert(target.value == generation.physicalCollectionName)
+      generation.points match {
+        case point +: _ => Right(Json.obj("status" -> Json.fromString("ok"), "result" -> Json.obj("points" -> Json.arr(Json.obj("id" -> QdrantPointId.json(point.id), "score" -> Json.fromBigDecimal(BigDecimal("0.9")))))))
+        case _ => fail("expected one compiled point")
+      }
+    }
   }
 }
 

@@ -262,7 +262,7 @@ object BeautyQSearchDeclarations {
       * rendering. Open the referenced declarations to edit policy; these values expose the same
       * registries/vocabulary consumed by inbound validation. */
     object request {
-      /** See `BeautyQPublicFilterRegistry.staticSpecs/dynamicSpecs` for public filter policy. */
+      /** See `BeautyQPublicFilterRegistry` for the ordered generic public-filter declarations. */
       val publicFilters = BeautyQPublicFilterRegistry.fields
       /** See `BeautyQPublicSortRegistry` for public sort policy. */
       val publicSorts   = BeautyQPublicSortRegistry.names

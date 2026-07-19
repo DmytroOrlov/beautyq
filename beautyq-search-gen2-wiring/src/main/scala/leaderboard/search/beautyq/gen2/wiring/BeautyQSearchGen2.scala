@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.gen2.wiring
 
-import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy}
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy, BeautySearchRequestGen2}
 import leaderboard.search.beautyq.gen2.materialization.{
   BeautyQSearchSnapshotSource,
   BeautyQSnapshotCanonicalRows,
@@ -16,6 +16,11 @@ import leaderboard.search.beautyq.gen2.materialization.{
 object BeautyQSearchGen2 {
   val contract = BeautyQSearchDeclarations
 
+  object input {
+    val request      = BeautySearchRequestGen2
+    val intentParser = BeautyQIntentParserGen2
+  }
+
   object materialization {
     val snapshot      = BeautyQSearchSnapshotSource
     val canonicalRows = BeautyQSnapshotCanonicalRows
@@ -24,9 +29,10 @@ object BeautyQSearchGen2 {
   }
 
   object plan {
-    val policy   = BeautyQSearchPlanPolicy
-    val groups   = BeautyQSearchPlanPolicy.groups
-    val compiler = BeautyQSearchPlanCompiler
+    val policy           = BeautyQSearchPlanPolicy
+    val groups           = BeautyQSearchPlanPolicy.groups
+    val compiler         = BeautyQSearchPlanCompiler
+    val candidateCompiler = BeautyQCandidatePlanCompiler
   }
 
   object elasticsearch {
@@ -43,5 +49,6 @@ object BeautyQSearchGen2 {
     val runtime           = BeautyQQdrantRuntime
     val hydrationPolicy   = BeautyQQdrantHydrationPolicy.policy
     val candidates        = BeautyQQdrantCandidatePipeline
+    val candidatePolicy   = BeautyQQdrantPolicy
   }
 }

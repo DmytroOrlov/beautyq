@@ -107,6 +107,9 @@ specification records only how BeautyQ applies it:
 The complete implemented composition entry is wiring-owned `BeautyQSearchGen2`. Its `contract` branch
 references `BeautyQSearchDeclarations`, read as
 `catalog → variants.Fields → variants.document → variants.request → variants.intent → variants.plan`;
+the direct `input` branch exposes `BeautySearchRequestGen2` and `BeautyQIntentParserGen2`, while the
+`plan` and `qdrant` branches expose the candidate compiler, Qdrant policy, runtime, hydration policy
+and candidate pipeline;
 its other branches reference the owning materialization, plan and Elasticsearch objects directly.
 Executable declarations own policy; structure trees, inventories, traces, ledgers, and fingerprints
 are derived views. The framework derives only tautological evidence fixed by a selected type, direct
@@ -699,11 +702,58 @@ final case class PublicFilterInput(
   presentationId: Option[FacetSelectionId],
 )
 
-final case class PublicFilterField[Constraint](
+final case class PublicFilterField[Document](
   name: PublicFieldName,
-  operators: Set[PublicOperator],
-  decode: PublicFilterInput => Either[FilterError, Constraint],
+  fieldHandles: Vector[SearchField[Document, ?]],
+  acceptedOperators: Vector[PublicOperator],
 )
+
+sealed trait PublicFilterDeclaration[Document] {
+  def name: PublicFieldName
+  def fieldHandles: Vector[SearchField[Document, ?]]
+  def acceptedOperators: Vector[PublicOperator]
+  def withOperators(operators: Vector[PublicOperator]): PublicFilterDeclaration[Document]
+}
+
+object PublicFilterDeclaration {
+  def value[Document, A](name: PublicFieldName, field: SearchField[Document, A]): PublicFilterDeclaration[Document]
+  def ordered[Document, A: Ordering](name: PublicFieldName, field: SearchField[Document, A]): PublicFilterDeclaration[Document]
+  def intervalOverlap[Document, A: Ordering](name: PublicFieldName, from: SearchField[Document, A], to: SearchField[Document, A]): PublicFilterDeclaration[Document]
+  def geoDistance[Document](name: PublicFieldName, field: SearchField[Document, GeoPoint]): PublicFilterDeclaration[Document]
+}
+
+object PublicFilterRegistry {
+  def apply[Document](
+    declarations: Vector[PublicFilterDeclaration[Document]],
+  ): Either[NonEmptyErrors[PublicFilterDeclarationError], PublicFilterRegistry[Document]]
+
+  def unsafeFrom[Document](declarations: Vector[PublicFilterDeclaration[Document]]): PublicFilterRegistry[Document]
+}
+
+final class PublicFilterRegistry[Document] {
+  val fields: Vector[PublicFilterField[Document]]
+  def decode(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], PublicFilterClause[Document]]
+  def decodeNamed(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], (PublicFieldName, PublicFilterClause[Document])]
+}
+```
+
+`PublicFilterDeclaration` is the reusable high-level authoring path. `value`, `ordered`,
+`intervalOverlap` and `geoDistance` retain typed field handles and derive shape decoding, canonical
+value handling, bound construction and geo-radius construction. A domain supplies public names,
+ordered declarations and any intentional operator narrowing; it does not copy these mechanics. The
+low-level `PublicInputSpec`/`PublicInputRegistry` remains an escape hatch for a non-standard input
+shape, not the canonical new-domain example.
+
+```scala
+sealed trait PublicFilterDeclarationError
+object PublicFilterDeclarationError {
+  final case class DuplicateName(name: PublicFieldName, firstIndex: Int, duplicateIndex: Int)
+    extends PublicFilterDeclarationError
+  final case class NoSupportedOperators(name: PublicFieldName, declarationIndex: Int)
+    extends PublicFilterDeclarationError
+  final case class UnsupportedOperator(name: PublicFieldName, declarationIndex: Int, operator: PublicOperator, supported: Vector[PublicOperator])
+    extends PublicFilterDeclarationError
+}
 ```
 
 The server assigns public provenance deterministically:
@@ -1054,8 +1104,10 @@ BeautyQSearchGen2
 ├── contract -> BeautyQSearchDeclarations
 │   ├── catalog.topology
 │   └── variants (Fields, document, request, intent, plan/candidate policy)
+├── input (request validation and intent parser)
 ├── materialization (snapshot, canonical-row, projection and materializer owners)
-├── plan (policy, groups and compiler owners)
+├── plan (policy, groups, full-plan compiler and candidate compiler owners)
+├── qdrant (policy, resources, runtime, hydration policy and candidate pipeline owners)
 └── elasticsearch (policy, resources, generation, baseline and service owners)
 ```
 

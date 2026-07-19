@@ -1,5 +1,10 @@
 # Search supplement architecture
 
+This document owns the reusable supplement semantic/evaluation contract and the historical BeautyQ
+local gate. It is not the canonical Gen2 API or lifecycle specification; exact Gen2 contracts belong to
+[`docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md`](gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md), and
+current brick status belongs to its implementation plan.
+
 ## Purpose
 
 Baseline search remains the owner of constraints, filters, facets, exact/range/geo logic, and response components.
@@ -108,7 +113,8 @@ New-domain setup checklist: `docs/search/NEW_DOMAIN_ONBOARDING.md`.
 * no score fusion/rerank
 * no traffic shadowing/mirroring
 * no production startup indexing (local managed startup may prepare local ES/Qdrant data only)
-* no production collection lifecycle
+* no production collection lifecycle is owned by this supplement policy; Gen2 physical-generation
+  lifecycle is specified and owned by its Elasticsearch/Qdrant verticals
 * no production route/default behavior change from frontend provenance alone
 * no route/API JSON contract change from supplement wiring
 * no benchmark output as automatic rollout signal

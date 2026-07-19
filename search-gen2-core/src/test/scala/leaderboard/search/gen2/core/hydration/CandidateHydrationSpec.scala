@@ -125,6 +125,36 @@ final class CandidateHydrationSpec extends AnyWordSpec {
       }
     }
 
+    "reject projected-document and projection-format mismatches before lookup" in {
+      val plan = CandidatePlan[Document](text, Vector.empty)
+      CandidateHydrator.hydrate(Execution(plan, Vector(CandidateHit(first.id, 0.9)), metadata.copy(projectedDocumentsFingerprint = "other")), materialized, noPolicy) match {
+        case Left(CandidateHydrationError.ProjectedDocumentsMismatch("other", "projected")) => succeed
+        case other => fail(s"expected projected-document mismatch, got $other")
+      }
+      CandidateHydrator.hydrate(Execution(plan, Vector(CandidateHit(first.id, 0.9)), metadata.copy(projectionFormatVersion = "other")), materialized, noPolicy) match {
+        case Left(CandidateHydrationError.ProjectionFormatMismatch("other", "projection-v1")) => succeed
+        case other => fail(s"expected projection-format mismatch, got $other")
+      }
+    }
+
+    "reject a point-count mismatch before candidate lookup" in {
+      val plan = CandidatePlan[Document](text, Vector.empty)
+      CandidateHydrator.hydrate(Execution(plan, Vector(CandidateHit(first.id, 0.9)), metadata.copy(pointCount = 3)), materialized, noPolicy) match {
+        case Left(CandidateHydrationError.PointCountMismatch(3, 2)) => succeed
+        case other => fail(s"expected point-count mismatch, got $other")
+      }
+    }
+
+    "reject hydrated documents that violate the candidate plan constraints" in {
+      val plan = CandidatePlan(text, Vector(PlannedConstraint.Terms(countField, Set(999))))
+      CandidateHydrator.hydrate(Execution(plan, Vector(CandidateHit(first.id, 0.9))), materialized, noPolicy) match {
+        case Left(CandidateHydrationError.ConstraintViolations(values)) =>
+          assert(values.map(_._1) == Vector(0))
+          assert(values.headOption.exists(_._2 == first.id))
+        case other => fail(s"expected constraint violations, got $other")
+      }
+    }
+
     "fail instead of silently dropping a missing candidate document" in {
       val plan = CandidatePlan[Document](text, Vector.empty)
       val missing = UUID.fromString("00000000-0000-0000-0000-000000000099")

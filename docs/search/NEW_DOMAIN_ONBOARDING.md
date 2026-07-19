@@ -76,11 +76,13 @@ automatically once your types have the right shape:
   seed-scoped list - see "What a new domain still declares" below) assembled into your snapshot via
   `LoadedCatalog(...).toRawSnapshot[YourSnapshot]` - same generic `Mirror.ProductOf` assembly as
   `toSnapshot`, but with no dedup, matching seed input's already-distinct assumption.
-- Public inbound mechanics in `search-gen2-contract`: validated `PublicInputRegistry` and
-  `PublicSortRegistry` reject duplicate names before building one lookup map and preserve declaration
-  order; capability projection supplies the default operator matrix. Dynamic public names should be
-  composed directly from each declared `DynamicFieldFamily.entries`, not from a second definition/map
-  join. See the technical specification for exact signatures.
+- Public inbound mechanics in `search-gen2-contract`: declare one ordered vector of
+  `PublicFilterDeclaration.value`/`ordered`/`intervalOverlap`/`geoDistance` values and build one
+  `PublicFilterRegistry`. It derives shape decoding, canonical errors, bounds and geo clauses; the
+  domain supplies only public names, typed handles and deliberate operator narrowing. The lower-level
+  `PublicInputRegistry` remains an escape hatch for non-standard input shapes. Dynamic names come
+  directly from each declared `DynamicFieldFamily.entries`; see the technical specification for exact
+  signatures.
 - `SearchIntentMatcher` in `search-gen2-contract`: deterministic longest-alias selection, contextual
   fixed-point rounds, semantic overlays, `requires`/`excludes`, occupied-token protection and residual
   token calculation are reusable; a domain supplies only its rule view, action coverage and text
@@ -369,10 +371,11 @@ families) using only selectors, kind choices, and capabilities, with every mecha
 derived by the registry.
 
 For a complete implemented business review, start at `BeautyQSearchGen2` in the wiring module. It links
-directly to the canonical contract, materialization, plan/group and Elasticsearch owners without copying
-their policy. Follow its `contract` branch into `BeautyQSearchDeclarations`, then read
-`catalog.topology`, `variants.Fields`, `variants.document`, `variants.request`, `variants.intent`, and
-`variants.plan`.
+directly to the canonical contract, inbound input/parser, materialization, plan/candidate, Qdrant and
+Elasticsearch owners without copying their policy. Follow its `contract` branch into
+`BeautyQSearchDeclarations`, then read `catalog.topology`, `variants.Fields`, `variants.document`,
+`variants.request`, `variants.intent`, and `variants.plan`; follow `input` for request/parser and
+`qdrant` for candidate policy/runtime/hydration.
 
 Before assuming a value type or document/snapshot shape is supported, check technical specification
 §§7.1 and 9.4. Delivery status and exact next tasks are in the implementation plan.
@@ -507,7 +510,7 @@ generation compiler and the request compiler all consume; a domain never recreat
 traversal, an aggregation name, or a second fingerprint. `BeautyQElasticsearchPolicy`/
 `BeautyQElasticsearchGeneration`/`BeautyQElasticsearchBaseline` (`beautyq-search-gen2-wiring`) are the
 golden reference at full scale. Reuse the generic physical-generation lifecycle and baseline service with
-domain resource names; group/carousel result types remain a later brick.
+domain resource names; group/carousel composition remains an orchestration concern owned by Brick 7.
 
 ## Qdrant candidate and hydration policy (6A/6C boundary)
 

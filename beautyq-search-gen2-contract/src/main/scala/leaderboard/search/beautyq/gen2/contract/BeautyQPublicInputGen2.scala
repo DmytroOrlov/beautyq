@@ -57,127 +57,48 @@ object BeautySortError {
   final case class DuplicatePublicSort(name: PublicSortName) extends BeautySortError
 }
 
-final case class BeautyQPublicField(
-  name: PublicFieldName,
-  fieldHandles: Vector[SearchField[VariantSearchDocumentGen2, ?]],
-  acceptedOperators: Vector[PublicOperator],
-)
+type BeautyQPublicField = PublicFilterField[VariantSearchDocumentGen2]
 
 object BeautyQPublicFilterRegistry {
-  /** BeautyQ policy is declared in the ordered `staticSpecs`/`dynamicSpecs` inventory below:
-    * public names, field handles and intentionally accepted operators. The decoder and registry
-    * after that inventory are reusable mechanics and should not be copied into a new domain. */
+  /** BeautyQ owns only this ordered public vocabulary: caller-facing names, typed field handles and
+    * the one intentional Boolean narrowing. Generic declarations own shape decoding and registry
+    * mechanics. */
   private val Fields = BeautyQSearchDeclarations.variants.Fields
 
-  private def publicOperators(field: SearchField[VariantSearchDocumentGen2, ?]): Vector[PublicOperator] =
-    PublicOperator.fromFilterCapabilities(field.capabilities.filterOperators.toVector)
-
-  private sealed trait Spec extends PublicInputSpec[PublicFilterInput, PublicFieldName, PublicOperator, BeautyPublicFilterClause, PublicFilterError] {
-    def public: BeautyQPublicField
-
-    def name: PublicFieldName = public.name
-    def acceptedOperators: Vector[PublicOperator] = public.acceptedOperators
-  }
-
-  private final case class ValueSpec[A](override val name: PublicFieldName, field: SearchField[VariantSearchDocumentGen2, A], ordering: Option[Ordering[A]], operators: Option[Vector[PublicOperator]] = None) extends Spec {
-    val public: BeautyQPublicField = BeautyQPublicField(name, Vector(field), operators.getOrElse(publicOperators(field)))
-
-    def decode(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], BeautyPublicFilterClause] =
-      input.operator match {
-        case PublicOperator.Equal => scalar(input, "Scalar").flatMap(raw => decodeValue(input.field, field, raw)).map(value => BeautyPublicFilterClause.Constraint(PlannedConstraint.Terms(field, Set(value))))
-        case PublicOperator.In => many(input).flatMap(values => decodeMany(input, field, values)).map(values => BeautyPublicFilterClause.Constraint(PlannedConstraint.Terms(field, values.toSet)))
-        case operator => range(input, field, operator)
-      }
-
-    private def range(input: PublicFilterInput, target: SearchField[VariantSearchDocumentGen2, A], operator: PublicOperator): Either[NonEmptyErrors[PublicFilterError], BeautyPublicFilterClause] = {
-      val decoded = input.value match {
-        case PublicFilterValue.Scalar(raw) if operator != PublicOperator.Between =>
-          decodeValue(input.field, target, raw).flatMap(value => singleBound(input.field, operator, value))
-        case PublicFilterValue.BetweenBounds(lower, upper, lowerInclusive, upperInclusive) if operator == PublicOperator.Between =>
-          for {
-            low <- decodeValue(input.field, target, lower)
-            high <- decodeValue(input.field, target, upper)
-            bounds <- ordering match {
-              case Some(valueOrdering) => boundsFor(input.field, lower, upper, low, high, lowerInclusive, upperInclusive)(using valueOrdering)
-              case None => Left(errors(PublicFilterError.InvalidBetweenBounds(input.field, lower, upper, "field does not support ordered bounds")))
-            }
-          } yield bounds
-        case _ => Left(errors(PublicFilterError.WrongPublicValueShape(input.field, operator, if (operator == PublicOperator.Between) "BetweenBounds" else "Scalar")))
-      }
-      decoded.map(bounds => BeautyPublicFilterClause.Constraint(PlannedConstraint.NumberRange(target, bounds)))
-    }
-  }
-
-  private final case class PriceSpec(override val name: PublicFieldName, from: SearchField[VariantSearchDocumentGen2, BigDecimal], to: SearchField[VariantSearchDocumentGen2, BigDecimal]) extends Spec {
-    val public: BeautyQPublicField = BeautyQPublicField(name, Vector(from, to), publicOperators(from))
-
-    def decode(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], BeautyPublicFilterClause] = {
-      val decoded: Either[NonEmptyErrors[PublicFilterError], RangeBounds[BigDecimal]] = input.value match {
-        case PublicFilterValue.Scalar(raw) if input.operator != PublicOperator.Between =>
-          decodeValue(input.field, from, raw).flatMap(value => singleBound(input.field, input.operator, value))
-        case PublicFilterValue.BetweenBounds(lower, upper, lowerInclusive, upperInclusive) if input.operator == PublicOperator.Between =>
-          for {
-            low <- decodeValue(input.field, from, lower)
-            high <- decodeValue(input.field, from, upper)
-            bounds <- boundsFor(input.field, lower, upper, low, high, lowerInclusive, upperInclusive)
-          } yield bounds
-        case _ => Left(errors(PublicFilterError.WrongPublicValueShape(input.field, input.operator, if (input.operator == PublicOperator.Between) "BetweenBounds" else "Scalar")))
-      }
-      decoded.map(bounds => BeautyPublicFilterClause.Constraint(PlannedConstraint.IntervalOverlap(from, to, bounds)))
-    }
-  }
-
-  private final case class DistanceSpec(override val name: PublicFieldName, field: SearchField[VariantSearchDocumentGen2, GeoPoint]) extends Spec {
-    val public: BeautyQPublicField = BeautyQPublicField(name, Vector(field), publicOperators(field))
-
-    def decode(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], BeautyPublicFilterClause] =
-      scalar(input, "Scalar").flatMap { raw =>
-        SearchValueCodec.bigDecimal.decodeCanonical(raw) match {
-          case Left(error) => Left(errors(PublicFilterError.InvalidCanonicalValue(input.field, error.typeId, raw, error.message)))
-          case Right(meters) if meters <= 0 => Left(errors(PublicFilterError.NonPositiveDistance(input.field, raw)))
-          case Right(meters) => Right(BeautyPublicFilterClause.GeoRadius(field, Distance(meters)))
-        }
-      }
-  }
-
   // Business-facing public filter policy: names intentionally differ from storage field ids.
-  private val staticSpecs: Vector[Spec] = Vector(
-    ValueSpec(PublicFieldName("service"), Fields.serviceCode, None),
-    ValueSpec(PublicFieldName("category"), Fields.categoryCode, None),
-    PriceSpec(PublicFieldName("price"), Fields.priceFrom, Fields.priceTo),
-    ValueSpec(PublicFieldName("durationMinutes"), Fields.durationMin, Some(summon[Ordering[Int]])),
-    DistanceSpec(PublicFieldName("distanceMeters"), Fields.location),
-  )
-
-  private def dynamicValueSpecs[A](
+  private def dynamicValueDeclarations[A](
     family: DynamicFieldFamily[VariantSearchDocumentGen2, A],
     prefix: String,
     ordering: Option[Ordering[A]],
-    operators: Option[Vector[PublicOperator]] = None,
-  ): Vector[Spec] =
+  ): Vector[PublicFilterDeclaration[VariantSearchDocumentGen2]] =
     family.entries.map { case (code, field) =>
-      ValueSpec(PublicFieldName(s"$prefix.$code"), field, ordering, operators)
+      ordering match {
+        case Some(valueOrdering) => PublicFilterDeclaration.ordered(PublicFieldName(s"$prefix.$code"), field)(using valueOrdering)
+        case None                => PublicFilterDeclaration.value(PublicFieldName(s"$prefix.$code"), field)
+      }
     }
 
   // Business-facing dynamic inventory: stable attribute codes define public names and order.
-  private def dynamicSpecs: Vector[Spec] =
-    dynamicValueSpecs(Fields.intAttributes, "attribute.int", Some(summon[Ordering[Int]])) ++
-      dynamicValueSpecs(Fields.decimalAttributes, "attribute.decimal", Some(summon[Ordering[BigDecimal]])) ++
-      dynamicValueSpecs(Fields.enumAttributes, "attribute.enum", None: Option[Ordering[String]]) ++
-      dynamicValueSpecs(Fields.booleanAttributes, "attribute.boolean", None: Option[Ordering[Boolean]], Some(Vector(PublicOperator.Equal)))
+  // One ordered declaration vector is the source for the public inventory, registry and decoder.
+  private val declarations: Vector[PublicFilterDeclaration[VariantSearchDocumentGen2]] =
+    Vector(
+      PublicFilterDeclaration.value(PublicFieldName("service"), Fields.serviceCode),
+      PublicFilterDeclaration.value(PublicFieldName("category"), Fields.categoryCode),
+      PublicFilterDeclaration.intervalOverlap(PublicFieldName("price"), Fields.priceFrom, Fields.priceTo),
+      PublicFilterDeclaration.ordered(PublicFieldName("durationMinutes"), Fields.durationMin),
+      PublicFilterDeclaration.geoDistance(PublicFieldName("distanceMeters"), Fields.location),
+    ) ++
+      dynamicValueDeclarations(Fields.intAttributes, "attribute.int", Some(summon[Ordering[Int]])) ++
+      dynamicValueDeclarations(Fields.decimalAttributes, "attribute.decimal", Some(summon[Ordering[BigDecimal]])) ++
+      dynamicValueDeclarations(Fields.enumAttributes, "attribute.enum", None) ++
+      Fields.booleanAttributes.entries.map { case (code, field) =>
+        PublicFilterDeclaration.value(PublicFieldName(s"attribute.boolean.$code"), field)
+          .withOperators(Vector(PublicOperator.Equal))
+      }
 
-  // Keep the public inventory ordered: static names first, then the declared dynamic-family entries.
-  private val specs: Vector[Spec] = staticSpecs ++ dynamicSpecs
+  private val registry = PublicFilterRegistry.unsafeFrom(declarations)
 
-  val fields: Vector[BeautyQPublicField] = specs.map(_.public)
-
-  private val registry = PublicInputRegistry.unsafeFrom[PublicFilterInput, PublicFieldName, PublicOperator, BeautyPublicFilterClause, PublicFilterError](
-    specs,
-    _.field,
-    _.operator,
-    PublicFilterError.UnknownPublicField.apply,
-    PublicFilterError.UnsupportedPublicOperator.apply,
-  )
+  val fields: Vector[BeautyQPublicField] = registry.fields
 
   def publicNameOf(filter: DecodedPublicFilter): PublicFieldName = filter.publicName
 
@@ -192,68 +113,9 @@ object BeautyQPublicFilterRegistry {
     }
   }
 
-  private def scalar(input: PublicFilterInput, expected: String): Either[NonEmptyErrors[PublicFilterError], String] = input.value match {
-    case PublicFilterValue.Scalar(value) => Right(value)
-    case _ => Left(errors(PublicFilterError.WrongPublicValueShape(input.field, input.operator, expected)))
-  }
+  private def errors(error: PublicFilterError): NonEmptyErrors[PublicFilterError] =
+    NonEmptyErrors.fromHead(error, Vector.empty)
 
-  private def many(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], Vector[String]] = input.value match {
-    case PublicFilterValue.Many(values) if values.nonEmpty => Right(values)
-    case PublicFilterValue.Many(_) => Left(errors(PublicFilterError.EmptyPublicValues(input.field)))
-    case _ => Left(errors(PublicFilterError.WrongPublicValueShape(input.field, input.operator, "Many")))
-  }
-
-  // Decodes every input value regardless of earlier failures, so a request with several invalid values
-  // reports all of them (with their exact index) in one response instead of one-at-a-time round trips.
-  // Canonical-duplicate detection only runs once every value has decoded successfully, and only then is
-  // the final Vector/Set constructed - a decode failure must never be shadowed by a spurious duplicate
-  // report over a partially-decoded result.
-  private def decodeMany[A](input: PublicFilterInput, field: SearchField[VariantSearchDocumentGen2, A], values: Vector[String]): Either[NonEmptyErrors[PublicFilterError], Vector[A]] = {
-    val (decodeErrors, decodedValues) =
-      values.zipWithIndex.map { case (raw, index) =>
-        field.codec.decodeCanonical(raw) match {
-          case Right(value) => Right(value)
-          case Left(error)  => Left(PublicFilterError.InvalidCanonicalValueAt(input.field, index, error.typeId, raw, error.message))
-        }
-      }.partitionMap(identity)
-
-    NonEmptyErrors.fromVector(decodeErrors) match {
-      case Some(errs) => Left(errs)
-      case None =>
-        val canonical = decodedValues.map(field.codec.encodeCanonical)
-        canonical.find(value => canonical.count(_ == value) > 1) match {
-          case Some(value) => Left(errors(PublicFilterError.DuplicateCanonicalTerm(input.field, value)))
-          case None        => Right(decodedValues)
-        }
-    }
-  }
-
-  private def decodeValue[A](name: PublicFieldName, field: SearchField[VariantSearchDocumentGen2, A], raw: String): Either[NonEmptyErrors[PublicFilterError], A] =
-    field.codec.decodeCanonical(raw) match {
-      case Right(value) => Right(value)
-      case Left(error)  => Left(errors(PublicFilterError.InvalidCanonicalValue(name, error.typeId, raw, error.message)))
-    }
-
-  // Total over all eight PublicOperator cases, but only the four legal single-bound operators produce a
-  // bound: an operator that cannot legally reach this helper (Equal, In, Between, WithinDistance) still
-  // produces a typed WrongPublicValueShape decoding error here rather than an invented equality range,
-  // even though every current caller already excludes those operators before calling in.
-  private def singleBound[A](name: PublicFieldName, operator: PublicOperator, value: A): Either[NonEmptyErrors[PublicFilterError], RangeBounds[A]] = operator match {
-    case PublicOperator.GreaterThan        => Right(RangeBounds(Bound.Exclusive(value), Bound.Unbounded))
-    case PublicOperator.GreaterThanOrEqual => Right(RangeBounds(Bound.Inclusive(value), Bound.Unbounded))
-    case PublicOperator.LessThan           => Right(RangeBounds(Bound.Unbounded, Bound.Exclusive(value)))
-    case PublicOperator.LessThanOrEqual    => Right(RangeBounds(Bound.Unbounded, Bound.Inclusive(value)))
-    case other                             => Left(errors(PublicFilterError.WrongPublicValueShape(name, other, "Scalar")))
-  }
-
-  private def boundsFor[A: Ordering](name: PublicFieldName, lowerRaw: String, upperRaw: String, lower: A, upper: A, lowerInclusive: Boolean, upperInclusive: Boolean): Either[NonEmptyErrors[PublicFilterError], RangeBounds[A]] = {
-    val ordering = summon[Ordering[A]]
-    if (ordering.gt(lower, upper)) Left(errors(PublicFilterError.InvalidBetweenBounds(name, lowerRaw, upperRaw, "lower bound is greater than upper bound")))
-    else if (ordering.equiv(lower, upper) && (!lowerInclusive || !upperInclusive)) Left(errors(PublicFilterError.InvalidBetweenBounds(name, lowerRaw, upperRaw, "equal endpoints require both bounds inclusive")))
-    else Right(RangeBounds(if (lowerInclusive) Bound.Inclusive(lower) else Bound.Exclusive(lower), if (upperInclusive) Bound.Inclusive(upper) else Bound.Exclusive(upper)))
-  }
-
-  private def errors(error: PublicFilterError): NonEmptyErrors[PublicFilterError] = NonEmptyErrors.fromHead(error, Vector.empty)
 }
 
 object BeautyQPublicSortRegistry {
