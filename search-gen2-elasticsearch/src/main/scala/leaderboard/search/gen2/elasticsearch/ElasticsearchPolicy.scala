@@ -56,7 +56,7 @@ final case class ElasticsearchDefaultSortPolicy(
 final case class ElasticsearchSearchCompilerVersion(value: String)
 
 object ElasticsearchSearchCompilerVersion {
-  val Current: ElasticsearchSearchCompilerVersion = ElasticsearchSearchCompilerVersion("es-search-compiler-v2")
+  val Current: ElasticsearchSearchCompilerVersion = ElasticsearchSearchCompilerVersion("es-search-compiler-v3")
 }
 
 sealed trait ElasticsearchQueryPolicyError

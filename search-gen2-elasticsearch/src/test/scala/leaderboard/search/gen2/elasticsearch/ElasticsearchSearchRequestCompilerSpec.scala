@@ -67,7 +67,7 @@ final class ElasticsearchSearchRequestCompilerSpec extends AnyWordSpec {
       }
     }
 
-    "reject a non-empty plan.groups with a typed error, never silently ignoring it" in {
+    "carry non-empty plan.groups and the exact execution query into the prepared request" in {
       val group =
         GroupRequest[BookDocument, String](
           GroupId("genre-group"),
@@ -78,10 +78,9 @@ final class ElasticsearchSearchRequestCompilerSpec extends AnyWordSpec {
           Vector(GroupOrder.Key(SortDirection.Asc)),
           GroupPrecisionPolicy.RequireExact,
         )
-      ElasticsearchSearchRequestCompiler.compile(fullPolicy, boundPlanOf(groups = Vector(group))) match {
-        case Left(ElasticsearchSearchRequestCompileError.UnsupportedGroups(count)) => assert(count == 1)
-        case other                                                                 => fail(s"expected UnsupportedGroups, got $other")
-      }
+      val compiled = compileOrFail(boundPlanOf(groups = Vector(group)))
+      assert(compiled.requestedGroups.map(_.id) == Vector(GroupId("genre-group")))
+      assert(compiled.executionQuery == at(compiled.body, "query"))
     }
 
     "never emit an offset/from field" in {

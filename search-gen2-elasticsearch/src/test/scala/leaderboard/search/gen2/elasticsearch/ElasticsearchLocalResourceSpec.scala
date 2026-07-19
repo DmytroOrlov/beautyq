@@ -74,6 +74,7 @@ final class ElasticsearchLocalResourceSpec extends AnyWordSpec {
             assert(first.totalHits == 257L)
             val genreResult = first.termsFacet(FacetId("genreFacet"), genre).getOrElse(fail("expected genre facet"))
             assert(genreResult.buckets.map(_.count).sum == 257L)
+            assert(first.group(GroupId("genre-group")).exists(_.buckets.map(_.matchingDocumentCount).sum == 257L))
             val cursor = first.nextCursor.getOrElse(fail("expected next cursor"))
 
             val second = service.search(prepare(searchPlan(Some(SearchCursor.fromTransport(cursor.opaqueValue)), Vector(facet)))).getOrElse(fail("expected second page"))
@@ -153,8 +154,18 @@ final class ElasticsearchLocalResourceSpec extends AnyWordSpec {
     }
   }
 
-  private def searchPlan(cursor: Option[SearchCursor], facets: Vector[FacetRequest[BookDocument]]): SearchPlan[BookDocument] =
-    SearchPlan(None, Vector.empty, Vector.empty, Vector.empty, PageRequest(cursor, PageSize.from(10).getOrElse(fail("expected page size"))), facets, Vector.empty, PlanDiagnostics.empty)
+  private def searchPlan(cursor: Option[SearchCursor], facets: Vector[FacetRequest[BookDocument]]): SearchPlan[BookDocument] = {
+    val group = GroupRequest[BookDocument, String](
+      GroupId("genre-group"),
+      genre,
+      GroupSize.from(10).getOrElse(fail("expected group size")),
+      RepresentativeRequest.IdentityOnly(),
+      Vector(GroupMetricRequest.BestScore(GroupMetricId("best-score"))),
+      Vector(GroupOrder.Metric(GroupMetricId("best-score"), SortDirection.Desc), GroupOrder.Key(SortDirection.Asc)),
+      GroupPrecisionPolicy.RequireExact,
+    )
+    SearchPlan(None, Vector.empty, Vector.empty, Vector.empty, PageRequest(cursor, PageSize.from(10).getOrElse(fail("expected page size"))), facets, Vector(group), PlanDiagnostics.empty)
+  }
 
   private def prepare(plan: SearchPlan[BookDocument]): PreparedElasticsearchSearchRequest[BookDocument, String] = {
     val bound = SearchCursorEnvelope.bind(plan, CanonicalPlanView(fullPolicy.contractFingerprint)).getOrElse(fail("expected bound plan"))

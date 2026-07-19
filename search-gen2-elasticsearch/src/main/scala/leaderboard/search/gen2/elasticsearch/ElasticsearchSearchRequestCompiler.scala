@@ -19,7 +19,6 @@ sealed trait ElasticsearchSearchRequestCompileError
 
 object ElasticsearchSearchRequestCompileError {
   final case class ContractFingerprintMismatch(expected: ContractFingerprint, actual: ContractFingerprint) extends ElasticsearchSearchRequestCompileError
-  final case class UnsupportedGroups(count: Int) extends ElasticsearchSearchRequestCompileError
   final case class ValueEncoding(context: ElasticsearchQueryValueContext, error: SearchValueDecodeError) extends ElasticsearchSearchRequestCompileError
   final case class UnrepresentablePageSize(pageSize: Int) extends ElasticsearchSearchRequestCompileError
   final case class CursorStateDecodeFailed(error: ElasticsearchCursorStateError) extends ElasticsearchSearchRequestCompileError
@@ -40,8 +39,8 @@ object ElasticsearchGenerationRequirement {
   * [[BoundSearchPlan]] into one immutable prepared [[CompiledElasticsearchSearchRequest]]. Accepts only a bound
   * plan - never a raw [[SearchPlan]] - and rejects a bound plan whose contract fingerprint differs from
   * the policy's own, so a caller cannot compile a request against a plan/generation the policy did not
-  * produce. Brick 5B does not implement groups: a non-empty `plan.groups` is a typed
-  * [[ElasticsearchSearchRequestCompileError.UnsupportedGroups]] error, never silently ignored.
+  * produce. A non-empty `plan.groups` is carried into the prepared request and executed by the generic
+  * secondary group-query owner; it is never silently ignored or recomputed from the hit window.
   */
 object ElasticsearchSearchRequestCompiler {
 
@@ -54,7 +53,6 @@ object ElasticsearchSearchRequestCompiler {
     val plan = boundPlan.plan
     for {
       _              <- requireMatchingFingerprint(policy, boundPlan)
-      _              <- requireNoGroups(plan)
       lookaheadSize  <- lookaheadSizeOf(plan.page.size)
       baseQuery      <- compileBaseQuery(policy, plan)
       scoredQuery    <- applyGeoScoring(policy, plan.softSignals, baseQuery)
@@ -72,10 +70,12 @@ object ElasticsearchSearchRequestCompiler {
       new CompiledElasticsearchSearchRequest[Document, Id](
         generationRequirement = generationRequirement,
         body = body,
+        executionQuery = scoredQuery.query,
         boundPlan = boundPlan,
         identityField = policy.index.declaration.identity,
         sortShape = sortClauses,
         requestedFacets = plan.facets,
+        requestedGroups = plan.groups,
         totalHitsPolicy = policy.totalHitsPolicy,
         pageSize = plan.page.size,
       )
@@ -87,10 +87,12 @@ object ElasticsearchSearchRequestCompiler {
   final class CompiledElasticsearchSearchRequest[Document, Id] private[ElasticsearchSearchRequestCompiler] (
     val generationRequirement: ElasticsearchGenerationRequirement,
     val body: Json,
+    val executionQuery: Json,
     val boundPlan: BoundSearchPlan[Document],
     val identityField: SearchField[Document, Id],
     val sortShape: Vector[Json],
     val requestedFacets: Vector[FacetRequest[Document]],
+    val requestedGroups: Vector[GroupRequest[Document, ?]],
     val totalHitsPolicy: ElasticsearchTotalHitsPolicy,
     val pageSize: PageSize,
   )
@@ -101,9 +103,6 @@ object ElasticsearchSearchRequestCompiler {
   ): Either[ElasticsearchSearchRequestCompileError, Unit] =
     if (boundPlan.identity.contractFingerprint == policy.contractFingerprint) Right(())
     else Left(ElasticsearchSearchRequestCompileError.ContractFingerprintMismatch(policy.contractFingerprint, boundPlan.identity.contractFingerprint))
-
-  private def requireNoGroups[Document](plan: SearchPlan[Document]): Either[ElasticsearchSearchRequestCompileError, Unit] =
-    if (plan.groups.isEmpty) Right(()) else Left(ElasticsearchSearchRequestCompileError.UnsupportedGroups(plan.groups.length))
 
   private def lookaheadSizeOf(pageSize: PageSize): Either[ElasticsearchSearchRequestCompileError, Int] =
     if (pageSize.value <= Int.MaxValue - 1) Right(pageSize.value + 1)
