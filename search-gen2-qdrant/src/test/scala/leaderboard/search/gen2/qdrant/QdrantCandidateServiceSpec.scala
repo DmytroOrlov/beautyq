@@ -18,6 +18,40 @@ final class QdrantCandidateServiceSpec extends AnyWordSpec {
       val client = new AuthorizedClient(generation, alias.value)
       val result = new QdrantCandidateService(client, config).execute(QdrantTestFixtures.policy, request).getOrElse(fail("expected candidate result"))
       assert(result.hits.map(_.id).nonEmpty)
+      assert(result.target.value == generation.physicalCollectionName)
+      assert(result.metadata == generation.metadata)
+    }
+
+    "compose prepare, embedding, completion and authorized execution into one bound result" in {
+      val generation = compiledGeneration
+      val alias = QdrantResourceName.from("neutral_alias").getOrElse(fail("expected alias"))
+      val config = QdrantCandidateServiceConfig.create(alias, "neutral_alias_").getOrElse(fail("expected config"))
+      val plan = leaderboard.search.gen2.contract.CandidatePlan[QdrantTestFixtures.NeutralDocument](semanticText, Vector.empty)
+      val port = new QdrantQueryEmbeddingPort[String] {
+        def embed(input: QdrantEmbeddingInput): Either[String, QdrantEmbeddingResult] =
+          QdrantEmbeddingResult.from(input, Vector(0.1, 0.2, 0.3)).left.map(_.toString)
+      }
+      val result = QdrantCandidatePipeline.execute(QdrantTestFixtures.policy, plan, port, new QdrantCandidateService(new AuthorizedClient(generation, alias.value), config))
+      result match {
+        case Right(bound) =>
+          assert(bound.candidatePlan == plan)
+          assert(bound.target.value == generation.physicalCollectionName)
+          assert(bound.metadata == generation.metadata)
+        case Left(error) => fail(s"expected bound candidate execution, got $error")
+      }
+    }
+
+    "preserve an embedding-port failure before Qdrant execution" in {
+      val alias = QdrantResourceName.from("neutral_alias").getOrElse(fail("expected alias"))
+      val config = QdrantCandidateServiceConfig.create(alias, "neutral_alias_").getOrElse(fail("expected config"))
+      val plan = leaderboard.search.gen2.contract.CandidatePlan[QdrantTestFixtures.NeutralDocument](semanticText, Vector.empty)
+      val port = new QdrantQueryEmbeddingPort[String] {
+        def embed(input: QdrantEmbeddingInput): Either[String, QdrantEmbeddingResult] = Left("embedding-unavailable")
+      }
+      QdrantCandidatePipeline.execute(QdrantTestFixtures.policy, plan, port, new QdrantCandidateService(new NoCallClient, config)) match {
+        case Left(QdrantCandidatePipelineError.Embedding("embedding-unavailable")) => succeed
+        case other => fail(s"expected embedding error, got $other")
+      }
     }
 
     "reject a candidate fingerprint mismatch before resolving the alias" in {

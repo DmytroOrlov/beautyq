@@ -1740,10 +1740,30 @@ Qdrant does not receive facets, groups or public page requests.
 ### 12.6 Candidate decoding (Brick 6A) and hydration (Brick 6C)
 
 Brick 6A decodes the Qdrant response to the candidate-only
-`QdrantCandidateSearchResult[Id]`, retaining ordered typed hits and duplicate/elapsed diagnostics.
-Brick 6C will hydrate those IDs via the Gen2 document store/snapshot view.
+`QdrantCandidateSearchResult[Id]`, retaining ordered typed hits and duplicate/elapsed diagnostics. The
+6B service wraps that decoder result in a private-constructor
+`QdrantAuthorizedCandidateResult[Id]` carrying the exact authorized physical collection and persisted
+`QdrantGenerationMetadata`; callers cannot supply either value.
 
-Post-hydration constraint checking remains an assertion and diagnostic. It is not the primary filter implementation.
+Brick 6C exposes a synchronous typed `QdrantQueryEmbeddingPort` and one executable
+`QdrantCandidatePipeline`: `prepare -> embed -> complete -> authorized service`. Its
+`ExecutedQdrantCandidatePlan` binds the original `CandidatePlan`, declaration, request, authorized target,
+metadata and diagnostics before hydration. The generic core then checks source/projected/projection
+fingerprints and point count, performs one ordered identity lookup, preserves candidate order/scores and
+attaches domain provenance. Missing IDs and duplicate document identities are typed failures; no candidate
+is silently dropped. The lookup derives identities through the declaration's `identityOf(document)` view;
+BeautyQ does not supply a parallel identity selector or map.
+
+The initial generic hydration vocabulary is deliberately closed to `Fail` for missing documents and
+`RequireAll` for hard constraints. `PlannedConstraintAssertion` replays the exact bound hard constraints
+for terms, numeric/temporal ranges, interval overlap and geo distance in declared constraint order. This
+is an integrity assertion after backend filtering, not a second capability validator or a replacement for
+Qdrant filter compilation.
+
+BeautyQ supplies only `BeautyQQdrantHydrationPolicy` (`semantic-supplement` provenance) and composes the
+policy/evaluation with the generic pipeline. The final result remains candidate-only: it has ordered
+hydrated documents, scores, provenance, authorized target, persisted metadata and Qdrant diagnostics, but
+no totals, facets, groups or public pagination. Baseline-plus-supplement composition remains Brick 7.
 
 ### 12.7 Transport and physical collection lifecycle (Brick 6B)
 

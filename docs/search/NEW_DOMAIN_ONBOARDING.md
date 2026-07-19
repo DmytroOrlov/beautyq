@@ -509,7 +509,7 @@ traversal, an aggregation name, or a second fingerprint. `BeautyQElasticsearchPo
 golden reference at full scale. Reuse the generic physical-generation lifecycle and baseline service with
 domain resource names; group/carousel result types remain a later brick.
 
-## Qdrant candidate policy (pure 6A boundary)
+## Qdrant candidate and hydration policy (6A/6C boundary)
 
 After the document declaration and semantic candidate policy exist, a domain supplies only the
 identity field, searchable embedding field, named-vector/model identity, distance and retrieval
@@ -517,7 +517,10 @@ knobs to its Qdrant policy. The generic policy derives payload fields, payload i
 JSON, deterministic generation metadata and candidate response decoding from that declaration. The
 domain also chooses only its stable collection alias and physical prefix; lifecycle, metadata
 convergence, alias authorization and target binding remain framework-owned. Do not maintain a second
-payload/index list or call Gen1 Qdrant; hydration remains a later brick.
+payload/index list or call Gen1 Qdrant. For an eligible candidate path, provide a typed embedding adapter
+and one explicit hydration choice: missing documents fail and hard constraints are asserted after one
+generation-consistent lookup. The framework derives the request pipeline, target/metadata binding, ordered
+lookup, integrity errors and candidate-only result; baseline/supplement append policy remains Brick 7.
 
 ## Materialization
 

@@ -2,6 +2,7 @@ package leaderboard.search.gen2.qdrant
 
 import io.circe.Json
 import leaderboard.search.gen2.contract.*
+import leaderboard.search.gen2.core.candidate.CandidateGenerationMetadata
 import leaderboard.search.gen2.core.materialization.MaterializedSearchDocuments
 
 final case class QdrantGenerationIdentity(
@@ -20,7 +21,11 @@ final case class QdrantGenerationMetadata(
   generationId: String,
   identity: QdrantGenerationIdentity,
   pointCount: Int,
-)
+) extends CandidateGenerationMetadata {
+  def sourceContentFingerprint: String = identity.sourceContentFingerprint
+  def projectedDocumentsFingerprint: String = identity.projectedDocumentsFingerprint
+  def projectionFormatVersion: String = identity.projectionFormatVersion
+}
 
 sealed trait QdrantGenerationCompileError
 object QdrantGenerationCompileError {

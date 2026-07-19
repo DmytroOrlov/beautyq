@@ -28,6 +28,9 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
       assert(BeautyQSearchGen2.elasticsearch.generation eq BeautyQElasticsearchGeneration)
       assert(BeautyQSearchGen2.elasticsearch.baseline eq BeautyQElasticsearchBaseline)
       assert(BeautyQSearchGen2.elasticsearch.service eq BeautyQElasticsearchBaselineService)
+
+      assert(BeautyQSearchGen2.qdrant.hydrationPolicy eq BeautyQQdrantHydrationPolicy.policy)
+      assert(BeautyQSearchGen2.qdrant.candidates eq BeautyQQdrantCandidatePipeline)
     }
   }
 }

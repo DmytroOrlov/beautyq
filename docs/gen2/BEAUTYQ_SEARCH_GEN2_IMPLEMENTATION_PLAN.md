@@ -21,20 +21,20 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, and 6A–6B-A are completed; Brick 6B-B is active pending its separate Qdrant 1.18.3 resource proof.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A and 6C are implemented; Brick 6B-B remains active pending its separate Qdrant 1.18.3 resource proof, and the pre-7 compliance audit makes Brick 6D the next implementation brick.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
   6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
-- **Next sequence:** 6B-B completes its real-resource proof, then 6C composes BeautyQ
-  query embedding and document hydration. Brick 7 then owns baseline-plus-supplement orchestration.
+- **Next sequence:** implement Brick 6D's authoring/ownership/proof closure; independently complete 6B-B's real-resource proof; then implement Brick 7 orchestration, Brick 8 independent application/evaluation, and Brick 9 atomic cutover/deletion.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
-- **Canonical reading path:** start at wiring-owned `BeautyQSearchGen2` for the complete implemented
-  composition. Its `contract` branch points to backend-neutral `BeautyQSearchDeclarations`; all other
-  branches are direct references to their downstream owners.
+- **Canonical reading path:** start at wiring-owned `BeautyQSearchGen2`. Its `contract` branch points to
+  backend-neutral `BeautyQSearchDeclarations`; all other branches are direct references to downstream
+  owners. Brick 6D must expose the currently missing intent-parser and candidate-compiler links before
+  this path may again be called complete.
 
-### Audit-derived acceptance gate for Bricks 6B–7
+### Audit-derived acceptance gate for the remaining bricks
 
 This is the local application of the normative domain-authoring principles, not another audit ledger:
 
@@ -94,11 +94,12 @@ typed handles declared there are reused by document, constraints, facets, groups
 Qdrant payload/filter policy and response descriptions. No downstream section recreates a field or
 derives a public query name from `SearchField.path`.
 
-The completed 4D+4E inbound boundary is visible under the same branch: `variants.request` exposes
+The 4D+4E inbound boundary is visible under the same branch: `variants.request` exposes
 the authoritative public filter/sort/facet registries and `variants.intent` exposes the validated
-stable-code vocabulary. Generic lookup/operator gating, ordered sort/facet inventories and the
-longest-match/contextual/overlay engine live in `search-gen2-contract`; BeautyQ declares only public
-names, typed field policy, stable actions, aliases and domain translation/label policy. The validated
+stable-code vocabulary. Generic lookup/operator gating and ordered sort/facet inventories live in
+`search-gen2-contract`, but standard scalar/collection/range decoding still has a tracked BeautyQ-owned
+extraction gap assigned to Brick 6D. The longest-match/contextual/overlay engine is already generic.
+BeautyQ declares public names, typed field policy, stable actions, aliases and domain translation/label policy. The validated
 request assigns `ExplicitUi`/`FacetSelection` provenance on the server; the parser emits `ParsedHard`
 constraints, canonical semantic labels and the one `GeoProximitySignal`. Noise without contextual
 requirements remains in the independent matching phase; the Gen2-only NearUser rule is an explicit
@@ -106,8 +107,9 @@ semantic overlay with a hair-removal exclusion. Neither branch constructs a `Sea
 geo origins, applies precedence or talks to a backend.
 
 The contract root intentionally stops at the contract-module boundary. Wiring-owned
-`BeautyQSearchGen2` is the complete implemented navigation facade; it points to this contract root,
-the materialization owners and the Elasticsearch composition without copying them or reversing the DAG.
+`BeautyQSearchGen2` is the navigation facade; Brick 6D completes its direct links across request/intent,
+plan/candidate compilation, materialization, Elasticsearch and Qdrant without copying policy or reversing
+the DAG.
 
 The implementation must not begin by rebuilding catalog topology as an isolated vertical. Catalog
 cannot determine document joins, normalization, text/embedding composition, price-overlap semantics,
@@ -1056,16 +1058,157 @@ Focused neutral and BeautyQ proofs are green. The communication proof still requ
 Qdrant 1.18.3 resource; until it executes, Brick 6B-B remains active. Gen1 remains on 1.15.4 and
 `/points/search`.
 
-## Brick 6C — BeautyQ query embedding and candidate hydration (planned)
+## Brick 6C — BeautyQ query embedding and candidate hydration (implemented)
 
-Compose the already accepted candidate evaluation with a typed embedding port, complete the 6A request,
-execute it through the authorized 6B service, and hydrate returned IDs from one generation-consistent Gen2
-document lookup. Reuse generic ordered lookup/dedup mechanics; BeautyQ owns only its embedding adapter,
-missing-document policy, post-hydration hard-constraint assertion and candidate provenance.
+The generic core now owns typed identity extraction, ordered candidate lookup, post-hydration constraint
+assertion and generation-evidence checks. Qdrant owns the synchronous typed embedding port, the
+prepare -> embed -> complete -> authorized-service pipeline and a service-owned result carrying the
+authorized physical target and persisted metadata. BeautyQ composes those values with its semantic
+candidate evaluation and declares only the initial `Fail`/`RequireAll` hydration policy plus
+`semantic-supplement` provenance.
 
-The hydrated result remains candidate-only. Missing IDs, duplicate document identities, embedding mismatch
-and hard-constraint violations are typed integrity failures, not graceful Qdrant outages. No totals, facets,
-groups, public pagination, baseline fallback or append policy enters this brick.
+The final hydrated result remains candidate-only and read-only. Missing IDs, duplicate document identities,
+generation fingerprint mismatch and hard-constraint violations are typed integrity failures, not graceful
+Qdrant outages. No totals, facets, groups, public pagination, baseline fallback or append policy enters
+this brick. The Qdrant 1.18.3 communication proof remains the separate 6B-B gate.
+
+The pre-7 compliance audit accepted the production ownership and candidate-only result shape, but found
+two proof gaps that Brick 6D must close before orchestration consumes this seam: one real BeautyQ eligible
+path through intent -> plan -> candidate evaluation -> authorized Qdrant execution -> hydration, and direct
+neutral hydrator coverage for projected-document, projection-format, point-count and hard-constraint
+integrity failures. These are proof closeout, not a redesign of 6C.
+
+## Brick 6D — Pre-orchestration authoring, navigation and proof closure (next)
+
+### Why this is one brick
+
+The pre-7 audit found one repeated-mechanics extraction gap and several incomplete views/proofs at the
+same domain-authoring seam. Splitting them into independent micro-fixes would let the public-input API,
+BeautyQ migration, canonical facade, onboarding and acceptance evidence drift again. Brick 6D is one
+cohesive closeout: a new domain gets one reusable inbound authoring path, and the canonical BeautyQ path
+proves that exact path through the already accepted 6C boundary. It does not implement supplement
+orchestration.
+
+### Current compliance state
+
+| Vertical | Status before 6D | Required owner/action |
+|---|---|---|
+| catalog -> document -> `Fields` | green | preserve the canonical typed handles |
+| snapshot -> projection -> materialization | green | no redesign |
+| public request | **changes required** | move standard value/range decoding mechanics from BeautyQ into `search-gen2-contract` |
+| intent -> `SearchPlan` | green | expose the parser/compiler path from the facade without wrapping it |
+| Elasticsearch full result | green | preserve complete baseline ownership |
+| Qdrant candidate/hydration | **almost green** | add the missing BeautyQ eligible proof and neutral integrity-error matrix; keep 6B-B's resource gate separate |
+| baseline-plus-supplement | planned | Brick 7, after the ownership contract below is fixed |
+| application/evaluation/cutover | planned | Bricks 8 and 9 |
+
+### Generic inbound authoring closure
+
+Add a high-level backend-neutral public-filter declaration/decoder kernel in `search-gen2-contract` while
+retaining `PublicInputSpec`/`PublicInputRegistry` as the low-level escape hatch. The high-level path owns:
+
+- scalar and non-empty collection shape decoding;
+- canonical codec decoding, indexed error accumulation and canonical duplicate detection;
+- one-sided inclusive/exclusive bound construction;
+- ordered `between` validation;
+- ordinary value/range, interval-overlap and geo-distance clause construction;
+- capability-derived default public operators plus explicit validated narrowing.
+
+The domain still declares every choice that may differ: public name, exact `Fields.*` handle(s), ordinary
+value versus interval versus distance meaning, accepted-operator narrowing, dynamic-family public-name
+composition, presentation/provenance policy and domain-facing error wording when it is genuinely policy.
+Public names remain explicit and never derive from `SearchField.path`.
+
+Migrate `BeautyQPublicFilterRegistry` to one ordered vector of these generic declarations. Remove its local
+`ValueSpec`/`PriceSpec`/`DistanceSpec`, scalar/many/decode-many/range/bounds mechanics and the false comment
+that calls private BeautyQ helpers reusable. Preserve exact public names, order, field handles, accepted
+operators, decoding errors, accumulation order, interval price semantics, geo distance semantics and
+provenance.
+
+Prove the reusable boundary with a neutral document containing keyword, ordered numeric, interval,
+geo and dynamic-family declarations. Tests must cover valid forms, wrong shapes, all single-bound
+operators, inclusive/exclusive `between`, complete indexed error accumulation, canonical duplicates,
+capability-derived operators, explicit narrowing and wrong-document compile rejection.
+
+### Complete the readable executable path
+
+Extend `BeautyQSearchGen2` only with direct references so a reviewer can navigate in data-flow order:
+
+```text
+contract/request
+-> intent parser
+-> SearchPlan compiler
+-> candidate compiler
+-> Elasticsearch baseline
+-> Qdrant candidate/hydration pipeline
+```
+
+The facade owns no adapter, policy, list, renderer or wrapper. Its focused identity spec must cover every
+implemented member, including Qdrant policy/resources/runtime/hydration/pipeline and the newly visible
+intent/candidate compilers.
+
+### Close 6C proof gaps
+
+Add one BeautyQ-shaped eligible end-to-end candidate proof using the canonical request, intent, plan,
+candidate policy, materialized document and hydration policy. It must preserve bound hard constraints,
+candidate order, scores, `semantic-supplement` provenance, authorized target and generation metadata,
+while exposing no total/facet/group/page surface.
+
+Extend the neutral hydration suite with direct proofs for `ProjectedDocumentsMismatch`,
+`ProjectionFormatMismatch`, `PointCountMismatch` and hydrator-level `ConstraintViolations`. These errors
+remain integrity failures; Brick 7 must not degrade them into baseline-only success.
+
+### Documentation closeout owned by 6D
+
+- update the technical-spec `BeautyQSearchGen2` tree to include the real Qdrant branch and complete
+  request/intent/candidate navigation;
+- remove onboarding's stale claim that group/carousel result types are future work;
+- stop presenting `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` as the canonical Gen2 architecture owner;
+  classify its Gen1-specific hard-constraint, lifecycle and route material as historical/evaluation
+  evidence, while the Gen2 technical spec/ADR own current architecture;
+- make onboarding show only the new high-level public-filter declarations, not a copied BeautyQ decoder;
+- describe `ConstraintPrecedence.sourceOrder` as typed reviewer-readable order unless a real stable external
+  ID contract is introduced; do not add defensive labels to unrelated enums;
+- keep exact APIs in the technical spec, live gaps/order in this plan and the minimal new-domain path in
+  onboarding; do not reproduce source or test-by-test narration.
+
+### Proof and acceptance
+
+- BeautyQ public names/order/handles/operators and every accepted/rejected request scenario remain exact;
+- the neutral high-level decoder proves reuse independently of BeautyQ;
+- no standard decode traversal or bounds construction remains in BeautyQ;
+- the facade is a complete direct-reference navigation view with no copied policy;
+- the BeautyQ eligible candidate path and neutral hydration error matrix are green;
+- generic Gen2 modules remain free of BeautyQ symbols and Gen1 dependencies;
+- docs no longer overstate the old registry, facade or Gen1 supplement document;
+- Brick 6B-B remains independently active until its Qdrant 1.18.3 resource proof executes.
+
+### Pain-to-promise closeout owned by the remaining sequence
+
+| Gen1 pain / Gen2 promise | Current result | Remaining owner |
+|---|---|---|
+| executable root instead of descriptive readiness and compatibility facades | incomplete navigation view | Brick 6D |
+| reusable domain authoring rather than copied registries/decoders | lookup is generic; standard decode mechanics are not | Brick 6D |
+| Qdrant candidate filtering/hydration with no invented full-result semantics | production shape accepted; proof incomplete | Brick 6D plus 6B-B resource gate |
+| closed public filter/facet/result loop and honest `appliedFilters` response | backend contracts exist; public composition is absent | Brick 8 |
+| lifecycle reflects persisted state | ES proven; Qdrant scripted and focused, communication proof pending | Brick 6B-B |
+| one backend role must not erase another | ES full result and Qdrant candidate result are separate; merge not yet executable | Brick 7 |
+| no-harm supplement semantics | accepted ADR only; executable membership/degradation/append policy absent | Brick 7 |
+| serving code isolated from evaluation and Gen1 | module firewall exists; eval/app composition is not built | Brick 8 |
+| one final migration rather than compatibility layers | side-by-side build preserved | Brick 9 |
+
+### Remaining order after the audit
+
+```text
+Brick 6D  reusable inbound authoring + readable facade + 6C proof/docs closeout
+6B-B      independent Qdrant 1.18.3 communication gate
+Brick 7   baseline membership + supplement orchestration
+Brick 8   independent application/API/eval and cutover evidence
+Brick 9   atomic route cutover and Gen1 deletion
+```
+
+Brick 7 must not start until Brick 6D is accepted. Brick 6B-B's resource proof may run independently,
+but Brick 8 full-search readiness cannot pass without it.
 
 ## Brick 7 — Implement baseline-plus-supplement orchestration
 
@@ -1080,20 +1223,29 @@ result. Brick 7 does not reopen their transport, lifecycle, embedding or hydrati
 
 In `search-gen2-core` add generic orchestration primitives where domain-neutral.
 
-In `beautyq-search-gen2-wiring` add BeautyQ policy:
+In `beautyq-search-gen2-wiring` add only the remaining BeautyQ composition policy:
 
 - ES baseline `FullSearchResult`;
-- Qdrant `CandidateSearchResult`;
-- first-page/default-relevance eligibility;
+- the bound `BeautyQQdrantCandidatePipelineResult` produced by the accepted candidate/hydration owner;
 - max-one append-only selection;
 - baseline current-page deduplication;
 - baseline full-match membership guard;
-- hard-constraint assertion;
-- provenance;
 - separate baseline total and supplement count;
 - fixed startup/readiness policy: ES baseline required, Qdrant outage exposes explicit `baseline_only` mode and `supplementReady = false`;
-- fixed request-time policy: Qdrant timeout/transport/backend failure returns unchanged ES output with `supplement_failed` and a stable reason code;
+- fixed request-time policy: embedding transport/unavailability and Qdrant timeout/transport/backend
+  failure return unchanged ES output with `supplement_failed` and a stable typed reason code;
+- fixed integrity policy: embedding input/model/dimension/completion mismatch, plan/capability errors,
+  generation evidence mismatch and hydration/constraint violations never degrade to baseline-only success;
 - explicit degradation diagnostics, with no hidden retry or fallback candidate backend.
+
+Eligibility, hard-constraint assertion and candidate provenance are inputs already bound by
+`BeautyQCandidatePlanCompiler` and `BeautyQQdrantCandidatePipeline`; the orchestrator must not evaluate,
+replace or reconstruct them. It may inspect the bound result only to choose append/no-append and render
+the final supplement status.
+
+Add a domain-neutral Elasticsearch membership compiler/service that evaluates exact candidate IDs against
+the same lifecycle-authorized baseline plan/generation. BeautyQ orchestration must not build raw membership
+JSON or accept an independently supplied query, filters or physical target.
 
 ### Forbidden
 
@@ -1102,6 +1254,9 @@ In `beautyq-search-gen2-wiring` add BeautyQ policy:
 - fallback ownership;
 - supplement under price/duration/distance sort;
 - changing ES facets/groups/totals to include the supplement implicitly.
+- recomputing page/sort eligibility, hard constraints or candidate provenance;
+- raw Elasticsearch membership JSON in BeautyQ code;
+- treating embedding/configuration/integrity failures as ordinary Qdrant degradation.
 
 ### Proof
 
@@ -1112,6 +1267,8 @@ In `beautyq-search-gen2-wiring` add BeautyQ policy:
 - ES baseline or document-lookup failure prevents serving readiness;
 - Qdrant startup failure keeps baseline serving explicit but fails full-search/cutover readiness;
 - request-time Qdrant failure returns the unchanged baseline with `supplement_failed`;
+- request-time embedding transport/unavailability returns the unchanged baseline with its own stable reason;
+- embedding completion/model/dimension errors remain typed integrity failures;
 - plan/capability errors and hydration invariant violations are not degraded into baseline-only success;
 - no-hard-constraint-violation gate is green;
 - provenance and supplement count are correct.
@@ -1120,6 +1277,7 @@ In `beautyq-search-gen2-wiring` add BeautyQ policy:
 
 ```text
 search-gen2-core/...                                generic orchestration types
+search-gen2-elasticsearch/...                       bound baseline-membership compiler/service
 beautyq-search-gen2-wiring/...                      BeautyQ policy/service
 beautyq-search-gen2-eval/...                        no-harm fixtures/report
 ```
@@ -1142,6 +1300,9 @@ Run Gen2 end to end beside V1 without integrating it into the V1 backend.
 - cache the lifecycle-authorized active generation for first-page searches and invalidate that cache
   only after activation; a normal first page must not perform mapping, count and alias discovery again;
 - wire Qdrant and baseline-plus-supplement orchestration;
+- project one explicit public Gen2 response from the validated request, compiled plan, authoritative ES
+  result and bound supplement result: `appliedFilters` with provenance, exact baseline total/facets/groups,
+  cursor, carousel projections, supplement count/status/reason and per-hit origin have one response owner;
 - use separate backend resources;
 - add end-to-end request/response tests;
 - build the evaluation corpus and cutover report in `beautyq-search-gen2-eval`;
@@ -1169,6 +1330,7 @@ The application shell may depend on both V1 and Gen2 only to expose separate com
 - semantic delta ledger fixtures pass;
 - exact facet and group authoritative fixtures pass;
 - pagination/supplement no-duplicate tests pass;
+- route-level tests close the public filter/facet/applied-filter/result loop without a Gen1 codec adapter;
 - relevance/no-harm/latency/freshness gates meet accepted thresholds;
 - module firewall is clean;
 - serving readiness and full-search readiness expose the accepted ES/Qdrant distinction;

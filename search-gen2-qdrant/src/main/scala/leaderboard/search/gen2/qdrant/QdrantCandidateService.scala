@@ -30,6 +30,17 @@ object QdrantCandidateServiceError {
   final case class Response(error: QdrantCandidateResponseError) extends QdrantCandidateServiceError
 }
 
+/** Service-owned authorized result. The physical target and persisted metadata are exposed only
+  * after alias resolution and generation/policy validation have succeeded. */
+final class QdrantAuthorizedCandidateResult[Id] private[qdrant] (
+  val decoded: QdrantCandidateSearchResult[Id],
+  val target: QdrantResourceName,
+  val metadata: QdrantGenerationMetadata,
+) {
+  def hits: Vector[QdrantCandidateHit[Id]] = decoded.hits
+  def diagnostics: QdrantCandidateDiagnostics = decoded.diagnostics
+}
+
 /** Resolves and authorizes a physical collection internally; callers never supply an executable target. */
 final class QdrantCandidateService(
   client: QdrantGen2Client,
@@ -40,7 +51,7 @@ final class QdrantCandidateService(
   def execute[Document, Id](
     policy: QdrantPolicy[Document, Id],
     request: QdrantCompiledCandidateRequest,
-  ): Either[QdrantCandidateServiceError, QdrantCandidateSearchResult[Id]] =
+  ): Either[QdrantCandidateServiceError, QdrantAuthorizedCandidateResult[Id]] =
     for {
       _ <- Either.cond(request.candidateContractFingerprint == policy.candidateContractFingerprint.value, (), ContractFingerprintMismatch(policy.candidateContractFingerprint.value, request.candidateContractFingerprint))
       aliases <- client.listAliases().left.map(Transport("list-aliases", _)).flatMap(raw => QdrantCollectionWire.aliases(raw).left.map(error => Malformed("list-aliases", error.toString)))
@@ -58,7 +69,7 @@ final class QdrantCandidateService(
       _ <- authorizeTarget(details, target, policy)
       response <- client.queryPoints(targetName, request.body).left.map(Transport("query-points", _))
       result <- QdrantCandidateResponseDecoder.decode(policy.identity, request, response).left.map(Response.apply)
-    } yield result
+    } yield new QdrantAuthorizedCandidateResult(result, targetName, details.metadata)
 
   private def authorizeTarget[Document, Id](details: QdrantCollectionWire.Details, target: String, policy: QdrantPolicy[Document, Id]): Either[QdrantCandidateServiceError, Unit] = {
     val generationId = QdrantGenerationNaming.generationId(details.metadata.identity)

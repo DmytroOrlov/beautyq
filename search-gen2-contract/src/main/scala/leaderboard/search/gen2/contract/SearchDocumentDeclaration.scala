@@ -72,6 +72,15 @@ final case class SearchDocumentDeclaration[Document, Id] private (
 ) {
   def allFields: Vector[SearchField[Document, ?]] = identity +: fields
 
+  /** Extracts the declared required identity. The unreachable optional branch is kept explicit so
+    * this helper remains total if the declaration representation is ever widened without silently
+    * inventing an identity. */
+  def identityOf(document: Document): Id =
+    identity.extract(document) match {
+      case Some(value) => value
+      case None        => throw new IllegalStateException(s"required identity field ${identity.id.value} was absent")
+    }
+
   def structure: SearchDocumentStructure =
     SearchDocumentStructure(
       id = id,
