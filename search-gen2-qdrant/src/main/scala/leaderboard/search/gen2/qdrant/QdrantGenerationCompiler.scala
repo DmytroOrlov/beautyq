@@ -69,7 +69,6 @@ final class QdrantCompiledGeneration private[qdrant] (
 )
 
 object QdrantGenerationCompiler {
-  private val MetadataSchemaVersion = "qdrant-generation-metadata-v1"
 
   def prepare[Snapshot, Document, Id](
     policy: QdrantPolicy[Document, Id],
@@ -150,24 +149,9 @@ object QdrantGenerationCompiler {
               embeddingModel = policyModel(prepared),
               embeddedPointsFingerprint = embeddedFingerprint,
             )
-            val generationId = QdrantCanonical.sha256(
-              Vector(
-                generationIdentity.sourceContentFingerprint,
-                generationIdentity.projectedDocumentsFingerprint,
-                generationIdentity.collectionContractFingerprint,
-                generationIdentity.projectionFormatVersion,
-                generationIdentity.compilerVersion,
-                generationIdentity.collectionFormatVersion,
-                generationIdentity.embeddingModel.provider,
-                generationIdentity.embeddingModel.model,
-                generationIdentity.embeddingModel.revision,
-                generationIdentity.embeddingModel.dimension.toString,
-                generationIdentity.embeddingModel.textFormatVersion,
-                generationIdentity.embeddedPointsFingerprint,
-              )
-            )
-            val physicalName = s"$physicalCollectionPrefix$generationId"
-            val metadata = QdrantGenerationMetadata(MetadataSchemaVersion, generationId, generationIdentity, points.size)
+            val generationId = QdrantGenerationNaming.generationId(generationIdentity)
+            val physicalName = QdrantGenerationNaming.physicalName(physicalCollectionPrefix, generationIdentity)
+            val metadata = QdrantGenerationMetadata(QdrantGenerationMetadataCodec.CurrentSchemaVersion, generationId, generationIdentity, points.size)
             Right(new QdrantCompiledGeneration(generationIdentity, physicalName, collectionJson(prepared, metadata), payloadIndexRequests(prepared), points, metadata))
         }
       }
@@ -198,32 +182,9 @@ object QdrantGenerationCompiler {
             "size" -> Json.fromInt(policy.embeddingModel.dimension),
             "distance" -> Json.fromString(policy.distance.wireValue),
           )),
-          "metadata" -> Json.obj("search_gen2" -> metadataJson(metadata)),
+          "metadata" -> Json.obj("search_gen2" -> QdrantGenerationMetadataCodec.encode(metadata)),
         )
     }
-
-  private def metadataJson(metadata: QdrantGenerationMetadata): Json =
-    Json.obj(
-      "schema_version" -> Json.fromString(metadata.schemaVersion),
-      "generation_id" -> Json.fromString(metadata.generationId),
-      "point_count" -> Json.fromInt(metadata.pointCount),
-      "identity" -> Json.obj(
-        "source_content_fingerprint" -> Json.fromString(metadata.identity.sourceContentFingerprint),
-        "projected_documents_fingerprint" -> Json.fromString(metadata.identity.projectedDocumentsFingerprint),
-        "collection_contract_fingerprint" -> Json.fromString(metadata.identity.collectionContractFingerprint),
-        "projection_format_version" -> Json.fromString(metadata.identity.projectionFormatVersion),
-        "compiler_version" -> Json.fromString(metadata.identity.compilerVersion),
-        "collection_format_version" -> Json.fromString(metadata.identity.collectionFormatVersion),
-        "embedding_model" -> Json.obj(
-          "provider" -> Json.fromString(metadata.identity.embeddingModel.provider),
-          "model" -> Json.fromString(metadata.identity.embeddingModel.model),
-          "revision" -> Json.fromString(metadata.identity.embeddingModel.revision),
-          "dimension" -> Json.fromInt(metadata.identity.embeddingModel.dimension),
-          "text_format_version" -> Json.fromString(metadata.identity.embeddingModel.textFormatVersion),
-        ),
-        "embedded_points_fingerprint" -> Json.fromString(metadata.identity.embeddedPointsFingerprint),
-      ),
-    )
 
   private def payloadIndexRequests(prepared: QdrantPreparedGeneration): Vector[Json] =
     prepared.policy match {

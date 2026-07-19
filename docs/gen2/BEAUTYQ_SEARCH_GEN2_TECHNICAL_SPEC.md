@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; Brick 6B-A implemented, Brick 6B-B next**
+Status: **accepted architecture baseline; Brick 6B-A implemented, Brick 6B-B active pending its local-resource proof**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -369,8 +369,8 @@ parameters and headers; path confinement, UTF-8 JSON decoding, redirect refusal,
 typed HTTP/connection/JSON errors remain transport-owned. `ElasticsearchGen2JsonClient` preserves its
 existing six-method caller surface as a thin adapter. `QdrantGen2Client` binds only the exact collection,
 alias, waited-index/upsert, exact-count and `/points/query` paths; it accepts only a validated resource-name
-segment and performs no lifecycle authorization. Brick 6B-B will bind an authorized physical target before
-invoking it; there is no second HTTP implementation.
+segment and performs no lifecycle authorization. Brick 6B-B binds an authorized physical target internally
+before invoking it; there is no second HTTP implementation.
 
 ### 5.4 Gen1 references are classified, not dependencies
 
@@ -1754,7 +1754,7 @@ exact count, atomic alias updates and `/points/query`. The optional `api-key` is
 never domain policy or a rendered diagnostic value. The Elasticsearch client is a thin compatibility
 adapter over the same transport; `search-gen2-core` remains HTTP-free.
 
-The following lifecycle and execution contract is Brick 6B-B, not yet implemented:
+Brick 6B-B implements the following lifecycle and execution contract:
 
 The lifecycle consumes only a compiler-owned `QdrantCompiledGeneration`. A deterministic physical
 collection is convergently created or completed, then accepted only when named-vector configuration,
@@ -1764,8 +1764,9 @@ failure and is never mutated into apparent compatibility.
 
 Candidate execution accepts only a compiler-owned request whose candidate fingerprint matches the
 configured policy. It resolves the configured alias to one physical collection, validates that
-collection's persisted generation metadata against the policy, binds the trusted target internally and
-passes the raw `/points/query` response to the 6A decoder. Callers cannot supply a physical target.
+collection's persisted generation metadata, named-vector configuration and payload schema against the
+policy, binds the trusted target internally and passes the raw `/points/query` response to the 6A decoder.
+Callers cannot supply a physical target.
 
 The initial lifecycle performs no automatic deletion of successfully built physical collections and
 exposes no retention policy. Qdrant aliases switch atomically, but collection deletion has no conditional

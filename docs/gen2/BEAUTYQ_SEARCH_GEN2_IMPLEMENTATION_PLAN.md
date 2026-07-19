@@ -21,12 +21,11 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A and 6B-A are completed; Brick 6B-B is next.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, and 6A–6B-A are completed; Brick 6B-B is active pending its separate Qdrant 1.18.3 resource proof.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
   6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
-- **Next sequence:** 6B-B adds the Qdrant generation
-  lifecycle, alias authorization, candidate execution and real-resource proof. 6C composes BeautyQ
+- **Next sequence:** 6B-B completes its real-resource proof, then 6C composes BeautyQ
   query embedding and document hydration. Brick 7 then owns baseline-plus-supplement orchestration.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
@@ -1036,7 +1035,7 @@ documented Qdrant response envelopes. The candidate contract fingerprint include
 and REST protocol versions that define this executable wire shape. No lifecycle, embeddings, hydration
 or orchestration belongs here.
 
-### Brick 6B-B — Convergent physical lifecycle and candidate service
+### Brick 6B-B — Convergent physical lifecycle and candidate service (active)
 
 Consume only the compiler-owned 6A generation and candidate artifacts. For one deterministic physical
 collection, create or validate its named-vector configuration and persisted `search_gen2` metadata,
@@ -1052,9 +1051,10 @@ There is no retention enum or cleanup policy. The lifecycle also authorizes a ca
 its candidate fingerprint matches the policy and the alias resolves to one metadata-compatible physical
 collection. Candidate execution uses `/points/query` and delegates decoding to the 6A decoder.
 
-The communication proof runs against a separate local Qdrant 1.18.3 resource, while Gen1 remains on
-1.15.4 and `/points/search`. It proves create/retry/reuse, payload indexes, exact count, atomic alias switch,
-target authorization, filtered query execution and preservation of previously successful generations.
+The generic metadata codec, convergent lifecycle and target-authorizing candidate service are implemented.
+Focused neutral and BeautyQ proofs are green. The communication proof still requires a separate local
+Qdrant 1.18.3 resource; until it executes, Brick 6B-B remains active. Gen1 remains on 1.15.4 and
+`/points/search`.
 
 ## Brick 6C — BeautyQ query embedding and candidate hydration (planned)
 

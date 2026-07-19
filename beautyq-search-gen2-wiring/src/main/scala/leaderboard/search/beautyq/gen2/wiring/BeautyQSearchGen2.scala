@@ -38,7 +38,8 @@ object BeautyQSearchGen2 {
   }
 
   object qdrant {
-    val policy = BeautyQQdrantPolicy.policy
-    val resources = BeautyQSearchGen2ResourceNames
+    val policy = BeautyQQdrantRuntime.policy
+    val resources = BeautyQQdrantRuntime.resources
+    val runtime = BeautyQQdrantRuntime
   }
 }
