@@ -22,19 +22,21 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     ModuleNode("search-gen2-contract", "searchGen2Contract", "leaderboard.search.gen2.contract", List("leaderboard-core"))
   private val searchGen2CoreNode =
     ModuleNode("search-gen2-core", "searchGen2Core", "leaderboard.search.gen2.core", List("search-gen2-contract"))
+  private val searchGen2TransportNode =
+    ModuleNode("search-gen2-transport", "searchGen2Transport", "leaderboard.search.gen2.transport", Nil)
   private val searchGen2ElasticsearchNode =
     ModuleNode(
       "search-gen2-elasticsearch",
       "searchGen2Elasticsearch",
       "leaderboard.search.gen2.elasticsearch",
-      List("search-gen2-contract", "search-gen2-core"),
+      List("search-gen2-contract", "search-gen2-core", "search-gen2-transport"),
     )
   private val searchGen2QdrantNode =
     ModuleNode(
       "search-gen2-qdrant",
       "searchGen2Qdrant",
       "leaderboard.search.gen2.qdrant",
-      List("search-gen2-contract", "search-gen2-core"),
+      List("search-gen2-contract", "search-gen2-core", "search-gen2-transport"),
     )
   private val beautyqSearchGen2ContractNode =
     ModuleNode(
@@ -78,6 +80,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   private val gen2Modules: List[ModuleNode] = List(
     searchGen2ContractNode,
     searchGen2CoreNode,
+    searchGen2TransportNode,
     searchGen2ElasticsearchNode,
     searchGen2QdrantNode,
     beautyqSearchGen2ContractNode,
@@ -101,7 +104,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   private val servingModules: List[ModuleNode] = gen2Modules.filterNot(_.displayName == beautyqSearchGen2EvalNode.displayName)
 
   private val genericModuleDirs: List[String] =
-    List("search-gen2-contract", "search-gen2-core", "search-gen2-elasticsearch", "search-gen2-qdrant")
+    List("search-gen2-contract", "search-gen2-core", "search-gen2-transport", "search-gen2-elasticsearch", "search-gen2-qdrant")
 
   private val forbiddenGen1SbtProjectTokens: List[String] = List(
     "searchContractCore",
@@ -206,7 +209,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       assertNoViolations("Gen2 build.sbt dependsOn violations", violations)
     }
 
-    "prove all eight Gen2 projects are present in the root aggregate" in {
+    "prove all nine Gen2 projects are present in the root aggregate" in {
       val aggregateBlock = buildBlock("`distage-example`")
       val violations = gen2Modules.filterNot(node => aggregateBlock.contains(node.sbtId)).map { node =>
         s"${node.sbtId} is missing from the `distage-example` aggregate"
@@ -230,29 +233,29 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   // expected unique dependencies and rejects a missing, unexpected, or duplicated one.
   "Gen2 dependsOn edge set" should {
     "accept the exact expected dependencies" in {
-      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract, searchGen2Core)")
+      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract, searchGen2Core, searchGen2Transport)")
       assert(check.isValid)
     }
 
     "accept reordered expected dependencies" in {
-      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Core, searchGen2Contract)")
+      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Transport, searchGen2Core, searchGen2Contract)")
       assert(check.isValid)
     }
 
     "reject a missing dependency" in {
       val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract)")
       assert(!check.isValid)
-      assert(check.missing == List("searchGen2Core"))
+      assert(check.missing == List("searchGen2Core", "searchGen2Transport"))
     }
 
     "reject an unexpected dependency" in {
-      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract, searchGen2Core, appHttp)")
+      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract, searchGen2Core, searchGen2Transport, appHttp)")
       assert(!check.isValid)
       assert(check.unexpected == List("appHttp"))
     }
 
     "reject a duplicate dependency within one dependsOn call" in {
-      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract, searchGen2Core, searchGen2Core)")
+      val check = checkDependsOn(searchGen2ElasticsearchNode, "lazy val x = project.dependsOn(searchGen2Contract, searchGen2Core, searchGen2Transport, searchGen2Core)")
       assert(!check.isValid)
       assert(check.duplicates == List("searchGen2Core"))
     }
@@ -260,7 +263,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     "reject a duplicate dependency added by a second dependsOn call" in {
       val block =
         """lazy val x = project
-          |  .dependsOn(searchGen2Contract, searchGen2Core)
+          |  .dependsOn(searchGen2Contract, searchGen2Core, searchGen2Transport)
           |  .dependsOn(searchGen2Core)
           |""".stripMargin
 
@@ -317,7 +320,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   }
 
   "Gen2 visual dependency tree" should {
-    "render an exact human-readable dependency tree for the eight Gen2 modules" in {
+    "render an exact human-readable dependency tree for the nine Gen2 modules" in {
       val expected =
         """search-gen2-contract
           |└── leaderboard-core
@@ -325,13 +328,17 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
           |search-gen2-core
           |└── search-gen2-contract
           |
+          |search-gen2-transport
+          |
           |search-gen2-elasticsearch
           |├── search-gen2-contract
-          |└── search-gen2-core
+          |├── search-gen2-core
+          |└── search-gen2-transport
           |
           |search-gen2-qdrant
           |├── search-gen2-contract
-          |└── search-gen2-core
+          |├── search-gen2-core
+          |└── search-gen2-transport
           |
           |beautyq-search-gen2-contract
           |├── search-gen2-contract
@@ -391,7 +398,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   }
 
   "Generic/domain firewall" should {
-    "keep the four generic Gen2 modules free of leaderboard.repo imports, BeautyQ Gen2 imports, and BeautyQ source text" in {
+    "keep the five generic Gen2 modules free of leaderboard.repo imports, BeautyQ Gen2 imports, and BeautyQ source text" in {
       val violations = genericModuleDirs.flatMap { moduleDir =>
         val files = scalaFilesUnder(s"$moduleDir/src/main/scala")
 
@@ -418,7 +425,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     // test, so this closes the one gap the main-only check above left open: nothing previously proved a
     // second/tracer domain living in a generic module's own test tree stays free of the same forbidden
     // imports the module's production code is held to.
-    "keep the four generic Gen2 modules' test sources free of the same forbidden imports as their main sources" in {
+    "keep the five generic Gen2 modules' test sources free of the same forbidden imports as their main sources" in {
       val filesByModule = genericModuleDirs.map(moduleDir => moduleDir -> scalaFilesUnder(s"$moduleDir/src/test/scala"))
 
       // A vacuously green check (no test files found) would prove nothing; at least one generic module

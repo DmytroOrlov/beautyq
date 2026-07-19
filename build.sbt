@@ -200,6 +200,14 @@ lazy val searchGen2Core = project
   )))
   .dependsOn(searchGen2Contract)
 
+lazy val searchGen2Transport = project
+  .in(file("search-gen2-transport"))
+  .settings(name := "search-gen2-transport")
+  .pipe(lightweightSettings(Seq(
+    Deps.circeParser,
+    Deps.scalatest % Test,
+  )))
+
 lazy val searchGen2Elasticsearch = project
   .in(file("search-gen2-elasticsearch"))
   .settings(name := "search-gen2-elasticsearch")
@@ -208,7 +216,7 @@ lazy val searchGen2Elasticsearch = project
     Deps.circeParser,
     Deps.scalatest % Test,
   )))
-  .dependsOn(searchGen2Contract, searchGen2Core)
+  .dependsOn(searchGen2Contract, searchGen2Core, searchGen2Transport)
 
 lazy val searchGen2Qdrant = project
   .in(file("search-gen2-qdrant"))
@@ -218,7 +226,7 @@ lazy val searchGen2Qdrant = project
     Deps.circeParser,
     Deps.scalatest % Test,
   )))
-  .dependsOn(searchGen2Contract, searchGen2Core)
+  .dependsOn(searchGen2Contract, searchGen2Core, searchGen2Transport)
 
 lazy val beautyqSearchGen2Contract = project
   .in(file("beautyq-search-gen2-contract"))
@@ -302,6 +310,7 @@ lazy val `distage-example` = project
     beautyqSearchWiring,
     searchGen2Contract,
     searchGen2Core,
+    searchGen2Transport,
     searchGen2Elasticsearch,
     searchGen2Qdrant,
     beautyqSearchGen2Contract,

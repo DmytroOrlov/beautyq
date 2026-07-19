@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; Brick 5D and Brick 6A implemented, Brick 6B next**
+Status: **accepted architecture baseline; Brick 6B-A implemented, Brick 6B-B next**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -362,6 +362,15 @@ timeouts, headers, synchronous JDK execution, JSON decoding and typed HTTP failu
 Gen2 backend consumers. Elasticsearch keeps a thin backend-named adapter; Qdrant owns only its exact
 REST method/path/body protocol. Transport contains no search semantics, backend resource lifecycle or
 BeautyQ policy. Gen1 remains unchanged.
+
+The implemented transport surface is one synchronous `Gen2JsonHttpClient` with `putJson`, bodyless
+`post`, `postJson`, `postNdjson`, `getJson` and bodyless `delete`. Each operation accepts typed query
+parameters and headers; path confinement, UTF-8 JSON decoding, redirect refusal, timeout validation and
+typed HTTP/connection/JSON errors remain transport-owned. `ElasticsearchGen2JsonClient` preserves its
+existing six-method caller surface as a thin adapter. `QdrantGen2Client` binds only the exact collection,
+alias, waited-index/upsert, exact-count and `/points/query` paths; it accepts only a validated resource-name
+segment and performs no lifecycle authorization. Brick 6B-B will bind an authorized physical target before
+invoking it; there is no second HTTP implementation.
 
 ### 5.4 Gen1 references are classified, not dependencies
 
@@ -1738,10 +1747,14 @@ Post-hydration constraint checking remains an assertion and diagnostic. It is no
 
 ### 12.7 Transport and physical collection lifecycle (Brick 6B)
 
-The Qdrant wire adapter uses the neutral Gen2 JSON transport but owns its exact 1.18.3 paths and bodies:
+Brick 6B-A implements the neutral Gen2 JSON transport and the Qdrant wire adapter. The adapter owns its
+exact 1.18.3 paths and bodies:
 collection details and aliases, collection creation, waited payload-index creation, waited point upsert,
 exact count, atomic alias updates and `/points/query`. The optional `api-key` is transport configuration,
-never domain policy or a rendered diagnostic value.
+never domain policy or a rendered diagnostic value. The Elasticsearch client is a thin compatibility
+adapter over the same transport; `search-gen2-core` remains HTTP-free.
+
+The following lifecycle and execution contract is Brick 6B-B, not yet implemented:
 
 The lifecycle consumes only a compiler-owned `QdrantCompiledGeneration`. A deterministic physical
 collection is convergently created or completed, then accepted only when named-vector configuration,

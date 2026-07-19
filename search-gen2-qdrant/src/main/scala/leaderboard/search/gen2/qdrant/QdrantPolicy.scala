@@ -292,6 +292,8 @@ object QdrantPolicy {
   ): String =
     QdrantCanonical.sha256(
       Vector(
+        s"compiler=${QdrantCompilerVersion.Current.value}",
+        s"protocol=${QdrantProtocolVersion.Current.value}",
         s"vector=${vectorName.value}",
         s"model=${model.provider}:${model.model}:${model.revision}:${model.dimension}:${model.textFormatVersion}",
         s"distance=${distance.wireValue}",

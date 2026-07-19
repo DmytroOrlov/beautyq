@@ -20,6 +20,31 @@ final class QdrantPolicySpec extends AnyWordSpec {
       assert(policy.collectionContractFingerprint.value != policy.candidateContractFingerprint.value)
     }
 
+    "include the executable compiler and REST protocol versions in candidate identity" in {
+      val repeated = QdrantPolicy.unsafeFrom(
+        PlanContractVersion("neutral-v1"),
+        QdrantTestFixtures.document,
+        QdrantTestFixtures.id,
+        QdrantTestFixtures.title,
+        QdrantTestFixtures.policy.vectorName,
+        QdrantTestFixtures.policy.embeddingModel,
+        QdrantDistance.Cosine,
+        QdrantTestFixtures.policy.retrieval,
+      )
+      val changedRetrieval = QdrantPolicy.unsafeFrom(
+        PlanContractVersion("neutral-v1"),
+        QdrantTestFixtures.document,
+        QdrantTestFixtures.id,
+        QdrantTestFixtures.title,
+        QdrantTestFixtures.policy.vectorName,
+        QdrantTestFixtures.policy.embeddingModel,
+        QdrantDistance.Cosine,
+        QdrantRetrievalPolicy(3, 2, Some(0.4)),
+      )
+      assert(repeated.candidateContractFingerprint == QdrantTestFixtures.policy.candidateContractFingerprint)
+      assert(changedRetrieval.candidateContractFingerprint != QdrantTestFixtures.policy.candidateContractFingerprint)
+    }
+
     "reject a foreign identity and a non-searchable embedding field" in {
       val foreignIdentity = field[QdrantTestFixtures.NeutralDocument, java.util.UUID]("foreignId", _.id).keyword
       val foreignEmbedding = field[QdrantTestFixtures.NeutralDocument, String]("foreign", _.title).keyword

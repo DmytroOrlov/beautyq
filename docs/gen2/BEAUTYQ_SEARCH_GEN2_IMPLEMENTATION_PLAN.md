@@ -21,11 +21,11 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D and 6A are completed; Brick 6B-A is next.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A and 6B-A are completed; Brick 6B-B is next.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
-- **Next sequence:** 6B-A extracts the now-proven second-consumer JSON/HTTP mechanics into a neutral
-  transport project and adds the exact Qdrant 1.18.3 wire client. 6B-B adds the Qdrant generation
+  6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
+- **Next sequence:** 6B-B adds the Qdrant generation
   lifecycle, alias authorization, candidate execution and real-resource proof. 6C composes BeautyQ
   query embedding and document hydration. Brick 7 then owns baseline-plus-supplement orchestration.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
@@ -1015,26 +1015,26 @@ beautyq-search-gen2-wiring/...                      BeautyQ policy composition o
 
 Remove the pure Gen2 Qdrant policy/compiler branch. Gen1 Qdrant remains untouched.
 
-## Brick 6B — Qdrant transport, generation lifecycle and candidate execution (next)
+## Brick 6B — Qdrant transport, generation lifecycle and candidate execution
 
 Brick 6B is delivered as two cohesive patches so transport extraction and resource mutation remain
 independently reviewable.
 
-### Brick 6B-A — Neutral JSON transport and exact Qdrant wire client
+### Brick 6B-A — Neutral JSON transport and exact Qdrant wire client (completed)
 
 The second Gen2 backend makes the endpoint/path/timeout/header/JSON/error mechanics currently embedded in
-the Elasticsearch client a source-confirmed second consumer. Add `search-gen2-transport`, move those
-domain- and backend-neutral mechanics there, and keep a thin Elasticsearch adapter with unchanged
-observable behavior. Both backend projects depend on the neutral transport project; `search-gen2-core`
-remains free of HTTP concerns.
+the Elasticsearch client a source-confirmed second consumer. The completed slice adds
+`search-gen2-transport`, moves those domain- and backend-neutral mechanics there, and keeps a thin
+Elasticsearch adapter with unchanged observable behavior. Both backend projects now depend on the
+neutral transport project; `search-gen2-core` remains free of HTTP concerns.
 
-Add the Qdrant 1.18.3 wire client over that transport with exact methods for collection details, aliases,
+The Qdrant 1.18.3 wire client now runs over that transport with exact methods for collection details, aliases,
 collection creation, payload-index creation, waited point upsert, exact count, atomic alias update and
 `POST /collections/{target}/points/query`. Query parameters and optional `api-key` are typed transport
 inputs; method/path/body choices are owned by the Qdrant adapter, not its callers. Scripted tests use the
-documented Qdrant response envelopes. Before that protocol becomes executable, include the Qdrant
-compiler and REST protocol versions in the candidate contract fingerprint. No lifecycle, embeddings,
-hydration or orchestration belongs here.
+documented Qdrant response envelopes. The candidate contract fingerprint includes the Qdrant compiler
+and REST protocol versions that define this executable wire shape. No lifecycle, embeddings, hydration
+or orchestration belongs here.
 
 ### Brick 6B-B — Convergent physical lifecycle and candidate service
 
