@@ -1095,6 +1095,73 @@ modes, semantic labels, matched rule IDs, user-location source, public names or 
 classification — those stay domain policy, applied by the domain compiler between `prepare` and
 `prepared.assemble(finalNotices)` (§10.2), never after `assemble`/`compile` already returned.
 
+### 7.10 Append-only supplement selection and lifecycle-bound membership (implemented, Brick 7A)
+
+`BaselineMembershipResult[Id]` is a final class with a private constructor and a
+`private[gen2] fromBackend` factory. Domain wiring (`leaderboard.search.beautyq.gen2`) cannot call
+`fromBackend` or the constructor. It carries `requestedIds` and `matchingIds` (stored in
+`requestedIds` order, containing only IDs from `requestedIds`).
+
+`AppendOnlySupplementPolicyError.InvalidMaxAppended` rejects zero and negative `maxAppended` values.
+`AppendOnlySupplementPolicy` owns `select[Candidate, Id]` which classifies candidates in a single
+immutable fold: current-page duplicates go to `currentPageDuplicateIds`, complete-baseline members
+(not on current page) go to `baselineMemberIds`, up to `maxAppended` candidates go to `appended`,
+and remaining eligible candidates go to `budgetExcludedIds`. Classification precedence: current-page
+duplicate > baseline member > append > excluded. Candidate order is preserved; score is never used
+for fusion or reranking. Returns `MembershipInputMismatch` when candidate IDs differ from requested
+IDs including order.
+
+`AppendOnlySupplementSelection[Candidate, Id]` is a final read-only result with
+`appended`, `currentPageDuplicateIds`, `baselineMemberIds` and `budgetExcludedIds`. No public
+constructor/apply/copy.
+
+`BoundElasticsearchBaselineResult[Document, Id]` is a final class carrying
+`authorizedRequest: AuthorizedElasticsearchSearchRequest[Document, Id]` (private[elasticsearch])
+and `result: ElasticsearchFullSearchResult[Document, Id]`. Domain code can read `target` and
+`generationReference` but cannot replace authorization, target, generation or query.
+
+`ElasticsearchBaselineService.searchBound` moves the authorize → search → decode → groups execution
+into one method; `search` becomes a derived view via `_.result`. There is one execution
+implementation.
+
+`ElasticsearchBaselineMembershipCompiler.compile` takes a `BoundElasticsearchBaselineResult`
+and `candidateIds`, encodes each ID through the bound baseline's authorized identity-field codec via
+`ElasticsearchScalarCompiler.toBackendJson`, and produces `CompiledElasticsearchBaselineMembershipRequest`
+with body:
+
+```json
+{
+  "size": <candidate count>,
+  "_source": false,
+  "track_total_hits": false,
+  "query": {
+    "bool": {
+      "must": [<baseline.authorizedRequest.prepared.executionQuery>],
+      "filter": [{
+        "terms": {
+          "<identity field path>": [<typed encoded candidate ids in candidate order>]
+        }
+      }]
+    }
+  }
+}
+```
+
+No sort, search_after, cursor, facet/group aggregation, `_source` loading, score fusion, wildcard
+target or active alias.
+
+`CompiledElasticsearchBaselineMembershipRequest[Document, Id]` is a final class carrying the bound
+baseline, candidate IDs and compiled body. Target is derived from the bound baseline. No constructor
+accepting raw query JSON or physical target.
+
+`ElasticsearchBaselineMembershipDecoder.decode` validates the response shape (top-level object,
+hits object, hits.hits array), rejects excessive hits, malformed hits, decode failures, duplicate
+identities (with first/duplicate indexes) and unexpected identities. Creates `matchingIds` by
+filtering `candidateIds` against the decoded match set in request order.
+
+`ElasticsearchBaselineService.membership` returns empty result without transport call when
+`candidateIds` is empty; otherwise compiles, POSTs to bound target, and decodes.
+
 ## 8. BeautyQ Gen2 executable composition
 
 The contract root and downstream composition facade have different module-safe ownership:

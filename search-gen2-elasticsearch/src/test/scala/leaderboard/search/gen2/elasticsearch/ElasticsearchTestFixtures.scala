@@ -1,8 +1,14 @@
 package leaderboard.search.gen2.elasticsearch
 
 import leaderboard.search.gen2.contract.*
+import leaderboard.search.gen2.core.materialization.{ContentFingerprint, ProjectedDocumentsFingerprint, ProjectionFormatVersion}
+import leaderboard.search.gen2.elasticsearch.lifecycle.ElasticsearchGenerationLifecycleConfig
+
+import io.circe.Json
 
 import java.time.Instant
+
+  private def fail(msg: String): Nothing = throw new IllegalStateException(s"fixture setup failed: $msg")
 
 /** Shared neutral book/library document fixture, unrelated to BeautyQ, covering all eight
   * [[SearchFieldKind]]s plus one optional dotted dynamic family and one same-typed interval-overlap pair
@@ -128,4 +134,33 @@ object ElasticsearchTestFixtures {
   final case class OtherDocument(id: String, headline: String)
   private val otherDeclarations = searchFields[OtherDocument]("other")
   val otherHeadline: SearchField[OtherDocument, String] = otherDeclarations.text(_.headline).searchable.declare
+
+  // Lifecycle fixture: a valid generation identity, derived target, metadata, and encoded _meta.
+  private val testIdentity = ElasticsearchGenerationIdentity(
+    sourceContentFingerprint = ContentFingerprint("test-source-fp"),
+    projectedDocumentsFingerprint = ProjectedDocumentsFingerprint("test-projected-fp"),
+    contractFingerprint = fullPolicy.contractFingerprint,
+    projectionFormatVersion = ProjectionFormatVersion("test-projection-v1"),
+    compilerVersion = ElasticsearchCompilerVersion("test-compiler-v1"),
+    indexFormatVersion = policy.indexFormatVersion,
+  )
+
+  private val testPersistedIdentity = ElasticsearchPersistedGenerationIdentity.fromTrusted(testIdentity)
+  private val testGenerationId = ElasticsearchGenerationNaming.generationId(testPersistedIdentity, ElasticsearchGenerationMetadataSchemaVersion.Current)
+  private val testTarget = ElasticsearchGenerationNaming.physicalIndexName("books_", testPersistedIdentity).getOrElse(fail("expected valid physical index name"))
+  private val testReference = ElasticsearchGenerationReference(testTarget.value)
+  private val testBuiltAt = Instant.parse("2026-01-01T00:00:00Z")
+  val testMetadata = ElasticsearchGenerationMetadata(
+    ElasticsearchGenerationMetadataSchemaVersion.Current,
+    testGenerationId,
+    testBuiltAt,
+    2L,
+    testPersistedIdentity,
+  )
+  private val testEncodedMeta = ElasticsearchGenerationMetadataCodec.encode(testMetadata)
+
+  val testLifecycleConfig = ElasticsearchGenerationLifecycleConfig.create("books", "books_", ElasticsearchBulkBatchingPolicy.create(10, 10000L).getOrElse(fail("expected batching"))).getOrElse(fail("expected config"))
+  val testPhysicalTarget = testTarget
+  val testGenerationReference = testReference
+  val testMetadataJson: Json = testEncodedMeta
 }

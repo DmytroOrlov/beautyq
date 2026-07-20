@@ -76,4 +76,65 @@ final class BeautyQElasticsearchBaselineBoundarySpec extends AnyWordSpec {
       )
     }
   }
+
+  "the bound baseline result boundary" should {
+    "reject construction of BoundElasticsearchBaselineResult outside elasticsearch package" in {
+      assertDoesNotCompile(
+        """def forgeBoundResult(
+          |  auth: leaderboard.search.gen2.elasticsearch.lifecycle.AuthorizedElasticsearchSearchRequest[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId],
+          |  result: leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId],
+          |): leaderboard.search.gen2.elasticsearch.BoundElasticsearchBaselineResult[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId] =
+          |  new leaderboard.search.gen2.elasticsearch.BoundElasticsearchBaselineResult(auth, result)""".stripMargin
+      )
+    }
+    "reject copy on BoundElasticsearchBaselineResult" in {
+      assertDoesNotCompile(
+        """def forgeBoundResultCopy(
+          |  value: leaderboard.search.gen2.elasticsearch.BoundElasticsearchBaselineResult[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId],
+          |): Any = value.copy(authorizedRequest = value.authorizedRequest)""".stripMargin
+      )
+    }
+    "reject subclassing BoundElasticsearchBaselineResult" in {
+      assertDoesNotCompile(
+        """final class ForgedBoundResult[Document, Id] extends leaderboard.search.gen2.elasticsearch.BoundElasticsearchBaselineResult[Document, Id](
+          |  null: leaderboard.search.gen2.elasticsearch.lifecycle.AuthorizedElasticsearchSearchRequest[Document, Id],
+          |  null: leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult[Document, Id]
+          |)""".stripMargin
+      )
+    }
+  }
+
+  "the membership compilation boundary" should {
+    "reject construction of CompiledElasticsearchBaselineMembershipRequest outside compiler package" in {
+      assertDoesNotCompile(
+        """def forgeCompiledRequest(
+          |  auth: leaderboard.search.gen2.elasticsearch.lifecycle.AuthorizedElasticsearchSearchRequest[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId],
+          |  ids: Vector[leaderboard.model.MasterServiceOfferVariantId],
+          |  body: io.circe.Json,
+          |): leaderboard.search.gen2.elasticsearch.CompiledElasticsearchBaselineMembershipRequest[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId] =
+          |  new leaderboard.search.gen2.elasticsearch.CompiledElasticsearchBaselineMembershipRequest(auth, ids, body)""".stripMargin
+      )
+    }
+  }
+
+  "the membership evidence boundary" should {
+    "reject calling BaselineMembershipResult.fromBackend from BeautyQ package" in {
+      assertDoesNotCompile(
+        """def forgeMembership(
+          |  requested: Vector[leaderboard.model.MasterServiceOfferVariantId],
+          |  matching: Vector[leaderboard.model.MasterServiceOfferVariantId],
+          |): leaderboard.search.gen2.core.supplement.BaselineMembershipResult[leaderboard.model.MasterServiceOfferVariantId] =
+          |  leaderboard.search.gen2.core.supplement.BaselineMembershipResult.fromBackend(requested, matching)""".stripMargin
+      )
+    }
+    "reject direct construction of BaselineMembershipResult" in {
+      assertDoesNotCompile(
+        """def forgeMembershipDirect(
+          |  requested: Vector[leaderboard.model.MasterServiceOfferVariantId],
+          |  matching: Vector[leaderboard.model.MasterServiceOfferVariantId],
+          |): leaderboard.search.gen2.core.supplement.BaselineMembershipResult[leaderboard.model.MasterServiceOfferVariantId] =
+          |  new leaderboard.search.gen2.core.supplement.BaselineMembershipResult(requested, matching)""".stripMargin
+      )
+    }
+  }
 }

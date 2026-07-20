@@ -21,11 +21,15 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A, 6C and 6D are implemented; Brick 6B-B remains active pending its separate Qdrant 1.18.3 resource proof.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A, 6C, 6D and 7A are implemented; Brick 6B-B remains active pending its separate Qdrant 1.18.3 resource proof.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
   6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
-- **Next sequence:** independently complete 6B-B's real-resource proof; then implement Brick 7 orchestration, Brick 8 independent application/evaluation, and Brick 9 atomic cutover/deletion.
+  7A owns generic append-only supplement selection, lifecycle-bound Elasticsearch baseline membership,
+  bound baseline authorization, and construction boundaries.
+- **Next sequence:** independently complete 6B-B's real-resource proof; then implement Brick 7B BeautyQ
+  orchestration and explicit degradation, Brick 8 independent application/evaluation, and Brick 9
+  atomic cutover/deletion.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
@@ -1204,7 +1208,114 @@ Brick 9   atomic route cutover and Gen1 deletion
 Brick 7 may start after Brick 6D acceptance; Brick 6B-B's resource proof may run independently, but Brick 8
 full-search readiness cannot pass without it.
 
-## Brick 7 — Implement baseline-plus-supplement orchestration
+### Brick 7A — append-only selection and lifecycle-bound membership
+
+### Purpose
+
+Establish the generic append-only supplement selection policy and lifecycle-bound Elasticsearch
+baseline-membership compiler/service. Provide bound baseline authorization so downstream orchestration
+receives query/target/generation only through the authorized lifecycle path.
+
+### Diff
+
+In `search-gen2-core` add:
+
+- `BaselineMembershipResult[Id]`: final class with private constructor and `private[gen2] fromBackend`
+  factory; domain code cannot construct or copy it.
+- `AppendOnlySupplementPolicyError.InvalidMaxAppended`: rejected zero and negative values; domain must
+  explicitly declare `maxAppended > 0`.
+- `AppendOnlySupplementPolicy`: owns `select` traversal that classifies candidates into
+  `currentPageDuplicateIds`, `baselineMemberIds`, `appended` and `budgetExcludedIds` in a single
+  immutable fold; preserves candidate objects unchanged; never uses candidate score for fusion or
+  reranking.
+- `AppendOnlySupplementSelectionError.MembershipInputMismatch`: returned when candidate IDs differ
+  from membership requested IDs including order.
+- `AppendOnlySupplementSelection[Candidate, Id]`: final read-only result with `appended`,
+  `currentPageDuplicateIds`, `baselineMemberIds` and `budgetExcludedIds`; no public constructor/apply/copy.
+
+In `search-gen2-elasticsearch` add:
+
+- `BoundElasticsearchBaselineResult[Document, Id]`: final class carrying `authorizedRequest` and
+  `result`; domain code can read `target` and `generationReference` but cannot replace authorization,
+  target, generation or query.
+- `ElasticsearchBaselineService.searchBound`: moves authorize → search → decode → groups execution
+  into one method; `search` becomes a derived view via `_.result`.
+- `ElasticsearchBaselineMembershipCompileError.IdentityValueEncoding`: wraps codec errors with
+  candidate index and field ID.
+- `CompiledElasticsearchBaselineMembershipRequest[Document, Id]`: final class carrying bound baseline,
+  candidate IDs and compiled body; target derived from bound baseline; no constructor accepting raw
+  query JSON or physical target.
+- `ElasticsearchBaselineMembershipCompiler.compile`: takes `BoundElasticsearchBaselineResult` and
+  `candidateIds`; encodes each candidate ID through the bound baseline's authorized identity-field
+  codec → `ElasticsearchScalarCompiler.toBackendJson`; wraps failures with index and field ID.
+  Compiles request owns the exact bound baseline; query, identity codec, physical target and generation
+  derive from the one bound baseline; membership cannot be paired with another authorized request.
+- Membership request JSON: `size`, `_source: false`, `track_total_hits: false`, bool query with
+  `must: [executionQuery]` and `filter: [terms on identity field]`; no sort, search_after, cursor,
+  facet/group aggregation, `_source` loading, score fusion, wildcard target or active alias.
+- `ElasticsearchBaselineMembershipResponseError`: `Malformed`, `ExcessiveHits`, `InvalidHit`,
+  `InvalidIdentity`, `DuplicateIdentity`, `UnexpectedIdentity`.
+- `ElasticsearchBaselineMembershipDecoder.decode`: validates top-level/hits/hit/_id shapes; rejects
+  excessive hits, duplicates, unexpected identities; decodes `_id` with authorized codec; creates
+  `matchingIds` by filtering `candidateIds` against decoded set in request order.
+- `ElasticsearchBaselineMembershipError`: `Compile`, `Transport`, `Response`.
+- `ElasticsearchBaselineService.membership`: empty `candidateIds` returns empty result without
+  transport call; non-empty compiles, POSTs to bound target, decodes.
+
+In `beautyq-search-gen2-wiring` add compile-negative proofs in
+`BeautyQElasticsearchBaselineBoundarySpec`: BeautyQ cannot construct
+`BoundElasticsearchBaselineResult`, call `copy` on it, subclass it, construct
+`CompiledElasticsearchBaselineMembershipRequest`, call
+`BaselineMembershipResult.fromBackend`, or directly construct
+`BaselineMembershipResult`.
+
+### Forbidden for 7A
+
+- BeautyQ production code changes;
+- Qdrant transport or lifecycle;
+- final supplement statuses or degradation reason codes;
+- `baseline_only` or `supplement_failed` implementations;
+- public response projection;
+- route, role, evaluation metrics, SearchPlan or CandidatePlan changes;
+- page/sort eligibility reevaluation, hard constraint recheck, or provenance reconstruction;
+- raw membership Set as caller input;
+- raw ES query/target acceptance;
+- double authorization of baseline generation;
+- Gen1 source import;
+- lifecycle activation/cleanup changes;
+- retries or fallback;
+- new module or build dependency.
+
+### Proof
+
+- `AppendOnlySupplementSpec`: policy creation accepts 1 and positive, rejects 0 and negative;
+  membership/candidate mismatch returns typed error; current-page duplicates removed; complete-baseline
+  members not on current page removed; current-page classification wins over baseline membership;
+  candidate order preserved; score/data objects unchanged; at most maxAppended appended; later eligible
+  candidates enter budgetExcludedIds in order; baseline input not returned; empty candidate produces
+  empty selection.
+- `ElasticsearchBaselineMembershipSpec`: exact request JSON; executionQuery in must; typed scalar
+  encoding; candidate ID order preserved; physical target used; no alias/raw target/callerQuery/facets/groups/cursor/search_after/sort; response hit order does not control matchingIds; empty response yields no matches; malformed shapes fail typed; excessive hits fail; decode failure preserves index and codec error; duplicate identity reports indexes; unexpected identity fails; empty candidate performs no transport; non-empty uses bound target and decoder; search delegates to searchBound.
+- `BeautyQElasticsearchBaselineBoundarySpec`: compile-negative proofs for all new construction boundaries.
+
+### Expected diff shape
+
+```text
+search-gen2-core/src/main/...supplement/            BaselineMembershipResult, AppendOnlySupplementPolicy, AppendOnlySupplementSelection
+search-gen2-core/src/test/...supplement/            AppendOnlySupplementSpec
+search-gen2-elasticsearch/src/main/.../             BoundElasticsearchBaselineResult, searchBound, membership
+search-gen2-elasticsearch/src/main/.../membership   ElasticsearchBaselineMembership (compiler + decoder)
+search-gen2-elasticsearch/src/test/.../             ElasticsearchBaselineServiceSpec (searchBound + delegation)
+search-gen2-elasticsearch/src/test/.../lifecycle/   ElasticsearchBaselineMembershipSpec
+beautyq-search-gen2-wiring/src/test/.../            BeautyQElasticsearchBaselineBoundarySpec (new boundaries)
+```
+
+### Rollback
+
+Remove the supplement package, membership compiler/decoder, bound result, and membership service method.
+Gen2 ES baseline `search` remains functional. V1 remains untouched.
+
+### Brick 7B — BeautyQ orchestration and explicit degradation
 
 ### Purpose
 
@@ -1237,9 +1348,9 @@ Eligibility, hard-constraint assertion and candidate provenance are inputs alrea
 replace or reconstruct them. It may inspect the bound result only to choose append/no-append and render
 the final supplement status.
 
-Add a domain-neutral Elasticsearch membership compiler/service that evaluates exact candidate IDs against
-the same lifecycle-authorized baseline plan/generation. BeautyQ orchestration must not build raw membership
-JSON or accept an independently supplied query, filters or physical target.
+BeautyQ orchestration receives `BoundElasticsearchBaselineResult` (not raw query/target), the bound
+candidate pipeline result, and uses `ElasticsearchBaselineService.membership` (not independently
+supplied membership JSON) to verify candidate eligibility against the complete baseline.
 
 ### Forbidden
 
