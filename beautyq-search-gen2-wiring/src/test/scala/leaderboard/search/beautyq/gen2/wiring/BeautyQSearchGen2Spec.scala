@@ -38,7 +38,6 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
       assert(BeautyQSearchGen2.qdrant.policy eq BeautyQQdrantPolicy.policy)
       assert(BeautyQSearchGen2.qdrant.resources eq BeautyQSearchGen2ResourceNames)
       assert(BeautyQSearchGen2.qdrant.runtime eq BeautyQQdrantRuntime)
-      assert(BeautyQSearchGen2.qdrant.candidatePolicy eq BeautyQQdrantPolicy)
     }
   }
 }

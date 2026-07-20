@@ -49,6 +49,5 @@ object BeautyQSearchGen2 {
     val runtime           = BeautyQQdrantRuntime
     val hydrationPolicy   = BeautyQQdrantHydrationPolicy.policy
     val candidates        = BeautyQQdrantCandidatePipeline
-    val candidatePolicy   = BeautyQQdrantPolicy
   }
 }

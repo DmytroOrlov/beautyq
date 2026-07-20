@@ -279,30 +279,31 @@ object PublicFilterRegistry {
       val empty = if (declaration.acceptedOperators.isEmpty) Vector(PublicFilterDeclarationError.NoSupportedOperators(declaration.name, declarationIndex)) else Vector.empty
       unsupported ++ empty
     }
-    val duplicateErrors = declarations.zipWithIndex.foldLeft((Map.empty[PublicFieldName, Int], Vector.empty[PublicFilterDeclarationError])) {
-      case ((firstIndexes, errors), (declaration, index)) =>
-        firstIndexes.get(declaration.name) match {
-          case Some(firstIndex) => (firstIndexes, errors :+ PublicFilterDeclarationError.DuplicateName(declaration.name, firstIndex, index))
-          case None             => (firstIndexes.updated(declaration.name, index), errors)
+    val specs = declarations.map { declaration =>
+      new PublicInputSpec[PublicFilterInput, PublicFieldName, PublicOperator, PublicFilterClause[Document], PublicFilterError] {
+        def name: PublicFieldName = declaration.name
+        def acceptedOperators: Vector[PublicOperator] = declaration.acceptedOperators
+        def decode(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], PublicFilterClause[Document]] = declaration.decode(input)
+      }
+    }
+    PublicInputRegistry(specs, _.field, _.operator, PublicFilterError.UnknownPublicField.apply, PublicFilterError.UnsupportedPublicOperator.apply) match {
+      case Left(errors) =>
+        val duplicateErrors = errors.toVector.map {
+          case PublicDeclarationError.DuplicateName(name, firstIndex, duplicateIndex) =>
+            PublicFilterDeclarationError.DuplicateName(name, firstIndex, duplicateIndex)
         }
-    }._2
-    NonEmptyErrors.fromVector(policyErrors ++ duplicateErrors) match {
-      case Some(errors) => Left(errors)
-      case None =>
-        val specs = declarations.map { declaration =>
-          new PublicInputSpec[PublicFilterInput, PublicFieldName, PublicOperator, PublicFilterClause[Document], PublicFilterError] {
-            def name: PublicFieldName = declaration.name
-            def acceptedOperators: Vector[PublicOperator] = declaration.acceptedOperators
-            def decode(input: PublicFilterInput): Either[NonEmptyErrors[PublicFilterError], PublicFilterClause[Document]] = declaration.decode(input)
-          }
+        val combined = policyErrors ++ duplicateErrors
+        NonEmptyErrors.fromVector(combined) match {
+          case Some(e) => Left(e)
+          case None    => throw new IllegalStateException("expected combined errors when PublicInputRegistry failed")
         }
-        PublicInputRegistry(specs, _.field, _.operator, PublicFilterError.UnknownPublicField.apply, PublicFilterError.UnsupportedPublicOperator.apply)
-          .left
-          .map(_.map {
-            case PublicDeclarationError.DuplicateName(name, firstIndex, duplicateIndex) =>
-              PublicFilterDeclarationError.DuplicateName(name, firstIndex, duplicateIndex)
-          })
-          .map(registry => new PublicFilterRegistry(declarations, registry))
+      case Right(registry) if policyErrors.nonEmpty =>
+        NonEmptyErrors.fromVector(policyErrors) match {
+          case Some(e) => Left(e)
+          case None    => throw new IllegalStateException("expected policy errors but vector was empty")
+        }
+      case Right(registry) =>
+        Right(new PublicFilterRegistry(declarations, registry))
     }
   }
 

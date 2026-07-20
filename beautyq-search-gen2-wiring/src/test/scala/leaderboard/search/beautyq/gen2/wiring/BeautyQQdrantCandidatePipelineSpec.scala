@@ -66,7 +66,9 @@ final class BeautyQQdrantCandidatePipelineSpec extends AnyWordSpec {
       val candidateEvaluation = BeautyQCandidatePlanCompiler.compile(compiled).getOrElse(fail("expected eligible candidate evaluation"))
       candidateEvaluation.decision match {
         case CandidatePlanDecision.Eligible(plan) =>
-          assert(plan.hardConstraints.nonEmpty)
+          assert(plan.hardConstraints == Vector(
+            PlannedConstraint.Terms(BeautyQSearchDeclarations.variants.Fields.serviceCode, Set(ServiceCodeOf("manicure"))),
+          ))
           val generation = compiledGeneration
           val alias = QdrantResourceName.from(BeautyQSearchGen2ResourceNames.QdrantCollectionAlias).getOrElse(fail("expected alias"))
           val config = QdrantCandidateServiceConfig.create(alias, BeautyQSearchGen2ResourceNames.QdrantPhysicalCollectionPrefix).getOrElse(fail("expected service config"))
@@ -76,9 +78,11 @@ final class BeautyQQdrantCandidatePipelineSpec extends AnyWordSpec {
           }
           BeautyQQdrantCandidatePipeline.execute(candidateEvaluation, BeautyQElasticsearchTestFixtures.materialized, embeddingPort, new QdrantCandidateService(new AuthorizedBeautyQClient(generation, alias.value), config)) match {
             case Right(result) =>
+              assert(result.evaluation eq candidateEvaluation)
               result.outcome match {
                 case Right(hydrated) =>
                   assert(hydrated.candidates.map(_.id) == Vector(BeautyQElasticsearchTestFixtures.document.variantId))
+                  assert(hydrated.candidates.map(_.score) == Vector(0.9))
                   assert(hydrated.candidates.map(_.provenance) == Vector(BeautyQCandidateProvenance.SemanticSupplement))
                   assert(hydrated.target.value == generation.physicalCollectionName)
                   assert(hydrated.metadata == generation.metadata)
@@ -91,6 +95,9 @@ final class BeautyQQdrantCandidatePipelineSpec extends AnyWordSpec {
       }
     }
   }
+
+  private def ServiceCodeOf(value: String) =
+    BeautyQSearchDeclarations.variants.Fields.serviceCode.codec.decodeCanonical(value).getOrElse(fail(s"invalid fixture ServiceCode '$value'"))
 
   private def compiledGeneration: QdrantCompiledGeneration = {
     val prepared = QdrantGenerationCompiler.prepare(BeautyQQdrantPolicy.policy, BeautyQElasticsearchTestFixtures.materialized).getOrElse(fail("expected prepared generation"))
