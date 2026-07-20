@@ -21,21 +21,24 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A, 6C, 6D and 7A are implemented; Brick 6B-B remains active pending its separate Qdrant 1.18.3 resource proof.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A, 6C, 6D, 7A and 7B are implemented; Brick 6B-B remains active pending its separate Qdrant 1.18.3 resource proof.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
   6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
   7A owns generic append-only supplement selection, lifecycle-bound Elasticsearch baseline membership,
-  bound baseline authorization, and construction boundaries.
-- **Next sequence:** independently complete 6B-B's real-resource proof; then implement Brick 7B BeautyQ
-  orchestration and explicit degradation, Brick 8 independent application/evaluation, and Brick 9
-  atomic cutover/deletion.
+  bound baseline authorization, and construction boundaries. 7B owns BeautyQ orchestration with
+  owner-private outcomes (`Ineligible`, `Evaluated`, `Failed`), typed `BeautyQSupplementStatus`, exact
+  cause preservation in `PipelineFailureDisposition`, policy-owned readiness results with derived
+  `supplementReady`, and the production-path proofs described below.
+- **Next sequence:** implement Brick 8 independent application/evaluation while completing 6B-B's
+  separate real-resource proof. Brick 8 cannot be accepted, and Brick 9 cannot start, until that proof
+  passes. Brick 9 then performs the atomic cutover/deletion.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
 - **Canonical reading path:** start at wiring-owned `BeautyQSearchGen2`. Its `contract`, `input`,
-  `materialization`, `plan`, `qdrant` and `elasticsearch` branches are direct references to the
-  executable owners; the facade owns no copied policy.
+  `materialization`, `plan`, `elasticsearch`, `qdrant` and `supplement` branches are direct references
+  to the executable owners; the facade owns no copied policy.
 
 ### Audit-derived acceptance gate for the remaining bricks
 
@@ -53,6 +56,24 @@ This is the local application of the normative domain-authoring principles, not 
 5. **Proof and documentation honesty:** scripted fixtures use the real wire shape, communication tests
    prove destructive/resource behavior, and this plan reports live status while the technical spec owns
    exact API and supported shapes.
+
+The post-7B review found no reason to reopen the generic plan, backend or supplement kernels. Brick 8
+must close four remaining composition seams:
+
+- expose lifecycle-bound baseline execution and membership through the BeautyQ Elasticsearch service;
+  application code must not reach around it to construct generic lifecycle/service internals;
+- narrow `BeautyQQdrantCandidatePipelineResult` and `BeautyQElasticsearchSearchResult` construction to
+  their executable owners before application/public response code treats either value as trusted;
+- make eval evidence keep one orchestrator result (or otherwise derive `supplementCount` from appended
+  IDs and `statusCode` from typed status); those tautological views must not remain constructor fields;
+- construct the public response from one `BeautyQSearchOrchestrator.Result`. Its compiled plan,
+  authoritative baseline, supplement outcome, status and diagnostics are derived through that value,
+  never supplied as independently replaceable arguments.
+
+The initial application composition performs lifecycle authorization from persisted state for each
+request. A process-local active-generation cache with only local activation invalidation is forbidden:
+another process may switch the alias. Such an optimization requires a separately proven coherence
+contract and is not part of the remaining Gen2 delivery.
 
 ### Accepted initial limits, not live abstraction debt
 
@@ -1185,14 +1206,14 @@ remain integrity failures; Brick 7 must not degrade them into baseline-only succ
 
 | Gen1 pain / Gen2 promise | Current result | Remaining owner |
 |---|---|---|
-| executable root instead of descriptive readiness and compatibility facades | direct-reference navigation facade covers input, plan/candidate, ES and Qdrant owners | 6B-B resource gate only |
-| reusable domain authoring rather than copied registries/decoders | generic filter declarations own standard decode mechanics; BeautyQ owns names/handles | 6B-B resource gate only |
+| executable root instead of descriptive readiness and compatibility facades | direct-reference navigation reaches input, materialization, plan, ES, Qdrant and supplement owners; application execution is absent | Brick 8 |
+| reusable domain authoring rather than copied registries/decoders | generic declarations own standard decode/matching/backend mechanics; BeautyQ owns names, handles and policy | closed for the accepted initial shapes |
 | Qdrant candidate filtering/hydration with no invented full-result semantics | eligible BeautyQ path and neutral integrity proofs are green; resource proof remains separate | Brick 6B-B |
 | closed public filter/facet/result loop and honest `appliedFilters` response | backend contracts exist; public composition is absent | Brick 8 |
 | lifecycle reflects persisted state | ES proven; Qdrant scripted and focused, communication proof pending | Brick 6B-B |
-| one backend role must not erase another | ES full result and Qdrant candidate result are separate; merge not yet executable | Brick 7 |
-| no-harm supplement semantics | accepted ADR only; executable membership/degradation/append policy absent | Brick 7 |
-| serving code isolated from evaluation and Gen1 | module firewall exists; eval/app composition is not built | Brick 8 |
+| one backend role must not erase another | owner-private orchestration preserves the ES full result and appends only Qdrant candidates | Brick 8 public projection from that result |
+| no-harm supplement semantics | lifecycle-bound membership, append-only selection, degradation and derived eval evidence are executable | Brick 8 end-to-end/eval gate |
+| serving code isolated from evaluation and Gen1 | firewall is executable and eval derives from the orchestrator result; application composition is absent | Brick 8 |
 | one final migration rather than compatibility layers | side-by-side build preserved | Brick 9 |
 
 ### Remaining order after the audit
@@ -1200,13 +1221,13 @@ remain integrity failures; Brick 7 must not degrade them into baseline-only succ
 ```text
 Brick 6D  reusable inbound authoring + readable facade + 6C proof/docs closeout (implemented)
 6B-B      independent Qdrant 1.18.3 communication gate
-Brick 7   baseline membership + supplement orchestration
+Brick 7   baseline membership + supplement orchestration (implemented)
 Brick 8   independent application/API/eval and cutover evidence
 Brick 9   atomic route cutover and Gen1 deletion
 ```
 
-Brick 7 may start after Brick 6D acceptance; Brick 6B-B's resource proof may run independently, but Brick 8
-full-search readiness cannot pass without it.
+Brick 8 implementation may proceed while 6B-B's resource proof runs independently, but Brick 8
+acceptance and full-search readiness cannot pass without it.
 
 ### Brick 7A — append-only selection and lifecycle-bound membership
 
@@ -1317,6 +1338,8 @@ Gen2 ES baseline `search` remains functional. V1 remains untouched.
 
 ### Brick 7B — BeautyQ orchestration and explicit degradation
 
+**Status: Complete — focused ownership/orchestration verification green**
+
 ### Purpose
 
 Combine role-specific backend outputs under the narrow accepted no-harm policy.
@@ -1324,14 +1347,23 @@ Combine role-specific backend outputs under the narrow accepted no-harm policy.
 Entry requires 6B's authorized candidate execution and 6C's generation-consistent hydrated candidate
 result. Brick 7 does not reopen their transport, lifecycle, embedding or hydration decisions.
 
+### Implemented
+
+Owner-private outcome types (`Ineligible`, `Evaluated`, `Failed`) with constructors private to
+`BeautyQSearchOrchestrator`, preventing external construction and subclassing. Typed
+`BeautyQSupplementStatus` enum with stable codes
+(`ineligible`, `no_append`, `supplemented`, `supplement_failed`). Policy-owned `PipelineFailureDisposition`
+(Hard/Degradable) with exact original typed cause preservation. Policy-owned readiness results with derived
+`supplementReady` from mode, no independent Boolean. Orchestrator-owned error algebras preserving exact
+typed causes for hard pipeline failures.
+
 ### Diff
 
-In `search-gen2-core` add generic orchestration primitives where domain-neutral.
+In `search-gen2-wiring` add BeautyQ composition policy:
 
-In `beautyq-search-gen2-wiring` add only the remaining BeautyQ composition policy:
-
-- ES baseline `FullSearchResult`;
-- the bound `BeautyQQdrantCandidatePipelineResult` produced by the accepted candidate/hydration owner;
+- the lifecycle-bound `BoundElasticsearchBaselineResult` and its complete `ElasticsearchFullSearchResult`;
+- the compiler-owned `CompiledCandidateEvaluation`; candidate execution remains owned by the accepted
+  Qdrant pipeline rather than by a separately supplied candidate result;
 - max-one append-only selection;
 - baseline current-page deduplication;
 - baseline full-match membership guard;
@@ -1345,12 +1377,13 @@ In `beautyq-search-gen2-wiring` add only the remaining BeautyQ composition polic
 
 Eligibility, hard-constraint assertion and candidate provenance are inputs already bound by
 `BeautyQCandidatePlanCompiler` and `BeautyQQdrantCandidatePipeline`; the orchestrator must not evaluate,
-replace or reconstruct them. It may inspect the bound result only to choose append/no-append and render
-the final supplement status.
+replace or reconstruct them. It invokes that pipeline from the compiler-owned evaluation and only chooses
+append/no-append and renders the final supplement status.
 
-BeautyQ orchestration receives `BoundElasticsearchBaselineResult` (not raw query/target), the bound
-candidate pipeline result, and uses `ElasticsearchBaselineService.membership` (not independently
-supplied membership JSON) to verify candidate eligibility against the complete baseline.
+BeautyQ orchestration receives `BoundElasticsearchBaselineResult` (not raw query/target), the
+`CompiledCandidateEvaluation` and materialized snapshot. It uses
+`ElasticsearchBaselineService.membership` (not independently supplied membership JSON) to verify
+candidate eligibility against the complete baseline.
 
 ### Forbidden
 
@@ -1376,7 +1409,22 @@ supplied membership JSON) to verify candidate eligibility against the complete b
 - embedding completion/model/dimension errors remain typed integrity failures;
 - plan/capability errors and hydration invariant violations are not degraded into baseline-only success;
 - no-hard-constraint-violation gate is green;
-- provenance and supplement count are correct.
+- provenance and supplement count are correct;
+- outcome types are final classes with private constructors (compile-time boundary proof);
+- readiness results are policy-owned with derived supplementReady (no independent Boolean);
+- degradation disposition preserves exact original typed cause (identity proof).
+
+### Focused specs
+
+- `BeautyQSupplementPolicySpec`: exact cause preservation with `cause eq originalError` proofs;
+- `BeautyQSupplementReadinessPolicySpec`: new `evaluate(Set[BeautyQSearchDependency])` API with mode proofs;
+- `BeautyQSearchOrchestratorSpec`: production-path bound baseline, plan binding/no-call, ineligible,
+  append-only, membership-failure and typed degradation proofs;
+- external-package `BeautyQSupplementBoundarySpec`: compile-negative ownership proofs;
+- `BeautyQNoHarmSupplementEvidenceSpec`: evidence derivation from a single result without recomputation.
+
+The requested module compiles and focused ownership/orchestration specs are green. The resource-backed
+Qdrant proof remains the independent 6B-B gate.
 
 ### Expected diff shape
 
@@ -1402,12 +1450,23 @@ Run Gen2 end to end beside V1 without integrating it into the V1 backend.
 - add a separate local/test role, command or versioned endpoint;
 - wire the complete repository snapshot -> materializer -> generation compilation -> activation path;
 - suspend the synchronous Elasticsearch client behind the application effect/runtime blocking boundary;
-- cache the lifecycle-authorized active generation for first-page searches and invalidate that cache
-  only after activation; a normal first page must not perform mapping, count and alias discovery again;
-- wire Qdrant and baseline-plus-supplement orchestration;
-- project one explicit public Gen2 response from the validated request, compiled plan, authoritative ES
-  result and bound supplement result: `appliedFilters` with provenance, exact baseline total/facets/groups,
-  cursor, carousel projections, supplement count/status/reason and per-hit origin have one response owner;
+- extend the BeautyQ Elasticsearch service with lifecycle-bound baseline execution and membership
+  delegation; its ordinary search view remains derived, and application code never reconstructs the
+  generic lifecycle or carries an independently selected target;
+- narrow the existing BeautyQ candidate-pipeline and Elasticsearch projection result constructors to
+  their executable owners before composing them into the application result;
+- compile validated input -> intent -> plan -> candidate evaluation exactly once, execute the bound
+  baseline, and pass those compiler-owned values through the existing supplement orchestrator;
+- add the application owner to `BeautyQSearchGen2` only when executable, as another direct reference;
+  do not create a second facade or a placeholder branch;
+- project one explicit public Gen2 response from only the resulting
+  `BeautyQSearchOrchestrator.Result`: `appliedFilters` with provenance, exact baseline
+  total/facets/groups, cursor, carousel projections, supplement count/status/reason and per-hit origin
+  have one response owner and derive their plan/baseline/supplement evidence through that aggregate;
+- use `BeautyQSupplementReadinessPolicy.Result` as the sole readiness decision; do not copy its
+  dependency order or store separate mode/readiness booleans;
+- perform lifecycle authorization from persisted state for every request; do not introduce a
+  process-local active-generation cache without an independently proven cross-process coherence rule;
 - use separate backend resources;
 - add end-to-end request/response tests;
 - build the evaluation corpus and cutover report in `beautyq-search-gen2-eval`;
@@ -1422,16 +1481,24 @@ The application shell may depend on both V1 and Gen2 only to expose separate com
 - V1 shadow adapters;
 - shared index alias/collection;
 - production/default route ownership switch;
-- serving dependency on eval.
+- serving dependency on eval;
+- application-owned copies of membership, append, degradation or readiness mechanics;
+- a public-response factory accepting independently replaceable plan, baseline or supplement values;
+- bypassing the BeautyQ composition path to assemble generic lifecycle/service internals in the app;
+- locally invalidated active-generation caches that can outlive an alias switch by another process;
+- stored eval `supplementCount`/`statusCode` values that can diverge from appended IDs/typed status.
 
 ### Proof
 
 - independent Gen2 endpoint/role passes end-to-end tests;
 - runtime tests prove snapshot materialization precedes generation compilation/activation and failures
   cannot expose a partially activated generation;
-- repeated first-page requests reuse the cached active generation with no three-round-trip lifecycle
-  rediscovery; activation deterministically invalidates and replaces the cached value;
+- application tests prove every executable search target came from the lifecycle authorization used by
+  the returned bound baseline, including an alias switch performed outside the application process;
 - blocking Elasticsearch calls execute only on the declared blocking/suspended boundary;
+- the public projector accepts one orchestrator result and derives plan, applied-filter provenance,
+  baseline data, supplement status/reason and per-hit origin without recomputation;
+- the canonical `BeautyQSearchGen2` path points directly to the one executable application owner;
 - semantic delta ledger fixtures pass;
 - exact facet and group authoritative fixtures pass;
 - pagination/supplement no-duplicate tests pass;

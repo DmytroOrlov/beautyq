@@ -510,7 +510,9 @@ generation compiler and the request compiler all consume; a domain never recreat
 traversal, an aggregation name, or a second fingerprint. `BeautyQElasticsearchPolicy`/
 `BeautyQElasticsearchGeneration`/`BeautyQElasticsearchBaseline` (`beautyq-search-gen2-wiring`) are the
 golden reference at full scale. Reuse the generic physical-generation lifecycle and baseline service with
-domain resource names; group/carousel composition remains an orchestration concern owned by Brick 7.
+domain resource names; keep domain-specific group/carousel projection at the wiring edge and derive any
+public response from the domain's single bound orchestration result rather than separately supplied plan,
+baseline and supplement values.
 
 ## Qdrant candidate and hydration policy (6A/6C boundary)
 
@@ -523,7 +525,10 @@ convergence, alias authorization and target binding remain framework-owned. Do n
 payload/index list or call Gen1 Qdrant. For an eligible candidate path, provide a typed embedding adapter
 and one explicit hydration choice: missing documents fail and hard constraints are asserted after one
 generation-consistent lookup. The framework derives the request pipeline, target/metadata binding, ordered
-lookup, integrity errors and candidate-only result; baseline/supplement append policy remains Brick 7.
+lookup, integrity errors and candidate-only result. If a domain later composes a supplement, pass the
+compiler-owned bound baseline and candidate evaluation to the orchestration owner; do not construct or
+copy readiness, degradation, membership or final-result values. Exact current API shapes belong to the
+technical specification, and live sequencing belongs to the implementation plan.
 
 ## Materialization
 

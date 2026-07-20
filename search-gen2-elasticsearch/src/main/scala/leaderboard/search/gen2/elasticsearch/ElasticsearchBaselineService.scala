@@ -1,5 +1,6 @@
 package leaderboard.search.gen2.elasticsearch
 
+import leaderboard.search.gen2.core.plan.BoundSearchPlan
 import leaderboard.search.gen2.core.supplement.BaselineMembershipResult
 import leaderboard.search.gen2.elasticsearch.lifecycle.*
 
@@ -24,6 +25,8 @@ final class BoundElasticsearchBaselineResult[Document, Id] private[elasticsearch
 ) {
   def target: ElasticsearchSearchTarget = authorizedRequest.target
   def generationReference: ElasticsearchGenerationReference = authorizedRequest.generationReference
+  def boundPlan: BoundSearchPlan[Document] = authorizedRequest.prepared.boundPlan
+  def generationMetadata: ElasticsearchGenerationMetadata = authorizedRequest.generation.persistedMetadata
 }
 
 final class ElasticsearchBaselineService(lifecycle: ElasticsearchGenerationLifecycle) {

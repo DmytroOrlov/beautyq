@@ -1,5 +1,6 @@
 package leaderboard.search.gen2.elasticsearch
 
+import leaderboard.search.gen2.core.candidate.SearchGenerationEvidence
 import leaderboard.search.gen2.core.plan.ContractFingerprint.value
 
 import io.circe.{Json, JsonObject}
@@ -38,7 +39,11 @@ final case class ElasticsearchGenerationMetadata(
   builtAt: Instant,
   documentCount: Long,
   identity: ElasticsearchPersistedGenerationIdentity,
-)
+) extends SearchGenerationEvidence {
+  def sourceContentFingerprint: String = identity.sourceContentFingerprint
+  def projectedDocumentsFingerprint: String = identity.projectedDocumentsFingerprint
+  def projectionFormatVersion: String = identity.projectionFormatVersion
+}
 
 sealed trait ElasticsearchGenerationMetadataError
 object ElasticsearchGenerationMetadataError {

@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; Brick 6B-A implemented, Brick 6B-B active pending its local-resource proof**
+Status: **accepted architecture baseline; all slices through Brick 7B except the active 6B-B Qdrant 1.18.3 resource proof are implemented; Brick 8 is next**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -1743,8 +1743,8 @@ superseded marker from the target becoming active in the same atomic alias mutat
 `action_results`; when results are present they are decoded strictly in request order. A superseded
 target whose mapping has disappeared is treated as idempotently already removed, while other lookup
 transport failures remain typed. Cleanup failures are typed and retryable; a cursor pinned to a deleted
-generation is a typed stale-generation failure. Resource-backed acceptance remains the active Brick 5C-D
-gate. There is no configurable retention policy in the initial greenfield architecture.
+generation is a typed stale-generation failure. There is no configurable retention policy in the initial
+greenfield architecture.
 
 The neutral synchronous JDK client accepts an omitted endpoint port or an explicit port in `1..65535`,
 owns confined HTTP paths, timeouts, methods/content types, and maps request construction, connection,
@@ -1882,7 +1882,8 @@ Qdrant filter compilation.
 BeautyQ supplies only `BeautyQQdrantHydrationPolicy` (`semantic-supplement` provenance) and composes the
 policy/evaluation with the generic pipeline. The final result remains candidate-only: it has ordered
 hydrated documents, scores, provenance, authorized target, persisted metadata and Qdrant diagnostics, but
-no totals, facets, groups or public pagination. Baseline-plus-supplement composition remains Brick 7.
+no totals, facets, groups or public pagination. The implemented composition in section 13 appends these
+candidates without transferring full-result ownership away from Elasticsearch.
 
 ### 12.7 Transport and physical collection lifecycle (Brick 6B)
 
@@ -1915,12 +1916,28 @@ failed/incompatible state remains observable for an operator rather than being g
 
 ## 13. Baseline-plus-supplement orchestration
 
-The orchestrator receives:
+The implemented BeautyQ boundary is compiler-owned and receives no raw query,
+target, membership JSON or independently supplied candidate result:
 
 ```text
-baseline: FullSearchResult
-supplement: CandidateSearchResult
+BeautyQSearchOrchestrator.execute(
+  baseline: BoundElasticsearchBaselineResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId],
+  evaluation: CompiledCandidateEvaluation,
+  materialized: MaterializedBeautyQVariantDocuments,
+  embeddingPort: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
+  qdrantService: QdrantCandidateService,
+  baselineService: ElasticsearchBaselineService,
+): Either[BeautyQSearchOrchestrationError, BeautyQSearchOrchestrator.Result]
 ```
+
+`baseline` and `evaluation` must carry the same compiler-owned bound-plan
+reference. The orchestrator invokes candidate execution, verifies generation
+consistency, asks the bound baseline service for complete-set membership, and
+then applies the generic append-only selection. `Result` and its
+`Ineligible`/`Evaluated`/`Failed` outcomes are final owner-private classes;
+baseline and evaluation are stored once, and status/reason/cause are derived
+views rather than independently supplied fields. The eval module derives its
+`SupplementEvidence` only from this result.
 
 Policy is defined by the ADR:
 
@@ -1955,6 +1972,28 @@ Before cutover, Gen2 is runnable through an independent local/test composition:
 - no production request fan-out from V1 to Gen2.
 
 Comparison occurs in `beautyq-search-gen2-eval` or integration tests.
+
+The application follows the same canonical path as a domain reviewer. It compiles validated input,
+intent, plan and candidate evaluation once; obtains the lifecycle-bound baseline and complete-set
+membership through the BeautyQ Elasticsearch service; then invokes the existing orchestrator. The
+application must not reconstruct generic lifecycle/service internals or choose a physical target.
+Once implemented, `BeautyQSearchGen2` exposes that application owner by direct reference and contains no
+parallel facade or placeholder branch.
+
+The public response projector accepts one `BeautyQSearchOrchestrator.Result`. Applied-filter provenance,
+baseline totals/facets/groups/cursor, carousel projection, supplement status/reason and per-hit origin
+derive through that aggregate. No constructor accepts independently replaceable plan, baseline or
+supplement values. Existing BeautyQ pipeline/projection aggregates must have owner-private construction
+before the application treats them as trusted results.
+
+Evaluation remains a one-way derived consumer of the orchestrator result. Tautological report views such
+as supplement count and status code derive from appended IDs and typed status rather than being stored as
+independently replaceable constructor values.
+
+Readiness is the existing `BeautyQSupplementReadinessPolicy.Result`, not another Boolean/configuration
+model. The initial runtime resolves persisted lifecycle state for each request. It has no process-local
+active-generation cache invalidated only by local activation, because another process can switch the
+alias; any later optimization requires an explicit, tested cross-process coherence contract.
 
 ## 15. Quality and evaluation
 

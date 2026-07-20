@@ -3,13 +3,14 @@ package leaderboard.search.beautyq.gen2.contract
 import leaderboard.model.*
 import leaderboard.search.gen2.contract.*
 
-/** The executable BeautyQ Gen2 business root. Read this file first when authoring or reviewing the
-  * domain, in data-flow order: `catalog` defines the source topology; `variants.Fields` defines the
-  * document vocabulary and backend capabilities; `variants.document` closes the document contract;
+/** The executable BeautyQ Gen2 contract declaration, reached from the canonical navigation entry point
+  * `BeautyQSearchGen2.contract`. Within this declaration, read in data-flow order: `catalog` defines the
+  * source topology; `variants.Fields` defines the document vocabulary and backend capabilities;
+  * `variants.document` closes the document contract;
   * `variants.request` and `variants.intent` expose the public inbound policies; `variants.plan` exposes
   * the executable plan policy (constraint-source precedence, geo-origin, facets, groups, plan modes and
   * the default-browse notice) that `BeautyQSearchPlanCompiler` composes with reusable Gen2 mechanics.
-  * Backend/route wiring remains the next stage after this declaration and is intentionally not hidden
+  * Backend/route wiring remains the next stage on `BeautyQSearchGen2` and is intentionally not hidden
   * behind a second catalog tree.
   *
   * This is the real, current `catalog`/`variants` declaration, not a placeholder rendering of a future

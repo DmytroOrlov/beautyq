@@ -7,11 +7,9 @@ final case class CandidateHit[Id, Score](id: Id, score: Score)
 
 /** Metadata fields required to prove that candidate hits and documents came from one materialized
   * generation. Backend modules adapt their persisted metadata to this contract. */
-trait CandidateGenerationMetadata {
-  def sourceContentFingerprint: String
-  def projectedDocumentsFingerprint: String
-  def projectionFormatVersion: String
+trait CandidateGenerationMetadata extends SearchGenerationEvidence {
   def pointCount: Int
+  final def documentCount: Long = pointCount.toLong
 }
 
 /** A candidate execution whose plan, declaration, hits and authorized generation evidence are one

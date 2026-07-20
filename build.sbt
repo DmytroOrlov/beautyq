@@ -258,8 +258,10 @@ lazy val beautyqSearchGen2Wiring = project
 lazy val beautyqSearchGen2Eval = project
   .in(file("beautyq-search-gen2-eval"))
   .settings(name := "beautyq-search-gen2-eval")
-  .pipe(lightweightSettings(Nil))
-  .dependsOn(beautyqSearchGen2Wiring)
+  .pipe(lightweightSettings(Seq(
+    Deps.scalatest % Test,
+  )))
+  .dependsOn(beautyqSearchGen2Wiring % "compile->compile;test->test")
 
 lazy val appServices = project
   .in(file("app-services"))

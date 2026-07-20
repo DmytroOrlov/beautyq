@@ -50,4 +50,10 @@ object BeautyQSearchGen2 {
     val hydrationPolicy   = BeautyQQdrantHydrationPolicy.policy
     val candidates        = BeautyQQdrantCandidatePipeline
   }
+
+  object supplement {
+    val policy       = BeautyQSupplementPolicy
+    val readiness    = BeautyQSupplementReadinessPolicy
+    val orchestrator = BeautyQSearchOrchestrator
+  }
 }

@@ -773,7 +773,12 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
             findMatchingCloseParen(block, openIndex) match {
               case Some(closeIndex) =>
                 val args = block.substring(openIndex + 1, closeIndex)
-                loop(closeIndex + 1, acc ++ splitTopLevelArgs(args))
+                val dependencyArguments = splitTopLevelArgs(args).map { argument =>
+                  // A test-only configuration mapping is still the same project edge for the
+                  // module firewall; the mapping controls classpath visibility, not the serving DAG.
+                  argument.trim.takeWhile(character => character.isLetterOrDigit || character == '_' || character == '-' || character == '`')
+                }
+                loop(closeIndex + 1, acc ++ dependencyArguments)
               case None =>
                 fail(s"unmatched '.dependsOn(' opening parenthesis while scanning build.sbt block: $block")
             }
