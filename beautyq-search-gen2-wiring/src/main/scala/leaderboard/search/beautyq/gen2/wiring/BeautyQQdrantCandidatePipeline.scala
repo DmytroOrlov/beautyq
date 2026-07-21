@@ -32,21 +32,23 @@ object BeautyQQdrantCandidatePipelineError {
 
 /** BeautyQ's final candidate-only composition result. The original evaluation and its exact
   * ineligible reason or hydrated candidate result are bound together by this pipeline. */
-final class BeautyQQdrantCandidatePipelineResult private[wiring] (
-  val evaluation: CompiledCandidateEvaluation,
-  val outcome: Either[BeautyQCandidateIneligibility, HydratedCandidateSearchResult[
-    VariantSearchDocumentGen2,
-    MasterServiceOfferVariantId,
-    Double,
-    QdrantResourceName,
-    QdrantGenerationMetadata,
-    QdrantCandidateDiagnostics,
-    BeautyQCandidateProvenance,
-  ]],
-)
+type BeautyQQdrantCandidatePipelineResult = BeautyQQdrantCandidatePipeline.Result
 
 object BeautyQQdrantCandidatePipeline {
   import BeautyQQdrantCandidatePipelineError.*
+
+  final class Result private[BeautyQQdrantCandidatePipeline] (
+    val evaluation: CompiledCandidateEvaluation,
+    val outcome: Either[BeautyQCandidateIneligibility, HydratedCandidateSearchResult[
+      VariantSearchDocumentGen2,
+      MasterServiceOfferVariantId,
+      Double,
+      QdrantResourceName,
+      QdrantGenerationMetadata,
+      QdrantCandidateDiagnostics,
+      BeautyQCandidateProvenance,
+    ]],
+  )
 
   def execute[EmbeddingError](
     evaluation: CompiledCandidateEvaluation,
@@ -56,7 +58,7 @@ object BeautyQQdrantCandidatePipeline {
   ): Either[BeautyQQdrantCandidatePipelineError[EmbeddingError], BeautyQQdrantCandidatePipelineResult] =
     evaluation.decision match {
       case CandidatePlanDecision.Ineligible(reason) =>
-        Right(new BeautyQQdrantCandidatePipelineResult(evaluation, Left(reason)))
+        Right(new Result(evaluation, Left(reason)))
       case CandidatePlanDecision.Eligible(plan) =>
         for {
           executed <- QdrantCandidatePipeline.execute(
@@ -66,6 +68,6 @@ object BeautyQQdrantCandidatePipeline {
                         service,
                       ).left.map(Qdrant.apply)
           hydrated <- CandidateHydrator.hydrate(executed, materialized, BeautyQQdrantHydrationPolicy.policy).left.map(Hydration.apply)
-        } yield new BeautyQQdrantCandidatePipelineResult(evaluation, Right(hydrated))
+        } yield new Result(evaluation, Right(hydrated))
     }
 }

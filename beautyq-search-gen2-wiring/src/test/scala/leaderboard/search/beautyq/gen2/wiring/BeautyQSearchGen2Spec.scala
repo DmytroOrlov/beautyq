@@ -115,4 +115,44 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
       assert(BeautyQSearchGen2.supplement.orchestrator eq BeautyQSearchOrchestrator)
     }
   }
+
+  "BeautyQSearchGen2.application" should {
+    "expose the one executable application owner" in {
+      assert(BeautyQSearchGen2.application eq BeautyQSearchApplication)
+      assert(BeautyQSearchGen2.elasticsearch.generationApplication eq BeautyQSearchGenerationApplication)
+    }
+
+    "execute the native request through the one application path" in {
+      val context = leaderboard.search.beautyq.gen2.wiring.testkit.BeautyQOrchestrationTestKit.eligible()
+      val application = BeautyQSearchApplication.make(
+        leaderboard.search.beautyq.gen2.wiring.testkit.BeautyQOrchestrationTestKit.materialized,
+        context.baselineService,
+        context.embedding,
+        context.qdrant,
+      )
+      val request = leaderboard.search.beautyq.gen2.contract.BeautySearchRequestGen2(
+        Some("relaxing appointment"),
+        Vector(leaderboard.search.gen2.contract.PublicFilterInput(
+          leaderboard.search.gen2.contract.PublicFieldName("service"),
+          leaderboard.search.gen2.contract.PublicOperator.Equal,
+          leaderboard.search.gen2.contract.PublicFilterValue.Scalar("manicure"),
+          None,
+        )),
+        Vector.empty,
+        Vector.empty,
+        leaderboard.search.beautyq.gen2.wiring.testkit.BeautyQOrchestrationTestKit.page,
+        None,
+      )
+
+      application.execute(request) match {
+        case Right(result) =>
+          assert(result.status == BeautyQSupplementStatus.Supplemented)
+          BeautyQSearchResponseGen2Projector.project(result) match {
+            case Right(response) => assert(response.supplementCount == result.appendedCandidates.size)
+            case Left(error) => fail(s"expected projected Gen2 response, got $error")
+          }
+        case Left(error) => fail(s"expected application result, got $error")
+      }
+    }
+  }
 }

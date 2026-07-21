@@ -152,7 +152,7 @@ Defaults:
 * `Communication` only for real external processes such as databases, search engines, queues, model servers, dockerized services, or HTTP services.
 * `Whitebox` only when the internal detail is the explicit contract.
 
-Resource-backed test DoD: use default local resources, run when resources are available, and cancel with a useful reason when unavailable. Boolean env gates are allowed only for true manual-artifact, destructive, or explicitly external workflows; such gates must be documented.
+Resource-backed test DoD: use default local resources, run when resources are available, and cancel with a useful reason when unavailable. If the repository owns a `Scene.Managed` Docker binding, obtain its endpoint through Distage injection; do not hard-code localhost or cancel because that managed resource was not started manually. Cancellation is for genuinely external resources only. Boolean env gates are allowed only for true manual-artifact, destructive, or explicitly external workflows; such gates must be documented.
 
 Prefer abstract contract suites over duplicated implementation-specific tests:
 

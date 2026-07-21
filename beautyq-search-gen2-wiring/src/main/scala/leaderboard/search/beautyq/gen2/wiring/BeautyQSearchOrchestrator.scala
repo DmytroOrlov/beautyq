@@ -24,6 +24,7 @@ object BeautyQSearchOrchestrationError {
   final case class BoundPlanMismatch(expected: String, actual: String) extends BeautyQSearchOrchestrationError
   final case class GenerationMismatch(error: SearchGenerationConsistencyError) extends BeautyQSearchOrchestrationError
   final case class Membership(error: ElasticsearchBaselineMembershipError) extends BeautyQSearchOrchestrationError
+  final case class BaselineService(error: BeautyQElasticsearchBaselineServiceError) extends BeautyQSearchOrchestrationError
   final case class AppendPolicy(error: leaderboard.search.gen2.core.supplement.AppendOnlySupplementSelectionError[MasterServiceOfferVariantId]) extends BeautyQSearchOrchestrationError
   final case class CandidatePipeline(cause: BeautyQQdrantCandidatePipelineError[BeautyQEmbeddingRequestError]) extends BeautyQSearchOrchestrationError
 }
@@ -37,6 +38,8 @@ object BeautyQSearchOrchestrator {
   final class Ineligible private[BeautyQSearchOrchestrator] (
     val reason: BeautyQCandidateIneligibility,
   ) extends BeautyQSupplementOutcome
+
+  final class BaselineOnly private[BeautyQSearchOrchestrator] () extends BeautyQSupplementOutcome
 
   final class Evaluated private[BeautyQSearchOrchestrator] (
     val hydrated: HydratedCandidateSearchResult[
@@ -83,6 +86,7 @@ object BeautyQSearchOrchestrator {
 
     def status: BeautyQSupplementStatus = outcomeRef match {
       case _: Ineligible => BeautyQSupplementStatus.Ineligible
+      case _: BaselineOnly => BeautyQSupplementStatus.NoAppend
       case evaluated: Evaluated =>
         if (evaluated.selection.appended.isEmpty) BeautyQSupplementStatus.NoAppend
         else BeautyQSupplementStatus.Supplemented
@@ -107,13 +111,27 @@ object BeautyQSearchOrchestrator {
     }
   }
 
+  /** Readiness-owned baseline-only execution. It keeps the same validated
+    * baseline/evaluation aggregate while deliberately skipping candidate
+    * mechanics; the result remains compiler-owned and read-only. */
+  def baselineOnly(
+    baseline: BoundElasticsearchBaselineResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId],
+    evaluation: CompiledCandidateEvaluation,
+  ): Either[BeautyQSearchOrchestrationError, Result] =
+    if (baseline.boundPlan ne evaluation.compiled.boundPlan)
+      Left(BeautyQSearchOrchestrationError.BoundPlanMismatch(
+        baseline.boundPlan.identityHash.value,
+        evaluation.compiled.boundPlan.identityHash.value,
+      ))
+    else Right(new Result(baseline, evaluation, new BaselineOnly()))
+
   def execute(
     baseline: BoundElasticsearchBaselineResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId],
     evaluation: CompiledCandidateEvaluation,
     materialized: MaterializedBeautyQVariantDocuments,
     embeddingPort: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
     qdrantService: QdrantCandidateService,
-    elasticsearchBaselineService: ElasticsearchBaselineService,
+    elasticsearchBaselineService: BeautyQElasticsearchBaselineService,
   ): Either[BeautyQSearchOrchestrationError, BeautyQSearchOrchestrator.Result] = {
     // 1. Verify exact bound-plan reference
     if (baseline.boundPlan ne evaluation.compiled.boundPlan) {
@@ -151,7 +169,12 @@ object BeautyQSearchOrchestrator {
                 _ <- verifyGenerationConsistency(baseline, hydrated)
                 candidateIds = hydrated.candidates.map(_.id)
                 membership <- elasticsearchBaselineService.membership(baseline, candidateIds)
-                  .left.map(BeautyQSearchOrchestrationError.Membership.apply)
+                  .left.map {
+                    case BeautyQElasticsearchBaselineServiceError.Membership(error) =>
+                      BeautyQSearchOrchestrationError.Membership(error)
+                    case other =>
+                      BeautyQSearchOrchestrationError.BaselineService(other)
+                  }
                 selection <- BeautyQSupplementPolicy.appendOnly.select(
                   baseline.result.hits.map(_.id),
                   hydrated.candidates,

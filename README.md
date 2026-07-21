@@ -38,6 +38,7 @@ Current BeautyQ route truth:
 
 * Production / non-managed default `POST /beauty-search` remains ES-backed.
 * Local managed launcher `POST /beauty-search` is ES-backed with the constrained Qdrant supplement.
+* The native Gen2 `POST /beauty-search-gen2` route is an explicit opt-in composition only; it is not mounted by the default plugin and does not fan out from V1.
 * Qdrant supplement remains local/test constrained supplement only.
 * Local/test provenance, measured gates, and benchmark reports are local/test evidence only; they do not approve a production/default route switch.
 * There is no fallback, fusion, or rerank.

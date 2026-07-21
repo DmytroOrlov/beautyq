@@ -32,7 +32,10 @@ object BeautyQElasticsearchTestFixtures {
       priceFrom = BigDecimal("20.5"),
       priceTo = BigDecimal("40.75"),
       durationMin = 45,
-      enumAttributes = Map("nail_coating_type" -> "gel_polish"),
+      enumAttributes = Map(
+        "nail_coating_type" -> "gel_polish",
+        "nail_service_type" -> "manicure",
+      ),
       booleanAttributes = Map("with_design" -> true),
       intAttributes = Map("session_count" -> 1),
       bigDecimalAttributes = Map("deposit_amount" -> BigDecimal("10.25")),
@@ -41,7 +44,50 @@ object BeautyQElasticsearchTestFixtures {
       attributeText = "gel polish",
       providerText = "jane doe downtown studio",
       locationText = "downtown studio 1 main st nails",
+  )
+
+  /** A real typed source graph for resource tests. The materialized fixture
+    * above remains a compact scripted baseline; this graph is passed through
+    * BeautyQVariantMaterializer when a second generation must differ by data. */
+  val snapshot: BeautyQSearchSnapshot = {
+    val category = Category(document.categoryId, document.categoryCode, Category.rootCategoryId, 1, document.categoryName)
+    val service = Service(document.serviceId, document.serviceCode, document.categoryId, document.serviceName)
+    val schema = ServiceVariantSchema.fromItems(
+      document.serviceId,
+      Vector(
+        ServiceVariantSchemaItem(AttributeDefinition.SessionCount, required = false),
+        ServiceVariantSchemaItem(AttributeDefinition.DepositAmount, required = false),
+        ServiceVariantSchemaItem(AttributeDefinition.WithRemoval, required = false),
+        ServiceVariantSchemaItem(AttributeDefinition.NailCoatingTypeAttribute, required = false),
+      ),
     )
+    val master = Master(document.masterId, document.masterName)
+    val location = MasterLocation(document.masterLocationId, document.masterId, document.locationName, document.address, document.lat, document.lon)
+    val offer = MasterServiceOffer(document.masterServiceOfferId, document.masterId, document.serviceId)
+    val variant = MasterServiceOfferVariant.make(
+      document.variantId,
+      document.masterServiceOfferId,
+      document.masterLocationId,
+      document.priceFrom,
+      document.priceTo,
+      document.durationMin,
+      MasterServiceOfferVariantAttributes(
+        intValues = AttributeMap.empty.updated(AttributeDefinition.SessionCount, document.intAttributes.getOrElse("session_count", throw new IllegalStateException("expected session_count fixture"))),
+        bigDecimalValues = AttributeMap.empty.updated(AttributeDefinition.DepositAmount, document.bigDecimalAttributes.getOrElse("deposit_amount", throw new IllegalStateException("expected deposit_amount fixture"))),
+        enumValues = AttributeMap.empty.updated(AttributeDefinition.NailCoatingTypeAttribute, NailCoatingType.GelPolish),
+        booleanValues = AttributeMap.empty.updated(AttributeDefinition.WithRemoval, true),
+      ),
+    ).getOrElse(throw new IllegalStateException("expected typed resource fixture variant"))
+    BeautyQSearchSnapshot(
+      categories = Vector(category),
+      services = Vector(service),
+      serviceVariantSchemas = Vector(schema),
+      masters = Vector(master),
+      masterLocations = Vector(location),
+      masterServiceOffers = Vector(offer),
+      masterServiceOfferVariants = Vector(variant),
+    )
+  }
 
   private val emptySnapshot = BeautyQSearchSnapshot(Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty)
 

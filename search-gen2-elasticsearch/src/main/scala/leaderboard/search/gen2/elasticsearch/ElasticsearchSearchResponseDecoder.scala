@@ -128,6 +128,7 @@ object ElasticsearchSearchResponseDecoder {
   final class BaselineSearchPage[Document, Id] private[ElasticsearchSearchResponseDecoder] (
     val hits: Vector[ElasticsearchDocumentHit[Id]],
     val totalHits: Long,
+    val totalRelation: String,
     val facets: Vector[ElasticsearchFacetResult[Document]],
     val diagnostics: ElasticsearchResponseDiagnostics,
     val nextCursor: Option[SearchCursor],
@@ -147,12 +148,12 @@ object ElasticsearchSearchResponseDecoder {
       obj         <- liftSingle(topLevelObject(response))
       diagnostics <- liftSingle(decodeDiagnostics(obj))
       _           <- liftSingle(requireNotPartial(diagnostics))
-      totalHits   <- liftSingle(decodeTotal(obj, compiled.prepared.totalHitsPolicy))
+      total       <- liftSingle(decodeTotal(obj, compiled.prepared.totalHitsPolicy))
       rawHits     <- liftSingle(decodeRawHits(obj))
       _           <- liftSingle(requireHitWindow(rawHits, compiled.prepared.pageSize.value + 1))
       hits        <- liftSingle(decodeHits(rawHits, compiled))
       facets      <- decodeFacets(obj, compiled.prepared.requestedFacets)
-    } yield assemblePage(compiled, hits, totalHits, facets, diagnostics)
+    } yield assemblePage(compiled, hits, total.value, total.relation, facets, diagnostics)
 
   private def single[A](error: A): NonEmptyErrors[A] = NonEmptyErrors.fromHead(error, Vector.empty)
 
@@ -187,7 +188,9 @@ object ElasticsearchSearchResponseDecoder {
     else if (diagnostics.timedOut || diagnostics.shardsFailed > 0) Left(ElasticsearchSearchResponseError.PartialResponse(diagnostics))
     else Right(())
 
-  private def decodeTotal(obj: JsonObject, totalHitsPolicy: ElasticsearchTotalHitsPolicy): Either[ElasticsearchSearchResponseError, Long] =
+  private final case class DecodedTotal(value: Long, relation: String)
+
+  private def decodeTotal(obj: JsonObject, totalHitsPolicy: ElasticsearchTotalHitsPolicy): Either[ElasticsearchSearchResponseError, DecodedTotal] =
     for {
       hitsObj  <- obj("hits").flatMap(_.asObject).toRight(ElasticsearchSearchResponseError.MalformedResponse("missing or invalid 'hits'"))
       totalObj <- hitsObj("total").flatMap(_.asObject).toRight(ElasticsearchSearchResponseError.MalformedResponse("missing or invalid 'hits.total'"))
@@ -195,7 +198,7 @@ object ElasticsearchSearchResponseDecoder {
       _        <- Either.cond(value >= 0L, (), ElasticsearchSearchResponseError.MalformedResponse("negative 'hits.total.value'"))
       relation <- totalObj("relation").flatMap(_.asString).toRight(ElasticsearchSearchResponseError.MalformedResponse("missing or invalid 'hits.total.relation'"))
       _        <- requireExactRelationIfDemanded(relation, totalHitsPolicy)
-    } yield value
+    } yield DecodedTotal(value, relation)
 
   private def requireExactRelationIfDemanded(relation: String, policy: ElasticsearchTotalHitsPolicy): Either[ElasticsearchSearchResponseError, Unit] =
     policy match {
@@ -423,6 +426,7 @@ object ElasticsearchSearchResponseDecoder {
     compiled: AuthorizedElasticsearchSearchRequest[Document, Id],
     decodedHits: Vector[ElasticsearchDocumentHit[Id]],
     totalHits: Long,
+    totalRelation: String,
     facets: Vector[ElasticsearchFacetResult[Document]],
     diagnostics: ElasticsearchResponseDiagnostics,
   ): BaselineSearchPage[Document, Id] = {
@@ -438,6 +442,6 @@ object ElasticsearchSearchResponseDecoder {
           SearchCursorEnvelope.issue(compiled.prepared.boundPlan, ElasticsearchCursorStateCodec.encode(state))
         }
 
-    new BaselineSearchPage[Document, Id](pageHits, totalHits, facets, diagnostics, nextCursor)
+    new BaselineSearchPage[Document, Id](pageHits, totalHits, totalRelation, facets, diagnostics, nextCursor)
   }
 }

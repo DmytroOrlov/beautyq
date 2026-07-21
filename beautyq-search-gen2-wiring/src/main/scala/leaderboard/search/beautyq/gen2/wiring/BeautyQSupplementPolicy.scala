@@ -79,8 +79,10 @@ object BeautyQSupplementPolicy {
       case QdrantCandidatePipelineError.Preparation(_) =>
         BeautyQSupplementPolicy.Hard(outerError)
       case QdrantCandidatePipelineError.Embedding(embeddingError) =>
-        // All BeautyQEmbeddingRequestError cases are degradable; no impossible fallback
-        BeautyQSupplementPolicy.Degradable(outerError, classifyEmbeddingError(embeddingError))
+        embeddingError match {
+          case BeautyQEmbeddingRequestError.InvalidResult(_) => BeautyQSupplementPolicy.Hard(outerError)
+          case requestError => BeautyQSupplementPolicy.Degradable(outerError, classifyEmbeddingError(requestError))
+        }
       case QdrantCandidatePipelineError.Completion(_) =>
         BeautyQSupplementPolicy.Hard(outerError)
       case QdrantCandidatePipelineError.Service(serviceError) =>
@@ -99,6 +101,8 @@ object BeautyQSupplementPolicy {
         BeautyQDegradationReason.EmbeddingUnavailable
       case BeautyQEmbeddingRequestError.Transport(_) =>
         BeautyQDegradationReason.EmbeddingTransport
+      case BeautyQEmbeddingRequestError.InvalidResult(_) =>
+        BeautyQDegradationReason.QdrantBackend
     }
 
   private def classifyServiceError(

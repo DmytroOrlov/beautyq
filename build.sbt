@@ -285,12 +285,19 @@ lazy val appHttp = project
     Deps.tapirJsonCirce,
     Deps.scalatest % Test,
   )))
-  .dependsOn(beautyqSearchWiring, appServices)
+  .dependsOn(beautyqSearchWiring, beautyqSearchGen2Wiring, appServices)
 
 lazy val `leaderboard-app-shell` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
-  .dependsOn(beautyqSearchWiring, appHttp, appServices)
-  .dependsOn(beautyqSearchGen2Materialization % "test->compile")
+  .dependsOn(
+    beautyqSearchWiring,
+    beautyqSearchGen2Wiring % "compile->compile;test->test",
+    beautyqSearchGen2Materialization,
+    searchGen2Elasticsearch % "test->test",
+    searchGen2Qdrant % "test->test",
+    appHttp,
+    appServices,
+  )
 
 lazy val `graal-resources` = project
   .in(file("graal-resources"))

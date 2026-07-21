@@ -11,7 +11,13 @@ import scala.util.Using
 
 final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
 
-  private final case class ModuleNode(displayName: String, sbtId: String, packagePrefix: String, dependsOn: List[String])
+  private final case class ModuleNode(
+    displayName: String,
+    sbtId: String,
+    packagePrefix: String,
+    dependsOn: List[String],
+    additionalTestPackagePrefixes: List[String] = Nil,
+  )
 
   private val leaderboardCoreNode           = ModuleNode("leaderboard-core", "`leaderboard-core`", "", Nil)
   private val repoCoreNode                  = ModuleNode("repo-core", "repoCore", "", Nil)
@@ -64,6 +70,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
         "search-gen2-elasticsearch",
         "search-gen2-qdrant",
       ),
+      additionalTestPackagePrefixes = List("leaderboard.search.beautyq.gen2.boundary"),
     )
   private val beautyqSearchGen2EvalNode =
     ModuleNode(
@@ -375,7 +382,9 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
           else List(s"${node.displayName}: expected main source directory src/main/scala to exist")
 
         val mainViolations = scalaFilesUnder(s"${node.displayName}/src/main/scala").flatMap(path => packagePrefixViolation(path, node.packagePrefix))
-        val testViolations = scalaFilesUnder(s"${node.displayName}/src/test/scala").flatMap(path => packagePrefixViolation(path, node.packagePrefix))
+        val testViolations = scalaFilesUnder(s"${node.displayName}/src/test/scala").flatMap { path =>
+          packagePrefixViolation(path, node.packagePrefix, node.additionalTestPackagePrefixes)
+        }
 
         mainRootViolation ++ mainViolations ++ testViolations
       }
@@ -632,11 +641,12 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     }
   }
 
-  private def packagePrefixViolation(path: Path, expectedPrefix: String): Option[String] = {
+  private def packagePrefixViolation(path: Path, expectedPrefix: String, additionalPrefixes: List[String] = Nil): Option[String] = {
     val declaredPackage = read(path).linesIterator.map(_.trim).find(_.startsWith("package ")).map(_.stripPrefix("package ").trim)
 
+    val acceptedPrefixes = expectedPrefix :: additionalPrefixes
     declaredPackage match {
-      case Some(pkg) if pkg == expectedPrefix || pkg.startsWith(expectedPrefix + ".") => None
+      case Some(pkg) if acceptedPrefixes.exists(prefix => pkg == prefix || pkg.startsWith(prefix + ".")) => None
       case Some(pkg) => Some(s"${relative(path)}: expected package prefix '$expectedPrefix' but found '$pkg'")
       case None      => Some(s"${relative(path)}: expected a package declaration with prefix '$expectedPrefix'")
     }

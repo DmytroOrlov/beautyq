@@ -517,8 +517,10 @@ final class SearchModuleBoundaryGuardrailSpec extends AnyWordSpec {
       assertBlockContains("beautyqSearchMaterialization", ".dependsOn(beautyqSearchContract, beautyqSearchRepositories, repoCore, beautyqModel)")
       assertBlockContains("beautyqSearchWiring", ".dependsOn(beautyqSearchContract, beautyqSearchMaterialization, `search-elasticsearch`, `search-qdrant`)")
       assertBlockContains("appServices", ".dependsOn(beautyqSearchRepositories)")
-      assertBlockContains("appHttp", ".dependsOn(beautyqSearchWiring, appServices)")
-      assertBlockContains("`leaderboard-app-shell`", ".dependsOn(beautyqSearchWiring, appHttp, appServices)")
+      assertBlockContains("appHttp", ".dependsOn(beautyqSearchWiring, beautyqSearchGen2Wiring, appServices)")
+      assertBlockContains("`leaderboard-app-shell`", ".dependsOn(")
+      assertBlockContains("`leaderboard-app-shell`", "searchGen2Elasticsearch % \"test->test\"")
+      assertBlockContains("`leaderboard-app-shell`", "searchGen2Qdrant % \"test->test\"")
     }
 
     "prove forbidden imports fail and allowed exceptions pass" in {

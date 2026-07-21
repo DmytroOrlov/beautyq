@@ -39,6 +39,11 @@ A new domain must not implement locally:
 - generic intent matching phases, canonical framing, or materialization orchestration;
 - a copied declaration inventory from another domain.
 
+The application shell is an edge concern: a domain's canonical root may be composed behind one
+independent endpoint, but the endpoint should decode the native request and pass it to the root. Do not
+recreate lifecycle authorization, membership, supplement selection, readiness, or response projection in
+route code; those mechanics belong to the framework/domain composition owners.
+
 ## What is generic now
 
 These surfaces need no new derivation code, no macro, and no per-domain adapter body - you either

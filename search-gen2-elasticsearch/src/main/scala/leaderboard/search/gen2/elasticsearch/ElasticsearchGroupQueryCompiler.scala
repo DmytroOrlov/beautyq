@@ -78,6 +78,7 @@ object ElasticsearchGroupQueryCompiler {
       "top_hits" -> Json.obj(
         "size" -> Json.fromInt(1),
         "_source" -> source,
+        "track_scores" -> Json.fromBoolean(true),
         "sort" -> Json.fromValues(
           Vector(
             Json.obj("_score" -> Json.obj("order" -> Json.fromString("desc"))),

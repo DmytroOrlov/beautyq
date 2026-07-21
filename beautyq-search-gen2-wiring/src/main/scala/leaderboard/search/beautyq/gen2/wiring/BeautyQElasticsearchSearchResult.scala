@@ -6,29 +6,9 @@ import leaderboard.search.beautyq.gen2.contract.*
 import leaderboard.search.gen2.contract.GroupId
 import leaderboard.search.gen2.elasticsearch.*
 
-final class BeautyQProviderCarouselItem private[beautyq] (
-  val masterId: MasterId,
-  val masterName: String,
-  val masterLocationId: MasterLocationId,
-  val locationName: String,
-  val address: String,
-  val matchingVariantCount: Long,
-  val representativeVariantId: MasterServiceOfferVariantId,
-  val bestScore: BigDecimal,
-  val distanceMeters: Option[BigDecimal],
-  val precision: ElasticsearchGroupPrecision,
-)
-
-final class BeautyQServiceIntentCarouselItem private[beautyq] (
-  val serviceId: ServiceId,
-  val serviceName: String,
-  val categoryId: CategoryId,
-  val categoryName: String,
-  val matchingVariantCount: Long,
-  val representativeVariantId: MasterServiceOfferVariantId,
-  val bestScore: BigDecimal,
-  val precision: ElasticsearchGroupPrecision,
-)
+type BeautyQProviderCarouselItem = BeautyQElasticsearchSearchResult.ProviderCarouselItem
+type BeautyQServiceIntentCarouselItem = BeautyQElasticsearchSearchResult.ServiceIntentCarouselItem
+type BeautyQElasticsearchSearchResult = BeautyQElasticsearchSearchResult.Result
 
 sealed trait BeautyQCarouselProjectionError
 
@@ -37,30 +17,55 @@ object BeautyQCarouselProjectionError {
   final case class InvalidGroup(id: GroupId, message: String) extends BeautyQCarouselProjectionError
 }
 
-final class BeautyQElasticsearchSearchResult private[beautyq] (
-  val baseline: ElasticsearchFullSearchResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId],
-  val providerCarousel: Vector[BeautyQProviderCarouselItem],
-  val serviceIntentCarousel: Vector[BeautyQServiceIntentCarouselItem],
-) {
-  def hits: Vector[ElasticsearchDocumentHit[MasterServiceOfferVariantId]] = baseline.hits
-  def totalHits: Long = baseline.totalHits
-  def facets: Vector[ElasticsearchFacetResult[VariantSearchDocumentGen2]] = baseline.facets
-  def diagnostics: ElasticsearchResponseDiagnostics = baseline.diagnostics
-  def nextCursor = baseline.nextCursor
-}
-
 object BeautyQElasticsearchSearchResult {
+  final class ProviderCarouselItem private[BeautyQElasticsearchSearchResult] (
+    val masterId: MasterId,
+    val masterName: String,
+    val masterLocationId: MasterLocationId,
+    val locationName: String,
+    val address: String,
+    val matchingVariantCount: Long,
+    val representativeVariantId: MasterServiceOfferVariantId,
+    val bestScore: BigDecimal,
+    val distanceMeters: Option[BigDecimal],
+    val precision: ElasticsearchGroupPrecision,
+  )
+
+  final class ServiceIntentCarouselItem private[BeautyQElasticsearchSearchResult] (
+    val serviceId: ServiceId,
+    val serviceName: String,
+    val categoryId: CategoryId,
+    val categoryName: String,
+    val matchingVariantCount: Long,
+    val representativeVariantId: MasterServiceOfferVariantId,
+    val bestScore: BigDecimal,
+    val precision: ElasticsearchGroupPrecision,
+  )
+
+  final class Result private[BeautyQElasticsearchSearchResult] (
+    val baseline: ElasticsearchFullSearchResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId],
+    val providerCarousel: Vector[ProviderCarouselItem],
+    val serviceIntentCarousel: Vector[ServiceIntentCarouselItem],
+  ) {
+    def hits: Vector[ElasticsearchDocumentHit[MasterServiceOfferVariantId]] = baseline.hits
+    def totalHits: Long = baseline.totalHits
+    def totalRelation: String = baseline.totalRelation
+    def facets: Vector[ElasticsearchFacetResult[VariantSearchDocumentGen2]] = baseline.facets
+    def diagnostics: ElasticsearchResponseDiagnostics = baseline.diagnostics
+    def nextCursor = baseline.nextCursor
+  }
+
   def project(
     baseline: ElasticsearchFullSearchResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId]
   ): Either[BeautyQCarouselProjectionError, BeautyQElasticsearchSearchResult] =
     for {
       provider <- projectProvider(baseline)
       service <- projectService(baseline)
-    } yield new BeautyQElasticsearchSearchResult(baseline, provider, service)
+    } yield new Result(baseline, provider, service)
 
   private def projectProvider(
     baseline: ElasticsearchFullSearchResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId]
-  ): Either[BeautyQCarouselProjectionError, Vector[BeautyQProviderCarouselItem]] =
+    ): Either[BeautyQCarouselProjectionError, Vector[BeautyQProviderCarouselItem]] =
     for {
       group <- baseline.group(BeautyQSearchPlanPolicy.ProviderGroupId).toRight(BeautyQCarouselProjectionError.MissingGroup(BeautyQSearchPlanPolicy.ProviderGroupId))
       typed <- group.typedFor(BeautyQSearchPlanPolicy.ProviderGroupId, BeautyQSearchDeclarations.variants.Fields.masterLocationId).toRight(BeautyQCarouselProjectionError.MissingGroup(BeautyQSearchPlanPolicy.ProviderGroupId))
@@ -78,7 +83,7 @@ object BeautyQElasticsearchSearchResult {
 
   private def projectService(
     baseline: ElasticsearchFullSearchResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId]
-  ): Either[BeautyQCarouselProjectionError, Vector[BeautyQServiceIntentCarouselItem]] =
+    ): Either[BeautyQCarouselProjectionError, Vector[BeautyQServiceIntentCarouselItem]] =
     for {
       group <- baseline.group(BeautyQSearchPlanPolicy.ServiceGroupId).toRight(BeautyQCarouselProjectionError.MissingGroup(BeautyQSearchPlanPolicy.ServiceGroupId))
       typed <- group.typedFor(BeautyQSearchPlanPolicy.ServiceGroupId, BeautyQSearchDeclarations.variants.Fields.serviceId).toRight(BeautyQCarouselProjectionError.MissingGroup(BeautyQSearchPlanPolicy.ServiceGroupId))

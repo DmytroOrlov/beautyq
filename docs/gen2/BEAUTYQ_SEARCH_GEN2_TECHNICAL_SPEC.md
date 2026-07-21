@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; all slices through Brick 7B except the active 6B-B Qdrant 1.18.3 resource proof are implemented; Brick 8 is next**
+Status: **accepted architecture baseline; Brick 8 application composition and focused proofs are implemented, but Brick 6B-B's separately managed Qdrant 1.18.3 and Brick 8's managed ES/Qdrant resource/cutover proofs remain active; Brick 9 is not started**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -1977,14 +1977,25 @@ The application follows the same canonical path as a domain reviewer. It compile
 intent, plan and candidate evaluation once; obtains the lifecycle-bound baseline and complete-set
 membership through the BeautyQ Elasticsearch service; then invokes the existing orchestrator. The
 application must not reconstruct generic lifecycle/service internals or choose a physical target.
-Once implemented, `BeautyQSearchGen2` exposes that application owner by direct reference and contains no
-parallel facade or placeholder branch.
+`BeautyQSearchGen2` exposes that application owner by direct reference and contains no parallel facade or
+placeholder branch.
 
-The public response projector accepts one `BeautyQSearchOrchestrator.Result`. Applied-filter provenance,
-baseline totals/facets/groups/cursor, carousel projection, supplement status/reason and per-hit origin
+The current implementation exposes that owner as `BeautyQSearchGen2.application`. The app shell's
+`BeautySearchGen2PluginModules.api` is opt-in and mounts the native Gen2 contract at
+`POST /beauty-search-gen2`; the existing `/beauty-search` route remains V1-owned until the single final
+cutover. The endpoint decodes `BeautySearchRequestGen2` directly and projects one
+`BeautyQSearchResponseGen2`; no V1 request/response adapter or backend fan-out is involved.
+
+The public response projector accepts one `BeautyQSearchOrchestrator.Result`. Applied-filter field,
+canonical constraint and provenance; suppressed-filter field, constraint, provenance and reason;
+baseline totals/relation/facets/groups/cursor, carousel projection, supplement status/reason and per-hit origin
 derive through that aggregate. No constructor accepts independently replaceable plan, baseline or
 supplement values. Existing BeautyQ pipeline/projection aggregates must have owner-private construction
 before the application treats them as trusted results.
+
+`BeautyQSearchResponseGen2Projector` is the sole construction owner of the public response and nested
+DTOs. Their public types are read-only aliases to final projector-owned classes: HTTP encoders can read
+fields, but external wiring cannot call `apply`, `copy`, a public constructor or subclass them.
 
 Evaluation remains a one-way derived consumer of the orchestrator result. Tautological report views such
 as supplement count and status code derive from appended IDs and typed status rather than being stored as
@@ -1994,6 +2005,49 @@ Readiness is the existing `BeautyQSupplementReadinessPolicy.Result`, not another
 model. The initial runtime resolves persisted lifecycle state for each request. It has no process-local
 active-generation cache invalidated only by local activation, because another process can switch the
 alias; any later optimization requires an explicit, tested cross-process coherence contract.
+
+The same application instance therefore re-authorizes the current physical generation on every
+request and observes an alias switch made by another activation; request-time execution does not
+reuse a previously bound target.
+
+Generation activation is owned by `BeautyQSearchGenerationApplication`: materialization is completed
+before Elasticsearch activation, Qdrant failures that are transport/unavailable remain explicit
+baseline-only readiness, and invalid embedding results or incompatible generation state remain hard
+activation failures. No partially activated Qdrant generation is exposed.
+
+At request time, `BaselineOnly` readiness executes the validated baseline path and skips supplement
+mechanics; `FullSearch` executes the complete orchestrator. Both modes return the same projector-owned
+response contract, and degradable supplement failures remain successful baseline-preserving responses.
+
+The pre-cutover evaluation gate consumes the explicit typed
+`BeautyQCutoverQueryFixture.required` vector, in this order:
+`q_broad_006_ready_append_probe` (“beauty near Wandsbek Markt”),
+`manicure_real_route_probe` (“маникюр”), `q_broad_001_widened_probe`
+(“салон красоты wandsbek ногти”), and `q_broad_003_widened_probe`
+(“что-то для лица рядом”). The fixture binds each stable ID to its query;
+the runner executes that fixture query and the observation derives its ID and
+append budget from the same fixture. The budget itself derives from
+`BeautyQSupplementPolicy.appendOnly`, not a second evaluation literal. The gate derives
+`testedQueries`, `improvedQueries`, `unchangedQueries`, `worsenedQueries`,
+`totalSupplementOnlyAppends`, `duplicateBaselineIds`, `lostBaselineIds`,
+`prefixOrderRegressions`, `baselineOwnedComponentChanges` and
+`appendBudgetViolations`. The gate cannot pass without at least one improvement, zero worsening,
+zero baseline loss/order/component changes, zero duplicates and zero append-budget violations.
+Each observation is produced from one compiler-owned application result and
+its projector-owned response: the evidence reads returned hit order and
+supplement provenance, then compares the actual response's baseline-owned
+facets, groups, filters, totals, cursor and diagnostics with that result's
+baseline-only projection. It does not reconstruct result IDs or accept an
+independently supplied fingerprint. Raw baseline/result/evidence fields are
+not a public construction path.
+The Distage-managed ES/Qdrant communication proof covers those two backend wire contracts; skipped
+or canceled resource specs are not cutover approval. Its deterministic embedding is a contract
+fixture, not an embedding-service communication claim. Embedding-service communication is a
+separate Brick 8 gate. Distage injects the managed Elasticsearch and separate Qdrant 1.18.3
+endpoints. The resource gate reads the exact reserved Qdrant alias before mutation and
+fails closed if it is occupied, regardless of its target. Alias and collection inventory read/decode
+failures are red failures. Pure preflight reports every reachable-but-broken resource before any
+genuinely unavailable external dependency can block communication verification.
 
 ## 15. Quality and evaluation
 

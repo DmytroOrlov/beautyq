@@ -41,6 +41,7 @@ object BeautyQSearchGen2 {
     val generation = BeautyQElasticsearchGeneration
     val baseline   = BeautyQElasticsearchBaseline
     val service    = BeautyQElasticsearchBaselineService
+    val generationApplication = BeautyQSearchGenerationApplication
   }
 
   object qdrant {
@@ -56,4 +57,6 @@ object BeautyQSearchGen2 {
     val readiness    = BeautyQSupplementReadinessPolicy
     val orchestrator = BeautyQSearchOrchestrator
   }
+
+  val application = BeautyQSearchApplication
 }

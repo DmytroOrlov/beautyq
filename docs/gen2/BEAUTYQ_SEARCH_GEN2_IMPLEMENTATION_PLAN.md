@@ -21,7 +21,7 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A, 6C, 6D, 7A and 7B are implemented; Brick 6B-B remains active pending its separate Qdrant 1.18.3 resource proof.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-A, 6C, 6D, 7A and 7B are implemented; Brick 8 application composition and focused seam proofs are present as an independent opt-in path, while its external-resource/cutover evidence and Brick 6B-B's separate Qdrant 1.18.3 resource proof remain open.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
   6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
@@ -30,9 +30,14 @@ summaries must remain short and point here.
   owner-private outcomes (`Ineligible`, `Evaluated`, `Failed`), typed `BeautyQSupplementStatus`, exact
   cause preservation in `PipelineFailureDisposition`, policy-owned readiness results with derived
   `supplementReady`, and the production-path proofs described below.
-- **Next sequence:** implement Brick 8 independent application/evaluation while completing 6B-B's
-  separate real-resource proof. Brick 8 cannot be accepted, and Brick 9 cannot start, until that proof
-  passes. Brick 9 then performs the atomic cutover/deletion.
+- **Next sequence:** complete Brick 8's communication proof against the Distage-managed ES/Qdrant resources and attach the
+  four typed-fixture cutover observations. The executable path now lives behind
+  `BeautyQSearchGen2.application`, with `BeautyQSearchGen2Bootstrap` owning
+  snapshot/materializer/activation ordering and `/beauty-search-gen2` available only through the
+  explicit app-shell module. Brick 8 remains active; its resource gate must first
+  establish an empty exact Qdrant alias/namespace and report reachable incompatibilities
+  before any unavailable-resource cancellation. Brick 9 cannot start until the resource and
+  cutover gates pass. Brick 9 then performs the atomic cutover/deletion.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,
   so no additional defensive construction framework is justified.
@@ -74,6 +79,19 @@ The initial application composition performs lifecycle authorization from persis
 request. A process-local active-generation cache with only local activation invalidation is forbidden:
 another process may switch the alias. Such an optimization requires a separately proven coherence
 contract and is not part of the remaining Gen2 delivery.
+
+The implemented application path keeps the native Gen2 request/response contract in the independent
+`/beauty-search-gen2` endpoint. It is opt-in and does not alter `/beauty-search`; Elasticsearch blocking
+is confined to the runtime effect boundary. Baseline-only readiness executes the baseline path without
+candidate mechanics, while degradable supplement failures remain successful baseline-preserving
+responses. Evaluation emits a machine-readable derived gate. The
+response DTO constructors are owner-private to the projector; application/http code receives only
+read-only aliases. The cutover gate requires the four entries of the typed
+`BeautyQCutoverQueryFixture.required` vector, each executed through the
+application and projector before evidence is derived:
+`q_broad_006_ready_append_probe`, `manicure_real_route_probe`,
+`q_broad_001_widened_probe`, and `q_broad_003_widened_probe`; it reports typed metrics for improvement, unchanged behavior, worsening,
+baseline loss/order/component changes and append-budget violations.
 
 ### Accepted initial limits, not live abstraction debt
 
@@ -1078,8 +1096,9 @@ its candidate fingerprint matches the policy and the alias resolves to one metad
 collection. Candidate execution uses `/points/query` and delegates decoding to the 6A decoder.
 
 The generic metadata codec, convergent lifecycle and target-authorizing candidate service are implemented.
-Focused neutral and BeautyQ proofs are green. The communication proof still requires a separate local
-Qdrant 1.18.3 resource; until it executes, Brick 6B-B remains active. Gen1 remains on 1.15.4 and
+Focused neutral and BeautyQ proofs are green. The communication proof uses a separate Distage-managed
+Qdrant 1.18.3 container with an injected endpoint; until that proof executes successfully, Brick 6B-B
+remains active. Gen1 remains on 1.15.4 and
 `/points/search`.
 
 ## Brick 6C — BeautyQ query embedding and candidate hydration (implemented)
@@ -1123,8 +1142,8 @@ orchestration.
 | intent -> `SearchPlan` | green | facade exposes parser and full/candidate compilers without wrapping them |
 | Elasticsearch full result | green | preserve complete baseline ownership |
 | Qdrant candidate/hydration | green for scripted proof | eligible BeautyQ path and neutral integrity-error matrix; keep 6B-B's resource gate separate |
-| baseline-plus-supplement | planned | Brick 7, after the ownership contract below is fixed |
-| application/evaluation/cutover | planned | Bricks 8 and 9 |
+| baseline-plus-supplement | implemented | Bricks 7A/7B; resource gate remains separate |
+| application/evaluation/cutover | active implementation | Brick 8 focused seams are present; communication/cutover proof pending |
 
 ### Generic inbound authoring closure
 
@@ -1165,6 +1184,7 @@ contract/request
 -> candidate compiler
 -> Elasticsearch baseline
 -> Qdrant candidate/hydration pipeline
+-> owner-private application -> projector -> opt-in HTTP endpoint
 ```
 
 The facade owns no adapter, policy, list, renderer or wrapper. Its focused identity spec must cover every
@@ -1200,29 +1220,29 @@ remain integrity failures; Brick 7 must not degrade them into baseline-only succ
 - the BeautyQ eligible candidate path and neutral hydration error matrix are green;
 - generic Gen2 modules remain free of BeautyQ symbols and Gen1 dependencies;
 - docs no longer overstate the old registry, facade or Gen1 supplement document;
-- Brick 6B-B remains independently active until its Qdrant 1.18.3 resource proof executes.
+- Brick 6B-B remains independently active until its separately managed Qdrant 1.18.3 resource proof executes.
 
 ### Pain-to-promise closeout owned by the remaining sequence
 
 | Gen1 pain / Gen2 promise | Current result | Remaining owner |
 |---|---|---|
-| executable root instead of descriptive readiness and compatibility facades | direct-reference navigation reaches input, materialization, plan, ES, Qdrant and supplement owners; application execution is absent | Brick 8 |
+| executable root instead of descriptive readiness and compatibility facades | direct-reference navigation reaches input, materialization, plan, ES, Qdrant, supplement and owner-private application/projector owners | Brick 8 communication proof |
 | reusable domain authoring rather than copied registries/decoders | generic declarations own standard decode/matching/backend mechanics; BeautyQ owns names, handles and policy | closed for the accepted initial shapes |
 | Qdrant candidate filtering/hydration with no invented full-result semantics | eligible BeautyQ path and neutral integrity proofs are green; resource proof remains separate | Brick 6B-B |
-| closed public filter/facet/result loop and honest `appliedFilters` response | backend contracts exist; public composition is absent | Brick 8 |
+| closed public filter/facet/result loop and honest `appliedFilters` response | opt-in native Gen2 endpoint and projector are present; local route/resource proof remains open | Brick 8 |
 | lifecycle reflects persisted state | ES proven; Qdrant scripted and focused, communication proof pending | Brick 6B-B |
-| one backend role must not erase another | owner-private orchestration preserves the ES full result and appends only Qdrant candidates | Brick 8 public projection from that result |
-| no-harm supplement semantics | lifecycle-bound membership, append-only selection, degradation and derived eval evidence are executable | Brick 8 end-to-end/eval gate |
-| serving code isolated from evaluation and Gen1 | firewall is executable and eval derives from the orchestrator result; application composition is absent | Brick 8 |
+| one backend role must not erase another | owner-private orchestration and response projector preserve the ES full result and append only Qdrant candidates | Brick 8 resource proof |
+| no-harm supplement semantics | lifecycle-bound membership, append-only selection, degradation and four-query derived cutover metrics are executable | Brick 8 local/eval gate |
+| serving code isolated from evaluation and Gen1 | firewall is executable; eval derives from the orchestrator result and route is explicit opt-in | Brick 8 resource proof |
 | one final migration rather than compatibility layers | side-by-side build preserved | Brick 9 |
 
 ### Remaining order after the audit
 
 ```text
 Brick 6D  reusable inbound authoring + readable facade + 6C proof/docs closeout (implemented)
-6B-B      independent Qdrant 1.18.3 communication gate
+6B-B      independent Distage-managed Qdrant 1.18.3 communication gate (injected endpoint)
 Brick 7   baseline membership + supplement orchestration (implemented)
-Brick 8   independent application/API/eval and cutover evidence
+Brick 8   independent application/API/eval and cutover evidence (active; focused seams present)
 Brick 9   atomic route cutover and Gen1 deletion
 ```
 
@@ -1440,6 +1460,10 @@ beautyq-search-gen2-eval/...                        no-harm fixtures/report
 Disable/delete Gen2 supplement orchestration; independent Gen2 ES baseline remains available. V1 remains untouched.
 
 ## Brick 8 — Provide independent Gen2 application composition and cutover evidence
+
+**Status: active — implementation and focused seam proofs present; the Distage-managed ES/Qdrant
+communication proof passes. Embedding-service communication and final cutover evidence remain
+pending. The managed proof uses a deterministic embedding contract fixture.**
 
 ### Purpose
 

@@ -29,18 +29,23 @@ object BeautyQOrchestrationTestKit {
   }
 
   final case class Context(
+    request: BeautySearchRequestGen2,
     compiled: CompiledBeautyQSearchPlan,
     evaluation: CompiledCandidateEvaluation,
     baseline: BoundElasticsearchBaselineResult[VariantSearchDocumentGen2, MasterServiceOfferVariantId],
     qdrant: QdrantCandidateService,
     embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
-    baselineService: ElasticsearchBaselineService,
+    baselineService: BeautyQElasticsearchBaselineService,
   )
 
-  def eligible(baselineIds: Vector[MasterServiceOfferVariantId] = Vector.empty): Context =
+  def eligible(
+    baselineIds: Vector[MasterServiceOfferVariantId] = Vector.empty,
+    membershipIds: Option[Vector[MasterServiceOfferVariantId]] = None,
+    semanticText: String = "relaxing appointment",
+  ): Context =
     build(
       BeautySearchRequestGen2(
-        Some("relaxing appointment"),
+        Some(semanticText),
         Vector(PublicFilterInput(PublicFieldName("service"), leaderboard.search.gen2.contract.PublicOperator.Equal, PublicFilterValue.Scalar("manicure"), None)),
         Vector.empty,
         Vector.empty,
@@ -50,6 +55,7 @@ object BeautyQOrchestrationTestKit {
       baselineIds,
       QdrantMode.Eligible,
       membershipFailure = false,
+      membershipIds = membershipIds.getOrElse(baselineIds),
     )
 
   def ineligible: Context =
@@ -65,21 +71,27 @@ object BeautyQOrchestrationTestKit {
       Vector(document.variantId),
       QdrantMode.NoCall,
       membershipFailure = false,
+      membershipIds = Vector(document.variantId),
     )
 
-  def timedOut: Context =
+  def timedOut: Context = timedOut("relaxing appointment", None)
+
+  def timedOut(semanticText: String): Context = timedOut(semanticText, None)
+
+  def timedOut(semanticText: String, userLocation: Option[GeoPoint]): Context =
     build(
       BeautySearchRequestGen2(
-        Some("relaxing appointment"),
+        Some(semanticText),
         Vector(PublicFilterInput(PublicFieldName("service"), leaderboard.search.gen2.contract.PublicOperator.Equal, PublicFilterValue.Scalar("manicure"), None)),
         Vector.empty,
         Vector.empty,
         page,
-        None,
+        userLocation,
       ),
       Vector(document.variantId),
       QdrantMode.EmbeddingTimeout,
       membershipFailure = false,
+      membershipIds = Vector(document.variantId),
     )
 
   def membershipFailure: Context =
@@ -95,6 +107,7 @@ object BeautyQOrchestrationTestKit {
       Vector.empty,
       QdrantMode.Eligible,
       membershipFailure = true,
+      membershipIds = Vector.empty,
     )
 
   def build(
@@ -102,6 +115,7 @@ object BeautyQOrchestrationTestKit {
     baselineIds: Vector[MasterServiceOfferVariantId],
     qdrantMode: QdrantMode,
     membershipFailure: Boolean,
+    membershipIds: Vector[MasterServiceOfferVariantId],
   ): Context = {
     val validated = BeautySearchRequestGen2.validate(request).getOrElse(throw new AssertionError("expected valid BeautyQ request"))
     val intent = BeautyQIntentParserGen2.parse(validated, BeautyQIntentVocabulary.value).getOrElse(throw new AssertionError("expected parsed BeautyQ intent"))
@@ -130,11 +144,11 @@ object BeautyQOrchestrationTestKit {
       generation.mapping.json,
       metadata,
       baselineIds,
+      membershipIds,
       membershipFailure,
     )
-    val baselineService = new ElasticsearchBaselineService(new ElasticsearchGenerationLifecycle(esClient, lifecycleConfig, Clock.systemUTC()))
-    val prepared = BeautyQElasticsearchBaseline.compileRequest(compiled).getOrElse(throw new AssertionError("expected prepared baseline request"))
-    val baseline = baselineService.searchBound(prepared) match {
+    val baselineService = BeautyQElasticsearchBaselineService.make(esClient, Clock.systemUTC(), batching).getOrElse(throw new AssertionError("expected BeautyQ baseline service"))
+    val baseline = baselineService.searchBound(compiled) match {
       case Right(bound) => bound
       case Left(error)  => throw new AssertionError(s"expected bound baseline, got $error")
     }
@@ -161,7 +175,7 @@ object BeautyQOrchestrationTestKit {
           QdrantEmbeddingResult.from(input, Vector.fill(input.modelValue.dimension)(0.1)).left.map(error => BeautyQEmbeddingRequestError.Transport(error.toString))
       }
     }
-    Context(compiled, evaluation, baseline, qdrant, embedding, baselineService)
+    Context(request, compiled, evaluation, baseline, qdrant, embedding, baselineService)
   }
 
   private final class ScriptedElasticsearchClient(
@@ -170,6 +184,7 @@ object BeautyQOrchestrationTestKit {
     mapping: Json,
     metadata: ElasticsearchGenerationMetadata,
     baselineIds: Vector[MasterServiceOfferVariantId],
+    membershipIds: Vector[MasterServiceOfferVariantId],
     membershipFailure: Boolean,
   ) extends ElasticsearchGen2JsonClient {
     private val mappingWithMetadata = mapping.asObject match {
@@ -222,7 +237,7 @@ object BeautyQOrchestrationTestKit {
 
     private val membershipResponse: Json = Json.obj(
       "hits" -> Json.obj(
-        "hits" -> Json.fromValues(baselineIds.map(id => Json.obj("_id" -> Json.fromString(id.value.toString)))),
+        "hits" -> Json.fromValues(membershipIds.map(id => Json.obj("_id" -> Json.fromString(id.value.toString)))),
       ),
     )
 

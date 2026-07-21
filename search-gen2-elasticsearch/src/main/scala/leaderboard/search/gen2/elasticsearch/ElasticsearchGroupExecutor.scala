@@ -20,6 +20,7 @@ final class ElasticsearchFullSearchResult[Document, Id] private[elasticsearch] (
 ) {
   def hits: Vector[ElasticsearchDocumentHit[Id]] = page.hits
   def totalHits: Long = page.totalHits
+  def totalRelation: String = page.totalRelation
   def facets: Vector[ElasticsearchFacetResult[Document]] = page.facets
   def diagnostics: ElasticsearchResponseDiagnostics = page.diagnostics
   def nextCursor: Option[SearchCursor] = page.nextCursor
@@ -29,6 +30,11 @@ final class ElasticsearchFullSearchResult[Document, Id] private[elasticsearch] (
 
   def group(groupId: GroupId): Option[ElasticsearchGroupResult[Document, Id]] =
     groups.find(_.id == groupId)
+
+  /** Read-only view for a public projector; the group vector remains owned by
+    * this decoder/service aggregate and is never accepted as an independent
+    * input. */
+  def groupResults: Vector[ElasticsearchGroupResult[Document, Id]] = groups
 }
 
 object ElasticsearchGroupExecutor {
