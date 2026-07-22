@@ -160,7 +160,16 @@ final class BeautyQGen2CutoverGateSpec extends AnyWordSpec {
       val readinessJson = json.hcursor.downField("readiness")
       assert(readinessJson.get[String]("observed").toOption.contains(BeautyQServingMode.FullSearch.modeCode))
       assert(readinessJson.get[String]("expected").toOption.contains(BeautyQServingMode.FullSearch.modeCode))
-      assert(json.hcursor.downField("checks").downField("full-search-readiness").succeeded)
+      json.hcursor.downField("checks").values match {
+        case Some(checks) =>
+          val matched = checks.filter(v => v.hcursor.get[String]("id") == Right("full-search-readiness"))
+          assert(matched.size == 1, s"expected exactly one full-search-readiness check, got ${matched.size}")
+          val check = matched.head
+          assert(check.hcursor.get[Boolean]("passed") == Right(true))
+          assert(check.hcursor.get[String]("observed") == Right(BeautyQServingMode.FullSearch.modeCode))
+          assert(check.hcursor.get[String]("expected") == Right(BeautyQServingMode.FullSearch.modeCode))
+        case None => fail("expected checks array")
+      }
     }
   }
 

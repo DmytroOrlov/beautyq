@@ -46,7 +46,7 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
       }
     }
 
-    "run the complete opt-in application through the real Elasticsearch, Qdrant, and embedding communication paths and POST /beauty-search-gen2" in {
+    "run the complete default native Gen2 application through the real Elasticsearch, Qdrant, and embedding communication paths and POST /beauty-search" in {
       withManagedPorts { (elasticsearchPort, qdrantPort) =>
         val embeddingConfig = LlamaCppEmbeddingClientConfig(
           baseUrl = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081"),
@@ -255,8 +255,8 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
         new BeautyQSearchGen2HttpService(startupOrError.runtime),
         BeautySearchGen2TapirEndpoints,
       )
-      val response = runIO(observe(api.http.orNotFound, postJson("/beauty-search-gen2", requestBody)))
-      assert(response.status == org.http4s.Status.Ok, s"expected HTTP 200 from POST /beauty-search-gen2, got ${response.status} body=${response.body}")
+      val response = runIO(observe(api.http.orNotFound, postJson("/beauty-search", requestBody)))
+      assert(response.status == org.http4s.Status.Ok, s"expected HTTP 200 from POST /beauty-search, got ${response.status} body=${response.body}")
       assert(response.body.contains("\"supplementStatus\":\"supplemented\""), s"expected supplemented status in body, got ${response.body}")
       assert(response.body.contains("\"totalHits\""), s"expected totalHits in body, got ${response.body}")
       assert(response.body.contains("\"appliedFilters\""), s"expected appliedFilters in body, got ${response.body}")
@@ -306,26 +306,28 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
     }
 
   private def withManagedPorts[A](f: (ElasticsearchPortCfg, QdrantGen2PortCfg) => A): A = {
-    val module = new ModuleDef {
-      make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
-      include(LogIO2Module[IO]())
-      make[IzLogger].fromValue(IzLogger())
-      include(ElasticsearchDockerPlugin.dockerModule[IO])
-      include(QdrantGen2DockerPlugin.dockerModule[IO])
-      make[ManagedPorts].from { (elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg) =>
-        ManagedPorts(elasticsearch, qdrant)
+    BeautyQSearchGen2ResourceSupport.withExclusiveCanonicalNamespace {
+      val module = new ModuleDef {
+        make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+        include(LogIO2Module[IO]())
+        make[IzLogger].fromValue(IzLogger())
+        include(ElasticsearchDockerPlugin.dockerModule[IO])
+        include(QdrantGen2DockerPlugin.dockerModule[IO])
+        make[ManagedPorts].from { (elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg) =>
+          ManagedPorts(elasticsearch, qdrant)
+        }
       }
+      val effect = Injector[Task]().produce(
+        bindings = module,
+        roots = Roots.target[ManagedPorts],
+        activation = Activation(Scene -> Scene.Managed),
+        locatorPrivacy = LocatorPrivacy.PublicByDefault,
+      ).use { locator =>
+        val ports = locator.get[ManagedPorts]
+        ZIO.attemptBlocking(f(ports.elasticsearch, ports.qdrant))
+      }
+      Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
     }
-    val effect = Injector[Task]().produce(
-      bindings = module,
-      roots = Roots.target[ManagedPorts],
-      activation = Activation(Scene -> Scene.Managed),
-      locatorPrivacy = LocatorPrivacy.PublicByDefault,
-    ).use { locator =>
-      val ports = locator.get[ManagedPorts]
-      ZIO.attemptBlocking(f(ports.elasticsearch, ports.qdrant))
-    }
-    Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
   }
 
   /** The application owner currently reserves one canonical BeautyQ namespace

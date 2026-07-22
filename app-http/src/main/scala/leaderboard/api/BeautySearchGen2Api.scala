@@ -13,8 +13,7 @@ trait BeautySearchGen2Service[F[+_, +_]] {
   def execute(request: BeautySearchRequestGen2): F[HttpApiFailure, BeautyQSearchResponseGen2]
 }
 
-/** Explicit opt-in API for the independent Gen2 composition. It does not
-  * change the existing `/beauty-search` route or its service. */
+/** The canonical `/beauty-search` API. Native Gen2 request/response ownership. */
 final class BeautySearchGen2Api[F[+_, +_]: Error2](
   service: BeautySearchGen2Service[F],
   endpoints: BeautySearchGen2TapirEndpoints,

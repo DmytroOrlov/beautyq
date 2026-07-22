@@ -3,6 +3,7 @@ package leaderboard.search
 import com.typesafe.config.ConfigFactory
 import izumi.distage.config.model.AppConfig
 import distage.{Injector, ModuleDef, Scene}
+import distage.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
 import leaderboard.api.BeautySearchGen2Api
@@ -19,7 +20,7 @@ import scala.concurrent.duration.*
 final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
 
   "BeautySearchGen2PluginModules.routeComposition" should {
-    "expose the independent API composition only through explicit opt-in" in {
+    "expose the independent API composition through the default LeaderboardPlugin inclusion" in {
       val module = new ModuleDef {
         include(BeautySearchGen2PluginModules.routeComposition)
         make[Probe].from((endpoints: BeautySearchGen2TapirEndpoints) => Probe(endpoints))
@@ -119,7 +120,7 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
           include(BeautySearchGen2PluginModules.api)
         },
         roots = Roots.target[BeautySearchGen2Api[IO]],
-        activation = Activation(Scene -> Scene.Managed),
+        activation = Activation(Scene -> Scene.Managed, Repo -> Repo.Prod),
         locatorPrivacy = LocatorPrivacy.PublicByDefault,
       )
       val planString = plan.toString
@@ -241,13 +242,19 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
   }
 
   "default LeaderboardPlugin graph" should {
-    "exclude the BeautyQ Gen2 opt-in module, runtime, and embedding owner from the production default wiring" in {
+    "include BeautySearchGen2PluginModules.api as the default /beauty-search route" in {
       val source = scala.io.Source.fromFile("leaderboard-app-shell/src/main/scala/leaderboard/plugins/LeaderboardPlugin.scala")
       val content = scala.util.Using.resource(source)(_.mkString)
-      val referenced =
-        Seq("BeautySearchGen2PluginModules", "BeautyQSearchGen2Startup", "BeautyQSearchGen2Bootstrap", "BeautyQGen2EmbeddingClient", "BeautyQSearchGen2Runtime", "beauty-search-gen2")
-      val violations = referenced.filter(content.contains)
-      assert(violations.isEmpty, s"LeaderboardPlugin.scala must not reference any Gen2 owner; found: ${violations.mkString(", ")}")
+      assert(content.contains("include(BeautySearchGen2PluginModules.api)"), "LeaderboardPlugin.scala must include BeautySearchGen2PluginModules.api")
+      assert(content.contains("/beauty-search") || content.contains("BeautySearchGen2PluginModules"), "LeaderboardPlugin.scala must reference the Gen2 route")
+    }
+
+    "not include any Gen1 launcher/module owners" in {
+      val source = scala.io.Source.fromFile("leaderboard-app-shell/src/main/scala/leaderboard/plugins/LeaderboardPlugin.scala")
+      val content = scala.util.Using.resource(source)(_.mkString)
+      val forbidden = Seq("BeautySearchPluginModules", "BeautySearchRouteModules", "BeautySearchLocalQdrantSupplementLauncherModule")
+      val violations = forbidden.filter(content.contains)
+      assert(violations.isEmpty, s"LeaderboardPlugin.scala must not reference any Gen1 owner; found: ${violations.mkString(", ")}")
     }
   }
 

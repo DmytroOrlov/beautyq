@@ -7,10 +7,10 @@ import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.docker.modules.DockerSupportModule
 import izumi.distage.plugins.PluginDef
 import izumi.reflect.TagKK
-import leaderboard.config.{QdrantGen2PortCfg, QdrantPortCfg}
+import leaderboard.config.QdrantGen2PortCfg
 import zio.IO
 
-/** Sole Distage-managed Qdrant process: the single `ContainerDef` shared by Gen1 and Gen2 clients. */
+/** Sole Distage-managed Qdrant process for native Gen2. */
 object QdrantGen2Docker extends ContainerDef {
   val primaryPort: DockerPort = DockerPort.TCP(6333)
 
@@ -42,14 +42,6 @@ object QdrantGen2DockerPlugin extends PluginDef {
         QdrantGen2PortCfg(
           host = address.hostString,
           port = address.port,
-        )
-    }
-
-    make[QdrantPortCfg].from {
-      (cfg: QdrantGen2PortCfg) =>
-        QdrantPortCfg(
-          host = cfg.host,
-          port = cfg.port,
         )
     }
   }

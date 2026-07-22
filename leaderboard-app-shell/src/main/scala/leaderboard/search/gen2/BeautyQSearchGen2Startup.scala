@@ -5,10 +5,10 @@ import leaderboard.search.beautyq.gen2.wiring.*
 import leaderboard.search.gen2.qdrant.QdrantCandidateService
 import zio.IO
 
-/** Single startup owner for the explicit opt-in BeautyQ Gen2 composition.
-  *
-  * This owner composes the existing production components into the application/runtime graph that
-  * serves `/beauty-search-gen2`. It enforces three non-negotiable sequencing facts:
+/** Single startup owner for the default native BeautyQ Gen2 composition.
+   *
+   * This owner composes the existing production components into the application/runtime graph that
+   * serves `/beauty-search`. It enforces three non-negotiable sequencing facts:
   *
   *   1. The snapshot source and materializer are called exactly once, by the bootstrap.
   *   2. Elasticsearch and Qdrant generations are activated exactly once, by the bootstrap.
@@ -62,11 +62,11 @@ object BeautyQSearchGen2Startup {
 
   private[gen2] def renderStartupError(error: BeautyQSearchGen2BootstrapError): String = error match {
     case BeautyQSearchGen2BootstrapError.Materialization(cause) =>
-      s"beauty-search-gen2 startup materialization failed: ${cause.toString}"
+      s"beauty-search startup materialization failed: ${cause.toString}"
     case BeautyQSearchGen2BootstrapError.Activation(cause) =>
-      s"beauty-search-gen2 startup activation failed: ${cause.toString}"
+      s"beauty-search startup activation failed: ${cause.toString}"
     case BeautyQSearchGen2BootstrapError.Blocking(cause) =>
-      s"beauty-search-gen2 startup blocking failed: ${cause.toString}"
+      s"beauty-search startup blocking failed: ${cause.toString}"
   }
 
   private[gen2] def failureCause(error: BeautyQSearchGen2BootstrapError): Throwable = error match {

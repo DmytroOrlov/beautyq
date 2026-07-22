@@ -1,5 +1,6 @@
 package leaderboard.plugins
 
+import distage.StandardAxis.Repo
 import distage.config.ConfigModuleDef
 import distage.ModuleDef
 import leaderboard.api.{BeautySearchGen2Api, BeautySearchGen2Service, HttpApi}
@@ -18,9 +19,8 @@ import zio.IO
 
 import java.time.{Clock => JClock, Duration}
 
-/** Explicit opt-in module for the BeautyQ Gen2 route composition. It is intentionally not
-  * included by [[LeaderboardPlugin]]: V1 route ownership remains unchanged until the single final
-  * cutover. The Brick 8A executable opt-in graph composes the production components in one
+/** The canonical Gen2 route composition. Included by [[LeaderboardPlugin]] as the default
+  * `/beauty-search` route. The Brick 8A executable graph composes the production components in one
   * startup resource and binds the trusted application, readiness, and runtime derived from that
   * same activation; the HTTP route stays unavailable until the resource acquire succeeds. */
 object BeautySearchGen2PluginModules {
@@ -42,6 +42,7 @@ object BeautySearchGen2PluginModules {
   }
 
   def api: ModuleDef = new ModuleDef {
+    tag(Repo.Prod)
     include(BeautySearchGen2PluginModules.validatedAppShellConfigModule)
     include(BeautySearchGen2PluginModules.appShellGraph)
     include(BeautySearchGen2PluginModules.routeComposition)
@@ -56,6 +57,8 @@ object BeautySearchGen2PluginModules {
     * from its own endpoint and timeout values, so no raw unnamed Gen2 HTTP-client binding is
     * registered more than once. */
   def appShellGraph: ModuleDef = new ModuleDef {
+    make[JClock].fromValue(JClock.systemUTC())
+
     make[BeautyQSearchSnapshotSource.Postgres[IO]].from {
       (sql: SQL[IO], clock: JClock) => new BeautyQSearchSnapshotSource.Postgres[IO](sql, clock)
     }

@@ -1,6 +1,6 @@
 # BeautyQ Search Framework Gen2 — side-by-side technical specification
 
-Status: **accepted architecture baseline; Bricks 0–8 are implemented; Brick 8B is user-verified green for the requested focused validation, including the real four-query communication gate and both deterministic reports; Brick 9 is not started**
+Status: **accepted architecture baseline; Bricks 0–9 are implemented; Brick 9 focused verification passed. Coordinator or user full-repository verification remains required before the change set is committed or called fully green.**
 Scope: an independent Gen2 module graph built beside Gen1
 Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
 
@@ -1769,8 +1769,7 @@ Brick 6A is the implemented pure boundary in `search-gen2-qdrant`: it has no HTT
 resource lifecycle or BeautyQ hydration. Brick 6B-A owns the shared neutral JSON transport and exact
 Qdrant 1.18.3 wire adapter; 6B-B owns collection lifecycle, authorization and candidate execution; 6C
 owns BeautyQ query embedding and candidate hydration. Gen1 and Gen2 share one Distage-managed
-Qdrant 1.18.3 process; the canonical endpoint view is `QdrantGen2PortCfg` and the legacy `QdrantPortCfg`
-DTO is a derived compatibility view used by unchanged Gen1 client code.
+Qdrant 1.18.3 process; `QdrantGen2PortCfg` is the sole Qdrant endpoint view.
 
 ### 12.1 Semantic query text policy
 
@@ -1982,18 +1981,18 @@ application must not reconstruct generic lifecycle/service internals or choose a
 placeholder branch.
 
 The current implementation exposes that owner as `BeautyQSearchGen2.application`. The app shell's
-`BeautySearchGen2PluginModules` is the explicit opt-in module: `appShellConfigModule` reads
+`BeautySearchGen2PluginModules` is the default native Gen2 composition, included by `LeaderboardPlugin`
+for `Repo.Prod`: `appShellConfigModule` reads
 `beautyq-gen2-app-shell` for connect/request timeouts and Elasticsearch bulk limits; `appShellGraph`
-binds the `BeautyQSearchSnapshotSource.Postgres[IO]`, the `BeautyQVariantMaterializer.FromSnapshotSource[IO]`,
+binds `java.time.Clock.systemUTC()`, the `BeautyQSearchSnapshotSource.Postgres[IO]`, the `BeautyQVariantMaterializer.FromSnapshotSource[IO]`,
 the per-edge `ElasticsearchGen2JsonClient`, `QdrantGen2Client`, `BeautyQGen2EmbeddingClient` (all built
 directly from their typed endpoint and timeout values to avoid raw unnamed HTTP-client double bindings),
 the `BeautyQSearchGen2Bootstrap`, one `BeautyQSearchGen2Startup` Distage resource that owns the
 `materialize -> activate ES -> activate Qdrant -> publish trusted activation` sequence, and
 `BeautyQSearchApplication`/`BeautyQSearchGen2Runtime` derived from that same activation; `routeComposition`
 binds the existing `BeautySearchGen2TapirEndpoints`, `BeautySearchGen2Api`, and the
-`BeautyQSearchGen2HttpService` adapter. The opt-in module is intentionally absent from
-`LeaderboardPlugin`; Brick 9 owns default-route activation. The existing `/beauty-search` route remains
-V1-owned until the single final cutover. The endpoint decodes `BeautySearchRequestGen2` directly and
+`BeautyQSearchGen2HttpService` adapter. `POST /beauty-search` is the native Gen2 route; `/beauty-search-gen2`
+is absent. The endpoint decodes `BeautySearchRequestGen2` directly and
 projects one `BeautyQSearchResponseGen2`; no V1 request/response adapter or backend fan-out is
 involved.
 
@@ -2079,8 +2078,8 @@ endpoint: a managed scenario calls the production `BeautyQGen2EmbeddingClient`, 
 configured model identity, asserts the returned vector's exact dimension against
 `BeautyQQdrantPolicy.policy.embeddingModel`, runs the resulting vector through the real Qdrant
 candidate path, executes the opt-in `BeautyQSearchGen2Runtime`, projects the native Gen2 response, and
-exercises `POST /beauty-search-gen2` through the real route adapter. The same managed communication
-proof also exercises the Gen2 `/points/query` and Gen1 `/points/search` wire paths against the single
+exercises `POST /beauty-search` through the real route adapter. The same managed communication
+proof also exercises the Gen2 `/points/query` wire path against the single
 Distage-managed Qdrant 1.18.3 process. An unreachable llama.cpp endpoint is a precise
 `VERIFICATION BLOCKED`; a reachable endpoint that returns malformed JSON, the wrong model, an empty
 vector or the wrong dimension is red. The Gen2 embedding response model is bound to the
@@ -2093,9 +2092,8 @@ written under `target/search-gen2/`. The runner does not invoke the HTTP route, 
 synthesise IDs, does not rebuild result IDs, does not execute a second baseline search for comparison,
 and reuses the existing test-owned Distage managed-resource support. Distage injects the managed
 Elasticsearch endpoint and the single Distage-managed Qdrant 1.18.3 endpoint (canonical view
-`QdrantGen2PortCfg`; the legacy `QdrantPortCfg` DTO is a derived compatibility view used by unchanged
-Gen1 client code). The managed communication proof exercises both the Gen2 `/points/query` and Gen1
-`/points/search` wire paths against that single endpoint. The resource gate reads the exact reserved
+`QdrantGen2PortCfg`). The managed communication proof exercises the Gen2 `/points/query` wire path
+against that single endpoint. The resource gate reads the exact reserved
 Qdrant alias before mutation and fails closed if it is occupied, regardless of its target. Alias and
 collection inventory read/decode failures are red failures. Pure preflight reports every
 reachable-but-broken resource before any genuinely unavailable external dependency can block
@@ -2157,17 +2155,14 @@ Cutover is allowed only when:
 
 The final cutover change set:
 
-- mounts the native Gen2 request/response contract at `/beauty-search` and removes the temporary
-  `/beauty-search-gen2` path without a V1 compatibility adapter;
-- switches operational resource names/aliases as planned;
-- removes V1 route/wiring/contracts/interpreters and compatibility aliases;
-- removes obsolete Gen1 sbt projects and dependencies;
-- removes historical serving-time eval scaffolding not retained in Gen2 eval;
-- removes the derived legacy `QdrantPortCfg` compatibility view while keeping internal Gen2 type/module
-  names stable during the cutover;
-- maps a stale-generation cursor to HTTP 409 code `stale_search_cursor` with restart-pagination
-  guidance;
-- updates documentation to make Gen2 the only architecture.
+- `/beauty-search` owns native Gen2 request/response; `/beauty-search-gen2` is absent;
+- Gen1 search modules and compatibility DTOs are absent;
+- internal Gen2 type/module/package names remain intentionally stable;
+- deleted-generation cursors return HTTP 409 `stale_search_cursor`;
+- the client must restart pagination without the cursor;
+- one managed Qdrant 1.18.3 remains;
+- production serving has no eval dependency;
+- rollback is a revert of the complete Brick 9 change set.
 
 No application-level rate limiter is introduced as a Gen2 completion artifact: the repository has no
 accepted caller-identity or quota policy. Deployment ingress owns that operational concern.

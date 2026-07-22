@@ -5,8 +5,7 @@ import leaderboard.http.HttpApiFailure
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
-/** Independent Gen2 endpoint. It is deliberately not part of the V1 route
-  * and is mounted only by an explicit Gen2 composition. */
+/** The canonical `/beauty-search` endpoint. Native Gen2 request/response ownership. */
 trait BeautySearchGen2TapirEndpoints {
   def searchBeautyGen2: PublicEndpoint[Json, HttpApiFailure, Json, Any]
 
@@ -17,7 +16,7 @@ object BeautySearchGen2TapirEndpoints extends BeautySearchGen2TapirEndpoints {
   given Schema[Json] = Schema.any[Json]
 
   val searchBeautyGen2: PublicEndpoint[Json, HttpApiFailure, Json, Any] =
-    HttpApiFailureTapirSupport.endpointBase.in("beauty-search-gen2").post
+    HttpApiFailureTapirSupport.endpointBase.in("beauty-search").post
       .in(jsonBody[Json])
       .out(jsonBody[Json])
 }

@@ -240,26 +240,28 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
   )
 
   private def withManagedPorts[A](f: (ElasticsearchPortCfg, QdrantGen2PortCfg) => A): A = {
-    val module = new ModuleDef {
-      make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
-      include(LogIO2Module[IO]())
-      make[IzLogger].fromValue(IzLogger())
-      include(ElasticsearchDockerPlugin.dockerModule[IO])
-      include(QdrantGen2DockerPlugin.dockerModule[IO])
-      make[ManagedPorts].from { (elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg) =>
-        ManagedPorts(elasticsearch, qdrant)
+    BeautyQSearchGen2ResourceSupport.withExclusiveCanonicalNamespace {
+      val module = new ModuleDef {
+        make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+        include(LogIO2Module[IO]())
+        make[IzLogger].fromValue(IzLogger())
+        include(ElasticsearchDockerPlugin.dockerModule[IO])
+        include(QdrantGen2DockerPlugin.dockerModule[IO])
+        make[ManagedPorts].from { (elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg) =>
+          ManagedPorts(elasticsearch, qdrant)
+        }
       }
+      val effect = Injector[Task]().produce(
+        bindings = module,
+        roots = Roots.target[ManagedPorts],
+        activation = Activation(Scene -> Scene.Managed),
+        locatorPrivacy = LocatorPrivacy.PublicByDefault,
+      ).use { locator =>
+        val ports = locator.get[ManagedPorts]
+        ZIO.attemptBlocking(f(ports.elasticsearch, ports.qdrant))
+      }
+      Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
     }
-    val effect = Injector[Task]().produce(
-      bindings = module,
-      roots = Roots.target[ManagedPorts],
-      activation = Activation(Scene -> Scene.Managed),
-      locatorPrivacy = LocatorPrivacy.PublicByDefault,
-    ).use { locator =>
-      val ports = locator.get[ManagedPorts]
-      ZIO.attemptBlocking(f(ports.elasticsearch, ports.qdrant))
-    }
-    Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
   }
 
   private def ensureIsolatedNamespace(

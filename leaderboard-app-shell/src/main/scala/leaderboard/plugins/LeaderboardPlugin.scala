@@ -10,13 +10,12 @@ import izumi.distage.roles.bundled.BundledRolesModule
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.fundamentals.platform.integration.PortCheck
 import izumi.fundamentals.platform.versions.Version
-import leaderboard.api.{BeautySearchProductionIncludedApis, BeautySearchProductionInclusionActivation, BeautySearchProductionInclusionHandle, CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
-import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg}
+import leaderboard.api.{CategoryApi, HttpApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
+import leaderboard.config.{ElasticsearchPortCfg, PostgresCfg, PostgresPortCfg, QdrantGen2PortCfg}
 import leaderboard.http.HttpServer
 import leaderboard.http.tapir.{CategoryTapirEndpoints, LadderTapirEndpoints, MasterLocationTapirEndpoints, MasterServiceOfferTapirEndpoints, MasterServiceOfferVariantTapirEndpoints, MasterTapirEndpoints, ProfileTapirEndpoints, ServiceTapirEndpoints}
 import leaderboard.repo.{Categories, Ladder, MasterLocations, MasterServiceOfferVariants, MasterServiceOffers, Masters, Profiles, ServiceVariantSchemas, Services}
 import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
-import leaderboard.search.startup.BeautyQManagedLocalSearchDataReady
 import leaderboard.seed.{BeautyQSeedInserter, BeautyQSeedLoader, BeautyQSeedReady}
 import leaderboard.services.Ranks
 import leaderboard.sql.{SQL, TransactorResource}
@@ -29,8 +28,8 @@ import scala.concurrent.duration.*
 object LeaderboardPlugin extends PluginDef {
   include(modules.roles[IO])
   include(modules.apiBase[IO])
-  // Local managed launcher default: `/beauty-search` is ES plus the constrained Qdrant supplement.
-  include(BeautySearchLocalQdrantSupplementLauncherModule.managedLocalDefault)
+  // Local managed launcher default: `/beauty-search` is native Gen2.
+  include(BeautySearchGen2PluginModules.api)
   include(modules.repoDummy[IO])
   include(modules.repoProd[IO])
   include(modules.seed[IO])
@@ -99,12 +98,6 @@ object LeaderboardPlugin extends PluginDef {
       // The `profile` API
       make[ProfileTapirEndpoints].fromValue(ProfileTapirEndpoints)
       make[ProfileApi[F]]
-      // Disabled Beauty search inclusion boundary only; not route exposure.
-      make[BeautySearchProductionInclusionActivation].fromValue(BeautySearchProductionInclusionActivation.default)
-      make[BeautySearchProductionInclusionHandle[F]].fromValue(BeautySearchProductionInclusionHandle.disabled[F])
-      make[BeautySearchProductionIncludedApis[F]].from { (handle: BeautySearchProductionInclusionHandle[F]) =>
-        BeautySearchProductionIncludedApis.fromHandle(handle)
-      }
 
       // A set of all APIs
       many[HttpApi[F]]
@@ -122,9 +115,8 @@ object LeaderboardPlugin extends PluginDef {
       make[Ranks[F]].from[Ranks.Impl[F]]
     }
 
-    def api[F[+_, +_]: TagKK: Error2]: ModuleDef = new ModuleDef {
+    def api[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
       include(apiBase[F])
-      include(BeautySearchRouteModules.seedCatalogInMemory[F])
     }
 
     def repoDummy[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
@@ -184,9 +176,8 @@ object LeaderboardPlugin extends PluginDef {
     }
 
     // Non-managed graphs do not prepare ES/Qdrant search data at startup (no production startup indexing).
-    def searchDataProvided[F[+_, +_]: TagKK]: ModuleDef = new ModuleDef {
+    def searchDataProvided[F[+_, +_]]: ModuleDef = new ModuleDef {
       tag(Scene.Provided)
-      make[BeautyQManagedLocalSearchDataReady].fromResource[BeautyQManagedLocalSearchDataReady.Noop[F]]
     }
 
     val configs: ConfigModuleDef = new ConfigModuleDef {
@@ -199,6 +190,7 @@ object LeaderboardPlugin extends PluginDef {
       tag(Scene.Provided)
 
       makeConfig[PostgresPortCfg]("postgres")
+      makeConfig[QdrantGen2PortCfg]("qdrant-gen2")
     }
   }
 }

@@ -18,10 +18,8 @@ Start here:
 
 Current coordinator focus:
 
-BeautyQ Search Framework Gen2 is the active project. Gen2 will be built side by side in a separate
-module DAG, followed by one final cutover and removal of Gen1 search modules.
-
-Current search-framework work is tracked in the
+BeautyQ Search Framework Gen2 is complete. The independent Gen2 module DAG has been built and the
+final cutover removed all Gen1 search modules. Current search-framework work is tracked in the
 [BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md).
 
 The new-domain onboarding document remains the practical authoring guide; the domain-authoring
@@ -36,11 +34,8 @@ configuration guidance.
 
 Current BeautyQ route truth:
 
-* Production / non-managed default `POST /beauty-search` remains ES-backed.
-* Local managed launcher `POST /beauty-search` is ES-backed with the constrained Qdrant supplement.
-* The native Gen2 `POST /beauty-search-gen2` route is an explicit opt-in composition only; it is not mounted by the default plugin and does not fan out from V1.
-* Qdrant supplement remains local/test constrained supplement only.
-* Local/test provenance, measured gates, and benchmark reports are local/test evidence only; they do not approve a production/default route switch.
+* The default search route is native Gen2 `POST /beauty-search` with the full Elasticsearch + Qdrant + embedding graph.
+* `/beauty-search-gen2` and the Gen1 request/response route are absent.
 * There is no fallback, fusion, or rerank.
 
 Run the local managed launcher:
@@ -69,27 +64,27 @@ the endpoint is unavailable, returns an empty embedding, or returns the wrong ve
 with a diagnostic naming the bootstrap, the endpoint, the expected dimension, and the actual reason.
 Startup does not silently fall back to ES-only.
 
-Qdrant append probe:
+Gen2 append probe:
 
 ```bash
 curl -sS -X POST 'http://localhost:8080/beauty-search' \
   -H 'Content-Type: application/json' \
-  -d '{"query":"beauty near Wandsbek Markt","limit":10}' \
-| jq '{executionMode, qdrantSupplement, qdrantVariants: [.variantCarousel[] | select(.resultOrigin == "qdrant_supplement") | {variantId, resultOrigin}]}'
+  -d '{"query":"beauty near Wandsbek Markt","page":{"size":20}}' \
+| jq '{supplementStatus, supplementCount, origins: ([.hits[].origin] | unique)}'
 ```
 
-Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_with_append`, `qdrantSupplement.contribution` is `qdrant_only_variant_append`, and exactly one returned variant has `resultOrigin` equal to `qdrant_supplement`.
+Expected: `supplementStatus` is `supplemented`, `supplementCount` is at least 1, and one hit origin is `qdrant_supplement`.
 
-Qdrant used with no append:
+Gen2 used with no append:
 
 ```bash
 curl -sS -X POST 'http://localhost:8080/beauty-search' \
   -H 'Content-Type: application/json' \
-  -d '{"query":"маникюр","limit":10}' \
-| jq '{executionMode, qdrantSupplement, origins: ([.variantCarousel[].resultOrigin] | unique)}'
+  -d '{"query":"маникюр","page":{"size":20}}' \
+| jq '{supplementStatus, supplementCount, supplementStatusCode, origins: ([.hits[].origin] | unique)}'
 ```
 
-Expected: `executionMode` is `es_plus_qdrant_supplement`, `qdrantSupplement.status` is `used_no_append`, `qdrantSupplement.contribution` is `none`, `qdrantSupplement.appendedVariantIds` is empty, and `origins` is only `["es_baseline"]`.
+Expected: `supplementStatus` is `no_append`, `supplementCount` is 0, and origins is only `["es_baseline"]`.
 
 ## Eval and measurement guardrails
 
@@ -110,18 +105,20 @@ workflow, and the boundary guardrail specs for enforced import/build-DAG constra
 | Module | Responsibility |
 |---|---|
 | `leaderboard-core` | generic failure types (`QueryFailure` and siblings) |
-| `search-core` | generic search framework: fields, document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly, generic semantic supplement policy |
-| `search-contract-core` | generic search-contract ADTs (`SearchDomainSpec`, `SearchField`, `SearchRuntimeDeclaration`) |
+| `search-gen2-contract` | generic search-contract ADTs (`SearchDomainSpec`, `SearchField`, `SearchRuntimeDeclaration`) |
+| `search-gen2-core` | generic search framework: field/document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly |
+| `search-contract-core` | shared generic search-contract primitives retained post-cutover |
 | `repo-core` | generic repo/catalog graph-loading primitives, independent of BeautyQ |
 | `beautyq-model` | BeautyQ domain model (attributes, service-variant schema, master-service-offer-variant, user profile) |
-| `beautyq-search-contract` | pure BeautyQ search contract declarations (catalog/document/intent/runtime/response/evaluation slices, `BeautyQSearchDomainContract`); no repo/client/HTTP imports |
+| `beautyq-search-gen2-contract` | pure BeautyQ Gen2 search contract declarations (catalog/document/intent/runtime/response/evaluation slices); no repo/client/HTTP imports |
 | `beautyq-search-repositories` | BeautyQ repository interfaces and their `Dummy`/`Postgres` implementations |
-| `beautyq-search-materialization` | BeautyQ catalog/document materialization: catalog snapshots, snapshot loaders, and variant document projection |
-| `search-elasticsearch` | reusable ES client/interpreter code (mapping, ingestion, request, response); no BeautyQ-specific logic |
-| `search-qdrant` | reusable Qdrant client/interpreter/indexing/semantic-search/compatibility code; no BeautyQ-specific logic |
-| `beautyq-search-wiring` | BeautyQ runtime/search/backend/routing/policy/eval-design/helper layer that consumes the contract - the largest BeautyQ-specific module |
+| `beautyq-search-gen2-materialization` | BeautyQ Gen2 catalog/document materialization: consistent snapshots, snapshot loaders, and variant document projection |
+| `search-gen2-elasticsearch` | reusable ES client/compiler code (mapping, ingestion, request, response); no BeautyQ-specific logic |
+| `search-gen2-qdrant` | reusable Qdrant client/candidate compiler/indexing/semantic-search code; no BeautyQ-specific logic |
+| `beautyq-search-gen2-wiring` | BeautyQ Gen2 runtime/search/backend/routing/policy layer that consumes the Gen2 contract |
+| `beautyq-search-gen2-eval` | BeautyQ Gen2 evaluation, cutover gate, and deletion inventory; test-only dependency of app-shell |
 | `app-services` | app-level service boundaries over repository interfaces, e.g. `leaderboard.services.Ranks` |
-| `app-http` | HTTP/Tapir API layer for the whole app, including `BeautySearchApi` and every other API/endpoint class |
-| `leaderboard-app-shell` | **app shell module**: config, Distage/module composition and plugin wiring, real clients/resources, and startup/bootstrap/seed/eval shell execution code. No longer the conceptual owner of the BeautyQ search contract, materialization, runtime/wiring, or HTTP layers. Previously named `bifunctor-tagless`. |
+| `app-http` | HTTP/Tapir API layer for the whole app, including `BeautySearchGen2Api` and every other API/endpoint class |
+| `leaderboard-app-shell` | **app shell module**: config, Distage/module composition and plugin wiring, real clients/resources, and startup/bootstrap/seed/eval shell execution code. No longer the conceptual owner of the BeautyQ search contract, materialization, runtime/wiring, or HTTP layers. |
 
 The repository also contains upstream distage example implementation variants under `monofunctor-tagless` and `monomorphic-cats`.

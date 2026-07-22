@@ -17,6 +17,13 @@ object HttpApiFailureTapirSupport {
         case _                            => false
       },
       oneOfVariantValueMatcher(
+        statusCode(StatusCode.Conflict)
+          .and(jsonBody[HttpApiFailure.Conflict])
+      ) {
+        case _: HttpApiFailure.Conflict => true
+        case _                          => false
+      },
+      oneOfVariantValueMatcher(
         statusCode(StatusCode.ServiceUnavailable)
           .and(jsonBody[HttpApiFailure.ServiceUnavailable])
       ) {

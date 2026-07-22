@@ -88,36 +88,6 @@ lazy val `leaderboard-core` = project
     Deps.distageCore,
   )))
 
-lazy val `search-core` = project
-  .pipe(lightweightSettings(Seq(
-    Deps.circeGeneric,
-    Deps.scalatest % Test,
-  )))
-  .dependsOn(`leaderboard-core`)
-
-lazy val `search-elasticsearch` = project
-  .pipe(lightweightSettings(Seq(
-    Deps.circeGeneric,
-    Deps.circeParser,
-    Deps.zio,
-    Deps.scalatest % Test,
-  )))
-  .dependsOn(`leaderboard-core`, `search-core`, searchContractCore)
-
-lazy val `search-qdrant` = project
-  .pipe(lightweightSettings(Seq(
-    Deps.circeGeneric,
-    Deps.circeParser,
-    Deps.zio,
-    Deps.scalatest % Test,
-  )))
-  .dependsOn(`leaderboard-core`, `search-core`, searchContractCore)
-
-// --- BeautyQ search module skeletons (Phase 2 of docs/search/BEAUTYQ_SEARCH_CONTRACT_MODULE_SPLIT_PLAN.md) ---
-// Module shells only: no existing implementation code has been moved into them yet.
-// See the plan doc's "Target 10-module split" / "Dependency DAG" sections for the intended
-// ownership and dependency boundaries these projects will grow into.
-
 lazy val repoCore = project
   .in(file("repo-core"))
   .settings(name := "repo-core")
@@ -144,15 +114,6 @@ lazy val beautyqModel = project
   )))
   .dependsOn(`leaderboard-core`)
 
-lazy val beautyqSearchContract = project
-  .in(file("beautyq-search-contract"))
-  .settings(name := "beautyq-search-contract")
-  .pipe(lightweightSettings(Seq(
-    Deps.circeGeneric,
-    Deps.scalatest % Test,
-  )))
-  .dependsOn(searchContractCore, beautyqModel, repoCore, `search-core`)
-
 lazy val beautyqSearchRepositories = project
   .in(file("beautyq-search-repositories"))
   .settings(name := "beautyq-search-repositories")
@@ -165,21 +126,7 @@ lazy val beautyqSearchRepositories = project
   )))
   .dependsOn(`leaderboard-core`, repoCore, beautyqModel)
 
-lazy val beautyqSearchMaterialization = project
-  .in(file("beautyq-search-materialization"))
-  .settings(name := "beautyq-search-materialization")
-  .pipe(lightweightSettings(Nil))
-  .dependsOn(beautyqSearchContract, beautyqSearchRepositories, repoCore, beautyqModel)
-
-lazy val beautyqSearchWiring = project
-  .in(file("beautyq-search-wiring"))
-  .settings(name := "beautyq-search-wiring")
-  .pipe(lightweightSettings(Seq(
-    Deps.scalatest % Test,
-  )))
-  .dependsOn(beautyqSearchContract, beautyqSearchMaterialization, `search-elasticsearch`, `search-qdrant`)
-
-// --- BeautyQ Search Gen2 (side by side with Gen1; see docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) ---
+// --- BeautyQ Search Gen2 (see docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) ---
 // Independent module DAG. No Gen2 project may depend on a Gen1 search project; enforced by
 // SearchGen2ModuleFirewallSpec. Brick 0 adds only the module graph and firewall, no search behavior.
 
@@ -285,12 +232,11 @@ lazy val appHttp = project
     Deps.tapirJsonCirce,
     Deps.scalatest % Test,
   )))
-  .dependsOn(beautyqSearchWiring, beautyqSearchGen2Wiring % "compile->compile;test->test", appServices)
+  .dependsOn(beautyqSearchGen2Wiring % "compile->compile;test->test", appServices)
 
 lazy val `leaderboard-app-shell` = project
   .pipe(appSettings(Seq(Deps.zio, Deps.zioCats, Deps.tapirHttp4sServer, Deps.tapirJsonCirce)))
   .dependsOn(
-    beautyqSearchWiring,
     beautyqSearchGen2Wiring % "compile->compile;test->test",
     beautyqSearchGen2Eval % "test->test",
     beautyqSearchGen2Materialization,
@@ -308,16 +254,10 @@ lazy val `distage-example` = project
   .in(file("."))
   .aggregate(
     `leaderboard-core`,
-    `search-core`,
-    `search-elasticsearch`,
-    `search-qdrant`,
     repoCore,
     searchContractCore,
     beautyqModel,
-    beautyqSearchContract,
     beautyqSearchRepositories,
-    beautyqSearchMaterialization,
-    beautyqSearchWiring,
     searchGen2Contract,
     searchGen2Core,
     searchGen2Transport,

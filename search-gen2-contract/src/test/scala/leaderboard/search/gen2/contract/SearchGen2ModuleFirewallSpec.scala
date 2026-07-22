@@ -114,16 +114,12 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     List("search-gen2-contract", "search-gen2-core", "search-gen2-transport", "search-gen2-elasticsearch", "search-gen2-qdrant")
 
   private val forbiddenGen1SbtProjectTokens: List[String] = List(
-    "searchContractCore",
     "search-core",
     "search-elasticsearch",
     "search-qdrant",
     "beautyqSearchContract",
     "beautyqSearchMaterialization",
     "beautyqSearchWiring",
-    "appHttp",
-    "appServices",
-    "leaderboard-app-shell",
   )
 
   private val gen1ImportFirewallForbidden: List[String] = List(
@@ -223,6 +219,16 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       }
 
       assertNoViolations("Gen2 aggregate membership violations", violations)
+    }
+
+    "prove all four retained shared project definitions are present in the root aggregate" in {
+      val aggregateBlock = buildBlock("`distage-example`")
+      val retainedShared = List("repoCore", "searchContractCore", "beautyqModel", "beautyqSearchRepositories")
+      val violations = retainedShared.filterNot(token => aggregateBlock.contains(token)).map { token =>
+        s"$token is missing from the `distage-example` aggregate"
+      }
+
+      assertNoViolations("Retained shared project aggregate membership violations", violations)
     }
 
     "prove the accepted Gen2 module graph is acyclic" in {

@@ -12,6 +12,7 @@ object HttpApiFailure {
   final case class BadRequest(code: String, message: String) extends HttpApiFailure
   final case class NotFound(code: String, message: String) extends HttpApiFailure
   final case class ServiceUnavailable(code: String, message: String) extends HttpApiFailure
+  final case class Conflict(code: String, message: String) extends HttpApiFailure
 
   object ServiceUnavailable {
     // Disabled-by-default runtime route-gate rejection for the ES-backed `/beauty-search` route.
@@ -42,6 +43,7 @@ object HttpApiFailure {
   implicit val badRequestCodec: Codec.AsObject[BadRequest] = semiauto.deriveCodec
   implicit val notFoundCodec: Codec.AsObject[NotFound] = semiauto.deriveCodec
   implicit val serviceUnavailableCodec: Codec.AsObject[ServiceUnavailable] = semiauto.deriveCodec
+  implicit val conflictCodec: Codec.AsObject[Conflict] = semiauto.deriveCodec
 
   def fromQueryFailure(error: QueryFailure): HttpApiFailure =
     InternalServerError

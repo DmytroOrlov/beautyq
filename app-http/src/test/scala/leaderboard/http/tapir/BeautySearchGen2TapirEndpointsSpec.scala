@@ -13,10 +13,11 @@ final class BeautySearchGen2TapirEndpointsSpec extends AnyWordSpec {
       assert(BeautySearchGen2TapirEndpoints.searchBeautyGen2.method.contains(Method.POST))
     }
 
-    "mount the opt-in Gen2 route at the agreed prefix only" in {
+    "mount the native Gen2 route at the agreed prefix only" in {
       val path = BeautySearchGen2TapirEndpoints.searchBeautyGen2.input
       val rendered = path.show
-      assert(rendered.contains("/beauty-search-gen2"))
+      assert(rendered.contains("/beauty-search"))
+      assert(!rendered.contains("/beauty-search-gen2"))
     }
   }
 }

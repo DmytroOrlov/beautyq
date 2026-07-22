@@ -44,7 +44,7 @@ final class BeautyQGen1SearchDeletionInventorySpec extends AnyWordSpec {
         "leaderboard.config.QdrantPortCfg",
       )
       mustAppear.foreach { owner =>
-        val matches = owners.count(_.contains(owner))
+        val matches = owners.count(_ == owner)
         assert(matches == 1, s"expected exactly one inventory entry to match '$owner', got $matches")
       }
     }

@@ -87,4 +87,13 @@ object BeautyQSearchGen2ResourceSupport {
 
   def decodeQdrantCollectionNames(raw: Json): Either[String, Vector[String]] =
     SearchGen2ResourceInventorySupport.decodeQdrantCollectionNames(raw)
+
+  // Serializes only communication proofs that own the canonical BeautyQ Gen2
+  // Elasticsearch/Qdrant namespaces.  The two managed suites share aliases and
+  // physical prefixes; without mutual exclusion concurrent alias activation can
+  // leave two active targets and break the other suite's generation-A request.
+  private val canonicalNamespaceMonitor = new AnyRef
+
+  def withExclusiveCanonicalNamespace[A](body: => A): A =
+    canonicalNamespaceMonitor.synchronized(body)
 }

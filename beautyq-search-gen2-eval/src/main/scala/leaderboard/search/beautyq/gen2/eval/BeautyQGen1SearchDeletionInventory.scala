@@ -2,15 +2,15 @@ package leaderboard.search.beautyq.gen2.eval
 
 import io.circe.Json
 
-/** The canonical Brick 9 deletion input. Each entry is one typed owner/path with
-  * a stable ID, an explicit kind, the exact current Gen1 owner, the Brick 9
-  * action, the Gen2 replacement and a short reason. Active order is explicit
-  * and is not derived from enum inventory.
+/** Post-cutover completion evidence: the fixed set of owners, paths, and modules
+  * that were removed or edited by the Brick 9 atomic cutover.  Each entry is an
+  * immutable record of a removed Gen1 owner, its action, its Gen2 replacement,
+  * and the reason.  Active order is explicit and is not derived from enum
+  * inventory.
   *
-  * Project-root deletion entries own every file inside the deleted project. The
-  * inventory never enumerates individual files under a deleted project; only
-  * exact cross-project files (specs, fixtures, docs) are listed as their own
-  * entries. */
+  * After cutover, this inventory is a static artifact — owners named here no
+  * longer exist in the repository.  The inventory is retained as canonical
+  * completion evidence alongside the machine-readable cutover report. */
 enum BeautyQGen1DeletionEntryKind(val stableId: String) {
   case SbtProjectRoot extends BeautyQGen1DeletionEntryKind("sbt-project-root")
   case SbtDependencyEdge extends BeautyQGen1DeletionEntryKind("sbt-dependency-edge")
@@ -94,7 +94,7 @@ object BeautyQGen1SearchDeletionInventory {
       "beautyq-search-wiring",
       BeautyQGen1DeletionAction.DeleteProject,
       "beautyq-search-gen2-wiring + BeautyQSearchGen2Startup",
-      "Gen1 wiring is replaced by beautyq-search-gen2-wiring and the explicit opt-in app-shell graph; the new pipeline keeps a single trusted activation.",
+      "Gen1 wiring is replaced by beautyq-search-gen2-wiring and the application graph; the pipeline keeps a single trusted activation.",
     ),
     // Shared foundations retained (not classified for deletion)
     entry(
@@ -127,8 +127,8 @@ object BeautyQGen1SearchDeletionInventory {
       BeautyQGen1DeletionEntryKind.SbtDependencyEdge,
       "leaderboard-app-shell.dependsOn(beautyqSearchGen2Wiring % \"compile->compile;test->test\")",
       BeautyQGen1DeletionAction.RetainShared,
-      "stays as Brick 8 wires the Gen2 startup into the app shell",
-      "BeautyQSearchGen2Startup owns the explicit opt-in graph; deleting the edge would break /beauty-search-gen2.",
+      "stays as the Gen2 application graph is the canonical runtime owner",
+      "BeautyQSearchGen2Startup owns the application graph; deleting the edge would break /beauty-search.",
     ),
     entry(
       "leaderboard-app-shell-eval-edge-test",
@@ -144,7 +144,7 @@ object BeautyQGen1SearchDeletionInventory {
       "app-http.dependsOn(beautyqSearchWiring)",
       BeautyQGen1DeletionAction.EditOwner,
       "app-http.dependsOn(beautyqSearchGen2Wiring % \"compile->compile;test->test\")",
-      "app-http no longer needs the Gen1 wiring; only the Gen2 wiring is required for /beauty-search-gen2 route and shared types.",
+      "app-http no longer needs the Gen1 wiring; only the Gen2 wiring is required for the /beauty-search route and shared types.",
     ),
     entry(
       "leaderboard-app-shell-beautyq-search-wiring-edge-delete",
@@ -160,7 +160,7 @@ object BeautyQGen1SearchDeletionInventory {
       BeautyQGen1DeletionEntryKind.PublicRouteApi,
       "leaderboard.api.BeautySearchApi / BeautySearchTapirEndpoints",
       BeautyQGen1DeletionAction.RemoveRoute,
-      "BeautySearchGen2Api / BeautySearchGen2TapirEndpoints (already wired by /beauty-search-gen2)",
+      "BeautySearchGen2Api / BeautySearchGen2TapirEndpoints",
       "/beauty-search is the unversioned native Gen2 contract; the Gen1 route adapter and Tapir contract are removed.",
     ),
     entry(
@@ -185,7 +185,7 @@ object BeautyQGen1SearchDeletionInventory {
       BeautyQGen1DeletionEntryKind.AppShellDiModule,
       "leaderboard.plugins.BeautySearchPluginModules",
       BeautyQGen1DeletionAction.RemoveBinding,
-      "BeautySearchGen2PluginModules (already present as the opt-in module)",
+      "BeautySearchGen2PluginModules",
       "BeautySearchPluginModules binds the Gen1 BeautySearchApi; Brick 9 removes the Gen1 binding so /beauty-search serves the Gen2 contract.",
     ),
     entry(

@@ -3,6 +3,7 @@ package leaderboard.repo
 import leaderboard.model.{Category, CategoryCode, MasterServiceOfferId, MasterServiceOfferVariant, Service, ServiceId, ServiceVariantSchema}
 import leaderboard.model.Category.CategoryId
 import leaderboard.repo.RepoOp.ManyByKey
+import leaderboard.search.beautyq.gen2.contract.BeautyQSearchDeclarations
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, ZIO}
 
@@ -119,14 +120,14 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQCatalogGraph.graph" should {
+  "BeautyQSearchDeclarations.catalog.topology" should {
     "declare the catalog under the name \"beautyq\"" in {
-      assert(BeautyQCatalogGraph.graph[IO].name == "beautyq")
+      assert(BeautyQSearchDeclarations.catalog.topology.name == "beautyq")
     }
 
     "list the declared roots/edges in domain declaration order, with real key labels" in {
       assert(
-        BeautyQCatalogGraph.graph[IO].steps.map(_.summary) ==
+        BeautyQSearchDeclarations.catalog.topology.steps.map(_.summary) ==
           Vector(
             "root:category:tree:parentId",
             "many:category->service:categoryId",
@@ -140,11 +141,11 @@ final class RepoFieldRelationSpec extends AnyWordSpec {
     }
 
     "declare the category root as a real, tree-loaded step keyed by parentId" in {
-      assert(BeautyQCatalogGraph.graph[IO].steps.head == CatalogStep.Root("category", RootLoading.Tree, Some("parentId")))
+      assert(BeautyQSearchDeclarations.catalog.topology.steps.head == CatalogStep.Root("category", RootLoading.Tree, Some("parentId")))
     }
 
     "declare the master root as a real, all-loaded step" in {
-      val masterRootStep = BeautyQCatalogGraph.graph[IO].steps.collectFirst { case step @ CatalogStep.Root("master", _, _) => step }
+      val masterRootStep = BeautyQSearchDeclarations.catalog.topology.steps.collectFirst { case step @ CatalogStep.Root("master", _, _) => step }
       assert(masterRootStep.contains(CatalogStep.Root("master", RootLoading.All, None)))
     }
   }
