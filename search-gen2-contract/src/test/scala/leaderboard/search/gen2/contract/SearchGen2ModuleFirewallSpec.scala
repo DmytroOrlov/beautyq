@@ -480,6 +480,30 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
 
       assertNoViolations("Gen2 eval firewall violations", importViolations ++ buildViolations)
     }
+
+    "keep leaderboard-app-shell production sources free of eval imports and restrict the eval build edge to test scope" in {
+      val mainSourceFiles = scalaFilesUnder("leaderboard-app-shell/src/main/scala")
+      assert(mainSourceFiles.nonEmpty, "expected leaderboard-app-shell/src/main/scala to contain at least one file")
+      val importViolations = mainSourceFiles.flatMap { path =>
+        forbiddenImportViolations(relative(path), read(path), List(evalPackagePrefix), allowedPatterns = Nil)
+      }
+
+      val appShellBlock = buildBlock("`leaderboard-app-shell`")
+      val evalEdges = extractDependsOnMappings(appShellBlock, beautyqSearchGen2EvalNode.sbtId)
+      val badEdgeViolations = evalEdges.collect {
+        case mapping if mapping.startsWith("compile->") =>
+          s"leaderboard-app-shell: eval build edge uses non-test scope mapping '$mapping'"
+      }
+      val noEdgeViolation =
+        if (evalEdges.isEmpty)
+          List("leaderboard-app-shell: expected test->test build edge to ${beautyqSearchGen2EvalNode.sbtId}".replace("${beautyqSearchGen2EvalNode.sbtId}", beautyqSearchGen2EvalNode.sbtId))
+        else Nil
+
+      assertNoViolations(
+        "leaderboard-app-shell eval firewall violations",
+        importViolations ++ badEdgeViolations ++ noEdgeViolation,
+      )
+    }
   }
 
   "Gen2 diagnostic import scanner" should {
@@ -807,6 +831,57 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
 
   private def isIdentifierChar(ch: Char): Boolean =
     ch.isLetterOrDigit || ch == '_'
+
+  // Returns the raw sbt scope-mapping tokens (e.g. List("test->test")) for every
+  // `.dependsOn(...)` occurrence of the named dependency. An argument with no
+  // explicit `% "..."` mapping is reported as `List("")`. The list preserves
+  // declaration order so the firewall can spot a second, forbidden edge.
+  private def extractDependsOnMappings(block: String, dependencyName: String): List[String] = {
+    val marker = ".dependsOn"
+
+    @tailrec
+    def loop(fromIndex: Int, acc: List[String]): List[String] = {
+      val markerIndex = block.indexOf(marker, fromIndex)
+      if (markerIndex < 0) {
+        acc
+      } else {
+        val afterMarker    = markerIndex + marker.length
+        val isLongerSymbol = afterMarker < block.length && isIdentifierChar(block.charAt(afterMarker))
+
+        if (isLongerSymbol) {
+          loop(afterMarker, acc)
+        } else {
+          val openIndex = skipWhitespace(block, afterMarker)
+          if (openIndex < block.length && block.charAt(openIndex) == '(') {
+            findMatchingCloseParen(block, openIndex) match {
+              case Some(closeIndex) =>
+                val args = block.substring(openIndex + 1, closeIndex)
+                val mappings = splitTopLevelArgs(args).collect {
+                  case argument if argument.contains(dependencyName) =>
+                    val percentIndex = argument.indexOf('%')
+                    if (percentIndex < 0) ""
+                    else {
+                      val raw = argument.substring(percentIndex + 1).trim
+                      if (raw.startsWith("\"") && raw.endsWith("\"") && raw.length >= 2) raw.substring(1, raw.length - 1)
+                      else raw
+                    }
+                }
+                loop(closeIndex + 1, acc ++ mappings)
+              case None =>
+                fail(s"unmatched '.dependsOn(' opening parenthesis while scanning build.sbt block: $block")
+            }
+          } else {
+            fail(
+              s"expected '(' immediately after skipping whitespace following '.dependsOn' at index $afterMarker " +
+                s"(comments and other syntax between '.dependsOn' and '(' are not supported) while scanning build.sbt block: $block"
+            )
+          }
+        }
+      }
+    }
+
+    loop(0, Nil)
+  }
 
   // Skips whitespace (including newlines) starting at fromIndex; returns text.length if only
   // whitespace remains, which the caller treats as "no opening parenthesis found" via a bounds check.

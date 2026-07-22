@@ -1,6 +1,8 @@
 # COORDINATOR_WORKFLOW_AND_PROMPTING.md
 
-Purpose: canonical coordinator guide for source-truth gating, patch acceptance, delegated prompts, review closeout, verification labels, bundle scripts, docs ownership, senior audits, and model recommendations.
+Model tags: `[ALL]` every model, `[W]` weak/Qwen3.6, `[M]` medium/MiniMax-M3, `[S]` strong. Task tags are used only where behavior differs, such as `[CONTINUATION]` and `[DOCS]`. Untagged review and safety rules apply to all.
+
+Purpose: canonical coordinator guide for source-truth gating, patch acceptance, delegated prompts, review closeout, verification evidence, bundles, docs ownership, audits, and model recommendations.
 
 `AGENTS.md` is repo/delegated-agent guardrails. This file controls coordinator workflow and closeout. If the two conflict on repo safety, tests, or bounded edit behavior, stop and request a docs clarification patch.
 
@@ -10,11 +12,13 @@ Purpose: canonical coordinator guide for source-truth gating, patch acceptance, 
 
 ## 1.1 Source-truth gate
 
-Before any patch design, exact read/edit file list, test recipe, or delegated-agent prompt, source-confirm the relevant files, types, functions, fields, constructors, helpers, fixtures, imports, contracts, and validation commands.
+Before patch design or delegation, source-confirm the decision-critical facts: architecture, executable ownership, public and compatibility contracts, delete/retain boundaries, acceptance criteria, and the validation seam.
+
+Imports, direct callers, local signatures, test renames, and compiler-driven repairs inside an already named module frontier are mechanically discoverable. They need not all be pre-inlined, although `[W]` prompts should include them when doing so prevents broad reading.
 
 Docs, handoff, memory, and previous conclusions do not replace current source anchors.
 
-If required source truth is missing, stop with one of:
+If required decision-critical source truth is missing, stop with one of:
 
 - `BLOCKED_NEED_BUNDLE`
 - `BLOCKED_NEED_BUNDLE_SCOPE`
@@ -50,58 +54,28 @@ Downstream options are only for new work after the current patch is complete.
 
 A happy-path implementation is not accepted when the original task required branch coverage, failure behavior, cancel behavior, compatibility behavior, or matrix behavior.
 
-## 1.3 Business authoring gate
+## 1.3 Declarative authoring gate
 
-The repository-wide contract is
-[docs/search/DOMAIN_AUTHORING_PRINCIPLES.md](../search/DOMAIN_AUTHORING_PRINCIPLES.md). This
-section is the coordinator procedure for applying it; it does not restate the full principles.
+For a declarative business DSL or reusable framework patch, classify requested behavior as:
 
-For a domain DSL or declaration patch, classify each requested line before writing the prompt:
+- `BUSINESS_CHOICE`: facts that legitimately vary by consumer;
+- `DERIVABLE_EVIDENCE`: facts already fixed by types, selectors, declared inventories, or order.
 
-- `BUSINESS_CHOICE`: topology, identity selection, String keyword/text meaning, capabilities, public
-  names, dynamic inventory, projection/invariants, or backend policy;
-- `DERIVABLE_EVIDENCE`: facts already fixed by a type, direct selector, or declared inventory.
+The canonical declaration should state business choices and avoid hand-writing derivable evidence. Continue or reject a patch when it repeats selector/type/name/path/semantic facts, maintains parallel ordered lists, manually folds generated structures, or makes a generated view a second policy owner.
 
-The canonical domain diff must show the first category and avoid hand-writing the second. Reject or
-continue a patch when the business declaration still repeats selector/type/name/path/semantic facts,
-maintains parallel ordered field lists, manually folds the document, or owns generic tree mechanics.
-Low-level constructors may remain as platform escape hatches, but the onboarding example and golden
-domain declaration must use the low-boilerplate authoring surface. Generic mechanics belong in neutral
-tests; domain tests should focus on policy and the readable generated structure.
+When the reusable kernel changes, require both a real consumer need and a structurally different neutral/tracer usage that challenges the reusable shape. A fixture calibrates representation; it must not invent production vocabulary.
 
-The escape-hatch count in the golden domain declaration is a tracked metric, not a one-time check: note
-it (`rowWithSortParts`/`computedField`/`document` used instead of `completeDocument`, and any other
-documented low-level constructor) at every accepted patch that touches the golden domain. A count that
-increases without a recorded reason in the same patch is a review red flag - it means the low-boilerplate
-authoring surface stopped covering a case it used to, or a business author reached for the escape hatch
-out of habit rather than necessity.
-
-This gate is about one domain's own declaration. A separate, opposite-direction question applies when
-the patch changes the *reusable Gen2 kernel itself* (`search-gen2-contract`/`search-gen2-core`, not a
-domain module): which real domain requirement justifies the feature, and which structurally different
-tracer/neutral usage challenges its reusable shape? The fixture calibrates representation; it does not
-invent production vocabulary. A BeautyQ-only representation without that calibration or an explicit
-single-consumer note is narrow-by-extraction rather than narrow-by-design and remains a review red flag.
-
-Every prompt that adds domain policy or reusable search mechanics must answer:
+Every such prompt must answer:
 
 ```text
 Canonical entry point:
-  Where will the new business policy be read?
 Domain-owned differences:
-  Which choices legitimately vary by domain?
 Framework-derived mechanics:
-  Which repeated operations are reused or extracted?
 Reuse proof:
-  Which neutral fixture or neutral tracer, or a second unrelated domain shape challenges the boundary?
 Executable owner:
-  Which declaration owns the policy, and which outputs are derived views?
 ```
 
-Return CONTINUE_SAME_PATCH or REJECT when policy is unreachable from the canonical entry point,
-generic code contains domain concepts, a domain copies reusable lookup/matching/validation mechanics,
-or a generated view becomes a second policy owner.
-
+Return `CONTINUE_SAME_PATCH` or `REJECT` when policy is unreachable, generic code contains consumer concepts, a consumer copies reusable mechanics, or generated output becomes a second policy owner.
 ## 1.3.1 No speculative defenses
 
 Require a concrete reachable failure or real persistence, wire, backend, cursor, fingerprint, or public compatibility contract before adding safeguards.
@@ -109,9 +83,7 @@ Require a concrete reachable failure or real persistence, wire, backend, cursor,
 Do not add defenses for overridden enum `toString`, reflection, malicious same-package callers,
 impossible nulls/states, or unspecified future changes.
 
-Apply the enum-text rule in `AGENTS.md`: preserve task-defined typed IDs/codes and active order used by
-contract views; use `toString` only for incidental diagnostics. Reject speculative labels or wrappers,
-not named contract values. Return `CONTINUE_SAME_PATCH` or `REJECT`.
+Apply the stable-value rule in `AGENTS.md`: preserve task-defined typed IDs/codes and active order used by contract views; use `toString` only for incidental diagnostics. Reject speculative labels or wrappers, not named contract values. Return `CONTINUE_SAME_PATCH` or `REJECT`.
 
 ## 1.4 No fake green
 
@@ -123,16 +95,7 @@ If a selected path uses saved artifacts or fixtures, provenance must say so. Do 
 
 ## 1.5 Protected source-truth invariant
 
-This invariant is intentionally repeated. Do not remove, shorten, soften, or move it into `AGENTS.md`.
-
-Before any patch design or delegated-agent prompt, source-confirm the relevant files, types, functions, fields, contracts, and validation commands.
-
-If required source truth is missing, stop patch planning, delegated prompts, adjacent safe patches, and invented helper/API design.
-
-A partial inventory may list `SOURCE_CONFIRMED` and `DOC_LEVEL_ONLY` facts, but if required anchors are missing it must end with a bundle request, not a patch proposal.
-
-The source-truth gate has higher priority than the requested output shape.
-
+Section 1.1 is protected and has higher priority than the requested output shape. Do not weaken it, move it into `AGENTS.md`, or produce a delegated prompt while decision-critical source anchors are missing.
 ---
 
 # 2. Role split and prompt forms
@@ -143,14 +106,18 @@ Delegated agents own bounded edits, focused tests, mechanical verification, and 
 
 The coordinator must resolve architecture before delegation; never leave an agent with `NEED_ARCHITECTURE_DECISION`.
 
-Read-only, audit, and source-truth work is coordinator-owned. Do not present it as a reusable delegated prompt.
+Audit conclusions, architecture, and source-sufficiency decisions are coordinator-owned. Exact read-only inventory or evidence capture may be delegated when paths, commands, output limits, and report shape are fixed.
 
-Do not create reusable read-only prompts by putting `Do not edit files` inside a prompt.
+Do not present interpretive audit or architecture work as a delegated prompt merely by adding `Do not edit files`.
 
-Allowed reusable prompt form:
+Allowed reusable prompt forms:
 
-- `Task:` only;
-- delegated edit work only.
+- `Task:` for delegated edit work;
+- `Task:` for exact mechanical inventory or evidence capture when paths,
+  commands, output limits, and report shape are fixed.
+
+Mechanical inventory tasks must not contain architecture interpretation or
+patch design.
 
 Forbidden reusable prompt labels:
 
@@ -168,52 +135,34 @@ Do not paste all of `AGENTS.md` into prompts. Inline only task-specific excerpts
 
 ## 3.1 Accepted closeout shape
 
-After an accepted review / closed patch **A**, respond in this order:
+After an accepted review:
 
-1. `current result review` for **A**.
-2. Extended commit message for **A**.
-3. If the user already selected a source-confirmed follow-up **B**, provide exactly one delegated edit `Task:` prompt for **B**.
-4. Provide the model recommendation for **B** as a coordinator note outside the prompt.
-5. Provide exactly two unconditional downstream follow-up options after **B**: **C** and **D**.
-6. Provide exactly one recommendation between **C** and **D**.
-7. A combined post-**B** bundle script (with labeled sections `current result review`,
-   `next option 1 source truth`, `next option 2 source truth`) is optional coordinator evidence
-   capture, not a mandatory step for every accepted patch. Provide it only when the coordinator or
-   user needs captured evidence for the next source-truth check; otherwise state the next
-   options' source-truth status inline.
+1. State the current result and remaining uncertainty.
+2. Provide an extended commit message for non-trivial work.
+3. If the user already selected a source-confirmed follow-up, provide one delegated edit `Task:` prompt.
+4. Put the model recommendation outside the prompt.
+5. Provide zero to two genuine downstream options only when useful; recommend one only when there is a real choice.
+6. Provide a bundle script only when further source capture or remote handoff is actually needed.
 
-Mandatory review and verification are plumbing, not downstream options.
+Mandatory review and verification are plumbing, not downstream options. A user reply containing only an option number selects work; it is not evidence. Do not manufacture alternatives after the task is complete.
+## 3.2 Verification
 
-The prompted task **B** must not be repeated as option `1` or option `2`.
+Delegated workers never run an unscoped full repository suite.
 
-If **B** is not source-confirmed, do not write a delegated prompt. Output only the appropriate `BLOCKED_*` status with an executable bundle script.
+The primary/coordinator may run an exact full command only when the user explicitly requests it. Otherwise use focused checks and ask the user in plain language to run the exact broader command before committing when that confidence is warranted.
 
-A user reply of only `1` or `2` is only task selection. It is never review evidence, source truth, or validation.
+Every report states exactly what ran and what remains unknown. Do not encode confidence as synthetic status labels.
+## 3.2.1 Risk-to-validation matrix
 
-If the user already chose the next task, continue that task after review acceptance. Do not re-offer the previously rejected alternative as an equal patch option.
+| Change shape | Minimum focused validation |
+|---|---|
+| Pure model, parser, policy, or codec helper | Owning spec |
+| Public API, wire codec, or route contract | Owning spec plus route/wire contract |
+| Build edge or module boundary | Owning production compile plus boundary/firewall spec |
+| DI, plugin, or activation change | Focused graph/wiring proof; broader full command only by explicit user request to primary/coordinator, otherwise ask the user to run it |
+| Lifecycle or external resource behavior | Scripted/in-process contract plus focused communication test when the harness is available |
 
-If the next step is evidence-conditional, the coordinator evaluates the condition during review and chooses the branch. Do not present evidence-conditional branches as equal user choices.
-
-## 3.2 Verification labels
-
-Use only these labels:
-
-- `FOCUSED GREEN` — requested focused suite passed; full repo unknown.
-- `FULL GREEN` — full requested project test passed.
-- `USER-VERIFIED FULL GREEN` — user ran the exact full command and reported green.
-- `VERIFICATION BLOCKED` — local permissions/resources blocked verification.
-
-Focused-only is never `FULL GREEN`.
-
-Do not run or ask delegated agents to run full `sbt test` unless explicitly requested.
-
-Default delegated-agent mode:
-
-- focused checks only;
-- prompt says `Do not run full sbt test.`;
-- report says `Focused result only. Full verification left to coordinator/user.`
-
-The user runs full `sbt test` when the coordinator recommends it.
+Use the narrowest row that covers every changed risk layer. Split unrelated risk layers rather than validating them with one oversized command.
 
 ## 3.3 Commit messages
 
@@ -228,11 +177,11 @@ For accepted non-trivial patches, prepare an extended commit message:
 - user-visible effects where relevant;
 - verification trailer.
 
-Avoid generic water such as "compile clean" unless it changes trust status or explains a known failure/fix.
+Avoid generic verification boilerplate unless it explains a known failure, fix, or remaining risk.
 
 Do not prepare an extended commit message for `CONTINUE_SAME_PATCH`, `CORE_DIRECTION_OK_BUT_NOT_ACCEPTED`, `REJECT`, or `BLOCKED_*`.
 
-Do not claim `FULL GREEN` from focused checks.
+Do not imply that focused checks cover the full repository.
 
 ---
 
@@ -240,105 +189,72 @@ Do not claim `FULL GREEN` from focused checks.
 
 ## 4.1 Source-truth gate before prompt
 
-Before writing a delegated prompt, source-confirm exact seams. If source truth is missing, request a focused bundle and stop.
+Apply section 1.1 before writing a prompt: close decision-critical seams and request focused bundles only for missing decision evidence. Do not duplicate mechanically discoverable imports, callers, or local signatures for `[M/S]` unless they are known traps.
 
-The prompt must not ask the agent to compensate with broad repository search unless broad source discovery is explicitly intended.
+The prompt must not ask the agent to reconstruct missing architecture or deletion inventory with broad repository search unless discovery is explicitly the task.
 
 Do not say "use attached bundle". Inline relevant facts.
 
 ## 4.2 Required delegated prompt shape
 
-Every delegated edit prompt must include:
+Every delegated edit prompt includes:
 
 ```text
-Task: feat(scope): exact small change
+Task: exact bounded change
 
-Read only:
-- exact files
+Available local sources:
+- exact files/ranges/symbols and why each may be needed
 
-Edit only:
-- exact files
+
+Edit boundary:
+- edit targets or manifest
+- retained owners
+- forbidden changes
 
 Current facts:
-- exact package paths, types, constructors, imports, helpers, aliases
-- exact fixture/test style
-- exact contracts and boundary conditions
-- exact metric semantics when relevant
+- only the facts needed for this model tier
 
 Goal:
-- exact behavior/tests/docs wording to add or change
-
-Forbidden:
-- exact scope boundaries
+- exact behavior/tests/docs outcome
 
 Validation:
 - focused commands
-- Do not run full sbt test unless explicitly requested
+- exact post-fix rerun rule
+- do not run the full repository suite
 
 Report:
 - changed files
-- focused validation result
-- deviations / compile fixes
-- do not claim FULL GREEN from focused checks
+- focused command results
+- deviations or diagnostic-driven fixes
+- remaining uncertainty
 
-Stop:
-- NEED_BUNDLE if listed files do not expose the required source truth
+Scope expansion:
+- exact files, symbols, diagnostics, and smallest next action
 ```
 
-For high-specificity edits, prefer exact replacement hunk or before/after snippet over prose-only instructions.
+Model-tier recipe:
 
-Include a read budget and stop condition.
+- `[W]` Inline exact paths and material signatures, imports, constructors, fixtures, manifests, diagnostics, and replacement hunks. This is appropriate when it prevents broad repository reading.
+- `[M]` Inline decision-critical seams, invariants, manifests, and known traps. Allow bounded lookup of stable local definitions and named dependency frontiers.
+- `[S]` Inline outcome, acceptance criteria, forbidden boundaries, known evidence, and source contradictions. Architecture and ownership decisions remain coordinator-owned. Allow bounded source discovery and reconciliation within those decisions.
+- `[W][CONTINUATION]` When exact hunks and current diagnostics are supplied, tell the model not to pre-read the whole source list.
+- `[M/S]` For new code, owner-map changes, or `[DOCS]` reconciliation, allow reading the canonical owner and nearby tests before editing.
 
-Historical milestone context belongs in coordinator review, not in every delegated prompt.
+Do not paste all of `AGENTS.md` into prompts. Inline only task-specific guardrails the chosen model is likely to violate. Historical context stays in coordinator review unless it changes the edit.
+## 4.2.1 Continuation and context control
 
-Do not hand agents broad grep-anchor lists as the implementation map when exact seams are known.
+- `[ALL][CONTINUATION]` Preserve the same uncommitted patch; a fresh session is a handoff, not a separate logical task.
+- `[ALL][CONTINUATION]` Before handoff or compaction, save a checkpoint under `target/agent-checkpoint/` containing raw `git status --short`, `git diff --stat`, `git diff --name-status`, completed edits, the last successful command, the complete current failure, and the next exact command.
+- `[ALL][CONTINUATION]` The next prompt inlines the checkpoint summary and does not repeat discovery or already successful checks without a source-confirmed reason.
+- `[W]` Prefer exact snippets and replacement hunks. `[M]` Allow bounded mechanical closure inside named frontiers. `[S]` Prefer bounded source inspection over duplicating large stable source.
+- `[ALL]` Large documents, diffs, successful logs, status, and inventories stay in repo-local artifacts; include only summaries and unexpected excerpts in the conversation.
+- `[ALL]` Follow `AGENTS.md` for diagnostics, sbt execution, deletion safety, and failure triage instead of repeating those rules here.
+- `[W][DOCS]` Multiple large documents may use a fresh docs continuation in the same uncommitted patch with exact replacement anchors; do not defer required live documentation to a later logical task.
+- `[ALL]` Split on observable triggers: a new architecture or ownership decision, a diagnostic opening several unplanned retained owners, a second unrelated root cause, repeated compile/search cycles, or lost verified state after compaction.
 
-Do not include model recommendations inside delegated prompts.
+## 4.3 Runtime safety inheritance
 
-Every delegated prompt inherits section 1.3.1; do not restate speculative safeguards as task requirements.
-
-## 4.2.1 Cost-aware continuation prompts
-
-These rules apply to every model tier.
-
-* Inline the exact source-confirmed paths, symbols, signatures, diagnostics, tests, and commands needed for the bounded edit. The agent must not reopen or broadly search the repository merely to reconfirm them.
-* Treat inlined anchors as authoritative unless a complete compiler/test diagnostic contradicts them. Then read only the reported range and directly named definition; otherwise stop with `NEED_BUNDLE`.
-* For large docs, provide exact headings/ranges or replacement text. Do not request full reads or rereads of unchanged implementation plans or technical specs.
-* A continuation prompt must preserve the working tree and state: completed edits, green commands, last failed/blocked command, relevant full diagnostics, fixes applied since, and the next exact command. Do not restart discovery or repeat green checks without a source-confirmed reason.
-* Request one initial checklist and one final update. Intermediate updates are only for a new blocker, scope change, or source contradiction.
-* Batch all diagnostics from one run into one edit pass. Searches are exact symbol/file scoped; repository-wide `rg`/`grep`/`find` is allowed only when broad discovery is explicitly the task.
-* Set bounded reads/searches and a validation plan. Default continuation budget: up to 12 reads, 4 exact searches, one compile when closure is unknown, one exact post-fix rerun, one final chained focused command, and one exact rerun if that final command exposes a source defect.
-* A budget must never force stopping immediately after a source fix without rerunning the command that found it.
-* Never pipe sbt through output filters; preserve complete diagnostics and the real exit status.
-
-## 4.3 Metrics, unsafe extraction, and test style
-
-For B-lite / M-ESQ-EVAL prompts, inline metric semantics from current handoff/source. Default metric semantics: distinct variant-id counts unless source-confirmed otherwise.
-
-Delegated prompts must inherit `AGENTS.md` Scala/test-style rules. Inline the unsafe-extraction constraint when a task touches decoded collections, options, Either, or JSON-derived structures.
-
-For pure search/eval model tests, prefer:
-
-- `AnyWordSpec`;
-- deterministic UUID fixtures when IDs are needed;
-- direct `assert`;
-- pattern matching for ADTs/options/either;
-- direct equality for case objects;
-- no effects, Distage, runtime, Docker, ES, or Qdrant clients.
-
-Avoid unless source-justified:
-
-- `var`;
-- `Ref`/`Atomic*` in simple pure tests;
-- broad `Recording*`/`Counting*` doubles;
-- `assert(true)`;
-- empty success branches;
-- `Option.get`;
-- unsafe `.head` on decoded or data-derived collections;
-- `asInstanceOf` / `isInstanceOf` assertions;
-- null assertions.
-
-If a suggested param/import/local is unused, remove it unless it is a source-confirmed lifecycle/readiness edge.
+Do not duplicate the Scala, test-double, unsafe-extraction, DI, lifecycle, HTTP, or sbt rules from `AGENTS.md`. Inline only the task-specific hazard the chosen model is likely to violate.
 
 ---
 
@@ -354,7 +270,7 @@ Required before `ACCEPT`:
 - no hidden fixture fallback unless explicitly requested;
 - reachable-but-broken resources fail red;
 - unavailable resources cancel/resource-gate only when no valid contract can be checked;
-- full-suite cancel count reported if full suite was run.
+- cancel count reported when an explicitly requested broader run was performed under section 3.2.
 
 If any required item remains, use `CONTINUE_SAME_PATCH`.
 
@@ -373,9 +289,8 @@ Delegated agents must not create review bundles, zip archives, or grep-report ar
 Clarifications:
 
 - Source-truth bundles (section 6.1–6.3) may still be requested by the coordinator when anchors are missing — that is coordinator-run evidence gathering, not a delegated-agent action.
-- Coordinator-owned bundle scripts are not default delegated patch closeout; see the softened step 7 in 3.1.
-- Full `sbt test` remains forbidden for delegated agents unless explicitly requested (section 3.2).
-- No `FULL GREEN` claim from focused checks (section 3.2/3.3) — this applies whether or not a bundle was captured.
+- Coordinator-owned bundle scripts are not default delegated patch closeout; see the optional bundle rule in section 3.1.
+- Full repository tests remain forbidden for delegated workers; section 3.2 governs explicit primary/coordinator runs.
 
 This does not remove the bundle section below; bundle scripts remain available as optional coordinator evidence capture.
 
@@ -404,97 +319,26 @@ Do not include full `target`, generated build output, screenshots, stale numbere
 
 ## 6.2 Required bundle shape
 
-When explicitly requested, user-facing bundle scripts must:
+When explicitly requested, a bundle must:
 
-- create a repo-local `.review-bundles/beautyq-<topic>-<timestamp>-$RANDOM` workspace;
-- use `BASE`, `WORK`, and `BUNDLE_ID`;
-- include `BUNDLE_ID` in every internal artifact basename;
-- avoid generic internal filenames;
-- include task-relevant status, anchors, diffs, and manifests;
-- truncate large text outputs;
-- zip the bundle directory;
-- print `wc -c` for artifacts and zip;
-- run `cpf "$ZIP"`;
-- print `echo "$ZIP"`.
-
-When explicitly requested, patch-review bundles must include:
-
-- `git diff --binary HEAD --`;
-- `git diff --binary --cached`;
-- `git diff --binary`;
-- NUL-safe untracked-file manifest;
-- NUL-safe untracked-file archive.
-
-Include full recent commit bodies only when commit rationale/history is task-relevant.
-
-If `cpf` is unavailable in an agent shell, still create the zip, print `echo "$ZIP"`, and report the deviation honestly. Do not replace `cpf` with `pbcopy` in user-facing snippets.
-
-Artifact handoff commands must print the final workspace path and zip path.
-
-## 6.3 Canonical bundle skeleton
-
-Use this shape unless the task requires a narrower variant:
+- use a repo-local `.review-bundles/<topic>-<timestamp>-$RANDOM` workspace;
+- include task-relevant status, bounded anchors, diffs, and manifests;
+- use NUL-safe untracked-file capture when untracked files matter;
+- truncate large text output;
+- include the bundle ID in artifact names;
+- print artifact and zip sizes;
+- print the final workspace and archive paths;
+- copy the archive with:
 
 ```bash
-BASE=".review-bundles/beautyq-<topic>-$(date -u +%Y%m%d-%H%M%S)-$RANDOM"
-WORK="$BASE.dir"
-BUNDLE_ID="$(basename "$BASE")"
-OUT="$WORK/${BUNDLE_ID}-bundle.txt"
-
-mkdir -p "$WORK"
-
-{
-  echo "## status"
-  git status --short
-  echo
-
-  echo "## relevant anchors"
-  rg -n "PatternA|PatternB" AGENTS.md docs leaderboard-app-shell/src/main leaderboard-app-shell/src/test || true
-  echo
-
-  echo "## recent commits"
-  git --no-pager log -14 --oneline
-} > "$OUT" 2>&1
-
-git --no-pager diff --binary HEAD -- > "$WORK/${BUNDLE_ID}-tracked-changes-from-head.patch" 2>&1 || true
-git --no-pager diff --binary --cached > "$WORK/${BUNDLE_ID}-staged-tracked-changes.patch" 2>&1 || true
-git --no-pager diff --binary > "$WORK/${BUNDLE_ID}-unstaged-tracked-changes.patch" 2>&1 || true
-git ls-files --others --exclude-standard -z > "$WORK/${BUNDLE_ID}-untracked-files.nul"
-
-python3 - <<'PY' "$WORK" "$BUNDLE_ID"
-import pathlib, sys, tarfile
-work = pathlib.Path(sys.argv[1])
-bundle_id = sys.argv[2]
-repo = pathlib.Path.cwd()
-nul = work / f"{bundle_id}-untracked-files.nul"
-manifest = work / f"{bundle_id}-untracked-files.manifest.txt"
-tar_path = work / f"{bundle_id}-untracked-files.tar.gz"
-items = [p for p in nul.read_bytes().split(b"\0") if p]
-paths = [p.decode("utf-8", errors="replace") for p in items]
-manifest.write_text("\n".join(paths) + ("\n" if paths else ""), encoding="utf-8")
-with tarfile.open(tar_path, "w:gz", dereference=False) as tar:
-    for rel in paths:
-        path = repo / rel
-        if path.exists() or path.is_symlink():
-            tar.add(path, arcname=rel, recursive=False)
-PY
-
-ZIP="$BASE.zip"
-rm -f "$ZIP"
-(cd "$WORK" && zip -9 -r "../$(basename "$ZIP")" .) >/dev/null
-
-wc -c "$OUT"
-wc -c "$WORK/${BUNDLE_ID}-tracked-changes-from-head.patch"
-wc -c "$WORK/${BUNDLE_ID}-staged-tracked-changes.patch"
-wc -c "$WORK/${BUNDLE_ID}-unstaged-tracked-changes.patch"
-wc -c "$WORK/${BUNDLE_ID}-untracked-files.manifest.txt"
-wc -c "$WORK/${BUNDLE_ID}-untracked-files.tar.gz"
-wc -c "$ZIP"
 cpf "$ZIP"
 echo "$ZIP"
 ```
 
-## 6.4 No shell/session hazards
+If `cpf` is unavailable, still create and print the archive path and report the deviation. Do not substitute a different clipboard command.
+
+Use a repository-owned bundle script when available; otherwise provide a task-specific compact script. Do not embed a universal multi-page skeleton in this guide.
+## 6.3 No shell/session hazards
 
 User-facing copy-paste terminal commands must not close, replace, or mutate the user's shell behavior.
 
@@ -510,14 +354,14 @@ Forbidden:
 
 Use local flags and conditional branches. On failure, print `BLOCKED` or `MISSING`, skip dependent steps, and still print diagnostics.
 
-## 6.5 No `/tmp` for persisted evidence
+## 6.4 No `/tmp` for persisted evidence
 
 `/tmp` is only for disposable scratch or short-lived bundles.
 
 Multi-iteration evidence workspaces must use project-local paths, defaulting to:
 
 ```text
-./.beautyq-evidence-runs/<run-id>/
+./.evidence-runs/<run-id>/
 ```
 
 The path must be gitignored or added to `.git/info/exclude` before use.
@@ -530,145 +374,79 @@ Use `$HOME` or external paths only when the user explicitly asks.
 
 Before changing docs, identify the canonical owner of the fact.
 
-Search Gen2 exact API and supported technical shapes belong to the technical specification; live gaps
-and sequencing belong to the implementation plan; practical domain authoring belongs to onboarding.
-Do not recreate a separate framework-scope ledger.
-
 Keep:
 
-- stable repo behavior in `AGENTS.md`;
+- stable repository behavior in `AGENTS.md`;
 - coordinator workflow in this file;
+- product/domain policy in product documentation;
 - task-local facts in delegated prompts;
-- volatile verification counts in reports, not long-lived docs or commit messages.
+- volatile counts and verification outcomes in reports.
 
-Do not add sibling coordinator/runbook files under `docs/local` unless the user explicitly asks or the file is a task-local temporary evidence template.
+Do not duplicate long API lists, task state, metrics, bundle logic, or prompt rules across docs. Duplicate only short safety-critical guardrails that must be visible at multiple entry points.
 
-Do not duplicate long API lists, metric semantics, roadmap state, bundle rules, or prompt-writing rules across docs.
-
-Duplicate only short safety-critical guardrails that must be visible at multiple entrypoints.
-
-When the user asks the coordinator to edit this guide or another text doc, provide a ready replacement file/artifact by default. Do not ask the user to apply a coordinator-authored patch unless the user explicitly asked for a patch.
-
+When asked to edit this guide or another text document, provide a ready replacement artifact by default.
 ---
 
 # 8. Model recommendations
 
-Model recommendation blocks are only for non-trivial delegated edit prompts.
-
-Keep them outside the delegated prompt.
+Keep model recommendations outside delegated prompts. Recommend the cheapest tier likely to complete the task without expensive retries.
 
 Decision order:
 
-1. Source truth.
-2. Task type and risk.
-3. User preference.
-4. Model choice.
+1. source-truth sufficiency;
+2. task type and risk;
+3. expected discovery and output size;
+4. user preference;
+5. model tier.
 
-Recommend the minimal sufficient model, not a comfortable heavier default. Docs-only or narrow review-fix delegated edits usually use cheaper/local models unless policy or source complexity justifies more.
+| Tier | Example | Best fit |
+|---|---|---|
+| Weak | Qwen3.6 | exact mechanical patches, narrow dofixes, exact manifests |
+| Medium | MiniMax-M3 | source-confirmed multi-module work, bounded dependency closure |
+| Strong | strong frontier model | source reconciliation, architecture, high-risk lifecycle or ownership changes |
 
 Do not use a stronger model to invent missing source truth.
-
-Exact model names:
-
-- `Qwen 256/512`
-- `Qwen 1024/2048`
-- `Qwen 4096`
-- `MiMo-V2.5`
-- `MiMo-V2.5-Pro`
-- `MiniMax-M3`
-- `GPT-5.5-medium`
-- `GPT-5.5-high`
-
-Compact mapping:
-
-- tiny mechanical docs/code edits: `Qwen 256/512` or `MiMo-V2.5`;
-- bounded pure code/docs patches from exact recipe: `Qwen 1024/2048` or `MiMo-V2.5-Pro`;
-- larger source-confirmed local work: `Qwen 4096`;
-- source-confirmed repo inventory or stronger non-GPT agentic work: `MiniMax-M3`;
-- complex code writing when cheaper/local models are likely to waste iterations: `GPT-5.5-medium`;
-- very high-risk production lifecycle/runtime/backend migration code: `GPT-5.5-high`.
-
-Recommendation note template:
-
-```text
-Task classification:
-- Type:
-- Source truth:
-- Risk:
-- Preference:
-- Availability:
-
-Run recommendation:
-- Cheapest likely to work:
-- Faster cloud option:
-- Stronger non-GPT option:
-- GPT option, only if justified:
-- If source truth is missing:
-```
-
 ---
 
 # 9. Senior audit playbook
 
-Senior audit work is coordinator-owned read-only source-truth work. Run it with bundle scripts, not delegated read-only prompts.
+Senior audit interpretation is coordinator-owned source-truth work. Exact mechanical evidence capture may be delegated when paths, commands, output limits, and report shape are fixed.
 
-This playbook is not product route truth, not a roadmap, and not a substitute for canonical docs.
+Run audit waves independently and read-only. Each wave ends with either source-confirmed edit seams, no issue found, or a focused bundle request. An audit finding never skips the source-truth gate.
 
-Run waves independently as read-only evidence gathering, not as edits.
+Generic waves:
 
-Each wave ends in exactly one of:
-
-- accepted patch candidate with source-confirmed edit seams;
-- no-issue-found evidence;
-- `BLOCKED_NEED_BUNDLE`.
-
-A wave finding never skips the source-truth gate.
-
-## 9.1 Audit waves
-
-1. **Docs-cement audit** — stale milestone counts; future plans written as current truth; dummy/backend equivalence wording; benchmark-as-rollout wording; fallback/fusion/rerank ambiguity.
-2. **Project values/goals audit** — roadmap memory vs source truth; measured local/test gates before production claims; local/test proof is not production approval; baseline owns hard constraints; supplement stays candidate-only; verification labels stay honest.
-3. **Architecture boundary audit** — route/default graph; ES/Qdrant ownership split; frontend provenance contract; benchmark/eval non-goals; local managed vs production boundary.
-4. **Dependency/DI/lifecycle audit** — Distage roots; axes/activation; heavy dependency construction; graph garbage collection; startup/readiness ordering through dependency edges.
-5. **Scala/FP/BIO audit** — typed errors preserved; resource safety; no swallowed failures; narrow effects; no mutable spy creep; no broad production graph in focused specs.
-6. **Test taxonomy audit** — Contractual/Regression/Progression/Benchmark × Blackbox/Effectual/Whitebox × Atomic/Group/Communication coverage gaps; dummy/in-memory tests do not oversell real-backend proof.
-7. **Readiness/reuse/state-marker audit** — fingerprints; metadata; sidecars; counts; compatibility checks; markers validated against real resources, not assumed from marker alone.
-8. **Eval/golden/report governance audit** — derived counts; golden drift; report/source ownership; no accidental semantic/Qdrant-owned query class creeps into baseline-owned classes.
-9. **Decoder/API-shape drift audit** — live external JSON shapes vs unit fixtures; stable payload keys; persisted JSON compatibility.
-
-Accepted wave findings still follow normal closeout: extended commit message, exactly two downstream options, one recommendation, and a combined post-task bundle script.
-
+1. documentation claims versus current source;
+2. project goals versus measured evidence;
+3. architecture and ownership boundaries;
+4. dependency injection, lifecycle, roots, and activation;
+5. typed errors, effects, resource safety, and mutable-test creep;
+6. test taxonomy and real-resource coverage;
+7. readiness, compatibility, fingerprints, and state markers;
+8. generated reports, golden data, and ownership drift;
+9. external decoder, API, and persisted-shape drift.
 ---
 
 # 10. Pre-send / pre-accept checklist
 
 Before sending a delegated prompt:
 
-- Is source truth sufficient?
-- Are read/edit files exact?
-- Are required facts inlined for this model tier without broad reconfirmation?
-- Does a continuation prompt preserve green checks, the last diagnostic, applied fixes, and the next command?
-- Are large docs range-bounded and is a mandatory post-fix rerun reserved?
-- Is this edit bounded?
-- Have business choices been separated from tautological evidence?
-- Does the target domain example show the intended authoring surface rather than platform internals?
-- Are validation commands focused unless full test was explicitly requested?
-- Does the prompt stop with `NEED_BUNDLE` if listed files are insufficient?
-- Are model recommendations outside the prompt?
+- Is the architecture already decided?
+- Are decision-critical source anchors confirmed?
+- Is the prompt sized for the chosen model tier?
+- Are edit targets, retained owners, and forbidden changes explicit?
+- Does a continuation include the standard checkpoint: status, diff summaries, completed edits, last success, complete failure, and next command?
+- Are large outputs kept in repo-local artifacts?
+- Does validation follow the risk-to-validation matrix?
+- Are product/domain/task-specific facts kept out of these two guides?
+- Is any rule duplicated unnecessarily?
 
 Before accepting a patch:
 
-- Is the original DoD complete?
-- Does the canonical domain declaration contain only business choices, with tautological evidence derived by the reusable layer?
-- Would a structurally similar new domain require copying per-type codecs, repeated IDs/paths/semantics, parallel lists, document folds, or renderer mechanics?
-- If the patch touches `search-gen2-contract`/`search-gen2-core`: is the feature justified by a real domain need and its reusable shape challenged by a different neutral/tracer usage, or explicitly marked single-consumer?
-- Did the escape-hatch count in the golden domain declaration increase without a recorded reason?
-- Are required tests/docs/validation/branch coverage done in this same patch?
-- If not, am I using `CONTINUE_SAME_PATCH` instead of `ACCEPT`?
-- Are downstream options only new work after current patch completion?
-- Are verification labels honest?
-- Is the commit message only for an accepted patch?
-- Does each commit have one cohesive architectural purpose that its subject names? Split independent
-  risk layers or unrelated "why" narratives, but do not mechanically split one coherent checkpoint by
-  file, test, documentation section or delegated D-item. A planned brick may be one commit or a small
-  cohesive series; post-hoc surgery is not a substitute for reviewable intent.
+- Is the original requested behavior complete?
+- Are required focused tests, docs, branches, and edge cases complete in this patch?
+- Are ownership and compatibility boundaries preserved?
+- Are known deviations and source contradictions resolved?
+- Is the commit message only about the change, rationale, boundaries, and verification actually performed?
+- Is broader verification requested separately when warranted?
+- Does the commit have one cohesive architectural purpose rather than unrelated risk layers?

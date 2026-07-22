@@ -21,7 +21,20 @@ the same commit that starts, completes, blocks, or materially re-scopes a brick.
 summaries must remain short and point here.
 
 - **Overall:** implementation in progress.
-- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-B, 6C, 6D, 7A and 7B are implemented. Brick 8's compiler/application/projector/runtime seams and independently selectable ES/Qdrant communication proofs are present; the shared Distage-managed Qdrant 1.18.3 process executes both Gen1 `/points/search` and Gen2 `/points/query`. Brick 8 remains active because the app shell does not yet bind bootstrap, activation, application and runtime into one executable opt-in graph, the HTTP encoder does not yet expose the projector's complete filter/total contract, the real embedding adapter has no communication proof, and the four cutover observations have not been produced by that real graph.
+- **Live status:** Bricks 0–3, 4A–4G-B, 5A–5D, 6A–6B-B, 6C, 6D, 7A, 7B and 8A are implemented. Brick 8B
+  is implemented and user-verified green for the requested focused
+  validation. The four fixed typed fixtures executed through the Brick 8A
+  opt-in application graph against real Elasticsearch, shared managed Qdrant
+  1.18.3, and the configured embedding endpoint. FullSearch readiness and the
+  no-harm cutover gate passed. The deterministic cutover report and Gen1
+  deletion inventory were produced under `target/search-gen2/`. Brick 9 is not
+  started and remains the only large outstanding Gen2 change set. The
+  `BeautyQGen2EmbeddingClient` now binds the response model identity to the requested model; a missing,
+  non-string or mismatched `model` field is a typed `InvalidResult(QdrantEmbeddingError.ModelMismatch)`
+  and never degrades to a connectivity failure. The single test-only `leaderboard-app-shell
+  test -> beautyq-search-gen2-eval test` build edge plus the `SearchGen2ModuleFirewallSpec`
+  "leaderboard-app-shell production sources free of eval imports" check keeps the eval module out of
+  the production serving classpath.
 - **Completed:** 5D owns exact Elasticsearch groups and BeautyQ carousel projection. 6A owns the pure
   Qdrant policy, generation artifacts, candidate request compiler and candidate-only response decoder.
   6B-A owns the neutral JSON/HTTP transport, thin Elasticsearch adapter and exact Qdrant wire client.
@@ -29,12 +42,13 @@ summaries must remain short and point here.
   bound baseline authorization, and construction boundaries. 7B owns BeautyQ orchestration with
   owner-private outcomes (`Ineligible`, `Evaluated`, `Failed`), typed `BeautyQSupplementStatus`, exact
   cause preservation in `PipelineFailureDisposition`, policy-owned readiness results with derived
-  `supplementReady`, and the production-path proofs described below.
-- **Next sequence:** exactly three large change sets remain. Brick 8A composes one executable opt-in
-  app-shell graph and closes the native Gen2 HTTP projection plus real embedding communication. Brick
-  8B executes the four typed fixtures through that graph, emits the machine-readable no-harm/cutover
-  result, and produces the complete Gen1 deletion inventory. Only then may Brick 9 atomically move the
-  unversioned route to the native Gen2 contract and delete Gen1 search. No generic plan, backend or
+  `supplementReady`, and the production-path proofs described below. 8A owns the explicit opt-in
+  app-shell graph, the complete HTTP projection and the real embedding communication. 8B owns the
+  readiness-aware cutover gate, the executable four-fixture runner, the typed `BeautyQGen1SearchDeletionInventory`
+  and the deterministic machine-readable report artifacts.
+- **Next sequence:** exactly one large change set remains. Brick 9 atomically moves the unversioned
+  `/beauty-search` route to the native Gen2 contract and deletes Gen1 search using the published
+  `BeautyQGen1SearchDeletionInventory` as the canonical deletion input. No generic plan, backend or
   supplement redesign is part of this sequence.
 - **Materialization boundary decision:** the canonical production source and materializer compute their
   fingerprints with the values they return. No untrusted production caller supplies those aggregates,

@@ -1,30 +1,266 @@
 package leaderboard.search
 
-import distage.Injector
+import com.typesafe.config.ConfigFactory
+import izumi.distage.config.model.AppConfig
+import distage.{Injector, ModuleDef, Scene}
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
+import leaderboard.api.BeautySearchGen2Api
+import leaderboard.config.{BeautyQGen2AppShellConfig, BeautyQGen2AppShellConfigError, BeautyQGen2AppShellConfigException, RawBeautyQGen2AppShellConfig}
 import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
 import leaderboard.plugins.BeautySearchGen2PluginModules
+import leaderboard.search.beautyq.gen2.materialization.BeautyQMaterializationError
+import leaderboard.search.gen2.{BeautyQSearchGen2BootstrapError, BeautyQSearchGen2StartupFailure}
 import org.scalatest.wordspec.AnyWordSpec
+import zio.{IO, Task, Unsafe}
+
+import scala.concurrent.duration.*
 
 final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
-  "BeautySearchGen2PluginModules" should {
+
+  "BeautySearchGen2PluginModules.routeComposition" should {
     "expose the independent API composition only through explicit opt-in" in {
-      val module = new distage.ModuleDef {
-        include(BeautySearchGen2PluginModules.api)
+      val module = new ModuleDef {
+        include(BeautySearchGen2PluginModules.routeComposition)
         make[Probe].from((endpoints: BeautySearchGen2TapirEndpoints) => Probe(endpoints))
       }
-      val probe = Injector().produce(
+      val effect = Injector[Task]().produce(
         bindings = module,
         roots = Roots.target[Probe],
         activation = Activation.empty,
         locatorPrivacy = LocatorPrivacy.PublicByDefault,
-      ).unsafeGet().get[Probe]
+      ).use(locator => zio.ZIO.succeed(locator.get[Probe]))
+      val probe = Unsafe.unsafe { implicit unsafe =>
+        zio.Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
+      }
 
       assert(probe.endpoints.all.size == 1)
       assert(probe.endpoints.all.headOption.exists(_ eq probe.endpoints.searchBeautyGen2))
     }
   }
 
+  "BeautySearchGen2PluginModules.appShellConfigModule" should {
+    "expose the raw HOCON-bound operational config under the agreed name" in {
+      val module = new ModuleDef {
+        make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+        include(BeautySearchGen2PluginModules.appShellConfigModule)
+        make[ConfigProbe].from((config: RawBeautyQGen2AppShellConfig) => ConfigProbe(config))
+      }
+      val effect = Injector[Task]().produce(
+        bindings = module,
+        roots = Roots.target[ConfigProbe],
+        activation = Activation(Scene -> Scene.Managed),
+        locatorPrivacy = LocatorPrivacy.PublicByDefault,
+      ).use(locator => zio.ZIO.succeed(locator.get[ConfigProbe]))
+      val probe = Unsafe.unsafe { implicit unsafe =>
+        zio.Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
+      }
+
+      assert(probe.config.connectTimeout == 5.seconds)
+      assert(probe.config.requestTimeout == 60.seconds)
+      assert(probe.config.bulkMaxActions == 100)
+      assert(probe.config.bulkMaxBytes == 1048576L)
+    }
+  }
+
+  "BeautyQGen2AppShellConfig.validateAtBoundary" should {
+    "reject a non-positive connect timeout with the typed BeautyQGen2AppShellConfigError at the DI boundary" in {
+      val raw = RawBeautyQGen2AppShellConfig(
+        connectTimeout = FiniteDuration(0, "millis"),
+        requestTimeout = 60.seconds,
+        bulkMaxActions = 100,
+        bulkMaxBytes = 1048576L,
+      )
+      val thrown = scala.util.Try {
+        BeautyQGen2AppShellConfig.validateAtBoundary(raw)
+      } match {
+        case scala.util.Failure(error: BeautyQGen2AppShellConfigException) => error
+        case scala.util.Failure(other) =>
+          fail(s"expected BeautyQGen2AppShellConfigException, got $other")
+        case scala.util.Success(value) =>
+          fail(s"expected BeautyQGen2AppShellConfigException, got success $value")
+      }
+      thrown.typed match {
+        case BeautyQGen2AppShellConfigError.NonPositiveConnectTimeout(value) =>
+          assert(value == FiniteDuration(0, "millis"))
+        case other => fail(s"expected NonPositiveConnectTimeout, got $other")
+      }
+    }
+
+    "reject a non-positive bulk max actions with the typed error" in {
+      val raw = RawBeautyQGen2AppShellConfig(
+        connectTimeout = 5.seconds,
+        requestTimeout = 60.seconds,
+        bulkMaxActions = 0,
+        bulkMaxBytes = 1048576L,
+      )
+      val thrown = scala.util.Try {
+        BeautyQGen2AppShellConfig.validateAtBoundary(raw)
+      } match {
+        case scala.util.Failure(error: BeautyQGen2AppShellConfigException) => error
+        case scala.util.Failure(other) =>
+          fail(s"expected BeautyQGen2AppShellConfigException, got $other")
+        case scala.util.Success(value) =>
+          fail(s"expected BeautyQGen2AppShellConfigException, got success $value")
+      }
+      thrown.typed match {
+        case BeautyQGen2AppShellConfigError.NonPositiveBulkMaxActions(value) =>
+          assert(value == 0)
+        case other => fail(s"expected NonPositiveBulkMaxActions, got $other")
+      }
+    }
+  }
+
+  "BeautySearchGen2PluginModules.api" should {
+    "declare the BeautyQSearchGen2Startup in the plan that produces BeautySearchGen2Api[IO]" in {
+      val plan = Injector[Task]().plan(
+        bindings = new ModuleDef {
+          make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+          include(BeautySearchGen2PluginModules.api)
+        },
+        roots = Roots.target[BeautySearchGen2Api[IO]],
+        activation = Activation(Scene -> Scene.Managed),
+        locatorPrivacy = LocatorPrivacy.PublicByDefault,
+      )
+      val planString = plan.toString
+      assert(planString.contains("BeautyQSearchGen2Startup"), s"expected BeautyQSearchGen2Startup in plan, got $planString")
+    }
+
+    "fail to produce BeautySearchGen2Api[IO] when the startup resource is not in the graph" in {
+      val planEffect = zio.ZIO.attempt {
+        Injector[Task]().produce(
+          bindings = new ModuleDef {
+            make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+            include(BeautySearchGen2PluginModules.routeComposition)
+          },
+          roots = Roots.target[BeautySearchGen2Api[IO]],
+          activation = Activation(Scene -> Scene.Managed),
+          locatorPrivacy = LocatorPrivacy.PublicByDefault,
+        ).use(_ => zio.ZIO.unit)
+      }
+      val outer = Unsafe.unsafe { implicit unsafe =>
+        try {
+          zio.Runtime.default.unsafe.run(planEffect).getOrThrowFiberFailure()
+          fail("expected provision failure when startup is missing")
+        } catch {
+          case e: Throwable => e
+        }
+      }
+      val all = collectThrowables(outer)
+      val message = all.flatMap(t => Option(t.getMessage).toList).mkString(" | ")
+      assert(
+        message.contains("BeautyQSearchGen2Runtime") || message.contains("missing"),
+        s"expected missing-dependency failure, got causes: $message"
+      )
+    }
+  }
+
+  "BeautyQSearchGen2StartupFailure" should {
+    "preserve the exact typed BeautyQSearchGen2BootstrapError on startup failure" in {
+      val typedError: BeautyQSearchGen2BootstrapError =
+        BeautyQSearchGen2BootstrapError.Materialization(
+          BeautyQMaterializationError.Snapshot(
+            leaderboard.search.beautyq.gen2.materialization.SnapshotLoadError.Repository(
+              leaderboard.model.QueryFailure.operation("test", "synthetic")
+            )
+          )
+        )
+      val failure = new BeautyQSearchGen2StartupFailure(typedError)
+      failure.typed match {
+        case BeautyQSearchGen2BootstrapError.Materialization(_) => ()
+        case other => fail(s"expected Materialization preserved, got $other")
+      }
+    }
+  }
+
+  "BeautyQGen2AppShellConfig" should {
+    "reject non-positive connect timeout" in {
+      val raw = BeautyQGen2AppShellConfig(
+        connectTimeout = FiniteDuration(0, "millis"),
+        requestTimeout = 60.seconds,
+        bulkMaxActions = 100,
+        bulkMaxBytes = 1048576L,
+      )
+      BeautyQGen2AppShellConfig.validate(raw) match {
+        case Left(BeautyQGen2AppShellConfigError.NonPositiveConnectTimeout(_)) => ()
+        case other => fail(s"expected NonPositiveConnectTimeout, got $other")
+      }
+    }
+
+    "reject non-positive request timeout" in {
+      val raw = BeautyQGen2AppShellConfig(
+        connectTimeout = 5.seconds,
+        requestTimeout = FiniteDuration(-1, "seconds"),
+        bulkMaxActions = 100,
+        bulkMaxBytes = 1048576L,
+      )
+      BeautyQGen2AppShellConfig.validate(raw) match {
+        case Left(BeautyQGen2AppShellConfigError.NonPositiveRequestTimeout(_)) => ()
+        case other => fail(s"expected NonPositiveRequestTimeout, got $other")
+      }
+    }
+
+    "reject non-positive bulk max actions" in {
+      val raw = BeautyQGen2AppShellConfig(
+        connectTimeout = 5.seconds,
+        requestTimeout = 60.seconds,
+        bulkMaxActions = 0,
+        bulkMaxBytes = 1048576L,
+      )
+      BeautyQGen2AppShellConfig.validate(raw) match {
+        case Left(BeautyQGen2AppShellConfigError.NonPositiveBulkMaxActions(_)) => ()
+        case other => fail(s"expected NonPositiveBulkMaxActions, got $other")
+      }
+    }
+
+    "reject non-positive bulk max bytes" in {
+      val raw = BeautyQGen2AppShellConfig(
+        connectTimeout = 5.seconds,
+        requestTimeout = 60.seconds,
+        bulkMaxActions = 100,
+        bulkMaxBytes = 0L,
+      )
+      BeautyQGen2AppShellConfig.validate(raw) match {
+        case Left(BeautyQGen2AppShellConfigError.NonPositiveBulkMaxBytes(_)) => ()
+        case other => fail(s"expected NonPositiveBulkMaxBytes, got $other")
+      }
+    }
+
+    "accept the documented default operational values" in {
+      val raw = BeautyQGen2AppShellConfig(
+        connectTimeout = 5.seconds,
+        requestTimeout = 60.seconds,
+        bulkMaxActions = 100,
+        bulkMaxBytes = 1048576L,
+      )
+      BeautyQGen2AppShellConfig.validate(raw) match {
+        case Right(value) => assert(value == raw)
+        case Left(error)  => fail(s"expected validated config, got $error")
+      }
+    }
+  }
+
+  "default LeaderboardPlugin graph" should {
+    "exclude the BeautyQ Gen2 opt-in module, runtime, and embedding owner from the production default wiring" in {
+      val source = scala.io.Source.fromFile("leaderboard-app-shell/src/main/scala/leaderboard/plugins/LeaderboardPlugin.scala")
+      val content = scala.util.Using.resource(source)(_.mkString)
+      val referenced =
+        Seq("BeautySearchGen2PluginModules", "BeautyQSearchGen2Startup", "BeautyQSearchGen2Bootstrap", "BeautyQGen2EmbeddingClient", "BeautyQSearchGen2Runtime", "beauty-search-gen2")
+      val violations = referenced.filter(content.contains)
+      assert(violations.isEmpty, s"LeaderboardPlugin.scala must not reference any Gen2 owner; found: ${violations.mkString(", ")}")
+    }
+  }
+
   private final case class Probe(endpoints: BeautySearchGen2TapirEndpoints)
+  private final case class ConfigProbe(config: RawBeautyQGen2AppShellConfig)
+
+  /** Recursive, immutable cause-chain walk: each throwable's direct message, the recursive
+    * walk over its suppressed throwables, and the recursive walk over its cause are concatenated
+    * in deterministic order. The result is the complete set of throwables reachable from `top`. */
+  private def collectThrowables(top: Throwable): Vector[Throwable] = {
+    val direct = Vector(top)
+    val viaSuppressed = top.getSuppressed.toVector.flatMap(collectThrowables)
+    val viaCause = Option(top.getCause).map(collectThrowables).getOrElse(Vector.empty)
+    direct ++ viaSuppressed ++ viaCause
+  }
 }

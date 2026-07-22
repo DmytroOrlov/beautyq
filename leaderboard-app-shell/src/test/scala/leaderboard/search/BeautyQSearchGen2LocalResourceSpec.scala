@@ -8,7 +8,10 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.config.model.AppConfig
 import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogIO2Module
+import leaderboard.HttpContractTestSupport
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
+import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
+import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
 import leaderboard.search.beautyq.gen2.materialization.*
 import leaderboard.search.beautyq.gen2.wiring.*
@@ -19,14 +22,17 @@ import leaderboard.search.gen2.core.hydration.CandidateHydrationError
 import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
+import leaderboard.search.gen2.{BeautyQGen2EmbeddingClient, BeautyQSearchGen2Bootstrap, BeautyQSearchGen2HttpService, BeautyQSearchGen2Startup}
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
+import zio.interop.catz.*
 
 import java.time.{Clock, Duration, Instant}
+import java.net.{HttpURLConnection, URI, URL}
 
 import BeautyQSearchGen2ResourceSupport.*
 
 /** Atomic resource-gate proofs plus the managed BeautyQ Gen2 communication proof. */
-final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.AnyWordSpec {
+final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.AnyWordSpec with HttpContractTestSupport {
   "managed BeautyQ Gen2" should {
     "activate and query two real BeautyQ-shaped generations when resources serve" in {
       withManagedPorts { (elasticsearchPort, qdrantPort) =>
@@ -39,6 +45,22 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
           runScenario(esClient, qdrantHttp, deterministicEmbedding)
       }
     }
+
+    "run the complete opt-in application through the real Elasticsearch, Qdrant, and embedding communication paths and POST /beauty-search-gen2" in {
+      withManagedPorts { (elasticsearchPort, qdrantPort) =>
+        val embeddingConfig = LlamaCppEmbeddingClientConfig(
+          baseUrl = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081"),
+          endpointPath = "/v1/embeddings",
+        )
+        val embeddingEndpoint = URI.create(s"${embeddingConfig.baseUrl}${embeddingConfig.endpointPath}").toURL
+        val embeddingReachable = probeEmbeddingReachability(embeddingEndpoint)
+        if (!embeddingReachable) {
+          fail(s"VERIFICATION BLOCKED: real BeautyQ Gen2 embedding endpoint is unreachable at $embeddingEndpoint; cannot prove embedding communication")
+        }
+        val (embedding, _) = buildRealEmbedding(embeddingConfig)
+        runScenarioWithEmbedding(elasticsearchPort, qdrantPort, embedding)
+      }
+    }
   }
 
   private val deterministicEmbedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError] =
@@ -49,6 +71,51 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
           .left
           .map(BeautyQEmbeddingRequestError.InvalidResult.apply)
     }
+
+  private def probeEmbeddingReachability(endpoint: URL): Boolean = {
+    val connection = endpoint.openConnection()
+    connection match {
+      case http: HttpURLConnection =>
+        http.setConnectTimeout(2000)
+        http.setReadTimeout(2000)
+        http.setRequestMethod("GET")
+        try {
+          http.connect()
+          val code = http.getResponseCode
+          code >= 200 && code < 500
+        } catch {
+          case _: java.io.IOException => false
+        } finally {
+          http.disconnect()
+        }
+      case _ => false
+    }
+  }
+
+  private def buildRealEmbedding(
+    config: LlamaCppEmbeddingClientConfig,
+  ): (QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError], Int) = {
+    val baseUrl = s"${config.baseUrl}"
+    val httpEndpoint = Gen2HttpEndpoint.fromString(baseUrl).getOrElse(fail(s"real embedding endpoint must be valid: $baseUrl"))
+    val transport = Gen2HttpTransportConfig
+      .create(httpEndpoint, Duration.ofSeconds(5), Duration.ofSeconds(60))
+      .getOrElse(fail("real embedding transport config must be valid"))
+    val http = Gen2JsonHttpClient.jdk(transport)
+    val client = BeautyQGen2EmbeddingClient.fromTransport(http, config.endpointPath)
+    val probeInput = QdrantEmbeddingInput.from(
+      QdrantEmbeddingPurpose.CandidateQuery,
+      "beauty-search-gen2-managed-preflight",
+      "beauty-search-gen2-managed-preflight",
+      BeautyQQdrantPolicy.policy.embeddingModel,
+    ).getOrElse(fail("expected preflight embedding input"))
+    val probeResult = client.embed(probeInput) match {
+      case Right(value) => value
+      case Left(error)  => fail(s"real embedding preflight failed: $error")
+    }
+    val dimension = probeResult.model.dimension
+    assert(dimension == BeautyQQdrantPolicy.policy.embeddingModel.dimension, s"real embedding dimension must match policy: actual=$dimension expected=${BeautyQQdrantPolicy.policy.embeddingModel.dimension}")
+    (client, dimension)
+  }
 
   private def runScenario(
     esClient: ElasticsearchGen2JsonClient,
@@ -135,6 +202,70 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
     }
   }
 
+  private def runScenarioWithEmbedding(
+    elasticsearchPort: ElasticsearchPortCfg,
+    qdrantPort: QdrantGen2PortCfg,
+    embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
+  ): Unit = {
+    val esEndpoint = ElasticsearchGen2Endpoint.fromString(s"http://${elasticsearchPort.host}:${elasticsearchPort.port}").getOrElse(fail("expected managed Elasticsearch endpoint"))
+    val esTransport = ElasticsearchGen2TransportConfig.create(esEndpoint, Duration.ofSeconds(5), Duration.ofSeconds(60)).getOrElse(fail("expected Elasticsearch transport config"))
+    val esClient = ElasticsearchGen2JsonClient.jdk(esTransport)
+    val qdrantEndpoint = Gen2HttpEndpoint.fromString(s"http://${qdrantPort.host}:${qdrantPort.port}").getOrElse(fail("expected managed Gen2 Qdrant endpoint"))
+    val qdrantTransport = Gen2HttpTransportConfig.create(qdrantEndpoint, Duration.ofSeconds(5), Duration.ofSeconds(60)).getOrElse(fail("expected Qdrant transport config"))
+    val qdrantHttp = Gen2JsonHttpClient.jdk(qdrantTransport)
+    val materialized = BeautyQOrchestrationTestKit.materialized
+    val batching = ElasticsearchBulkBatchingPolicy.create(100, 1024L * 1024L).getOrElse(fail("expected batching"))
+    val elasticsearch = BeautyQElasticsearchBaselineService
+      .make(esClient, Clock.systemUTC(), batching)
+      .getOrElse(fail("expected BeautyQ baseline service"))
+    val qdrantClient = QdrantGen2Client.fromTransport(qdrantHttp)
+    val qdrantLifecycle = BeautyQQdrantRuntime.lifecycle(qdrantClient).getOrElse(fail("expected BeautyQ Qdrant lifecycle"))
+    val candidateService = BeautyQQdrantRuntime.candidateService(qdrantClient).getOrElse(fail("expected BeautyQ Qdrant candidate service"))
+    val expectedEsTargets = Vector(materialized).map { mat =>
+      val generation = BeautyQElasticsearchGeneration.compile(mat).getOrElse(fail("expected ES generation for cleanup"))
+      ElasticsearchGenerationNaming
+        .physicalIndexName(BeautyQSearchGen2ResourceNames.ElasticsearchPhysicalIndexPrefix, generation.identity)
+        .getOrElse(fail("expected deterministic ES target for cleanup"))
+        .value
+    }
+    ensureIsolatedNamespace(esClient, qdrantClient, qdrantHttp)
+    val requestBody =
+      "{\"query\":\"relaxing appointment\",\"filters\":[{\"field\":\"service\",\"operator\":\"equal\",\"value\":\"manicure\"}],\"requestedFacets\":[],\"sort\":[],\"page\":{\"size\":20}}"
+
+    try {
+      val bootstrap = BeautyQSearchGen2Bootstrap.make(
+        new BeautyQVariantMaterializer.FromSnapshotSource[IO](new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {
+          def load: IO[SnapshotLoadError, VersionedSnapshot[BeautyQSearchSnapshot]] =
+            ZIO.succeed(VersionedSnapshot(
+              value = BeautyQElasticsearchTestFixtures.snapshot,
+              contentFingerprint = BeautyQSnapshotFingerprint.compute(BeautyQElasticsearchTestFixtures.snapshot),
+              sourceRevision = Some(SourceRevision("real-embedding-preflight")),
+              capturedAt = Instant.now(),
+            ))
+        }),
+        elasticsearch,
+        qdrantLifecycle,
+        embedding,
+      )
+      val startup = BeautyQSearchGen2Startup.acquire(bootstrap, candidateService)
+      val startupOrError = Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe.run(startup).getOrThrowFiberFailure()
+      }
+      val api = new leaderboard.api.BeautySearchGen2Api[IO](
+        new BeautyQSearchGen2HttpService(startupOrError.runtime),
+        BeautySearchGen2TapirEndpoints,
+      )
+      val response = runIO(observe(api.http.orNotFound, postJson("/beauty-search-gen2", requestBody)))
+      assert(response.status == org.http4s.Status.Ok, s"expected HTTP 200 from POST /beauty-search-gen2, got ${response.status} body=${response.body}")
+      assert(response.body.contains("\"supplementStatus\":\"supplemented\""), s"expected supplemented status in body, got ${response.body}")
+      assert(response.body.contains("\"totalHits\""), s"expected totalHits in body, got ${response.body}")
+      assert(response.body.contains("\"appliedFilters\""), s"expected appliedFilters in body, got ${response.body}")
+      (): Unit
+    } finally {
+      cleanupExactResources(esClient, qdrantHttp, expectedEsTargets)
+    }
+  }
+
   private def preflightEmbedding: QdrantEmbeddingResult = {
     val input = QdrantEmbeddingInput.from(
       QdrantEmbeddingPurpose.CandidateQuery,
@@ -168,6 +299,11 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
     elasticsearch: ElasticsearchPortCfg,
     qdrant: QdrantGen2PortCfg,
   )
+
+  private def runIO[A](effect: zio.Task[A]): A =
+    Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
+    }
 
   private def withManagedPorts[A](f: (ElasticsearchPortCfg, QdrantGen2PortCfg) => A): A = {
     val module = new ModuleDef {
@@ -294,5 +430,4 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
       }
     }
   }
-
 }

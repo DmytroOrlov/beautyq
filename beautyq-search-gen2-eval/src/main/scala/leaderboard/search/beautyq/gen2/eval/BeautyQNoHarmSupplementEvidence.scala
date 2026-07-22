@@ -95,9 +95,11 @@ object BeautyQNoHarmSupplementEvidence {
     def statusCode: String = status.stableCode
   }
 
-  /** Build evidence from the actual public projection and the one aggregate that produced it.
-    * Baseline-owned sections are compared with a baseline-only projection of that same bound
-    * result; result IDs and origins are read from the supplied response, never reconstructed. */
+  /** The single accepted evidence construction path. Baseline-owned sections are
+    * compared with a baseline-only projection of that same bound result; result
+    * IDs and origins are read from the supplied response, never reconstructed.
+    * The runner must use this entry point and never a shortcut that fabricates
+    * ordering from baseline plus appended IDs. */
   def fromExecution(
     result: BeautyQSearchOrchestrator.Result,
     response: BeautyQSearchResponseGen2,
@@ -141,39 +143,6 @@ object BeautyQNoHarmSupplementEvidence {
             ))
         }
     }
-
-  def derive(result: BeautyQSearchOrchestrator.Result): SupplementEvidence = {
-    val baseline = result.baseline
-    val outcome = result.outcome
-
-    val baselineIds = baseline.result.hits.map(_.id)
-
-    val (appendedIds, currentPageDuplicateIds, baselineMemberIds, budgetExcludedIds) = outcome match {
-      case evaluated: BeautyQSearchOrchestrator.Evaluated =>
-        (
-          evaluated.selection.appended.map(_.id),
-          evaluated.selection.currentPageDuplicateIds,
-          evaluated.selection.baselineMemberIds,
-          evaluated.selection.budgetExcludedIds,
-        )
-      case _ =>
-        (Vector.empty[MasterServiceOfferVariantId], Vector.empty, Vector.empty, Vector.empty)
-    }
-
-    new SupplementEvidence(
-      baselineIds = baselineIds,
-      resultIds = baselineIds.map(_.value.toString) ++ appendedIds.map(_.value.toString),
-      baselineOwnedComponentsPreserved = true,
-      appendedIds = appendedIds,
-      status = result.status,
-      ineligibilityReason = result.ineligibilityReason,
-      degradationReason = result.degradationReason,
-      degradationCause = result.degradationCause,
-      currentPageDuplicateIds = currentPageDuplicateIds,
-      baselineMemberIds = baselineMemberIds,
-      budgetExcludedIds = budgetExcludedIds,
-    )
-  }
 
   private def ownedComponents(response: BeautyQSearchResponseGen2): BaselineOwnedComponents =
     BaselineOwnedComponents(

@@ -1,5 +1,7 @@
 # AGENTS.md
 
+Runtime tags: `[ALL]` every model, `[W]` weak/Qwen3.6, `[M]` medium/MiniMax-M3, `[S]` strong. Task tags are used only where behavior differs, such as `[CONTINUATION]` and `[DOCS]`. Untagged repository safety rules apply to all.
+
 ## Core rules
 
 * Keep patches atomic: one purpose, no unrelated refactors or mixed risk layers. If wider scope is required, stop with the smallest safe next step.
@@ -7,14 +9,13 @@
 * Focused tests and route-level HTTP contract tests are the primary source of truth. If tests, docs, and implementation conflict, report it; do not guess.
 * Do not perform broad architecture, audit, or design work unless explicitly requested. Make bounded edits and focused checks only.
 * Reports are brief: focused result, deviations or compile fixes, and blocked verification.
-* Canonical docs: read once and only at named ranges. If the prompt supplies current-state evidence or replacement text, do not read first; update once after code and proofs stabilize.
-* Every delegated prompt, for every model tier, must inline exact paths, signatures, imports, fixtures, contracts, and replacements. Treat them as authoritative; missing or contradictory evidence means `NEED_BUNDLE`, not rediscovery.
-* After a first read, use exact ranges or `git diff`. Compiler errors permit only the reported file/range and named definition. Search only exact symbols in listed paths; no repository/home/cache/filesystem-wide grep/find unless discovery is explicit.
-* Batch one planned edit pass per file and at most one diagnostic pass. Do not alternate micro-edits, rereads, and compiles.
-* Use one initial checklist and at most one completion update before the final report.
-* Default budget: 12 file-read calls, 4 exact searches, 3 sbt invocations, and 2 todo updates. Exceed it only for a named blocker and report why.
+* `[W][CONTINUATION]` When exact current-state anchors or replacement hunks are supplied, read canonical docs only at the named ranges and update them after code and proofs stabilize.
+* `[M/S][DOCS]` A full read of the canonical owner is allowed for documentation deduplication, owner-map changes, or broad compatibility/cutover reconciliation.
+* `[W]` After a first read, use exact ranges, exact symbols, and `git diff`; do not broaden discovery unless the task explicitly requires it.
+* `[M/S]` A named dependency-frontier search is allowed when a public API, module edge, or complete diagnostic proves it necessary.
+* Batch coherent edits per file and avoid micro-edit loops. Make another pass only when a new complete diagnostic or source contradiction requires it.
+* `[W]` Use at most one compact checklist when the prompt requires it; do not rewrite the full checklist between edits. `[M/S]` Todo tooling is optional.
 * Keep temporary files and generated output inside the repository. Do not use explicit absolute scratch/device paths such as `/tmp`, `/var/tmp`, `/private/tmp`, `/dev`, or `/dev/null` unless the user provides one.
-
 ## Ownership and abstraction
 
 * Put behavior at its source of truth; reusable layers must not hard-code one app/domain.
@@ -24,47 +25,40 @@
 * If behavior preservation requires domain names in a reusable layer, stop and report the boundary conflict.
 * Prefer small explicit adapters over broad “generic” code that secretly knows one domain.
 
-### Business declaration DSLs
+### Declarative business DSLs
 
-Search-domain work follows [docs/search/DOMAIN_AUTHORING_PRINCIPLES.md](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md). Before changing a domain or reusable search component, verify:
+Before changing a business declaration or reusable component, verify:
 
-* new business policy is reachable from the canonical domain entry point;
-* domain code declares policy; repeated mechanics remain framework-owned;
-* a neutral fixture/tracer or second unrelated domain challenges the reusable boundary;
+* new business policy is reachable from the canonical entry point;
+* business code declares legitimate choices while repeated mechanics remain framework-owned;
+* a neutral fixture, tracer, or structurally different consumer challenges the reusable boundary;
 * registries, trees, traces, ledgers, fingerprints, and docs derive from one executable declaration.
 
-Domain declarations explicitly state legitimately variable choices: topology, identity selection, String keyword/text meaning, capabilities, public names, dynamic inventories, projection joins, invariants, and backend policy. Reusable layers derive tautological evidence: nominal codecs/type IDs, direct value type/path/default ID/semantic, extraction presence, unambiguous non-String kind, registration order, identity exclusion, document assembly, and structural rendering.
+Declarations state legitimately variable choices such as topology, identity selection, String keyword/text meaning, capabilities, public names, dynamic inventories, projection joins, invariants, and backend policy. Reusable layers derive facts already fixed by selectors, types, and declaration order.
 
-“Explicit” applies to business policy, not facts already fixed by selectors, types, or declaration order. Repeated name/type/path/semantic literals, parallel ordered field lists, manual document folds, and domain-owned generic renderers are review red flags. Low-level constructors may remain escape hatches, but are not the canonical new-domain example.
-
+Repeated name/type/path/semantic literals, parallel ordered field lists, manual document folds, and business-owned generic renderers are review red flags. Low-level constructors may remain escape hatches, but are not the canonical authoring example.
 ## Verification
 
-Labels:
-
-* `FOCUSED GREEN`: requested focused suite passed; full repository unknown.
-* `USER-VERIFIED FULL GREEN`: user ran the exact full command and reported green.
-* `VERIFICATION BLOCKED`: permissions, resources, sbt, Docker, environment, or agent policy prevented verification.
-
-Rules:
-
-* Delegated agents never run broad/full tasks such as unscoped `test`, `Test/test`, or project-wide tests. If full confidence is required, report focused results and require coordinator/user verification.
-* Focused checks are never `FULL GREEN`.
-* Focused checks alone cannot make plugin/module-shape, production-graph, lifecycle/readiness, or other full-graph-sensitive changes commit-ready; require coordinator/user full verification.
-
+* Delegated agents run focused commands only; they never run an unscoped full repository suite.
+* If broader confidence is required, report the focused result and state the exact broader command for the user or an explicitly authorized primary/coordinator to run before committing.
+* Report verification in plain language: command, result, useful counts, blocked resources, and remaining uncertainty.
+* Do not use synthetic confidence labels in reports or commit messages.
+* Focused checks alone cannot prove unrelated modules, the entire production graph, lifecycle/readiness across every axis, or the full repository.
 ## sbt
 
 * Use one chained sbt command; never run sbt in parallel.
 * Run a repository validation wrapper exactly unless it is full-suite. Otherwise run quoted focused tasks from the repository root with the sandbox options below.
 * Scope compile/tests to the owning subproject. Root aggregate `Test/compile` is not a prerequisite for one spec and may initialize unrelated graphs or socket checks.
-* If asked for a full suite, report `VERIFICATION BLOCKED` by policy and ask coordinator/user to run it.
-* Do not run malformed forms such as `sbt Test/compile ...` or `sbt about`. Never pipe sbt through `tail`, `head`, `tee`, or grep: pipelines can truncate root diagnostics and return the filter status instead of sbt status. A repository wrapper may save the full log while printing every diagnostic block and the final summary.
+* A delegated agent asked for an unscoped full suite must decline and provide the exact command for the user or explicitly authorized primary/coordinator.
+* Do not run malformed forms such as `sbt Test/compile ...` or `sbt about`, and never pipe sbt through `tail`, `head`, `tee`, or grep. Use a repository-owned validation wrapper when one exists. Until then, run the ordinary unpiped focused command; do not hand-roll shell redirection or summary parsing that could lose sbt's exit status or diagnostics.
 * Do not run `Test/compile` before `testOnly` for the same project: `testOnly` already compiles. Use a separate compile task only when no final test task covers the changed source or when localizing a compile failure.
 * On compile failure, inspect all diagnostics from the complete output, group them by root cause, apply all source-confirmed fixes in one batch, then rerun. Never rerun after fixing only the last visible error.
+* Compiler diagnostics may authorize repair of direct retained callers inside the already named module frontier, but are not a deletion inventory. A retained contract, wiring, firewall, lifecycle, or resource proof is a repair target unless the task's exact manifest deletes its owner. Deleting an owner, adding a project edge, changing a public contract, or crossing into a new module frontier requires coordinator approval and an exact scope-expansion report.
 * Do not probe setup (`type/which sbt`, `java -version`, `$JAVA_HOME`, `$SBT_OPTS`, `.sbtopts`, `.jvmopts`), inspect launcher lines, or resolve tool paths outside the repository unless the exact command fails with a missing-command/setup error.
 * Before the first sandboxed sbt command, create `target/codex-sbt/ivy2` and use `-Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2`; `-Dsbt.server=false` alone does not bypass the boot socket.
 * If the shared Coursier cache is read-only, rerun the same command with `COURSIER_CACHE=target/codex-sbt/coursier-cache`. Uncached artifacts may require network approval; never request home-cache writes.
 * If sbt reaches the task and project code fails to bind a Unix/TCP socket with `Operation not permitted`, launcher/cache setup succeeded. Request escalation only for that exact focused task.
-* If socket/network escalation is unavailable, report `VERIFICATION BLOCKED` and the exact command.
+* If socket/network escalation is unavailable, report the blocked focused command and exact environment error.
 * Never edit source to work around sbt locks.
 * For stale recursive targets or `File name too long`, clean target directories and rerun the same command; report environment cleanup, not a source change.
 
@@ -81,9 +75,8 @@ sbt --batch --no-global \
 
 ## Database schema and reset
 
-* BeautyQ has no persistent production database requiring forward schema migration.
-* Do not add `ALTER TABLE`, backfills, legacy fallback values, migration stages, or a migration framework.
-* Change fresh `CREATE TABLE`, seed data, repositories, and tests directly.
+* Add forward migrations, backfills, legacy fallbacks, or a migration framework only when current repository source and deployment policy prove that persistent schema evolution is required.
+* For disposable fresh-schema workflows, change `CREATE TABLE`, seed data, repositories, and tests directly.
 * After an intentional schema change, reused Distage containers may hold stale data. Reset only confirmed stale Distage state:
 
 ```bash
@@ -91,13 +84,12 @@ docker rm -f $(docker ps -a -q -f "label=distage.type") || true
 ```
 
 * Do not reset for unexplained source/test failures. Rerun the same validation and report the reset as environment cleanup.
-
 ## DI, lifecycle, and graph
 
 * Startup follows dependency edges, not binding/module/memoization-root order.
 * Graph GC may remove unrooted bindings; inspect roots, axes/activation, and suite inheritance before production-module changes.
 * Disabled experiments must not construct heavy dependencies; use explicit axis/config, by-name/factory/resource boundaries, or separate modules.
-* Focused/unit specs must not include whole production plugins/apps unless production graph coverage is explicit; prefer targeted modules, existing app/role/testkit fixtures, or coordinator/user full validation.
+* Focused/unit specs must not include whole production plugins/apps unless production graph coverage is explicit; prefer targeted modules, existing app/role/testkit fixtures, or broader verification outside the delegated task.
 
 ### Whole-plugin include hazard
 
@@ -106,7 +98,7 @@ docker rm -f $(docker ps -a -q -f "label=distage.type") || true
 * On either full-run signature, do not debug the first aborted suite as root cause. First find ad-hoc whole-plugin includes in tests and replace them with targeted modules, existing role/testkit fixtures, or explicit minimal bindings.
 * If none exist, stop and request the stack trace, module snippets, and grep output.
 * This is graph-construction evidence, not product-behavior evidence.
-* Changes to `LeaderboardPlugin.modules.api` or whole-plugin include tests require coordinator/user full-project verification; delegated agents neither run it nor declare commit readiness from focused checks.
+* Changes to `LeaderboardPlugin.modules.api` or whole-plugin include tests require broader full-project verification by the user or an explicitly authorized primary/coordinator; delegated agents do not run it and must not imply that focused checks cover the whole graph.
 
 ### Intentional dependency edges
 
@@ -240,7 +232,7 @@ Report case ID/name, input, parsed/decoded state when available, observed output
 
 ## Failure protocol
 
-After one focused query or test fails or aborts, stop expanding. One compile task with multiple diagnostics is one failure: inspect and fix all diagnostics in the reported files that share the same root causes before rerunning. Report:
+After one focused command fails or aborts, triage every failure and diagnostic from that complete run. Fix one coherent shared root cause across the reported files before rerunning; do not expand beyond that command's dependency frontier. Report:
 
 * suite/test name;
 * exact error;

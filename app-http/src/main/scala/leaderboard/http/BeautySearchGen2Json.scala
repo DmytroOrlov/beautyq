@@ -4,8 +4,12 @@ import io.circe.{Decoder, Json}
 import leaderboard.search.beautyq.gen2.contract.{BeautySearchRequestGen2, BeautySortInput}
 import leaderboard.search.gen2.contract.{FacetId, FacetSelectionId, GeoPoint, PageRequest, PageSize, PublicFieldName, PublicFilterInput, PublicFilterValue, PublicOperator, PublicSortName, SearchCursor, SortDirection}
 
-/** The Gen2 wire codec is owned by the independent endpoint. It decodes into
-  * the native Gen2 request contract; it does not adapt the V1 request model. */
+/** The Gen2 wire codec is owned by the independent endpoint. It decodes into the native Gen2
+  * request contract; it does not adapt the V1 request model.
+  *
+  * The response encoder reads the projector-owned DTO only: every field is the exact value the
+  * BeautyQSearchResponseGen2Projector publishes. No constraint, provenance, suppression reason,
+  * facet/group/carousel derivation, or backend mechanics is reconstructed in app-http. */
 object BeautySearchGen2Json {
   def decodeRequest(json: Json): Either[String, BeautySearchRequestGen2] = {
     val c = json.hcursor
@@ -29,6 +33,7 @@ object BeautySearchGen2Json {
         "source" -> Json.fromJsonObject(hit.source),
       ))),
       "totalHits" -> Json.fromLong(totalHits),
+      "totalRelation" -> Json.fromString(totalRelation),
       "facets" -> Json.fromValues(facets.map(facet => Json.obj(
         "id" -> Json.fromString(facet.id),
         "kind" -> Json.fromString(facet.kind),
@@ -71,7 +76,17 @@ object BeautySearchGen2Json {
         "representativeVariantId" -> Json.fromString(item.representativeVariantId),
         "bestScore" -> Json.fromBigDecimal(item.bestScore),
       ))),
-      "appliedFilters" -> Json.fromValues(appliedFilters.map(filter => Json.obj("fieldId" -> Json.fromString(filter.fieldId), "provenance" -> Json.fromString(filter.provenance)))),
+      "appliedFilters" -> Json.fromValues(appliedFilters.map(filter => Json.obj(
+        "fieldId" -> Json.fromString(filter.fieldId),
+        "constraint" -> Json.fromString(filter.constraint),
+        "provenance" -> Json.fromString(filter.provenance),
+      ))),
+      "suppressedFilters" -> Json.fromValues(suppressedFilters.map(filter => Json.obj(
+        "fieldId" -> Json.fromString(filter.fieldId),
+        "constraint" -> Json.fromString(filter.constraint),
+        "provenance" -> Json.fromString(filter.provenance),
+        "reason" -> Json.fromString(filter.reason),
+      ))),
       "nextCursor" -> nextCursor.fold(Json.Null)(Json.fromString),
       "supplementCount" -> Json.fromInt(supplementCount),
       "supplementStatus" -> Json.fromString(supplementStatus.stableCode),

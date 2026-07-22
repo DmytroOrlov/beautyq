@@ -8,15 +8,22 @@ import leaderboard.search.gen2.qdrant.QdrantCandidatePipelineError
 import org.scalatest.wordspec.AnyWordSpec
 
 /** Eval evidence is a derived view over the one compiler-owned orchestrator
-  * result. It does not re-run candidate, membership or hydration mechanics. */
+  * result. It does not re-run candidate, membership or hydration mechanics,
+  * and the only accepted construction path is `fromExecution`. */
 final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
   import BeautyQOrchestrationTestKit.*
 
-  "BeautyQNoHarmSupplementEvidence.derive" should {
-    "derive ineligible status and reason from execute" in {
+  private val fullSearchReadiness: BeautyQSupplementReadinessPolicy.Result =
+    BeautyQSupplementReadinessPolicy.evaluate(Set.empty)
+
+  "BeautyQNoHarmSupplementEvidence.fromExecution" should {
+    "derive ineligible status and reason from the same application result and projection" in {
       val context = ineligible
-      val result = execute(context)
-      val evidence = BeautyQNoHarmSupplementEvidence.derive(result)
+      val (result, response) = executeApplication(context)
+      val evidence = BeautyQNoHarmSupplementEvidence.fromExecution(result, response) match {
+        case Right(value) => value
+        case Left(error)  => fail(s"expected execution evidence, got $error")
+      }
 
       assert(evidence.status == BeautyQSupplementStatus.Ineligible)
       assert(evidence.statusCode == BeautyQSupplementStatus.Ineligible.stableCode)
@@ -27,23 +34,31 @@ final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
       assert(evidence.appendedIds.isEmpty)
     }
 
-    "derive success selection without changing the orchestrator result" in {
+    "derive success selection and exact baseline prefix preservation" in {
       val context = eligible()
-      val result = execute(context)
+      val (result, response) = executeApplication(context)
       val before = result.appendedCandidates.map(_.id)
-      val evidence = BeautyQNoHarmSupplementEvidence.derive(result)
+      val evidence = BeautyQNoHarmSupplementEvidence.fromExecution(result, response) match {
+        case Right(value) => value
+        case Left(error)  => fail(s"expected execution evidence, got $error")
+      }
 
       assert(evidence.status == result.status)
       assert(evidence.statusCode == result.statusCode)
       assert(evidence.appendedIds == before)
       assert(evidence.supplementCount == result.supplementCount)
       assert(result.appendedCandidates.map(_.id) == before)
+      assert(evidence.resultIds == response.hits.map(_.id))
+      assert(evidence.baselineOwnedComponentsPreserved)
     }
 
-    "preserve the exact typed degradable cause" in {
+    "preserve the exact typed degradable cause from fromExecution" in {
       val context = timedOut
-      val result = execute(context)
-      val evidence = BeautyQNoHarmSupplementEvidence.derive(result)
+      val (result, response) = executeApplication(context)
+      val evidence = BeautyQNoHarmSupplementEvidence.fromExecution(result, response) match {
+        case Right(value) => value
+        case Left(error)  => fail(s"expected execution evidence, got $error")
+      }
 
       assert(evidence.status == BeautyQSupplementStatus.SupplementFailed)
       assert(evidence.statusCode == BeautyQSupplementStatus.SupplementFailed.stableCode)
@@ -57,8 +72,11 @@ final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
 
     "derive membership and duplicate evidence from the evaluated outcome" in {
       val context = eligible(Vector(document.variantId))
-      val result = execute(context)
-      val evidence = BeautyQNoHarmSupplementEvidence.derive(result)
+      val (result, response) = executeApplication(context)
+      val evidence = BeautyQNoHarmSupplementEvidence.fromExecution(result, response) match {
+        case Right(value) => value
+        case Left(error)  => fail(s"expected execution evidence, got $error")
+      }
 
       assert(evidence.status == BeautyQSupplementStatus.NoAppend)
       assert(evidence.currentPageDuplicateIds == Vector(document.variantId))
@@ -82,48 +100,57 @@ final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
         q003Fixture.query,
         Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4"))),
       )
-      val gate = BeautyQCutoverGate.evaluate(Vector(
-        observation(q006Fixture, q006),
-        observation(manicureFixture, manicure),
-        observation(q001Fixture, q001),
-        observation(q003Fixture, q003),
-      ))
+      val gate = BeautyQCutoverGate.evaluate(
+        fullSearchReadiness,
+        Vector(
+          observation(q006Fixture, q006),
+          observation(manicureFixture, manicure),
+          observation(q001Fixture, q001),
+          observation(q003Fixture, q003),
+        ),
+      )
 
       assert(gate.passed)
       assert(gate.metrics.testedQueries == 4)
       assert(gate.metrics.improvedQueries == 1)
       assert(gate.toJson.hcursor.get[Boolean]("passed").exists(identity))
     }
+
+    "keep the accepted evidence entry point as the only public construction path" in {
+      // The historical `derive` shortcut must not be re-introduced.
+      assertDoesNotCompile(
+        """{
+          |  val result: BeautyQSearchOrchestrator.Result = ???
+          |  BeautyQNoHarmSupplementEvidence.derive(result)
+          |}""".stripMargin
+      )
+    }
   }
 
-  private def execute(context: Context): BeautyQSearchOrchestrator.Result =
-    BeautyQSearchOrchestrator.execute(context.baseline, context.evaluation, materialized, context.embedding, context.qdrant, context.baselineService) match {
-      case Right(result) => result
-      case Left(error)   => fail(s"expected orchestrator result, got $error")
-    }
-
-  private def executeApplication(context: Context): BeautyQSearchOrchestrator.Result = {
+  private def executeApplication(context: Context): (BeautyQSearchOrchestrator.Result, BeautyQSearchResponseGen2) = {
     val application = BeautyQSearchApplication.make(
       materialized,
       context.baselineService,
       context.embedding,
       context.qdrant,
     )
-    application.execute(context.request) match {
-      case Right(result) => result
-      case Left(error)   => fail(s"expected application result, got $error")
+    val result = application.execute(context.request) match {
+      case Right(value) => value
+      case Left(error)  => fail(s"expected application result, got $error")
     }
+    val response = BeautyQSearchResponseGen2Projector.project(result) match {
+      case Right(value) => value
+      case Left(error)  => fail(s"expected projected application response, got $error")
+    }
+    (result, response)
   }
 
   private def observation(fixture: BeautyQCutoverQueryFixture, context: Context): BeautyQCutoverQueryObservation = {
-    val result = executeApplication(context)
-    val response = BeautyQSearchResponseGen2Projector.project(result) match {
+    val (result, response) = executeApplication(context)
+    val evidence = BeautyQNoHarmSupplementEvidence.fromExecution(result, response) match {
       case Right(value) => value
-      case Left(error) => fail(s"expected projected application response, got $error")
+      case Left(error)  => fail(s"expected execution evidence, got $error")
     }
-    BeautyQNoHarmSupplementEvidence.fromExecution(result, response) match {
-      case Right(evidence) => BeautyQCutoverQueryObservation.fromEvidence(fixture, evidence)
-      case Left(error) => fail(s"expected execution evidence, got $error")
-    }
+    BeautyQCutoverQueryObservation.fromEvidence(fixture, evidence)
   }
 }
