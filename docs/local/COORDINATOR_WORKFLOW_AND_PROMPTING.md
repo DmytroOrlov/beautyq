@@ -297,6 +297,20 @@ Do not include model recommendations inside delegated prompts.
 
 Every delegated prompt inherits section 1.3.1; do not restate speculative safeguards as task requirements.
 
+## 4.2.1 Cost-aware continuation prompts
+
+These rules apply to every model tier.
+
+* Inline the exact source-confirmed paths, symbols, signatures, diagnostics, tests, and commands needed for the bounded edit. The agent must not reopen or broadly search the repository merely to reconfirm them.
+* Treat inlined anchors as authoritative unless a complete compiler/test diagnostic contradicts them. Then read only the reported range and directly named definition; otherwise stop with `NEED_BUNDLE`.
+* For large docs, provide exact headings/ranges or replacement text. Do not request full reads or rereads of unchanged implementation plans or technical specs.
+* A continuation prompt must preserve the working tree and state: completed edits, green commands, last failed/blocked command, relevant full diagnostics, fixes applied since, and the next exact command. Do not restart discovery or repeat green checks without a source-confirmed reason.
+* Request one initial checklist and one final update. Intermediate updates are only for a new blocker, scope change, or source contradiction.
+* Batch all diagnostics from one run into one edit pass. Searches are exact symbol/file scoped; repository-wide `rg`/`grep`/`find` is allowed only when broad discovery is explicitly the task.
+* Set bounded reads/searches and a validation plan. Default continuation budget: up to 12 reads, 4 exact searches, one compile when closure is unknown, one exact post-fix rerun, one final chained focused command, and one exact rerun if that final command exposes a source defect.
+* A budget must never force stopping immediately after a source fix without rerunning the command that found it.
+* Never pipe sbt through output filters; preserve complete diagnostics and the real exit status.
+
 ## 4.3 Metrics, unsafe extraction, and test style
 
 For B-lite / M-ESQ-EVAL prompts, inline metric semantics from current handoff/source. Default metric semantics: distinct variant-id counts unless source-confirmed otherwise.
@@ -632,7 +646,9 @@ Before sending a delegated prompt:
 
 - Is source truth sufficient?
 - Are read/edit files exact?
-- Are required facts inlined?
+- Are required facts inlined for this model tier without broad reconfirmation?
+- Does a continuation prompt preserve green checks, the last diagnostic, applied fixes, and the next command?
+- Are large docs range-bounded and is a mandatory post-fix rerun reserved?
 - Is this edit bounded?
 - Have business choices been separated from tautological evidence?
 - Does the target domain example show the intended authoring surface rather than platform internals?

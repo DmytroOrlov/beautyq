@@ -8,7 +8,8 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.config.model.AppConfig
 import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogIO2Module
-import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
+import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg, QdrantPortCfg}
+import leaderboard.model.QueryFailure
 import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
 import leaderboard.search.gen2.contract.*
 import leaderboard.search.gen2.core.materialization.*
@@ -20,12 +21,14 @@ import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.qdrant.QdrantTestFixtures
 import leaderboard.search.gen2.qdrant.QdrantTestFixtures.*
 import leaderboard.search.gen2.transport.*
+import leaderboard.search.qdrant.{QdrantClient, QdrantJsonInterpreter}
+import leaderboard.search.dsl.{EmbeddingSpec, VectorDistance, VectorSearchSpec}
 import zio.{IO, Runtime, Task, Unsafe, ZIO}
 
 import java.time.{Clock, Duration, Instant}
 import java.util.UUID
 
-/** Communication proofs using only Distage-managed ES and the separate Gen2 Qdrant 1.18.3 resource. */
+/** Communication proofs using only Distage-managed ES and the single shared Qdrant 1.18.3 resource. */
 final class SearchGen2ManagedResourceSpec extends org.scalatest.wordspec.AnyWordSpec {
   "managed Elasticsearch Gen2" should {
     "build generations, preserve in-progress resources and reject an old cursor" in {
@@ -146,69 +149,132 @@ final class SearchGen2ManagedResourceSpec extends org.scalatest.wordspec.AnyWord
     }
   }
 
-  "managed Gen2 Qdrant" should {
-    "use the injected 1.18.3 endpoint for generation and candidate execution" in {
-      withManagedQdrant { port =>
-          val endpoint = Gen2HttpEndpoint.fromString(s"http://${port.host}:${port.port}").getOrElse(fail("expected managed Gen2 Qdrant endpoint"))
-          val transport = Gen2HttpTransportConfig.create(endpoint, Duration.ofSeconds(5), Duration.ofSeconds(60)).getOrElse(fail("expected Qdrant transport"))
-          val http = Gen2JsonHttpClient.jdk(transport)
-          val root = http.getJson("/").getOrElse(fail("expected Qdrant root response"))
-          assert(root.hcursor.get[String]("version") == Right("1.18.3"))
-          val suffix = UUID.randomUUID().toString.replace("-", "")
-          val alias = QdrantResourceName.from(s"gen2_neutral_$suffix").getOrElse(fail("expected alias"))
-          val prefix = s"${alias.value}_"
-          val lifecycleConfig = QdrantGenerationLifecycleConfig.create(alias, prefix).getOrElse(fail("expected lifecycle config"))
-          val candidateConfig = QdrantCandidateServiceConfig.create(alias, prefix).getOrElse(fail("expected candidate config"))
-          val client = QdrantGen2Client.fromTransport(http)
-          val lifecycle = new QdrantGenerationLifecycle(client, lifecycleConfig)
-          val generationA = compiledQdrantGeneration(prefix, s"a-$suffix")
-          val generationB = compiledQdrantGeneration(prefix, s"b-$suffix")
-          assert(generationA.physicalCollectionName != generationB.physicalCollectionName)
-          try {
-            lifecycle.activate(generationA) match {
-              case Right(_) => ()
-              case Left(error) => fail(s"expected managed Qdrant activation, got $error")
-            }
-            val candidateService = new QdrantCandidateService(client, candidateConfig)
-            val candidatePlan = CandidatePlan[QdrantTestFixtures.NeutralDocument](SemanticQueryText.from("alpha").getOrElse(fail("expected semantic text")), Vector.empty)
-            val prepared = QdrantCandidateRequestCompiler.prepare(QdrantTestFixtures.policy, candidatePlan).getOrElse(fail("expected candidate preparation"))
-            val embedding = QdrantEmbeddingResult.from(prepared.embeddingInput, Vector(0.1, 0.2, 0.3)).getOrElse(fail("expected candidate embedding"))
-            val request = QdrantCandidateRequestCompiler.complete(prepared, embedding).getOrElse(fail("expected candidate request"))
-            val result = candidateService.execute(QdrantTestFixtures.policy, request).getOrElse(fail("expected authorized candidate execution"))
-            assert(result.target.value == generationA.physicalCollectionName)
-            assert(result.hits.nonEmpty, "expected live Qdrant candidate hits for generation A")
-            val generationBTarget = QdrantResourceName.from(generationB.physicalCollectionName).getOrElse(fail("expected generation B name"))
-            client.createCollection(generationBTarget, generationB.collectionJson) match {
-              case Right(_) => ()
-              case Left(error) => fail(s"expected partially prepared generation B collection, got $error")
-            }
-            lifecycle.activate(generationB) match {
-              case Right(_) => ()
-              case Left(error) => fail(s"expected managed Qdrant generation B activation, got $error")
-            }
-            val secondResult = candidateService.execute(QdrantTestFixtures.policy, request).getOrElse(fail("expected authorized candidate execution on B"))
-            assert(secondResult.target.value == generationB.physicalCollectionName)
-            assert(secondResult.hits.nonEmpty, "expected live Qdrant candidate hits for converged generation B")
-            assert(client.getCollection(QdrantResourceName.from(generationA.physicalCollectionName).getOrElse(fail("expected generation A name"))).isRight)
-            val activeTargets = decodeQdrantAliasTargets(client.listAliases().getOrElse(fail("expected aliases after B activation")), alias.value)
-            assert(activeTargets == Vector(generationB.physicalCollectionName))
-          } finally {
-            client.updateAliases(io.circe.Json.obj("actions" -> io.circe.Json.arr(
-              io.circe.Json.obj("delete_alias" -> io.circe.Json.obj("alias_name" -> io.circe.Json.fromString(alias.value))),
-            ))) match {
+  "managed shared Qdrant" should {
+    "execute both Gen2 /points/query and Gen1 /points/search on the same 1.18.3 process" in {
+      withManagedQdrant { ports =>
+        assert(ports.gen1.host == ports.gen2.host, s"expected same host, got gen1=${ports.gen1.host} gen2=${ports.gen2.host}")
+        assert(ports.gen1.port == ports.gen2.port, s"expected same port, got gen1=${ports.gen1.port} gen2=${ports.gen2.port}")
+        val endpoint = Gen2HttpEndpoint.fromString(s"http://${ports.gen2.host}:${ports.gen2.port}").getOrElse(fail("expected managed Qdrant endpoint"))
+        val transport = Gen2HttpTransportConfig.create(endpoint, Duration.ofSeconds(5), Duration.ofSeconds(60)).getOrElse(fail("expected Qdrant transport"))
+        val http = Gen2JsonHttpClient.jdk(transport)
+        val root = http.getJson("/").getOrElse(fail("expected Qdrant root response"))
+        assert(root.hcursor.get[String]("version") == Right("1.18.3"))
+
+        val suffix = UUID.randomUUID().toString.replace("-", "")
+        val alias = QdrantResourceName.from(s"gen2_neutral_$suffix").getOrElse(fail("expected alias"))
+        val prefix = s"${alias.value}_"
+        val lifecycleConfig = QdrantGenerationLifecycleConfig.create(alias, prefix).getOrElse(fail("expected lifecycle config"))
+        val candidateConfig = QdrantCandidateServiceConfig.create(alias, prefix).getOrElse(fail("expected candidate config"))
+        val client = QdrantGen2Client.fromTransport(http)
+        val lifecycle = new QdrantGenerationLifecycle(client, lifecycleConfig)
+        val generationA = compiledQdrantGeneration(prefix, s"a-$suffix")
+        val generationB = compiledQdrantGeneration(prefix, s"b-$suffix")
+        assert(generationA.physicalCollectionName != generationB.physicalCollectionName)
+
+        val gen1Client = new QdrantClient(ports.gen1.host, ports.gen1.port)
+        val gen1CollectionName = s"gen1_smoke_${UUID.randomUUID().toString.replace("-", "_")}"
+        val gen1CollectionPath = s"/collections/$gen1CollectionName"
+        val gen1VectorName = "gen1-managed-vector"
+        val gen1Dimension = 3
+        val gen1Vector = List(0.12, 0.34, 0.56)
+        val gen1PointId = UUID.randomUUID().toString
+        val gen1PayloadKey = "payloadKey"
+        val gen1PayloadValue = s"gen1_${UUID.randomUUID().toString.replace("-", "_")}"
+        val gen1Spec = VectorSearchSpec(
+          collectionName = gen1CollectionName,
+          vectorName = gen1VectorName,
+          topK = 3,
+          scoreThreshold = None,
+        )
+        val gen1EmbeddingSpec = EmbeddingSpec[Any](
+          vectorName = gen1VectorName,
+          modelName = "gen1-managed",
+          dimension = gen1Dimension,
+          distance = VectorDistance.Cosine,
+          sourceTextFields = Nil,
+        )
+        val gen1CollectionJson = QdrantJsonInterpreter.createCollectionJson(gen1Spec, gen1EmbeddingSpec)
+        val gen1UpsertJson = QdrantJsonInterpreter.upsertPointJson(
+          gen1PointId,
+          gen1VectorName,
+          gen1Vector,
+          Map(gen1PayloadKey -> Json.fromString(gen1PayloadValue)),
+        )
+        val gen1SearchJson = QdrantJsonInterpreter.searchRequestJson(gen1Spec, gen1Vector)
+
+        try {
+          lifecycle.activate(generationA) match {
+            case Right(_) => ()
+            case Left(error) => fail(s"expected managed Qdrant activation, got $error")
+          }
+          val candidateService = new QdrantCandidateService(client, candidateConfig)
+          val candidatePlan = CandidatePlan[QdrantTestFixtures.NeutralDocument](SemanticQueryText.from("alpha").getOrElse(fail("expected semantic text")), Vector.empty)
+          val prepared = QdrantCandidateRequestCompiler.prepare(QdrantTestFixtures.policy, candidatePlan).getOrElse(fail("expected candidate preparation"))
+          val embedding = QdrantEmbeddingResult.from(prepared.embeddingInput, Vector(0.1, 0.2, 0.3)).getOrElse(fail("expected candidate embedding"))
+          val request = QdrantCandidateRequestCompiler.complete(prepared, embedding).getOrElse(fail("expected candidate request"))
+          val result = candidateService.execute(QdrantTestFixtures.policy, request).getOrElse(fail("expected authorized candidate execution"))
+          assert(result.target.value == generationA.physicalCollectionName)
+          assert(result.hits.nonEmpty, "expected live Qdrant candidate hits for generation A")
+          val generationBTarget = QdrantResourceName.from(generationB.physicalCollectionName).getOrElse(fail("expected generation B name"))
+          client.createCollection(generationBTarget, generationB.collectionJson) match {
+            case Right(_) => ()
+            case Left(error) => fail(s"expected partially prepared generation B collection, got $error")
+          }
+          lifecycle.activate(generationB) match {
+            case Right(_) => ()
+            case Left(error) => fail(s"expected managed Qdrant generation B activation, got $error")
+          }
+          val secondResult = candidateService.execute(QdrantTestFixtures.policy, request).getOrElse(fail("expected authorized candidate execution on B"))
+          assert(secondResult.target.value == generationB.physicalCollectionName)
+          assert(secondResult.hits.nonEmpty, "expected live Qdrant candidate hits for converged generation B")
+          assert(client.getCollection(QdrantResourceName.from(generationA.physicalCollectionName).getOrElse(fail("expected generation A name"))).isRight)
+          val activeTargets = decodeQdrantAliasTargets(client.listAliases().getOrElse(fail("expected aliases after B activation")), alias.value)
+          assert(activeTargets == Vector(generationB.physicalCollectionName))
+
+          runGen1Zio {
+            for {
+              _ <- gen1Client.createCollection(gen1CollectionPath, gen1CollectionJson)
+              _ <- gen1Client.upsertPoint(s"$gen1CollectionPath/points?wait=true", gen1UpsertJson)
+              hits <- gen1Client.search(s"$gen1CollectionPath/points/search", gen1SearchJson)
+              _ <- ZIO.succeed {
+                assert(hits.nonEmpty, "expected at least one /points/search hit on the shared 1.18.3 process")
+                hits match {
+                  case firstHit :: _ =>
+                    assert(firstHit.id == gen1PointId, s"unexpected top hit id: ${firstHit.id}")
+                    val actualPayload = firstHit.payload.apply(gen1PayloadKey).flatMap(_.asString)
+                    assert(actualPayload.contains(gen1PayloadValue), s"unexpected payload value: ${firstHit.payload}")
+                  case Nil =>
+                    fail("expected at least one hit but received an empty list")
+                }
+              }
+            } yield ()
+          } match {
+            case Right(()) => ()
+            case Left(failure) => fail(s"managed Gen1 /points/search failed: $failure")
+          }
+        } finally {
+          client.updateAliases(io.circe.Json.obj("actions" -> io.circe.Json.arr(
+            io.circe.Json.obj("delete_alias" -> io.circe.Json.obj("alias_name" -> io.circe.Json.fromString(alias.value))),
+          ))) match {
+            case Right(_) => ()
+            case Left(Gen2HttpTransportError.HttpFailure(_, _, 404, _)) => ()
+            case Left(error) => fail(s"failed exact Qdrant alias cleanup: $error")
+          }
+          Vector(generationA.physicalCollectionName, generationB.physicalCollectionName).foreach { target =>
+            http.delete(s"/collections/$target") match {
               case Right(_) => ()
               case Left(Gen2HttpTransportError.HttpFailure(_, _, 404, _)) => ()
-              case Left(error) => fail(s"failed exact Qdrant alias cleanup: $error")
+              case Left(error) => fail(s"failed exact Qdrant cleanup for '$target': $error")
             }
-            Vector(generationA.physicalCollectionName, generationB.physicalCollectionName).foreach { target =>
-              http.delete(s"/collections/$target") match {
-                case Right(_) => ()
-                case Left(Gen2HttpTransportError.HttpFailure(_, _, 404, _)) => ()
-                case Left(error) => fail(s"failed exact Qdrant cleanup for '$target': $error")
-              }
-            }
-            (): Unit
           }
+          http.delete(gen1CollectionPath) match {
+            case Right(_) => ()
+            case Left(Gen2HttpTransportError.HttpFailure(_, _, 404, _)) => ()
+            case Left(error) => fail(s"failed exact Gen1 Qdrant collection cleanup: $error")
+          }
+          (): Unit
+        }
+        (): Unit
       }
     }
   }
@@ -244,23 +310,38 @@ final class SearchGen2ManagedResourceSpec extends org.scalatest.wordspec.AnyWord
     Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
   }
 
-  private def withManagedQdrant[A](f: QdrantGen2PortCfg => A): A = {
+  private def withManagedQdrant[A](f: ManagedQdrantPorts => A): A = {
     val module = new ModuleDef {
       make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
       include(LogIO2Module[IO]())
       make[IzLogger].fromValue(IzLogger())
       include(QdrantGen2DockerPlugin.dockerModule[IO])
+      make[ManagedQdrantPorts].from { (gen1: QdrantPortCfg, gen2: QdrantGen2PortCfg) =>
+        ManagedQdrantPorts(gen1, gen2)
+      }
     }
     val effect = Injector[Task]().produce(
       bindings = module,
-      roots = Roots.target[QdrantGen2PortCfg],
+      roots = Roots.target[ManagedQdrantPorts],
       activation = Activation(Scene -> Scene.Managed),
       locatorPrivacy = LocatorPrivacy.PublicByDefault,
     ).use { locator =>
-      ZIO.attemptBlocking(f(locator.get[QdrantGen2PortCfg]))
+      ZIO.attemptBlocking(f(locator.get[ManagedQdrantPorts]))
     }
     Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
   }
+
+  private def runGen1Zio[A](program: zio.IO[QueryFailure, A]): Either[QueryFailure, A] =
+    Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe
+        .run(program.either)
+        .getOrThrowFiberFailure()
+    }
+
+  private final case class ManagedQdrantPorts(
+    gen1: QdrantPortCfg,
+    gen2: QdrantGen2PortCfg,
+  )
 
   private def searchPlan(cursor: Option[SearchCursor]): SearchPlan[BookDocument] = {
     val facet = FacetRequest.Terms(
