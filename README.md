@@ -8,22 +8,14 @@ This repository currently includes BeautyQ search work inside the broader distag
 Start here:
 
 * `AGENTS.md` for agent rules in the repository
-* [Documentation map](docs/README.md)
-* [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) for the normative
-  business-policy, reuse, and executable-source-of-truth contract
-* [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) for the current implemented architecture
-* `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator workflow and anti-scope-drift rules
+* [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide domain/search ownership principles
+* [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical domain authoring, lifecycle composition, proof selection, and focused validation
+* [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, verification ownership, and delivery closure
+* [BeautyQ Search Gen2 semantics ADR](docs/gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md) — accepted semantic decisions and stable identities
+* [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation
+* `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
 
 BeautyQ Search Gen2 is complete and frozen.
-
-The technical specification owns the current implemented architecture, supported shapes, runtime
-ownership, accepted limits, and delivery closure.
-
-[NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) owns practical instructions for
-adding another search domain.
-
-[BEAUTYQ_SEARCH_GEN2_REVIEW.md](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) owns historical Gen1
-findings and the reasons behind the Gen2 architecture.
 
 The route/Qdrant sections below are current operational truth.
 

@@ -217,6 +217,24 @@ snapshot materialization and backend activation begin.
 A provided/external database may use a no-op readiness implementation, but the dependency must
 still remain explicit.
 
+## Proof model and test selection
+
+Four proof layers are used:
+
+1. **Pure policy/compiler behavior** — ordinary unit or property-style tests.
+2. **Distage composition and ownership** — plan or graph tests proving required bindings and dependencies.
+3. **HTTP boundary behavior** — route-level tests for decoding, status mapping, response encoding, and route ownership.
+4. **Real external-resource behavior** — communication tests using actual PostgreSQL, Elasticsearch, Qdrant, or embedding wire paths.
+
+A pure gate and a real-resource communication proof are different proofs; scripted backend JSON does not replace a real communication proof. Focused owner tests should run before the full repository suite. The full clean root suite is a closure proof, not the default validation for every bounded edit. Suites sharing canonical Elasticsearch or Qdrant namespaces must be serialized or otherwise isolated. First-start behavior must be checked from a fresh managed-resource state; a successful second launch over a database prepared by a failed first launch is not sufficient first-start evidence.
+
+For the current BeautyQ owners:
+
+* `BeautyQGen2CutoverGateSpec` — pure readiness-aware cutover gate.
+* `BeautyQSearchGen2CutoverCommunicationSpec` — real communication through the current Elasticsearch, Qdrant, and embedding paths.
+
+The declaration/materialization DSL describes logical reads; it does not infer Distage lifecycle ordering from SQL text. Application composition must make source-data readiness a dependency of search startup.
+
 ## Search Gen2 domain declaration
 
 `search-gen2-contract` owns a second, narrower low-boilerplate authoring layer for the typed

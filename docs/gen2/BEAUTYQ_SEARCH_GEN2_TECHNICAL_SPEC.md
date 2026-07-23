@@ -2251,6 +2251,10 @@ keeping the startup dependency explicit.
 The architecture is frozen. Further architectural work requires a product requirement or a
 source-confirmed defect.
 
+### Verification ownership
+
+This technical specification records which proof layer owns each architectural claim; it does not own step-by-step test recipes. Pure policy, Distage graph, HTTP contract, and real-resource communication are separate proof layers. `BeautyQGen2CutoverGateSpec` is the pure gate owner; `BeautyQSearchGen2CutoverCommunicationSpec` is the real-resource communication owner. Operational commands and practical proof-selection guidance belong to [`NEW_DOMAIN_ONBOARDING.md`](../search/NEW_DOMAIN_ONBOARDING.md).
+
 Before the later startup-readiness ordering dofix, the recorded clean root `sbt test` completed
 successfully. Across the 13 aggregated project test tasks:
 - 1727 tests passed;
