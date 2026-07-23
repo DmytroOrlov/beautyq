@@ -12,6 +12,7 @@ import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
 import leaderboard.plugins.BeautySearchGen2PluginModules
 import leaderboard.search.beautyq.gen2.materialization.BeautyQMaterializationError
 import leaderboard.search.gen2.{BeautyQSearchGen2BootstrapError, BeautyQSearchGen2StartupFailure}
+import leaderboard.seed.BeautyQSeedReady
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Task, Unsafe}
 
@@ -113,10 +114,11 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
   }
 
   "BeautySearchGen2PluginModules.api" should {
-    "declare the BeautyQSearchGen2Startup in the plan that produces BeautySearchGen2Api[IO]" in {
+    "declare the BeautyQSearchGen2Startup and seed-readiness edge in the plan that produces BeautySearchGen2Api[IO]" in {
       val plan = Injector[Task]().plan(
         bindings = new ModuleDef {
           make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+          make[BeautyQSeedReady].fromValue(new BeautyQSeedReady {})
           include(BeautySearchGen2PluginModules.api)
         },
         roots = Roots.target[BeautySearchGen2Api[IO]],
@@ -125,6 +127,7 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
       )
       val planString = plan.toString
       assert(planString.contains("BeautyQSearchGen2Startup"), s"expected BeautyQSearchGen2Startup in plan, got $planString")
+      assert(planString.contains("BeautyQSeedReady"), s"expected BeautyQSeedReady in plan, got $planString")
     }
 
     "fail to produce BeautySearchGen2Api[IO] when the startup resource is not in the graph" in {

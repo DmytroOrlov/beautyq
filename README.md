@@ -51,6 +51,12 @@ incompatible Qdrant vector spec forces rebuild or fails fast before bind. No use
 activation env flag is required, and operators never create or index the Qdrant collection by hand —
 startup does it automatically. The launcher HTTP server binds to source-confirmed port `8080`.
 
+The Gen2 snapshot materialization branch depends on `BeautyQSeedReady`, an explicit Distage lifecycle
+resource that proves all seven repository tables (including `master_service_offer_variant`) exist
+and seed data is loaded. Distage cannot infer SQL table dependencies from query text; this DI edge
+ensures the snapshot source never queries a missing table on first start. The HTTP route stays
+unavailable until both seed readiness and Gen2 activation succeed.
+
 The local embedding endpoint is configured at `llama-cpp-embedding` in
 `leaderboard-app-shell/src/main/resources/common-reference.conf` (default base URL
 `http://localhost:8081`, endpoint path `/v1/embeddings`; base URL override

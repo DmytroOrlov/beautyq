@@ -110,7 +110,7 @@ docker rm -f $(docker ps -a -q -f "label=distage.type") || true
 
 ### Readiness and weak sets
 
-* Tests reading readiness/seed/bootstrap-dependent data must depend directly on the readiness edge before repository reads.
+* Any test or startup resource that performs a readiness/seed/bootstrap-dependent repository or external read must depend on that readiness edge before the read; a shared downstream root does not order sibling prerequisites.
 * Do not first alter unrelated search, storage, or external-client code for a missing readiness edge.
 * Weak-set contributions may require concrete retention roots.
 * Do not fake weak-set proof through alias bindings that bypass the weak set.

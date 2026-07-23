@@ -14,8 +14,11 @@ import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
 import leaderboard.search.gen2.{BeautyQGen2EmbeddingClient, BeautyQSearchGen2Bootstrap, BeautyQSearchGen2HttpService, BeautyQSearchGen2Runtime, BeautyQSearchGen2Startup}
+import leaderboard.seed.BeautyQSeedReady
 import leaderboard.sql.SQL
 import zio.IO
+
+import scala.annotation.unused
 
 import java.time.{Clock => JClock, Duration}
 
@@ -53,6 +56,13 @@ object BeautySearchGen2PluginModules {
     * trusted activation. No second snapshot, no second materialization, no second backend
     * activation, and no independent readiness computation are reachable.
     *
+    * In managed/test scenes the Gen2 snapshot materialization branch depends on
+    * [[leaderboard.seed.BeautyQSeedReady]], which itself depends on all seven repository
+    * lifecycle resources (categories, services, masters, master-locations, service-variant
+    * schemas, master-service-offers, and master-service-offer-variants). Distage derives this
+    * ordering from the DI/lifecycle edge rather than from SQL query text, ensuring the
+    * `master_service_offer_variant` table exists before the snapshot source queries it.
+    *
     * Each typed backend client (Elasticsearch / Qdrant / embedding) is constructed at the edge
     * from its own endpoint and timeout values, so no raw unnamed Gen2 HTTP-client binding is
     * registered more than once. */
@@ -60,7 +70,9 @@ object BeautySearchGen2PluginModules {
     make[JClock].fromValue(JClock.systemUTC())
 
     make[BeautyQSearchSnapshotSource.Postgres[IO]].from {
-      (sql: SQL[IO], clock: JClock) => new BeautyQSearchSnapshotSource.Postgres[IO](sql, clock)
+      (seedReady: BeautyQSeedReady, sql: SQL[IO], clock: JClock) =>
+        @unused val _edge = seedReady
+        new BeautyQSearchSnapshotSource.Postgres[IO](sql, clock)
     }
 
     make[SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot]].from {
