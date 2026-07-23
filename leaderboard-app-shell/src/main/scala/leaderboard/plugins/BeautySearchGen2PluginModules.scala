@@ -48,7 +48,7 @@ object BeautySearchGen2PluginModules {
     include(BeautySearchGen2PluginModules.routeComposition)
   }
 
-  /** The Brick 8A opt-in application graph: one startup resource owns the
+  /** The Brick 8A native application graph: one startup resource owns the
     * load/materialize/activate sequence; the application and runtime derive from that single
     * trusted activation. No second snapshot, no second materialization, no second backend
     * activation, and no independent readiness computation are reachable.

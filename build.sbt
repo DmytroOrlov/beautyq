@@ -98,13 +98,6 @@ lazy val repoCore = project
   )))
   .dependsOn(`leaderboard-core`)
 
-lazy val searchContractCore = project
-  .in(file("search-contract-core"))
-  .settings(name := "search-contract-core")
-  .pipe(lightweightSettings(Seq(
-    Deps.scalatest % Test,
-  )))
-
 lazy val beautyqModel = project
   .in(file("beautyq-model"))
   .settings(name := "beautyq-model")
@@ -255,7 +248,6 @@ lazy val `distage-example` = project
   .aggregate(
     `leaderboard-core`,
     repoCore,
-    searchContractCore,
     beautyqModel,
     beautyqSearchRepositories,
     searchGen2Contract,

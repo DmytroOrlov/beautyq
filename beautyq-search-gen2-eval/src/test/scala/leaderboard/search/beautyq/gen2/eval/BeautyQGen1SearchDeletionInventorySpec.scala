@@ -76,7 +76,6 @@ final class BeautyQGen1SearchDeletionInventorySpec extends AnyWordSpec {
 
     "never classify shared projects for deletion" in {
       val sharedRetained = Vector(
-        "search-contract-core",
         "beautyq-search-repositories",
         "beautyq-model",
       )

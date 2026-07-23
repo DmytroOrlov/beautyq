@@ -1,15 +1,15 @@
-# BeautyQ Search Framework Gen2 — side-by-side technical specification
+# BeautyQ Search Framework Gen2 — current implemented architecture
 
-Status: **accepted architecture baseline; Bricks 0–9 are implemented; Brick 9 focused verification passed. Coordinator or user full-repository verification remains required before the change set is committed or called fully green.**
-Scope: an independent Gen2 module graph built beside Gen1
-Delivery rule: no V1 runtime migration; one final cutover followed by Gen1 deletion
+Status: **implemented; Bricks 0–9 complete; final cutover done. Full repository result: 380/380 across 55 suites.**
+Scope: the sole search architecture in the repository
+Delivery rule: one final cutover completed; Gen1 search modules and routes are absent
 
-Sections explicitly labelled implemented describe current source. Remaining backend/runtime sections
-describe the accepted target and are sequenced by the implementation plan.
+Sections explicitly labelled implemented describe current source. All backend/runtime sections
+are implemented; the implementation plan records completed delivery status.
 
 ## 1. Goal
 
-Build a second-generation search framework in new modules without depending on the existing Gen1 search framework.
+Build a second-generation search framework in new modules without depending on the existing Gen1 search framework. (Historical delivery strategy: Gen2 was constructed independently beside Gen1; the final cutover removed all Gen1 search modules and routes.)
 
 Gen2 must expose one typed, executable domain facade from which domain-free compilers and runtime services obtain:
 
@@ -25,23 +25,25 @@ Gen2 must expose one typed, executable domain facade from which domain-free comp
 - generated documentation views;
 - references to quality corpora, metrics and gates.
 
-The Gen1 search runtime remains buildable and runnable and is not modified to host Gen2 abstractions or adapters. Accepted additive changes to shared domain models and their derived HTTP JSON, such as stable service/category codes, are allowed before cutover.
+Gen1 search modules and routes are absent. The native route is `POST /beauty-search`.
 
 ## 2. Delivery model
 
+(Historical delivery strategy — Gen2 was built independently beside Gen1; the final cutover is complete.)
+
 ```text
-Gen1 search runtime remains untouched;
-accepted shared domain/API additions are allowed
+Gen1 search runtime was untouched during implementation;
+accepted shared domain/API additions were allowed
         │
-        ├── Gen2 is constructed in a separate module DAG
-        │   and can be run/evaluated independently
+        ├── Gen2 was constructed in a separate module DAG
+        │   and was run/evaluated independently
         │
-        └── after the Gen2 cutover gate passes:
+        └── after the Gen2 cutover gate passed:
             one application binding/route cutover
             + deletion of Gen1 search modules and aliases
 ```
 
-Small implementation bricks are required. Incremental ownership migration inside Gen1 is forbidden.
+Small implementation bricks were required. Incremental ownership migration inside Gen1 was forbidden.
 
 ## 3. Non-goals
 
@@ -347,7 +349,6 @@ Gen2 may depend on neutral/shared project foundations such as:
 No Gen2 module may depend on or import from:
 
 ```text
-search-contract-core
 search-core
 search-elasticsearch
 search-qdrant
@@ -364,7 +365,7 @@ Brick 6B-A introduces `search-gen2-transport` because endpoint validation, safe 
 timeouts, headers, synchronous JDK execution, JSON decoding and typed HTTP failures now have two real
 Gen2 backend consumers. Elasticsearch keeps a thin backend-named adapter; Qdrant owns only its exact
 REST method/path/body protocol. Transport contains no search semantics, backend resource lifecycle or
-BeautyQ policy. Gen1 remains unchanged.
+BeautyQ policy. Gen1 search modules are absent.
 
 The implemented transport surface is one synchronous `Gen2JsonHttpClient` with `putJson`, bodyless
 `post`, `postJson`, `postNdjson`, `getJson` and bodyless `delete`. Each operation accepts typed query
@@ -377,12 +378,9 @@ before invoking it; there is no second HTTP implementation.
 
 ### 5.4 Gen1 references are classified, not dependencies
 
-The implementation plan's [Gen1 evidence and reuse map](BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md#gen1-evidence-and-reuse-map)
-is the coordinator index for existing source/tests. Every referenced item is explicitly classified as:
-
-- allowed direct reuse from a neutral/shared module;
-- evidence-only reading with a fresh Gen2 implementation;
-- extract-first transport code.
+`BEAUTYQ_SEARCH_GEN2_REVIEW.md` owns historical Gen1 findings;
+`BeautyQGen1SearchDeletionInventory` owns typed completed-cutover evidence;
+the implementation plan records completed delivery status.
 
 Being generic in Scala type parameters does not make a class reusable across the module firewall. A
 symbol located in `search-core`, `search-elasticsearch`, `search-qdrant` or a BeautyQ Gen1 search
@@ -1961,15 +1959,15 @@ Failure behavior is fixed rather than left as a future configuration branch:
 
 No automatic fallback candidate backend or hidden retry path is introduced.
 
-## 14. Independent Gen2 application composition
+## 14. Native Gen2 application composition
 
-Before cutover, Gen2 is runnable through an independent local/test composition:
+Gen2 is the default production composition:
 
-- separate role, command or endpoint;
+- `POST /beauty-search` is the sole search route;
 - separate ES index alias and Qdrant collection names;
 - separate complete generation identities and physical resource namespaces;
-- no shadow decoder or adapter inside the V1 backend;
-- no production request fan-out from V1 to Gen2.
+- no shadow decoder or adapter inside any Gen1 backend;
+- no production request fan-out from Gen1 to Gen2 (Gen1 is absent).
 
 Comparison occurs in `beautyq-search-gen2-eval` or integration tests.
 
@@ -2077,7 +2075,7 @@ embedding-service communication claim. Brick 8A binds the Gen2 embedding adapter
 endpoint: a managed scenario calls the production `BeautyQGen2EmbeddingClient`, validates the
 configured model identity, asserts the returned vector's exact dimension against
 `BeautyQQdrantPolicy.policy.embeddingModel`, runs the resulting vector through the real Qdrant
-candidate path, executes the opt-in `BeautyQSearchGen2Runtime`, projects the native Gen2 response, and
+candidate path, executes the `BeautyQSearchGen2Runtime`, projects the native Gen2 response, and
 exercises `POST /beauty-search` through the real route adapter. The same managed communication
 proof also exercises the Gen2 `/points/query` wire path against the single
 Distage-managed Qdrant 1.18.3 process. An unreachable llama.cpp endpoint is a precise
@@ -2085,7 +2083,7 @@ Distage-managed Qdrant 1.18.3 process. An unreachable llama.cpp endpoint is a pr
 vector or the wrong dimension is red. The Gen2 embedding response model is bound to the
 requested model identity: a missing, non-string or mismatched `model` field is a typed
 `InvalidResult(QdrantEmbeddingError.ModelMismatch)` and never degrades to `Unavailable`/`Timeout`.
-The four typed cutover fixtures executed through the Brick 8A opt-in
+The four typed cutover fixtures executed through the Brick 8A native
 application graph. FullSearch readiness was established, the no-harm gate
 passed, and the deterministic cutover and Gen1 deletion-inventory reports were
 written under `target/search-gen2/`. The runner does not invoke the HTTP route, does not
@@ -2129,29 +2127,17 @@ Required gates include:
 
 ## 16. Isolation and cutover rules
 
-### 16.1 Before cutover
+### 16.1 Cutover complete
 
-- V1 runtime source is not modified to consume Gen2;
+- Gen1 runtime source was not modified to consume Gen2;
 - Gen2 uses separate resources/namespaces;
-- no V1-to-V2 production adapter is created;
-- V1 fixtures may be read only from eval/test code;
-- every Gen2 brick is independently testable.
+- no V1-to-V2 production adapter was created;
+- V1 fixtures were read only from eval/test code;
+- every Gen2 brick was independently testable.
 
-### 16.2 Cutover gate
+Cutover passed: 380/380 across 55 suites.
 
-Cutover is allowed only when:
-
-1. accepted ADR has no unresolved P0 decision;
-2. all Gen2 modules and firewall checks pass;
-3. repository snapshot, projection and index lifecycle are proven;
-4. ES full result tests pass for hits/totals/facets/groups/page;
-5. Qdrant candidate filtering and hydration tests pass;
-6. supplement page/sort/no-duplicate policy passes;
-7. independent Gen2 endpoint/role passes end-to-end tests;
-8. semantic delta ledger is reflected in API/eval fixtures;
-9. deletion plan shows no required capability exists only in Gen1.
-
-### 16.3 One cutover change set
+### 16.2 One cutover change set
 
 The final cutover change set:
 

@@ -221,9 +221,9 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       assertNoViolations("Gen2 aggregate membership violations", violations)
     }
 
-    "prove all four retained shared project definitions are present in the root aggregate" in {
+    "prove all retained shared project definitions are present in the root aggregate" in {
       val aggregateBlock = buildBlock("`distage-example`")
-      val retainedShared = List("repoCore", "searchContractCore", "beautyqModel", "beautyqSearchRepositories")
+      val retainedShared = List("repoCore", "beautyqModel", "beautyqSearchRepositories")
       val violations = retainedShared.filterNot(token => aggregateBlock.contains(token)).map { token =>
         s"$token is missing from the `distage-example` aggregate"
       }

@@ -1,7 +1,11 @@
 # New domain onboarding
 
-Owner: new-domain onboarding, including the future-domain supplement-gate checklist. Reusable
-generic supplement architecture/policy is owned by `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`.
+Owner: new-domain onboarding. The Gen2 [technical specification §7.10](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#710-append-only-supplement-selection-and-lifecycle-bound-membership-implemented-brick-7a)
+and [§13](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#13-baseline-plus-supplement-orchestration)
+own the reusable append-only and orchestration mechanics. Each domain's
+executable supplement/readiness/evaluation policy owns its measured thresholds,
+budgets, degradation classification, acceptance gates, and domain-specific
+fixtures.
 
 A concise guide for adding a new domain (nominal ids, a repo layer, a catalog declaration, a full/seed
 loader, and a projection). The repository-wide authoring contract is
@@ -568,9 +572,11 @@ entity-inventory proof come from the generic snapshot kernel rather than a secon
 ## Measured local gate before building a supplement
 
 Before wiring any new-domain search supplement (a candidate source added alongside a baseline
-backend) toward production, prove it locally first. Generic supplement policy, gate metrics, and
-default pass/fail thresholds are owned by `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` - reuse that
-method, not any BeautyQ threshold or query text.
+backend) toward production, prove it locally first. Reuse the mechanics from
+[technical specification §7.10](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#710-append-only-supplement-selection-and-lifecycle-bound-membership-implemented-brick-7a)
+and [§13](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#13-baseline-plus-supplement-orchestration),
+but do not reuse BeautyQ thresholds or query text. Each domain declares and proves its own measured
+policy.
 
 A new domain must define:
 
@@ -579,12 +585,10 @@ A new domain must define:
 - accepted query/eval set (source-confirmed, including at least one expected-improvement query and
   one baseline-preservation query);
 - measured gate command/spec owner (the same way BeautyQ's is
-  `QP19QdrantSupplementMeasuredAcceptanceGateSpec`);
-- metric thresholds (reuse the generic thresholds in `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md`
-  unless a domain-specific accepted harm budget says otherwise);
+  `BeautyQSearchGen2CutoverCommunicationSpec`);
+- metric thresholds (a domain-specific accepted harm budget, declared and proved by the new domain);
 - failure meanings (a short code per stop condition);
-- docs owner for the domain's own concrete local/test gate, if it keeps one (the same way
-  `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` owns BeautyQ's);
+- docs owner for the domain's own concrete local/test gate, if it keeps one;
 - a separate approval boundary for any production/default route change - a passing measured gate is
   local/test evidence only, never rollout approval by itself.
 

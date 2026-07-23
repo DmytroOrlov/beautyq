@@ -12,8 +12,6 @@ Start here:
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) for the normative
   business-policy, reuse, and executable-source-of-truth contract
 * [BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) for the current plan and authoritative live implementation state
-* `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md` for the locked BeautyQ local/test Qdrant supplement gate
-* `docs/SEARCH_SUPPLEMENT_ARCHITECTURE.md` for the reusable baseline-plus-supplement architecture
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator workflow and anti-scope-drift rules
 
 Current coordinator focus:
@@ -69,8 +67,8 @@ Gen2 append probe:
 ```bash
 curl -sS -X POST 'http://localhost:8080/beauty-search' \
   -H 'Content-Type: application/json' \
-  -d '{"query":"beauty near Wandsbek Markt","page":{"size":20}}' \
-| jq '{supplementStatus, supplementCount, origins: ([.hits[].origin] | unique)}'
+  -d '{"query":"beauty near Wandsbek Markt","filters":[],"requestedFacets":[],"sort":[],"page":{"size":20}}' \
+| jq '{hits: (.hits | length), supplementStatus, supplementStatusCode, supplementCount, origins: ([.hits[].origin] | unique)}'
 ```
 
 Expected: `supplementStatus` is `supplemented`, `supplementCount` is at least 1, and one hit origin is `qdrant_supplement`.
@@ -80,8 +78,8 @@ Gen2 used with no append:
 ```bash
 curl -sS -X POST 'http://localhost:8080/beauty-search' \
   -H 'Content-Type: application/json' \
-  -d '{"query":"маникюр","page":{"size":20}}' \
-| jq '{supplementStatus, supplementCount, supplementStatusCode, origins: ([.hits[].origin] | unique)}'
+  -d '{"query":"маникюр","filters":[],"requestedFacets":[],"sort":[],"page":{"size":20}}' \
+| jq '{hits: (.hits | length), supplementStatus, supplementStatusCode, supplementCount, origins: ([.hits[].origin] | unique)}'
 ```
 
 Expected: `supplementStatus` is `no_append`, `supplementCount` is 0, and origins is only `["es_baseline"]`.
@@ -98,16 +96,13 @@ fusion, rerank, or ES/Qdrant tuning.
 
 ## Module map
 
-This is the current physical module map. See `docs/beautyq-search-dsl-v1.md` for detailed BeautyQ
-search ownership, `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator/source-truth
-workflow, and the boundary guardrail specs for enforced import/build-DAG constraints.
+This is the current physical module map. See the [Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) for detailed current architecture, [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) for practical authoring guidance, `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator/source-truth workflow, and the boundary guardrail specs for enforced import/build-DAG constraints.
 
 | Module | Responsibility |
 |---|---|
 | `leaderboard-core` | generic failure types (`QueryFailure` and siblings) |
-| `search-gen2-contract` | generic search-contract ADTs (`SearchDomainSpec`, `SearchField`, `SearchRuntimeDeclaration`) |
+| `search-gen2-contract` | generic executable Gen2 search fields, facets, requests, plans, constraints, provenance, cursor, and suppression types |
 | `search-gen2-core` | generic search framework: field/document spec, runtime spec, fingerprinting, document JSON, generic semantic candidate assembly |
-| `search-contract-core` | shared generic search-contract primitives retained post-cutover |
 | `repo-core` | generic repo/catalog graph-loading primitives, independent of BeautyQ |
 | `beautyq-model` | BeautyQ domain model (attributes, service-variant schema, master-service-offer-variant, user profile) |
 | `beautyq-search-gen2-contract` | pure BeautyQ Gen2 search contract declarations (catalog/document/intent/runtime/response/evaluation slices); no repo/client/HTTP imports |

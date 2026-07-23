@@ -21,10 +21,22 @@ final class BeautyQApplicationBoundarySpec extends AnyWordSpec {
       assertDoesNotCompile(
         """def forge(): leaderboard.search.beautyq.gen2.wiring.BeautyQSearchResponseGen2Projector.Response =
           |  new leaderboard.search.beautyq.gen2.wiring.BeautyQSearchResponseGen2Projector.Response(
-          |    Vector.empty, 0L, Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty,
-          |    None, 0, leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementStatus.NoAppend,
-          |    "no_append", None, None,
-          |    leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 0, 0, 0),
+          |    hits = Vector.empty,
+          |    totalHits = 0L,
+          |    totalRelation = "eq",
+          |    facets = Vector.empty,
+          |    groups = Vector.empty,
+          |    providerCarousel = Vector.empty,
+          |    serviceIntentCarousel = Vector.empty,
+          |    appliedFilters = Vector.empty,
+          |    suppressedFilters = Vector.empty,
+          |    nextCursor = None,
+          |    supplementCount = 0,
+          |    supplementStatus = leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementStatus.NoAppend,
+          |    supplementStatusCode = "no_append",
+          |    ineligibilityReason = None,
+          |    degradationReason = None,
+          |    diagnostics = leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 0, 0, 0),
           |  )""".stripMargin
       )
     }
@@ -36,10 +48,22 @@ final class BeautyQApplicationBoundarySpec extends AnyWordSpec {
       )
       assertDoesNotCompile(
         """final class Forged extends leaderboard.search.beautyq.gen2.wiring.BeautyQSearchResponseGen2Projector.Response(
-          |  Vector.empty, 0L, Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty,
-          |  None, 0, leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementStatus.NoAppend,
-          |  "no_append", None, None,
-          |  leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 0, 0, 0),
+          |  hits = Vector.empty,
+          |  totalHits = 0L,
+          |  totalRelation = "eq",
+          |  facets = Vector.empty,
+          |  groups = Vector.empty,
+          |  providerCarousel = Vector.empty,
+          |  serviceIntentCarousel = Vector.empty,
+          |  appliedFilters = Vector.empty,
+          |  suppressedFilters = Vector.empty,
+          |  nextCursor = None,
+          |  supplementCount = 0,
+          |  supplementStatus = leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementStatus.NoAppend,
+          |  supplementStatusCode = "no_append",
+          |  ineligibilityReason = None,
+          |  degradationReason = None,
+          |  diagnostics = leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 0, 0, 0),
           |)""".stripMargin
       )
     }

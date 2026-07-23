@@ -98,14 +98,6 @@ object BeautyQGen1SearchDeletionInventory {
     ),
     // Shared foundations retained (not classified for deletion)
     entry(
-      "search-contract-core-retain",
-      BeautyQGen1DeletionEntryKind.SbtProjectRoot,
-      "search-contract-core",
-      BeautyQGen1DeletionAction.RetainShared,
-      "beautyq-search-gen2-contract uses the SearchDomainSpec lineage as evidence only; no Gen2 import remains",
-      "The Gen2 module firewall keeps a stable core foundation; no Gen2 source imports the project and no Gen1 search project remains on the Gen2 compile classpath.",
-    ),
-    entry(
       "beautyq-search-repositories-retain",
       BeautyQGen1DeletionEntryKind.SbtProjectRoot,
       "beautyq-search-repositories",

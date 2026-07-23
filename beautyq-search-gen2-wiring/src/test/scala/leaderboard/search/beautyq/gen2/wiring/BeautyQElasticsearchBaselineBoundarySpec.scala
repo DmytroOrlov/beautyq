@@ -36,11 +36,12 @@ final class BeautyQElasticsearchBaselineBoundarySpec extends AnyWordSpec {
       assertDoesNotCompile(
         """def forgePage(): leaderboard.search.gen2.elasticsearch.BaselineSearchPage[leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2, leaderboard.model.MasterServiceOfferVariantId] =
           |  new leaderboard.search.gen2.elasticsearch.ElasticsearchSearchResponseDecoder.BaselineSearchPage(
-          |    Vector.empty,
-          |    0L,
-          |    Vector.empty,
-          |    leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 1, 1, 0),
-          |    None,
+          |    hits = Vector.empty,
+          |    totalHits = 0L,
+          |    totalRelation = "eq",
+          |    facets = Vector.empty,
+          |    diagnostics = leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 1, 1, 0),
+          |    nextCursor = None,
           |  )""".stripMargin
       )
       assertDoesNotCompile(
@@ -52,7 +53,7 @@ final class BeautyQElasticsearchBaselineBoundarySpec extends AnyWordSpec {
         """final class ForgedPage extends leaderboard.search.gen2.elasticsearch.ElasticsearchSearchResponseDecoder.BaselineSearchPage[
           |  leaderboard.search.beautyq.gen2.contract.VariantSearchDocumentGen2,
           |  leaderboard.model.MasterServiceOfferVariantId
-          |](Vector.empty, 0L, Vector.empty, leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 1, 1, 0), None)""".stripMargin
+          |](hits = Vector.empty, totalHits = 0L, totalRelation = "eq", facets = Vector.empty, diagnostics = leaderboard.search.gen2.elasticsearch.ElasticsearchResponseDiagnostics(false, 1, 1, 0), nextCursor = None)""".stripMargin
       )
       assertDoesNotCompile(
         """def forgeFullResult(): leaderboard.search.gen2.elasticsearch.ElasticsearchFullSearchResult[

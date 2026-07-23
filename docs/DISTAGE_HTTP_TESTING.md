@@ -28,10 +28,10 @@ Focused local harness docs for route and service proofs. This is not a full Dist
 
 ## Commands
 
-* QP18:
-  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP18QdrantSupplementImprovementNoWorseningSpec'`
-* QP19:
-  `sbt 'leaderboard-app-shell/Test/compile' 'leaderboard-app-shell/testOnly leaderboard.search.QP19QdrantSupplementMeasuredAcceptanceGateSpec'`
+* Pure readiness/evaluation gate proof (eval module, no external resources):
+  `sbt 'beautyqSearchGen2Eval/testOnly leaderboard.search.beautyq.gen2.eval.BeautyQGen2CutoverGateSpec'`
+* Real Elasticsearch/Qdrant/embedding communication proof (app-shell test scope):
+  `sbt 'leaderboard-app-shell/testOnly leaderboard.search.BeautyQSearchGen2CutoverCommunicationSpec'`
 
 ## Do not
 
@@ -41,4 +41,6 @@ Focused local harness docs for route and service proofs. This is not a full Dist
 
 ## Links
 
-* `docs/BEAUTYQ_QDRANT_SUPPLEMENT_LOCAL_GATE.md`
+* [§13 — Baseline-plus-supplement orchestration](gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#13-baseline-plus-supplement-orchestration)
+* [§14 — Native Gen2 application composition](gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#14-native-gen2-application-composition)
+* [§15 — Quality and evaluation](gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#15-quality-and-evaluation)
