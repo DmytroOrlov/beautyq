@@ -11,24 +11,21 @@ Start here:
 * [Documentation map](docs/README.md)
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) for the normative
   business-policy, reuse, and executable-source-of-truth contract
-* [BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) for the current plan and authoritative live implementation state
+* [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) for the current implemented architecture
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` for coordinator workflow and anti-scope-drift rules
 
-Current coordinator focus:
+BeautyQ Search Gen2 is complete and frozen.
 
-BeautyQ Search Framework Gen2 is complete. The independent Gen2 module DAG has been built and the
-final cutover removed all Gen1 search modules. Current search-framework work is tracked in the
-[BeautyQ Search Gen2 implementation plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md).
+The technical specification owns the current implemented architecture, supported shapes, runtime
+ownership, accepted limits, and delivery closure.
 
-The new-domain onboarding document remains the practical authoring guide; the domain-authoring
-principles document owns the repository-wide contract, and the Gen2 implementation plan owns current
-delivery status.
+[NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) owns practical instructions for
+adding another search domain.
+
+[BEAUTYQ_SEARCH_GEN2_REVIEW.md](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) owns historical Gen1
+findings and the reasons behind the Gen2 architecture.
 
 The route/Qdrant sections below are current operational truth.
-
-Longer-term direction: a reusable domain-agnostic search contract/materialization DSL that can
-onboard a new domain with explicit topology, documented metrics, and transparent ES/Qdrant
-configuration guidance.
 
 Current BeautyQ route truth:
 

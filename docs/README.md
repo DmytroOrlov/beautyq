@@ -6,17 +6,16 @@
 * [Domain authoring principles](search/DOMAIN_AUTHORING_PRINCIPLES.md) — normative contract for
   domain-facing declarations, framework derivation, cross-domain reuse, and executable source-of-truth
   ownership, including the enum-text rule.
-* [BeautyQ Search Gen2 implementation plan](gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) — completed delivery status.
 * `search/NEW_DOMAIN_ONBOARDING.md` — new-domain onboarding owner.
 * `DISTAGE_HTTP_TESTING.md` — focused local route/service/real-resource testing model.
 
 ## BeautyQ Search Gen2
 
-* [Implementation plan](gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) — completed delivery status: Bricks 0–9 complete, final cutover done.
 * [Technical specification](gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, module DAG,
-  exact generic APIs and supported technical shapes, backend roles, lifecycle, fingerprinting, and cutover rules.
+  exact generic APIs and supported technical shapes, backend roles, lifecycle, fingerprinting, cutover rules,
+  accepted initial limits, and completed delivery status.
 * [Semantics ADR](gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md) — accepted search semantics and policy decisions.
-* [Gen1 architecture review](gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — evidence-backed review and the gaps addressed by Gen2.
+* [Gen1 architecture review](gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and the gaps addressed by Gen2.
 
 ## BeautyQ search architecture
 

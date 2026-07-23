@@ -1,11 +1,11 @@
 # BeautyQ Search Framework Gen2 — current implemented architecture
 
-Status: **implemented; Bricks 0–9 complete; final cutover done. Full repository result: 380/380 across 55 suites.**
+Status: **fully implemented and frozen**
 Scope: the sole search architecture in the repository
 Delivery rule: one final cutover completed; Gen1 search modules and routes are absent
 
 Sections explicitly labelled implemented describe current source. All backend/runtime sections
-are implemented; the implementation plan records completed delivery status.
+are implemented; delivery closure is recorded below.
 
 ## 1. Goal
 
@@ -380,7 +380,7 @@ before invoking it; there is no second HTTP implementation.
 
 `BEAUTYQ_SEARCH_GEN2_REVIEW.md` owns historical Gen1 findings;
 `BeautyQGen1SearchDeletionInventory` owns typed completed-cutover evidence;
-the implementation plan records completed delivery status.
+delivery closure is recorded in the delivery status section below.
 
 Being generic in Scala type parameters does not make a class reusable across the module firewall. A
 symbol located in `search-core`, `search-elasticsearch`, `search-qdrant` or a BeautyQ Gen1 search
@@ -2228,3 +2228,51 @@ Gen2 is complete when:
 16. the independent Gen2 composition passes the cutover gate, including full-search readiness with Qdrant available;
 17. the final cutover removes Gen1 search modules, routes, aliases and obsolete scaffolding;
 18. repository documentation describes Gen2 as the sole search framework.
+
+## Delivery status and operational closure
+
+BeautyQ Search Gen2 is fully implemented and frozen. It is the native BeautyQ search stack.
+
+`POST /beauty-search` is the sole BeautyQ search route. The old `/beauty-search-gen2` route is absent.
+Gen1 serving/runtime owners are removed.
+
+Elasticsearch owns the complete baseline result. Qdrant remains candidate-only and can only append
+through the no-harm policy. Evaluation code is outside production serving.
+
+Application composition requires `BeautyQSeedReady` before `BeautyQSearchGen2Startup` begins snapshot
+materialization and backend activation.
+
+In managed/test composition, `BeautyQSeedReady.LoadAndInsert` waits for the repository lifecycle and
+completes seed insertion first.
+
+In provided composition, `BeautyQSeedReady.Noop` preserves externally owned database readiness while
+keeping the startup dependency explicit.
+
+The architecture is frozen. Further architectural work requires a product requirement or a
+source-confirmed defect.
+
+Before the later startup-readiness ordering dofix, the recorded clean root `sbt test` completed
+successfully. Across the 13 aggregated project test tasks:
+- 1727 tests passed;
+- 176 suites completed;
+- 0 failed, canceled, ignored, or pending.
+
+The final `380 tests / 55 suites` block belongs only to `leaderboard-app-shell`; it is not the
+repository-wide total. The repository-wide total was obtained by adding the separate subproject
+summaries from the same clean root run.
+
+A new repository-wide count must be recorded only after the full root suite is rerun on the post-dofix
+tree; this document does not infer that count.
+
+### Accepted limits
+
+These are accepted limits, not open defects or roadmap commitments:
+
+- no second production search domain yet;
+- no CDC materialization;
+- no authenticated cursor state;
+- no arbitrary custom-analyzer framework;
+- no universal supplement acceptance threshold;
+- generic multi-valued field support remains limited to documented shapes;
+- no application rate limiter without a product quota policy;
+- no process-local active-generation cache without a coherence contract.

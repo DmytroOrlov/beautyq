@@ -16,8 +16,7 @@ policy.
 BeautyQ is this repository's only production consumer of the Search Gen2 declaration/materialization
 kernel today, so it is the richest worked example below. Exact supported document/value/snapshot
 shapes belong to the
-[technical specification](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md); current open gaps belong to
-the [implementation plan](../gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md).
+[technical specification](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md).
 
 This is not a claim that a new domain is zero-code. It still needs nominal ids, model case classes,
 repository implementations, a pure catalog declaration, a loader, a seed policy, and a projection -
@@ -204,8 +203,19 @@ semantic distinctions while reusing the listed helpers:
 - projection remains the domain's owner of joins, missing-entity errors, stored-data validation,
   normalization, and document-value/text policy.
 
-This is the current contract, not a phase log. The implementation plan owns active Gen2 delivery
-status; source and focused tests own the exact derivation behavior.
+This is the current contract, not a phase log. The technical specification owns the current
+implemented state and delivery closure; source and focused tests own the exact derivation behavior.
+
+## Application composition and source-readiness ordering
+
+A domain's declaration and materialization DSL describes logical data reads. It does not infer
+Distage lifecycle ordering from SQL text.
+
+Application composition must make source-data readiness a dependency of search startup before
+snapshot materialization and backend activation begin.
+
+A provided/external database may use a no-op readiness implementation, but the dependency must
+still remain explicit.
 
 ## Search Gen2 domain declaration
 
@@ -387,7 +397,7 @@ Elasticsearch owners without copying their policy. Follow its `contract` branch 
 `qdrant` for candidate policy/runtime/hydration.
 
 Before assuming a value type or document/snapshot shape is supported, check technical specification
-§§7.1 and 9.4. Delivery status and exact next tasks are in the implementation plan.
+§§7.1 and 9.4. Delivery status is recorded in the technical specification.
 
 **Authoring hazard when nesting a `Fields` object under a domain root:** if the enclosing root object
 also aliases `Fields.document`, keep every dependency either inside `Fields` or outside the enclosing
@@ -537,7 +547,7 @@ generation-consistent lookup. The framework derives the request pipeline, target
 lookup, integrity errors and candidate-only result. If a domain later composes a supplement, pass the
 compiler-owned bound baseline and candidate evaluation to the orchestration owner; do not construct or
 copy readiness, degradation, membership or final-result values. Exact current API shapes belong to the
-technical specification, and live sequencing belongs to the implementation plan.
+technical specification, and delivery closure is recorded in the technical specification.
 
 ## Materialization
 

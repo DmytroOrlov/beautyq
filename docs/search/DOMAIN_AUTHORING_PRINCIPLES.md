@@ -157,10 +157,12 @@ need a synthetic authoring plan.
 ## Current-state qualification
 
 The principles are normative, but an existing implementation may still have a tracked extraction gap.
-Such a gap must name the current owner and next boundary in the relevant implementation plan. It must
+Such a gap must name the current owner and next boundary in the technical specification. It must
 not be hidden by claiming that an operation is already generic.
 
-For the current Gen2 state, exact supported shapes belong to the
+For the current Gen2 state, exact supported shapes, lifecycle/runtime ownership, accepted limits,
+and delivery closure belong to the
 [technical specification](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md), the practical new-domain
-path belongs to [`NEW_DOMAIN_ONBOARDING.md`](NEW_DOMAIN_ONBOARDING.md), and live gaps/delivery status
-belong to the [implementation plan](../gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md).
+path belongs to [`NEW_DOMAIN_ONBOARDING.md`](NEW_DOMAIN_ONBOARDING.md), and historical Gen1 evidence
+belongs to [BEAUTYQ_SEARCH_GEN2_REVIEW.md](../gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md).
+Implementation chronology belongs to Git history.
