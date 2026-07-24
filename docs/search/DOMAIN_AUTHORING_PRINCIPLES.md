@@ -112,11 +112,24 @@ reconstruct policy.
 When a declaration, test, and documentation statement disagree, report the mismatch and resolve it
 explicitly. Do not silently choose one layer as a substitute for another.
 
-### Stable identity and explicit order
+### Stable semantic identity
 
-Use ordinary `toString` only for incidental diagnostics. A task-defined stable ID/code or active subset/
-order is typed domain policy; all views derive from it, and it must not be replaced with `toString` or
-enum inventory. Do not add stable labels to unrelated enums.
+Public names, typed IDs, reason codes, fingerprint inputs, and policy order that affect requests,
+cursors, persistence, backend execution, or public responses must be explicit and stable. Display
+labels, incidental declaration layout, unordered iteration, or diagnostic prose must not silently
+define protocol identity. When order is semantically meaningful, declare it through an explicit
+ordered owner and prove it.
+
+Use ordinary `toString` only for incidental diagnostics. A task-defined stable ID/code or active
+subset/order is typed domain policy; all views derive from it, and it must not be replaced with
+`toString` or enum inventory. Do not add stable labels to unrelated enums.
+
+### Canonical and supplemental result ownership
+
+A domain must name one canonical result owner. Approximate, semantic, recommendation, or supplemental
+backends may enrich the canonical result only through an explicitly declared composition policy.
+They must not silently redefine canonical totals, ordering, facets, groups, cursor state, or trusted
+provenance.
 
 ## Coordinator and reviewer gate
 

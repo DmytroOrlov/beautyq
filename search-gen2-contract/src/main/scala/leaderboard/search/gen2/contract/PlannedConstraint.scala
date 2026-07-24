@@ -39,7 +39,7 @@ object PlannedConstraint {
   ) extends PlannedConstraint[Document]
 
   /** An offer/availability interval `[from, to]` matches a requested interval by overlap, never by a
-    * range over `from` alone (see docs/gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md #2). `from` and `to`
+    * range over `from` alone; overlap is determined by the request interval against the document's `[from, to]` range, never by matching `from` alone. `from` and `to`
     * share one value type `A` by construction; [[validate]] additionally requires them to share one
     * logical codec (`codec.typeId`), since two `SearchField[Document, A]` handles for the same Scala
     * type `A` are not guaranteed to share the same [[SearchValueCodec]] instance.

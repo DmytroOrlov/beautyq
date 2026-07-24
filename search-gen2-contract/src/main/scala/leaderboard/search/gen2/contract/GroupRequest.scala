@@ -55,8 +55,8 @@ object GroupOrder {
   ) extends GroupOrder
 }
 
-/** A group request over one typed key field of one document, richer than a plain terms bucket - matches
-  * docs/gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md #15. Construction is unchecked; call
+/** A group request over one typed key field of one document, richer than a plain terms bucket - carries
+  * typed identity, order, precision, and plan ownership. Construction is unchecked; call
   * [[GroupRequest.validate]] to check it against `keyField`'s declared capabilities and its own internal
   * shape.
   */

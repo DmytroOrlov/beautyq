@@ -326,8 +326,8 @@ object BeautyQGen1SearchDeletionInventory {
       BeautyQGen1DeletionEntryKind.DocumentationOwner,
       "docs/search/BEAUTYQ_SEARCH_*.md (Gen1 contract, supplement, eval scaffolding)",
       BeautyQGen1DeletionAction.DeleteFileOrOwner,
-      "docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md + BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md",
-      "The Gen1 search documentation is removed; the Gen2 plan and technical spec are the only search architecture documents.",
+      "docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md",
+      "The Gen1 search documentation is removed; the technical specification is the sole remaining current architecture document. Git history owns implementation chronology and decision rationale.",
     ),
     entry(
       "docs-gen1-supplement-architecture-delete",

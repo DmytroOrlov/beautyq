@@ -12,7 +12,7 @@ import org.scalatest.wordspec.AnyWordSpec
   *      update rather than staying silently stale.
   *
   * This file pins only mechanically testable vocabulary and compile gaps. Current open extraction gaps
-  * and their future owners belong to docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md.
+  * are current accepted limits documented in docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits.
   */
 final class SearchGen2VocabularyLedgerSpec extends AnyWordSpec {
 
@@ -97,7 +97,7 @@ final class SearchGen2VocabularyLedgerSpec extends AnyWordSpec {
     }
   }
 
-  // See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md, G-3: a Vector[A]-valued searchable/
+  // Accepted limit G-3 (docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits): a Vector[A]-valued searchable/
   // filterable field has no SearchFieldKind, SearchValueCodec, or FieldExtraction shape today.
   // LibraryTracerDomainSpec proves the practical consequence (completeDocument forces an explicit
   // .ignore); these two assertions are the minimal generic, BeautyQ-free compile-time proof that no

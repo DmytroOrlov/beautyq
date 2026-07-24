@@ -235,7 +235,7 @@ object ElasticsearchSearchRequestCompiler {
       case Bound.Exclusive(value) => encodeValue(field, value, context).map(json => Some((if (isLower) "gt" else "lt") -> json))
     }
 
-  // Mirrors docs/gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md #2: the request's lower bound constrains
+  // Matches the exact interval-overlap direction mapping: the request's lower bound constrains
   // `to`, and its upper bound constrains `from` - never a range over `from` alone. Reused by both hard
   // IntervalOverlap filters and IntervalOverlap facet buckets via the `contextFor` parameter, so both
   // compile the exact same predicate shape.

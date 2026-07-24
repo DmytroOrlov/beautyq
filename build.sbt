@@ -119,9 +119,9 @@ lazy val beautyqSearchRepositories = project
   )))
   .dependsOn(`leaderboard-core`, repoCore, beautyqModel)
 
-// --- BeautyQ Search Gen2 (see docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md) ---
+// --- BeautyQ Search Gen2 modules ---
 // Independent module DAG. No Gen2 project may depend on a Gen1 search project; enforced by
-// SearchGen2ModuleFirewallSpec. Brick 0 adds only the module graph and firewall, no search behavior.
+// SearchGen2ModuleFirewallSpec.
 
 lazy val searchGen2Contract = project
   .in(file("search-gen2-contract"))

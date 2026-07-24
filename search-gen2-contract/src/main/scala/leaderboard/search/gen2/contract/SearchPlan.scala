@@ -1,8 +1,8 @@
 package leaderboard.search.gen2.contract
 
-/** Trusted precedence of one constraint, per docs/gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md #7/#8.
+/** Trusted precedence of one constraint, carried as explicit typed semantics by the plan algebra.
   * `FacetSelection` carries its validated stable selection identity rather than a parallel optional ID,
-  * so a selection can never exist without one. Only Brick 4D's trust boundary may construct
+  * so a selection can never exist without one. Only the trusted plan-compilation boundary may construct
   * `ParsedHard`/`ParsedSoft`/`SystemDefault`; this contract only carries the result of that decision.
   */
 sealed trait ConstraintProvenance extends Product with Serializable

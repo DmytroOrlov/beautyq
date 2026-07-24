@@ -57,8 +57,22 @@ Gen2 does not initially require:
 - raw Elasticsearch or Qdrant JSON in BeautyQ declarations;
 - automatic vocabulary generation from display names;
 - compatibility adapters that route V1 runtime through Gen2;
-- byte-for-byte V1 request/response parity where the semantic delta ADR declares a change;
+- byte-for-byte V1 request/response parity where this specification defines an intentional change;
 - preserving historical M8–M21 evaluation scaffolding in the serving classpath.
+
+## Semantic invariants
+
+This technical specification records current BeautyQ Gen2 semantic invariants.
+
+Elasticsearch owns the complete canonical baseline result, including canonical hit order, totals, facets, groups, cursor state, and baseline diagnostics where those shapes are supported. Qdrant does not own or redefine the final result.
+
+Qdrant returns candidate identities, scores, and candidate diagnostics only. Supplement composition is append-only: it must not remove, replace, reorder, or rewrite baseline hits. Supplement candidates already present in the current page or complete baseline are excluded before append-budget selection. Supplement failure follows the current typed readiness/degradation policy and must not fabricate a successful enriched result.
+
+Stable protocol identity is explicit. Field IDs, public filter and sort names, facet IDs, group IDs, reason/status codes, explicit ordered policy vectors, and plan/generation contract fingerprints are stable identities. Display labels, unordered-map iteration, incidental source order, or rendered prose must not silently become protocol identity. Meaningful order must be explicit and tested.
+
+Cursor state is bound to canonical plan identity. Backend execution is authorized against the persisted generation contract. A stale, missing, ambiguous, or incompatible generation is rejected through typed failure handling. A cursor must not silently continue against another incompatible plan or generation.
+
+Clients may submit supported public request forms. Clients cannot assign trusted parsed/system provenance to their own filters. Request, field, cursor, and backend-response decoders reject malformed or incompatible shapes instead of guessing missing semantics. Backend response ownership remains closed at the appropriate projector or decoder boundary.
 
 ## 4. Architectural principles
 
@@ -1182,9 +1196,9 @@ to this facade without making the backend-neutral contract module depend on down
 
 ### 8.1 Stable identities
 
-Add and validate `ServiceCode` and `CategoryCode` as specified by the ADR.
+`ServiceCode` and `CategoryCode` are the stable business identities used and validated by the current BeautyQ Gen2 contract.
 
-The accepted implementation places these codes in the shared BeautyQ domain/persistence models, not in a Gen2-only sidecar. This may add code fields to derived Service/Category HTTP JSON before search cutover. The side-by-side guarantee is therefore: Gen1 search runtime semantics and ownership remain unchanged; shared domain/API schemas may receive this documented additive change.
+`ServiceCode` and `CategoryCode` live in the shared BeautyQ domain and persistence models rather than in a Gen2-only sidecar. They are the current stable identities used by the native Gen2 contract and may also be present in shared domain/API representations. No side-by-side Gen1 search guarantee remains after the completed cutover.
 
 The variant document contains both internal IDs and stable codes where search/filter/intent behavior requires them.
 
@@ -1348,7 +1362,7 @@ Rules:
 - invalid field/operator/value combinations return typed validation errors;
 - one request cannot contain conflicting pagination sizes;
 - location without geo intent is accepted as data but does not change ranking;
-- plan compilation follows the accepted precedence ADR.
+- plan compilation follows the constraint-precedence policy defined in this specification.
 
 ### 10.2 Plan compilation
 
@@ -1591,7 +1605,7 @@ empty `bool`. Hard constraints compile per kind: `Terms` as `term` for a single 
 - for an empty set; `NumberRange` preserves every inclusive/exclusive/unbounded bound combination and
 uses `match_all` for both-unbounded bounds, with the canonical ISO instant string for `DateTime` fields;
 `IntervalOverlap` compiles the
-ADR's exact overlap-direction mapping (the request's lower bound constrains the indexed `to` field with
+the exact interval-overlap direction mapping (the request's lower bound constrains the indexed `to` field with
 `gte`/`gt`; the request's upper bound constrains the indexed `from` field with `lte`/`lt`), collapsing to
 `match_all` when fully unbounded; `GeoDistanceFilter` compiles with meters and explicit `distance_type:
 arc`. Geo scoring is independent of both hard filters and sorts: a `GeoProximitySignal` contributes one
@@ -1606,7 +1620,7 @@ support that emitted value sort, before request compilation. Facet aggregation n
 `facet:<value>`, never from a normalized field path; `Terms`, `NumberRange` and `IntervalOverlap` facets
 all compile under the plan's complete `AllAppliedHardFilters` context with no self-exclusion, and the
 same shared overlap-predicate builder used for hard-constraint compilation is reused for
-`IntervalOverlap` facet buckets, so the ADR's direction mapping is expressed in exactly one place.
+`IntervalOverlap` facet buckets, so the direction mapping is expressed in exactly one place.
 
 The prepared request contains no executable physical target. For a first page it carries
 `ElasticsearchGenerationRequirement.Active`; for a later page it carries the decoded, untrusted
@@ -1763,11 +1777,7 @@ composition.
 
 ## 12. Qdrant Gen2 requirements
 
-Brick 6A is the implemented pure boundary in `search-gen2-qdrant`: it has no HTTP client, Qdrant
-resource lifecycle or BeautyQ hydration. Brick 6B-A owns the shared neutral JSON transport and exact
-Qdrant 1.18.3 wire adapter; 6B-B owns collection lifecycle, authorization and candidate execution; 6C
-owns BeautyQ query embedding and candidate hydration. Gen1 and Gen2 share one Distage-managed
-Qdrant 1.18.3 process; `QdrantGen2PortCfg` is the sole Qdrant endpoint view.
+`search-gen2-qdrant` owns the neutral Qdrant 1.18.3 transport, collection lifecycle, authorization, response decoding, and candidate execution. BeautyQ application composition owns query embedding and candidate hydration. `QdrantGen2DockerPlugin` is the sole Distage-managed Qdrant container owner, and `QdrantGen2PortCfg` is the sole Qdrant endpoint view. No Gen1 Qdrant search runtime remains.
 
 ### 12.1 Semantic query text policy
 
@@ -1937,7 +1947,7 @@ baseline and evaluation are stored once, and status/reason/cause are derived
 views rather than independently supplied fields. The eval module derives its
 `SupplementEvidence` only from this result.
 
-Policy is defined by the ADR:
+Current supplement policy:
 
 - first page only;
 - default relevance sort only;

@@ -52,7 +52,7 @@ object BeautyQSearchPlanPolicy {
   // categoryName as Terms(limit = 10) and priceFrom/durationMin as Ranges with exactly these bucket IDs
   // and thresholds. Gen2 keeps the bucket IDs/thresholds, but facets the stable serviceCode/categoryCode
   // identity fields (not the presentation name fields) and uses the IntervalOverlap price facet over
-  // both price fields per docs/gen2/BEAUTYQ_SEARCH_GEN2_SEMANTICS_ADR.md #4.
+  // both price fields via IntervalOverlap, the current BeautyQ price-precedence policy.
   private val priceBuckets: Vector[FacetBucket[BigDecimal]] =
     Vector(
       FacetBucket.HalfOpen(FacetBucketId("0-30"), BigDecimal(0), BigDecimal(30)),

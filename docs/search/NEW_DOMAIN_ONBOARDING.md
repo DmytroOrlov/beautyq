@@ -597,6 +597,26 @@ Do not copy BeautyQ snapshot, joins, text policy or SQL. SQL statements and deco
 inside the new domain's one consistent transaction adapter; snapshot traversal/order and catalog
 entity-inventory proof come from the generic snapshot kernel rather than a second hand-written list.
 
+## Semantic ownership checklist
+
+A new domain author must explicitly cover these ownership decisions before declaring a search domain
+complete:
+
+1. Choose the canonical baseline/result owner.
+2. Define whether any secondary backend is candidate-only, advisory, or supplemental.
+3. Declare the exact no-harm or composition rule for supplemental results.
+4. Assign stable field, filter, sort, facet, group, status, and reason identities where those concepts
+   exist.
+5. Declare meaningful ordering explicitly instead of relying on map or incidental source order.
+6. Decide which declarations participate in plan, cursor, mapping, generation, or persistence
+   fingerprints.
+7. Prevent public requests from granting themselves trusted provenance.
+8. Define malformed-input and incompatible-generation behavior.
+9. Add focused proofs for identity mutation, ordering, boundary decoding, cursor/generation binding,
+   and canonical-result preservation.
+
+Reuse existing generic Gen2 mechanics before adding another framework abstraction.
+
 ## Measured local gate before building a supplement
 
 Before wiring any new-domain search supplement (a candidate source added alongside a baseline

@@ -185,7 +185,7 @@ object LibraryTracerProjection {
 object LibraryTracerSearchDomain {
   import LibraryTracerModel.*
 
-  // Open authoring hazard G-8 (see docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md): Fields' own inputs are kept fully local to Fields
+  // Open authoring hazard G-8 (accepted limit, see docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits): Fields' own inputs are kept fully local to Fields
   // (never a private val of the enclosing object it closes over). A nested Fields object that captures
   // an outer private val, combined with the enclosing object's own `val document = Fields.document`
   // alias, is a reentrant JVM class-initialization hazard: the outer alias can observe a stale/default
@@ -246,7 +246,7 @@ object LibraryTracerSearchDomain {
         .searchable
         .declare
 
-    // Gap G-3 (tracked in docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md): a Vector[String]-valued
+    // Accepted limit G-3 (docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits): a Vector[String]-valued
     // field has no expressible SearchFieldKind or FieldExtraction today. completeDocument's exhaustive
     // product coverage forces this decision to be explicit instead of silently missing.
     declarations.ignore(_.tags)

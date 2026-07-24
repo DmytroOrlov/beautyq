@@ -80,7 +80,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       List("beautyq-search-gen2-wiring"),
     )
 
-  // Accepted order from the Gen2 implementation plan/technical spec. This one ordered list is the
+  // Accepted module order from the Gen2 technical specification. This one ordered list is the
   // sole source for project checks, package checks, visual rendering, the cycle proof, and the
   // aggregate proof. Dependency order here is a documentation/rendering convenience only - it is
   // never compared against build.sbt as a sequence; see checkDependsOn.

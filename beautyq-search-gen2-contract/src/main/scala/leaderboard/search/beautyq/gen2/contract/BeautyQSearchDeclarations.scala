@@ -14,8 +14,7 @@ import leaderboard.search.gen2.contract.*
   * behind a second catalog tree.
   *
   * This is the real, current `catalog`/`variants` declaration, not a placeholder rendering of a future
-  * tree. See docs/gen2/BEAUTYQ_SEARCH_GEN2_IMPLEMENTATION_PLAN.md
-  * for the section-by-section delivery order this root grew into, and
+  * tree. Current ownership is documented in docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md, and
   * docs/search/NEW_DOMAIN_ONBOARDING.md for the low-boilerplate `searchFields[Document]` authoring DSL
   * that `variants.Fields` uses. Every field below declares only its selector, kind (or lets it be
   * inferred), and capabilities; the generic registry derives the rest.
