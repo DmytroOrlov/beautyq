@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **approved design; implementation not started**
+Status: **Q1 completed, O0 next, Q2 planned, O1 planned, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -333,16 +333,19 @@ are aggregate/slice-only unless the break-glass migration-and-replenishment proc
 
 ## 6. Delivery sequence
 
-### Patch Q1 — executable evaluation foundation
+### Patch Q1 — executable evaluation foundation **COMPLETED**
 
-- add the thin domain-neutral eval project and neutral mathematical proofs;
-- move and strictly decode the BeautyQ corpus;
-- remove corpus duplicates, the stale validation report, and obsolete M9–M14 artifacts after migration;
-- implement explicit exhaustive/partial judgment semantics, domain-owned cutoffs, metric applicability,
-  and pure metric formulas;
-- define generated report ownership and the optional typed accepted-baseline manifest;
-- update module firewall/build-DAG proofs;
-- correct the technical specification's current quality claims.
+Completed:
+- added the thin domain-neutral eval project and neutral mathematical proofs;
+- moved and strictly decoded the BeautyQ corpus;
+- removed corpus duplicates, the stale validation report, and obsolete M9–M14 artifacts after migration;
+- implemented explicit exhaustive/partial judgment semantics, domain-owned cutoffs, metric applicability, and pure metric formulas;
+- defined generated report ownership, ordered scope/cutoff aggregates, protected aggregate-only encoding,
+  strict canonical corpus/fingerprint handling, and the optional typed accepted-baseline manifest;
+- updated module firewall/build-DAG proofs;
+- corrected the technical specification's current quality claims.
+
+The current visible 89 cases are regression cases, not a protected holdout.
 
 ### Patch O0 — supplement startup policy and safe kill switch
 

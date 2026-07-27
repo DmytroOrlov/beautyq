@@ -44,6 +44,13 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       "leaderboard.search.gen2.qdrant",
       List("search-gen2-contract", "search-gen2-core", "search-gen2-transport"),
     )
+  private val searchGen2EvalNode =
+    ModuleNode(
+      "search-gen2-eval",
+      "searchGen2Eval",
+      "leaderboard.search.gen2.eval",
+      Nil,
+    )
   private val beautyqSearchGen2ContractNode =
     ModuleNode(
       "beautyq-search-gen2-contract",
@@ -77,7 +84,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       "beautyq-search-gen2-eval",
       "beautyqSearchGen2Eval",
       "leaderboard.search.beautyq.gen2.eval",
-      List("beautyq-search-gen2-wiring"),
+      List("search-gen2-eval", "beautyq-search-gen2-wiring"),
     )
 
   // Accepted module order from the Gen2 technical specification. This one ordered list is the
@@ -90,6 +97,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     searchGen2TransportNode,
     searchGen2ElasticsearchNode,
     searchGen2QdrantNode,
+    searchGen2EvalNode,
     beautyqSearchGen2ContractNode,
     beautyqSearchGen2MaterializationNode,
     beautyqSearchGen2WiringNode,
@@ -111,7 +119,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   private val servingModules: List[ModuleNode] = gen2Modules.filterNot(_.displayName == beautyqSearchGen2EvalNode.displayName)
 
   private val genericModuleDirs: List[String] =
-    List("search-gen2-contract", "search-gen2-core", "search-gen2-transport", "search-gen2-elasticsearch", "search-gen2-qdrant")
+    List("search-gen2-contract", "search-gen2-core", "search-gen2-transport", "search-gen2-elasticsearch", "search-gen2-qdrant", "search-gen2-eval")
 
   private val forbiddenGen1SbtProjectTokens: List[String] = List(
     "search-core",
@@ -212,7 +220,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
       assertNoViolations("Gen2 build.sbt dependsOn violations", violations)
     }
 
-    "prove all nine Gen2 projects are present in the root aggregate" in {
+    "prove all ten Gen2 projects are present in the root aggregate" in {
       val aggregateBlock = buildBlock("`distage-example`")
       val violations = gen2Modules.filterNot(node => aggregateBlock.contains(node.sbtId)).map { node =>
         s"${node.sbtId} is missing from the `distage-example` aggregate"
@@ -333,7 +341,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   }
 
   "Gen2 visual dependency tree" should {
-    "render an exact human-readable dependency tree for the nine Gen2 modules" in {
+    "render an exact human-readable dependency tree for the ten Gen2 modules" in {
       val expected =
         """search-gen2-contract
           |└── leaderboard-core
@@ -352,6 +360,8 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
           |├── search-gen2-contract
           |├── search-gen2-core
           |└── search-gen2-transport
+          |
+          |search-gen2-eval
           |
           |beautyq-search-gen2-contract
           |├── search-gen2-contract
@@ -373,6 +383,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
           |└── search-gen2-qdrant
           |
           |beautyq-search-gen2-eval
+          |├── search-gen2-eval
           |└── beautyq-search-gen2-wiring""".stripMargin
 
       assert(renderGraph(gen2Modules) == expected)
@@ -413,7 +424,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
   }
 
   "Generic/domain firewall" should {
-    "keep the five generic Gen2 modules free of leaderboard.repo imports, BeautyQ Gen2 imports, and BeautyQ source text" in {
+    "keep the six generic Gen2 modules free of leaderboard.repo imports, BeautyQ Gen2 imports, and BeautyQ source text" in {
       val violations = genericModuleDirs.flatMap { moduleDir =>
         val files = scalaFilesUnder(s"$moduleDir/src/main/scala")
 
@@ -440,7 +451,7 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     // test, so this closes the one gap the main-only check above left open: nothing previously proved a
     // second/tracer domain living in a generic module's own test tree stays free of the same forbidden
     // imports the module's production code is held to.
-    "keep the five generic Gen2 modules' test sources free of the same forbidden imports as their main sources" in {
+    "keep the six generic Gen2 modules' test sources free of the same forbidden imports as their main sources" in {
       val filesByModule = genericModuleDirs.map(moduleDir => moduleDir -> scalaFilesUnder(s"$moduleDir/src/test/scala"))
 
       // A vacuously green check (no test files found) would prove nothing; at least one generic module

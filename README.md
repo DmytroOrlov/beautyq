@@ -114,8 +114,9 @@ This is the current physical module map. See the [Gen2 technical specification](
 | `beautyq-search-gen2-materialization` | BeautyQ Gen2 catalog/document materialization: consistent snapshots, snapshot loaders, and variant document projection |
 | `search-gen2-elasticsearch` | reusable ES client/compiler code (mapping, ingestion, request, response); no BeautyQ-specific logic |
 | `search-gen2-qdrant` | reusable Qdrant client/candidate compiler/indexing/semantic-search code; no BeautyQ-specific logic |
+| `search-gen2-eval` | domain-neutral evaluation IDs, ranking mathematics, aggregation, comparison and deterministic report/manifest codecs |
 | `beautyq-search-gen2-wiring` | BeautyQ Gen2 runtime/search/backend/routing/policy layer that consumes the Gen2 contract |
-| `beautyq-search-gen2-eval` | BeautyQ Gen2 evaluation, cutover gate, and deletion inventory; test-only dependency of app-shell |
+| `beautyq-search-gen2-eval` | BeautyQ Gen2 evaluation, cutover gate, deletion inventory, canonical BeautyQ corpus, domain policy and adapters; test-only dependency of app-shell |
 | `app-services` | app-level service boundaries over repository interfaces, e.g. `leaderboard.services.Ranks` |
 | `app-http` | HTTP/Tapir API layer for the whole app, including `BeautySearchGen2Api` and every other API/endpoint class |
 | `leaderboard-app-shell` | **app shell module**: config, Distage/module composition and plugin wiring, real clients/resources, and startup/bootstrap/seed/eval shell execution code. No longer the conceptual owner of the BeautyQ search contract, materialization, runtime/wiring, or HTTP layers. |

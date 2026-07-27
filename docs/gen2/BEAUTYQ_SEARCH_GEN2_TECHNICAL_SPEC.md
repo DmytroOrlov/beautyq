@@ -333,6 +333,9 @@ search-gen2-elasticsearch
 search-gen2-qdrant
   └─ depends on search-gen2-contract/core/transport
 
+search-gen2-eval
+  └─ independent neutral evaluation kernel
+
 beautyq-search-gen2-contract
   └─ depends on search-gen2-contract, repo-core and beautyq-model
      (`repo-core` supplies the catalog declaration algebra owned by the Gen2 root)
@@ -346,7 +349,7 @@ beautyq-search-gen2-wiring
   └─ depends on all required Gen2 runtime modules
 
 beautyq-search-gen2-eval
-  └─ depends on Gen2 modules, fixtures and evaluation libraries
+  └─ depends on search-gen2-eval and beautyq-search-gen2-wiring
 ```
 
 ### 5.1 Allowed shared dependencies
@@ -2126,23 +2129,29 @@ communication verification.
 
 ## 15. Quality and evaluation
 
-Current implementation is narrower than the original quality design.
+Q1 evaluation kernel and canonical BeautyQ corpus are implemented.
+
 `beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
-evidence, deterministic cutover report encoding and the completed Gen1 deletion inventory. The
-Distage communication owner executes those four probes through the native application and real
+evidence, deterministic cutover report encoding, the completed Gen1 deletion inventory, a canonical
+89-case BeautyQ evaluation corpus, domain evaluation policy and adapters. All 89 migrated cases are
+visible regression/partial judgments; no protected holdout exists yet. No complete real-resource corpus
+report exists yet.
+
+The Distage communication owner executes those four probes through the native application and real
 Elasticsearch, Qdrant and embedding paths.
 
-The 89-query labeled corpus, complete relevance metrics, slice reports, latency report and freshness
-report are not currently owned or executed by the Gen2 eval module. The corpus remains duplicated in
-legacy locations and its checked-in validation report is stale. Those are explicit post-cutover gaps;
-they must not be cited as implemented proof.
+The domain-neutral `search-gen2-eval` project supplies stable evaluation identities, ranked metric
+mathematics (with declared-cutoff denominators), ordered scope/cutoff aggregation, comparison and
+deterministic report/manifest codecs. Domain corpus schemas,
+request construction, labels, slices, thresholds, and gates remain in each domain's eval project.
+Serving modules continue to have no eval dependency.
 
-The approved correction moves one canonical corpus into `beautyq-search-gen2-eval`, introduces a thin
-domain-neutral metric/run kernel, retains BeautyQ-owned labels, judgment completeness, metric cutoffs
-and thresholds, and makes a second domain evaluation-first. Full reports remain generated artifacts;
-an optional checked-in accepted baseline is a compact typed provenance manifest, not a copied report.
-Serving modules continue to have no eval dependency. The post-cutover plan owns the exact metric
-applicability, report ownership and delivery sequence.
+Q2 remains responsible for execution, protected cases, accepted manifest and measured report. The
+Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
+fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
+observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
+without per-case or result identities.
+Full reports remain generated artifacts.
 
 Required gates include:
 

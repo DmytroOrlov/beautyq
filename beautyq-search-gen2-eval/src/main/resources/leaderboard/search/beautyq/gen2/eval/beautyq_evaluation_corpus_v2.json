@@ -1,0 +1,5277 @@
+{
+  "schemaVersion": "beautyq-evaluation-corpus-v2",
+  "corpusId": "beautyq-wandsbek-hamburg-v1",
+  "dataset": "wandsbek_hamburg_beauty_services_seed_ready",
+  "version": 1,
+  "defaultUserLocation": {
+    "label": "Wandsbek Markt",
+    "lat": 53.572,
+    "lon": 10.066
+  },
+  "cases": [
+    {
+      "id": "q_nails_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникюр гель лак",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find manicure with gel polish.",
+      "notes": [
+        "Should not confuse gel polish with hair removal or facial products. Materials surcharge is a preferred benchmark signal for some gel-polish variants."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникюр с shellac и снятием",
+      "language": "ru",
+      "slices": [
+        "mixed_language",
+        "attribute_heavy",
+        "hard_negative"
+      ],
+      "userIntent": "Find shellac manicure where removal is included.",
+      "notes": [
+        "The word снятие/removal must mean nail coating removal, not depilation."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "shellac entfernen und neu",
+      "language": "de",
+      "slices": [
+        "german",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find shellac manicure with removal.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "обычный маникюр без покрытия",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "negative_attribute"
+      ],
+      "userIntent": "Find basic manicure without coating.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "36b4ddff-7800-5965-9dce-856b4776eea0"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "дешевый маникюр рядом",
+      "language": "ru",
+      "slices": [
+        "broad",
+        "price"
+      ],
+      "userIntent": "Find low-price manicure near the user.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_price_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "under 50",
+      "language": "en",
+      "slices": [
+        "price",
+        "english"
+      ],
+      "userIntent": "Find services within a price budget (under 50).",
+      "notes": [
+        "Pure natural-language budget query: the `under 50` phrase becomes a hard ES price upper bound (priceFrom <= 50), owned by the baseline parser/DSL/Elasticsearch path, never a semantic/Qdrant recall hint.",
+        "Required contract is price-only (no service/attribute signal); acceptable evidence spans multiple services to show the budget, not a service, drives the match. Fixture mapping only; no backend retrieval quality is measured."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+          ],
+          "forbiddenIds": [
+            "7ce84040-4005-5796-89d6-e0a51e3fb369",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec",
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "педикюр без лака",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find pedicure without coating.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "2193db11-d035-58a0-997c-8a96f6d98b01"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "pedicure gel polish",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find pedicure with gel polish.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_008",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Fußpflege Shellac Wandsbek",
+      "language": "de",
+      "slices": [
+        "german",
+        "location",
+        "synonym"
+      ],
+      "userIntent": "Find shellac pedicure / foot care in Wandsbek.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_009",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "наращивание ногтей гель",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find gel nail extensions.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "a4a01672-c103-51b0-8276-49e8aa5d4091"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_010",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "коррекция гелевых ногтей с дизайном",
+      "language": "ru",
+      "slices": [
+        "attribute_heavy"
+      ],
+      "userIntent": "Find gel nail refill with design/correction.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "51cc8284-3879-5bdb-8780-7b43e47f1251"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_011",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "снять гель с ногтей",
+      "language": "ru",
+      "slices": [
+        "hard_negative",
+        "direct"
+      ],
+      "userIntent": "Find nail gel removal.",
+      "notes": [
+        "Hard negative: removal must not become hair removal."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_nails_012",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "acrylic nails Hamburg Wandsbek",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find acrylic nail extension.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "ресницы классика",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find classic 1D lash extension.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "ресницы 2д",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find 2D lash extension.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "forbiddenIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Wimpern 3D",
+      "language": "de",
+      "slices": [
+        "german",
+        "attribute"
+      ],
+      "userIntent": "Find 3D lashes.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "mega volume lashes",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find mega volume lash extension.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "269c7210-4120-5e6c-a674-866f9bf98fcd"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "коррекция ресниц 2д",
+      "language": "ru",
+      "slices": [
+        "attribute_heavy",
+        "hard_negative"
+      ],
+      "userIntent": "Find 2D lash refill/correction.",
+      "notes": [
+        "Hard negative: correction should not become nail refill or brow correction."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12"
+          ],
+          "forbiddenIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "lash lifting mit färben",
+      "language": "de",
+      "slices": [
+        "german",
+        "attribute"
+      ],
+      "userIntent": "Find lash lifting with tinting.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "снять ресницы",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "hard_negative"
+      ],
+      "userIntent": "Find lash removal.",
+      "notes": [
+        "Hard negative: removal should not match depilation or nail removal."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_lashes_008",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "volume2_d Wandsbek lashes",
+      "language": "mixed",
+      "slices": [
+        "mixed_language",
+        "technical_token"
+      ],
+      "userIntent": "Find 2D lash service even when user types the enum-ish token.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_brows_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "брови ламинирование с окрашиванием",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find brow lamination with tinting.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_brows_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "brow lamination Wandsbek",
+      "language": "en",
+      "slices": [
+        "english",
+        "synonym"
+      ],
+      "userIntent": "Find brow lamination.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_brows_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "коррекция бровей",
+      "language": "ru",
+      "slices": [
+        "direct"
+      ],
+      "userIntent": "Find brow shaping/correction.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "245cf7ad-666b-5df1-8c0f-868741458337"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_brows_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Augenbrauen färben",
+      "language": "de",
+      "slices": [
+        "german",
+        "synonym"
+      ],
+      "userIntent": "Find brow tinting.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_brows_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "брови хна",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find henna brows.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_brows_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "shape and tint brows",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find brow shaping/tinting service.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "депиляция верхняя губа воском",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find upper lip waxing.",
+      "notes": [
+        "Hard negative: lip PMU is not upper lip waxing."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "94575ead-5606-58fc-9bff-7f2918344c74"
+          ],
+          "forbiddenIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "wax upper lip",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find upper lip waxing.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "94575ead-5606-58fc-9bff-7f2918344c74"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "threading chin",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find chin threading.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "laser hair removal armpits",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find laser armpit hair removal.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "лазер подмышки 6 сеансов",
+      "language": "ru",
+      "slices": [
+        "attribute_heavy",
+        "numeric"
+      ],
+      "userIntent": "Find 6-session laser armpit package.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "bikini laser",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find bikini laser hair removal.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "d103456e-61f3-5987-995d-03550bdf0230"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "sugaring lower legs",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find sugaring for lower legs.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_008",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "sugaring upper lip рядом",
+      "language": "mixed",
+      "slices": [
+        "english",
+        "attribute"
+      ],
+      "userIntent": "Find upper lip sugaring nearby.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_009",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "IPL Beine",
+      "language": "de",
+      "slices": [
+        "german",
+        "synonym"
+      ],
+      "userIntent": "Find laser/IPL full legs hair removal.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "99fc235a-7238-5399-b847-c7b68b85e2b4"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_hair_010",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "бикини воск недорого",
+      "language": "ru",
+      "slices": [
+        "price",
+        "attribute"
+      ],
+      "userIntent": "Find affordable bikini waxing.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "b036712b-991b-538e-80ef-aec745be2aba"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_pmu_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "перманент губы",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find permanent make-up for lips.",
+      "notes": [
+        "Hard negative: lips PMU is not upper lip depilation."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_pmu_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "pmu lips Hamburg",
+      "language": "mixed",
+      "slices": [
+        "mixed_language",
+        "attribute"
+      ],
+      "userIntent": "Find PMU lips.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "54568273-7762-5881-a027-0900965ddba4",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_pmu_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "permanent makeup brows correction included",
+      "language": "en",
+      "slices": [
+        "english",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find PMU brows with correction included.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_pmu_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "powder brows",
+      "language": "en",
+      "slices": [
+        "synonym",
+        "broad"
+      ],
+      "userIntent": "Find PMU brows / powder brows.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_pmu_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "eyeliner pmu",
+      "language": "en",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find PMU eyeliner.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_pmu_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "татуаж губ коррекция",
+      "language": "ru",
+      "slices": [
+        "synonym",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find lip PMU with correction.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "54568273-7762-5881-a027-0900965ddba4",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "aquafacial",
+      "language": "en",
+      "slices": [
+        "direct"
+      ],
+      "userIntent": "Find Aquafacial facial treatment.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "microneedling face",
+      "language": "en",
+      "slices": [
+        "direct",
+        "attribute"
+      ],
+      "userIntent": "Find face microneedling.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "чистка лица",
+      "language": "ru",
+      "slices": [
+        "synonym",
+        "direct"
+      ],
+      "userIntent": "Find facial cleansing.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "bb glow",
+      "language": "en",
+      "slices": [
+        "direct"
+      ],
+      "userIntent": "Find BB Glow facial.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "anti aging facial face neck decollete",
+      "language": "en",
+      "slices": [
+        "attribute_heavy"
+      ],
+      "userIntent": "Find anti-aging face/neck/decollete treatment.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "peeling Gesicht",
+      "language": "mixed",
+      "slices": [
+        "mixed_language",
+        "german"
+      ],
+      "userIntent": "Find facial peeling.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "увлажнение лица 3 сеанса скидка",
+      "language": "ru",
+      "slices": [
+        "numeric",
+        "price",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find hydration facial package with multiple sessions/discount.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d",
+            "a301a5de-c6e2-5b54-89af-1ab82c51745f"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_face_008",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "классический уход лицо",
+      "language": "ru",
+      "slices": [
+        "direct",
+        "synonym"
+      ],
+      "userIntent": "Find classic facial treatment.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "b8150d36-f350-51d7-a07c-22beeec96d1c"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_home_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "выездной уход для двоих",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "numeric",
+        "home_visit"
+      ],
+      "userIntent": "Find home-visit facial care for two people.",
+      "notes": [
+        "ServiceIntent should point to home/mobile care, not normal salon facial."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d",
+            "a301a5de-c6e2-5b54-89af-1ab82c51745f"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "51b23898-5baf-5a7a-8a00-52868181b650"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_home_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "beauty treatment at home small group",
+      "language": "en",
+      "slices": [
+        "english",
+        "home_visit",
+        "broad"
+      ],
+      "userIntent": "Find home/mobile beauty care for a small group.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d",
+            "a301a5de-c6e2-5b54-89af-1ab82c51745f"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "51b23898-5baf-5a7a-8a00-52868181b650"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_broad_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "салон красоты wandsbek ногти",
+      "language": "ru",
+      "slices": [
+        "broad",
+        "location"
+      ],
+      "userIntent": "Explore nail services near Wandsbek.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "54568273-7762-5881-a027-0900965ddba4",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec",
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_broad_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "lashes and brows Wandsbek",
+      "language": "en",
+      "slices": [
+        "broad",
+        "multi_intent"
+      ],
+      "userIntent": "Explore lashes and brow services.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_broad_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "что-то для лица рядом",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "broad"
+      ],
+      "userIntent": "Explore facial treatments nearby.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_broad_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "хочу привести себя в порядок рядом",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "broad"
+      ],
+      "userIntent": "Broad beauty intent; should return generally useful nearby offers rather than unrelated far providers.",
+      "notes": [
+        "PMU is valid beauty domain but too heavy for broad quick self-care intent, so forbidden for this benchmark query."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_broad_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "недорогие ногти рядом",
+      "language": "ru",
+      "slices": [
+        "price",
+        "broad"
+      ],
+      "userIntent": "Find affordable nail services nearby.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "083f3849-b865-5a7e-ac02-90b5945320f8",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_broad_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "beauty near Wandsbek Markt",
+      "language": "en",
+      "slices": [
+        "broad",
+        "location"
+      ],
+      "userIntent": "Broad nearby beauty search.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "54568273-7762-5881-a027-0900965ddba4",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c",
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e",
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d",
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_noise_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "манекюр шелак",
+      "language": "ru",
+      "slices": [
+        "typo",
+        "synonym"
+      ],
+      "userIntent": "Typo query should still find shellac manicure.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_noise_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "реснички 2д корр",
+      "language": "ru",
+      "slices": [
+        "typo",
+        "conversational",
+        "attribute"
+      ],
+      "userIntent": "Noisy short query for 2D lash refill/correction.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12"
+          ],
+          "forbiddenIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_noise_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "депиляция губа не татуаж",
+      "language": "ru",
+      "slices": [
+        "hard_negative",
+        "conversational"
+      ],
+      "userIntent": "Find upper lip hair removal, explicitly not PMU/tattoo.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "forbiddenIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_noise_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "gel removal",
+      "language": "en",
+      "slices": [
+        "hard_negative",
+        "ambiguous"
+      ],
+      "userIntent": "Ambiguous English query should favor nail gel removal, not hair removal.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_noise_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "lifting",
+      "language": "mixed",
+      "slices": [
+        "ambiguous",
+        "hard_negative"
+      ],
+      "userIntent": "Short ambiguous lifting query should surface lash lifting and brow lamination before facial anti-aging.",
+      "notes": [],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d"
+          ],
+          "forbiddenIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd",
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "хочу чтобы кожа выглядела свежей и напитанной перед событием",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find facial care that makes skin look fresh and hydrated before an event.",
+      "notes": [
+        "Seed-backed semantic paraphrase for facial care hydration/classic/aquafacial variants; no exact service or attribute token is required in the user text.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "лицо шея декольте anti age уход",
+      "language": "mixed",
+      "slices": [
+        "mixed_language",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find anti-aging facial care for face, neck, and decollete.",
+      "notes": [
+        "Seed-backed mixed RU/EN query for anti-aging facial care with body_area=face_neck_decollete.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "убрать пушок над губой без лазера",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "hard_negative",
+        "attribute"
+      ],
+      "userIntent": "Find non-laser upper-lip hair removal.",
+      "notes": [
+        "Seed-backed semantic wording for upper_lip hair removal; `без лазера` is represented conservatively as non-laser acceptable methods without changing parser behavior.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "аккуратные брови чтобы не рисовать карандашом",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find brow services that make brows look neat without daily pencil drawing.",
+      "notes": [
+        "Seed-backed semantic goal for brow shaping, tinting, henna, and lamination variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "ресницы выглядят натурально но заметнее",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find natural-looking but more visible lashes, especially classic 1D extensions.",
+      "notes": [
+        "Seed-backed semantic paraphrase for classic1_d lash extension variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "обновить нарощенные ресницы не полный сет",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "hard_negative"
+      ],
+      "userIntent": "Find lash refill/correction rather than a full extension set.",
+      "notes": [
+        "Seed-backed semantic paraphrase for lash refill/correction; hard-negative boundary is full-set lash extension.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "531faff3-d4fd-5143-b4d5-db068831e57c"
+          ],
+          "forbiddenIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "снять старый гель и привести ногти в порядок",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "hard_negative"
+      ],
+      "userIntent": "Find nail gel removal with nail care/manicure context.",
+      "notes": [
+        "Seed-backed semantic combination of removal and nail-care intent; hard-negative boundary is hair removal.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed",
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_008",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "домашний уход для подруг небольшой компанией",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "home_visit",
+        "numeric"
+      ],
+      "userIntent": "Find home-visit facial care for a small group of friends.",
+      "notes": [
+        "Seed-backed semantic phrase for home_visit_surcharge and max_clients mini-group variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c4294b9c-dafc-541a-b8a3-8e1b7c55c42d",
+            "a301a5de-c6e2-5b54-89af-1ab82c51745f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "51b23898-5baf-5a7a-8a00-52868181b650"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_009",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "перманент чтобы губы были ярче без ежедневной помады",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find permanent make-up for brighter lips without daily lipstick.",
+      "notes": [
+        "Seed-backed outcome wording for PMU lips variants.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_semantic_010",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "быстро убрать волосы в подмышках курсом",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "numeric",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find armpit hair removal with a course/package of sessions.",
+      "notes": [
+        "Seed-backed semantic phrase for armpits hair removal, especially the session_count package variant.",
+        "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_pmu_lips_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "губы ярче чтобы не красить каждый день",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find permanent lip color so the user does not need daily lipstick.",
+      "notes": [
+        "Materialized semantic holdout pilot for permanent lips anchor q_pmu_001; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_lashes_2d_wandsbek_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "хочу 2д ресницы в Вандсбеке",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "location",
+        "synonym"
+      ],
+      "userIntent": "Find 2D lash service near Wandsbek in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for technical-token anchor q_lashes_008; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_lashes_2d_natural_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "ресницы пообъемнее но без мега объема",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find noticeable but not mega-volume 2D lash result in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for direct 2D lash anchor q_lashes_002; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
+          ],
+          "forbiddenIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a",
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "51cc8284-3879-5bdb-8780-7b43e47f1251",
+            "a4a01672-c103-51b0-8276-49e8aa5d4091",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_lashes_classic_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "натуральные ресницы классический эффект",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find natural classic lash effect in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for classic lash anchor q_lashes_001; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+          ],
+          "forbiddenIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "989e0858-bc32-5b71-a355-6ce1e20b0cb1",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_aquafacial_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "глубоко очистить и освежить лицо без инъекций",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find non-injection facial cleansing/freshening treatment in outcome-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for aquafacial anchor q_face_001; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35",
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "36b4ddff-7800-5965-9dce-856b4776eea0",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "6e071abd-9fd2-59b6-9054-3632e6dc997f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_bb_glow_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find face tone-evening treatment without daily makeup in outcome-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for BB glow anchor q_face_004; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_anti_age_decollete_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "уход чтобы лицо шея и декольте выглядели моложе",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find anti-aging care for face, neck, and décolleté in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for anti-aging face/neck/décolleté anchor q_face_005; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_face_anti_age_decollete_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "хочу омолодить лицо и зону декольте без операции",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find non-surgical rejuvenation for face and décolleté in outcome-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for attribute-heavy semantic anchor q_semantic_002; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "e90bad04-997a-51a1-9a15-6b9404025def"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "bc9f055b-d655-5bcc-ba72-1848bb295002"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_hair_armpits_laser_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "убрать волосы под мышками надолго курсом",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find longer-lasting armpit hair removal course in outcome-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for laser armpits anchor q_hair_004; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "b406eed9-c42c-5f5b-9aca-e5a5742741f7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_hair_armpits_laser_course_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "курс чтобы подмышки дольше оставались гладкими",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find a course for longer-lasting smooth armpits in outcome-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for six-session laser armpits anchor q_hair_005; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94"
+          ],
+          "forbiddenIds": [
+            "54568273-7762-5881-a027-0900965ddba4",
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c",
+            "c276df41-547e-5ef0-ab00-9464ec45c0e1",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "b8150d36-f350-51d7-a07c-22beeec96d1c",
+            "7c0663da-bd96-585a-ab3d-d7e63e3fc766",
+            "e90bad04-997a-51a1-9a15-6b9404025def",
+            "f018b7f8-1997-596f-8c32-414d6cf8f538",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_pmu_powder_brows_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "брови с мягким пудровым эффектом надолго",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "synonym"
+      ],
+      "userIntent": "Find longer-lasting soft powder brow PMU effect in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for powder brows anchor q_pmu_004; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "1ef18ddc-5518-5775-9298-1ceb23043c60",
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_brows_lamination_wandsbek_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "уложить брови надолго рядом с Wandsbek",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "location",
+        "synonym"
+      ],
+      "userIntent": "Find longer-lasting brow styling/lamination near Wandsbek in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for brow lamination Wandsbek anchor q_brows_002; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "97e6cfed-cd74-5d87-bda0-59d1e935516f"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_brows_henna_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "окрасить брови хной чтобы держалось дольше",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "attribute_heavy",
+        "synonym"
+      ],
+      "userIntent": "Find henna brow tinting that lasts longer in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for henna brows anchor q_brows_005; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+          ],
+          "forbiddenIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "e52e0840-34dc-559b-8512-0dba9d4130c3",
+            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9",
+            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
+            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "b5ec4ac7-c364-512b-ab12-5e19d523284e"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_nails_shellac_refresh_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "снять старый shellac и сделать новый аккуратный маникюр",
+      "language": "mixed",
+      "slices": [
+        "mixed_language",
+        "conversational",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find shellac removal and new manicure in mixed user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for shellac remove-and-renew anchor q_nails_003; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656",
+            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+          ],
+          "forbiddenIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859",
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "94575ead-5606-58fc-9bff-7f2918344c74",
+            "36dfdb33-659e-55bd-929c-83e5abaf0ee4",
+            "55213b7f-1ade-56b7-91be-3d4a48384ae4",
+            "b036712b-991b-538e-80ef-aec745be2aba",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "17fe4477-4866-507c-84f9-0dd9b63295cc",
+            "a5a90236-d10c-5021-9dd7-cc56367a3b19",
+            "99fc235a-7238-5399-b847-c7b68b85e2b4",
+            "d103456e-61f3-5987-995d-03550bdf0230",
+            "97bd38cc-a019-5306-972c-ca72dbd52b77",
+            "64cf31e0-cef7-5f77-abbb-43055f9739f9",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52",
+            "0028f33c-8ce0-567e-89ac-e2910389e9ed"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q_holdout_nails_gel_correction_design_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "обновить гелевые ногти и добавить небольшой дизайн",
+      "language": "ru",
+      "slices": [
+        "conversational",
+        "attribute_heavy"
+      ],
+      "userIntent": "Find gel nail refresh/correction with small design in user-language phrasing.",
+      "notes": [
+        "Materialized semantic holdout for gel nail correction/design anchor q_nails_010; expected/scoring cloned from anchor."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "51cc8284-3879-5bdb-8780-7b43e47f1251"
+          ],
+          "forbiddenIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713",
+            "01051aa3-95cb-5c3f-9691-582f2b145f38",
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "01841fa0-4fa2-5c42-a2b5-c5614c978d12",
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07",
+            "507552fc-58b8-5614-844f-4e0f95acec1c",
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89",
+            "d658c194-38f7-5396-b8cb-cf155739c235",
+            "269c7210-4120-5e6c-a674-866f9bf98fcd",
+            "91cdce5c-7400-5b06-817c-2d04208be28c",
+            "531faff3-d4fd-5143-b4d5-db068831e57c",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c",
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "245cf7ad-666b-5df1-8c0f-868741458337",
+            "28d5239f-82ce-518c-819b-e59ad79038eb",
+            "bdf51756-88bd-5218-8b1f-682a9660aa8a",
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [
+            "78fdf5d2-0f92-5c2c-b20d-e5d2549d1c52"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "9587c0ce-951e-5dae-8dae-a522e189567b"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    }
+  ]
+}

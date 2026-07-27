@@ -667,8 +667,10 @@ verdicts by default. Revealing a protected case is a break-glass action: move it
 regression set and replenish the protected holdout with business-reviewed unused cases before using it
 for acceptance again.
 
-Reuse only neutral evaluation mechanics: stable case identity, deterministic run order, ranked metric
-mathematics, comparison and report encoding. Query text, request construction, entity expectations,
-language/intent slices, thresholds and stop conditions are domain policy and must not be copied from
-BeautyQ. The approved reusable-kernel and BeautyQ corpus migration are tracked in the
-[post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).
+Reuse only neutral evaluation mechanics from `search-gen2-eval`: stable case identity, deterministic run
+order, declared-cutoff ranked metric mathematics, ordered aggregate/comparison and report encoding.
+Domains must supply their own typed
+corpus, policy, and adapters. Query text, request construction, entity expectations, language/intent
+slices, thresholds and stop conditions are domain policy and must not be copied from BeautyQ.
+The approved reusable-kernel and BeautyQ corpus migration are implemented in
+[Q1 of the post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).
