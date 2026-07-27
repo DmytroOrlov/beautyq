@@ -644,3 +644,31 @@ Lock or stop: if the gate is green, lock the exact query set, counts, and failur
 is no improvement, stop; if there is any regression, stop or get an explicit coordinator/user-approved
 budget before implementing (never a vague "almost no worsening"); if the source query inventory is
 incomplete, report it as source-incomplete rather than inventing queries.
+
+## Eval-first domain delivery
+
+A new domain does not wait for its complete backend/runtime implementation before measuring quality.
+Its first vertical slice is:
+
+```text
+10–20 business-reviewed anchor queries
+-> hard acceptable/forbidden evidence and optional graded relevance
+-> simplest executable baseline
+-> first deterministic report
+```
+
+After that, each declaration, intent, filter, ranking, backend or supplement slice expands and reruns
+the same domain-owned evaluation. Keep a development set for policy work, a protected holdout excluded
+from ordinary policy tuning and changed only through explicit label review, and a permanent regression
+set containing every accepted real bug.
+
+Development/regression reports may name exact cases. Protected-holdout reports expose aggregate/slice
+verdicts by default. Revealing a protected case is a break-glass action: move it permanently into the
+regression set and replenish the protected holdout with business-reviewed unused cases before using it
+for acceptance again.
+
+Reuse only neutral evaluation mechanics: stable case identity, deterministic run order, ranked metric
+mathematics, comparison and report encoding. Query text, request construction, entity expectations,
+language/intent slices, thresholds and stop conditions are domain policy and must not be copied from
+BeautyQ. The approved reusable-kernel and BeautyQ corpus migration are tracked in the
+[post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).

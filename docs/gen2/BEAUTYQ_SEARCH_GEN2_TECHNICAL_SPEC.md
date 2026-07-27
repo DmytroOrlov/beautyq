@@ -1,11 +1,13 @@
 # BeautyQ Search Framework Gen2 — current implemented architecture
 
-Status: **fully implemented and frozen**
+Status: **native cutover complete; core architecture frozen; bounded post-cutover work approved**
 Scope: the sole search architecture in the repository
 Delivery rule: one final cutover completed; Gen1 search modules and routes are absent
 
 Sections explicitly labelled implemented describe current source. All backend/runtime sections
-are implemented; delivery closure is recorded below.
+are implemented; delivery closure is recorded below. Approved but unimplemented evaluation and
+operational corrections belong to
+[BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md](BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).
 
 ## 1. Goal
 
@@ -1958,16 +1960,31 @@ Current supplement policy:
 - ES retains ownership of total, facets and groups;
 - supplement count/provenance is separate.
 
-Failure behavior is fixed rather than left as a future configuration branch:
+Current failure behavior is:
 
 - Elasticsearch baseline availability is mandatory. Startup/readiness fails when the ES baseline, Gen2 document lookup or required baseline index is unavailable.
-- Qdrant unavailability does not prevent baseline serving. The application starts or remains serving in explicit `baseline_only` mode with `supplementReady = false`.
+- Qdrant unavailability does not prevent baseline serving. Current startup may automatically publish
+  typed `baseline_only` readiness with `supplementReady = false`; no operator opt-in owns that choice yet.
 - the full-search/cutover readiness gate still fails while the configured supplement backend is unavailable;
 - a request-time Qdrant timeout, transport error or backend error returns the successful Elasticsearch baseline unchanged and sets supplement status to `supplement_failed` with a stable reason code and diagnostics;
 - the response does not silently claim a successful hybrid execution;
 - plan compilation errors, unsupported capabilities and hydration invariant violations are not graceful Qdrant failures: they fail validation/request handling or mark the composition unhealthy according to their scope.
 
 No automatic fallback candidate backend or hidden retry path is introduced.
+
+This unconditional startup degradation is a source-confirmed post-cutover gap, not the final
+operational contract. The approved correction introduces closed
+`SupplementStartupPolicy.Required|Preferred|Disabled` configuration and separate
+`ServingMode.FullSearch|BaselineOnly`. `Required` is the default, `Preferred` permits degraded
+baseline-only startup, and `Disabled` is the intentional operator kill switch. A permitted
+baseline-only process remains Kubernetes-ready because it serves the complete canonical baseline.
+The disabled app-shell branch must reach baseline readiness without constructing, probing or
+activating Qdrant/embedding resources; ES, snapshot/materialization and baseline integrity remain
+required.
+Immutable startup status owns the operator-facing status/event and persistent public warning;
+request-time supplement outcome independently owns transient failure warnings and counters. Neither
+owner mutates the other, and no mode promotes itself without restart. Exact judgment semantics,
+partial-activation runbook and delivery order belong to the post-cutover plan.
 
 ## 14. Native Gen2 application composition
 
@@ -2109,18 +2126,23 @@ communication verification.
 
 ## 15. Quality and evaluation
 
-`beautyq-search-gen2-eval` owns:
+Current implementation is narrower than the original quality design.
+`beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
+evidence, deterministic cutover report encoding and the completed Gen1 deletion inventory. The
+Distage communication owner executes those four probes through the native application and real
+Elasticsearch, Qdrant and embedding paths.
 
-- labeled query corpus;
-- boundary datasets;
-- V1 observation fixtures where useful;
-- cross-backend semantic fixtures;
-- relevance metrics;
-- no-harm supplement reports;
-- latency and freshness reports;
-- cutover report generation.
+The 89-query labeled corpus, complete relevance metrics, slice reports, latency report and freshness
+report are not currently owned or executed by the Gen2 eval module. The corpus remains duplicated in
+legacy locations and its checked-in validation report is stale. Those are explicit post-cutover gaps;
+they must not be cited as implemented proof.
 
-Serving modules contain only quality references and gate policies.
+The approved correction moves one canonical corpus into `beautyq-search-gen2-eval`, introduces a thin
+domain-neutral metric/run kernel, retains BeautyQ-owned labels, judgment completeness, metric cutoffs
+and thresholds, and makes a second domain evaluation-first. Full reports remain generated artifacts;
+an optional checked-in accepted baseline is a compact typed provenance manifest, not a copied report.
+Serving modules continue to have no eval dependency. The post-cutover plan owns the exact metric
+applicability, report ownership and delivery sequence.
 
 Required gates include:
 
@@ -2208,11 +2230,23 @@ The change set is reverted as a unit if the cutover gate or post-merge smoke tes
 - zero constraint violations;
 - exact facet fixture parity;
 - group ordering fixture parity;
-- Recall@K, NDCG and MRR where labels exist;
-- zero-result and duplicate rates;
+- Success@K/MRR over declared acceptable evidence; Recall@K only for exhaustive acceptable sets;
+- Precision@K only for exhaustive judgments, or explicitly named judged precision plus unjudged rate
+  for a partial pool;
+- NDCG@K only for graded exhaustive judgments with a defined ideal ranking; a closed partial pool may
+  report only `PooledNDCG@K` with pool fingerprint and coverage;
+- zero-result and duplicate rates; duplicate public IDs fail structurally, while first-occurrence
+  relevance values remain diagnostic only;
 - no-harm supplement gate;
-- p50/p95 latency;
-- source/index freshness.
+
+Initial report-only operational evidence:
+
+- application-execution p50/p95 latency under the fixed warmup/sample/concurrency profile;
+- backend timing only where existing typed observations provide it;
+- snapshot capture, activation duration/time and active generation age under restart-only freshness.
+
+Latency is not a release gate until the measurement environment/protocol and domain-owned thresholds
+are separately approved. Cross-environment latency comparisons are initially forbidden.
 
 ## 18. Definition of done
 
@@ -2241,7 +2275,8 @@ Gen2 is complete when:
 
 ## Delivery status and operational closure
 
-BeautyQ Search Gen2 is fully implemented and frozen. It is the native BeautyQ search stack.
+BeautyQ Search Gen2 is the complete native BeautyQ serving stack. Its accepted declaration,
+baseline/supplement, lifecycle-authorization and route architecture is frozen.
 
 `POST /beauty-search` is the sole BeautyQ search route. The old `/beauty-search-gen2` route is absent.
 Gen1 serving/runtime owners are removed.
@@ -2258,8 +2293,10 @@ completes seed insertion first.
 In provided composition, `BeautyQSeedReady.Noop` preserves externally owned database readiness while
 keeping the startup dependency explicit.
 
-The architecture is frozen. Further architectural work requires a product requirement or a
-source-confirmed defect.
+The core architecture is frozen. The source-confirmed evaluation ownership mismatch, explicit
+supplement-startup policy, public request budgets, bounded Qdrant batching, restart-only operational
+contract and eval-first second-domain path are approved bounded work in the post-cutover plan.
+Anything beyond that plan still requires a product requirement or a source-confirmed defect.
 
 ### Verification ownership
 
