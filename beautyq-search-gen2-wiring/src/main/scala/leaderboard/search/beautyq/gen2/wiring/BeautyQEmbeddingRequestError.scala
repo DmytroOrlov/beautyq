@@ -11,6 +11,7 @@ object BeautyQEmbeddingRequestError {
   final case class Timeout(details: String) extends BeautyQEmbeddingRequestError
   final case class Unavailable(details: String) extends BeautyQEmbeddingRequestError
   final case class Transport(details: String) extends BeautyQEmbeddingRequestError
+  final case class MalformedResponse(details: String) extends BeautyQEmbeddingRequestError
   final case class InvalidResult(error: leaderboard.search.gen2.qdrant.QdrantEmbeddingError) extends BeautyQEmbeddingRequestError {
     def details: String = error.toString
   }

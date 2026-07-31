@@ -13,6 +13,7 @@ import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RawValue, RoleArgs
 import leaderboard.api.{CategoryApi, LadderApi, MasterApi, MasterLocationApi, MasterServiceOfferApi, MasterServiceOfferVariantApi, ProfileApi, ServiceApi}
 import leaderboard.http.HttpServer
 import leaderboard.plugins.{LeaderboardPlugin, PostgresDockerPlugin}
+import leaderboard.search.gen2.BeautyQSupplementStartup
 import logstage.LogIO2
 import zio.IO
 
@@ -684,6 +685,6 @@ sealed abstract class MainBase(
     make[Activation].named("default").fromValue(defaultActivation ++ activation)
   }
 
-  private def defaultActivation = Activation(Scene -> Scene.Provided, Mode -> Mode.Prod)
+  private def defaultActivation = Activation(Scene -> Scene.Provided, Mode -> Mode.Prod, BeautyQSupplementStartup -> BeautyQSupplementStartup.Required)
 
 }

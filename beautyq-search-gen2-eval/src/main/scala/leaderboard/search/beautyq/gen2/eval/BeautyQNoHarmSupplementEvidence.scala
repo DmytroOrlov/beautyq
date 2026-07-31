@@ -107,7 +107,7 @@ object BeautyQNoHarmSupplementEvidence {
     BeautyQSearchOrchestrator.baselineOnly(result.baseline, result.evaluation) match {
       case Left(error) => Left(EvidenceError.Baseline(error))
       case Right(baselineOnly) =>
-        BeautyQSearchResponseGen2Projector.project(baselineOnly) match {
+        BeautyQSearchResponseGen2Projector.projectWithoutStatus(baselineOnly) match {
           case Left(error) => Left(EvidenceError.Projection(error))
           case Right(expectedBaseline) =>
             val expectedOwned = ownedComponents(expectedBaseline)

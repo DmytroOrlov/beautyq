@@ -99,6 +99,12 @@ object BeautySearchGen2Json {
         "shardsSuccessful" -> Json.fromInt(diagnostics.shardsSuccessful),
         "shardsFailed" -> Json.fromInt(diagnostics.shardsFailed),
       ),
+      "servingMode" -> Json.fromString(servingMode),
+      "restartRequired" -> Json.fromBoolean(restartRequired),
+      "warnings" -> Json.fromValues(warnings.map(w => Json.obj(
+        "code" -> Json.fromString(w.code),
+        "message" -> Json.fromString(w.message),
+      ))),
     )
   }
 

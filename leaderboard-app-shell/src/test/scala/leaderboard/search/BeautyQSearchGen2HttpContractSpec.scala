@@ -1,5 +1,6 @@
 package leaderboard.search
 
+import io.circe.Json
 import leaderboard.HttpContractTestSupport
 import leaderboard.api.{BeautySearchGen2Api, BeautySearchGen2Service}
 import leaderboard.http.HttpApiFailure
@@ -12,7 +13,7 @@ import leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationReference
 import leaderboard.search.gen2.elasticsearch.lifecycle.ElasticsearchGenerationLifecycleError
 import org.http4s.Status
 import org.scalatest.wordspec.AnyWordSpec
-import zio.{IO, Runtime, Unsafe}
+import zio.{IO, Runtime, Unsafe, ZIO}
 import zio.interop.catz.*
 
 final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContractTestSupport {
@@ -21,6 +22,8 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
       val service = new BeautySearchGen2Service[IO] {
         def execute(request: BeautySearchRequestGen2): IO[HttpApiFailure, BeautyQSearchResponseGen2] =
           zio.ZIO.fail(HttpApiFailure.ServiceUnavailable("unexpected", "service must not be called"))
+        def status: IO[HttpApiFailure, Json] =
+          ZIO.succeed(Json.obj())
       }
       val api = new BeautySearchGen2Api[IO](service, BeautySearchGen2TapirEndpoints)
 
@@ -33,6 +36,8 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
       val service = new BeautySearchGen2Service[IO] {
         def execute(request: BeautySearchRequestGen2): IO[HttpApiFailure, BeautyQSearchResponseGen2] =
           zio.ZIO.fail(HttpApiFailure.ServiceUnavailable("gen2_unavailable", "not serving"))
+        def status: IO[HttpApiFailure, Json] =
+          ZIO.succeed(Json.obj())
       }
       val api = new BeautySearchGen2Api[IO](service, BeautySearchGen2TapirEndpoints)
 
@@ -44,7 +49,7 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
     "serve a successful full-search response" in {
       val context = BeautyQOrchestrationTestKit.eligible()
       val application = BeautyQSearchApplication.make(BeautyQOrchestrationTestKit.materialized, context.baselineService, context.embedding, context.qdrant)
-      val runtime = BeautyQSearchGen2Runtime.make(application, BeautyQSupplementReadinessPolicy.evaluate(Set.empty))
+      val runtime = BeautyQSearchGen2Runtime.make(application, fullSearchStatus)
       val api = new BeautySearchGen2Api[IO](new BeautyQSearchGen2HttpService(runtime), BeautySearchGen2TapirEndpoints)
 
       val response = runIO(observe(api.http.orNotFound, postJson("/beauty-search", validBody)))
@@ -54,10 +59,10 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
 
     "return baseline-only and degradable results as successful HTTP responses" in {
       val baselineContext = BeautyQOrchestrationTestKit.eligible()
-      val baselineApplication = BeautyQSearchApplication.make(BeautyQOrchestrationTestKit.materialized, baselineContext.baselineService, baselineContext.embedding, baselineContext.qdrant)
+      val baselineApplication = BeautyQSearchApplication.makeBaselineOnly(BeautyQOrchestrationTestKit.materialized, baselineContext.baselineService)
       val baselineRuntime = BeautyQSearchGen2Runtime.make(
         baselineApplication,
-        BeautyQSupplementReadinessPolicy.evaluate(Set(BeautyQSearchDependency.QdrantSupplement)),
+        baselineOnlyStatus,
       )
       val baselineResponse = runIO(observe(new BeautySearchGen2Api[IO](new BeautyQSearchGen2HttpService(baselineRuntime), BeautySearchGen2TapirEndpoints).http.orNotFound, postJson("/beauty-search", validBody)))
       assert(baselineResponse.status == Status.Ok)
@@ -65,7 +70,7 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
 
       val degradedContext = BeautyQOrchestrationTestKit.timedOut
       val degradedApplication = BeautyQSearchApplication.make(BeautyQOrchestrationTestKit.materialized, degradedContext.baselineService, degradedContext.embedding, degradedContext.qdrant)
-      val degradedRuntime = BeautyQSearchGen2Runtime.make(degradedApplication, BeautyQSupplementReadinessPolicy.evaluate(Set.empty))
+      val degradedRuntime = BeautyQSearchGen2Runtime.make(degradedApplication, fullSearchStatus)
       val degradedResponse = runIO(observe(new BeautySearchGen2Api[IO](new BeautyQSearchGen2HttpService(degradedRuntime), BeautySearchGen2TapirEndpoints).http.orNotFound, postJson("/beauty-search", validBody)))
       assert(degradedResponse.status == Status.Ok)
       assert(degradedResponse.body.contains("\"supplementStatus\":\"supplement_failed\""))
@@ -80,6 +85,8 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
               "Search cursor refers to a deleted generation; restart pagination without the cursor",
             )
           )
+        def status: IO[HttpApiFailure, Json] =
+          ZIO.succeed(Json.obj())
       }
       val api = new BeautySearchGen2Api[IO](service, BeautySearchGen2TapirEndpoints)
 
@@ -110,6 +117,8 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
       val service = new BeautySearchGen2Service[IO] {
         def execute(request: BeautySearchRequestGen2): IO[HttpApiFailure, BeautyQSearchResponseGen2] =
           zio.ZIO.fail(HttpApiFailure.ServiceUnavailable("unexpected", "service must not be called"))
+        def status: IO[HttpApiFailure, Json] =
+          ZIO.succeed(Json.obj())
       }
       val api = new BeautySearchGen2Api[IO](service, BeautySearchGen2TapirEndpoints)
 
@@ -117,6 +126,34 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
       assert(response.status == Status.NotFound)
     }
   }
+
+  private val fullSearchStatus: StartupServingStatus = new StartupServingStatus(
+    policy = SupplementStartupPolicy.Required,
+    servingMode = BeautyQServingMode.FullSearch,
+    condition = "healthy",
+    reason = None,
+    restartRequired = false,
+    sourceContentFingerprint = "test-fp",
+    projectedDocumentsFingerprint = "test-fp",
+    elasticsearchReference = "test-ref",
+    elasticsearchPhysicalTarget = "test-target",
+    qdrantGenerationId = Some("test-gen"),
+    qdrantPhysicalCollection = Some("test-col"),
+  )
+
+  private val baselineOnlyStatus: StartupServingStatus = new StartupServingStatus(
+    policy = SupplementStartupPolicy.Disabled,
+    servingMode = BeautyQServingMode.BaselineOnly,
+    condition = "limited",
+    reason = Some(new StartupServingStatus.Reason("qdrant_supplement_operator_disabled", "Qdrant supplement was disabled by operator policy; the complete Elasticsearch baseline was returned; restart is required", "supplement disabled by operator startup policy", None)),
+    restartRequired = true,
+    sourceContentFingerprint = "test-fp",
+    projectedDocumentsFingerprint = "test-fp",
+    elasticsearchReference = "test-ref",
+    elasticsearchPhysicalTarget = "test-target",
+    qdrantGenerationId = None,
+    qdrantPhysicalCollection = None,
+  )
 
   private val validBody =
     "{\"query\":\"relaxing appointment\",\"filters\":[],\"requestedFacets\":[],\"sort\":[],\"page\":{\"size\":20}}"

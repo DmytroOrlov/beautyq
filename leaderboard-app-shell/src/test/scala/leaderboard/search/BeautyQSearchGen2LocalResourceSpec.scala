@@ -8,6 +8,7 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.config.model.AppConfig
 import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogIO2Module
+import logstage.LogIO2
 import leaderboard.HttpContractTestSupport
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
 import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
@@ -244,10 +245,12 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
             ))
         }),
         elasticsearch,
+        SupplementStartupPolicy.Required,
         qdrantLifecycle,
         embedding,
       )
-      val startup = BeautyQSearchGen2Startup.acquire(bootstrap, candidateService)
+      val log = LogIO2.fromLogger[IO](IzLogger())
+      val startup = BeautyQSearchGen2Startup.acquire(bootstrap, candidateService, log)
       val startupOrError = Unsafe.unsafe { implicit unsafe =>
         Runtime.default.unsafe.run(startup).getOrThrowFiberFailure()
       }

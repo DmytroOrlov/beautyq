@@ -1984,6 +1984,9 @@ baseline-only process remains Kubernetes-ready because it serves the complete ca
 The disabled app-shell branch must reach baseline readiness without constructing, probing or
 activating Qdrant/embedding resources; ES, snapshot/materialization and baseline integrity remain
 required.
+SupplementStartupPolicy remains BeautyQ wiring-owned. BeautyQSupplementStartup is an app-shell
+Distage activation adapter. The activation choice is applied before planning; Disabled is selected
+before provisioning and its retained managed graph does not contain Qdrant or embedding resources.
 Immutable startup status owns the operator-facing status/event and persistent public warning;
 request-time supplement outcome independently owns transient failure warnings and counters. Neither
 owner mutates the other, and no mode promotes itself without restart. Exact judgment semantics,

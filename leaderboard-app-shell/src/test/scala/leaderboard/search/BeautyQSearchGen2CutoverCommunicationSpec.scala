@@ -8,6 +8,7 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.config.model.AppConfig
 import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogIO2Module
+import logstage.LogIO2
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
 import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
 import leaderboard.search.beautyq.gen2.eval.{BeautyQCutoverGate, BeautyQCutoverQueryFixture, BeautyQCutoverQueryObservation, BeautyQGen1SearchDeletionInventory, BeautyQNoHarmSupplementEvidence}
@@ -31,7 +32,7 @@ import java.time.{Clock, Duration, Instant}
   * The runner acquires one Distage-managed Elasticsearch and one shared Distage-managed Qdrant
   * 1.18.3 process, executes the real `BeautyQGen2EmbeddingClient` preflight against the
   * configured `LlamaCppEmbeddingClientConfig`, acquires one `BeautyQSearchGen2Startup`
-  * exactly once, requires its `activation.readiness` to be `FullSearch`, then projects
+  * exactly once, requires its `startup.status` to be `FullSearch`, then projects
   * the four typed fixtures through the same application in declared order, derives
   * each observation via `fromExecution`, evaluates the readiness-aware gate, and
   * writes the deterministic cutover and deletion-inventory reports to the
@@ -77,9 +78,8 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
         try {
           ensureIsolatedNamespace(esClient, qdrantClient, qdrantHttp)
           val startup = buildStartup(elasticsearchPort, qdrantClient, embeddingClient)
-          startup.activation.readiness match {
-            case serving: BeautyQSupplementReadinessPolicy.Serving
-                if serving.mode == BeautyQServingMode.FullSearch =>
+          startup.status.servingMode match {
+            case BeautyQServingMode.FullSearch =>
               ()
             case other => fail(s"expected FullSearch readiness, got $other")
           }
@@ -111,7 +111,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
         case Right(value) => value
         case Left(error)  => failCutover(fixture, s"application execution failed: $error")
       }
-      val response: BeautyQSearchResponseGen2 = BeautyQSearchResponseGen2Projector.project(result) match {
+      val response: BeautyQSearchResponseGen2 = BeautyQSearchResponseGen2Projector.project(result, startup.status) match {
         case Right(value) => value
         case Left(error)  => failCutover(fixture, s"projection failed: $error")
       }
@@ -121,7 +121,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
       }
       BeautyQCutoverQueryObservation.fromEvidence(fixture, evidence)
     }
-    val gate = BeautyQCutoverGate.evaluate(startup.activation.readiness, observations)
+    val gate = BeautyQCutoverGate.evaluate(startup.status.servingMode, observations)
     (gate, gate.toJson)
   }
 
@@ -155,9 +155,10 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
         ))
     }
     val materializer = new BeautyQVariantMaterializer.FromSnapshotSource[IO](source)
-    val bootstrap = BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, qdrantLifecycle, embedding)
+    val bootstrap = BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, SupplementStartupPolicy.Required, qdrantLifecycle, embedding)
+    val log = LogIO2.fromLogger[IO](IzLogger())
     val acquired: BeautyQSearchGen2Startup = Unsafe.unsafe { implicit unsafe =>
-      Runtime.default.unsafe.run(BeautyQSearchGen2Startup.acquire(bootstrap, candidateService)).getOrThrowFiberFailure()
+      Runtime.default.unsafe.run(BeautyQSearchGen2Startup.acquire(bootstrap, candidateService, log)).getOrThrowFiberFailure()
     }
     acquired
   }

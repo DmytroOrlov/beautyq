@@ -7,14 +7,8 @@ import leaderboard.search.gen2.contract.GeoPoint
 import leaderboard.search.gen2.qdrant.QdrantCandidatePipelineError
 import org.scalatest.wordspec.AnyWordSpec
 
-/** Eval evidence is a derived view over the one compiler-owned orchestrator
-  * result. It does not re-run candidate, membership or hydration mechanics,
-  * and the only accepted construction path is `fromExecution`. */
 final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
   import BeautyQOrchestrationTestKit.*
-
-  private val fullSearchReadiness: BeautyQSupplementReadinessPolicy.Result =
-    BeautyQSupplementReadinessPolicy.evaluate(Set.empty)
 
   "BeautyQNoHarmSupplementEvidence.fromExecution" should {
     "derive ineligible status and reason from the same application result and projection" in {
@@ -101,7 +95,7 @@ final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
         Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4"))),
       )
       val gate = BeautyQCutoverGate.evaluate(
-        fullSearchReadiness,
+        BeautyQServingMode.FullSearch,
         Vector(
           observation(q006Fixture, q006),
           observation(manicureFixture, manicure),
@@ -117,7 +111,6 @@ final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
     }
 
     "keep the accepted evidence entry point as the only public construction path" in {
-      // The historical `derive` shortcut must not be re-introduced.
       assertDoesNotCompile(
         """{
           |  val result: BeautyQSearchOrchestrator.Result = ???
@@ -138,7 +131,7 @@ final class BeautyQNoHarmSupplementEvidenceSpec extends AnyWordSpec {
       case Right(value) => value
       case Left(error)  => fail(s"expected application result, got $error")
     }
-    val response = BeautyQSearchResponseGen2Projector.project(result) match {
+    val response = BeautyQSearchResponseGen2Projector.projectWithoutStatus(result) match {
       case Right(value) => value
       case Left(error)  => fail(s"expected projected application response, got $error")
     }

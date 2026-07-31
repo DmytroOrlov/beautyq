@@ -2,7 +2,7 @@ package leaderboard.plugins
 
 import distage.StandardAxis.Repo
 import distage.config.ConfigModuleDef
-import distage.ModuleDef
+import distage.{Axis, ModuleDef}
 import leaderboard.api.{BeautySearchGen2Api, BeautySearchGen2Service, HttpApi}
 import leaderboard.config.{BeautyQGen2AppShellConfig, ElasticsearchPortCfg, QdrantGen2PortCfg, RawBeautyQGen2AppShellConfig}
 import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
@@ -13,30 +13,22 @@ import leaderboard.search.gen2.core.materialization.SearchSnapshotSource
 import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
-import leaderboard.search.gen2.{BeautyQGen2EmbeddingClient, BeautyQSearchGen2Bootstrap, BeautyQSearchGen2HttpService, BeautyQSearchGen2Runtime, BeautyQSearchGen2Startup}
+import leaderboard.search.gen2.{BeautyQGen2EmbeddingClient, BeautyQSearchGen2Bootstrap, BeautyQSearchGen2HttpService, BeautyQSearchGen2Runtime, BeautyQSearchGen2Startup, BeautyQSupplementStartup}
 import leaderboard.seed.BeautyQSeedReady
 import leaderboard.sql.SQL
+import logstage.LogIO2
 import zio.IO
 
 import scala.annotation.unused
 
 import java.time.{Clock => JClock, Duration}
 
-/** The canonical Gen2 route composition. Included by [[LeaderboardPlugin]] as the default
-  * `/beauty-search` route. The Brick 8A executable graph composes the production components in one
-  * startup resource and binds the trusted application, readiness, and runtime derived from that
-  * same activation; the HTTP route stays unavailable until the resource acquire succeeds. */
 object BeautySearchGen2PluginModules {
 
-  /** Raw HOCON-bound config; validation runs at the DI boundary (see [[validatedAppShellConfigModule]])
-    * so a non-positive timeout or batching value produces a typed
-    * [[leaderboard.config.BeautyQGen2AppShellConfigError]] rather than a downstream IllegalStateException. */
   def appShellConfigModule: ConfigModuleDef = new ConfigModuleDef {
     makeConfig[RawBeautyQGen2AppShellConfig]("beautyq-gen2-app-shell")
   }
 
-  /** Boundary validation: the only path that turns the HOCON-bound raw config into the validated
-    * [[BeautyQGen2AppShellConfig]]. Downstream bindings depend only on the validated value. */
   def validatedAppShellConfigModule: ModuleDef = new ModuleDef {
     include(appShellConfigModule)
     make[BeautyQGen2AppShellConfig].from { (raw: RawBeautyQGen2AppShellConfig) =>
@@ -51,22 +43,14 @@ object BeautySearchGen2PluginModules {
     include(BeautySearchGen2PluginModules.routeComposition)
   }
 
-  /** The Brick 8A native application graph: one startup resource owns the
-    * load/materialize/activate sequence; the application and runtime derive from that single
-    * trusted activation. No second snapshot, no second materialization, no second backend
-    * activation, and no independent readiness computation are reachable.
-    *
-    * In managed/test scenes the Gen2 snapshot materialization branch depends on
-    * [[leaderboard.seed.BeautyQSeedReady]], which itself depends on all seven repository
-    * lifecycle resources (categories, services, masters, master-locations, service-variant
-    * schemas, master-service-offers, and master-service-offer-variants). Distage derives this
-    * ordering from the DI/lifecycle edge rather than from SQL query text, ensuring the
-    * `master_service_offer_variant` table exists before the snapshot source queries it.
-    *
-    * Each typed backend client (Elasticsearch / Qdrant / embedding) is constructed at the edge
-    * from its own endpoint and timeout values, so no raw unnamed Gen2 HTTP-client binding is
-    * registered more than once. */
   def appShellGraph: ModuleDef = new ModuleDef {
+    include(commonBaselineGraph)
+    include(enabledSupplementGraph(BeautyQSupplementStartup.Required, SupplementStartupPolicy.Required))
+    include(enabledSupplementGraph(BeautyQSupplementStartup.Preferred, SupplementStartupPolicy.Preferred))
+    include(disabledSupplementGraph)
+  }
+
+  private def commonBaselineGraph: ModuleDef = new ModuleDef {
     make[JClock].fromValue(JClock.systemUTC())
 
     make[BeautyQSearchSnapshotSource.Postgres[IO]].from {
@@ -109,6 +93,23 @@ object BeautySearchGen2PluginModules {
           .getOrElse(throw new IllegalStateException("managed Gen2 Elasticsearch baseline service init failed"))
     }
 
+    make[BeautyQSearchApplication].from {
+      (startup: BeautyQSearchGen2Startup) => startup.application
+    }
+
+    make[BeautyQSearchGen2Runtime].from {
+      (startup: BeautyQSearchGen2Startup) => startup.runtime
+    }
+  }
+
+  private def enabledSupplementGraph(
+    choice: Axis.AxisChoice,
+    policy: SupplementStartupPolicy,
+  ): ModuleDef = new ModuleDef {
+    tag(choice)
+
+    make[SupplementStartupPolicy].fromValue(policy)
+
     make[QdrantGen2Client].from {
       (qdrantPort: QdrantGen2PortCfg, cfg: BeautyQGen2AppShellConfig) =>
         val endpoint = Gen2HttpEndpoint
@@ -147,30 +148,48 @@ object BeautySearchGen2PluginModules {
       (
         materializer: BeautyQVariantMaterializer[IO],
         elasticsearch: BeautyQElasticsearchBaselineService,
+        policy: SupplementStartupPolicy,
         qdrantLifecycle: QdrantGenerationLifecycle,
         embedding: BeautyQGen2EmbeddingClient,
-      ) => BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, qdrantLifecycle, embedding)
+      ) => BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, policy, qdrantLifecycle, embedding)
     }
 
     make[BeautyQSearchGen2Startup].fromResource {
       (
         bootstrap: BeautyQSearchGen2Bootstrap,
         qdrantCandidateService: QdrantCandidateService,
+        log: LogIO2[IO],
       ) =>
-        BeautyQSearchGen2Startup.lifecycle(bootstrap, qdrantCandidateService)
-    }
-
-    make[BeautyQSearchApplication].from {
-      (startup: BeautyQSearchGen2Startup) => startup.application
-    }
-
-    make[BeautyQSearchGen2Runtime].from {
-      (startup: BeautyQSearchGen2Startup) => startup.runtime
+        BeautyQSearchGen2Startup.lifecycle(bootstrap, qdrantCandidateService, log)
     }
   }
 
-  /** The route adapter binds only after the startup resource acquire succeeds, so the HTTP route
-    * stays unavailable while bootstrap, activation, or readiness is still in progress. */
+  private def disabledSupplementGraph: ModuleDef = new ModuleDef {
+    tag(BeautyQSupplementStartup.Disabled)
+
+    make[SupplementStartupPolicy].fromValue(SupplementStartupPolicy.Disabled)
+
+    make[BeautyQSearchGen2Bootstrap].from {
+      (
+        materializer: BeautyQVariantMaterializer[IO],
+        elasticsearch: BeautyQElasticsearchBaselineService,
+      ) =>
+        BeautyQSearchGen2Bootstrap.makeBaselineOnly(
+          materializer,
+          elasticsearch,
+          SupplementStartupPolicy.Disabled,
+        )
+    }
+
+    make[BeautyQSearchGen2Startup].fromResource {
+      (
+        bootstrap: BeautyQSearchGen2Bootstrap,
+        log: LogIO2[IO],
+      ) =>
+        BeautyQSearchGen2Startup.lifecycleBaselineOnly(bootstrap, log)
+    }
+  }
+
   def routeComposition: ModuleDef = new ModuleDef {
     make[BeautySearchGen2TapirEndpoints].fromValue(BeautySearchGen2TapirEndpoints)
     make[BeautySearchGen2Service[IO]].from { (runtime: BeautyQSearchGen2Runtime) => new BeautyQSearchGen2HttpService(runtime) }

@@ -19,33 +19,6 @@ final class BeautyQSupplementPolicySpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQSupplementPolicy.requiredDependencies" should {
-    "declare ElasticsearchBaseline before DocumentLookup" in {
-      assert(BeautyQSupplementPolicy.requiredDependencies == Vector(
-        BeautyQSearchDependency.ElasticsearchBaseline,
-        BeautyQSearchDependency.DocumentLookup,
-      ))
-    }
-
-    "declare exactly two required dependencies" in {
-      assert(BeautyQSupplementPolicy.requiredDependencies.length == 2)
-    }
-  }
-
-  "BeautyQSupplementPolicy.supplementDependency" should {
-    "be QdrantSupplement" in {
-      assert(BeautyQSupplementPolicy.supplementDependency == BeautyQSearchDependency.QdrantSupplement)
-    }
-  }
-
-  "BeautyQSearchDependency stable IDs" should {
-    "be exact" in {
-      assert(BeautyQSearchDependency.ElasticsearchBaseline.stableId == "elasticsearch-baseline")
-      assert(BeautyQSearchDependency.DocumentLookup.stableId == "document-lookup")
-      assert(BeautyQSearchDependency.QdrantSupplement.stableId == "qdrant-supplement")
-    }
-  }
-
   "BeautyQDegradationReason stable codes" should {
     "be exact" in {
       assert(BeautyQDegradationReason.EmbeddingTimeout.reasonCode == "embedding-timeout")
@@ -343,6 +316,228 @@ final class BeautyQSupplementPolicySpec extends AnyWordSpec {
         case hard: BeautyQSupplementPolicy.Hard =>
           assert(hard.cause eq error)
         case other => fail(s"expected Hard, got $other")
+      }
+    }
+  }
+
+  "BeautyQSupplementPolicy.classifyStartupActivationError" should {
+    "classify ES as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Elasticsearch(
+        BeautyQElasticsearchBaselineServiceError.Lifecycle(
+          leaderboard.search.gen2.elasticsearch.lifecycle.ElasticsearchGenerationLifecycleError.StaleGeneration(
+            leaderboard.search.gen2.elasticsearch.ElasticsearchGenerationReference("stale")
+          )
+        )
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Compile as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Compile(
+        QdrantGenerationCompileError.DuplicatePointId("duplicate-id")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant invalid physical name as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.InvalidPhysicalName("bad-name")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant malformed as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Malformed("op", "bad")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant collection incompatible as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.CollectionIncompatible("target", "reason")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant alias ambiguous as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.AliasAmbiguous("test", Vector("a", "b"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant mutation rejected as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.MutationRejected("op", io.circe.Json.obj())
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant point count mismatch as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.PointCountMismatch(10, 5L)
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant transport connection failed as startup degradable with qdrant-transport" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Transport("query", Gen2HttpTransportError.ConnectionFailed("GET", "/test", "connection refused"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.QdrantTransport)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(qdrant-transport), got $other")
+      }
+    }
+
+    "classify Qdrant transport request failed as startup degradable with qdrant-transport" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Transport("query", Gen2HttpTransportError.RequestFailed("GET", "/test", "request failed"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.QdrantTransport)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(qdrant-transport), got $other")
+      }
+    }
+
+    "classify Qdrant transport 408 as startup degradable with qdrant-backend" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Transport("query", Gen2HttpTransportError.HttpFailure("GET", "/test", 408, "timeout"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.QdrantBackend)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(qdrant-backend), got $other")
+      }
+    }
+
+    "classify Qdrant transport 500 as startup degradable with qdrant-backend" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Transport("query", Gen2HttpTransportError.HttpFailure("GET", "/test", 500, "server error"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.QdrantBackend)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(qdrant-backend), got $other")
+      }
+    }
+
+    "classify Qdrant transport 400 as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Transport("query", Gen2HttpTransportError.HttpFailure("GET", "/test", 400, "bad request"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify Qdrant invalid json response as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Qdrant(
+        QdrantGenerationLifecycleError.Transport("query", Gen2HttpTransportError.InvalidJsonResponse("GET", "/test", 200, "bad json", "parse error"))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify embedding timeout as startup degradable with embedding-timeout" in {
+      val error = BeautyQSearchGenerationActivationError.Embedding(
+        BeautyQEmbeddingRequestError.Timeout("timeout details")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.EmbeddingTimeout)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(embedding-timeout), got $other")
+      }
+    }
+
+    "classify embedding unavailable as startup degradable with embedding-unavailable" in {
+      val error = BeautyQSearchGenerationActivationError.Embedding(
+        BeautyQEmbeddingRequestError.Unavailable("unavailable details")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.EmbeddingUnavailable)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(embedding-unavailable), got $other")
+      }
+    }
+
+    "classify embedding transport as startup degradable with embedding-transport" in {
+      val error = BeautyQSearchGenerationActivationError.Embedding(
+        BeautyQEmbeddingRequestError.Transport("transport details")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case degradable: BeautyQSupplementPolicy.StartupDegradable =>
+          assert(degradable.reason == BeautyQDegradationReason.EmbeddingTransport)
+          assert(degradable.cause eq error)
+        case other => fail(s"expected StartupDegradable(embedding-transport), got $other")
+      }
+    }
+
+    "classify embedding malformed response as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Embedding(
+        BeautyQEmbeddingRequestError.MalformedResponse("bad json")
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
+      }
+    }
+
+    "classify embedding invalid result as startup hard" in {
+      val error = BeautyQSearchGenerationActivationError.Embedding(
+        BeautyQEmbeddingRequestError.InvalidResult(QdrantEmbeddingError.DimensionMismatch(1024, 768))
+      )
+      BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
+        case hard: BeautyQSupplementPolicy.StartupHard =>
+          assert(hard.cause eq error)
+        case other => fail(s"expected StartupHard, got $other")
       }
     }
   }

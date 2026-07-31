@@ -11,7 +11,8 @@ Start here:
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide domain/search ownership principles
 * [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical domain authoring, lifecycle composition, proof selection, and focused validation
 * [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, verification ownership, and delivery closure
-* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — approved evaluation, restart-only operations, request-budget, Qdrant-batching, and eval-first second-domain work that is not implemented yet
+* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1 evaluation foundations and the remaining O0 closeout, Q2 measured evaluation, O1 operational hardening, and eval-first second-domain work
+* [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — Required/Preferred/Disabled launcher modes, operator status, response warnings, restart-only recovery, and partial-activation procedures
 * [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
 
@@ -24,8 +25,11 @@ The route/Qdrant sections below are current operational truth.
 Current BeautyQ route truth:
 
 * The default search route is native Gen2 `POST /beauty-search` with the full Elasticsearch + Qdrant + embedding graph.
+* `GET /beauty-search/status` exposes operator status: condition, policy, serving mode, restart requirement, fingerprints and active generations.
 * `/beauty-search-gen2` and the Gen1 request/response route are absent.
 * There is no fallback, fusion, or rerank.
+* `SupplementStartupPolicy` controls startup: `required` (default) fails startup on supplement unavailability; `preferred` permits degraded baseline-only serving; `disabled` is the operator kill switch.
+* Startup state is immutable for the process lifetime; recovery requires restart.
 
 Run the local managed launcher:
 

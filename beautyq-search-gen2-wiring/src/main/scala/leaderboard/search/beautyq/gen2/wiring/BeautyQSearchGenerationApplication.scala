@@ -14,16 +14,10 @@ object BeautyQSearchGenerationActivationError {
   final case class Compile(error: QdrantGenerationCompileError) extends BeautyQSearchGenerationActivationError
 }
 
-/** One activation owner for the complete immutable materialization. Qdrant
-  * unavailability is represented as baseline-only readiness; identity,
-  * compiler and incompatible-resource failures remain hard. */
 object BeautyQSearchGenerationApplication {
-  /** Trusted activation snapshot; construction is owned by this application
-    * owner and cannot be supplied by another wiring component. */
   final class Activation private[BeautyQSearchGenerationApplication] (
     val materialized: MaterializedBeautyQVariantDocuments,
     val elasticsearchGeneration: LifecycleResolvedElasticsearchGeneration,
-    val readiness: BeautyQSupplementReadinessPolicy.Result,
     val qdrantGeneration: Option[ActiveQdrantGeneration],
     val qdrantFailure: Option[BeautyQSearchGenerationActivationError],
   )
@@ -44,12 +38,24 @@ object BeautyQSearchGenerationApplication {
     } yield new Activation(
       materialized,
       esActive,
-      qdrantOutcome match {
-        case (Some(_), _) => BeautyQSupplementReadinessPolicy.evaluate(Set.empty)
-        case (None, _)    => BeautyQSupplementReadinessPolicy.evaluate(Set(BeautyQSearchDependency.QdrantSupplement))
-      },
       qdrantOutcome._1,
       qdrantOutcome._2,
+    )
+
+  def activateBaselineOnly(
+    materialized: MaterializedBeautyQVariantDocuments,
+    elasticsearch: BeautyQElasticsearchBaselineService,
+  ): Either[BeautyQSearchGenerationActivationError, Activation] =
+    for {
+      esGeneration <- BeautyQElasticsearchGeneration.compile(materialized)
+        .left.map(BeautyQSearchGenerationActivationError.ElasticsearchCompile.apply)
+      esActive <- elasticsearch.activate(esGeneration)
+        .left.map(BeautyQSearchGenerationActivationError.Elasticsearch.apply)
+    } yield new Activation(
+      materialized,
+      esActive,
+      qdrantGeneration = None,
+      qdrantFailure = None,
     )
 
   private def prepareQdrant(

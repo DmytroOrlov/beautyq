@@ -6,12 +6,14 @@ import distage.{Injector, ModuleDef, Scene}
 import distage.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, LocatorPrivacy}
 import izumi.distage.model.plan.Roots
+import izumi.logstage.api.IzLogger
+import izumi.logstage.distage.LogIO2Module
 import leaderboard.api.BeautySearchGen2Api
 import leaderboard.config.{BeautyQGen2AppShellConfig, BeautyQGen2AppShellConfigError, BeautyQGen2AppShellConfigException, RawBeautyQGen2AppShellConfig}
 import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
-import leaderboard.plugins.BeautySearchGen2PluginModules
+import leaderboard.plugins.{BeautySearchGen2PluginModules, QdrantGen2DockerPlugin}
 import leaderboard.search.beautyq.gen2.materialization.BeautyQMaterializationError
-import leaderboard.search.gen2.{BeautyQSearchGen2BootstrapError, BeautyQSearchGen2StartupFailure}
+import leaderboard.search.gen2.{BeautyQSearchGen2BootstrapError, BeautyQSearchGen2StartupFailure, BeautyQSupplementStartup}
 import leaderboard.seed.BeautyQSeedReady
 import org.scalatest.wordspec.AnyWordSpec
 import zio.{IO, Task, Unsafe}
@@ -36,8 +38,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         zio.Runtime.default.unsafe.run(effect).getOrThrowFiberFailure()
       }
 
-      assert(probe.endpoints.all.size == 1)
-      assert(probe.endpoints.all.headOption.exists(_ eq probe.endpoints.searchBeautyGen2))
+      assert(probe.endpoints.all.size == 2)
+      assert(probe.endpoints.searchBeautyGen2 ne null)
+      assert(probe.endpoints.statusBeautyGen2 ne null)
     }
   }
 
@@ -114,20 +117,81 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
   }
 
   "BeautySearchGen2PluginModules.api" should {
-    "declare the BeautyQSearchGen2Startup and seed-readiness edge in the plan that produces BeautySearchGen2Api[IO]" in {
+    "declare the BeautyQSearchGen2Startup and seed-readiness edge when Required is selected" in {
       val plan = Injector[Task]().plan(
         bindings = new ModuleDef {
           make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
           make[BeautyQSeedReady].fromValue(new BeautyQSeedReady {})
+          include(LogIO2Module[IO]())
+          make[IzLogger].fromValue(IzLogger())
+          include(QdrantGen2DockerPlugin.dockerModule[IO])
           include(BeautySearchGen2PluginModules.api)
         },
         roots = Roots.target[BeautySearchGen2Api[IO]],
-        activation = Activation(Scene -> Scene.Managed, Repo -> Repo.Prod),
+        activation = Activation(Scene -> Scene.Managed, Repo -> Repo.Prod, BeautyQSupplementStartup -> BeautyQSupplementStartup.Required),
         locatorPrivacy = LocatorPrivacy.PublicByDefault,
       )
       val planString = plan.toString
       assert(planString.contains("BeautyQSearchGen2Startup"), s"expected BeautyQSearchGen2Startup in plan, got $planString")
       assert(planString.contains("BeautyQSeedReady"), s"expected BeautyQSeedReady in plan, got $planString")
+      assert(planString.contains("QdrantGen2Client"), s"expected QdrantGen2Client in Required plan, got $planString")
+      assert(planString.contains("QdrantGenerationLifecycle"), s"expected QdrantGenerationLifecycle in Required plan, got $planString")
+      assert(planString.contains("QdrantCandidateService"), s"expected QdrantCandidateService in Required plan, got $planString")
+      assert(planString.contains("BeautyQGen2EmbeddingClient"), s"expected BeautyQGen2EmbeddingClient in Required plan, got $planString")
+      assert(planString.contains("BeautyQSearchGen2Bootstrap"), s"expected BeautyQSearchGen2Bootstrap in Required plan, got $planString")
+    }
+
+    "retain the supplement owners when Preferred is selected" in {
+      val plan = Injector[Task]().plan(
+        bindings = new ModuleDef {
+          make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+          make[BeautyQSeedReady].fromValue(new BeautyQSeedReady {})
+          include(LogIO2Module[IO]())
+          make[IzLogger].fromValue(IzLogger())
+          include(QdrantGen2DockerPlugin.dockerModule[IO])
+          include(BeautySearchGen2PluginModules.api)
+        },
+        roots = Roots.target[BeautySearchGen2Api[IO]],
+        activation = Activation(Scene -> Scene.Managed, Repo -> Repo.Prod, BeautyQSupplementStartup -> BeautyQSupplementStartup.Preferred),
+        locatorPrivacy = LocatorPrivacy.PublicByDefault,
+      )
+      val planString = plan.toString
+      assert(planString.contains("BeautyQSearchGen2Startup"), s"expected BeautyQSearchGen2Startup in Preferred plan, got $planString")
+      assert(planString.contains("QdrantGen2Client"), s"expected QdrantGen2Client in Preferred plan, got $planString")
+      assert(planString.contains("QdrantGenerationLifecycle"), s"expected QdrantGenerationLifecycle in Preferred plan, got $planString")
+      assert(planString.contains("QdrantCandidateService"), s"expected QdrantCandidateService in Preferred plan, got $planString")
+      assert(planString.contains("BeautyQGen2EmbeddingClient"), s"expected BeautyQGen2EmbeddingClient in Preferred plan, got $planString")
+      assert(planString.contains("BeautyQSearchGen2Bootstrap"), s"expected BeautyQSearchGen2Bootstrap in Preferred plan, got $planString")
+    }
+
+    "retain only baseline owners when Disabled is selected and exclude Qdrant and embedding" in {
+      val plan = Injector[Task]().plan(
+        bindings = new ModuleDef {
+          make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
+          make[BeautyQSeedReady].fromValue(new BeautyQSeedReady {})
+          include(LogIO2Module[IO]())
+          make[IzLogger].fromValue(IzLogger())
+          include(QdrantGen2DockerPlugin.dockerModule[IO])
+          include(BeautySearchGen2PluginModules.api)
+        },
+        roots = Roots.target[BeautySearchGen2Api[IO]],
+        activation = Activation(Scene -> Scene.Managed, Repo -> Repo.Prod, BeautyQSupplementStartup -> BeautyQSupplementStartup.Disabled),
+        locatorPrivacy = LocatorPrivacy.PublicByDefault,
+      )
+      val planString = plan.toString
+      assert(planString.contains("BeautyQVariantMaterializer"), s"expected BeautyQVariantMaterializer in Disabled plan, got $planString")
+      assert(planString.contains("BeautyQElasticsearchBaselineService"), s"expected BeautyQElasticsearchBaselineService in Disabled plan, got $planString")
+      assert(planString.contains("BeautyQSearchGen2Bootstrap"), s"expected BeautyQSearchGen2Bootstrap in Disabled plan, got $planString")
+      assert(planString.contains("BeautyQSearchGen2Startup"), s"expected BeautyQSearchGen2Startup in Disabled plan, got $planString")
+      assert(planString.contains("BeautyQSearchGen2Runtime"), s"expected BeautyQSearchGen2Runtime in Disabled plan, got $planString")
+      assert(planString.contains("BeautySearchGen2Api"), s"expected BeautySearchGen2Api in Disabled plan, got $planString")
+      assert(!planString.contains("QdrantGen2PortCfg"), s"expected no QdrantGen2PortCfg in Disabled plan, got $planString")
+      assert(!planString.contains("QdrantGen2Client"), s"expected no QdrantGen2Client in Disabled plan, got $planString")
+      assert(!planString.contains("QdrantGenerationLifecycle"), s"expected no QdrantGenerationLifecycle in Disabled plan, got $planString")
+      assert(!planString.contains("QdrantCandidateService"), s"expected no QdrantCandidateService in Disabled plan, got $planString")
+      assert(!planString.contains("LlamaCppEmbeddingClientConfig"), s"expected no LlamaCppEmbeddingClientConfig in Disabled plan, got $planString")
+      assert(!planString.contains("BeautyQGen2EmbeddingClient"), s"expected no BeautyQGen2EmbeddingClient in Disabled plan, got $planString")
+      assert(!planString.contains("QdrantGen2Docker.Container"), s"expected no QdrantGen2Docker.Container in Disabled plan, got $planString")
     }
 
     "fail to produce BeautySearchGen2Api[IO] when the startup resource is not in the graph" in {
@@ -258,6 +322,12 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
       val forbidden = Seq("BeautySearchPluginModules", "BeautySearchRouteModules", "BeautySearchLocalQdrantSupplementLauncherModule")
       val violations = forbidden.filter(content.contains)
       assert(violations.isEmpty, s"LeaderboardPlugin.scala must not reference any Gen1 owner; found: ${violations.mkString(", ")}")
+    }
+
+    "set the default BeautyQSupplementStartup activation to Required" in {
+      val source = scala.io.Source.fromFile("leaderboard-app-shell/src/main/scala/leaderboard/LeaderboardRole.scala")
+      val content = scala.util.Using.resource(source)(_.mkString)
+      assert(content.contains("BeautyQSupplementStartup -> BeautyQSupplementStartup.Required"), "LeaderboardRole.scala default activation must select Required")
     }
   }
 

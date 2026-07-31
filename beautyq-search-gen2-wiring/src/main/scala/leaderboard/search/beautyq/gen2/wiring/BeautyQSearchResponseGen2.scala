@@ -11,9 +11,6 @@ enum BeautyQSearchHitOrigin(val stableCode: String) {
   case QdrantSupplement extends BeautyQSearchHitOrigin("qdrant_supplement")
 }
 
-// Public aliases intentionally expose read-only views without exposing a
-// public apply/copy construction path.  The projector object below is the
-// only executable owner of these response values.
 type BeautyQSearchHitGen2 = BeautyQSearchResponseGen2Projector.Hit
 type BeautyQAppliedFilterGen2 = BeautyQSearchResponseGen2Projector.AppliedFilter
 type BeautyQSuppressedFilterGen2 = BeautyQSearchResponseGen2Projector.SuppressedFilter
@@ -23,6 +20,7 @@ type BeautyQGroupSummaryGen2 = BeautyQSearchResponseGen2Projector.GroupSummary
 type BeautyQGroupBucketGen2 = BeautyQSearchResponseGen2Projector.GroupBucket
 type BeautyQProviderCarouselItemGen2 = BeautyQSearchResponseGen2Projector.ProviderCarouselItem
 type BeautyQServiceIntentCarouselItemGen2 = BeautyQSearchResponseGen2Projector.ServiceIntentCarouselItem
+type BeautyQSearchWarningGen2 = BeautyQSearchResponseGen2Projector.Warning
 type BeautyQSearchResponseGen2 = BeautyQSearchResponseGen2Projector.Response
 
 sealed trait BeautyQSearchResponseProjectionError
@@ -31,8 +29,6 @@ object BeautyQSearchResponseProjectionError {
   final case class MissingFacet(id: String) extends BeautyQSearchResponseProjectionError
 }
 
-/** The only public-result owner. It consumes one orchestrator aggregate and
-  * derives every response view from that aggregate. */
 object BeautyQSearchResponseGen2Projector {
   final class Hit private[BeautyQSearchResponseGen2Projector] (
     val id: String,
@@ -104,6 +100,11 @@ object BeautyQSearchResponseGen2Projector {
     val bestScore: BigDecimal,
   )
 
+  final class Warning private[BeautyQSearchResponseGen2Projector] (
+    val code: String,
+    val message: String,
+  )
+
   final class Response private[BeautyQSearchResponseGen2Projector] (
     val hits: Vector[Hit],
     val totalHits: Long,
@@ -120,11 +121,30 @@ object BeautyQSearchResponseGen2Projector {
     val supplementStatusCode: String,
     val ineligibilityReason: Option[String],
     val degradationReason: Option[String],
+    val servingMode: String,
+    val restartRequired: Boolean,
+    val warnings: Vector[Warning],
     val diagnostics: ElasticsearchResponseDiagnostics,
   )
 
   def project(
     result: BeautyQSearchOrchestrator.Result,
+    startupStatus: StartupServingStatus,
+  ): Either[BeautyQSearchResponseProjectionError, BeautyQSearchResponseGen2] = {
+    projectInternal(result, startupStatus.servingMode.modeCode, startupStatus.restartRequired, deriveWarnings(result, startupStatus))
+  }
+
+  def projectWithoutStatus(
+    result: BeautyQSearchOrchestrator.Result,
+  ): Either[BeautyQSearchResponseProjectionError, BeautyQSearchResponseGen2] = {
+    projectInternal(result, BeautyQServingMode.FullSearch.modeCode, restartRequired = false, Vector.empty)
+  }
+
+  private def projectInternal(
+    result: BeautyQSearchOrchestrator.Result,
+    servingModeCode: String,
+    restartRequired: Boolean,
+    warnings: Vector[Warning],
   ): Either[BeautyQSearchResponseProjectionError, BeautyQSearchResponseGen2] = {
     BeautyQElasticsearchSearchResult.project(result.baselineResult)
       .left.map(BeautyQSearchResponseProjectionError.Baseline.apply)
@@ -170,6 +190,7 @@ object BeautyQSearchResponseGen2Projector {
           item.representativeVariantId.toString,
           item.bestScore,
         ))
+        val resolvedWarnings = warnings
         facets(projected, result.evaluation.compiled.plan.facets).map { facetSummaries =>
           new Response(
             hits = baselineHits ++ supplementHits,
@@ -200,11 +221,37 @@ object BeautyQSearchResponseGen2Projector {
             supplementStatusCode = result.statusCode,
             ineligibilityReason = result.ineligibilityReason.map(_.stableCode),
             degradationReason = result.degradationReason.map(_.reasonCode),
+            servingMode = servingModeCode,
+            restartRequired = restartRequired,
+            warnings = resolvedWarnings,
             diagnostics = projected.diagnostics,
           )
         }
       }
   }
+
+  private def deriveWarnings(
+    result: BeautyQSearchOrchestrator.Result,
+    startupStatus: StartupServingStatus,
+  ): Vector[Warning] =
+    if (startupStatus.supplementReady) {
+      result.degradationReason match {
+        case Some(reason) =>
+          Vector(new Warning(
+            reason.reasonCode,
+            "Qdrant supplement failed for this request; the complete Elasticsearch baseline was returned",
+          ))
+        case None =>
+          Vector.empty
+      }
+    } else {
+      startupStatus.reason match {
+        case Some(reason) =>
+          Vector(new Warning(reason.code, reason.message))
+        case None =>
+          Vector.empty
+      }
+    }
 
   private def provenance(value: ConstraintProvenance): String = value match {
     case ConstraintProvenance.ExplicitUi       => "explicit-ui"

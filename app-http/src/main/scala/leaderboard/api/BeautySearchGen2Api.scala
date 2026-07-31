@@ -1,6 +1,7 @@
 package leaderboard.api
 
 import cats.effect.Async
+import io.circe.Json
 import izumi.functional.bio.Error2
 import leaderboard.http.{BeautySearchGen2Json, HttpApiFailure}
 import leaderboard.http.tapir.BeautySearchGen2TapirEndpoints
@@ -11,9 +12,9 @@ import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 trait BeautySearchGen2Service[F[+_, +_]] {
   def execute(request: BeautySearchRequestGen2): F[HttpApiFailure, BeautyQSearchResponseGen2]
+  def status: F[HttpApiFailure, Json]
 }
 
-/** The canonical `/beauty-search` API. Native Gen2 request/response ownership. */
 final class BeautySearchGen2Api[F[+_, +_]: Error2](
   service: BeautySearchGen2Service[F],
   endpoints: BeautySearchGen2TapirEndpoints,
@@ -31,7 +32,13 @@ final class BeautySearchGen2Api[F[+_, +_]: Error2](
                 case Right(response) => Right(BeautySearchGen2Json.encodeResponse(response))
               }
           }
-        }
+        },
+        statusBeautyGen2.serverLogic[F[Throwable, _]] { _ =>
+          async.map(service.status.attempt) {
+            case Left(error) => Left(error)
+            case Right(json) => Right(json)
+          }
+        },
       )
     }
 }

@@ -8,11 +8,6 @@ import leaderboard.search.beautyq.gen2.materialization.{
   BeautyQVariantProjectionGen2,
 }
 
-/** Navigation facade for the complete implemented BeautyQ Search Gen2 composition.
-  *
-  * Every member is a direct reference to its owning declaration or executable composition. This
-  * object owns no policy and grows only when another implementation branch becomes real.
-  */
 object BeautyQSearchGen2 {
   val contract = BeautyQSearchDeclarations
 
@@ -53,9 +48,10 @@ object BeautyQSearchGen2 {
   }
 
   object supplement {
-    val policy       = BeautyQSupplementPolicy
-    val readiness    = BeautyQSupplementReadinessPolicy
-    val orchestrator = BeautyQSearchOrchestrator
+    val policy               = BeautyQSupplementPolicy
+    val startupPolicy        = SupplementStartupPolicy
+    val orchestrator         = BeautyQSearchOrchestrator
+    val startupServingStatus = StartupServingStatus
   }
 
   val application = BeautyQSearchApplication

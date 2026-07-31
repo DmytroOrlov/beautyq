@@ -105,7 +105,7 @@ final class BeautyQGen2EmbeddingClientSpec extends AnyWordSpec {
       }
     }
 
-    "reject empty data as a typed Transport error" in {
+    "reject empty data as a typed MalformedResponse error" in {
       val client = scriptedClient(
         Response(
           status = 200,
@@ -114,9 +114,9 @@ final class BeautyQGen2EmbeddingClientSpec extends AnyWordSpec {
         ),
       )
       client.embed(sampleInput("any text")) match {
-        case Left(BeautyQEmbeddingRequestError.Transport(message)) =>
+        case Left(BeautyQEmbeddingRequestError.MalformedResponse(message)) =>
           assert(message.contains("embedding response data is empty"))
-        case other => fail(s"expected Transport, got $other")
+        case other => fail(s"expected MalformedResponse, got $other")
       }
     }
 

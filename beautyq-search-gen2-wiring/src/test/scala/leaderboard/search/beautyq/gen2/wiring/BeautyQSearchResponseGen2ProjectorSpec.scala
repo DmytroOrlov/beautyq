@@ -23,7 +23,7 @@ final class BeautyQSearchResponseGen2ProjectorSpec extends AnyWordSpec {
         case Left(error) => fail(s"expected orchestrated result, got $error")
       }
 
-      BeautyQSearchResponseGen2Projector.project(result) match {
+      BeautyQSearchResponseGen2Projector.projectWithoutStatus(result) match {
         case Right(response) =>
           assert(response.supplementCount == result.supplementCount)
           assert(response.supplementStatus == result.status)
@@ -48,7 +48,7 @@ final class BeautyQSearchResponseGen2ProjectorSpec extends AnyWordSpec {
         case Right(value) => value
         case Left(error) => fail(s"expected supplement result, got $error")
       }
-      BeautyQSearchResponseGen2Projector.project(supplemented) match {
+      BeautyQSearchResponseGen2Projector.projectWithoutStatus(supplemented) match {
         case Right(response) => assert(response.hits.forall(_.origin == BeautyQSearchHitOrigin.QdrantSupplement))
         case Left(error) => fail(s"expected supplement projection, got $error")
       }
@@ -69,7 +69,7 @@ final class BeautyQSearchResponseGen2ProjectorSpec extends AnyWordSpec {
         case Left(error) => fail(s"expected mixed orchestrated result, got $error")
       }
 
-      BeautyQSearchResponseGen2Projector.project(result) match {
+      BeautyQSearchResponseGen2Projector.projectWithoutStatus(result) match {
         case Right(response) =>
           response.hits match {
             case Vector(first, rest @ _*) =>

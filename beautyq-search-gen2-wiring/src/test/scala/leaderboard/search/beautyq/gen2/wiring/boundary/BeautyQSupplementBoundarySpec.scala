@@ -1,17 +1,13 @@
 package leaderboard.search.beautyq.gen2.wiring.boundary
 
-import leaderboard.search.beautyq.gen2.wiring.*
 import org.scalatest.wordspec.AnyWordSpec
 
 /** Black-box compile-negative proofs from a package outside each owner. */
 final class BeautyQSupplementBoundarySpec extends AnyWordSpec {
-  "BeautyQ readiness" should {
-    "expose only policy evaluation" in {
-      assertDoesNotCompile("leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementReadinessPolicy.Serving(leaderboard.search.beautyq.gen2.wiring.BeautyQServingMode.FullSearch)")
-      assertDoesNotCompile("leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementReadinessPolicy.NotServing(Vector.empty)")
-      BeautyQSupplementReadinessPolicy.evaluate(Set.empty) match {
-        case _: BeautyQSupplementReadinessPolicy.Result => succeed
-      }
+  "StartupServingStatus" should {
+    "hide its constructor from external packages" in {
+      assertDoesNotCompile("new leaderboard.search.beautyq.gen2.wiring.StartupServingStatus(leaderboard.search.beautyq.gen2.wiring.SupplementStartupPolicy.Required, leaderboard.search.beautyq.gen2.wiring.BeautyQServingMode.FullSearch, \"healthy\", None, false, \"src\", \"proj\", \"es-ref\", \"es-target\", None, None)")
+      assertDoesNotCompile("new leaderboard.search.beautyq.gen2.wiring.StartupServingStatus.Reason(\"code\", \"msg\", \"detail\", None)")
     }
   }
 

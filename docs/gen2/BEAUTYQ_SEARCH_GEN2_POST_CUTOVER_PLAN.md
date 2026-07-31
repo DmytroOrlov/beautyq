@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 next, Q2 planned, O1 planned, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, Q2 next, O1 planned, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -347,7 +347,7 @@ Completed:
 
 The current visible 89 cases are regression cases, not a protected holdout.
 
-### Patch O0 — supplement startup policy and safe kill switch
+### Patch O0 — supplement startup policy and safe kill switch **O0 COMPLETED**
 
 - add closed `SupplementStartupPolicy.Required|Preferred|Disabled`, defaulting to `Required`;
 - derive separate `ServingMode.FullSearch|BaselineOnly`;
@@ -359,6 +359,8 @@ The current visible 89 cases are regression cases, not a protected holdout.
 - keep permitted baseline serving Kubernetes-ready and hard required-mode failure not-ready;
 - require restart for recovery or policy change; never auto-promote after dependency recovery;
 - prove the partial ES/Qdrant activation outcome and document exact alias inspection/retry procedure.
+
+Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
 ### Patch Q2 — measured BeautyQ Gen2 report and correction gate
 

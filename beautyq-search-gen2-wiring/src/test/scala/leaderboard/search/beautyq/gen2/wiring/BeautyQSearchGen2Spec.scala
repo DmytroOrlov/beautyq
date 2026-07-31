@@ -107,8 +107,12 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
       assert(BeautyQSearchGen2.supplement.policy eq BeautyQSupplementPolicy)
     }
 
-    "expose readiness as direct reference to BeautyQSupplementReadinessPolicy" in {
-      assert(BeautyQSearchGen2.supplement.readiness eq BeautyQSupplementReadinessPolicy)
+    "expose startupPolicy as direct reference to SupplementStartupPolicy" in {
+      assert(BeautyQSearchGen2.supplement.startupPolicy eq SupplementStartupPolicy)
+    }
+
+    "expose startupServingStatus as direct reference to StartupServingStatus" in {
+      assert(BeautyQSearchGen2.supplement.startupServingStatus eq StartupServingStatus)
     }
 
     "expose orchestrator as direct reference to BeautyQSearchOrchestrator" in {
@@ -147,7 +151,7 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
       application.execute(request) match {
         case Right(result) =>
           assert(result.status == BeautyQSupplementStatus.Supplemented)
-          BeautyQSearchResponseGen2Projector.project(result) match {
+          BeautyQSearchResponseGen2Projector.projectWithoutStatus(result) match {
             case Right(response) => assert(response.supplementCount == result.appendedCandidates.size)
             case Left(error) => fail(s"expected projected Gen2 response, got $error")
           }

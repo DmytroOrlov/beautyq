@@ -7,9 +7,6 @@ import leaderboard.search.gen2.contract.*
 import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 
-/** Errors at the one public Gen2 application boundary. The wrapped values are
-  * the errors actually produced by the canonical declaration/parser/compiler
-  * path; this owner does not reinterpret them as another policy. */
 sealed trait BeautyQSearchApplicationError
 object BeautyQSearchApplicationError {
   final case class Input(error: NonEmptyErrors[BeautySearchRequestError]) extends BeautyQSearchApplicationError
@@ -20,14 +17,19 @@ object BeautyQSearchApplicationError {
   final case class Orchestration(error: BeautyQSearchOrchestrationError) extends BeautyQSearchApplicationError
 }
 
-/** The single executable BeautyQ Gen2 request owner. It receives immutable
-  * materialized documents and already-composed backend services; it never
-  * chooses a physical resource or rebuilds generic backend mechanics. */
+private sealed trait SupplementCapability
+private object SupplementCapability {
+  final class Full(
+    val embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
+    val qdrant: QdrantCandidateService,
+  ) extends SupplementCapability
+  case object Baseline extends SupplementCapability
+}
+
 final class BeautyQSearchApplication private (
   materialized: MaterializedBeautyQVariantDocuments,
   elasticsearch: BeautyQElasticsearchBaselineService,
-  embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
-  qdrant: QdrantCandidateService,
+  private val supplementCapability: SupplementCapability,
 ) {
   def execute(
     request: BeautySearchRequestGen2,
@@ -35,24 +37,20 @@ final class BeautyQSearchApplication private (
     for {
       prepared <- prepare(request)
       (evaluation, baseline) = prepared
-      result <- BeautyQSearchOrchestrator.execute(
-        baseline,
-        evaluation,
-        materialized,
-        embedding,
-        qdrant,
-        elasticsearch,
-      ).left.map(BeautyQSearchApplicationError.Orchestration.apply)
-    } yield result
-
-  def executeBaselineOnly(
-    request: BeautySearchRequestGen2,
-  ): Either[BeautyQSearchApplicationError, BeautyQSearchOrchestrator.Result] =
-    for {
-      prepared <- prepare(request)
-      (evaluation, baseline) = prepared
-      result <- BeautyQSearchOrchestrator.baselineOnly(baseline, evaluation)
-        .left.map(BeautyQSearchApplicationError.Orchestration.apply)
+      result <- supplementCapability match {
+        case full: SupplementCapability.Full =>
+          BeautyQSearchOrchestrator.execute(
+            baseline,
+            evaluation,
+            materialized,
+            full.embedding,
+            full.qdrant,
+            elasticsearch,
+          ).left.map(BeautyQSearchApplicationError.Orchestration.apply)
+        case SupplementCapability.Baseline =>
+          BeautyQSearchOrchestrator.baselineOnly(baseline, evaluation)
+            .left.map(BeautyQSearchApplicationError.Orchestration.apply)
+      }
     } yield result
 
   private def prepare(
@@ -81,5 +79,11 @@ object BeautyQSearchApplication {
     embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
     qdrant: QdrantCandidateService,
   ): BeautyQSearchApplication =
-    new BeautyQSearchApplication(materialized, elasticsearch, embedding, qdrant)
+    new BeautyQSearchApplication(materialized, elasticsearch, new SupplementCapability.Full(embedding, qdrant))
+
+  def makeBaselineOnly(
+    materialized: MaterializedBeautyQVariantDocuments,
+    elasticsearch: BeautyQElasticsearchBaselineService,
+  ): BeautyQSearchApplication =
+    new BeautyQSearchApplication(materialized, elasticsearch, SupplementCapability.Baseline)
 }

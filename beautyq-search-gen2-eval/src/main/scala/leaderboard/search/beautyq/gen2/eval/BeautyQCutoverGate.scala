@@ -2,14 +2,9 @@ package leaderboard.search.beautyq.gen2.eval
 
 import io.circe.Json
 import leaderboard.search.beautyq.gen2.contract.BeautySearchRequestGen2
-import leaderboard.search.beautyq.gen2.wiring.{BeautyQServingMode, BeautyQSupplementPolicy, BeautyQSupplementReadinessPolicy}
+import leaderboard.search.beautyq.gen2.wiring.{BeautyQServingMode, BeautyQSupplementPolicy}
 import leaderboard.search.gen2.contract.{GeoPoint, PageRequest, PageSize}
 
-/** The closed, source-confirmed query inventory used by the pre-cutover gate.
-  * Query text and stable identity belong to the same typed fixture; the
-  * append budget is derived from BeautyQ's executable supplement policy and
-  * the executable native Gen2 request is derived from the same fixture so
-  * the runner never repeats query strings, page sizes or filter sets. */
 enum BeautyQCutoverQueryFixture(
   val stableId: String,
   val query: String,
@@ -42,11 +37,6 @@ enum BeautyQCutoverQueryFixture(
 
   def appendBudget: Int = BeautyQSupplementPolicy.appendOnly.maxAppended
 
-  /** One canonical evaluation request: the fixture's own query, no filters, no
-    * facets, no explicit sort, the fixture-owned optional user location,
-    * first page with no cursor and the canonical page size. The runner obtains
-    * its request from this fixture rather than accepting separately supplied
-    * query or location values. */
   def request: BeautySearchRequestGen2 =
     BeautySearchRequestGen2(
       query = Some(query),
@@ -59,11 +49,8 @@ enum BeautyQCutoverQueryFixture(
 }
 
 object BeautyQCutoverQueryFixture {
-  /** Validated once at class load so neither the fixture nor the runner ever
-    * rebuilds the literal `20` or reruns `PageSize.from(20)`. */
   val pageSize: PageSize = PageSize.from(20).getOrElse(throw new AssertionError("expected canonical cutover page size"))
 
-  /** Explicit active business order; this is not enum inventory order. */
   val required: Vector[BeautyQCutoverQueryFixture] = Vector(
     BeautyQCutoverQueryFixture.QBroad006ReadyAppendProbe,
     BeautyQCutoverQueryFixture.ManicureRealRouteProbe,
@@ -72,9 +59,6 @@ object BeautyQCutoverQueryFixture {
   )
 }
 
-/** One immutable observation produced by an evaluation runner.  It contains
-  * only facts observed for one fixed query; the gate derives all counts and
-  * classifications from these facts. */
 final class BeautyQCutoverQueryObservation private[eval] (
   val fixture: BeautyQCutoverQueryFixture,
   val baselineIds: Vector[String],
@@ -116,9 +100,6 @@ object BeautyQCutoverQueryObservation {
       baselineOwnedComponentsPreserved,
     )
 
-  /** The production evaluation path supplies this observation from one
-    * compiler-owned result; no response IDs or plan fingerprint are rebuilt
-    * by the cutover runner. */
   def fromEvidence(
     fixture: BeautyQCutoverQueryFixture,
     evidence: BeautyQNoHarmSupplementEvidence.SupplementEvidence,
@@ -196,16 +177,10 @@ object BeautyQCutoverGateResult {
 }
 
 object BeautyQCutoverGate {
-  /** These are the only observations sufficient to make the pre-cutover
-    * decision.  A different or incomplete query set cannot pass by accident. */
   val requiredFixtures: Vector[BeautyQCutoverQueryFixture] = BeautyQCutoverQueryFixture.required
 
-  /** The authoritative gate entry point. Both readiness and observations are
-    * required: there is no public overload that evaluates observations without
-    * readiness, so the only evidence path emits a `full-search-readiness`
-    * check derived from the same readiness the live application used. */
   def evaluate(
-    readiness: BeautyQSupplementReadinessPolicy.Result,
+    servingMode: BeautyQServingMode,
     observations: Vector[BeautyQCutoverQueryObservation],
   ): BeautyQCutoverGateResult = {
     val derived = observations.map(derive)
@@ -222,7 +197,14 @@ object BeautyQCutoverGate {
       appendBudgetViolations = derived.map(_.appendBudgetViolations).sum,
     )
     val fixtures = observations.map(_.fixture)
-    val (readinessCheck, readinessObserved, readinessExpected) = readinessCheckValues(readiness)
+    val fullSearchCode = BeautyQServingMode.FullSearch.modeCode
+    val observedServing = servingMode.modeCode
+    val (readinessCheck, readinessObserved, readinessExpected) =
+      if (servingMode == BeautyQServingMode.FullSearch)
+        (BeautyQCutoverCheck("full-search-readiness", passed = true, observedServing, fullSearchCode), observedServing, fullSearchCode)
+      else
+        (BeautyQCutoverCheck("full-search-readiness", passed = false, observedServing, fullSearchCode), observedServing, fullSearchCode)
+
     val checks = Vector(
       BeautyQCutoverCheck(
         "fixed-query-matrix",
@@ -241,20 +223,6 @@ object BeautyQCutoverGate {
     )
     val enriched = BeautyQCutoverGateResult.from(metrics, checks, readinessObserved, readinessExpected)
     enriched
-  }
-
-  private def readinessCheckValues(
-    readiness: BeautyQSupplementReadinessPolicy.Result,
-  ): (BeautyQCutoverCheck, String, String) = {
-    val fullSearchCode = BeautyQServingMode.FullSearch.modeCode
-    val (passed, observed): (Boolean, String) = readiness match {
-      case serving: BeautyQSupplementReadinessPolicy.Serving =>
-        if (serving.mode == BeautyQServingMode.FullSearch) (true, fullSearchCode)
-        else (false, serving.mode.modeCode)
-      case notServing: BeautyQSupplementReadinessPolicy.NotServing =>
-        (false, s"not-serving:${notServing.unavailableRequired.map(_.stableId).sorted.mkString(",")}")
-    }
-    (BeautyQCutoverCheck("full-search-readiness", passed, observed, fullSearchCode), observed, fullSearchCode)
   }
 
   private final case class Derived(

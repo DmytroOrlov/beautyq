@@ -5,11 +5,11 @@ import leaderboard.http.HttpApiFailure
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
-/** The canonical `/beauty-search` endpoint. Native Gen2 request/response ownership. */
 trait BeautySearchGen2TapirEndpoints {
   def searchBeautyGen2: PublicEndpoint[Json, HttpApiFailure, Json, Any]
+  def statusBeautyGen2: PublicEndpoint[Unit, HttpApiFailure, Json, Any]
 
-  final def all: List[AnyEndpoint] = List(searchBeautyGen2)
+  final def all: List[AnyEndpoint] = List(searchBeautyGen2, statusBeautyGen2)
 }
 
 object BeautySearchGen2TapirEndpoints extends BeautySearchGen2TapirEndpoints {
@@ -18,5 +18,9 @@ object BeautySearchGen2TapirEndpoints extends BeautySearchGen2TapirEndpoints {
   val searchBeautyGen2: PublicEndpoint[Json, HttpApiFailure, Json, Any] =
     HttpApiFailureTapirSupport.endpointBase.in("beauty-search").post
       .in(jsonBody[Json])
+      .out(jsonBody[Json])
+
+  val statusBeautyGen2: PublicEndpoint[Unit, HttpApiFailure, Json, Any] =
+    HttpApiFailureTapirSupport.endpointBase.in("beauty-search" / "status").get
       .out(jsonBody[Json])
 }

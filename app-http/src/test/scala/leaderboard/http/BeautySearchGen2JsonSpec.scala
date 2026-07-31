@@ -80,7 +80,7 @@ final class BeautySearchGen2JsonSpec extends AnyWordSpec {
         case Right(value) => value
         case Left(error)  => fail(s"expected application result, got $error")
       }
-      val projected = BeautyQSearchResponseGen2Projector.project(orchestratorResult) match {
+      val projected = BeautyQSearchResponseGen2Projector.projectWithoutStatus(orchestratorResult) match {
         case Right(value) => value
         case Left(error)  => fail(s"expected projection, got $error")
       }
@@ -124,7 +124,7 @@ final class BeautySearchGen2JsonSpec extends AnyWordSpec {
         case Right(value) => value
         case Left(error)  => fail(s"expected application result, got $error")
       }
-      val projected = BeautyQSearchResponseGen2Projector.project(orchestratorResult) match {
+      val projected = BeautyQSearchResponseGen2Projector.projectWithoutStatus(orchestratorResult) match {
         case Right(value) => value
         case Left(error)  => fail(s"expected projection, got $error")
       }

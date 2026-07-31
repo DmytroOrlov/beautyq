@@ -5,18 +5,6 @@ import leaderboard.search.beautyq.gen2.wiring.BeautyQEmbeddingRequestError
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
 
-/** Synchronous Gen2 adapter for the embedding boundary. The app shell owns
-  * endpoint configuration; the Qdrant contract owns input/result binding.
-  *
-  * Every successful response must echo the requested model identity. The top-level
-  * `model` field is decoded, validated and compared to the input's model before
-  * any vector shape inspection. A missing, non-string, or mismatched model is a
-  * typed `InvalidResult(QdrantEmbeddingError.ModelMismatch)`; it never degrades
-  * as `Unavailable`/`Timeout`/`Transport` because the endpoint is reachable and
-  * the failure is a malformed/identity-mismatched response, not a connectivity
-  * problem. The exact `actual` model carries the requested identity with only
-  * the model name replaced by the returned string, so the algebra stays the
-  * single owner of the comparison value. */
 final class BeautyQGen2EmbeddingClient private (
   client: Gen2JsonHttpClient,
   endpointPath: String,
@@ -32,9 +20,10 @@ final class BeautyQGen2EmbeddingClient private (
       for {
         actualModel <- decodeModel(response.hcursor, input).left.map(toEmbeddingError)
         _ <- assertExpectedModel(input, actualModel)
-        data <- response.hcursor.downField("data").as[Vector[Json]].left.map(error => BeautyQEmbeddingRequestError.Transport(error.message))
-        first <- data.headOption.toRight(BeautyQEmbeddingRequestError.Transport("embedding response data is empty"))
-        values <- first.hcursor.downField("embedding").as[Vector[Double]].left.map(error => BeautyQEmbeddingRequestError.Transport(error.message))
+        dataCursor = response.hcursor.downField("data")
+        data <- dataCursor.as[Vector[Json]].left.map(_ => BeautyQEmbeddingRequestError.MalformedResponse("embedding response data is missing or not an array"))
+        first <- data.headOption.toRight(BeautyQEmbeddingRequestError.MalformedResponse("embedding response data is empty"))
+        values <- first.hcursor.downField("embedding").as[Vector[Double]].left.map(_ => BeautyQEmbeddingRequestError.MalformedResponse("embedding response vector is missing or not an array"))
         result <- QdrantEmbeddingResult.from(input, values).left.map(BeautyQEmbeddingRequestError.InvalidResult.apply)
       } yield result
     }

@@ -1,6 +1,45 @@
 package leaderboard.search.beautyq.gen2.wiring
 
-/** Serving mode codes: typed, not strings. */
+import leaderboard.search.beautyq.gen2.materialization.MaterializedBeautyQVariantDocuments
+import leaderboard.search.gen2.elasticsearch.lifecycle.LifecycleResolvedElasticsearchGeneration
+import leaderboard.search.gen2.qdrant.ActiveQdrantGeneration
+
+sealed trait SupplementStartupPolicy {
+  def stableCode: String
+}
+
+sealed trait AttemptSupplementStartup extends SupplementStartupPolicy
+
+object SupplementStartupPolicy {
+  case object Required extends AttemptSupplementStartup {
+    val stableCode: String = "required"
+  }
+  case object Preferred extends AttemptSupplementStartup {
+    val stableCode: String = "preferred"
+  }
+  case object Disabled extends SupplementStartupPolicy {
+    val stableCode: String = "disabled"
+  }
+
+  val Default: SupplementStartupPolicy = Required
+
+  val ordered: Vector[SupplementStartupPolicy] =
+    Vector(Required, Preferred, Disabled)
+
+  final class SupplementStartupPolicyError(message: String)
+    extends RuntimeException(message)
+
+  def fromStableCode(value: String): Either[SupplementStartupPolicyError, SupplementStartupPolicy] =
+    value.trim match {
+      case "" => Left(new SupplementStartupPolicyError("empty supplement startup policy code"))
+      case s if s != value => Left(new SupplementStartupPolicyError("whitespace in supplement startup policy code"))
+      case "required" => Right(Required)
+      case "preferred" => Right(Preferred)
+      case "disabled" => Right(Disabled)
+      case other => Left(new SupplementStartupPolicyError(s"unknown supplement startup policy code: $other"))
+    }
+}
+
 sealed trait BeautyQServingMode {
   def modeCode: String
 }
@@ -14,44 +53,93 @@ object BeautyQServingMode {
   }
 }
 
-/** Policy-owned readiness results. No public case-class constructor, no apply, no copy, no subclassing.
-  * supplementReady is derived from mode, not independently supplied. */
-object BeautyQSupplementReadinessPolicy {
+final class StartupServingStatus private[leaderboard] (
+  val policy: SupplementStartupPolicy,
+  val servingMode: BeautyQServingMode,
+  val condition: String,
+  val reason: Option[StartupServingStatus.Reason],
+  val restartRequired: Boolean,
+  val sourceContentFingerprint: String,
+  val projectedDocumentsFingerprint: String,
+  val elasticsearchReference: String,
+  val elasticsearchPhysicalTarget: String,
+  val qdrantGenerationId: Option[String],
+  val qdrantPhysicalCollection: Option[String],
+) {
+  def supplementReady: Boolean = servingMode == BeautyQServingMode.FullSearch
+}
 
-  sealed trait Result
+object StartupServingStatus {
 
-  final class NotServing private[BeautyQSupplementReadinessPolicy] (
-    val unavailableRequired: Vector[BeautyQSearchDependency],
-  ) extends Result
-  object NotServing {
-    def unapply(r: NotServing): Option[Vector[BeautyQSearchDependency]] =
-      Some(r.unavailableRequired)
-  }
+  final class Reason private[leaderboard] (
+    val code: String,
+    val message: String,
+    val detail: String,
+    private[wiring] val typedCause: Option[BeautyQSearchGenerationActivationError],
+  )
 
-  final class Serving private[BeautyQSupplementReadinessPolicy] (
-    val mode: BeautyQServingMode,
-  ) extends Result {
-    def supplementReady: Boolean = mode == BeautyQServingMode.FullSearch
-  }
-  object Serving {
-    def unapply(r: Serving): Option[BeautyQServingMode] =
-      Some(r.mode)
-  }
+  private[leaderboard] def healthy(
+    policy: SupplementStartupPolicy,
+    materialized: MaterializedBeautyQVariantDocuments,
+    elasticsearchGeneration: LifecycleResolvedElasticsearchGeneration,
+    qdrantGeneration: ActiveQdrantGeneration,
+  ): StartupServingStatus =
+    new StartupServingStatus(
+      policy = policy,
+      servingMode = BeautyQServingMode.FullSearch,
+      condition = "healthy",
+      reason = None,
+      restartRequired = false,
+      sourceContentFingerprint = materialized.sourceSnapshot.contentFingerprint.value,
+      projectedDocumentsFingerprint = materialized.projectedDocumentsFingerprint.value,
+      elasticsearchReference = elasticsearchGeneration.reference.value,
+      elasticsearchPhysicalTarget = elasticsearchGeneration.physicalTarget.value,
+      qdrantGenerationId = Some(qdrantGeneration.metadata.generationId),
+      qdrantPhysicalCollection = Some(qdrantGeneration.physicalCollection.value),
+    )
 
-  /** Evaluate readiness from one set of unavailable dependencies.
-    * Derives unavailableRequired once; nonEmpty is the hasRequired fact. */
-  def evaluate(
-    unavailable: Set[BeautyQSearchDependency],
-  ): Result = {
-    val unavailableRequired =
-      BeautyQSupplementPolicy.requiredDependencies.filter(unavailable.contains)
+  private[leaderboard] def degraded(
+    policy: SupplementStartupPolicy,
+    materialized: MaterializedBeautyQVariantDocuments,
+    elasticsearchGeneration: LifecycleResolvedElasticsearchGeneration,
+    code: String,
+    message: String,
+    detail: String,
+    typedCause: BeautyQSearchGenerationActivationError,
+  ): StartupServingStatus =
+    new StartupServingStatus(
+      policy = policy,
+      servingMode = BeautyQServingMode.BaselineOnly,
+      condition = "degraded",
+      reason = Some(new Reason(code, message, detail, Some(typedCause))),
+      restartRequired = true,
+      sourceContentFingerprint = materialized.sourceSnapshot.contentFingerprint.value,
+      projectedDocumentsFingerprint = materialized.projectedDocumentsFingerprint.value,
+      elasticsearchReference = elasticsearchGeneration.reference.value,
+      elasticsearchPhysicalTarget = elasticsearchGeneration.physicalTarget.value,
+      qdrantGenerationId = None,
+      qdrantPhysicalCollection = None,
+    )
 
-    if (unavailableRequired.nonEmpty) {
-      new NotServing(unavailableRequired)
-    } else if (unavailable.contains(BeautyQSupplementPolicy.supplementDependency)) {
-      new Serving(BeautyQServingMode.BaselineOnly)
-    } else {
-      new Serving(BeautyQServingMode.FullSearch)
-    }
-  }
+  private[leaderboard] def limited(
+    policy: SupplementStartupPolicy,
+    materialized: MaterializedBeautyQVariantDocuments,
+    elasticsearchGeneration: LifecycleResolvedElasticsearchGeneration,
+    code: String,
+    message: String,
+    detail: String,
+  ): StartupServingStatus =
+    new StartupServingStatus(
+      policy = policy,
+      servingMode = BeautyQServingMode.BaselineOnly,
+      condition = "limited",
+      reason = Some(new Reason(code, message, detail, None)),
+      restartRequired = true,
+      sourceContentFingerprint = materialized.sourceSnapshot.contentFingerprint.value,
+      projectedDocumentsFingerprint = materialized.projectedDocumentsFingerprint.value,
+      elasticsearchReference = elasticsearchGeneration.reference.value,
+      elasticsearchPhysicalTarget = elasticsearchGeneration.physicalTarget.value,
+      qdrantGenerationId = None,
+      qdrantPhysicalCollection = None,
+    )
 }
