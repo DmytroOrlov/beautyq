@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, Q2 next, O1 planned, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, Q2 active — measured evidence produced and correction gate red, O1 planned, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -362,7 +362,7 @@ The current visible 89 cases are regression cases, not a protected holdout.
 
 Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
-### Patch Q2 — measured BeautyQ Gen2 report and correction gate
+### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — CORRECTION REQUIRED**
 
 - execute the complete corpus through native Gen2 application/projector owners;
 - produce deterministic per-query reports for development/regression and aggregate/slice-only
@@ -380,6 +380,31 @@ Disabled is selected before provisioning and its retained managed graph does not
   and generate the first accepted manifest only after protected acceptance;
 - stop for a bounded corrective patch if hard/no-harm gates fail;
 - do not tune labels or thresholds to make existing output green.
+
+Implemented measurement evidence:
+
+- the canonical 89-case regression corpus executes through one native `BeautyQSearchApplication`
+  startup with `SupplementStartupPolicy.Required` and `ServingMode.FullSearch`;
+- one complete warmup pass and three complete measured passes run sequentially at concurrency one;
+- the generated detailed, measurement and correction-gate artifacts record corpus, snapshot,
+  generation, backend, embedding-model and environment identities;
+- application execution latency is reported separately from startup, materialization and projection;
+- measured rankings are deterministic, no request degraded, public identities remain unique, and the
+  baseline prefix, baseline-owned components and append budget remain preserved.
+
+The first real correction gate is intentionally red. Three canonical regression cases return a
+corpus-declared forbidden variant; across three measured passes this is nine forbidden-hit
+observations. The failing check is `no-forbidden-hits` (`observed=9`, `expected=0`). This is a bounded
+quality-correction input, not permission to weaken the judgments, gate, or evaluation mathematics.
+No protected holdout, relevance threshold or accepted baseline manifest exists yet.
+
+The current generated artifact paths are:
+
+- `target/search-gen2/beautyq-evaluation-detailed.json`;
+- `target/search-gen2/beautyq-evaluation-measurement.json`;
+- `target/search-gen2/beautyq-evaluation-correction-gate.json`.
+
+They are run evidence, not tracked executable policy.
 
 ### Patch O1 — remaining bounded operational hardening
 

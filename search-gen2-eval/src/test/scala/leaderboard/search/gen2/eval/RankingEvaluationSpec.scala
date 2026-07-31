@@ -4,6 +4,12 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.math.BigDecimal.RoundingMode
 
 final class RankingEvaluationSpec extends AnyWordSpec {
+  "RankingEvaluator metric schema" should {
+    "expose one stable version" in {
+      assert(RankingEvaluator.MetricSchemaVersion == "search-gen2-ranking-metrics-v1")
+    }
+  }
+
 
   private def resultId(raw: String): EvaluationResultId =
     EvaluationResultId.from(raw).getOrElse(fail(s"invalid result id: $raw"))

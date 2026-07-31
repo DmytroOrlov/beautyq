@@ -11,8 +11,9 @@ import izumi.logstage.distage.LogIO2Module
 import logstage.LogIO2
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
 import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
-import leaderboard.search.beautyq.gen2.eval.{BeautyQCutoverGate, BeautyQCutoverQueryFixture, BeautyQCutoverQueryObservation, BeautyQGen1SearchDeletionInventory, BeautyQNoHarmSupplementEvidence}
+import leaderboard.search.beautyq.gen2.eval.{BeautyQCutoverGate, BeautyQCutoverQueryFixture, BeautyQCutoverQueryObservation, BeautyQEvaluationEnvironment, BeautyQEvaluationExecutionError, BeautyQGen1SearchDeletionInventory, BeautyQMeasuredEvaluation, BeautyQNoHarmSupplementEvidence}
 import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshot, BeautyQSnapshotFingerprint, BeautyQVariantMaterializer, SnapshotLoadError}
+import leaderboard.seed.BeautyQSeedLoader
 import leaderboard.search.beautyq.gen2.wiring.*
 import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, SourceRevision, VersionedSnapshot}
@@ -99,6 +100,88 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
         }
       }
     }
+
+    "execute all 89 canonical regression cases through one Required startup and write measured correction evidence" in {
+      val embeddingConfig = LlamaCppEmbeddingClientConfig(
+        baseUrl = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081"),
+        endpointPath = "/v1/embeddings",
+      )
+      val embeddingEndpoint = URI.create(s"${embeddingConfig.baseUrl}${embeddingConfig.endpointPath}").toURL
+      if (!probeEmbeddingReachability(embeddingEndpoint)) {
+        cancel(
+          s"VERIFICATION BLOCKED: real BeautyQ Gen2 embedding endpoint is unreachable at $embeddingEndpoint; " +
+            s"cannot execute the 89-case Q2 evaluation."
+        )
+      }
+
+      val prepared = prepareCanonicalSeedEvaluation()
+      withManagedPorts { (elasticsearchPort, qdrantPort) =>
+        val esClient = buildEsClient(elasticsearchPort)
+        val qdrantHttp = buildQdrantHttp(qdrantPort)
+        val qdrantClient = QdrantGen2Client.fromTransport(qdrantHttp)
+        val embeddingClient = preflightEmbeddingClient(embeddingConfig) match {
+          case Right(value) => value
+          case Left(error)  => fail(s"real embedding preflight failed: $error")
+        }
+
+        try {
+          ensureIsolatedNamespace(esClient, qdrantClient, qdrantHttp)
+          val startup = buildStartupFromSnapshot(
+            elasticsearchPort,
+            qdrantClient,
+            embeddingClient,
+            prepared.versioned,
+          )
+          assert(startup.status.policy == SupplementStartupPolicy.Required)
+          assert(startup.status.servingMode == BeautyQServingMode.FullSearch)
+          assert(startup.status.supplementReady)
+          assert(!startup.status.restartRequired)
+
+          val elasticsearchVersion = decodeElasticsearchVersion(esClient.getJson("/") match {
+            case Right(value) => value
+            case Left(error)  => fail(s"failed to read Elasticsearch version: $error")
+          })
+          val qdrantVersion = decodeQdrantVersion(qdrantHttp.getJson("/") match {
+            case Right(value) => value
+            case Left(error)  => fail(s"failed to read Qdrant version: $error")
+          })
+          assert(qdrantVersion == "1.18.3")
+
+          val environment = BeautyQEvaluationEnvironment.fromSystem(
+            prepared.versioned.capturedAt,
+            prepared.versioned.sourceRevision.map(_.value).getOrElse(BeautyQSeedLoader.DefaultResourcePath),
+            elasticsearchVersion,
+            qdrantVersion,
+          ) match {
+            case Right(value) => value
+            case Left(error)  => fail(s"invalid Q2 evaluation environment: $error")
+          }
+          val measured = BeautyQMeasuredEvaluation.executeCanonical(
+            startup.application,
+            startup.status,
+            environment,
+          ) match {
+            case Right(value) => value
+            case Left(error)  => fail(renderEvaluationError(error))
+          }
+
+          writeArtifact("target/search-gen2/beautyq-evaluation-detailed.json", measured.detailedJson)
+          writeArtifact("target/search-gen2/beautyq-evaluation-measurement.json", measured.measurementJson)
+          writeArtifact("target/search-gen2/beautyq-evaluation-correction-gate.json", measured.correctionGate.toJson)
+
+          assert(measured.warmupExecutions == 89)
+          assert(measured.measuredExecutions == 267)
+          if (!measured.correctionGate.passed) {
+            val failed = measured.correctionGate.checks.filterNot(_.passed).map { check =>
+              s"${check.stableCode} observed=${check.observed} expected=${check.expected}"
+            }
+            fail(s"QUALITY_GATE_RED: ${failed.mkString("; ")}")
+          }
+        } finally {
+          cleanupExactResources(esClient, qdrantHttp, Vector(prepared.expectedElasticsearchTarget))
+        }
+      }
+    }
   }
 
   private def runCutover(
@@ -138,6 +221,21 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
     qdrantClient: QdrantGen2Client,
     embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
   ): BeautyQSearchGen2Startup = {
+    val versioned = VersionedSnapshot(
+      value = BeautyQElasticsearchTestFixtures.snapshot,
+      contentFingerprint = BeautyQSnapshotFingerprint.compute(BeautyQElasticsearchTestFixtures.snapshot),
+      sourceRevision = Some(SourceRevision("cutover-communication-spec")),
+      capturedAt = Instant.now(),
+    )
+    buildStartupFromSnapshot(elasticsearchPort, qdrantClient, embedding, versioned)
+  }
+
+  private def buildStartupFromSnapshot(
+    elasticsearchPort: ElasticsearchPortCfg,
+    qdrantClient: QdrantGen2Client,
+    embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
+    versioned: VersionedSnapshot[BeautyQSearchSnapshot],
+  ): BeautyQSearchGen2Startup = {
     val esClient = buildEsClient(elasticsearchPort)
     val batching = ElasticsearchBulkBatchingPolicy.create(100, 1024L * 1024L).getOrElse(fail("expected batching"))
     val elasticsearch = BeautyQElasticsearchBaselineService
@@ -147,12 +245,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
     val candidateService = BeautyQQdrantRuntime.candidateService(qdrantClient).getOrElse(fail("expected BeautyQ Qdrant candidate service"))
     val source = new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {
       def load: IO[SnapshotLoadError, VersionedSnapshot[BeautyQSearchSnapshot]] =
-        ZIO.succeed(VersionedSnapshot(
-          value = BeautyQElasticsearchTestFixtures.snapshot,
-          contentFingerprint = BeautyQSnapshotFingerprint.compute(BeautyQElasticsearchTestFixtures.snapshot),
-          sourceRevision = Some(SourceRevision("cutover-communication-spec")),
-          capturedAt = Instant.now(),
-        ))
+        ZIO.succeed(versioned)
     }
     val materializer = new BeautyQVariantMaterializer.FromSnapshotSource[IO](source)
     val bootstrap = BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, SupplementStartupPolicy.Required, qdrantLifecycle, embedding)
@@ -161,6 +254,84 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
       Runtime.default.unsafe.run(BeautyQSearchGen2Startup.acquire(bootstrap, candidateService, log)).getOrThrowFiberFailure()
     }
     acquired
+  }
+
+  private final case class PreparedCanonicalSeedEvaluation(
+    versioned: VersionedSnapshot[BeautyQSearchSnapshot],
+    expectedElasticsearchTarget: String,
+  )
+
+  private def prepareCanonicalSeedEvaluation(): PreparedCanonicalSeedEvaluation = {
+    val seed = new BeautyQSeedLoader.ResourceLoader().load() match {
+      case Right(value) => value
+      case Left(error)  => fail(s"failed to load canonical BeautyQ seed: ${error.message}")
+    }
+    val snapshot = BeautyQSearchSnapshot(
+      categories = seed.categories.toVector,
+      services = seed.services.toVector,
+      serviceVariantSchemas = seed.serviceVariantSchemas.toVector,
+      masters = seed.masters.toVector,
+      masterLocations = seed.masterLocations.toVector,
+      masterServiceOffers = seed.masterServiceOffers.toVector,
+      masterServiceOfferVariants = seed.masterServiceOfferVariants.toVector,
+    )
+    val versioned = VersionedSnapshot(
+      value = snapshot,
+      contentFingerprint = BeautyQSnapshotFingerprint.compute(snapshot),
+      sourceRevision = Some(SourceRevision(BeautyQSeedLoader.DefaultResourcePath)),
+      capturedAt = Instant.now(),
+    )
+    val source = new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {
+      def load: IO[SnapshotLoadError, VersionedSnapshot[BeautyQSearchSnapshot]] = ZIO.succeed(versioned)
+    }
+    val materialized = Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe.run(new BeautyQVariantMaterializer.FromSnapshotSource[IO](source).load).getOrThrowFiberFailure()
+    }
+    val generation = BeautyQElasticsearchGeneration.compile(materialized) match {
+      case Right(value) => value
+      case Left(error)  => fail(s"failed to compile canonical seed ES generation: $error")
+    }
+    val expectedTarget = ElasticsearchGenerationNaming
+      .physicalIndexName(BeautyQSearchGen2ResourceNames.ElasticsearchPhysicalIndexPrefix, generation.identity)
+      .map(_.value)
+      .getOrElse(fail("expected deterministic canonical seed ES target"))
+    PreparedCanonicalSeedEvaluation(versioned, expectedTarget)
+  }
+
+  private def decodeElasticsearchVersion(json: Json): String =
+    json.hcursor.downField("version").get[String]("number") match {
+      case Right(value) if value.nonEmpty => value
+      case Right(_) => fail("Elasticsearch version must be non-empty")
+      case Left(error) => fail(s"malformed Elasticsearch version response: ${error.message}")
+    }
+
+  private def decodeQdrantVersion(json: Json): String =
+    json.hcursor.get[String]("version") match {
+      case Right(value) if value.nonEmpty => value
+      case Right(_) => fail("Qdrant version must be non-empty")
+      case Left(error) => fail(s"malformed Qdrant version response: ${error.message}")
+    }
+
+  private def renderEvaluationError(error: BeautyQEvaluationExecutionError): String = error match {
+    case BeautyQEvaluationExecutionError.Application(caseId, query, pass, cause) =>
+      s"case=$caseId query=$query pass=$pass phase=application error=$cause"
+    case BeautyQEvaluationExecutionError.Projection(caseId, query, pass, cause) =>
+      s"case=$caseId query=$query pass=$pass phase=projection error=$cause"
+    case BeautyQEvaluationExecutionError.Evidence(caseId, query, pass, cause) =>
+      s"case=$caseId query=$query pass=$pass phase=no-harm-evidence error=$cause"
+    case BeautyQEvaluationExecutionError.Identity(caseId, query, pass, surface, value, message) =>
+      s"case=$caseId query=$query pass=$pass phase=identity surface=$surface value=$value error=$message"
+    case BeautyQEvaluationExecutionError.RankingInput(caseId, query, pass, surface, message) =>
+      s"case=$caseId query=$query pass=$pass phase=ranking-input surface=$surface error=$message"
+    case BeautyQEvaluationExecutionError.ReportInput(caseId, query, pass, message) =>
+      s"case=$caseId query=$query pass=$pass phase=report-input error=$message"
+    case BeautyQEvaluationExecutionError.Request(caseId, query, message) =>
+      s"case=$caseId query=$query phase=request error=$message"
+    case BeautyQEvaluationExecutionError.InvalidDuration(caseId, query, pass, nanos) =>
+      s"case=$caseId query=$query pass=$pass phase=timing error=negative-duration-$nanos"
+    case BeautyQEvaluationExecutionError.NonDeterministicObservation(caseId, query, component, expectedPass, actualPass, expected, actual) =>
+      s"case=$caseId query=$query phase=determinism component=$component expectedPass=$expectedPass actualPass=$actualPass expected=${expected.mkString(",")} actual=${actual.mkString(",")}"
+    case other => s"Q2 evaluation failed: $other"
   }
 
   private def preflightEmbeddingClient(

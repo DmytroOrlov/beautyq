@@ -2132,16 +2132,20 @@ communication verification.
 
 ## 15. Quality and evaluation
 
-Q1 evaluation kernel and canonical BeautyQ corpus are implemented.
+Q1 evaluation kernel and canonical BeautyQ corpus are implemented. Q2 now executes that corpus and
+produces measured evidence, but its first hard correction gate is red and Q2 is not accepted.
 
 `beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
 evidence, deterministic cutover report encoding, the completed Gen1 deletion inventory, a canonical
 89-case BeautyQ evaluation corpus, domain evaluation policy and adapters. All 89 migrated cases are
-visible regression/partial judgments; no protected holdout exists yet. No complete real-resource corpus
-report exists yet.
+visible regression/partial judgments; no protected holdout exists yet.
 
-The Distage communication owner executes those four probes through the native application and real
-Elasticsearch, Qdrant and embedding paths.
+The Distage communication owner retains the four-query readiness smoke and also executes all 89
+canonical cases through one Required/FullSearch native application and the real Elasticsearch, Qdrant
+and embedding paths. It performs one full warmup pass followed by three measured passes at concurrency
+one. Only `BeautyQSearchApplication.execute` is timed; startup, materialization and projection are
+excluded. Generated artifacts contain the deterministic detailed quality report, the measurement
+environment/latency report and the machine-readable correction-gate result.
 
 The domain-neutral `search-gen2-eval` project supplies stable evaluation identities, ranked metric
 mathematics (with declared-cutoff denominators), ordered scope/cutoff aggregation, comparison and
@@ -2149,8 +2153,13 @@ deterministic report/manifest codecs. Domain corpus schemas,
 request construction, labels, slices, thresholds, and gates remain in each domain's eval project.
 Serving modules continue to have no eval dependency.
 
-Q2 remains responsible for execution, protected cases, accepted manifest and measured report. The
-Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
+Q2 execution and measured reporting are implemented. The first real run preserves deterministic
+rankings, request readiness, public identity uniqueness, the Elasticsearch baseline prefix and owned
+components, and the append-only budget. Its `no-forbidden-hits` check is red: three canonical cases
+contain a returned forbidden variant, producing nine observations across the three measured passes.
+This requires a bounded relevance/search correction before Q2 acceptance; labels and gates are not
+changed in response to the output. Protected cases, domain thresholds and an accepted manifest remain
+unimplemented. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
 fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
 observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
 without per-case or result identities.

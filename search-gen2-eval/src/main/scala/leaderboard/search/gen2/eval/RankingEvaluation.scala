@@ -214,6 +214,8 @@ object RankingEvaluationResult {
 }
 
 object RankingEvaluator {
+  val MetricSchemaVersion: String = "search-gen2-ranking-metrics-v1"
+
   private val scale = 12
 
   private def normalize(value: BigDecimal): BigDecimal =
