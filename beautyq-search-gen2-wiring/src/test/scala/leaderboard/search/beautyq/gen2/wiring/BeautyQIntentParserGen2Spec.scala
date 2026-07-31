@@ -352,6 +352,121 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         case Left(errors) => fail(s"parse failed: ${errors.toVector}")
       }
     }
+
+    "map broad self-care query to r088 ServiceAny allowlist and r087 NearUser with geo signal" in {
+      BeautyQIntentParserGen2.parse(request(Some("хочу привести себя в порядок рядом"), Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4")))), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r088"), IntentRuleId("r087")))
+          intent.hardConstraints match {
+            case Vector(SourcedConstraint(PlannedConstraint.Terms(field, values), _)) =>
+              assert(field eq BeautyQSearchDeclarations.variants.Fields.serviceCode)
+              assert(values.map(field.codec.encodeCanonical) == Set("manicure", "lashes", "brows", "facial"))
+            case other => fail(s"expected one ServiceAny constraint, got $other")
+          }
+          intent.softSignals match {
+            case Vector(_: PlannedSignal.GeoProximitySignal[?]) => ()
+            case other => fail(s"expected one NearUser signal, got $other")
+          }
+          assert(intent.residualText.isEmpty)
+          assert(intent.canonicalSemanticLabels.map(_.stableKey) == Vector("service-any:manicure,lashes,brows,facial", "location:near-user"))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "map broad self-care query without location to r088 ServiceAny allowlist, no geo signal" in {
+      BeautyQIntentParserGen2.parse(request(Some("хочу привести себя в порядок")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r088")))
+          intent.hardConstraints match {
+            case Vector(SourcedConstraint(PlannedConstraint.Terms(field, values), _)) =>
+              assert(field eq BeautyQSearchDeclarations.variants.Fields.serviceCode)
+              assert(values.map(field.codec.encodeCanonical) == Set("manicure", "lashes", "brows", "facial"))
+            case other => fail(s"expected one ServiceAny constraint, got $other")
+          }
+          assert(intent.softSignals.isEmpty)
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "map Russian BB Glow paraphrase to r062 with exact three hard constraints and no PMU" in {
+      BeautyQIntentParserGen2.parse(request(Some("хочу чтобы тон лица выглядел ровнее без ежедневного макияжа")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r062")))
+          assert(intent.residualText.isEmpty)
+          intent.hardConstraints match {
+            case Vector(
+                  SourcedConstraint(PlannedConstraint.Terms(serviceField, serviceValues), _),
+                  SourcedConstraint(PlannedConstraint.Terms(treatmentField, treatmentValues), _),
+                  SourcedConstraint(PlannedConstraint.Terms(areaField, areaValues), _),
+                ) =>
+              assert(serviceField eq BeautyQSearchDeclarations.variants.Fields.serviceCode)
+              assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("facial"))
+              assert(treatmentField eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("facial_treatment_type"))
+              assert(treatmentValues == Set("bb_glow"))
+              assert(areaField eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("body_area"))
+              assert(areaValues == Set("face"))
+            case other => fail(s"expected the exact BB Glow constraints, got $other")
+          }
+          assert(!intent.hardConstraints.exists(_.constraint match {
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("pmu_area"))
+            case _ => false
+          }))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "map Russian powder-brow paraphrase to r058, longer phrase defeats generic r007" in {
+      BeautyQIntentParserGen2.parse(request(Some("брови с мягким пудровым эффектом надолго")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r058")))
+          assert(intent.residualText.isEmpty)
+          intent.hardConstraints match {
+            case Vector(
+                  SourcedConstraint(PlannedConstraint.Terms(serviceField, serviceValues), _),
+                  SourcedConstraint(PlannedConstraint.Terms(areaField, areaValues), _),
+                ) =>
+              assert(serviceField eq BeautyQSearchDeclarations.variants.Fields.serviceCode)
+              assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("pmu"))
+              assert(areaField eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("pmu_area"))
+              assert(areaValues == Set("brows"))
+            case other => fail(s"expected the exact powder-brow constraints, got $other")
+          }
+          assert(!intent.hardConstraints.exists(_.constraint match {
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("brow_service_type"))
+            case _ => false
+          }))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "keep plain брови mapping to r007/service brows" in {
+      BeautyQIntentParserGen2.parse(request(Some("брови")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r007")))
+          assert(intent.hardConstraints.exists(_.constraint match {
+            case PlannedConstraint.Terms(field, values) => (field eq BeautyQSearchDeclarations.variants.Fields.serviceCode) && values.map(field.codec.encodeCanonical) == Set("brows")
+            case _ => false
+          }))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "keep plain bb glow mapping to r062" in {
+      BeautyQIntentParserGen2.parse(request(Some("bb glow")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r062")))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "keep plain powder brows mapping to r058" in {
+      BeautyQIntentParserGen2.parse(request(Some("powder brows")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r058")))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
   }
 
   // Independent evidence, not derived from BeautyIntentTrace or any other production traversal helper:

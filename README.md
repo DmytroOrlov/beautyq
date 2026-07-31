@@ -11,15 +11,16 @@ Start here:
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide domain/search ownership principles
 * [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical domain authoring, lifecycle composition, proof selection, and focused validation
 * [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, verification ownership, and delivery closure
-* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0/O1 foundations, active Q2 measured correction evidence, and eval-first second-domain work
+* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0/O1 foundations, the active Q2 correction and its measured evidence, and eval-first second-domain work
 * [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — Required/Preferred/Disabled launcher modes, operator status, response warnings, restart-only recovery, and partial-activation procedures
 * [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
 
 BeautyQ Search Gen2 is the complete native serving architecture. Its declaration, baseline/supplement,
-lifecycle-authorization, and route ownership are frozen. Q1 and O0 are complete; Q2 now produces a
-real 89-case measured report and has exposed a red forbidden-hit correction gate. That bounded quality
-correction, protected acceptance evidence and the planned operational work remain unfinished.
+lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete; the approved Q2
+visible-regression intent correction is implemented and proved through the complete managed 89-case
+hard/no-harm run. Protected acceptance and the first accepted manifest remain pending; D1 requires
+second-domain product input.
 
 The route/Qdrant sections below are current operational truth.
 

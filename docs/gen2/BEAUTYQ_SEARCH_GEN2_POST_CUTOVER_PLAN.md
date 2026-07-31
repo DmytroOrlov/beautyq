@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — score evidence requires an explicit quality-policy decision, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; protected acceptance and first accepted manifest pending, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -362,7 +362,7 @@ The current visible 89 cases are regression cases, not a protected holdout.
 
 Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
-### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — CORRECTION REQUIRED**
+### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — VISIBLE REGRESSION CORRECTION PROVED; PROTECTED ACCEPTANCE PENDING**
 
 - execute the complete corpus through native Gen2 application/projector owners;
 - produce deterministic per-query reports for development/regression and aggregate/slice-only
@@ -392,11 +392,17 @@ Implemented measurement evidence:
 - measured rankings are deterministic, no request degraded, public identities remain unique, and the
   baseline prefix, baseline-owned components and append budget remain preserved.
 
-The first real correction gate is intentionally red. Three canonical regression cases return a
-corpus-declared forbidden variant; across three measured passes this is nine forbidden-hit
-observations. The failing check is `no-forbidden-hits` (`observed=9`, `expected=0`). This is a bounded
-quality-correction input, not permission to weaken the judgments, gate, or evaluation mathematics.
-No protected holdout, relevance threshold or accepted baseline manifest exists yet.
+The first real correction gate was red: three canonical regression cases returned a corpus-declared
+forbidden variant; across three measured passes this was nine forbidden-hit observations. The approved
+bounded correction is declared in the single BeautyQ vocabulary: the Russian powder-brow paraphrase
+extends r058, the Russian BB Glow paraphrase extends r062, and r088 owns the broad self-care ServiceAny
+allowlist `manicure, lashes, brows, facial` while r087 continues to own NearUser. No corpus label,
+denylist, result-ID special case, threshold or generic backend policy changed.
+
+The complete managed 89-case rerun proved the correction: one warmup pass, three measured passes /
+267 measured executions, zero forbidden hits, all hard/no-harm checks passed. The correction gate is
+green, the quality threshold is `not_required`, and no score threshold was added. Protected
+holdout is not configured and the accepted baseline is not generated.
 
 The current generated artifact paths are:
 
@@ -425,10 +431,13 @@ The cleanup procedure is owned by the canonical
 [`BEAUTYQ_SEARCH_GEN2_OPERATIONS.md`](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) runbook. It is a fenced,
 two-observation dry-run protocol; no automatic GC or unpersisted creation-time assumption exists.
 
-The latest measured supplement score ranges overlap: forbidden `[0.5150608, 0.5442586]`, non-forbidden
-`[0.44745553, 0.7772049]`. Therefore a single global Qdrant threshold is not an honest correction and
-was not added. Q2 remains active until product/search policy selects a bounded retrieval or eligibility
-correction and the complete 89-case run proves the hard/no-harm gate again.
+The original measured supplement score ranges overlapped: maximum forbidden `0.54429233`, minimum
+non-forbidden `0.44723216`. Therefore a single global Qdrant threshold was not an honest correction
+and was not added. The intent-policy correction (r058/r062 paraphrase extensions, r088 ServiceAny)
+repaired the three regression cases without a threshold. The complete 89-case managed rerun now
+passes: zero forbidden hits, all hard/no-harm checks green. Q2 visible-regression correction is
+proved; Q2 as a whole remains open only for product-supplied protected-holdout cases, approved
+protected thresholds and generation of the first accepted manifest.
 
 ### Patch D1 — eval-first second-domain vertical
 

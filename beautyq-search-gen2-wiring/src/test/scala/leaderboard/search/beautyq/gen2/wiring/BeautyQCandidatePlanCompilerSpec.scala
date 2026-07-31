@@ -21,6 +21,7 @@ final class BeautyQCandidatePlanCompilerSpec extends AnyWordSpec {
 
   private val vocabulary = BeautyQIntentVocabulary.value
   private val page = PageRequest(None, PageSize.from(20).getOrElse(fail("expected a valid PageSize")))
+  private val Fields = BeautyQSearchDeclarations.variants.Fields
 
   private def rawRequest(
     query: Option[String] = None,
@@ -156,6 +157,67 @@ final class BeautyQCandidatePlanCompilerSpec extends AnyWordSpec {
           rawRequest(sort = Vector(BeautySortInput(PublicSortName("price"), SortDirection.Asc))),
         )
       assert(fixtures.map(request => BeautyQCandidatePlanCompiler.compile(compiled(request))).forall(_.isRight))
+    }
+
+    "carry compiled hard constraints unchanged for the broad self-care correction query" in {
+      val request = rawRequest(query = Some("хочу привести себя в порядок"))
+      val fixture = compiled(request)
+      compileOrFail(fixture).decision match {
+        case CandidatePlanDecision.Eligible(plan) =>
+          assert(plan.hardConstraints == fixture.plan.hardConstraints)
+          plan.hardConstraints match {
+            case Vector(PlannedConstraint.Terms(field, values)) =>
+              assert(field eq Fields.serviceCode)
+              assert(values.map(field.codec.encodeCanonical) == Set("manicure", "lashes", "brows", "facial"))
+            case other => fail(s"expected the exact broad self-care constraint, got $other")
+          }
+        case other => fail(s"expected Eligible, got $other")
+      }
+    }
+
+    "carry compiled hard constraints unchanged for the BB Glow paraphrase query" in {
+      val request = rawRequest(query = Some("хочу чтобы тон лица выглядел ровнее без ежедневного макияжа"))
+      val fixture = compiled(request)
+      compileOrFail(fixture).decision match {
+        case CandidatePlanDecision.Eligible(plan) =>
+          assert(plan.hardConstraints == fixture.plan.hardConstraints)
+          plan.hardConstraints match {
+            case Vector(
+                  PlannedConstraint.Terms(serviceField, serviceValues),
+                  PlannedConstraint.Terms(treatmentField, treatmentValues),
+                  PlannedConstraint.Terms(areaField, areaValues),
+                ) =>
+              assert(serviceField eq Fields.serviceCode)
+              assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("facial"))
+              assert(treatmentField eq Fields.enumAttributesByCode("facial_treatment_type"))
+              assert(treatmentValues == Set("bb_glow"))
+              assert(areaField eq Fields.enumAttributesByCode("body_area"))
+              assert(areaValues == Set("face"))
+            case other => fail(s"expected the exact BB Glow constraints, got $other")
+          }
+        case other => fail(s"expected Eligible, got $other")
+      }
+    }
+
+    "carry compiled hard constraints unchanged for the powder-brow paraphrase query" in {
+      val request = rawRequest(query = Some("брови с мягким пудровым эффектом надолго"))
+      val fixture = compiled(request)
+      compileOrFail(fixture).decision match {
+        case CandidatePlanDecision.Eligible(plan) =>
+          assert(plan.hardConstraints == fixture.plan.hardConstraints)
+          plan.hardConstraints match {
+            case Vector(
+                  PlannedConstraint.Terms(serviceField, serviceValues),
+                  PlannedConstraint.Terms(areaField, areaValues),
+                ) =>
+              assert(serviceField eq Fields.serviceCode)
+              assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("pmu"))
+              assert(areaField eq Fields.enumAttributesByCode("pmu_area"))
+              assert(areaValues == Set("brows"))
+            case other => fail(s"expected the exact powder-brow constraints, got $other")
+          }
+        case other => fail(s"expected Eligible, got $other")
+      }
     }
   }
 }

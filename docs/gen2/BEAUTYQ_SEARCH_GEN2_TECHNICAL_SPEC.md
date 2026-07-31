@@ -2137,8 +2137,10 @@ communication verification.
 
 ## 15. Quality and evaluation
 
-Q1 evaluation kernel and canonical BeautyQ corpus are implemented. Q2 now executes that corpus and
-produces measured evidence, but its first hard correction gate is red and Q2 is not accepted.
+Q1 evaluation kernel and canonical BeautyQ corpus are implemented. Q2 executes that corpus and
+produces measured evidence; the approved visible-regression intent correction is implemented and passed
+the complete managed 89-case hard/no-harm run. Protected acceptance and accepted-manifest generation
+remain open.
 
 `beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
 evidence, deterministic cutover report encoding, the completed Gen1 deletion inventory, a canonical
@@ -2160,13 +2162,17 @@ deterministic report/manifest codecs. Domain corpus schemas,
 request construction, labels, slices, thresholds, and gates remain in each domain's eval project.
 Serving modules continue to have no eval dependency.
 
-Q2 execution and measured reporting are implemented. The first real run preserves deterministic
+Q2 execution and measured reporting are implemented. The first real run preserved deterministic
 rankings, request readiness, public identity uniqueness, the Elasticsearch baseline prefix and owned
-components, and the append-only budget. Its `no-forbidden-hits` check is red: three canonical cases
-contain a returned forbidden variant, producing nine observations across the three measured passes.
-This requires a bounded relevance/search correction before Q2 acceptance; labels and gates are not
-changed in response to the output. Protected cases, domain thresholds and an accepted manifest remain
-unimplemented. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
+components, and the append-only budget. Its `no-forbidden-hits` check was red: three canonical cases
+contained a returned forbidden variant, producing nine observations across the three measured passes.
+The approved correction is owned solely by the BeautyQ vocabulary: r058 and r062 gain the measured
+Russian paraphrases, and r088 declares the broad self-care ServiceAny allowlist; r087 remains the
+NearUser overlay. Typed hard constraints continue unchanged through the Elasticsearch baseline and
+Qdrant candidate plans, and hydration remains a second hard-constraint check. No result filtering,
+threshold, corpus-label change, materialized-shape change or lifecycle redesign is used. The complete
+managed 89-case rerun passed: zero forbidden hits, all hard/no-harm checks green, no threshold
+required. Protected cases, domain thresholds and an accepted manifest remain unimplemented. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
 fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
 observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
 without per-case or result identities.
@@ -2174,12 +2180,12 @@ Full reports remain generated artifacts.
 
 The score-separation artifact records every visible returned identity with its query, projector-owned
 origin, score, corpus judgment, supplement status, degradation reason, baseline identities and appended
-identities. Protected cases, when configured, contribute only redacted aggregate ranges. The first score analysis found
-forbidden supplement scores in `[0.5150608, 0.5442586]` and non-forbidden supplement scores in
-`[0.44745553, 0.7772049]`. These latest-run ranges overlap, so no single Qdrant score threshold can remove every
-observed forbidden append without also removing observed non-forbidden appends. No threshold has been
-introduced: Q2 remains blocked on an explicit quality-policy/retrieval decision rather than silently
-turning measured evidence into business policy.
+identities. Protected cases, when configured, contribute only redacted aggregate ranges. The first score
+analysis found maximum forbidden supplement score `0.54429233` and minimum non-forbidden supplement score
+`0.44723216`. These ranges overlapped, so no single Qdrant score threshold could remove every
+observed forbidden append without also removing observed non-forbidden appends. The intent-policy
+correction repaired the three regression cases without a threshold; the managed rerun recorded zero
+observed forbidden supplements.
 
 The public HTTP boundary enforces the BeautyQ-owned request budget before backend execution through the
 executable [`BeautyQSearchRequestBudget`](../../beautyq-search-gen2-contract/src/main/scala/leaderboard/search/beautyq/gen2/contract/BeautyQSearchRequestBudget.scala)

@@ -252,11 +252,11 @@ object BeautyQIntentVocabulary {
     rule("r055", "губы", "губ", "lips")(enumAttr("pmu_area", "lips"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
     rule("r056", "eyeliner")(enumAttr("pmu_area", "eyeliner"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
     rule("r057", "correction", "коррекция")(bool("with_correction", true))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
-    rule("r058", "powder brows")(service("pmu"), enumAttr("pmu_area", "brows")),
+    rule("r058", "powder brows", "брови с мягким пудровым эффектом надолго")(service("pmu"), enumAttr("pmu_area", "brows")),
     rule("r059", "brows")(enumAttr("pmu_area", "brows"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
     rule("r060", "aquafacial")(service("facial"), enumAttr("facial_treatment_type", "aquafacial"), enumAttr("body_area", "face")),
     rule("r061", "microneedling")(service("facial"), enumAttr("facial_treatment_type", "microneedling"), enumAttr("body_area", "face")),
-    rule("r062", "bb glow")(service("facial"), enumAttr("facial_treatment_type", "bb_glow"), enumAttr("body_area", "face")),
+    rule("r062", "bb glow", "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа")(service("facial"), enumAttr("facial_treatment_type", "bb_glow"), enumAttr("body_area", "face")),
     rule("r063", "чистка лица")(service("facial"), enumAttr("facial_treatment_type", "cleansing"), enumAttr("body_area", "face")),
     rule("r064", "классический уход лицо")(service("facial"), enumAttr("facial_treatment_type", "classic"), enumAttr("body_area", "face")),
     rule("r065", "увлажнение лица")(service("facial"), enumAttr("facial_treatment_type", "hydration"), enumAttr("body_area", "face_neck_decollete")),
@@ -285,6 +285,20 @@ object BeautyQIntentVocabulary {
     // hard alias such as "дешевый маникюр рядом", while its explicit hair-removal exclusion preserves
     // the inherited r076 noise exception for hair-removal queries.
     rule("r087", "рядом", "near me", "nearby")()(using mode = IntentRuleMode.SemanticOverlay, semantic = Vector(BeautyIntentAction.NearUser), excludes = Vector(service("hair_removal"))),
+    rule(
+      "r088",
+      "хочу привести себя в порядок",
+      "привести себя в порядок",
+    )(
+      BeautyIntentAction.ServiceAny(
+        Vector(
+          codeService("manicure").code,
+          codeService("lashes").code,
+          codeService("brows").code,
+          codeService("facial").code,
+        )
+      )
+    ),
   )
 
   val validation: Either[NonEmptyErrors[BeautyIntentVocabularyError], BeautyQIntentVocabulary] = validate(sourceRules)

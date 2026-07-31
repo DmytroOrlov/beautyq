@@ -508,5 +508,33 @@ final class BeautyQSearchPlanCompilationTraceSpec extends AnyWordSpec {
             |plan.group[1] group id=service-intent-carousel key=serviceId:ServiceId size=10 representative=fields[serviceId:ServiceId, serviceName:string, categoryId:CategoryId, categoryName:string] metrics=[best-score(best-score)] order=[metric(best-score Desc), matching-document-count(Desc), key(Asc)] precision=RequireExact""".stripMargin
       )
     }
+
+    "trace the broad self-care correction through r088 and its exact candidate allowlist" in {
+      val trace = traceOf(rawRequest(query = Some("хочу привести себя в порядок")))
+      assert(trace.contains("intent.matched-rules=[r088]"))
+      assert(trace.contains("intent.hard[0] provenance=ParsedHard constraint.terms field=serviceCode:ServiceCode values=[brows, facial, lashes, manicure]"))
+      assert(trace.contains("intent.labels=[service-any:manicure,lashes,brows,facial:manicure, lashes, brows, facial]"))
+      assert(trace.contains("matched-rules=[r088]"))
+      assert(!trace.contains("pmu_area"))
+      assert(!trace.contains("r087"))
+    }
+
+    "trace the BB Glow paraphrase through r062 and all three declared constraints" in {
+      val trace = traceOf(rawRequest(query = Some("хочу чтобы тон лица выглядел ровнее без ежедневного макияжа")))
+      assert(trace.contains("intent.matched-rules=[r062]"))
+      assert(trace.contains("field=serviceCode:ServiceCode values=[facial]"))
+      assert(trace.contains("field=enumAttributes.facial_treatment_type:string values=[bb_glow]"))
+      assert(trace.contains("field=enumAttributes.body_area:string values=[face]"))
+      assert(!trace.contains("pmu_area"))
+    }
+
+    "trace the powder-brow paraphrase through r058 rather than generic r007" in {
+      val trace = traceOf(rawRequest(query = Some("брови с мягким пудровым эффектом надолго")))
+      assert(trace.contains("intent.matched-rules=[r058]"))
+      assert(trace.contains("field=serviceCode:ServiceCode values=[pmu]"))
+      assert(trace.contains("field=enumAttributes.pmu_area:string values=[brows]"))
+      assert(!trace.contains("matched-rules=[r007]"))
+      assert(!trace.contains("brow_service_type"))
+    }
   }
 }
