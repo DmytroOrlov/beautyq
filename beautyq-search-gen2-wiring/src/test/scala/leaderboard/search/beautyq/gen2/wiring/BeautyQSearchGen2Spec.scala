@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.gen2.wiring
 
-import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy, BeautySearchRequestGen2}
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy, BeautyQSearchRequestBudget, BeautySearchRequestGen2}
 import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshotSource, BeautyQSnapshotCanonicalRows, BeautyQVariantMaterializer, BeautyQVariantProjectionGen2}
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -15,6 +15,10 @@ final class BeautyQSearchGen2Spec extends AnyWordSpec {
   "BeautyQSearchGen2.input" should {
     "expose request as direct reference to BeautySearchRequestGen2" in {
       assert(BeautyQSearchGen2.input.request eq BeautySearchRequestGen2)
+    }
+
+    "expose the request budget as a direct reference to its business owner" in {
+      assert(BeautyQSearchGen2.input.budget eq BeautyQSearchRequestBudget)
     }
 
     "expose intentParser as direct reference to BeautyQIntentParserGen2" in {

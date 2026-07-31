@@ -11,7 +11,7 @@ Start here:
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide domain/search ownership principles
 * [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical domain authoring, lifecycle composition, proof selection, and focused validation
 * [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, verification ownership, and delivery closure
-* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0 foundations, active Q2 measured correction evidence, planned O1 hardening, and eval-first second-domain work
+* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0/O1 foundations, active Q2 measured correction evidence, and eval-first second-domain work
 * [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — Required/Preferred/Disabled launcher modes, operator status, response warnings, restart-only recovery, and partial-activation procedures
 * [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
@@ -43,11 +43,9 @@ BeautyQ seed is loaded into SQL/Postgres, the Elasticsearch baseline index is bu
 supplement collection/vectors are indexed. Repeated starts skip the ES/Qdrant rebuild when the local
 bootstrap fingerprint still matches the seed/search/vector/embedding inputs and the prepared resources
 are present and compatible; changed inputs, a missing ES index, a missing Qdrant collection, or an
-incompatible Qdrant vector spec forces rebuild or fails fast before bind. The current source has no
-operator-owned supplement-startup mode and may automatically publish typed `baseline_only` readiness for
-transport/unavailability; the approved post-cutover correction makes full supplement readiness
-required by default and permits baseline-only startup only through explicit `preferred` or `disabled`
-configuration. Operators
+incompatible Qdrant vector spec forces rebuild or fails fast before bind. Full supplement readiness is
+required by default; baseline-only startup is available only through explicit `preferred` degradation
+or the `disabled` operator kill switch. Operators
 never create or index the Qdrant collection by hand — startup does it automatically. The launcher HTTP
 server binds to source-confirmed port `8080`.
 
@@ -63,12 +61,9 @@ The local embedding endpoint is configured at `llama-cpp-embedding` in
 `M18_QDRANT_EMBEDDING_ENDPOINT`). The managed launcher reads that value through Distage config, and
 the Scala constructors do not carry runtime endpoint defaults. The managed bootstrap exercises the
 embedding endpoint before full-search readiness. Malformed output, model mismatch, an empty embedding,
-or the wrong vector dimension (expected `1024`) is a hard failure. Current transport/unavailability
-handling may automatically publish typed `baseline_only`; it is not a hidden Gen1 fallback. The approved
-post-cutover contract will fail startup by default, allow this mode only through explicit
-`preferred` degradation or an intentional `disabled` kill switch, expose startup state through an
-operator status/log and safe response warnings, keep request-time supplement failures separate, and
-require restart before returning to full search. The disabled branch will not construct, probe or
+or the wrong vector dimension (expected `1024`) is a hard failure. Preferred-mode transport/unavailability
+publishes typed `baseline_only` with an operator warning; it is not a hidden Gen1 fallback. Required
+mode fails startup, and disabled mode does not construct, probe or
 activate Qdrant/embedding resources; it still requires the complete Elasticsearch baseline.
 
 Gen2 append probe:

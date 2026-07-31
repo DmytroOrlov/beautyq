@@ -40,6 +40,39 @@ final class QdrantGenerationLifecycleSpec extends AnyWordSpec {
         case other => fail(s"expected typed incompatibility, got $other")
       }
     }
+
+    "validate sequential-only work policy and upsert deterministic bounded batches" in {
+      assert(QdrantGenerationWorkPolicy.create(16, 64, 1).isRight)
+      assert(QdrantGenerationWorkPolicy.create(0, 64, 1) == Left(QdrantGenerationWorkPolicy.Error.NonPositiveEmbeddingBatchSize(0)))
+      assert(QdrantGenerationWorkPolicy.create(16, 0, 1) == Left(QdrantGenerationWorkPolicy.Error.NonPositiveUpsertBatchSize(0)))
+      assert(QdrantGenerationWorkPolicy.create(16, 64, 2) == Left(QdrantGenerationWorkPolicy.Error.UnsupportedParallelism(2)))
+
+      val generation = compiledGeneration
+      val alias = QdrantResourceName.from("neutral_alias").getOrElse(fail("expected alias"))
+      val config = QdrantGenerationLifecycleConfig.create(alias, "neutral_alias_").getOrElse(fail("expected config"))
+      val policy = QdrantGenerationWorkPolicy.create(16, 1, 1).getOrElse(fail("expected policy"))
+      val client = new BatchValidatingClient(generation, alias.value, generation.physicalCollectionName)
+      assert(new QdrantGenerationLifecycle(client, config, policy).activate(generation).isRight)
+    }
+
+    "preserve the exact failed upsert batch and point range" in {
+      val generation = compiledGeneration
+      val alias = QdrantResourceName.from("neutral_alias").getOrElse(fail("expected alias"))
+      val config = QdrantGenerationLifecycleConfig.create(alias, "neutral_alias_").getOrElse(fail("expected config"))
+      val policy = QdrantGenerationWorkPolicy.create(16, 1, 1).getOrElse(fail("expected policy"))
+      val failedPoint = generation.points.lift(1).getOrElse(fail("expected a second point"))
+      val client = new FailingBatchClient(generation, alias.value, generation.physicalCollectionName, QdrantPointId.json(failedPoint.id))
+      new QdrantGenerationLifecycle(client, config, policy).activate(generation) match {
+        case Left(QdrantGenerationLifecycleError.UpsertBatchFailed(1, 1, 1, QdrantGenerationLifecycleError.Transport("upsert-points[1]", _))) => ()
+        case other => fail(s"expected exact second-batch failure, got $other")
+      }
+      val retry = new BatchValidatingClient(generation, alias.value, generation.physicalCollectionName)
+      val active = new QdrantGenerationLifecycle(retry, config, policy).activate(generation) match {
+        case Right(value) => value
+        case Left(error) => fail(s"expected idempotent retry of the deterministic generation, got $error")
+      }
+      assert(active.physicalCollection.value == generation.physicalCollectionName)
+    }
   }
 
   private def compiledGeneration: QdrantCompiledGeneration = {
@@ -51,7 +84,10 @@ final class QdrantGenerationLifecycleSpec extends AnyWordSpec {
   private def details(generation: QdrantCompiledGeneration, pointsCount: Int, wrongVector: Boolean): Json = {
     val vectors = generation.collectionJson.hcursor.downField("vectors").focus.getOrElse(Json.obj())
     val metadata = generation.collectionJson.hcursor.downField("metadata").focus.getOrElse(Json.obj())
-    val firstPoint = generation.points.headOption.getOrElse(fail("expected at least one point"))
+    val firstPoint = generation.points match {
+      case value +: _ => value
+      case _ => fail("expected at least one point")
+    }
     val actualVectors = if (wrongVector) Json.obj(firstPoint.vectorName.value -> Json.obj("size" -> Json.fromInt(999), "distance" -> Json.fromString("Dot"))) else vectors
     val payload = Json.obj(QdrantCollectionWire.expectedPayloadSchema(generation.payloadIndexRequests).toVector.map { case (field, schema) => field -> Json.obj("data_type" -> Json.fromString(schema)) }*)
     Json.obj(
@@ -110,9 +146,34 @@ final class QdrantGenerationLifecycleSpec extends AnyWordSpec {
     }
   }
 
-  private final class ExistingClient(generation: QdrantCompiledGeneration, alias: String, target: String, wrongVector: Boolean = false) extends BaseClient {
+  private class ExistingClient(generation: QdrantCompiledGeneration, alias: String, target: String, wrongVector: Boolean = false) extends BaseClient {
     def getCollection(collection: QdrantResourceName): Either[Gen2HttpTransportError, Json] = Right(details(generation, generation.metadata.pointCount, wrongVector))
     def listAliases(): Either[Gen2HttpTransportError, Json] = Right(Json.obj("status" -> Json.fromString("ok"), "result" -> Json.obj("aliases" -> Json.arr(Json.obj("alias_name" -> Json.fromString(alias), "collection_name" -> Json.fromString(target))))))
     override def updateAliases(body: Json): Either[Gen2HttpTransportError, Json] = Left(Gen2HttpTransportError.RequestFailed("POST", "/collections/aliases", "alias mutation must not be called"))
+  }
+
+  private final class BatchValidatingClient(generation: QdrantCompiledGeneration, alias: String, target: String)
+    extends ExistingClient(generation, alias, target) {
+    override def upsertPoints(collection: QdrantResourceName, body: Json): Either[Gen2HttpTransportError, Json] = {
+      body.hcursor.downField("points").as[Vector[Json]] match {
+        case Right(Vector(_)) => super.upsertPoints(collection, body)
+        case other => fail(s"expected one exact point per batch, got $other")
+      }
+    }
+  }
+
+  private final class FailingBatchClient(
+    generation: QdrantCompiledGeneration,
+    alias: String,
+    target: String,
+    failedPointId: Json,
+  ) extends ExistingClient(generation, alias, target) {
+    override def upsertPoints(collection: QdrantResourceName, body: Json): Either[Gen2HttpTransportError, Json] =
+      body.hcursor.downField("points").as[Vector[Json]] match {
+        case Right(Vector(point)) if point.hcursor.downField("id").focus.contains(failedPointId) =>
+          Left(Gen2HttpTransportError.RequestFailed("PUT", s"/collections/${collection.value}/points", "scripted batch failure"))
+        case Right(Vector(_)) => super.upsertPoints(collection, body)
+        case other => fail(s"expected one exact point per batch, got $other")
+      }
   }
 }

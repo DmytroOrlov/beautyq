@@ -3,6 +3,54 @@ package leaderboard.search.beautyq.gen2.eval
 import io.circe.Json
 import leaderboard.search.beautyq.gen2.wiring.{BeautyQServingMode, SupplementStartupPolicy}
 
+final class BeautyQSupplementScoreSeparation private[eval] (
+  val forbiddenCount: Int,
+  val nonForbiddenCount: Int,
+  val minimumForbidden: Option[BigDecimal],
+  val maximumForbidden: Option[BigDecimal],
+  val minimumNonForbidden: Option[BigDecimal],
+  val maximumNonForbidden: Option[BigDecimal],
+  val candidateThreshold: Option[BigDecimal],
+) {
+  def strictlySeparable: Boolean = candidateThreshold.nonEmpty
+
+  def toJson: Json = Json.obj(
+    "forbiddenCount" -> Json.fromInt(forbiddenCount),
+    "nonForbiddenCount" -> Json.fromInt(nonForbiddenCount),
+    "minimumForbidden" -> minimumForbidden.fold(Json.Null)(Json.fromBigDecimal),
+    "maximumForbidden" -> maximumForbidden.fold(Json.Null)(Json.fromBigDecimal),
+    "minimumNonForbidden" -> minimumNonForbidden.fold(Json.Null)(Json.fromBigDecimal),
+    "maximumNonForbidden" -> maximumNonForbidden.fold(Json.Null)(Json.fromBigDecimal),
+    "strictlySeparable" -> Json.fromBoolean(strictlySeparable),
+    "candidateThreshold" -> candidateThreshold.fold(Json.Null)(Json.fromBigDecimal),
+  )
+}
+object BeautyQSupplementScoreSeparation {
+  private val NonForbiddenJudgments = Set("acceptable", "neutral", "unjudged")
+
+  private[eval] def from(values: Vector[BeautyQSupplementScoreObservation]): BeautyQSupplementScoreSeparation = {
+    val supplement = values.filter(_.origin == "qdrant_supplement")
+    val forbidden = supplement.filter(_.judgment == "forbidden").map(_.score)
+    val nonForbidden = supplement.filter(value => NonForbiddenJudgments.contains(value.judgment)).map(_.score)
+    val maximumForbidden = forbidden.maxOption
+    val minimumNonForbidden = nonForbidden.minOption
+    val threshold = for {
+      maximum <- maximumForbidden
+      minimum <- minimumNonForbidden
+      if maximum < minimum
+    } yield (maximum + minimum) / BigDecimal(2)
+    new BeautyQSupplementScoreSeparation(
+      forbidden.size,
+      nonForbidden.size,
+      forbidden.minOption,
+      maximumForbidden,
+      minimumNonForbidden,
+      nonForbidden.maxOption,
+      threshold,
+    )
+  }
+}
+
 final class BeautyQEvaluationCorrectionCheck private[BeautyQEvaluationCorrectionCheck] (
   val stableCode: String,
   val passed: Boolean,
@@ -30,6 +78,7 @@ final class BeautyQEvaluationCorrectionGateResult private[BeautyQEvaluationCorre
   val baselinePrefixViolationCount: Int,
   val baselineOwnedComponentViolationCount: Int,
   val appendBudgetViolationCount: Int,
+  val supplementScoreSeparation: BeautyQSupplementScoreSeparation,
 ) {
   def passed: Boolean = checks.forall(_.passed)
 
@@ -53,7 +102,12 @@ final class BeautyQEvaluationCorrectionGateResult private[BeautyQEvaluationCorre
       "baselineOwnedComponentViolationCount" -> Json.fromInt(baselineOwnedComponentViolationCount),
       "appendBudgetViolationCount" -> Json.fromInt(appendBudgetViolationCount),
     ),
-    "qualityThresholdStatus" -> Json.fromString("not_configured"),
+    "qualityThresholdStatus" -> Json.fromString(
+      if (supplementScoreSeparation.forbiddenCount == 0) "not_required"
+      else if (supplementScoreSeparation.strictlySeparable) "candidate_available"
+      else "explicit_policy_decision_required"
+    ),
+    "supplementScoreSeparation" -> supplementScoreSeparation.toJson,
     "protectedHoldoutStatus" -> Json.fromString("not_configured"),
     "acceptedBaselineStatus" -> Json.fromString("not_generated"),
   )
@@ -70,6 +124,7 @@ object BeautyQEvaluationCorrectionGateResult {
     baselinePrefixViolationCount: Int,
     baselineOwnedComponentViolationCount: Int,
     appendBudgetViolationCount: Int,
+    supplementScoreSeparation: BeautyQSupplementScoreSeparation,
   ): BeautyQEvaluationCorrectionGateResult =
     new BeautyQEvaluationCorrectionGateResult(
       checks,
@@ -82,6 +137,7 @@ object BeautyQEvaluationCorrectionGateResult {
       baselinePrefixViolationCount,
       baselineOwnedComponentViolationCount,
       appendBudgetViolationCount,
+      supplementScoreSeparation,
     )
 }
 
@@ -103,6 +159,7 @@ object BeautyQEvaluationCorrectionGate {
     val prefixViolations = measuredFlat.count(value => !value.baselinePrefixPreserved)
     val ownedViolations = measuredFlat.count(value => !value.baselineOwnedComponentsPreserved)
     val budgetViolations = measuredFlat.count(value => !value.appendBudgetPreserved)
+    val scoreSeparation = BeautyQSupplementScoreSeparation.from(measuredFlat.flatMap(_.scoreObservations))
     val requiredFullSearch =
       policy == SupplementStartupPolicy.Required && servingMode == BeautyQServingMode.FullSearch
 
@@ -132,6 +189,7 @@ object BeautyQEvaluationCorrectionGate {
       prefixViolations,
       ownedViolations,
       budgetViolations,
+      scoreSeparation,
     )
   }
 }

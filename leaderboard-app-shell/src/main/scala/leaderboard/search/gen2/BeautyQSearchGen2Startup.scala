@@ -12,6 +12,7 @@ final class BeautyQSearchGen2Startup private (
   val application: BeautyQSearchApplication,
   val runtime: BeautyQSearchGen2Runtime,
   val activation: BeautyQSearchGenerationApplication.Activation,
+  val evidence: BeautyQSearchStartupEvidence,
   val status: StartupServingStatus,
 )
 
@@ -27,27 +28,29 @@ object BeautyQSearchGen2Startup {
     log: LogIO2[IO],
   ): IO[BeautyQSearchGen2BootstrapError, BeautyQSearchGen2Startup] =
     bootstrap.activate
-      .flatMap { activation =>
+      .flatMap { bootstrapResult =>
+        val activation = bootstrapResult.activation
+        val evidence = bootstrapResult.evidence
         val policy = bootstrap.supplementStartupPolicy
         val startupResult: Either[BeautyQSearchGen2BootstrapError, (BeautyQSearchGen2Startup, IO[Nothing, Unit])] = policy match {
           case Required =>
             activation.qdrantFailure match {
               case Some(error) => Left(BeautyQSearchGen2BootstrapError.Activation(error))
-              case None => Right(buildHealthyStartup(bootstrap, qdrantCandidateService, activation, log))
+              case None => Right(buildHealthyStartup(bootstrap, qdrantCandidateService, activation, evidence, log))
             }
           case Preferred =>
             activation.qdrantFailure match {
               case Some(error) =>
                 BeautyQSupplementPolicy.classifyStartupActivationError(error) match {
                   case deg: BeautyQSupplementPolicy.StartupDegradable =>
-                    Right(buildDegradedStartup(bootstrap, activation, deg, log))
+                    Right(buildDegradedStartup(bootstrap, activation, evidence, deg, log))
                   case _: BeautyQSupplementPolicy.StartupHard =>
                     Left(BeautyQSearchGen2BootstrapError.Activation(error))
                 }
-              case None => Right(buildHealthyStartup(bootstrap, qdrantCandidateService, activation, log))
+              case None => Right(buildHealthyStartup(bootstrap, qdrantCandidateService, activation, evidence, log))
             }
           case Disabled =>
-            Right(buildLimitedStartup(bootstrap, activation, log))
+            Right(buildLimitedStartup(bootstrap, activation, evidence, log))
         }
         startupResult match {
           case Left(error) => ZIO.fail(error)
@@ -60,6 +63,7 @@ object BeautyQSearchGen2Startup {
     bootstrap: BeautyQSearchGen2Bootstrap,
     qdrantCandidateService: QdrantCandidateService,
     activation: BeautyQSearchGenerationApplication.Activation,
+    evidence: BeautyQSearchStartupEvidence,
     log: LogIO2[IO],
   ): (BeautyQSearchGen2Startup, IO[Nothing, Unit]) = {
     val qdrantGen = activation.qdrantGeneration.getOrElse(throw new IllegalStateException("healthy activation must have Qdrant generation"))
@@ -69,13 +73,17 @@ object BeautyQSearchGen2Startup {
       activation.elasticsearchGeneration,
       qdrantGen,
     )
-    val startup = constructStartup(bootstrap, qdrantCandidateService, activation, status)
+    val startup = constructStartup(bootstrap, qdrantCandidateService, activation, evidence, status)
     val startupPolicy = status.policy.stableCode
     val servingMode = status.servingMode.modeCode
     val condition = status.condition
     val restartRequired = status.restartRequired
+    val materializationDurationNanos = evidence.materializationDurationNanos
+    val activationDurationNanos = evidence.activationDurationNanos
+    val snapshotCapturedAt = evidence.snapshotCapturedAt
+    val activatedAt = evidence.activatedAt
     val logEffect = log.info(
-      s"beauty_search_startup_serving event=beauty_search_startup_serving startupPolicy=$startupPolicy servingMode=$servingMode condition=$condition reasonCode=none restartRequired=$restartRequired"
+      s"beauty_search_startup_serving event=beauty_search_startup_serving startupPolicy=$startupPolicy servingMode=$servingMode condition=$condition reasonCode=none restartRequired=$restartRequired snapshotCapturedAt=$snapshotCapturedAt activatedAt=$activatedAt materializationDurationNanos=$materializationDurationNanos activationDurationNanos=$activationDurationNanos"
     )
     (startup, logEffect)
   }
@@ -83,6 +91,7 @@ object BeautyQSearchGen2Startup {
   private def buildDegradedStartup(
     bootstrap: BeautyQSearchGen2Bootstrap,
     activation: BeautyQSearchGenerationApplication.Activation,
+    evidence: BeautyQSearchStartupEvidence,
     disposition: BeautyQSupplementPolicy.StartupDegradable,
     log: LogIO2[IO],
   ): (BeautyQSearchGen2Startup, IO[Nothing, Unit]) = {
@@ -95,14 +104,16 @@ object BeautyQSearchGen2Startup {
       sanitizedDetail(disposition.cause),
       disposition.cause,
     )
-    val startup = constructBaselineStartup(bootstrap, activation, status)
+    val startup = constructBaselineStartup(bootstrap, activation, evidence, status)
     val startupPolicy = status.policy.stableCode
     val servingMode = status.servingMode.modeCode
     val condition = status.condition
     val reasonCode = status.reason.map(_.code).getOrElse("none")
     val restartRequired = status.restartRequired
+    val materializationDurationNanos = evidence.materializationDurationNanos
+    val activationDurationNanos = evidence.activationDurationNanos
     val logEffect = log.warn(
-      s"beauty_search_startup_serving event=beauty_search_startup_serving startupPolicy=$startupPolicy servingMode=$servingMode condition=$condition reasonCode=$reasonCode restartRequired=$restartRequired"
+      s"beauty_search_startup_serving event=beauty_search_startup_serving startupPolicy=$startupPolicy servingMode=$servingMode condition=$condition reasonCode=$reasonCode restartRequired=$restartRequired snapshotCapturedAt=${evidence.snapshotCapturedAt} activatedAt=${evidence.activatedAt} materializationDurationNanos=$materializationDurationNanos activationDurationNanos=$activationDurationNanos"
     )
     (startup, logEffect)
   }
@@ -110,6 +121,7 @@ object BeautyQSearchGen2Startup {
   private def buildLimitedStartup(
     bootstrap: BeautyQSearchGen2Bootstrap,
     activation: BeautyQSearchGenerationApplication.Activation,
+    evidence: BeautyQSearchStartupEvidence,
     log: LogIO2[IO],
   ): (BeautyQSearchGen2Startup, IO[Nothing, Unit]) = {
     val status = StartupServingStatus.limited(
@@ -120,14 +132,16 @@ object BeautyQSearchGen2Startup {
       "Qdrant supplement was disabled by operator policy; the complete Elasticsearch baseline was returned; restart is required",
       "supplement disabled by operator startup policy",
     )
-    val startup = constructBaselineStartup(bootstrap, activation, status)
+    val startup = constructBaselineStartup(bootstrap, activation, evidence, status)
     val startupPolicy = status.policy.stableCode
     val servingMode = status.servingMode.modeCode
     val condition = status.condition
     val reasonCode = status.reason.map(_.code).getOrElse("none")
     val restartRequired = status.restartRequired
+    val materializationDurationNanos = evidence.materializationDurationNanos
+    val activationDurationNanos = evidence.activationDurationNanos
     val logEffect = log.warn(
-      s"beauty_search_startup_serving event=beauty_search_startup_serving startupPolicy=$startupPolicy servingMode=$servingMode condition=$condition reasonCode=$reasonCode restartRequired=$restartRequired"
+      s"beauty_search_startup_serving event=beauty_search_startup_serving startupPolicy=$startupPolicy servingMode=$servingMode condition=$condition reasonCode=$reasonCode restartRequired=$restartRequired snapshotCapturedAt=${evidence.snapshotCapturedAt} activatedAt=${evidence.activatedAt} materializationDurationNanos=$materializationDurationNanos activationDurationNanos=$activationDurationNanos"
     )
     (startup, logEffect)
   }
@@ -136,6 +150,7 @@ object BeautyQSearchGen2Startup {
     bootstrap: BeautyQSearchGen2Bootstrap,
     qdrantCandidateService: QdrantCandidateService,
     activation: BeautyQSearchGenerationApplication.Activation,
+    evidence: BeautyQSearchStartupEvidence,
     status: StartupServingStatus,
   ): BeautyQSearchGen2Startup = {
     val application = BeautyQSearchApplication.make(
@@ -144,21 +159,22 @@ object BeautyQSearchGen2Startup {
       bootstrap.embeddingPort.getOrElse(throw new IllegalStateException("embedding port must be present for full search startup")),
       qdrantCandidateService,
     )
-    val runtime = BeautyQSearchGen2Runtime.make(application, status)
-    new BeautyQSearchGen2Startup(bootstrap, application, runtime, activation, status)
+    val runtime = BeautyQSearchGen2Runtime.make(application, status, Some(evidence))
+    new BeautyQSearchGen2Startup(bootstrap, application, runtime, activation, evidence, status)
   }
 
   private def constructBaselineStartup(
     bootstrap: BeautyQSearchGen2Bootstrap,
     activation: BeautyQSearchGenerationApplication.Activation,
+    evidence: BeautyQSearchStartupEvidence,
     status: StartupServingStatus,
   ): BeautyQSearchGen2Startup = {
     val application = BeautyQSearchApplication.makeBaselineOnly(
       activation.materialized,
       bootstrap.elasticsearchService,
     )
-    val runtime = BeautyQSearchGen2Runtime.make(application, status)
-    new BeautyQSearchGen2Startup(bootstrap, application, runtime, activation, status)
+    val runtime = BeautyQSearchGen2Runtime.make(application, status, Some(evidence))
+    new BeautyQSearchGen2Startup(bootstrap, application, runtime, activation, evidence, status)
   }
 
   private def sanitizedDetail(error: BeautyQSearchGenerationActivationError): String = error match {
@@ -166,6 +182,8 @@ object BeautyQSearchGen2Startup {
       s"Qdrant lifecycle error: ${qdrantError.getClass.getSimpleName}"
     case BeautyQSearchGenerationActivationError.Embedding(embeddingError) =>
       s"Embedding error: ${embeddingError.getClass.getSimpleName}"
+    case BeautyQSearchGenerationActivationError.EmbeddingBatch(batchIndex, pointIndex, _, embeddingError) =>
+      s"Embedding error: ${embeddingError.getClass.getSimpleName} at batch=$batchIndex point=$pointIndex"
     case other =>
       s"Activation error: ${other.getClass.getSimpleName}"
   }
@@ -194,8 +212,13 @@ object BeautyQSearchGen2Startup {
     log: LogIO2[IO],
   ): IO[BeautyQSearchGen2BootstrapError, BeautyQSearchGen2Startup] =
     bootstrap.activate
-      .flatMap { activation =>
-        val (startup, logEffect) = buildLimitedStartup(bootstrap, activation, log)
+      .flatMap { bootstrapResult =>
+        val (startup, logEffect) = buildLimitedStartup(
+          bootstrap,
+          bootstrapResult.activation,
+          bootstrapResult.evidence,
+          log,
+        )
         logEffect.as(startup)
       }
 

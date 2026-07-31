@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, Q2 next, O1 planned, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — explicit quality-policy decision required, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -58,11 +58,21 @@ Returns HTTP 200 whenever a startup object exists.
   "servingMode": "full_search|baseline_only",
   "restartRequired": false,
   "reason": null,
+  "observedAt": "...",
   "snapshot": {
+    "capturedAt": "...",
+    "sourceRevision": "...",
     "sourceContentFingerprint": "...",
-    "projectedDocumentsFingerprint": "..."
+    "projectedDocumentsFingerprint": "...",
+    "ageSeconds": 0
+  },
+  "startupDurations": {
+    "materializationNanos": 0,
+    "activationNanos": 0
   },
   "activeGenerations": {
+    "activatedAt": "...",
+    "ageSeconds": 0,
     "elasticsearch": {
       "reference": "...",
       "physicalTarget": "..."
@@ -132,9 +142,40 @@ curl -sS 'http://<application>/beauty-search/status'
 - No mode promotes without restart.
 - No retry, polling, background recovery, automatic promotion, rollback, or cross-backend transaction exists.
 
-## Qdrant cleanup (future)
+## Qdrant cleanup (operator-owned)
 
-Automatic GC requires a fence/lease or equivalent coordination proof. Exact operator-owned cleanup remains the initial policy.
+Automatic GC is not implemented. Exact cleanup is allowed only during a quiescent maintenance
+window with every Search Gen2 activation process stopped or an equivalent administrative fence held
+for the complete inventory/review/deletion interval:
+
+1. Stop every activation-capable Search Gen2 process or establish the administrative activation fence.
+2. Read and record the exact current active Qdrant alias target.
+3. List physical collections for inventory only; never treat the listing as deletion authority.
+4. Ignore every collection outside the exact configured Gen2 physical prefix.
+5. Read each exact candidate's persisted collection metadata.
+6. Decode that metadata through the existing Search Gen2 Qdrant generation-metadata codec.
+7. Recompute the generation identity and deterministic physical collection name.
+8. Reject missing, malformed, unsupported, or mismatched metadata.
+9. Exclude the collection targeted by the current active alias.
+10. Exclude every collection still building or otherwise in progress, including one whose exact
+    point-count or lifecycle evidence is incomplete.
+11. Record the complete exact candidate inventory at T0 and delete nothing.
+12. Wait at least 24 hours while the activation fence remains enforceable.
+13. Repeat the complete active-alias, metadata, identity, name, and lifecycle-status dry run at T1.
+14. Select a candidate only when its exact generation identity and physical name are byte-for-byte
+    the same at T0 and T1. The 24 hours is the interval between complete observations; no collection
+    creation timestamp is assumed or invented.
+15. Reread the current active alias immediately before each deletion and abort if it changed,
+    disappeared, or became ambiguous.
+16. Delete only the individually approved exact physical collection name.
+17. Never use prefix deletion, wildcard deletion, `_all`, or inferred ownership.
+18. Verify the current active alias and perform an active Search Gen2 query after deletion; record
+    successful absence, typed failure, or retry state.
+19. Release the administrative fence or restart the stopped serving processes before resuming traffic.
+
+Database changes become visible after the coordinated restart; this is restart-only freshness, not
+CDC lag. A failed or changed identity remains for a later fenced retry, and no online automatic
+cleaner is permitted.
 
 ## Not implemented
 

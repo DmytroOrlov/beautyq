@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, Q2 active — measured evidence produced and correction gate red, O1 planned, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — score evidence requires an explicit quality-policy decision, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -402,11 +402,14 @@ The current generated artifact paths are:
 
 - `target/search-gen2/beautyq-evaluation-detailed.json`;
 - `target/search-gen2/beautyq-evaluation-measurement.json`;
+- `target/search-gen2/beautyq-evaluation-score-separation.json`;
 - `target/search-gen2/beautyq-evaluation-correction-gate.json`.
 
 They are run evidence, not tracked executable policy.
 
 ### Patch O1 — remaining bounded operational hardening
+
+Status: **completed**.
 
 - add BeautyQ request-budget values and enforce each at its existing HTTP/input/plan boundary;
 - batch Qdrant embedding/upsert with bounded in-flight work, deterministic order, exact-count
@@ -417,6 +420,15 @@ They are run evidence, not tracked executable policy.
 - document dry-run-first exact-metadata Qdrant cleanup inside a quiescent, activation-fenced
   maintenance window and the restart-only refresh/runbook;
 - prove changed snapshot plus restart activates both backend generations.
+
+The cleanup procedure is owned by the canonical
+[`BEAUTYQ_SEARCH_GEN2_OPERATIONS.md`](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) runbook. It is a fenced,
+two-observation dry-run protocol; no automatic GC or unpersisted creation-time assumption exists.
+
+The latest measured supplement score ranges overlap: forbidden `[0.5150608, 0.5442586]`, non-forbidden
+`[0.44745553, 0.7772049]`. Therefore a single global Qdrant threshold is not an honest correction and
+was not added. Q2 remains active until product/search policy selects a bounded retrieval or eligibility
+correction and the complete 89-case run proves the hard/no-harm gate again.
 
 ### Patch D1 — eval-first second-domain vertical
 

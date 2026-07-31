@@ -162,6 +162,8 @@ object BeautyQSupplementPolicy {
         classifyStartupQdrantError(qdrantError, error)
       case BeautyQSearchGenerationActivationError.Embedding(embeddingError) =>
         classifyStartupEmbeddingError(embeddingError, error)
+      case BeautyQSearchGenerationActivationError.EmbeddingBatch(_, _, _, embeddingError) =>
+        classifyStartupEmbeddingError(embeddingError, error)
       case BeautyQSearchGenerationActivationError.Compile(_) =>
         StartupHard(error)
     }
@@ -200,6 +202,8 @@ object BeautyQSupplementPolicy {
         StartupHard(outerError)
       case QdrantGenerationLifecycleError.PointCountMismatch(_, _) =>
         StartupHard(outerError)
+      case QdrantGenerationLifecycleError.UpsertBatchFailed(_, _, _, cause) =>
+        classifyStartupQdrantError(cause, outerError)
       case QdrantGenerationLifecycleError.Transport(_, transportError) =>
         classifyStartupQdrantTransportError(transportError, outerError)
     }

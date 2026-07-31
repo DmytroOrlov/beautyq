@@ -657,6 +657,13 @@ Its first vertical slice is:
 -> first deterministic report
 ```
 
+Operationally, declare request budgets at the domain HTTP/input boundary, keep generation work
+bounded and ordered, and record startup snapshot/generation evidence before serving. Use the canonical
+BeautyQ operations runbook's fenced two-observation cleanup procedure as the safety shape; do not invent
+automatic retention or a single score threshold from an unseparated sample. A measured gate that is red
+must fail the communication proof and produce its artifacts before requesting a product/search-policy
+decision.
+
 After that, each declaration, intent, filter, ranking, backend or supplement slice expands and reruns
 the same domain-owned evaluation. Keep a development set for policy work, a protected holdout excluded
 from ordinary policy tuning and changed only through explicit label review, and a permanent regression

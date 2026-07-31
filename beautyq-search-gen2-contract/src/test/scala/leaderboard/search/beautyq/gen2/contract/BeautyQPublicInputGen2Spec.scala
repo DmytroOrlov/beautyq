@@ -75,6 +75,42 @@ final class BeautyQPublicInputGen2Spec extends AnyWordSpec {
         case Left(errors) => fail(s"valid request rejected: ${errors.toVector}")
       }
     }
+
+    "reject every request-budget dimension through the BeautyQ-owned policy" in {
+      val oversizedPage = PageRequest(None, PageSize.from(BeautyQSearchRequestBudget.MaxPageSize + 1).getOrElse(fail("expected positive page size")))
+      val filter = PublicFilterInput(PublicFieldName("service"), PublicOperator.Equal, PublicFilterValue.Scalar("manicure"), None)
+      val sort = BeautySortInput(PublicSortName("relevance"), SortDirection.Desc)
+      val request = BeautySearchRequestGen2(
+        query = Some("x" * (BeautyQSearchRequestBudget.MaxQueryCodePoints + 1)),
+        filters = Vector.fill(BeautyQSearchRequestBudget.MaxFilters + 1)(filter),
+        requestedFacets = Vector.fill(BeautyQSearchRequestBudget.MaxRequestedFacets + 1)(FacetId("service")),
+        sort = Vector.fill(BeautyQSearchRequestBudget.MaxSorts + 1)(sort),
+        page = oversizedPage,
+        userLocation = None,
+      )
+      BeautySearchRequestGen2.validate(request) match {
+        case Left(errors) =>
+          assert(errors.toVector.contains(BeautySearchRequestError.QueryTooLong(BeautyQSearchRequestBudget.MaxQueryCodePoints, BeautyQSearchRequestBudget.MaxQueryCodePoints + 1)))
+          assert(errors.toVector.contains(BeautySearchRequestError.TooManyFilters(BeautyQSearchRequestBudget.MaxFilters, BeautyQSearchRequestBudget.MaxFilters + 1)))
+          assert(errors.toVector.contains(BeautySearchRequestError.TooManyRequestedFacets(BeautyQSearchRequestBudget.MaxRequestedFacets, BeautyQSearchRequestBudget.MaxRequestedFacets + 1)))
+          assert(errors.toVector.contains(BeautySearchRequestError.TooManySorts(BeautyQSearchRequestBudget.MaxSorts, BeautyQSearchRequestBudget.MaxSorts + 1)))
+          assert(errors.toVector.contains(BeautySearchRequestError.PageSizeTooLarge(BeautyQSearchRequestBudget.MaxPageSize, BeautyQSearchRequestBudget.MaxPageSize + 1)))
+        case Right(value) => fail(s"expected request budget rejection, got $value")
+      }
+    }
+
+    "count query Unicode code points rather than UTF-16 code units" in {
+      val emoji = "\uD83D\uDE00"
+      val request = BeautySearchRequestGen2(
+        Some(emoji * BeautyQSearchRequestBudget.MaxQueryCodePoints),
+        Vector.empty,
+        Vector.empty,
+        Vector.empty,
+        page,
+        None,
+      )
+      assert(BeautySearchRequestGen2.validate(request).isRight)
+    }
   }
 
   "BeautyQIntentVocabulary" should {

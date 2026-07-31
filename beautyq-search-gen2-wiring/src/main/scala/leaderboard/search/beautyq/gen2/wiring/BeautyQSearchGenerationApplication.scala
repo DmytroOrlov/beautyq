@@ -11,6 +11,12 @@ object BeautyQSearchGenerationActivationError {
   final case class Elasticsearch(error: BeautyQElasticsearchBaselineServiceError) extends BeautyQSearchGenerationActivationError
   final case class Qdrant(error: QdrantGenerationLifecycleError) extends BeautyQSearchGenerationActivationError
   final case class Embedding(error: BeautyQEmbeddingRequestError) extends BeautyQSearchGenerationActivationError
+  final case class EmbeddingBatch(
+    batchIndex: Int,
+    pointIndex: Int,
+    subject: String,
+    error: BeautyQEmbeddingRequestError,
+  ) extends BeautyQSearchGenerationActivationError
   final case class Compile(error: QdrantGenerationCompileError) extends BeautyQSearchGenerationActivationError
 }
 
@@ -27,11 +33,12 @@ object BeautyQSearchGenerationApplication {
     elasticsearch: BeautyQElasticsearchBaselineService,
     qdrant: QdrantGenerationLifecycle,
     embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
+    workPolicy: QdrantGenerationWorkPolicy = QdrantGenerationWorkPolicy.Default,
   ): Either[BeautyQSearchGenerationActivationError, Activation] =
     for {
       esGeneration <- BeautyQElasticsearchGeneration.compile(materialized)
         .left.map(BeautyQSearchGenerationActivationError.ElasticsearchCompile.apply)
-      qdrantPrepared <- prepareQdrant(materialized, embedding)
+      qdrantPrepared <- prepareQdrant(materialized, embedding, workPolicy)
       esActive <- elasticsearch.activate(esGeneration)
         .left.map(BeautyQSearchGenerationActivationError.Elasticsearch.apply)
       qdrantOutcome <- activatePreparedQdrant(qdrantPrepared, qdrant)
@@ -61,11 +68,12 @@ object BeautyQSearchGenerationApplication {
   private def prepareQdrant(
     materialized: MaterializedBeautyQVariantDocuments,
     embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
-  ): Either[BeautyQSearchGenerationActivationError, Either[BeautyQEmbeddingRequestError, QdrantCompiledGeneration]] =
+    workPolicy: QdrantGenerationWorkPolicy,
+  ): Either[BeautyQSearchGenerationActivationError, Either[BeautyQSearchGenerationActivationError, QdrantCompiledGeneration]] =
     for {
       prepared <- QdrantGenerationCompiler.prepare(BeautyQQdrantPolicy.policy, materialized)
         .left.map(BeautyQSearchGenerationActivationError.Compile.apply)
-      embedded = collectEmbeddings(prepared.points, embedding)
+      embedded = collectEmbeddings(prepared.points, embedding, workPolicy)
       outcome <- embedded match {
         case Left(error) => Left(error)
         case Right(Left(error)) => Right(Left(error))
@@ -79,31 +87,47 @@ object BeautyQSearchGenerationApplication {
     } yield outcome
 
   private def activatePreparedQdrant(
-    prepared: Either[BeautyQEmbeddingRequestError, QdrantCompiledGeneration],
+    prepared: Either[BeautyQSearchGenerationActivationError, QdrantCompiledGeneration],
     lifecycle: QdrantGenerationLifecycle,
   ): Either[BeautyQSearchGenerationActivationError, (Option[ActiveQdrantGeneration], Option[BeautyQSearchGenerationActivationError])] =
     prepared match {
-      case Left(error) => Right((None, Some(BeautyQSearchGenerationActivationError.Embedding(error))))
+      case Left(error) => Right((None, Some(error)))
       case Right(compiled) =>
         lifecycle.activate(compiled) match {
           case Right(value) => Right((Some(value), None))
-          case Left(error: QdrantGenerationLifecycleError.Transport) => Right((None, Some(BeautyQSearchGenerationActivationError.Qdrant(error))))
+          case Left(error) if isTransportFailure(error) => Right((None, Some(BeautyQSearchGenerationActivationError.Qdrant(error))))
           case Left(error) => Left(BeautyQSearchGenerationActivationError.Qdrant(error))
         }
     }
 
+  private def isTransportFailure(error: QdrantGenerationLifecycleError): Boolean = error match {
+    case _: QdrantGenerationLifecycleError.Transport => true
+    case QdrantGenerationLifecycleError.UpsertBatchFailed(_, _, _, cause) => isTransportFailure(cause)
+    case _ => false
+  }
+
   private def collectEmbeddings(
     points: Vector[QdrantPreparedPoint],
     embedding: QdrantQueryEmbeddingPort[BeautyQEmbeddingRequestError],
-  ): Either[BeautyQSearchGenerationActivationError, Either[BeautyQEmbeddingRequestError, Vector[QdrantEmbeddingResult]]] =
-    points.foldLeft[Either[BeautyQSearchGenerationActivationError, Either[BeautyQEmbeddingRequestError, Vector[QdrantEmbeddingResult]]]](Right(Right(Vector.empty[QdrantEmbeddingResult]))) {
-      case (Right(Left(error)), _) => Right(Left[BeautyQEmbeddingRequestError, Vector[QdrantEmbeddingResult]](error))
-      case (Left(error), _) => Left(error)
-      case (Right(Right(values)), point) =>
-        embedding.embed(point.embeddingInput) match {
-          case Right(value) => Right(Right(values :+ value))
-          case Left(error: BeautyQEmbeddingRequestError.InvalidResult) => Left(BeautyQSearchGenerationActivationError.Embedding(error))
-          case Left(error) => Right(Left[BeautyQEmbeddingRequestError, Vector[QdrantEmbeddingResult]](error))
-        }
-    }
+    workPolicy: QdrantGenerationWorkPolicy,
+  ): Either[BeautyQSearchGenerationActivationError, Either[BeautyQSearchGenerationActivationError, Vector[QdrantEmbeddingResult]]] =
+    points.grouped(workPolicy.embeddingBatchSize).toVector.zipWithIndex
+      .foldLeft[Either[BeautyQSearchGenerationActivationError, Either[BeautyQSearchGenerationActivationError, Vector[QdrantEmbeddingResult]]]](Right(Right(Vector.empty))) {
+        case (Right(Left(error)), _) => Right(Left(error))
+        case (Left(error), _) => Left(error)
+        case (Right(Right(values)), (batch, batchIndex)) =>
+          batch.zipWithIndex.foldLeft[Either[BeautyQSearchGenerationActivationError, Either[BeautyQSearchGenerationActivationError, Vector[QdrantEmbeddingResult]]]](Right(Right(values))) {
+            case (Right(Left(error)), _) => Right(Left(error))
+            case (Left(error), _) => Left(error)
+            case (Right(Right(done)), (point, withinBatchIndex)) =>
+              val pointIndex = batchIndex * workPolicy.embeddingBatchSize + withinBatchIndex
+              embedding.embed(point.embeddingInput) match {
+                case Right(value) => Right(Right(done :+ value))
+                case Left(error: BeautyQEmbeddingRequestError.InvalidResult) =>
+                  Left(BeautyQSearchGenerationActivationError.EmbeddingBatch(batchIndex, pointIndex, point.embeddingInput.subjectValue, error))
+                case Left(error) =>
+                  Right(Left(BeautyQSearchGenerationActivationError.EmbeddingBatch(batchIndex, pointIndex, point.embeddingInput.subjectValue, error)))
+              }
+          }
+      }
 }

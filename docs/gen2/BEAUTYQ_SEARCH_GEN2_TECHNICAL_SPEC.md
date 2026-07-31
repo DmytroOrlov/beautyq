@@ -1926,6 +1926,12 @@ exposes no retention policy. Qdrant aliases switch atomically, but collection de
 alias guard equivalent to the accepted Elasticsearch cleanup protocol; deletion based on a prior alias
 read would reintroduce a destructive TOCTOU race. Partial compatible builds are completed by retry, and
 failed/incompatible state remains observable for an operator rather than being guessed safe to delete.
+Generation embedding and upsert use the app-shell-configured generic work policy: batches are ordered,
+sequential (`maximumInFlightBatches = 1`) and bounded to 16 embedding inputs and 64 points. A failed
+upsert preserves its batch index and exact point range, leaves the alias inactive, and the same
+deterministic generation can be completed on restart. Cleanup remains an operator operation under an
+activation fence; the normative two-observation procedure is in the canonical
+[`BEAUTYQ_SEARCH_GEN2_OPERATIONS.md`](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md).
 
 ## 13. Baseline-plus-supplement orchestration
 
@@ -1966,8 +1972,8 @@ Current supplement policy:
 Current failure behavior is:
 
 - Elasticsearch baseline availability is mandatory. Startup/readiness fails when the ES baseline, Gen2 document lookup or required baseline index is unavailable.
-- Qdrant unavailability does not prevent baseline serving. Current startup may automatically publish
-  typed `baseline_only` readiness with `supplementReady = false`; no operator opt-in owns that choice yet.
+- Qdrant unavailability prevents Required startup; explicit Preferred mode may publish typed
+  `baseline_only` readiness with `supplementReady = false`, while Disabled is the operator kill switch.
 - the full-search/cutover readiness gate still fails while the configured supplement backend is unavailable;
 - a request-time Qdrant timeout, transport error or backend error returns the successful Elasticsearch baseline unchanged and sets supplement status to `supplement_failed` with a stable reason code and diagnostics;
 - the response does not silently claim a successful hybrid execution;
@@ -1975,10 +1981,9 @@ Current failure behavior is:
 
 No automatic fallback candidate backend or hidden retry path is introduced.
 
-This unconditional startup degradation is a source-confirmed post-cutover gap, not the final
-operational contract. The approved correction introduces closed
-`SupplementStartupPolicy.Required|Preferred|Disabled` configuration and separate
-`ServingMode.FullSearch|BaselineOnly`. `Required` is the default, `Preferred` permits degraded
+Startup degradation is explicit policy, not an unconditional fallback. The closed
+`SupplementStartupPolicy.Required|Preferred|Disabled` configuration derives the separate
+`ServingMode.FullSearch|BaselineOnly` status. `Required` is the default, `Preferred` permits degraded
 baseline-only startup, and `Disabled` is the intentional operator kill switch. A permitted
 baseline-only process remains Kubernetes-ready because it serves the complete canonical baseline.
 The disabled app-shell branch must reach baseline readiness without constructing, probing or
@@ -2145,7 +2150,9 @@ canonical cases through one Required/FullSearch native application and the real 
 and embedding paths. It performs one full warmup pass followed by three measured passes at concurrency
 one. Only `BeautyQSearchApplication.execute` is timed; startup, materialization and projection are
 excluded. Generated artifacts contain the deterministic detailed quality report, the measurement
-environment/latency report and the machine-readable correction-gate result.
+environment/latency report, the strict `beautyq-evaluation-score-separation-v1` artifact and the
+machine-readable correction-gate result. The communication spec writes all artifacts before failing
+when the measured quality gate is red; a red gate is never reported as a successful communication run.
 
 The domain-neutral `search-gen2-eval` project supplies stable evaluation identities, ranked metric
 mathematics (with declared-cutoff denominators), ordered scope/cutoff aggregation, comparison and
@@ -2164,6 +2171,21 @@ fingerprints the decoded typed corpus through its canonical encoder, and preserv
 observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
 without per-case or result identities.
 Full reports remain generated artifacts.
+
+The score-separation artifact records every visible returned identity with its query, projector-owned
+origin, score, corpus judgment, supplement status, degradation reason, baseline identities and appended
+identities. Protected cases, when configured, contribute only redacted aggregate ranges. The first score analysis found
+forbidden supplement scores in `[0.5150608, 0.5442586]` and non-forbidden supplement scores in
+`[0.44745553, 0.7772049]`. These latest-run ranges overlap, so no single Qdrant score threshold can remove every
+observed forbidden append without also removing observed non-forbidden appends. No threshold has been
+introduced: Q2 remains blocked on an explicit quality-policy/retrieval decision rather than silently
+turning measured evidence into business policy.
+
+The public HTTP boundary enforces the BeautyQ-owned request budget before backend execution through the
+executable [`BeautyQSearchRequestBudget`](../../beautyq-search-gen2-contract/src/main/scala/leaderboard/search/beautyq/gen2/contract/BeautyQSearchRequestBudget.scala)
+owner. Startup captures snapshot time/revision, materialization and activation durations and activation
+time. `/beauty-search/status` derives snapshot and generation age from the request-time clock. A managed restart proof activates a changed consistent snapshot into distinct
+Elasticsearch and Qdrant generations; this is restart-only freshness, not CDC or hot promotion.
 
 Required gates include:
 

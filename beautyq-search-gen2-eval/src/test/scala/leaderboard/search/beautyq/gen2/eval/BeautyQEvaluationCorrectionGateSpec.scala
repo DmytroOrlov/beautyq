@@ -23,9 +23,28 @@ final class BeautyQEvaluationCorrectionGateSpec extends AnyWordSpec {
         "baseline-owned-components-preserved",
         "append-budget-preserved",
       ))
-      assert(gate.toJson.hcursor.get[String]("qualityThresholdStatus").contains("not_configured"))
+      assert(gate.toJson.hcursor.get[String]("qualityThresholdStatus").contains("not_required"))
       assert(gate.toJson.hcursor.get[String]("protectedHoldoutStatus").contains("not_configured"))
       assert(gate.toJson.hcursor.get[String]("acceptedBaselineStatus").contains("not_generated"))
+    }
+
+    "derive a threshold candidate only from strictly separated supplement scores" in {
+      def observation(score: String, judgment: String) =
+        new BeautyQSupplementScoreObservation("case", "query", "result", "qdrant_supplement", BigDecimal(score), judgment, "supplemented", None, Vector.empty, Vector("result"))
+
+      val separated = BeautyQSupplementScoreSeparation.from(Vector(
+        observation("0.40", "forbidden"),
+        observation("0.60", "acceptable"),
+      ))
+      assert(separated.strictlySeparable)
+      assert(separated.candidateThreshold.contains(BigDecimal("0.50")))
+
+      val overlapping = BeautyQSupplementScoreSeparation.from(Vector(
+        observation("0.55", "forbidden"),
+        observation("0.45", "acceptable"),
+      ))
+      assert(!overlapping.strictlySeparable)
+      assert(overlapping.candidateThreshold.isEmpty)
     }
 
     "reject every hard and no-harm violation without a relevance threshold" in {

@@ -32,7 +32,7 @@ import java.net.{HttpURLConnection, URI, URL}
 
 import BeautyQSearchGen2ResourceSupport.*
 
-/** Atomic resource-gate proofs plus the managed BeautyQ Gen2 communication proof. */
+/** Focused resource-gate proofs plus the managed BeautyQ Gen2 communication proof. */
 final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.AnyWordSpec with HttpContractTestSupport {
   "managed BeautyQ Gen2" should {
     "activate and query two real BeautyQ-shaped generations when resources serve" in {
@@ -150,20 +150,31 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
     }
     ensureIsolatedNamespace(esClient, qdrantClient, qdrantHttp)
     val request = BeautyQOrchestrationTestKit.eligible().request
+    val log = LogIO2.fromLogger[IO](IzLogger())
+    def startupFor(materialized: MaterializedBeautyQVariantDocuments): BeautyQSearchGen2Startup = {
+      val source = new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {
+        def load: IO[SnapshotLoadError, VersionedSnapshot[BeautyQSearchSnapshot]] =
+          ZIO.succeed(materialized.sourceSnapshot)
+      }
+      val bootstrap = BeautyQSearchGen2Bootstrap.make(
+        new BeautyQVariantMaterializer.FromSnapshotSource[IO](source),
+        elasticsearch,
+        SupplementStartupPolicy.Required,
+        qdrantLifecycle,
+        embedding,
+      )
+      Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe.run(BeautyQSearchGen2Startup.acquire(bootstrap, candidateService, log)).getOrThrowFiberFailure()
+      }
+    }
 
     try {
-      val application = BeautyQSearchApplication.make(materializedA, elasticsearch, embedding, candidateService)
-      val generationA = BeautyQSearchGenerationApplication
-        .activate(materializedA, elasticsearch, qdrantLifecycle, embedding) match {
-          case Right(value) => value
-          case Left(error) => fail(s"expected BeautyQ generation A activation, got $error")
-        }
+      val startupA = startupFor(materializedA)
+      val application = startupA.application
+      val generationA = startupA.activation
       val firstResult = application.execute(request).getOrElse(fail("expected request against active generation A"))
-      val generationB = BeautyQSearchGenerationApplication
-        .activate(materializedB, elasticsearch, qdrantLifecycle, embedding) match {
-          case Right(value) => value
-          case Left(error) => fail(s"expected BeautyQ generation B activation, got $error")
-        }
+      val startupB = startupFor(materializedB)
+      val generationB = startupB.activation
       application.execute(request) match {
         case Left(BeautyQSearchApplicationError.Orchestration(
               BeautyQSearchOrchestrationError.CandidatePipeline(
@@ -176,7 +187,7 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
           assert(actual == materializedA.sourceSnapshot.contentFingerprint.value)
         case other => fail(s"expected the same application to observe the fresh generation, got $other")
       }
-      val applicationB = BeautyQSearchApplication.make(materializedB, elasticsearch, embedding, candidateService)
+      val applicationB = startupB.application
       val secondResult = applicationB.execute(request) match {
         case Right(value) => value
         case Left(error) => fail(s"expected request against fresh active generation B, got $error")
@@ -197,6 +208,9 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
       assert(activeQdrantTargets == Vector(activeQdrantTarget))
       assert(generationA.qdrantGeneration.exists(value => value.physicalCollection.value != activeQdrantTarget))
       assert(firstResult.baseline.target.value != secondResult.baseline.target.value)
+      assert(startupA.evidence.snapshotCapturedAt == materializedA.sourceSnapshot.capturedAt)
+      assert(startupB.evidence.snapshotCapturedAt == materializedB.sourceSnapshot.capturedAt)
+      assert(startupA.evidence.activatedAt.compareTo(startupB.evidence.activatedAt) <= 0)
       (): Unit
     } finally {
       cleanupExactResources(esClient, qdrantHttp, expectedEsTargets)

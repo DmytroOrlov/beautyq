@@ -23,9 +23,11 @@ final class BeautySearchGen2Api[F[+_, +_]: Error2](
     Http4sServerInterpreter[F[Throwable, _]]().toRoutes {
       import endpoints.*
       List(
-        searchBeautyGen2.serverLogic[F[Throwable, _]] { json =>
-          BeautySearchGen2Json.decodeRequest(json) match {
-            case Left(error) => async.pure(Left(HttpApiFailure.BadRequest("invalid_gen2_request", error)))
+        searchBeautyGen2.serverLogic[F[Throwable, _]] { raw =>
+          BeautySearchGen2Json.decodeTransportBody(raw) match {
+            case Left(error @ (_: BeautySearchGen2Json.RequestDecodeError.BodyTooLarge | _: BeautySearchGen2Json.RequestDecodeError.CursorTooLarge)) =>
+              async.pure(Left(HttpApiFailure.BadRequest("request_budget_exceeded", error.message)))
+            case Left(error) => async.pure(Left(HttpApiFailure.BadRequest("invalid_gen2_request", error.message)))
             case Right(request) =>
               async.map(service.execute(request).attempt) {
                 case Left(error) => Left(error)

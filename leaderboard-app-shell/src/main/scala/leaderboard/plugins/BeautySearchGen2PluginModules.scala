@@ -121,9 +121,23 @@ object BeautySearchGen2PluginModules {
         QdrantGen2Client.fromTransport(Gen2JsonHttpClient.jdk(transport))
     }
 
-    make[QdrantGenerationLifecycle].from { (client: QdrantGen2Client) =>
+    make[QdrantGenerationWorkPolicy].from { (cfg: BeautyQGen2AppShellConfig) =>
+      QdrantGenerationWorkPolicy
+        .create(
+          cfg.qdrantEmbeddingBatchSize,
+          cfg.qdrantUpsertBatchSize,
+          cfg.qdrantMaximumInFlightBatches,
+        )
+        .getOrElse(
+          throw new IllegalStateException(
+            s"managed Gen2 Qdrant work policy is invalid: embeddingBatch=${cfg.qdrantEmbeddingBatchSize} upsertBatch=${cfg.qdrantUpsertBatchSize} maximumInFlight=${cfg.qdrantMaximumInFlightBatches}"
+          )
+        )
+    }
+
+    make[QdrantGenerationLifecycle].from { (client: QdrantGen2Client, workPolicy: QdrantGenerationWorkPolicy) =>
       BeautyQQdrantRuntime
-        .lifecycle(client)
+        .lifecycle(client, workPolicy)
         .getOrElse(throw new IllegalStateException("managed Gen2 Qdrant lifecycle init failed"))
     }
 
@@ -151,7 +165,8 @@ object BeautySearchGen2PluginModules {
         policy: SupplementStartupPolicy,
         qdrantLifecycle: QdrantGenerationLifecycle,
         embedding: BeautyQGen2EmbeddingClient,
-      ) => BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, policy, qdrantLifecycle, embedding)
+        workPolicy: QdrantGenerationWorkPolicy,
+      ) => BeautyQSearchGen2Bootstrap.make(materializer, elasticsearch, policy, qdrantLifecycle, embedding, workPolicy)
     }
 
     make[BeautyQSearchGen2Startup].fromResource {
@@ -192,7 +207,9 @@ object BeautySearchGen2PluginModules {
 
   def routeComposition: ModuleDef = new ModuleDef {
     make[BeautySearchGen2TapirEndpoints].fromValue(BeautySearchGen2TapirEndpoints)
-    make[BeautySearchGen2Service[IO]].from { (runtime: BeautyQSearchGen2Runtime) => new BeautyQSearchGen2HttpService(runtime) }
+    make[BeautySearchGen2Service[IO]].from { (runtime: BeautyQSearchGen2Runtime, clock: JClock) =>
+      new BeautyQSearchGen2HttpService(runtime, clock)
+    }
     make[BeautySearchGen2Api[IO]]
     many[HttpApi[IO]].ref[BeautySearchGen2Api[IO]]
   }

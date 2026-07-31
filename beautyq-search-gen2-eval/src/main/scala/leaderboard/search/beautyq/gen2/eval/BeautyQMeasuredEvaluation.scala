@@ -159,6 +159,20 @@ private[eval] final class BeautyQMeasuredCase private (
   val baselinePrefixPreserved: Boolean,
   val baselineOwnedComponentsPreserved: Boolean,
   val appendBudgetPreserved: Boolean,
+  val scoreObservations: Vector[BeautyQSupplementScoreObservation],
+)
+
+final class BeautyQSupplementScoreObservation private[eval] (
+  val caseId: String,
+  val query: String,
+  val resultId: String,
+  val origin: String,
+  val score: BigDecimal,
+  val judgment: String,
+  val supplementStatus: String,
+  val degradationReason: Option[String],
+  val baselineIds: Vector[String],
+  val appendedIds: Vector[String],
 )
 
 private[eval] object BeautyQMeasuredCase {
@@ -195,6 +209,7 @@ private[eval] object BeautyQMeasuredCase {
       baselinePrefixPreserved.getOrElse(base.baselinePrefixPreserved),
       baselineOwnedComponentsPreserved.getOrElse(base.baselineOwnedComponentsPreserved),
       appendBudgetPreserved.getOrElse(base.appendBudgetPreserved),
+      base.scoreObservations,
     )
 
   def fromExecution(
@@ -238,6 +253,29 @@ private[eval] object BeautyQMeasuredCase {
       val baselineIds = evidence.baselineIds.map(_.value.toString)
       val returnedBaselinePrefix = evidence.resultIds.filter(baselineIds.contains)
       val prefixPreserved = baselineIds.distinct.forall(evidence.resultIds.contains) && returnedBaselinePrefix == baselineIds.distinct
+      val forbidden = current.variantJudgments.forbiddenIds.map(_.value).toSet
+      val acceptable = current.variantJudgments.acceptableIds.map(_.value).toSet
+      val neutral = current.variantJudgments.neutralIds.map(_.value).toSet
+      val appended = evidence.appendedIds.map(_.value.toString)
+      val scoreObservations = response.hits.map { hit =>
+        val judgment =
+          if (forbidden.contains(hit.id)) "forbidden"
+          else if (acceptable.contains(hit.id)) "acceptable"
+          else if (neutral.contains(hit.id)) "neutral"
+          else "unjudged"
+        new BeautyQSupplementScoreObservation(
+          current.caseId.value,
+          current.query,
+          hit.id,
+          hit.origin.stableCode,
+          hit.score,
+          judgment,
+          evidence.statusCode,
+          evidence.degradationReason.map(_.reasonCode),
+          baselineIds,
+          appended,
+        )
+      }
       new BeautyQMeasuredCase(
         current,
         reportInput,
@@ -259,6 +297,7 @@ private[eval] object BeautyQMeasuredCase {
         prefixPreserved,
         evidence.baselineOwnedComponentsPreserved,
         evidence.appendedIds.size <= BeautyQSupplementPolicy.appendOnly.maxAppended,
+        scoreObservations,
       )
     }
   }
@@ -301,6 +340,7 @@ final class BeautyQMeasuredEvaluationResult private[BeautyQMeasuredEvaluationRes
   val detailedJson: Json,
   val reportDigest: String,
   val measurementJson: Json,
+  val scoreSeparationJson: Json,
   val correctionGate: BeautyQEvaluationCorrectionGateResult,
   val warmupExecutions: Int,
   val measuredExecutions: Int,
@@ -311,6 +351,7 @@ object BeautyQMeasuredEvaluationResult {
     detailedJson: Json,
     reportDigest: String,
     measurementJson: Json,
+    scoreSeparationJson: Json,
     correctionGate: BeautyQEvaluationCorrectionGateResult,
     warmupExecutions: Int,
     measuredExecutions: Int,
@@ -320,6 +361,7 @@ object BeautyQMeasuredEvaluationResult {
       detailedJson,
       reportDigest,
       measurementJson,
+      scoreSeparationJson,
       correctionGate,
       warmupExecutions,
       measuredExecutions,
@@ -356,11 +398,13 @@ object BeautyQMeasuredEvaluation {
         deterministic = true,
       )
       measurement <- measurementJson(corpus, startupStatus, environment, first, measured, digest)
+      scoreSeparation = BeautyQScoreSeparationArtifact.encode(corpus, first)
     } yield BeautyQMeasuredEvaluationResult.create(
       report,
       detailed,
       digest,
       measurement,
+      scoreSeparation,
       gate,
       warmup.size,
       measured.map(_.size).sum,
@@ -502,6 +546,7 @@ object BeautyQMeasuredEvaluation {
         }
       }
       perCase.flatMap { visibleJson =>
+        val visibleScoreObservations = visible.flatMap(_.scoreObservations)
         val protectedSamples = measured.flatten
           .filter(_.corpusCase.partition == EvaluationPartition.ProtectedHoldout)
           .map(_.durationNanos)
@@ -539,6 +584,10 @@ object BeautyQMeasuredEvaluation {
             "latencyNanos" -> latencyJson(globalSummary),
             "visibleCaseLatency" -> Json.fromValues(visibleJson),
             "protectedLatency" -> protectedValue,
+            "scoreEvidence" -> Json.obj(
+              "observations" -> Json.fromValues(visibleScoreObservations.map(scoreObservationJson)),
+              "supplementSeparation" -> BeautyQSupplementScoreSeparation.from(visibleScoreObservations).toJson,
+            ),
             "snapshot" -> Json.obj(
               "capturedAt" -> Json.fromString(environment.snapshotCapturedAt.toString),
               "sourceRevision" -> Json.fromString(environment.sourceRevision),
@@ -580,4 +629,78 @@ object BeautyQMeasuredEvaluation {
     "p95" -> Json.fromLong(summary.p95),
     "maximum" -> Json.fromLong(summary.maximum),
   )
+
+  private def scoreObservationJson(value: BeautyQSupplementScoreObservation): Json = Json.obj(
+    "caseId" -> Json.fromString(value.caseId),
+    "query" -> Json.fromString(value.query),
+    "resultId" -> Json.fromString(value.resultId),
+    "origin" -> Json.fromString(value.origin),
+    "score" -> Json.fromBigDecimal(value.score),
+    "judgment" -> Json.fromString(value.judgment),
+    "supplementStatus" -> Json.fromString(value.supplementStatus),
+    "degradationReason" -> value.degradationReason.fold(Json.Null)(Json.fromString),
+    "baselineIds" -> Json.fromValues(value.baselineIds.map(Json.fromString)),
+    "appendedIds" -> Json.fromValues(value.appendedIds.map(Json.fromString)),
+  )
+
+}
+
+/** Strict, redacted score-separation artifact owned by the BeautyQ evaluation runner.
+  * Visible cases retain ordered hit evidence; protected cases contribute only aggregate ranges.
+  */
+object BeautyQScoreSeparationArtifact {
+  private val SchemaVersion = "beautyq-evaluation-score-separation-v1"
+
+  private def observationJson(value: BeautyQSupplementScoreObservation): Json = Json.obj(
+    "resultId" -> Json.fromString(value.resultId),
+    "origin" -> Json.fromString(value.origin),
+    "score" -> Json.fromBigDecimal(value.score),
+    "judgment" -> Json.fromString(value.judgment),
+    "supplementStatus" -> Json.fromString(value.supplementStatus),
+    "degradationReason" -> value.degradationReason.fold(Json.Null)(Json.fromString),
+    "baselineIds" -> Json.fromValues(value.baselineIds.map(Json.fromString)),
+    "appendedIds" -> Json.fromValues(value.appendedIds.map(Json.fromString)),
+  )
+
+  private def aggregateJson(values: Vector[BeautyQSupplementScoreObservation]): Json = {
+    val supplement = values.filter(_.origin == "qdrant_supplement")
+    val forbidden = supplement.filter(_.judgment == "forbidden").map(_.score)
+    val nonForbidden = supplement.filter(value => Set("acceptable", "neutral", "unjudged").contains(value.judgment)).map(_.score)
+    Json.obj(
+      "forbiddenCount" -> Json.fromInt(forbidden.size),
+      "nonForbiddenCount" -> Json.fromInt(nonForbidden.size),
+      "minimumForbidden" -> forbidden.minOption.fold(Json.Null)(Json.fromBigDecimal),
+      "maximumForbidden" -> forbidden.maxOption.fold(Json.Null)(Json.fromBigDecimal),
+      "minimumNonForbidden" -> nonForbidden.minOption.fold(Json.Null)(Json.fromBigDecimal),
+      "maximumNonForbidden" -> nonForbidden.maxOption.fold(Json.Null)(Json.fromBigDecimal),
+    )
+  }
+
+  private[eval] def encode(corpus: BeautyQEvaluationCorpus, measured: Vector[BeautyQMeasuredCase]): Json = {
+    val byCase = measured.map(value => value.corpusCase.caseId -> value).toMap
+    val visibleCases = corpus.cases.filter(_.partition != EvaluationPartition.ProtectedHoldout).flatMap { current =>
+      byCase.get(current.caseId).map { observed =>
+        Json.obj(
+          "caseId" -> Json.fromString(current.caseId.value),
+          "query" -> Json.fromString(current.query),
+          "observations" -> Json.fromValues(observed.scoreObservations.map(observationJson)),
+        )
+      }
+    }
+    val protectedValues = measured
+      .filter(_.corpusCase.partition == EvaluationPartition.ProtectedHoldout)
+      .flatMap(_.scoreObservations)
+    val separation = BeautyQSupplementScoreSeparation.from(measured.flatMap(_.scoreObservations))
+    Json.obj(
+      "schemaVersion" -> Json.fromString(SchemaVersion),
+      "visibleCases" -> Json.fromValues(visibleCases),
+      "protectedAggregate" -> (if (protectedValues.isEmpty) Json.Null else aggregateJson(protectedValues)),
+      "supplementSeparation" -> Json.obj(
+        "maximumForbiddenSupplementScore" -> separation.maximumForbidden.fold(Json.Null)(Json.fromBigDecimal),
+        "minimumNonForbiddenSupplementScore" -> separation.minimumNonForbidden.fold(Json.Null)(Json.fromBigDecimal),
+        "separable" -> Json.fromBoolean(separation.strictlySeparable),
+        "proposedThreshold" -> separation.candidateThreshold.fold(Json.Null)(Json.fromBigDecimal),
+      ),
+    )
+  }
 }

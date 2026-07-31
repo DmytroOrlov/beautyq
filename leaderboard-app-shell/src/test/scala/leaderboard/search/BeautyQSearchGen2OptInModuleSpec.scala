@@ -65,6 +65,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
       assert(probe.config.requestTimeout == 60.seconds)
       assert(probe.config.bulkMaxActions == 100)
       assert(probe.config.bulkMaxBytes == 1048576L)
+      assert(probe.config.qdrantEmbeddingBatchSize == 16)
+      assert(probe.config.qdrantUpsertBatchSize == 64)
+      assert(probe.config.qdrantMaximumInFlightBatches == 1)
     }
   }
 
@@ -75,6 +78,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = 60.seconds,
         bulkMaxActions = 100,
         bulkMaxBytes = 1048576L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       val thrown = scala.util.Try {
         BeautyQGen2AppShellConfig.validateAtBoundary(raw)
@@ -98,6 +104,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = 60.seconds,
         bulkMaxActions = 0,
         bulkMaxBytes = 1048576L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       val thrown = scala.util.Try {
         BeautyQGen2AppShellConfig.validateAtBoundary(raw)
@@ -248,6 +257,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = 60.seconds,
         bulkMaxActions = 100,
         bulkMaxBytes = 1048576L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       BeautyQGen2AppShellConfig.validate(raw) match {
         case Left(BeautyQGen2AppShellConfigError.NonPositiveConnectTimeout(_)) => ()
@@ -261,6 +273,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = FiniteDuration(-1, "seconds"),
         bulkMaxActions = 100,
         bulkMaxBytes = 1048576L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       BeautyQGen2AppShellConfig.validate(raw) match {
         case Left(BeautyQGen2AppShellConfigError.NonPositiveRequestTimeout(_)) => ()
@@ -274,6 +289,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = 60.seconds,
         bulkMaxActions = 0,
         bulkMaxBytes = 1048576L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       BeautyQGen2AppShellConfig.validate(raw) match {
         case Left(BeautyQGen2AppShellConfigError.NonPositiveBulkMaxActions(_)) => ()
@@ -287,6 +305,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = 60.seconds,
         bulkMaxActions = 100,
         bulkMaxBytes = 0L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       BeautyQGen2AppShellConfig.validate(raw) match {
         case Left(BeautyQGen2AppShellConfigError.NonPositiveBulkMaxBytes(_)) => ()
@@ -300,6 +321,9 @@ final class BeautyQSearchGen2OptInModuleSpec extends AnyWordSpec {
         requestTimeout = 60.seconds,
         bulkMaxActions = 100,
         bulkMaxBytes = 1048576L,
+        qdrantEmbeddingBatchSize = 16,
+        qdrantUpsertBatchSize = 64,
+        qdrantMaximumInFlightBatches = 1,
       )
       BeautyQGen2AppShellConfig.validate(raw) match {
         case Right(value) => assert(value == raw)

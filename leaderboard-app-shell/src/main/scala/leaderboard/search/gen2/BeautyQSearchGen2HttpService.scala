@@ -9,18 +9,25 @@ import leaderboard.search.beautyq.gen2.wiring.BeautyQElasticsearchBaselineServic
 import leaderboard.search.gen2.elasticsearch.lifecycle.ElasticsearchGenerationLifecycleError
 import zio.{IO, ZIO}
 
+import java.time.{Clock, Duration, Instant}
+
 final class BeautyQSearchGen2HttpService(
   runtime: BeautyQSearchGen2Runtime,
+  clock: Clock = Clock.systemUTC(),
 ) extends BeautySearchGen2Service[IO] {
   def execute(request: BeautySearchRequestGen2): IO[HttpApiFailure, BeautyQSearchResponseGen2] =
     runtime.execute(request).mapError(BeautyQSearchGen2HttpService.toHttpApiFailure)
 
   def status: IO[HttpApiFailure, Json] =
-    ZIO.succeed(BeautyQSearchGen2HttpService.encodeStatus(runtime.startupStatus))
+    ZIO.succeed(BeautyQSearchGen2HttpService.encodeStatus(runtime.startupStatus, runtime.startupEvidence, clock.instant()))
 }
 
 object BeautyQSearchGen2HttpService {
-  def encodeStatus(status: StartupServingStatus): Json = {
+  def encodeStatus(
+    status: StartupServingStatus,
+    evidence: Option[BeautyQSearchStartupEvidence] = None,
+    now: Instant = Instant.now(),
+  ): Json = {
     val reasonJson = status.reason.map { r =>
       Json.obj(
         "code" -> Json.fromString(r.code),
@@ -36,6 +43,50 @@ object BeautyQSearchGen2HttpService {
       )
     }.getOrElse(Json.Null)
 
+    val snapshotJson = evidence match {
+      case Some(value) => Json.obj(
+        "capturedAt" -> Json.fromString(value.snapshotCapturedAt.toString),
+        "sourceRevision" -> value.sourceRevision.map(Json.fromString).getOrElse(Json.Null),
+        "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
+        "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
+        "ageSeconds" -> Json.fromLong(nonNegativeSeconds(value.snapshotCapturedAt, now)),
+      )
+      case None => Json.obj(
+        "capturedAt" -> Json.Null,
+        "sourceRevision" -> Json.Null,
+        "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
+        "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
+        "ageSeconds" -> Json.Null,
+      )
+    }
+
+    val startupDurationsJson = evidence.map { value =>
+      Json.obj(
+        "materializationNanos" -> Json.fromLong(value.materializationDurationNanos),
+        "activationNanos" -> Json.fromLong(value.activationDurationNanos),
+      )
+    }.getOrElse(Json.Null)
+
+    val activeGenerationsJson = evidence.map { value =>
+      Json.obj(
+        "activatedAt" -> Json.fromString(value.activatedAt.toString),
+        "ageSeconds" -> Json.fromLong(nonNegativeSeconds(value.activatedAt, now)),
+        "elasticsearch" -> Json.obj(
+          "reference" -> Json.fromString(status.elasticsearchReference),
+          "physicalTarget" -> Json.fromString(status.elasticsearchPhysicalTarget),
+        ),
+        "qdrant" -> qdrantJson,
+      )
+    }.getOrElse(Json.obj(
+      "activatedAt" -> Json.Null,
+      "ageSeconds" -> Json.Null,
+      "elasticsearch" -> Json.obj(
+        "reference" -> Json.fromString(status.elasticsearchReference),
+        "physicalTarget" -> Json.fromString(status.elasticsearchPhysicalTarget),
+      ),
+      "qdrant" -> qdrantJson,
+    ))
+
     Json.obj(
       "live" -> Json.fromBoolean(true),
       "ready" -> Json.fromBoolean(true),
@@ -44,19 +95,15 @@ object BeautyQSearchGen2HttpService {
       "servingMode" -> Json.fromString(status.servingMode.modeCode),
       "restartRequired" -> Json.fromBoolean(status.restartRequired),
       "reason" -> reasonJson,
-      "snapshot" -> Json.obj(
-        "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
-        "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
-      ),
-      "activeGenerations" -> Json.obj(
-        "elasticsearch" -> Json.obj(
-          "reference" -> Json.fromString(status.elasticsearchReference),
-          "physicalTarget" -> Json.fromString(status.elasticsearchPhysicalTarget),
-        ),
-        "qdrant" -> qdrantJson,
-      ),
+      "observedAt" -> Json.fromString(now.toString),
+      "snapshot" -> snapshotJson,
+      "startupDurations" -> startupDurationsJson,
+      "activeGenerations" -> activeGenerationsJson,
     )
   }
+
+  private def nonNegativeSeconds(from: Instant, to: Instant): Long =
+    math.max(0L, Duration.between(from, to).getSeconds)
 
   private[search] def toHttpApiFailure(
     error: BeautyQSearchGen2RuntimeError,
@@ -72,6 +119,19 @@ object BeautyQSearchGen2HttpService {
         HttpApiFailure.Conflict(
           "stale_search_cursor",
           "Search cursor refers to a deleted generation; restart pagination without the cursor",
+        )
+      case BeautyQSearchGen2RuntimeError.Application(BeautyQSearchApplicationError.Input(errors)) =>
+        val budgetExceeded = errors.toVector.exists {
+          case _: leaderboard.search.beautyq.gen2.contract.BeautySearchRequestError.QueryTooLong => true
+          case _: leaderboard.search.beautyq.gen2.contract.BeautySearchRequestError.TooManyFilters => true
+          case _: leaderboard.search.beautyq.gen2.contract.BeautySearchRequestError.TooManyRequestedFacets => true
+          case _: leaderboard.search.beautyq.gen2.contract.BeautySearchRequestError.TooManySorts => true
+          case _: leaderboard.search.beautyq.gen2.contract.BeautySearchRequestError.PageSizeTooLarge => true
+          case _ => false
+        }
+        HttpApiFailure.BadRequest(
+          if (budgetExceeded) "request_budget_exceeded" else "invalid_gen2_request",
+          errors.toVector.mkString("; "),
         )
       case BeautyQSearchGen2RuntimeError.Application(_) =>
         HttpApiFailure.InternalServerError

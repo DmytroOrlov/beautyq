@@ -1,5 +1,7 @@
 package leaderboard.config
 
+import leaderboard.search.gen2.qdrant.QdrantGenerationWorkPolicy
+
 import scala.concurrent.duration.FiniteDuration
 
 /** App-shell operational runtime mechanics for the opt-in BeautyQ Gen2 composition.
@@ -18,6 +20,9 @@ final case class BeautyQGen2AppShellConfig(
   requestTimeout: FiniteDuration,
   bulkMaxActions: Int,
   bulkMaxBytes: Long,
+  qdrantEmbeddingBatchSize: Int,
+  qdrantUpsertBatchSize: Int,
+  qdrantMaximumInFlightBatches: Int,
 )
 
 sealed trait BeautyQGen2AppShellConfigError
@@ -26,6 +31,7 @@ object BeautyQGen2AppShellConfigError {
   final case class NonPositiveRequestTimeout(value: FiniteDuration) extends BeautyQGen2AppShellConfigError
   final case class NonPositiveBulkMaxActions(value: Int) extends BeautyQGen2AppShellConfigError
   final case class NonPositiveBulkMaxBytes(value: Long) extends BeautyQGen2AppShellConfigError
+  final case class InvalidQdrantWorkPolicy(error: QdrantGenerationWorkPolicy.Error) extends BeautyQGen2AppShellConfigError
 }
 
 /** Raw HOCON-bound config; reads from the configuration tree before any positive-value validation
@@ -35,9 +41,20 @@ final case class RawBeautyQGen2AppShellConfig(
   requestTimeout: FiniteDuration,
   bulkMaxActions: Int,
   bulkMaxBytes: Long,
+  qdrantEmbeddingBatchSize: Int,
+  qdrantUpsertBatchSize: Int,
+  qdrantMaximumInFlightBatches: Int,
 ) {
   def toValidated: BeautyQGen2AppShellConfig =
-    BeautyQGen2AppShellConfig(connectTimeout, requestTimeout, bulkMaxActions, bulkMaxBytes)
+    BeautyQGen2AppShellConfig(
+      connectTimeout,
+      requestTimeout,
+      bulkMaxActions,
+      bulkMaxBytes,
+      qdrantEmbeddingBatchSize,
+      qdrantUpsertBatchSize,
+      qdrantMaximumInFlightBatches,
+    )
 }
 
 object BeautyQGen2AppShellConfig {
@@ -46,7 +63,10 @@ object BeautyQGen2AppShellConfig {
     else if (raw.requestTimeout <= FiniteDuration(0, "millis")) Left(BeautyQGen2AppShellConfigError.NonPositiveRequestTimeout(raw.requestTimeout))
     else if (raw.bulkMaxActions <= 0) Left(BeautyQGen2AppShellConfigError.NonPositiveBulkMaxActions(raw.bulkMaxActions))
     else if (raw.bulkMaxBytes <= 0L) Left(BeautyQGen2AppShellConfigError.NonPositiveBulkMaxBytes(raw.bulkMaxBytes))
-    else Right(raw)
+    else QdrantGenerationWorkPolicy
+      .create(raw.qdrantEmbeddingBatchSize, raw.qdrantUpsertBatchSize, raw.qdrantMaximumInFlightBatches)
+      .left.map(BeautyQGen2AppShellConfigError.InvalidQdrantWorkPolicy.apply)
+      .map(_ => raw)
   }
 
   /** Validation invoked at the DI boundary; failure surfaces the typed

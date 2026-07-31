@@ -7,6 +7,25 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautySearchGen2JsonSpec extends AnyWordSpec {
   "BeautySearchGen2Json" should {
+    "reject the UTF-8 body and cursor budgets before native request decoding" in {
+      val body = " " * (leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxTransportBodyBytes + 1)
+      BeautySearchGen2Json.decodeTransportBody(body) match {
+        case Left(BeautySearchGen2Json.RequestDecodeError.BodyTooLarge(max, actual)) =>
+          assert(max == leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxTransportBodyBytes)
+          assert(actual == max + 1)
+        case other => fail(s"expected body budget rejection, got $other")
+      }
+
+      val cursor = "c" * (leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxCursorUtf8Bytes + 1)
+      val raw = s"""{"query":"nails","filters":[],"requestedFacets":[],"sort":[],"page":{"cursor":"$cursor","size":20}}"""
+      BeautySearchGen2Json.decodeTransportBody(raw) match {
+        case Left(BeautySearchGen2Json.RequestDecodeError.CursorTooLarge(max, actual)) =>
+          assert(max == leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxCursorUtf8Bytes)
+          assert(actual == max + 1)
+        case other => fail(s"expected cursor budget rejection, got $other")
+      }
+    }
+
     "decode the native request shape without using the V1 contract" in {
       val request = BeautySearchGen2Json.decodeRequest(Json.obj(
         "query" -> Json.fromString("massage"),

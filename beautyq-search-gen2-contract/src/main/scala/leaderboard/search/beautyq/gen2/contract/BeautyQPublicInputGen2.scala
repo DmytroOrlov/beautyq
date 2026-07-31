@@ -150,6 +150,11 @@ final case class DecodedBeautySortInput(name: PublicSortName, clause: DecodedBea
 
 sealed trait BeautySearchRequestError
 object BeautySearchRequestError {
+  final case class QueryTooLong(maxCodePoints: Int, actualCodePoints: Int) extends BeautySearchRequestError
+  final case class TooManyFilters(max: Int, actual: Int) extends BeautySearchRequestError
+  final case class TooManyRequestedFacets(max: Int, actual: Int) extends BeautySearchRequestError
+  final case class TooManySorts(max: Int, actual: Int) extends BeautySearchRequestError
+  final case class PageSizeTooLarge(max: Int, actual: Int) extends BeautySearchRequestError
   final case class InvalidFilter(index: Int, error: PublicFilterError) extends BeautySearchRequestError
   final case class InvalidSort(index: Int, error: BeautySortError) extends BeautySearchRequestError
   final case class UnknownRequestedFacet(id: FacetId) extends BeautySearchRequestError
@@ -184,6 +189,26 @@ final case class ValidatedBeautySearchRequestGen2 private[contract] (
 
 object BeautySearchRequestGen2 {
   def validate(request: BeautySearchRequestGen2): Either[NonEmptyErrors[BeautySearchRequestError], ValidatedBeautySearchRequestGen2] = {
+    val budgetErrors = Vector(
+      request.query.flatMap { value =>
+        val actual = value.codePointCount(0, value.length)
+        Option.when(actual > BeautyQSearchRequestBudget.MaxQueryCodePoints)(
+          BeautySearchRequestError.QueryTooLong(BeautyQSearchRequestBudget.MaxQueryCodePoints, actual)
+        )
+      },
+      Option.when(request.filters.size > BeautyQSearchRequestBudget.MaxFilters)(
+        BeautySearchRequestError.TooManyFilters(BeautyQSearchRequestBudget.MaxFilters, request.filters.size)
+      ),
+      Option.when(request.requestedFacets.size > BeautyQSearchRequestBudget.MaxRequestedFacets)(
+        BeautySearchRequestError.TooManyRequestedFacets(BeautyQSearchRequestBudget.MaxRequestedFacets, request.requestedFacets.size)
+      ),
+      Option.when(request.sort.size > BeautyQSearchRequestBudget.MaxSorts)(
+        BeautySearchRequestError.TooManySorts(BeautyQSearchRequestBudget.MaxSorts, request.sort.size)
+      ),
+      Option.when(request.page.size.value > BeautyQSearchRequestBudget.MaxPageSize)(
+        BeautySearchRequestError.PageSizeTooLarge(BeautyQSearchRequestBudget.MaxPageSize, request.page.size.value)
+      ),
+    ).flatten
     val filterResults = request.filters.map(BeautyQPublicFilterRegistry.decode)
     val filterErrors = filterResults.zipWithIndex.flatMap { case (result, index) => result match {
       case Left(errors) => errors.toVector.map(error => BeautySearchRequestError.InvalidFilter(index, error))
@@ -201,10 +226,10 @@ object BeautySearchRequestGen2 {
     facetResolution match {
       case Left(facetErrors) =>
         val requestFacetErrors = facetErrors.map(error => BeautySearchRequestError.UnknownRequestedFacet(error.id))
-        Left(prependErrors(filterErrors ++ sortErrors ++ duplicateSortErrors, requestFacetErrors, duplicateFacetErrors))
+        Left(prependErrors(budgetErrors ++ filterErrors ++ sortErrors ++ duplicateSortErrors, requestFacetErrors, duplicateFacetErrors))
 
       case Right(resolvedFacets) =>
-        val allErrors = filterErrors ++ sortErrors ++ duplicateSortErrors ++ duplicateFacetErrors
+        val allErrors = budgetErrors ++ filterErrors ++ sortErrors ++ duplicateSortErrors ++ duplicateFacetErrors
         NonEmptyErrors.fromVector(allErrors) match {
           case Some(errors) => Left(errors)
           case None =>

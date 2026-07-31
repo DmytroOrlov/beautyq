@@ -32,6 +32,25 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
       assert(response.status == Status.BadRequest)
     }
 
+    "reject oversized transport bodies and cursors before backend execution" in {
+      val service = new BeautySearchGen2Service[IO] {
+        def execute(request: BeautySearchRequestGen2): IO[HttpApiFailure, BeautyQSearchResponseGen2] =
+          ZIO.fail(HttpApiFailure.ServiceUnavailable("unexpected", "service must not be called"))
+        def status: IO[HttpApiFailure, Json] = ZIO.succeed(Json.obj())
+      }
+      val api = new BeautySearchGen2Api[IO](service, BeautySearchGen2TapirEndpoints)
+      val oversizedBody = " " * (leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxTransportBodyBytes + 1)
+      val bodyResponse = runIO(observe(api.http.orNotFound, postJson("/beauty-search", oversizedBody)))
+      assert(bodyResponse.status == Status.BadRequest)
+      assert(bodyResponse.body.contains("request_budget_exceeded"))
+
+      val cursor = "c" * (leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxCursorUtf8Bytes + 1)
+      val cursorBody = s"""{"query":"nails","filters":[],"requestedFacets":[],"sort":[],"page":{"cursor":"$cursor","size":20}}"""
+      val cursorResponse = runIO(observe(api.http.orNotFound, postJson("/beauty-search", cursorBody)))
+      assert(cursorResponse.status == Status.BadRequest)
+      assert(cursorResponse.body.contains("request_budget_exceeded"))
+    }
+
     "keep the new route isolated and preserve typed service failures" in {
       val service = new BeautySearchGen2Service[IO] {
         def execute(request: BeautySearchRequestGen2): IO[HttpApiFailure, BeautyQSearchResponseGen2] =
@@ -44,6 +63,20 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
       val response = runIO(observe(api.http.orNotFound, postJson("/beauty-search", "{\"query\":\"nails\",\"filters\":[],\"requestedFacets\":[],\"sort\":[],\"page\":{\"cursor\":\"cursor-token\",\"size\":20},\"userLocation\":{\"lat\":53.58,\"lon\":10.08}}")))
 
       assert(response.status == Status.ServiceUnavailable)
+    }
+
+    "map a decoded BeautyQ request-budget violation to HTTP 400" in {
+      val context = BeautyQOrchestrationTestKit.eligible()
+      val application = BeautyQSearchApplication.make(BeautyQOrchestrationTestKit.materialized, context.baselineService, context.embedding, context.qdrant)
+      val runtime = BeautyQSearchGen2Runtime.make(application, fullSearchStatus)
+      val api = new BeautySearchGen2Api[IO](new BeautyQSearchGen2HttpService(runtime), BeautySearchGen2TapirEndpoints)
+      val query = "q" * (leaderboard.search.beautyq.gen2.contract.BeautyQSearchRequestBudget.MaxQueryCodePoints + 1)
+      val response = runIO(observe(api.http.orNotFound, postJson(
+        "/beauty-search",
+        s"""{"query":"$query","filters":[],"requestedFacets":[],"sort":[],"page":{"size":20}}""",
+      )))
+      assert(response.status == Status.BadRequest)
+      assert(response.body.contains("request_budget_exceeded"))
     }
 
     "serve a successful full-search response" in {

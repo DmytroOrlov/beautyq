@@ -6,7 +6,7 @@ import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
 trait BeautySearchGen2TapirEndpoints {
-  def searchBeautyGen2: PublicEndpoint[Json, HttpApiFailure, Json, Any]
+  def searchBeautyGen2: PublicEndpoint[String, HttpApiFailure, Json, Any]
   def statusBeautyGen2: PublicEndpoint[Unit, HttpApiFailure, Json, Any]
 
   final def all: List[AnyEndpoint] = List(searchBeautyGen2, statusBeautyGen2)
@@ -15,9 +15,9 @@ trait BeautySearchGen2TapirEndpoints {
 object BeautySearchGen2TapirEndpoints extends BeautySearchGen2TapirEndpoints {
   given Schema[Json] = Schema.any[Json]
 
-  val searchBeautyGen2: PublicEndpoint[Json, HttpApiFailure, Json, Any] =
+  val searchBeautyGen2: PublicEndpoint[String, HttpApiFailure, Json, Any] =
     HttpApiFailureTapirSupport.endpointBase.in("beauty-search").post
-      .in(jsonBody[Json])
+      .in(stringBodyUtf8AnyFormat(Codec.string))
       .out(jsonBody[Json])
 
   val statusBeautyGen2: PublicEndpoint[Unit, HttpApiFailure, Json, Any] =

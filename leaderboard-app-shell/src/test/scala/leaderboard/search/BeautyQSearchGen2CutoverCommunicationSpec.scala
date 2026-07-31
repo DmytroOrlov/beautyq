@@ -167,15 +167,45 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
 
           writeArtifact("target/search-gen2/beautyq-evaluation-detailed.json", measured.detailedJson)
           writeArtifact("target/search-gen2/beautyq-evaluation-measurement.json", measured.measurementJson)
+          writeArtifact("target/search-gen2/beautyq-evaluation-score-separation.json", measured.scoreSeparationJson)
           writeArtifact("target/search-gen2/beautyq-evaluation-correction-gate.json", measured.correctionGate.toJson)
 
           assert(measured.warmupExecutions == 89)
           assert(measured.measuredExecutions == 267)
           if (!measured.correctionGate.passed) {
-            val failed = measured.correctionGate.checks.filterNot(_.passed).map { check =>
+            val failed = measured.correctionGate.checks.filterNot(_.passed)
+            val separation = measured.correctionGate.supplementScoreSeparation
+            val rendered = failed.map { check =>
               s"${check.stableCode} observed=${check.observed} expected=${check.expected}"
             }
-            fail(s"QUALITY_GATE_RED: ${failed.mkString("; ")}")
+            if (
+              failed.map(_.stableCode) == Vector("no-forbidden-hits") &&
+              separation.forbiddenCount > 0 &&
+              separation.nonForbiddenCount > 0 &&
+              !separation.strictlySeparable
+            ) {
+              val observations = scoreObservations(measured.scoreSeparationJson)
+              val maximumForbidden = stableMaximum(
+                observations.filter(_.judgment == "forbidden"),
+              ).getOrElse(fail("QUALITY_CORRECTION_DECISION_REQUIRED: missing forbidden witness"))
+              val minimumNonForbidden = stableMinimum(
+                observations.filter(value => Set("acceptable", "neutral", "unjudged").contains(value.judgment)),
+              ).getOrElse(fail("QUALITY_CORRECTION_DECISION_REQUIRED: missing non-forbidden witness"))
+              fail(
+                s"QUALITY_CORRECTION_DECISION_REQUIRED: ${rendered.mkString("; ")}; " +
+                  s"forbiddenScoreRange=${separation.minimumForbidden}..${separation.maximumForbidden}; " +
+                  s"nonForbiddenScoreRange=${separation.minimumNonForbidden}..${separation.maximumNonForbidden}; " +
+                  s"maximumForbidden:\n  caseId=${maximumForbidden.caseId}\n  resultId=${maximumForbidden.resultId}\n  " +
+                  s"origin=${maximumForbidden.origin}\n  score=${maximumForbidden.score}; " +
+                  s"minimumNonForbidden:\n  caseId=${minimumNonForbidden.caseId}\n  " +
+                  s"resultId=${minimumNonForbidden.resultId}\n  origin=${minimumNonForbidden.origin}\n  " +
+                  s"score=${minimumNonForbidden.score}; " +
+                  s"inequality=${maximumForbidden.score} >= ${minimumNonForbidden.score}; " +
+                  "overlap=true; no single threshold is safe"
+              )
+            } else {
+              fail(s"QUALITY_GATE_RED: ${rendered.mkString("; ")}")
+            }
           }
         } finally {
           cleanupExactResources(esClient, qdrantHttp, Vector(prepared.expectedElasticsearchTarget))
@@ -207,6 +237,43 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
     val gate = BeautyQCutoverGate.evaluate(startup.status.servingMode, observations)
     (gate, gate.toJson)
   }
+
+  private final case class ScoreWitness(
+    caseId: String,
+    resultId: String,
+    origin: String,
+    score: BigDecimal,
+    judgment: String,
+  )
+
+  private def scoreObservations(artifact: Json): Vector[ScoreWitness] = {
+    artifact.hcursor.downField("visibleCases").values.getOrElse(Vector.empty).flatMap { current =>
+      val caseId = current.hcursor.get[String]("caseId").getOrElse(fail("score artifact caseId is malformed"))
+      current.hcursor.downField("observations").values.getOrElse(Vector.empty).map { observation =>
+        ScoreWitness(
+          caseId,
+          observation.hcursor.get[String]("resultId").getOrElse(fail("score artifact resultId is malformed")),
+          observation.hcursor.get[String]("origin").getOrElse(fail("score artifact origin is malformed")),
+          observation.hcursor.get[BigDecimal]("score").getOrElse(fail("score artifact score is malformed")),
+          observation.hcursor.get[String]("judgment").getOrElse(fail("score artifact judgment is malformed")),
+        )
+      }
+    }.filter(_.origin == "qdrant_supplement").toVector
+  }
+
+  private def stableMaximum(values: Vector[ScoreWitness]): Option[ScoreWitness] =
+    values.foldLeft(Option.empty[ScoreWitness]) {
+      case (None, value) => Some(value)
+      case (Some(current), value) if value.score > current.score => Some(value)
+      case (Some(current), _) => Some(current)
+    }
+
+  private def stableMinimum(values: Vector[ScoreWitness]): Option[ScoreWitness] =
+    values.foldLeft(Option.empty[ScoreWitness]) {
+      case (None, value) => Some(value)
+      case (Some(current), value) if value.score < current.score => Some(value)
+      case (Some(current), _) => Some(current)
+    }
 
   private def failCutover(
     fixture: BeautyQCutoverQueryFixture,

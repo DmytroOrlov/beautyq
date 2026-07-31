@@ -14,6 +14,7 @@ object BeautyQSearchGen2RuntimeError {
 final class BeautyQSearchGen2Runtime private (
   application: BeautyQSearchApplication,
   val startupStatus: StartupServingStatus,
+  val startupEvidence: Option[BeautyQSearchStartupEvidence],
 ) {
   def execute(request: BeautySearchRequestGen2): IO[BeautyQSearchGen2RuntimeError, BeautyQSearchResponseGen2] =
     ZIO.attemptBlocking(application.execute(request))
@@ -35,6 +36,7 @@ object BeautyQSearchGen2Runtime {
   def make(
     application: BeautyQSearchApplication,
     startupStatus: StartupServingStatus,
+    startupEvidence: Option[BeautyQSearchStartupEvidence] = None,
   ): BeautyQSearchGen2Runtime =
-    new BeautyQSearchGen2Runtime(application, startupStatus)
+    new BeautyQSearchGen2Runtime(application, startupStatus, startupEvidence)
 }

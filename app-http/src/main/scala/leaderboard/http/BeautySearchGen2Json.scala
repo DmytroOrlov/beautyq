@@ -1,7 +1,8 @@
 package leaderboard.http
 
 import io.circe.{Decoder, Json}
-import leaderboard.search.beautyq.gen2.contract.{BeautySearchRequestGen2, BeautySortInput}
+import io.circe.parser.parse
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchRequestBudget, BeautySearchRequestGen2, BeautySortInput}
 import leaderboard.search.gen2.contract.{FacetId, FacetSelectionId, GeoPoint, PageRequest, PageSize, PublicFieldName, PublicFilterInput, PublicFilterValue, PublicOperator, PublicSortName, SearchCursor, SortDirection}
 
 /** The Gen2 wire codec is owned by the independent endpoint. It decodes into the native Gen2
@@ -11,16 +12,43 @@ import leaderboard.search.gen2.contract.{FacetId, FacetSelectionId, GeoPoint, Pa
   * BeautyQSearchResponseGen2Projector publishes. No constraint, provenance, suppression reason,
   * facet/group/carousel derivation, or backend mechanics is reconstructed in app-http. */
 object BeautySearchGen2Json {
+  sealed trait RequestDecodeError { def message: String }
+  object RequestDecodeError {
+    final case class BodyTooLarge(maxBytes: Int, actualBytes: Int) extends RequestDecodeError {
+      val message = s"request body exceeds $maxBytes UTF-8 bytes: $actualBytes"
+    }
+    final case class MalformedJson(detail: String) extends RequestDecodeError { val message = detail }
+    final case class InvalidShape(detail: String) extends RequestDecodeError { val message = detail }
+    final case class CursorTooLarge(maxBytes: Int, actualBytes: Int) extends RequestDecodeError {
+      val message = s"cursor exceeds $maxBytes UTF-8 bytes: $actualBytes"
+    }
+  }
+
+  def decodeTransportBody(raw: String): Either[RequestDecodeError, BeautySearchRequestGen2] = {
+    val bytes = raw.getBytes(java.nio.charset.StandardCharsets.UTF_8).length
+    if (bytes > BeautyQSearchRequestBudget.MaxTransportBodyBytes)
+      Left(RequestDecodeError.BodyTooLarge(BeautyQSearchRequestBudget.MaxTransportBodyBytes, bytes))
+    else parse(raw).left.map(error => RequestDecodeError.MalformedJson(error.message)).flatMap(decodeRequestTyped)
+  }
+
   def decodeRequest(json: Json): Either[String, BeautySearchRequestGen2] = {
+    decodeRequestTyped(json).left.map(_.message)
+  }
+
+  private def decodeRequestTyped(json: Json): Either[RequestDecodeError, BeautySearchRequestGen2] = {
     val c = json.hcursor
     for {
+      _ <- validateCursorBudget(c)
+      request <- (for {
       query <- get[Option[String]](c, "query")
       filters <- get[Vector[Json]](c, "filters").flatMap(values => sequence(values.zipWithIndex.map { case (value, index) => decodeFilter(value).left.map(error => s"filters[$index]: $error") }))
       requestedFacets <- get[Vector[String]](c, "requestedFacets").map(_.map(FacetId.apply))
       sort <- get[Vector[Json]](c, "sort").flatMap(values => sequence(values.zipWithIndex.map { case (value, index) => decodeSort(value).left.map(error => s"sort[$index]: $error") }))
       page <- get[Json](c, "page").flatMap(decodePage)
       userLocation <- get[Option[Json]](c, "userLocation").flatMap(_.map(decodeLocation).fold[Either[String, Option[GeoPoint]]](Right(None))(value => value.map(Some(_))))
-    } yield BeautySearchRequestGen2(query, filters, requestedFacets, sort, page, userLocation)
+      } yield BeautySearchRequestGen2(query, filters, requestedFacets, sort, page, userLocation))
+        .left.map(RequestDecodeError.InvalidShape.apply)
+    } yield request
   }
 
   def encodeResponse(response: leaderboard.search.beautyq.gen2.wiring.BeautyQSearchResponseGen2): Json = {
@@ -134,6 +162,15 @@ object BeautySearchGen2Json {
       pageSize <- PageSize.from(size).left.map(_.toString)
     } yield PageRequest(cursor.map(SearchCursor.fromTransport), pageSize)
   }
+
+  private def validateCursorBudget(cursor: io.circe.HCursor): Either[RequestDecodeError, Unit] =
+    cursor.downField("page").downField("cursor").focus.flatMap(_.asString) match {
+      case None => Right(())
+      case Some(value) =>
+        val bytes = value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length
+        if (bytes <= BeautyQSearchRequestBudget.MaxCursorUtf8Bytes) Right(())
+        else Left(RequestDecodeError.CursorTooLarge(BeautyQSearchRequestBudget.MaxCursorUtf8Bytes, bytes))
+    }
 
   private def decodeLocation(json: Json): Either[String, GeoPoint] = {
     val c = json.hcursor

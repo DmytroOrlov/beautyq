@@ -7,10 +7,13 @@ object BeautyQQdrantRuntime {
   val policy = BeautyQQdrantPolicy.policy
   val resources = BeautyQSearchGen2ResourceNames
 
-  def lifecycle(client: QdrantGen2Client): Either[QdrantGenerationLifecycleConfig.Error, QdrantGenerationLifecycle] =
+  def lifecycle(
+    client: QdrantGen2Client,
+    workPolicy: QdrantGenerationWorkPolicy = QdrantGenerationWorkPolicy.Default,
+  ): Either[QdrantGenerationLifecycleConfig.Error, QdrantGenerationLifecycle] =
     QdrantResourceName.from(resources.QdrantCollectionAlias) match {
       case Left(error) => Left(QdrantGenerationLifecycleConfig.Error.InvalidAlias(error))
-      case Right(alias) => QdrantGenerationLifecycleConfig.create(alias, resources.QdrantPhysicalCollectionPrefix).map(config => new QdrantGenerationLifecycle(client, config))
+      case Right(alias) => QdrantGenerationLifecycleConfig.create(alias, resources.QdrantPhysicalCollectionPrefix).map(config => new QdrantGenerationLifecycle(client, config, workPolicy))
     }
 
   def candidateService(client: QdrantGen2Client): Either[QdrantCandidateServiceConfig.Error, QdrantCandidateService] =

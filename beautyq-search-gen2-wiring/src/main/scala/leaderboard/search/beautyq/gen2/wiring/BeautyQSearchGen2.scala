@@ -1,6 +1,6 @@
 package leaderboard.search.beautyq.gen2.wiring
 
-import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy, BeautySearchRequestGen2}
+import leaderboard.search.beautyq.gen2.contract.{BeautyQSearchDeclarations, BeautyQSearchPlanPolicy, BeautyQSearchRequestBudget, BeautySearchRequestGen2}
 import leaderboard.search.beautyq.gen2.materialization.{
   BeautyQSearchSnapshotSource,
   BeautyQSnapshotCanonicalRows,
@@ -13,6 +13,7 @@ object BeautyQSearchGen2 {
 
   object input {
     val request      = BeautySearchRequestGen2
+    val budget       = BeautyQSearchRequestBudget
     val intentParser = BeautyQIntentParserGen2
   }
 

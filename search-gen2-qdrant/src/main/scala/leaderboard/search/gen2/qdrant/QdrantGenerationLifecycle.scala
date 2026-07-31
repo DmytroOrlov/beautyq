@@ -35,11 +35,18 @@ object QdrantGenerationLifecycleError {
   final case class AliasAmbiguous(alias: String, targets: Vector[String]) extends QdrantGenerationLifecycleError
   final case class MutationRejected(operation: String, raw: Json) extends QdrantGenerationLifecycleError
   final case class PointCountMismatch(expected: Int, actual: Long) extends QdrantGenerationLifecycleError
+  final case class UpsertBatchFailed(
+    batchIndex: Int,
+    firstPointIndex: Int,
+    pointCount: Int,
+    cause: QdrantGenerationLifecycleError,
+  ) extends QdrantGenerationLifecycleError
 }
 
 final class QdrantGenerationLifecycle(
   client: QdrantGen2Client,
   config: QdrantGenerationLifecycleConfig,
+  workPolicy: QdrantGenerationWorkPolicy = QdrantGenerationWorkPolicy.Default,
 ) {
   import QdrantGenerationLifecycleError.*
 
@@ -104,7 +111,16 @@ final class QdrantGenerationLifecycle(
         "payload" -> point.payload,
       )
     }
-    client.upsertPoints(target, Json.obj("points" -> Json.fromValues(points))).left.map(Transport("upsert-points", _)).flatMap(raw => decodeMutation("upsert-points", raw, requireBoolean = false).map(_ => ()))
+    points.grouped(workPolicy.upsertBatchSize).toVector.zipWithIndex.foldLeft[Either[QdrantGenerationLifecycleError, Unit]](Right(())) {
+      case (acc, (batch, batchIndex)) => acc.flatMap { _ =>
+        val firstPointIndex = batchIndex * workPolicy.upsertBatchSize
+        val operation = s"upsert-points[$batchIndex]"
+        val result = client.upsertPoints(target, Json.obj("points" -> Json.fromValues(batch)))
+          .left.map(Transport(operation, _))
+          .flatMap(raw => decodeMutation(operation, raw, requireBoolean = false))
+        result.left.map(UpsertBatchFailed(batchIndex, firstPointIndex, batch.size, _))
+      }
+    }
   }
 
   private def countPoints(target: QdrantResourceName): Either[QdrantGenerationLifecycleError, Long] =
