@@ -2177,8 +2177,13 @@ an ordered private holdout corpus and a separate protected-acceptance policy, re
 application execution path, emits aggregate-only protected report/measurement/gate artifacts, and
 derives a candidate baseline only after a green protected gate. The private product inputs are not
 present in this checkout, so protected acceptance and the first accepted manifest remain pending.
-The first accepted manifest must be bootstrapped from a clean committed application revision; a
-`working-tree` revision is rejected. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
+`BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
+candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
+resource and compares ordered aggregate observations. The first accepted manifest must be
+bootstrapped from a clean committed application revision; a `working-tree` revision is rejected.
+The verifier reports but does not compare these run-specific audit fields as baseline identity:
+application revision, Elasticsearch generation reference, Qdrant generation ID, visible report
+digest, protected report digest and top-level manifest report digest. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
 fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
 observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
 without per-case or result identities.

@@ -33,22 +33,41 @@ object BeautyQSearchGen2EvaluationResourceHarness {
   final case class ManagedPorts(elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg)
   final case class Prepared(versioned: VersionedSnapshot[BeautyQSearchSnapshot], expectedElasticsearchTarget: String)
 
+  final class ProtectedAcceptanceExecution private[search] (
+    val visible: BeautyQMeasuredEvaluationResult,
+    val protectedRun: BeautyQMeasuredEvaluationResult,
+    val protectedCorpus: BeautyQProtectedEvaluationCorpus,
+    val protectedPolicy: BeautyQProtectedAcceptancePolicy,
+    val acceptance: BeautyQProtectedAcceptanceResult,
+  )
+
   def runProtectedAcceptance(
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
   ): String = {
+    executeProtectedAcceptance(protectedCorpusPath, protectedPolicyPath, outputDir) match {
+      case Right(_) => "PROTECTED_ACCEPTANCE_EVALUATION_GREEN"
+      case Left(error) => error
+    }
+  }
+
+  def executeProtectedAcceptance(
+    protectedCorpusPath: Path,
+    protectedPolicyPath: Path,
+    outputDir: Path,
+  ): Either[String, ProtectedAcceptanceExecution] = {
     val visibleCorpus = BeautyQEvaluationCorpus.loadCanonical() match {
       case Right(value) => value
-      case Left(error) => return s"PRODUCT_INPUT_REQUIRED: canonical visible corpus unavailable: $error"
+      case Left(_) => return Left("PRODUCT_INPUT_REQUIRED: canonical visible corpus unavailable")
     }
     val protectedPolicy = BeautyQProtectedAcceptancePolicy.load(protectedPolicyPath) match {
       case Right(value) => value
-      case Left(_) => return "PRODUCT_INPUT_REQUIRED: protected acceptance policy input is missing or invalid"
+      case Left(_) => return Left("PRODUCT_INPUT_REQUIRED: protected acceptance policy input is missing or invalid")
     }
     val protectedCorpus = BeautyQProtectedEvaluationCorpus.load(protectedCorpusPath, visibleCorpus, protectedPolicy) match {
       case Right(value) => value
-      case Left(_) => return "PRODUCT_INPUT_REQUIRED: protected corpus input is missing or invalid"
+      case Left(_) => return Left("PRODUCT_INPUT_REQUIRED: protected corpus input is missing or invalid")
     }
     val embeddingConfig = LlamaCppEmbeddingClientConfig(
       baseUrl = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081"),
@@ -56,7 +75,7 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     )
     val embeddingEndpoint = URI.create(s"${embeddingConfig.baseUrl}${embeddingConfig.endpointPath}").toURL
     if (!probeEmbeddingReachability(embeddingEndpoint))
-      return s"VERIFICATION BLOCKED: real embedding endpoint is unreachable at $embeddingEndpoint"
+      return Left(s"VERIFICATION BLOCKED: real embedding endpoint is unreachable at $embeddingEndpoint")
 
     val prepared = prepareCanonicalSeedEvaluation()
     withManagedPorts { (elasticsearchPort, qdrantPort) =>
@@ -108,7 +127,8 @@ object BeautyQSearchGen2EvaluationResourceHarness {
         writeArtifact(outputDir.resolve("beautyq-protected-aggregate.json"), protectedRun.protectedReportJson)
         writeArtifact(outputDir.resolve("beautyq-protected-measurement.json"), protectedRun.measurementJson)
         writeArtifact(outputDir.resolve("beautyq-protected-acceptance-gate.json"), acceptance.toJson)
-        if (acceptance.passed) "PROTECTED_ACCEPTANCE_EVALUATION_GREEN" else "PROTECTED_ACCEPTANCE_RED"
+        if (acceptance.passed) Right(new ProtectedAcceptanceExecution(visible, protectedRun, protectedCorpus, protectedPolicy, acceptance))
+        else Left("PROTECTED_ACCEPTANCE_RED")
       } finally {
         cleanupExactResources(esClient, qdrantHttp, Vector(prepared.expectedElasticsearchTarget))
       }

@@ -199,16 +199,40 @@ sbt --batch --no-global \
 
 The runner loads both inputs strictly, proves the visible acceptance gate before executing any
 protected case, and uses the same startup/application path for visible and protected evidence.
-It writes exactly three aggregate-only artifacts:
+The protected runner writes exactly three aggregate-only artifacts:
 
 - `beautyq-protected-aggregate.json`
 - `beautyq-protected-measurement.json`
 - `beautyq-protected-acceptance-gate.json`
 
-It never emits protected case IDs, queries, result IDs, a candidate manifest, or a canonical
-accepted manifest. Missing or malformed private inputs and unavailable external resources are
-non-zero operational failures, not synthetic acceptance. Candidate and canonical manifest
-bootstrap is a later clean-HEAD operation.
+It never emits protected case IDs, queries or result IDs. Missing or malformed private inputs and
+unavailable external resources are non-zero operational failures, not synthetic acceptance.
+
+The accepted-baseline bootstrap/verification runner is a separate manual, non-discovered owner:
+
+```bash
+sbt --batch --no-global \
+  -Dsearch.gen2.eval.application-revision=<clean-commit> \
+  'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQAcceptedBaselineMain \
+    --mode bootstrap \
+    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
+    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
+    --output-dir target/search-gen2/protected'
+```
+
+Bootstrap derives `beautyq-accepted-baseline-candidate.json` only after the existing protected
+gate is green. It never edits source resources. The candidate is reviewed and promoted as the
+single aggregate-only classpath resource:
+
+`beautyq-search-gen2-eval/src/main/resources/leaderboard/search/beautyq/gen2/eval/beautyq_accepted_evaluation_baseline_v1.json`
+
+Verification runs the same real evidence path with `--mode verify`, loads only that canonical
+resource, writes `beautyq-accepted-baseline-verification.json`, and compares ordered aggregate
+observations and stable provenance. It does not use these run-specific audit fields as equality
+requirements: application revision, Elasticsearch generation reference, Qdrant generation ID,
+visible report digest, protected report digest and top-level manifest report digest. It never
+overwrites the canonical resource. A red or blocked run produces no candidate or verification
+manifest.
 
 ## Not implemented
 

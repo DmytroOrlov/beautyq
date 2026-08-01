@@ -281,8 +281,13 @@ policy versions, application revision, embedding provider/model/revision/dimensi
 digest, and only the approved aggregate/slice observations needed for comparison. Thresholds remain
 owned by the typed domain policy rather than being redefined by the manifest.
 
-The manifest is generated from a real report, strictly decoded, and rejected when its provenance no
-longer matches current corpus/policy/snapshot/model identities. Updating labels necessarily changes the
+The manifest is generated from a real report through
+`BeautyQAcceptedEvaluationBaseline.fromAcceptedProtectedRun`, strictly decoded through the generic
+accepted-baseline codec, and loaded from one canonical BeautyQ eval resource. A separate verifier
+compares ordered aggregate observations and rejects when stable corpus, policy, snapshot or model
+provenance no longer matches. These run-specific audit fields are reported but are not equality
+requirements: application revision, Elasticsearch generation reference, Qdrant generation ID,
+visible report digest, protected report digest and top-level manifest report digest. Updating labels necessarily changes the
 corpus fingerprint and requires an explicit label-review diff. No manually edited count/report may
 become a second authority.
 
@@ -305,8 +310,11 @@ seeing output.
    holdout before it can again serve as acceptance evidence.
 7. Rerun development/regression evidence and then the replenished protected holdout without changing
    its labels or thresholds in response to output.
-8. Generate the first accepted manifest from the first approved report; do not check in the full
-   report or hand-copy its counts.
+8. Run the manual bootstrap from the exact clean committed application revision. Review the generated
+   aggregate-only candidate and promote it byte-for-byte to the one canonical eval resource; do not
+   check in the full report or hand-copy its counts.
+9. Run manual verify against the canonical resource. Require a strict decode, compatible ordered
+   observations, and zero initial deltas before calling the first manifest accepted.
 
 Poor relevance does not by itself prove that the Gen2 architecture is wrong. It proves that a specific
 business policy or retrieval configuration needs measured correction. Hard semantic or no-harm
@@ -378,6 +386,8 @@ Disabled is selected before provisioning and its retained managed graph does not
 - retain the four-query real-resource smoke separately;
 - keep development/regression details visible, keep protected-holdout output aggregate/slice-only,
   and generate the first accepted manifest only after protected acceptance;
+- use `BeautyQAcceptedBaselineMain` only in manual `bootstrap` or `verify` mode; the canonical
+  manifest is eval-owned, aggregate-only and never overwritten by a runner;
 - stop for a bounded corrective patch if hard/no-harm gates fail;
 - do not tune labels or thresholds to make existing output green.
 

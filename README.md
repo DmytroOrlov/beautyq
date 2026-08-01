@@ -19,9 +19,10 @@ Start here:
 BeautyQ Search Gen2 is the complete native serving architecture. Its declaration, baseline/supplement,
 lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete; the approved Q2
 visible-regression intent correction is implemented and proved through the complete managed 89-case
-hard/no-harm run. Protected-acceptance machinery is implemented, but its private product corpus and
-acceptance policy are not present in this checkout, so protected acceptance and the first accepted
-manifest remain pending; D1 requires second-domain product input.
+hard/no-harm run. Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
+owners are implemented, but the private product corpus and acceptance policy are not present in this
+checkout, so protected acceptance and the first accepted manifest remain pending; D1 requires
+second-domain product input.
 
 The route/Qdrant sections below are current operational truth.
 
