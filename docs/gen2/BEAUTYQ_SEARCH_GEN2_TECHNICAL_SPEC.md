@@ -2172,7 +2172,13 @@ NearUser overlay. Typed hard constraints continue unchanged through the Elastics
 Qdrant candidate plans, and hydration remains a second hard-constraint check. No result filtering,
 threshold, corpus-label change, materialized-shape change or lifecycle redesign is used. The complete
 managed 89-case rerun passed: zero forbidden hits, all hard/no-harm checks green, no threshold
-required. Protected cases, domain thresholds and an accepted manifest remain unimplemented. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
+required. Protected-acceptance machinery is implemented as a BeautyQ eval owner: it strictly decodes
+an ordered private holdout corpus and a separate protected-acceptance policy, reuses the same measured
+application execution path, emits aggregate-only protected report/measurement/gate artifacts, and
+derives a candidate baseline only after a green protected gate. The private product inputs are not
+present in this checkout, so protected acceptance and the first accepted manifest remain pending.
+The first accepted manifest must be bootstrapped from a clean committed application revision; a
+`working-tree` revision is rejected. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
 fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
 observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
 without per-case or result identities.

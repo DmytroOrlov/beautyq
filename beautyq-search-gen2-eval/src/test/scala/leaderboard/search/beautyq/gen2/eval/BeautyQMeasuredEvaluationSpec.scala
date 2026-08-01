@@ -282,6 +282,70 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
         """new leaderboard.search.beautyq.gen2.eval.BeautyQLatencySummary(1, 1L, 1L, 1L, 1L)"""
       )
     }
+
+    "recursively exclude protected sentinel identities from all output forms" in {
+      val result = syntheticProtectedResult()
+      val allJson = Vector(
+        "detailedJson" -> result.detailedJson,
+        "protectedReportJson" -> result.protectedReportJson,
+        "measurementJson" -> result.measurementJson,
+        "scoreSeparationJson" -> result.scoreSeparationJson,
+      )
+      val sentinels = Vector(
+        "synthetic-protected-sentinel-case",
+        "synthetic-protected-sentinel-query",
+        "synthetic-protected-sentinel-result",
+        "synthetic-protected-sentinel-note",
+      )
+      allJson.foreach { case (name, json) =>
+        val text = json.noSpaces
+        sentinels.foreach(sentinel =>
+          assert(!text.contains(sentinel), s"$name must not contain '$sentinel'")
+        )
+      }
+    }
+
+    "retain aggregate protected evidence in protected output" in {
+      val result = syntheticProtectedResult()
+      val struct = result.protectedReportJson.hcursor.downField("globalAggregates")
+      assert(struct.get[Int]("structuralInvalidCount").isRight)
+      assert(struct.get[Int]("duplicateIdentityCount").isRight)
+      assert(struct.get[Int]("forbiddenHitCount").isRight)
+      val observations = struct.downField("metricObservations").values
+      assert(observations.nonEmpty)
+      observations.foreach { values =>
+        values.foreach { obs =>
+          assert(obs.hcursor.get[String]("surface").isRight)
+          assert(obs.hcursor.get[String]("metric").isRight)
+          assert(obs.hcursor.get[Int]("cutoff").isRight)
+          assert(obs.hcursor.get[BigDecimal]("average").isRight)
+        }
+      }
+      val cases = result.protectedReportJson.hcursor.downField("caseResults").values
+      cases.foreach { values =>
+        values.foreach { cr =>
+          assert(cr.hcursor.get[String]("caseId").isRight)
+        }
+      }
+    }
+
+    "prove protectedReportDigest equals digest of protectedReportJson" in {
+      val result = syntheticProtectedResult()
+      val expectedDigest = leaderboard.search.gen2.eval.EvaluationReportDigest.compute(result.protectedReportJson)
+      assert(result.protectedReportDigest == expectedDigest)
+    }
+
+    "prove digest is deterministic" in {
+      val result1 = syntheticProtectedResult()
+      val result2 = syntheticProtectedResult()
+      assert(result1.protectedReportDigest == result2.protectedReportDigest)
+      assert(result1.reportDigest == result2.reportDigest)
+    }
+
+    "retain the supplied protected evaluation-policy version" in {
+      val result = syntheticProtectedResult()
+      assert(result.evaluationPolicyVersion == BeautyQEvaluationPolicy.CurrentVersion)
+    }
   }
 
   private def canonicalCase(): (BeautyQEvaluationCorpus, CorpusCase) = {
@@ -319,5 +383,81 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
       case Right(value) => value
       case Left(error)  => fail(s"expected measured case, got $error")
     }
+  }
+
+  private def syntheticProtectedResult(): BeautyQMeasuredEvaluationResult = {
+    val caseId = leaderboard.search.gen2.eval.EvaluationCaseId.from("synthetic-protected-sentinel-case") match {
+      case Right(value) => value
+      case Left(error) => fail(error.toString)
+    }
+    val resultId = leaderboard.search.gen2.eval.EvaluationResultId.from("synthetic-protected-sentinel-result") match {
+      case Right(value) => value
+      case Left(error) => fail(error.toString)
+    }
+    val surface = BeautyQEvaluationPolicy.Variants
+    val slice = leaderboard.search.gen2.eval.EvaluationSliceId.from("smoke") match {
+      case Right(value) => value
+      case Left(error) => fail(error.toString)
+    }
+    val judgments = leaderboard.search.gen2.eval.RankingJudgments.from(
+      leaderboard.search.gen2.eval.JudgmentMode.Partial,
+      Vector(resultId), Vector.empty, Vector.empty, Vector.empty,
+    ) match {
+      case Right(value) => value
+      case Left(error) => fail(error.toString)
+    }
+    val ranking = leaderboard.search.gen2.eval.RankingEvaluationInput.from(
+      caseId, leaderboard.search.gen2.eval.EvaluationPartition.ProtectedHoldout, surface,
+      Vector(slice), judgments, Vector(resultId), BeautyQEvaluationPolicy.cutoffs,
+    ) match {
+      case Right(value) => leaderboard.search.gen2.eval.RankingEvaluator.evaluate(value)
+      case Left(error) => fail(error.toString)
+    }
+    val provenance = Vector(
+      "corpus-fingerprint" -> ("f" * 64),
+      "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
+      "metric-schema-version" -> leaderboard.search.gen2.eval.RankingEvaluator.MetricSchemaVersion,
+    ).foldLeft[Vector[leaderboard.search.gen2.eval.ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
+      val id = leaderboard.search.gen2.eval.EvaluationProvenanceId.from(idText) match {
+        case Right(actual) => actual
+        case Left(error) => fail(error.toString)
+      }
+      leaderboard.search.gen2.eval.ProvenanceComponent.from(id, value) match {
+        case Right(actual) => done :+ actual
+        case Left(error) => fail(error.toString)
+      }
+    }
+    val reportInput = leaderboard.search.gen2.eval.EvaluationReportCaseInput.from(
+      caseId, leaderboard.search.gen2.eval.EvaluationPartition.ProtectedHoldout,
+      leaderboard.search.gen2.eval.JudgmentMode.Partial,
+      Some(Vector(slice)), Vector(surface -> ranking),
+    ) match {
+      case Right(value) => value
+      case Left(error) => fail(error.toString)
+    }
+    val report = leaderboard.search.gen2.eval.EvaluationReportBuilder.build(provenance, Vector(reportInput))
+    val scoreSep = BeautyQSupplementScoreSeparation.from(Vector.empty)
+    val checks = Vector(
+      "required-full-search", "complete-warmup", "complete-measured-passes",
+      "deterministic-measured-rankings", "no-request-degradation",
+      "no-public-identity-duplicates", "no-forbidden-hits",
+      "baseline-prefix-preserved", "baseline-owned-components-preserved",
+      "append-budget-preserved",
+    ).map(code => BeautyQEvaluationCorrectionCheck.create(code, true, "true", "true"))
+    BeautyQMeasuredEvaluationResult.create(
+      report,
+      leaderboard.search.gen2.eval.EvaluationReport.encodeDetailed(report),
+      leaderboard.search.gen2.eval.EvaluationReport.encodeProtected(report),
+      leaderboard.search.gen2.eval.EvaluationReportDigest.compute(
+        leaderboard.search.gen2.eval.EvaluationReport.encodeProtected(report),
+      ),
+      leaderboard.search.gen2.eval.EvaluationReportDigest.compute(
+        leaderboard.search.gen2.eval.EvaluationReport.encodeDetailed(report),
+      ),
+      io.circe.Json.obj("test" -> io.circe.Json.fromString("measurement")),
+      io.circe.Json.obj("test" -> io.circe.Json.fromString("score-separation")),
+      BeautyQEvaluationCorrectionGateResult.create(checks, 1, 1, 3, 0, 0, 0, 0, 0, 0, scoreSep),
+      1, 3, BeautyQEvaluationPolicy.CurrentVersion,
+    )
   }
 }

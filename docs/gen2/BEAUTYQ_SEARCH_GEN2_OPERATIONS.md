@@ -177,6 +177,39 @@ Database changes become visible after the coordinated restart; this is restart-o
 CDC lag. A failed or changed identity remains for a later fenced retry, and no online automatic
 cleaner is permitted.
 
+## Protected acceptance run (manual only)
+
+Protected acceptance inputs are private operator-owned files and are not checked into the
+repository:
+
+- `target/search-gen2/private/beautyq-protected-holdout-v1.json`
+- `target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json`
+
+The test-owned runner is not an auto-discovered suite. Invoke it only from a clean committed
+revision with an explicit application revision property:
+
+```bash
+sbt --batch --no-global \
+  -Dsearch.gen2.eval.application-revision=<clean-commit> \
+  'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQProtectedAcceptanceMain \
+    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
+    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
+    --output-dir target/search-gen2/protected'
+```
+
+The runner loads both inputs strictly, proves the visible acceptance gate before executing any
+protected case, and uses the same startup/application path for visible and protected evidence.
+It writes exactly three aggregate-only artifacts:
+
+- `beautyq-protected-aggregate.json`
+- `beautyq-protected-measurement.json`
+- `beautyq-protected-acceptance-gate.json`
+
+It never emits protected case IDs, queries, result IDs, a candidate manifest, or a canonical
+accepted manifest. Missing or malformed private inputs and unavailable external resources are
+non-zero operational failures, not synthetic acceptance. Candidate and canonical manifest
+bootstrap is a later clean-HEAD operation.
+
 ## Not implemented
 
 - Hot reconciliation or CDC

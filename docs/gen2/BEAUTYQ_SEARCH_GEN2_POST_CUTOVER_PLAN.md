@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; protected acceptance and first accepted manifest pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; protected-acceptance machinery implemented, private product inputs and first accepted manifest pending, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -436,8 +436,12 @@ non-forbidden `0.44723216`. Therefore a single global Qdrant threshold was not a
 and was not added. The intent-policy correction (r058/r062 paraphrase extensions, r088 ServiceAny)
 repaired the three regression cases without a threshold. The complete 89-case managed rerun now
 passes: zero forbidden hits, all hard/no-harm checks green. Q2 visible-regression correction is
-proved; Q2 as a whole remains open only for product-supplied protected-holdout cases, approved
-protected thresholds and generation of the first accepted manifest.
+proved; protected acceptance machinery now provides strict private-corpus/policy decoding, shared
+visible/protected execution, aggregate-only protected report encoding, a typed protected gate and a
+candidate-baseline adapter. Q2 as a whole remains open for product-supplied protected-holdout cases,
+an approved protected acceptance policy and generation of the first accepted manifest from a clean
+committed revision. The current checkout has no private product inputs, so no protected run was
+claimed or executed; the manual runner reports `PRODUCT_INPUT_REQUIRED` until they are supplied.
 
 ### Patch D1 — eval-first second-domain vertical
 

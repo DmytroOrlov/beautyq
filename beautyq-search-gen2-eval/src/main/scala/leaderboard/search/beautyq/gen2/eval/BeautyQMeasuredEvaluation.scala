@@ -338,33 +338,42 @@ private[eval] object BeautyQMeasuredCase {
 final class BeautyQMeasuredEvaluationResult private[BeautyQMeasuredEvaluationResult] (
   val report: EvaluationReport,
   val detailedJson: Json,
+  val protectedReportJson: Json,
+  val protectedReportDigest: String,
   val reportDigest: String,
   val measurementJson: Json,
   val scoreSeparationJson: Json,
   val correctionGate: BeautyQEvaluationCorrectionGateResult,
   val warmupExecutions: Int,
   val measuredExecutions: Int,
+  val evaluationPolicyVersion: String,
 )
 object BeautyQMeasuredEvaluationResult {
   private[eval] def create(
     report: EvaluationReport,
     detailedJson: Json,
+    protectedReportJson: Json,
+    protectedReportDigest: String,
     reportDigest: String,
     measurementJson: Json,
     scoreSeparationJson: Json,
     correctionGate: BeautyQEvaluationCorrectionGateResult,
     warmupExecutions: Int,
     measuredExecutions: Int,
+    evaluationPolicyVersion: String,
   ): BeautyQMeasuredEvaluationResult =
     new BeautyQMeasuredEvaluationResult(
       report,
       detailedJson,
+      protectedReportJson,
+      protectedReportDigest,
       reportDigest,
       measurementJson,
       scoreSeparationJson,
       correctionGate,
       warmupExecutions,
       measuredExecutions,
+      evaluationPolicyVersion,
     )
 }
 
@@ -376,6 +385,26 @@ object BeautyQMeasuredEvaluation {
   ): Either[BeautyQEvaluationExecutionError, BeautyQMeasuredEvaluationResult] =
     for {
       corpus <- BeautyQEvaluationCorpus.loadCanonical().left.map(BeautyQEvaluationExecutionError.Corpus.apply)
+      result <- executeCorpus(application, startupStatus, environment, corpus, BeautyQEvaluationPolicy.CurrentVersion)
+    } yield result
+
+  def executeProtected(
+    application: BeautyQSearchApplication,
+    startupStatus: StartupServingStatus,
+    environment: BeautyQEvaluationEnvironment,
+    corpus: BeautyQEvaluationCorpus,
+    evaluationPolicyVersion: String,
+  ): Either[BeautyQEvaluationExecutionError, BeautyQMeasuredEvaluationResult] =
+    executeCorpus(application, startupStatus, environment, corpus, evaluationPolicyVersion)
+
+  private def executeCorpus(
+    application: BeautyQSearchApplication,
+    startupStatus: StartupServingStatus,
+    environment: BeautyQEvaluationEnvironment,
+    corpus: BeautyQEvaluationCorpus,
+    evaluationPolicyVersion: String,
+  ): Either[BeautyQEvaluationExecutionError, BeautyQMeasuredEvaluationResult] =
+    for {
       _ <- validateStartup(startupStatus)
       warmup <- executePass(application, startupStatus, corpus, "warmup[1]")
       measured <- (1 to BeautyQEvaluationPolicy.measuredPasses).toVector.foldLeft[
@@ -385,9 +414,11 @@ object BeautyQMeasuredEvaluation {
       }
       first <- measured.headOption.toRight(BeautyQEvaluationExecutionError.Environment("measured passes must be non-empty"))
       _ <- validateMeasuredDeterminism(first, measured)
-      provenance <- provenanceComponents(corpus, startupStatus, environment)
+      provenance <- provenanceComponents(corpus, startupStatus, environment, evaluationPolicyVersion)
       report = EvaluationReportBuilder.build(provenance, first.map(_.reportInput))
       detailed = EvaluationReport.encodeDetailed(report)
+      protectedReport = EvaluationReport.encodeProtected(report)
+      protectedDigest = EvaluationReportDigest.compute(protectedReport)
       digest = EvaluationReportDigest.compute(detailed)
       gate = BeautyQEvaluationCorrectionGate.evaluate(
         startupStatus.policy,
@@ -402,12 +433,15 @@ object BeautyQMeasuredEvaluation {
     } yield BeautyQMeasuredEvaluationResult.create(
       report,
       detailed,
+      protectedReport,
+      protectedDigest,
       digest,
       measurement,
       scoreSeparation,
       gate,
       warmup.size,
       measured.map(_.size).sum,
+      evaluationPolicyVersion,
     )
 
   private def validateStartup(status: StartupServingStatus): Either[BeautyQEvaluationExecutionError, Unit] =
@@ -490,6 +524,7 @@ object BeautyQMeasuredEvaluation {
     corpus: BeautyQEvaluationCorpus,
     status: StartupServingStatus,
     environment: BeautyQEvaluationEnvironment,
+    evaluationPolicyVersion: String,
   ): Either[BeautyQEvaluationExecutionError, Vector[ProvenanceComponent]] = {
     val model = BeautyQQdrantPolicy.policy.embeddingModel
     val raw = Vector(
@@ -499,8 +534,9 @@ object BeautyQMeasuredEvaluation {
       "elasticsearch-generation-reference" -> status.elasticsearchReference,
       "qdrant-generation-id" -> status.qdrantGenerationId.getOrElse("missing"),
       "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
-      "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
+      "evaluation-policy-version" -> evaluationPolicyVersion,
       "application-revision" -> environment.applicationRevision,
+      "application-revision-source" -> environment.applicationRevisionSource,
       "embedding-provider" -> model.provider,
       "embedding-model" -> model.model,
       "embedding-revision" -> model.revision,

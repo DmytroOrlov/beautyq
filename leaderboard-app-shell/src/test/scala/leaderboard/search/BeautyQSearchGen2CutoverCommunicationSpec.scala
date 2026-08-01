@@ -1,16 +1,9 @@
 package leaderboard.search
 
-import com.typesafe.config.ConfigFactory
-import distage.{Injector, ModuleDef, Scene}
 import io.circe.Json
-import izumi.distage.model.definition.{Activation, LocatorPrivacy}
-import izumi.distage.model.plan.Roots
-import izumi.distage.config.model.AppConfig
 import izumi.logstage.api.IzLogger
-import izumi.logstage.distage.LogIO2Module
 import logstage.LogIO2
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
-import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
 import leaderboard.search.beautyq.gen2.eval.{BeautyQCutoverGate, BeautyQCutoverQueryFixture, BeautyQCutoverQueryObservation, BeautyQEvaluationEnvironment, BeautyQEvaluationExecutionError, BeautyQGen1SearchDeletionInventory, BeautyQMeasuredEvaluation, BeautyQNoHarmSupplementEvidence}
 import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshot, BeautyQSnapshotFingerprint, BeautyQVariantMaterializer, SnapshotLoadError}
 import leaderboard.seed.BeautyQSeedLoader
@@ -21,7 +14,7 @@ import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
 import leaderboard.search.gen2.{BeautyQGen2EmbeddingClient, BeautyQSearchGen2Bootstrap, BeautyQSearchGen2Startup}
-import zio.{IO, Runtime, Task, Unsafe, ZIO}
+import zio.{IO, Runtime, Unsafe, ZIO}
 
 import java.net.{HttpURLConnection, URI, URL}
 import java.nio.charset.StandardCharsets
@@ -473,34 +466,8 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
     case _ => false
   }
 
-  private final case class ManagedPorts(
-    elasticsearch: ElasticsearchPortCfg,
-    qdrant: QdrantGen2PortCfg,
-  )
-
   private def withManagedPorts[A](f: (ElasticsearchPortCfg, QdrantGen2PortCfg) => A): A = {
-    BeautyQSearchGen2ResourceSupport.withExclusiveCanonicalNamespace {
-      val module = new ModuleDef {
-        make[AppConfig].fromValue(AppConfig.provided(ConfigFactory.load("common-reference.conf").resolve()))
-        include(LogIO2Module[IO]())
-        make[IzLogger].fromValue(IzLogger())
-        include(ElasticsearchDockerPlugin.dockerModule[IO])
-        include(QdrantGen2DockerPlugin.dockerModule[IO])
-        make[ManagedPorts].from { (elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg) =>
-          ManagedPorts(elasticsearch, qdrant)
-        }
-      }
-      val effect = Injector[Task]().produce(
-        bindings = module,
-        roots = Roots.target[ManagedPorts],
-        activation = Activation(Scene -> Scene.Managed),
-        locatorPrivacy = LocatorPrivacy.PublicByDefault,
-      ).use { locator =>
-        val ports = locator.get[ManagedPorts]
-        ZIO.attemptBlocking(f(ports.elasticsearch, ports.qdrant))
-      }
-      Unsafe.unsafe { implicit unsafe => Runtime.default.unsafe.run(effect).getOrThrowFiberFailure() }
-    }
+    BeautyQSearchGen2EvaluationResourceHarness.withManagedPorts(f)
   }
 
   private def ensureIsolatedNamespace(

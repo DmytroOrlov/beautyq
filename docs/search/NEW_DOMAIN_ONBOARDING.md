@@ -679,5 +679,11 @@ order, declared-cutoff ranked metric mathematics, ordered aggregate/comparison a
 Domains must supply their own typed
 corpus, policy, and adapters. Query text, request construction, entity expectations, language/intent
 slices, thresholds and stop conditions are domain policy and must not be copied from BeautyQ.
+For protected acceptance, keep the private corpus and protected-acceptance policy as separate
+domain-owned inputs. Decode both strictly with ordered arrays, execute visible and protected cases
+through the same startup/application path, redact protected identities from reports, and derive an
+accepted manifest only after a green protected gate from a clean committed application revision.
+Missing private product inputs block the protected run; they must not be replaced with synthetic
+acceptance data or a default threshold.
 The approved reusable-kernel and BeautyQ corpus migration are implemented in
 [Q1 of the post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).
