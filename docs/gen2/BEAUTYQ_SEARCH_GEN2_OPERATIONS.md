@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I private protected inputs authored, audited, and frozen, protected execution and first accepted manifest pending, D1 requires second-domain product input, Q2-A migration scope-drift audit completed**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I private protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit completed, protected bootstrap and accepted-baseline promotion/verify pending, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -240,31 +240,38 @@ sbt --batch --no-global \
     --audit-pass-id q2i-audit-v1'
 ```
 
-Frozen aggregate evidence:
+The completed freeze produced an aggregate audit binding source revision, typed corpus/policy and
+canonical-source fingerprints, input/draft hashes, ordered slice counts, exact-intent completeness,
+and catalog/leakage validation outcomes. Those exact values belong to the operator's protected audit
+record rather than this public runbook. Protected execution has not occurred, and no accepted manifest
+has been generated.
 
-- source revision: `18d5046cd9dafb594724c1a3efbab62c78b11801` (the current committed catalog/workflow base; the dofix remains uncommitted);
-- protected case count: `24`;
-- corpus fingerprint: `eb0211768662bbc74ad29835dbc22da17527d379638ea37bca51dc76b7e65fcd`;
-- policy fingerprint: `b03135710816ab4854404e494d76e3ce5e13d586d31f94b8c08433ca984f658a`;
-- corpus SHA-256: `d45fdaa4b9241c3a334385e66012d131e7b6b00ee4a48b9861389b5c5865d3b6`;
-- policy SHA-256: `2656ec5d2bef6d783641e7e41affe2021e9208dd3a1cc286646064b2bb3add6f`;
-- author draft SHA-256: `90b5ffad3eefdef7fe235802e2348f39e1eec0d98b40671765bfc784b4fa0171`;
-- judged draft SHA-256: `d45fdaa4b9241c3a334385e66012d131e7b6b00ee4a48b9861389b5c5865d3b6`;
-- canonical source fingerprint: `c94327bc85913d44edfa7eb3cc255193a71e1e48382704ba2645ae07bd8b9c81`;
-- exact visible-query duplicates: `0`;
-- normalized visible-query duplicates: `0`;
-- visible case-ID overlap: `0`;
-- internal exact-query duplicates: `0`;
-- internal normalized-query duplicates: `0`;
-- exact-intent cases: `8`;
-- exact-intent cases without an acceptable catalog variant: `0`;
-- invalid variant/provider/service-intent judgment identities: `0 / 0 / 0`.
+## Private Q2-I input durability
 
-The corpus, policy, and audit remain ignored and untracked. Protected execution has not occurred, and
-no accepted manifest has been generated.
+The private corpus, policy, aggregate audit, and optional author/judge drafts are operator-owned. Their
+durable originals must be stored outside every disposable repository `target` directory. The paths
+under `target/search-gen2/private` are only ignored local execution copies: deleting `target` deletes
+those copies, while Git intentionally tracks none of the private files.
 
-## Protected acceptance run (manual only)
+Before protected bootstrap, restore byte-exact corpus, policy, and audit copies from durable operator
+storage. Verify their SHA-256 values and strictly decode the aggregate audit fields before execution.
+Hashes and fingerprints prove equality of restored bytes but cannot reconstruct missing content. If no
+durable backup exists, do not synthesize replacements from documentation, visible cases, or search
+output. Run a new Q2-I author/judge/audit/freeze cycle with new provenance, hashes, and fingerprints.
 
+**Clean-build safety:** ordinary clean builds remain allowed, but any procedure that removes `target`
+must first preserve durable operator-owned originals. Restore the private execution copies before a
+protected workflow. The repository does not persist, distribute, or reconstruct those execution
+copies. The operator must check their local presence before protected work; when they are absent,
+restore them byte-exact from durable storage or run a new Q2-I cycle. Availability of a durable backup
+is an operator precondition, not a repository claim.
+
+## Protected acceptance and first baseline (manual only)
+
+### Phase 1 — protected acceptance and bootstrap candidate only
+
+Begin only after the coordinator has recorded a green root aggregate suite for the committed
+supplement-boundary closeout and the byte-exact private inputs have been restored and verified.
 Protected acceptance inputs are private operator-owned files and are not checked into the
 repository:
 
@@ -295,7 +302,8 @@ The protected runner writes exactly three aggregate-only artifacts:
 It never emits protected case IDs, queries or result IDs. Missing or malformed private inputs and
 unavailable external resources are non-zero operational failures, not synthetic acceptance.
 
-The accepted-baseline bootstrap/verification runner is a separate manual, non-discovered owner:
+After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
+same clean committed application revision and restored byte-exact inputs:
 
 ```bash
 sbt --batch --no-global \
@@ -307,19 +315,46 @@ sbt --batch --no-global \
     --output-dir target/search-gen2/protected'
 ```
 
-Bootstrap derives `beautyq-accepted-baseline-candidate.json` only after the existing protected
-gate is green. It never edits source resources. The candidate is reviewed and promoted as the
-single aggregate-only classpath resource:
+Bootstrap derives `beautyq-accepted-baseline-candidate.json` only after the existing protected gate is
+green. It never edits source resources. When it reports `ACCEPTED_BASELINE_CANDIDATE_READY`, preserve
+the aggregate artifacts and candidate, then stop for coordinator/operator review. Do not copy the
+candidate to the canonical resource in the same delegated task, and do not run verify yet.
+
+### Coordinator/operator candidate review
+
+Review only aggregate-safe evidence:
+
+- application revision;
+- schema and policy versions;
+- corpus and policy fingerprints;
+- protected gate pass/fail codes;
+- provenance IDs;
+- ordered aggregate observation keys and counts;
+- candidate digest;
+- absence of identity-level protected fields.
+
+Do not publish metric values, queries, case IDs, result IDs, or judgments. Candidate generation does
+not authorize promotion.
+
+### Phase 2 — explicit promotion and verify
+
+Begin this phase only after explicit coordinator/operator approval of the preserved Phase 1 candidate.
+Require the same application-revision identity recorded in Phase 1, the same restored frozen inputs,
+and the unchanged candidate. Copy it byte-for-byte to the single aggregate-only classpath resource:
 
 `beautyq-search-gen2-eval/src/main/resources/leaderboard/search/beautyq/gen2/eval/beautyq_accepted_evaluation_baseline_v1.json`
 
-Verification runs the same real evidence path with `--mode verify`, loads only that canonical
-resource, writes `beautyq-accepted-baseline-verification.json`, and compares ordered aggregate
-observations and stable provenance. It does not use these run-specific audit fields as equality
-requirements: application revision, Elasticsearch generation reference, Qdrant generation ID,
-visible report digest, protected report digest and top-level manifest report digest. It never
-overwrites the canonical resource. A red or blocked run produces no candidate or verification
-manifest.
+Verify byte equality and digest before running focused canonical-resource tests. The promoted resource
+necessarily makes the worktree non-clean; no search, evaluation-policy, lifecycle, route or corpus
+source may change after Phase 1. Then run the existing accepted-baseline owner independently with
+`--mode verify` against the same real evidence path, application-revision identity, and restored
+inputs. Verify loads only the canonical resource, writes
+`beautyq-accepted-baseline-verification.json`, and compares ordered aggregate observations and stable
+provenance. It does not use these run-specific audit fields as equality requirements: application
+revision, Elasticsearch generation reference, Qdrant generation ID, visible report digest, protected
+report digest and top-level manifest report digest. It never overwrites the canonical resource. A red
+or blocked run produces no verification manifest. Close Q2 documentation only after green verify; no
+automated promotion service exists.
 
 ## Not implemented
 

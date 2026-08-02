@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I private protected inputs authored, audited, and frozen; protected execution and first accepted manifest pending, D1 requires second-domain product input; Q2-A recovery-wave scope-drift audit completed**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I private protected inputs authored, audited, and frozen; Q2-A recovery-wave scope-drift audit completed; protected bootstrap, candidate review, accepted-baseline promotion, and verify pending; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -15,6 +15,11 @@ remaining work is:
 
 - protected execution has not run;
 - the first accepted manifest has not been promoted or verified;
+- availability of the disposable private execution copies is an operator precondition; they must be
+  restored byte-exact from durable operator storage or replaced by a new Q2-I author/judge/audit/freeze
+  cycle before protected bootstrap;
+- the root aggregate suite must be green on the committed supplement-boundary closeout before the
+  first protected bootstrap;
 - D1 has not started and still requires second-domain product input;
 - successful Qdrant generations are intentionally not deleted automatically;
 - CDC/hot refresh, automatic readiness promotion, persistent embedding caching, automatic Qdrant GC,
@@ -308,11 +313,14 @@ seeing output.
    holdout before it can again serve as acceptance evidence.
 7. Rerun development/regression evidence and then the replenished protected holdout without changing
    its labels or thresholds in response to output.
-8. Run the manual bootstrap from the exact clean committed application revision. Review the generated
-   aggregate-only candidate and promote it byte-for-byte to the one canonical eval resource; do not
-   check in the full report or hand-copy its counts.
-9. Run manual verify against the canonical resource. Require a strict decode, compatible ordered
-   observations, and zero initial deltas before calling the first manifest accepted.
+8. Run the manual bootstrap from the exact clean committed application revision. Preserve the
+   aggregate-only candidate and stop for separate coordinator/operator review; do not promote it in
+   the same delegated task, check in the full report, or hand-copy its counts.
+9. Only after explicit approval, promote the reviewed candidate byte-for-byte to the one canonical
+   eval resource and run manual verify as a separate phase. Require strict canonical-resource
+   decoding, no failed stable verification checks, and compatible ordered aggregate observations,
+   identities, scopes, and counts. Metric deltas classified as informational by the verifier do not
+   independently fail verification.
 
 Poor relevance does not by itself prove that the Gen2 architecture is wrong. It proves that a specific
 business policy or retrieval configuration needs measured correction. Hard semantic or no-harm
@@ -343,6 +351,14 @@ completeness, and zero visible or internal exact/normalized query overlap. No se
 duplicate detection is claimed. No protected search execution or accepted-manifest generation belongs
 to Q2-I; those remain the next clean-revision procedure.
 
+The Q2-I freeze completed; its ignored outputs use the disposable
+`target/search-gen2/private` execution directory, which is not repository-persisted durable storage.
+The repository does not assert local availability. Recorded hashes or fingerprints cannot reconstruct
+missing bytes. Before bootstrap, the operator must check for local copies and either restore and
+strictly verify the corpus, policy, and audit from durable storage or repeat Q2-I with new
+author/judge/audit provenance, identities, hashes, and fingerprints. Do not synthesize or infer the old
+set from documentation, the visible corpus, or search output.
+
 ### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
 
 Status: **COMPLETED**
@@ -355,8 +371,37 @@ No source-confirmed code correction remains from the audit; the only discovered 
 post-cutover status documentation, corrected here.
 
 Q2-A is a coordinator-owned audit record, not an executable runtime owner. The canonical accepted-
-baseline resource remains absent until manual promotion. Protected bootstrap may proceed only from a
-clean committed revision using the already frozen private inputs and the existing manual procedure.
+baseline resource remains absent until manual promotion. Q2-A remains completed and is not reopened by
+the separate private-input durability precondition.
+
+### Q2-B — Protected bootstrap and candidate review
+
+Status: **PENDING**
+
+Protected bootstrap may proceed only after two operational preconditions are satisfied: the committed
+supplement-boundary closeout has a green root aggregate suite, and the operator has either restored and
+verified byte-exact frozen corpus/policy/audit inputs from durable storage or completed a new Q2-I
+cycle. Bootstrap runs from a clean committed revision, proves the protected aggregate gate, and writes
+an aggregate-only accepted-baseline candidate. It then stops. The same delegated task must not promote
+the candidate or run verify.
+
+The coordinator/operator reviews the candidate's application revision, schema and policy versions,
+corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
+keys and counts, candidate digest, and absence of protected identity fields. Queries, case/result
+identities, judgments, and metric values remain private.
+
+### Q2-C — Explicit promotion, verify, and Q2 closeout
+
+Status: **PENDING ON Q2-B APPROVAL**
+
+Only explicit coordinator/operator approval of the Q2-B candidate starts Q2-C. Phase 1 records the
+clean committed application-revision identity. Promotion copies the preserved candidate byte-for-byte
+into the one canonical eval resource, so the worktree then necessarily contains that reviewed tracked
+resource. No search, evaluation-policy, lifecycle, route or corpus source may change between review
+and verify. Q2-C verifies digest/equality, runs the focused canonical-resource proofs, and performs an
+independent real verify with the same application-revision identity and restored frozen inputs. Q2
+documentation may close only after green verify. Candidate generation does not authorize promotion,
+and no automated promotion service is introduced.
 
 ## 5. Eval-first second-domain workflow
 

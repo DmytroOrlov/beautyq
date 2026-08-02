@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "beautyq-protected-author-draft-v1",
+  "sourceRevision": "3f55a3082d617fcca55be8104111893fb251b906",
+  "authorPassId": "q2i-recovery-author-v2",
+  "cases": [
+    {
+      "id": "q2i2_case_001",
+      "query": "Gel-Maniküre mit Entfernung und schlichtem Finish",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with gel polish and removal",
+      "notes": ["Exact service and attribute request from the canonical seed vocabulary."]
+    },
+    {
+      "id": "q2i2_case_002",
+      "query": "маникюр с гель-лаком",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with gel polish",
+      "notes": ["Exact manicure request with a source-backed nail coating attribute."]
+    },
+    {
+      "id": "q2i2_case_003",
+      "query": "Pediküre für gepflegte Zehennägel",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure",
+      "notes": ["Exact pedicure service request from the canonical seed."]
+    },
+    {
+      "id": "q2i2_case_004",
+      "query": "lash lift und wimpern styling",
+      "language": "mixed",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Eyelash service",
+      "notes": ["Exact eyelash service request using the seeded lashes service."]
+    },
+    {
+      "id": "q2i2_case_005",
+      "query": "оформление и коррекция бровей",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Brow service",
+      "notes": ["Exact brow service request from the canonical service taxonomy."]
+    },
+    {
+      "id": "q2i2_case_006",
+      "query": "facial cleansing and skin care",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Facial cosmetology",
+      "notes": ["Exact face-cosmetology request from the seeded service."]
+    },
+    {
+      "id": "q2i2_case_007",
+      "query": "пудровый перманент бровей",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Permanent make-up for brows",
+      "notes": ["Exact PMU brow request using the seeded PMU service and brows area."]
+    },
+    {
+      "id": "q2i2_case_008",
+      "query": "hair removal for underarms",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Hair removal",
+      "notes": ["Exact hair-removal service request from the canonical seed."]
+    },
+    {
+      "id": "q2i2_case_009",
+      "query": "мне нужно привести руки в порядок перед праздником",
+      "language": "ru",
+      "primarySlice": "conversational",
+      "additionalSlices": [],
+      "userIntent": "Conversational request for hand and nail care",
+      "notes": ["Conversational wording without copying a visible evaluation query."]
+    },
+    {
+      "id": "q2i2_case_010",
+      "query": "what can I book for a fresh beauty look this week",
+      "language": "en",
+      "primarySlice": "conversational",
+      "additionalSlices": [],
+      "userIntent": "Conversational request for a beauty appointment",
+      "notes": ["Broad conversational request grounded in the available beauty services."]
+    },
+    {
+      "id": "q2i2_case_011",
+      "query": "ich möchte meine Nägel schön und haltbar machen lassen",
+      "language": "de",
+      "primarySlice": "conversational",
+      "additionalSlices": [],
+      "userIntent": "Conversational nail-care request",
+      "notes": ["Conversational German request with no output-derived judgment."]
+    },
+    {
+      "id": "q2i2_case_012",
+      "query": "хочу аккуратно обновить брови к отпуску",
+      "language": "ru",
+      "primarySlice": "conversational",
+      "additionalSlices": [],
+      "userIntent": "Conversational brow-care request",
+      "notes": ["Conversational Russian request grounded in the seeded brow service."]
+    },
+    {
+      "id": "q2i2_case_013",
+      "query": "help me choose a gentle facial treatment",
+      "language": "en",
+      "primarySlice": "conversational",
+      "additionalSlices": [],
+      "userIntent": "Conversational face-care request",
+      "notes": ["Conversational English request grounded in face cosmetology."]
+    },
+    {
+      "id": "q2i2_case_014",
+      "query": "ich suche eine passende Behandlung für Wimpern",
+      "language": "de",
+      "primarySlice": "conversational",
+      "additionalSlices": [],
+      "userIntent": "Conversational eyelash-care request",
+      "notes": ["Conversational German request grounded in the lashes service."]
+    },
+    {
+      "id": "q2i2_case_015",
+      "query": "маникюр рядом с Wandsbeker Markt",
+      "language": "mixed",
+      "primarySlice": "nearby",
+      "additionalSlices": [],
+      "userIntent": "Nearby manicure",
+      "notes": ["Nearby slice combines seeded manicure service with the canonical locality."]
+    },
+    {
+      "id": "q2i2_case_016",
+      "query": "facial studio near Wandsbek Markt",
+      "language": "en",
+      "primarySlice": "nearby",
+      "additionalSlices": [],
+      "userIntent": "Nearby facial cosmetology",
+      "notes": ["Nearby English request uses the canonical Wandsbek location label."]
+    },
+    {
+      "id": "q2i2_case_017",
+      "query": "Kosmetik und Hautpflege in der Nähe vom Wandsbeker Markt",
+      "language": "de",
+      "primarySlice": "nearby",
+      "additionalSlices": [],
+      "userIntent": "Nearby face-care service",
+      "notes": ["Nearby German request grounded in the face-cosmetology service."]
+    },
+    {
+      "id": "q2i2_case_018",
+      "query": "ресницы поблизости у Wandsbek Markt",
+      "language": "mixed",
+      "primarySlice": "nearby",
+      "additionalSlices": [],
+      "userIntent": "Nearby eyelash service",
+      "notes": ["Nearby mixed-language request grounded in the lashes service."]
+    },
+    {
+      "id": "q2i2_case_019",
+      "query": "Book a manicure with gel polish in Wandsbek",
+      "language": "en",
+      "primarySlice": "multilingual",
+      "additionalSlices": [],
+      "userIntent": "English manicure request",
+      "notes": ["Multilingual slice with a source-backed manicure attribute."]
+    },
+    {
+      "id": "q2i2_case_020",
+      "query": "Gesichtsbehandlung für ein ebenmäßiges Hautbild",
+      "language": "de",
+      "primarySlice": "multilingual",
+      "additionalSlices": [],
+      "userIntent": "German facial-treatment request",
+      "notes": ["Multilingual slice grounded in face cosmetology."]
+    },
+    {
+      "id": "q2i2_case_021",
+      "query": "хочу lashes und аккуратные брови",
+      "language": "mixed",
+      "primarySlice": "multilingual",
+      "additionalSlices": [],
+      "userIntent": "Mixed-language eyelash and brow request",
+      "notes": ["Mixed-language request uses only seeded lashes and brows services."]
+    },
+    {
+      "id": "q2i2_case_022",
+      "query": "что можно сделать для ухода за собой",
+      "language": "ru",
+      "primarySlice": "broad-safe",
+      "additionalSlices": [],
+      "userIntent": "Broad self-care discovery",
+      "notes": ["Broad-safe request with no single inferred service identity."]
+    },
+    {
+      "id": "q2i2_case_023",
+      "query": "find a beauty service that suits me",
+      "language": "en",
+      "primarySlice": "broad-safe",
+      "additionalSlices": [],
+      "userIntent": "Broad beauty discovery",
+      "notes": ["Broad-safe English request without a hidden output expectation."]
+    },
+    {
+      "id": "q2i2_case_024",
+      "query": "etwas Schönes für meine nächste Auszeit",
+      "language": "de",
+      "primarySlice": "broad-safe",
+      "additionalSlices": [],
+      "userIntent": "Broad beauty discovery",
+      "notes": ["Broad-safe German request without a single required service."]
+    }
+  ]
+}

@@ -1,0 +1,373 @@
+{
+  "schemaVersion": "beautyq-evaluation-corpus-v2",
+  "corpusId": "beautyq-protected-holdout-q2i-recovery-v2",
+  "dataset": "beautyq-protected-holdout",
+  "version": 2,
+  "defaultUserLocation": {
+    "label": "Wandsbek Markt",
+    "lat": 53.572,
+    "lon": 10.066
+  },
+  "cases": [
+    {
+      "id": "q2i2_case_001",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "Gel-Maniküre mit Entfernung und schlichtem Finish",
+      "language": "de",
+      "slices": ["exact-intent"],
+      "userIntent": "Manicure with gel polish and removal",
+      "notes": ["Exact service and attribute request from the canonical seed vocabulary."],
+      "judgments": {
+        "variants": {"acceptableIds": ["1fcd6e17-c6bb-5901-9f63-205668897659"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_002",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "маникюр с гель-лаком",
+      "language": "ru",
+      "slices": ["exact-intent"],
+      "userIntent": "Manicure with gel polish",
+      "notes": ["Exact manicure request with a source-backed nail coating attribute."],
+      "judgments": {
+        "variants": {"acceptableIds": ["c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_003",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "Pediküre für gepflegte Zehennägel",
+      "language": "de",
+      "slices": ["exact-intent"],
+      "userIntent": "Pedicure",
+      "notes": ["Exact pedicure service request from the canonical seed."],
+      "judgments": {
+        "variants": {"acceptableIds": ["2193db11-d035-58a0-997c-8a96f6d98b01"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_004",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "lash lift und wimpern styling",
+      "language": "mixed",
+      "slices": ["exact-intent"],
+      "userIntent": "Eyelash service",
+      "notes": ["Exact eyelash service request using the seeded lashes service."],
+      "judgments": {
+        "variants": {"acceptableIds": ["d658c194-38f7-5396-b8cb-cf155739c235"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_005",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "оформление и коррекция бровей",
+      "language": "ru",
+      "slices": ["exact-intent"],
+      "userIntent": "Brow service",
+      "notes": ["Exact brow service request from the canonical service taxonomy."],
+      "judgments": {
+        "variants": {"acceptableIds": ["245cf7ad-666b-5df1-8c0f-868741458337"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_006",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "facial cleansing and skin care",
+      "language": "en",
+      "slices": ["exact-intent"],
+      "userIntent": "Facial cosmetology",
+      "notes": ["Exact face-cosmetology request from the seeded service."],
+      "judgments": {
+        "variants": {"acceptableIds": ["54568273-7762-5881-a027-0900965ddba4"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_007",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "пудровый перманент бровей",
+      "language": "ru",
+      "slices": ["exact-intent"],
+      "userIntent": "Permanent make-up for brows",
+      "notes": ["Exact PMU brow request using the seeded PMU service and brows area."],
+      "judgments": {
+        "variants": {"acceptableIds": ["c3bf48ba-6b81-5447-b6eb-c6320def9ed4"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_008",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "hair removal for underarms",
+      "language": "en",
+      "slices": ["exact-intent"],
+      "userIntent": "Hair removal",
+      "notes": ["Exact hair-removal service request from the canonical seed."],
+      "judgments": {
+        "variants": {"acceptableIds": ["d7ec2ffe-e84d-5782-b54e-b95540a58ef2"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_009",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "мне нужно привести руки в порядок перед праздником",
+      "language": "ru",
+      "slices": ["conversational"],
+      "userIntent": "Conversational request for hand and nail care",
+      "notes": ["Conversational wording without copying a visible evaluation query."],
+      "judgments": {
+        "variants": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_010",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "what can I book for a fresh beauty look this week",
+      "language": "en",
+      "slices": ["conversational"],
+      "userIntent": "Conversational request for a beauty appointment",
+      "notes": ["Broad conversational request grounded in the available beauty services."],
+      "judgments": {
+        "variants": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_011",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "ich möchte meine Nägel schön und haltbar machen lassen",
+      "language": "de",
+      "slices": ["conversational"],
+      "userIntent": "Conversational nail-care request",
+      "notes": ["Conversational German request with no output-derived judgment."],
+      "judgments": {
+        "variants": {"acceptableIds": ["798c4326-e081-59a9-b659-98671f1fd656"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_012",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "хочу аккуратно обновить брови к отпуску",
+      "language": "ru",
+      "slices": ["conversational"],
+      "userIntent": "Conversational brow-care request",
+      "notes": ["Conversational Russian request grounded in the seeded brow service."],
+      "judgments": {
+        "variants": {"acceptableIds": ["245cf7ad-666b-5df1-8c0f-868741458337"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_013",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "help me choose a gentle facial treatment",
+      "language": "en",
+      "slices": ["conversational"],
+      "userIntent": "Conversational face-care request",
+      "notes": ["Conversational English request grounded in face cosmetology."],
+      "judgments": {
+        "variants": {"acceptableIds": ["f018b7f8-1997-596f-8c32-414d6cf8f538"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_014",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "ich suche eine passende Behandlung für Wimpern",
+      "language": "de",
+      "slices": ["conversational"],
+      "userIntent": "Conversational eyelash-care request",
+      "notes": ["Conversational German request grounded in the lashes service."],
+      "judgments": {
+        "variants": {"acceptableIds": ["5848ff40-41eb-5981-b56e-84c5ae8c9e07"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_015",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "маникюр рядом с Wandsbeker Markt",
+      "language": "mixed",
+      "slices": ["nearby"],
+      "userIntent": "Nearby manicure",
+      "notes": ["Nearby slice combines seeded manicure service with the canonical locality."],
+      "judgments": {
+        "variants": {"acceptableIds": ["1fcd6e17-c6bb-5901-9f63-205668897659"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": ["989e0858-bc32-5b71-a355-6ce1e20b0cb1"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_016",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "facial studio near Wandsbek Markt",
+      "language": "en",
+      "slices": ["nearby"],
+      "userIntent": "Nearby facial cosmetology",
+      "notes": ["Nearby English request uses the canonical Wandsbek location label."],
+      "judgments": {
+        "variants": {"acceptableIds": ["f018b7f8-1997-596f-8c32-414d6cf8f538"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": ["989e0858-bc32-5b71-a355-6ce1e20b0cb1"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_017",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "Kosmetik und Hautpflege in der Nähe vom Wandsbeker Markt",
+      "language": "de",
+      "slices": ["nearby"],
+      "userIntent": "Nearby face-care service",
+      "notes": ["Nearby German request grounded in the face-cosmetology service."],
+      "judgments": {
+        "variants": {"acceptableIds": ["54568273-7762-5881-a027-0900965ddba4"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": ["989e0858-bc32-5b71-a355-6ce1e20b0cb1"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_018",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "ресницы поблизости у Wandsbek Markt",
+      "language": "mixed",
+      "slices": ["nearby"],
+      "userIntent": "Nearby eyelash service",
+      "notes": ["Nearby mixed-language request grounded in the lashes service."],
+      "judgments": {
+        "variants": {"acceptableIds": ["d658c194-38f7-5396-b8cb-cf155739c235"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": ["989e0858-bc32-5b71-a355-6ce1e20b0cb1"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_019",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "Book a manicure with gel polish in Wandsbek",
+      "language": "en",
+      "slices": ["multilingual"],
+      "userIntent": "English manicure request",
+      "notes": ["Multilingual slice with a source-backed manicure attribute."],
+      "judgments": {
+        "variants": {"acceptableIds": ["1fcd6e17-c6bb-5901-9f63-205668897659"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_020",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "Gesichtsbehandlung für ein ebenmäßiges Hautbild",
+      "language": "de",
+      "slices": ["multilingual"],
+      "userIntent": "German facial-treatment request",
+      "notes": ["Multilingual slice grounded in face cosmetology."],
+      "judgments": {
+        "variants": {"acceptableIds": ["a32c399d-db3a-5806-8556-e66c4ad4ea1c"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_021",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "хочу lashes und аккуратные брови",
+      "language": "mixed",
+      "slices": ["multilingual"],
+      "userIntent": "Mixed-language eyelash and brow request",
+      "notes": ["Mixed-language request uses only seeded lashes and brows services."],
+      "judgments": {
+        "variants": {"acceptableIds": ["5848ff40-41eb-5981-b56e-84c5ae8c9e07", "245cf7ad-666b-5df1-8c0f-868741458337"], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_022",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "что можно сделать для ухода за собой",
+      "language": "ru",
+      "slices": ["broad-safe"],
+      "userIntent": "Broad self-care discovery",
+      "notes": ["Broad-safe request with no single inferred service identity."],
+      "judgments": {
+        "variants": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_023",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "find a beauty service that suits me",
+      "language": "en",
+      "slices": ["broad-safe"],
+      "userIntent": "Broad beauty discovery",
+      "notes": ["Broad-safe English request without a hidden output expectation."],
+      "judgments": {
+        "variants": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    },
+    {
+      "id": "q2i2_case_024",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "etwas Schönes für meine nächste Auszeit",
+      "language": "de",
+      "slices": ["broad-safe"],
+      "userIntent": "Broad beauty discovery",
+      "notes": ["Broad-safe German request without a single required service."],
+      "judgments": {
+        "variants": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "providers": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []},
+        "serviceIntents": {"acceptableIds": [], "forbiddenIds": [], "neutralIds": [], "gradedGains": []}
+      }
+    }
+  ]
+}
