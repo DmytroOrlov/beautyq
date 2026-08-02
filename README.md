@@ -21,7 +21,9 @@ lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are compl
 visible-regression intent correction is implemented and proved through the complete managed 89-case
 hard/no-harm run. Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
 owners are implemented. Q2-I private protected inputs are now model-assisted, source-grounded,
-catalog-bound, audited, and frozen; Q2-A migration scope-drift audit is required before protected bootstrap, and protected execution and the first accepted manifest remain pending. No external
+catalog-bound, audited, and frozen; Q2-A migration scope-drift audit is completed, while protected
+execution and the first accepted manifest remain pending. No recovery-wave Gen1/legacy
+reintroduction was found. No external
 employee or separately hired reviewer is required: the
 checkout operator is the approval authority, provenance is recorded, and inputs are frozen before
 protected execution. D1 is not started and requires second-domain product input.

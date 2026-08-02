@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I private protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit pending before protected bootstrap, protected execution and first accepted manifest pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I private protected inputs authored, audited, and frozen, protected execution and first accepted manifest pending, D1 requires second-domain product input, Q2-A migration scope-drift audit completed**
 
 ## Supplement startup policy
 

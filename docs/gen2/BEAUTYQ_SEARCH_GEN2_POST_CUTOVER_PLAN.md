@@ -1,28 +1,24 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I private protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit pending before protected bootstrap, protected execution and first accepted manifest pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I private protected inputs authored, audited, and frozen; protected execution and first accepted manifest pending, D1 requires second-domain product input; Q2-A recovery-wave scope-drift audit completed**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
 implemented architecture. This plan owns only the selected work below; source and focused tests become
 the authority as each item is implemented.
 
-## 1. Current source-confirmed gaps
+## 1. Current source-confirmed remaining work
 
-The native Gen2 route and module cutover are complete. The following are not:
+The native Gen2 route, module cutover, evaluation foundation, supplement startup policy, operator
+status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
+remaining work is:
 
-- `beautyq-search-gen2-eval` currently implements the four-query readiness/no-harm cutover gate, not
-  the complete corpus, relevance, latency, and freshness surface previously described by the technical
-  specification;
-- the 89-query BeautyQ corpus exists as duplicate root and legacy app-shell resources, while its
-  checked-in validation report still records an older count of 74;
-- startup currently treats supplement transport/unavailability as permission to serve
-  `baseline_only` without an explicit operator policy;
-- readiness is fixed for the life of the process and no operator-facing serving-status owner exposes
-  the startup degradation cause;
-- the public request has no BeautyQ-owned resource budget above the generic positive-size checks;
-- Qdrant generation embedding/upsert is not bounded into batches;
-- successful Qdrant generations are intentionally not deleted automatically.
+- protected execution has not run;
+- the first accepted manifest has not been promoted or verified;
+- D1 has not started and still requires second-domain product input;
+- successful Qdrant generations are intentionally not deleted automatically;
+- CDC/hot refresh, automatic readiness promotion, persistent embedding caching, automatic Qdrant GC,
+  and cross-environment latency gating remain deferred.
 
 These gaps do not reopen the accepted declaration, plan, baseline/supplement, lifecycle-authorization,
 or route architecture.
@@ -349,15 +345,18 @@ to Q2-I; those remain the next clean-revision procedure.
 
 ### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
 
-Status: **PENDING — REQUIRED BEFORE FIRST PROTECTED BASELINE BOOTSTRAP**
+Status: **COMPLETED**
 
-The Gen1→Gen2 migration previously required multiple recovery waves, and a restored obligation can
-drift again while later recovery work proceeds. The first protected accepted baseline must not
-canonize a remaining migration omission. Q2-A therefore runs after Q2-I integrity closeout and before
-protected bootstrap/promote/verify. It is coordinator-owned and follows the senior-audit playbook in
-`docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md §9`. Its exact Gen1 comparison revision and current
-retained-owner inventory must be source-confirmed by that audit task rather than guessed here. Protected
-execution remains pending both the frozen private inputs and a green Q2-A closeout.
+The historical architecture audit closed the full Gen1 dependency and owner-removal findings. The
+follow-up audit examined the exact ten-commit recovery range from `1b3bac45` through `681e23c8` and
+found no exact Gen1/legacy reintroduction, no missing reopened owner, and no source-confirmed second
+production canonical owner. Temporary startup reference factories were removed by the final closeout.
+No source-confirmed code correction remains from the audit; the only discovered drift was stale
+post-cutover status documentation, corrected here.
+
+Q2-A is a coordinator-owned audit record, not an executable runtime owner. The canonical accepted-
+baseline resource remains absent until manual promotion. Protected bootstrap may proceed only from a
+clean committed revision using the already frozen private inputs and the existing manual procedure.
 
 ## 5. Eval-first second-domain workflow
 
