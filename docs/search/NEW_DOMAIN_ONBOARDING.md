@@ -651,7 +651,7 @@ A new domain does not wait for its complete backend/runtime implementation befor
 Its first vertical slice is:
 
 ```text
-10–20 business-reviewed anchor queries
+10–20 independently authored, operator-approved anchor queries
 -> hard acceptable/forbidden evidence and optional graded relevance
 -> simplest executable baseline
 -> first deterministic report
@@ -671,8 +671,8 @@ set containing every accepted real bug.
 
 Development/regression reports may name exact cases. Protected-holdout reports expose aggregate/slice
 verdicts by default. Revealing a protected case is a break-glass action: move it permanently into the
-regression set and replenish the protected holdout with business-reviewed unused cases before using it
-for acceptance again.
+regression set and replenish the protected holdout with independently authored, unused,
+operator-approved cases before using it for acceptance again.
 
 Reuse only neutral evaluation mechanics from `search-gen2-eval`: stable case identity, deterministic run
 order, declared-cutoff ranked metric mathematics, ordered aggregate/comparison and report encoding.
@@ -683,7 +683,16 @@ For protected acceptance, keep the private corpus and protected-acceptance polic
 domain-owned inputs. Decode both strictly with ordered arrays, execute visible and protected cases
 through the same startup/application path, redact protected identities from reports, and derive an
 accepted manifest only after a green protected gate from a clean committed application revision.
-Missing private product inputs block the protected run; they must not be replaced with synthetic
-acceptance data or a default threshold.
+Missing private inputs block protected execution and bootstrap, but do not block the dedicated
+pre-execution input-authoring workflow. Machine-assisted authoring is allowed when it is separated from
+execution, cannot observe protected results, records provenance, and freezes inputs before use; a
+separately hired reviewer is not required. “Synthetic acceptance data” means labels or thresholds
+derived from search output, not source-grounded cases authored before execution. Bootstrap and verify
+must never author, relabel or modify the frozen inputs, and no default threshold may replace an absent
+operator-approved policy. The freeze must also bind every judgment identity to the canonical typed
+catalog, require an acceptable variant for each exact-intent case, prove zero exact/normalized query
+duplicates both against visible evidence and internally, bind author/judge draft hashes and the
+canonical source fingerprint, and compare the declared source revision with the actual clean base.
+These are aggregate integrity checks; semantic-similarity duplicate detection is not claimed.
 The approved reusable-kernel and BeautyQ corpus migration are implemented in
 [Q1 of the post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).

@@ -13,7 +13,7 @@ import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
 import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
 import leaderboard.seed.BeautyQSeedLoader
 import leaderboard.search.beautyq.gen2.eval.*
-import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshot, BeautyQSnapshotFingerprint, BeautyQVariantMaterializer, SnapshotLoadError}
+import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshot, BeautyQVariantMaterializer, SnapshotLoadError}
 import leaderboard.search.beautyq.gen2.wiring.*
 import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
 import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, SourceRevision, VersionedSnapshot}
@@ -232,17 +232,16 @@ object BeautyQSearchGen2EvaluationResourceHarness {
   }
 
   def prepareCanonicalSeedEvaluation(): Prepared = {
-    val seed = new BeautyQSeedLoader.ResourceLoader().load().getOrElse(fail("failed to load canonical BeautyQ seed"))
-    val snapshot = BeautyQSearchSnapshot(
-      categories = seed.categories.toVector,
-      services = seed.services.toVector,
-      serviceVariantSchemas = seed.serviceVariantSchemas.toVector,
-      masters = seed.masters.toVector,
-      masterLocations = seed.masterLocations.toVector,
-      masterServiceOffers = seed.masterServiceOffers.toVector,
-      masterServiceOfferVariants = seed.masterServiceOfferVariants.toVector,
+    val catalog = BeautyQCanonicalSeedEvaluationCatalog.load() match {
+      case Right(value) => value
+      case Left(error) => fail(s"failed to load canonical BeautyQ seed catalog: $error")
+    }
+    val versioned = VersionedSnapshot(
+      catalog.snapshot,
+      catalog.sourceFingerprint,
+      Some(SourceRevision(BeautyQSeedLoader.DefaultResourcePath)),
+      Instant.now(),
     )
-    val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), Some(SourceRevision(BeautyQSeedLoader.DefaultResourcePath)), Instant.now())
     val source = new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {
       def load: IO[SnapshotLoadError, VersionedSnapshot[BeautyQSearchSnapshot]] = ZIO.succeed(versioned)
     }

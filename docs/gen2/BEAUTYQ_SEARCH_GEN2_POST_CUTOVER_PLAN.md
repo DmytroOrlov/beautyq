@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; protected-acceptance machinery implemented, private product inputs and first accepted manifest pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I private protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit pending before protected bootstrap, protected execution and first accepted manifest pending, D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -270,7 +270,9 @@ quality corpus.
 
 ### Generated reports and accepted baselines
 
-The canonical corpus and typed domain evaluation policy are the only human-authored quality inputs.
+The canonical corpus and typed domain evaluation policy are the only operator-approved quality inputs.
+Machine-assisted authoring is permitted in the dedicated pre-evaluation Q2-I stage when it cannot
+observe protected search output, records provenance, and freezes corpus and policy before execution.
 Development/regression per-query reports and protected-holdout aggregate/slice verdicts live under
 `target/search-gen2/` and CI artifacts; the standard protected artifact does not encode case
 identities, and no report is copied back into source.
@@ -306,7 +308,7 @@ seeing output.
 5. Protected-holdout execution reports aggregate/slice verdicts by default, not case identities. A
    failing holdout blocks acceptance; ordinary tuning does not inspect its cases.
 6. Revealing protected cases requires an explicit break-glass label review. Every revealed case moves
-   permanently into the regression set, and business-reviewed unused cases replenish the protected
+   permanently into the regression set, and independently authored, unused, operator-approved cases replenish the protected
    holdout before it can again serve as acceptance evidence.
 7. Rerun development/regression evidence and then the replenished protected holdout without changing
    its labels or thresholds in response to output.
@@ -320,11 +322,48 @@ Poor relevance does not by itself prove that the Gen2 architecture is wrong. It 
 business policy or retrieval configuration needs measured correction. Hard semantic or no-harm
 violations do block continued rollout.
 
+### Q2-I — Protected Input Authoring and Freeze
+
+Q2-I is the pre-execution owner for the first private protected inputs. A source-grounded author pass
+creates unused requests without seeing the visible corpus, intent aliases or search output. A separate
+judge pass assigns partial typed judgments from the canonical catalog without search output. Only the
+later audit pass compares against visible regression evidence and the intent vocabulary, rejects exact
+and NFKC/lowercase/whitespace-normalized query leakage, validates typed result identities and required
+slices, then freezes the corpus and policy with an aggregate-only audit record.
+
+The checkout operator is the approval authority; no external employee or separately hired reviewer is
+required. “Synthetic acceptance data” means labels or thresholds derived from search output. It does
+not include source-grounded model-assisted cases authored before execution and independently audited
+against typed source/catalog evidence. Bootstrap and verify remain read-only consumers: they may never
+author, relabel or modify private inputs. Revealed protected cases still move permanently into the
+visible regression set and must be replaced by independently authored, unused, operator-approved
+cases before the holdout is reused.
+
+The first Q2-I corpus and acceptance policy are authored, independently judged, catalog-bound, audited
+against the visible corpus, and frozen as ignored operator-owned inputs. Their aggregate audit binds
+the actual starting HEAD, typed corpus/policy and canonical source fingerprints, corpus/policy and
+author/judge-draft hashes, ordered slice counts, zero catalog-identity failures, exact-intent
+completeness, and zero visible or internal exact/normalized query overlap. No semantic-similarity
+duplicate detection is claimed. No protected search execution or accepted-manifest generation belongs
+to Q2-I; those remain the next clean-revision procedure.
+
+### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
+
+Status: **PENDING — REQUIRED BEFORE FIRST PROTECTED BASELINE BOOTSTRAP**
+
+The Gen1→Gen2 migration previously required multiple recovery waves, and a restored obligation can
+drift again while later recovery work proceeds. The first protected accepted baseline must not
+canonize a remaining migration omission. Q2-A therefore runs after Q2-I integrity closeout and before
+protected bootstrap/promote/verify. It is coordinator-owned and follows the senior-audit playbook in
+`docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md §9`. Its exact Gen1 comparison revision and current
+retained-owner inventory must be source-confirmed by that audit task rather than guessed here. Protected
+execution remains pending both the frozen private inputs and a green Q2-A closeout.
+
 ## 5. Eval-first second-domain workflow
 
 Before its first backend-rich implementation, a second domain must provide:
 
-1. 10–20 business-reviewed anchor queries across its important slices;
+1. 10–20 independently authored, operator-approved anchor queries across its important slices;
 2. hard acceptable/forbidden evidence and optional graded relevance;
 3. a development set, a protected holdout excluded from ordinary policy tuning and changed only by an
    explicit label-review procedure, and a permanent bug-regression set;
@@ -448,10 +487,10 @@ repaired the three regression cases without a threshold. The complete 89-case ma
 passes: zero forbidden hits, all hard/no-harm checks green. Q2 visible-regression correction is
 proved; protected acceptance machinery now provides strict private-corpus/policy decoding, shared
 visible/protected execution, aggregate-only protected report encoding, a typed protected gate and a
-candidate-baseline adapter. Q2 as a whole remains open for product-supplied protected-holdout cases,
-an approved protected acceptance policy and generation of the first accepted manifest from a clean
-committed revision. The current checkout has no private product inputs, so no protected run was
-claimed or executed; the manual runner reports `PRODUCT_INPUT_REQUIRED` until they are supplied.
+candidate-baseline adapter. Q2 as a whole remains open for private inputs created through Q2-I,
+protected execution and generation of the first accepted manifest from a clean committed revision.
+The protected runner and bootstrap do not create or modify those inputs; missing frozen inputs remain
+an operational failure at those later stages, not a requirement for an external employee.
 
 ### Patch D1 — eval-first second-domain vertical
 

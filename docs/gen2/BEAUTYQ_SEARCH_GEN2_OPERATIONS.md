@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — explicit quality-policy decision required, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I private protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit pending before protected bootstrap, protected execution and first accepted manifest pending, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -177,6 +177,92 @@ Database changes become visible after the coordinated restart; this is restart-o
 CDC lag. A failed or changed identity remains for a later fenced retry, and no online automatic
 cleaner is permitted.
 
+## Protected input authoring and freeze
+
+The private protected corpus and policy are created before protected execution through separated
+model-assisted author and judge passes, followed by an audit pass that alone may compare their query
+inventory with the visible corpus. No external employee is required; the checkout operator approves
+the first source-grounded set. The passes cannot inspect protected search output, and evaluation output
+must never be used to relabel or tune the same holdout.
+
+The freeze runner executes no search and acquires no Elasticsearch, Qdrant, embedding, application or
+startup resource. It strictly validates the corpus and policy, checks every judgment identity against
+the canonical typed seed catalog, requires an acceptable variant for every exact-intent case, applies
+exact and deterministic NFKC query-leakage audits against visible and protected inputs, binds both
+input-file hashes plus both authoring-draft hashes and the canonical source fingerprint, and writes only:
+
+- `target/search-gen2/private/beautyq-protected-holdout-v1.json` (read-only input);
+- `target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json` (read-only input);
+- `target/search-gen2/private/beautyq-protected-input-audit-v2.json` (aggregate operational evidence).
+
+All three files remain ignored and untracked. The audit record is evidence about validation and freeze;
+it contains no cases or judgments and is not an acceptance-policy owner. Exact and normalized duplicate
+checks detect direct leakage only; they are not semantic-similarity or fuzzy-search claims. Bootstrap
+and verify consume the frozen corpus and policy read-only and never author or modify them.
+
+The exact freeze invocation is:
+
+```bash
+sbt --batch --no-global \
+  -Dsbt.server=false \
+  -Dsbt.server.forcestart=true \
+  -Dsbt.ivy.home=target/codex-sbt/ivy2 \
+  'leaderboard-app-shell/Test/runMain \
+    leaderboard.search.BeautyQProtectedInputFreezeMain \
+    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
+    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
+    --author-draft target/search-gen2/private/work/beautyq-protected-author-draft-v1.json \
+    --judged-draft target/search-gen2/private/work/beautyq-protected-judged-draft-v1.json \
+    --audit-output target/search-gen2/private/beautyq-protected-input-audit-v2.json \
+    --source-revision <starting-40-hex-revision> \
+    --author-pass-id <stable-author-pass-id> \
+    --judge-pass-id <stable-judge-pass-id> \
+    --audit-pass-id <stable-audit-pass-id>'
+```
+
+The integrity closeout freeze completed with this exact invocation:
+
+```bash
+sbt --batch --no-global \
+  -Dsbt.server=false \
+  -Dsbt.server.forcestart=true \
+  -Dsbt.ivy.home=target/codex-sbt/ivy2 \
+  'leaderboard-app-shell/Test/runMain \
+    leaderboard.search.BeautyQProtectedInputFreezeMain \
+    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
+    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
+    --author-draft target/search-gen2/private/work/beautyq-protected-author-draft-v1.json \
+    --judged-draft target/search-gen2/private/work/beautyq-protected-judged-draft-v1.json \
+    --audit-output target/search-gen2/private/beautyq-protected-input-audit-v2.json \
+    --source-revision 18d5046cd9dafb594724c1a3efbab62c78b11801 \
+    --author-pass-id q2i-author-v1 \
+    --judge-pass-id q2i-judge-v1 \
+    --audit-pass-id q2i-audit-v1'
+```
+
+Frozen aggregate evidence:
+
+- source revision: `18d5046cd9dafb594724c1a3efbab62c78b11801` (the current committed catalog/workflow base; the dofix remains uncommitted);
+- protected case count: `24`;
+- corpus fingerprint: `eb0211768662bbc74ad29835dbc22da17527d379638ea37bca51dc76b7e65fcd`;
+- policy fingerprint: `b03135710816ab4854404e494d76e3ce5e13d586d31f94b8c08433ca984f658a`;
+- corpus SHA-256: `d45fdaa4b9241c3a334385e66012d131e7b6b00ee4a48b9861389b5c5865d3b6`;
+- policy SHA-256: `2656ec5d2bef6d783641e7e41affe2021e9208dd3a1cc286646064b2bb3add6f`;
+- author draft SHA-256: `90b5ffad3eefdef7fe235802e2348f39e1eec0d98b40671765bfc784b4fa0171`;
+- judged draft SHA-256: `d45fdaa4b9241c3a334385e66012d131e7b6b00ee4a48b9861389b5c5865d3b6`;
+- canonical source fingerprint: `c94327bc85913d44edfa7eb3cc255193a71e1e48382704ba2645ae07bd8b9c81`;
+- exact visible-query duplicates: `0`;
+- normalized visible-query duplicates: `0`;
+- visible case-ID overlap: `0`;
+- internal exact-query duplicates: `0`;
+- internal normalized-query duplicates: `0`;
+- exact-intent cases: `8`;
+- exact-intent cases without an acceptable catalog variant: `0`;
+- invalid variant/provider/service-intent judgment identities: `0 / 0 / 0`.
+
+The corpus, policy, and audit remain ignored and untracked. Protected execution has not occurred, and
+no accepted manifest has been generated.
+
 ## Protected acceptance run (manual only)
 
 Protected acceptance inputs are private operator-owned files and are not checked into the
@@ -184,6 +270,7 @@ repository:
 
 - `target/search-gen2/private/beautyq-protected-holdout-v1.json`
 - `target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json`
+- `target/search-gen2/private/beautyq-protected-input-audit-v2.json`
 
 The test-owned runner is not an auto-discovered suite. Invoke it only from a clean committed
 revision with an explicit application revision property:
