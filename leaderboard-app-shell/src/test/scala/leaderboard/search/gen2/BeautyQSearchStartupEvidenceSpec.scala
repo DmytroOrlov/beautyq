@@ -1,6 +1,6 @@
 package leaderboard.search.gen2
 
-import leaderboard.search.beautyq.gen2.wiring.{BeautyQServingMode, StartupServingStatus, SupplementStartupPolicy}
+import leaderboard.search.beautyq.gen2.wiring.{BeautyQStartupServingStatusTestFixtures, StartupServingStatus}
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.time.Instant
@@ -17,19 +17,7 @@ final class BeautyQSearchStartupEvidenceSpec extends AnyWordSpec {
         3400000L,
         activatedAt,
       )
-      val status = new StartupServingStatus(
-        SupplementStartupPolicy.Required,
-        BeautyQServingMode.FullSearch,
-        "healthy",
-        None,
-        restartRequired = false,
-        "source-fingerprint",
-        "documents-fingerprint",
-        "es-reference",
-        "es-target",
-        Some("qdrant-generation"),
-        Some("qdrant-collection"),
-      )
+      val status: StartupServingStatus = BeautyQStartupServingStatusTestFixtures.fullSearch
       val json = BeautyQSearchGen2HttpService.encodeStatus(
         status,
         Some(evidence),

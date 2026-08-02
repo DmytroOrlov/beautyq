@@ -81,82 +81,44 @@ final class BeautyQSupplementStartupPolicySpec extends AnyWordSpec {
 
   "StartupServingStatus" should {
     "report supplementReady true for FullSearch" in {
-      val status = new StartupServingStatus(
-        policy = SupplementStartupPolicy.Required,
-        servingMode = BeautyQServingMode.FullSearch,
-        condition = "healthy",
-        reason = None,
-        restartRequired = false,
-        sourceContentFingerprint = "src-fp",
-        projectedDocumentsFingerprint = "proj-fp",
-        elasticsearchReference = "es-ref",
-        elasticsearchPhysicalTarget = "es-target",
-        qdrantGenerationId = Some("qdrant-gen"),
-        qdrantPhysicalCollection = Some("qdrant-coll"),
-      )
+      val status = BeautyQStartupServingStatusTestFixtures.fullSearch
       assert(status.supplementReady)
       assert(status.servingMode == BeautyQServingMode.FullSearch)
       assert(!status.restartRequired)
     }
 
-    "report supplementReady false for BaselineOnly" in {
-      val status = new StartupServingStatus(
-        policy = SupplementStartupPolicy.Preferred,
-        servingMode = BeautyQServingMode.BaselineOnly,
-        condition = "degraded",
-        reason = None,
-        restartRequired = true,
-        sourceContentFingerprint = "src-fp",
-        projectedDocumentsFingerprint = "proj-fp",
-        elasticsearchReference = "es-ref",
-        elasticsearchPhysicalTarget = "es-target",
-        qdrantGenerationId = None,
-        qdrantPhysicalCollection = None,
-      )
+    "report Preferred degraded BaselineOnly with a typed reason" in {
+      val status = BeautyQStartupServingStatusTestFixtures.degradedBaseline
+      assert(status.policy == SupplementStartupPolicy.Preferred)
       assert(!status.supplementReady)
       assert(status.servingMode == BeautyQServingMode.BaselineOnly)
-      assert(status.restartRequired)
       assert(status.condition == "degraded")
+      assert(status.restartRequired)
+      status.reason match {
+        case Some(reason) =>
+          assert(reason.code == "qdrant_supplement_unavailable")
+          assert(reason.typedCause.nonEmpty)
+        case None => fail("expected a typed degraded reason")
+      }
     }
 
-    "preserve immutable condition" in {
-      val status = new StartupServingStatus(
-        policy = SupplementStartupPolicy.Disabled,
-        servingMode = BeautyQServingMode.BaselineOnly,
-        condition = "limited",
-        reason = None,
-        restartRequired = true,
-        sourceContentFingerprint = "src-fp",
-        projectedDocumentsFingerprint = "proj-fp",
-        elasticsearchReference = "es-ref",
-        elasticsearchPhysicalTarget = "es-target",
-        qdrantGenerationId = None,
-        qdrantPhysicalCollection = None,
-      )
+    "report Disabled limited BaselineOnly" in {
+      val status = BeautyQStartupServingStatusTestFixtures.disabledBaseline
+      assert(status.policy == SupplementStartupPolicy.Disabled)
+      assert(!status.supplementReady)
+      assert(status.servingMode == BeautyQServingMode.BaselineOnly)
       assert(status.condition == "limited")
       assert(status.restartRequired)
     }
 
     "carry elasticsearch reference and physical target" in {
-      val status = new StartupServingStatus(
-        policy = SupplementStartupPolicy.Required,
-        servingMode = BeautyQServingMode.FullSearch,
-        condition = "healthy",
-        reason = None,
-        restartRequired = false,
-        sourceContentFingerprint = "src-v1",
-        projectedDocumentsFingerprint = "proj-v1",
-        elasticsearchReference = "generation-2024-01-01",
-        elasticsearchPhysicalTarget = "beautyq-gen-2024-01-01",
-        qdrantGenerationId = Some("qdrant-1"),
-        qdrantPhysicalCollection = Some("collection-1"),
-      )
-      assert(status.elasticsearchReference == "generation-2024-01-01")
-      assert(status.elasticsearchPhysicalTarget == "beautyq-gen-2024-01-01")
-      assert(status.sourceContentFingerprint == "src-v1")
-      assert(status.projectedDocumentsFingerprint == "proj-v1")
-      assert(status.qdrantGenerationId.contains("qdrant-1"))
-      assert(status.qdrantPhysicalCollection.contains("collection-1"))
+      val status = BeautyQStartupServingStatusTestFixtures.fullSearch
+      assert(status.elasticsearchReference == "beautyq-status-test-generation")
+      assert(status.elasticsearchPhysicalTarget == "beautyq-status-test-target")
+      assert(status.sourceContentFingerprint == BeautyQStartupServingStatusTestFixtures.materialized.sourceSnapshot.contentFingerprint.value)
+      assert(status.projectedDocumentsFingerprint == BeautyQStartupServingStatusTestFixtures.materialized.projectedDocumentsFingerprint.value)
+      assert(status.qdrantGenerationId.exists(_.nonEmpty))
+      assert(status.qdrantPhysicalCollection.exists(_.nonEmpty))
     }
   }
 }

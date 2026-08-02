@@ -56,33 +56,11 @@ final class BeautyQSearchGen2RuntimeSpec extends AnyWordSpec {
     }
   }
 
-  private val fullSearchStatus: StartupServingStatus = new StartupServingStatus(
-    policy = SupplementStartupPolicy.Required,
-    servingMode = BeautyQServingMode.FullSearch,
-    condition = "healthy",
-    reason = None,
-    restartRequired = false,
-    sourceContentFingerprint = "test-source-fp",
-    projectedDocumentsFingerprint = "test-projected-fp",
-    elasticsearchReference = "test-es-ref",
-    elasticsearchPhysicalTarget = "test-es-target",
-    qdrantGenerationId = Some("test-qdrant-gen"),
-    qdrantPhysicalCollection = Some("test-qdrant-col"),
-  )
+  private val fullSearchStatus: StartupServingStatus =
+    BeautyQStartupServingStatusTestFixtures.fullSearch
 
-  private val limitedStatus: StartupServingStatus = new StartupServingStatus(
-    policy = SupplementStartupPolicy.Disabled,
-    servingMode = BeautyQServingMode.BaselineOnly,
-    condition = "limited",
-    reason = Some(new StartupServingStatus.Reason("qdrant_supplement_operator_disabled", "Qdrant supplement was disabled by operator policy; the complete Elasticsearch baseline was returned; restart is required", "supplement disabled by operator startup policy", None)),
-    restartRequired = true,
-    sourceContentFingerprint = "test-source-fp",
-    projectedDocumentsFingerprint = "test-projected-fp",
-    elasticsearchReference = "test-es-ref",
-    elasticsearchPhysicalTarget = "test-es-target",
-    qdrantGenerationId = None,
-    qdrantPhysicalCollection = None,
-  )
+  private val limitedStatus: StartupServingStatus =
+    BeautyQStartupServingStatusTestFixtures.disabledBaseline
 
   private val request: BeautySearchRequestGen2 = BeautySearchRequestGen2(
     Some("relaxing appointment"),

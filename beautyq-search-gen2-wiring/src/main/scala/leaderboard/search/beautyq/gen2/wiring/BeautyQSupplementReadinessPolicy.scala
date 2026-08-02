@@ -53,7 +53,7 @@ object BeautyQServingMode {
   }
 }
 
-final class StartupServingStatus private[leaderboard] (
+final class StartupServingStatus private (
   val policy: SupplementStartupPolicy,
   val servingMode: BeautyQServingMode,
   val condition: String,
@@ -71,12 +71,21 @@ final class StartupServingStatus private[leaderboard] (
 
 object StartupServingStatus {
 
-  final class Reason private[leaderboard] (
+  final class Reason private (
     val code: String,
     val message: String,
     val detail: String,
     private[wiring] val typedCause: Option[BeautyQSearchGenerationActivationError],
   )
+
+  object Reason {
+    private[StartupServingStatus] def create(
+      code: String,
+      message: String,
+      detail: String,
+      typedCause: Option[BeautyQSearchGenerationActivationError],
+    ): Reason = new Reason(code, message, detail, typedCause)
+  }
 
   private[leaderboard] def healthy(
     policy: SupplementStartupPolicy,
@@ -111,7 +120,7 @@ object StartupServingStatus {
       policy = policy,
       servingMode = BeautyQServingMode.BaselineOnly,
       condition = "degraded",
-      reason = Some(new Reason(code, message, detail, Some(typedCause))),
+      reason = Some(Reason.create(code, message, detail, Some(typedCause))),
       restartRequired = true,
       sourceContentFingerprint = materialized.sourceSnapshot.contentFingerprint.value,
       projectedDocumentsFingerprint = materialized.projectedDocumentsFingerprint.value,
@@ -133,7 +142,7 @@ object StartupServingStatus {
       policy = policy,
       servingMode = BeautyQServingMode.BaselineOnly,
       condition = "limited",
-      reason = Some(new Reason(code, message, detail, None)),
+      reason = Some(Reason.create(code, message, detail, None)),
       restartRequired = true,
       sourceContentFingerprint = materialized.sourceSnapshot.contentFingerprint.value,
       projectedDocumentsFingerprint = materialized.projectedDocumentsFingerprint.value,

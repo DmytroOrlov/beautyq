@@ -160,33 +160,11 @@ final class BeautyQSearchGen2HttpContractSpec extends AnyWordSpec with HttpContr
     }
   }
 
-  private val fullSearchStatus: StartupServingStatus = new StartupServingStatus(
-    policy = SupplementStartupPolicy.Required,
-    servingMode = BeautyQServingMode.FullSearch,
-    condition = "healthy",
-    reason = None,
-    restartRequired = false,
-    sourceContentFingerprint = "test-fp",
-    projectedDocumentsFingerprint = "test-fp",
-    elasticsearchReference = "test-ref",
-    elasticsearchPhysicalTarget = "test-target",
-    qdrantGenerationId = Some("test-gen"),
-    qdrantPhysicalCollection = Some("test-col"),
-  )
+  private val fullSearchStatus: StartupServingStatus =
+    BeautyQStartupServingStatusTestFixtures.fullSearch
 
-  private val baselineOnlyStatus: StartupServingStatus = new StartupServingStatus(
-    policy = SupplementStartupPolicy.Disabled,
-    servingMode = BeautyQServingMode.BaselineOnly,
-    condition = "limited",
-    reason = Some(new StartupServingStatus.Reason("qdrant_supplement_operator_disabled", "Qdrant supplement was disabled by operator policy; the complete Elasticsearch baseline was returned; restart is required", "supplement disabled by operator startup policy", None)),
-    restartRequired = true,
-    sourceContentFingerprint = "test-fp",
-    projectedDocumentsFingerprint = "test-fp",
-    elasticsearchReference = "test-ref",
-    elasticsearchPhysicalTarget = "test-target",
-    qdrantGenerationId = None,
-    qdrantPhysicalCollection = None,
-  )
+  private val baselineOnlyStatus: StartupServingStatus =
+    BeautyQStartupServingStatusTestFixtures.disabledBaseline
 
   private val validBody =
     "{\"query\":\"relaxing appointment\",\"filters\":[],\"requestedFacets\":[],\"sort\":[],\"page\":{\"size\":20}}"

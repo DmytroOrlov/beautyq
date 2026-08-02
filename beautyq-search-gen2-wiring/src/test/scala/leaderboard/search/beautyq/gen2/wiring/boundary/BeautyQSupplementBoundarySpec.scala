@@ -6,8 +6,51 @@ import org.scalatest.wordspec.AnyWordSpec
 final class BeautyQSupplementBoundarySpec extends AnyWordSpec {
   "StartupServingStatus" should {
     "hide its constructor from external packages" in {
-      assertDoesNotCompile("new leaderboard.search.beautyq.gen2.wiring.StartupServingStatus(leaderboard.search.beautyq.gen2.wiring.SupplementStartupPolicy.Required, leaderboard.search.beautyq.gen2.wiring.BeautyQServingMode.FullSearch, \"healthy\", None, false, \"src\", \"proj\", \"es-ref\", \"es-target\", None, None)")
-      assertDoesNotCompile("new leaderboard.search.beautyq.gen2.wiring.StartupServingStatus.Reason(\"code\", \"msg\", \"detail\", None)")
+      assertDoesNotCompile("""
+        new leaderboard.search.beautyq.gen2.wiring.StartupServingStatus(
+          leaderboard.search.beautyq.gen2.wiring.SupplementStartupPolicy.Required,
+          leaderboard.search.beautyq.gen2.wiring.BeautyQServingMode.FullSearch,
+          \"healthy\",
+          Option.empty[leaderboard.search.beautyq.gen2.wiring.StartupServingStatus.Reason],
+          false,
+          \"src\",
+          \"proj\",
+          \"es-ref\",
+          \"es-target\",
+          Option.empty[String],
+          Option.empty[String],
+        )
+      """)
+      assertDoesNotCompile("""
+        new leaderboard.search.beautyq.gen2.wiring.StartupServingStatus.Reason(
+          \"code\",
+          \"msg\",
+          \"detail\",
+          Option.empty[leaderboard.search.beautyq.gen2.wiring.BeautyQSearchGenerationActivationError],
+        )
+      """)
+    }
+
+    "not expose arbitrary-reference test factories" in {
+      assertDoesNotCompile("""
+        leaderboard.search.beautyq.gen2.wiring.StartupServingStatus.healthyFromReferences(
+          leaderboard.search.beautyq.gen2.wiring.SupplementStartupPolicy.Required,
+          "src",
+          "proj",
+          "es-ref",
+          "es-target",
+          "qdrant-gen",
+          "qdrant-col",
+        )
+      """)
+      assertDoesNotCompile("""
+        leaderboard.search.beautyq.gen2.wiring.StartupServingStatus.disabledFromReferences(
+          "src",
+          "proj",
+          "es-ref",
+          "es-target",
+        )
+      """)
     }
   }
 
