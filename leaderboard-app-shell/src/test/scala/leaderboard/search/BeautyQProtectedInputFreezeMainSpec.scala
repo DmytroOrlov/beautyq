@@ -179,6 +179,66 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
         case Left(error) => fail(s"expected canonical catalog, got $error")
       }
     }
+
+    "reproduce the tracked Q2-I freeze audit from canonical test resources" in {
+      val root = repositoryRoot(Paths.get(".").toAbsolutePath.normalize)
+      val resourceRoot = root.resolve(
+        "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected"
+      )
+      val corpusPath = resourceRoot.resolve("beautyq-protected-holdout-v1.json")
+      val policyPath = resourceRoot.resolve("beautyq-protected-acceptance-policy-v1.json")
+      val auditPath = resourceRoot.resolve("beautyq-protected-input-audit-v2.json")
+      val authorDraftPath = resourceRoot.resolve("provenance/beautyq-protected-author-draft-v1.json")
+      val judgedDraftPath = resourceRoot.resolve("provenance/beautyq-protected-judged-draft-v1.json")
+      val canonicalFiles = Vector(corpusPath, policyPath, auditPath, authorDraftPath, judgedDraftPath)
+      canonicalFiles.foreach { path =>
+        assert(Files.isRegularFile(path), "expected canonical protected resource")
+        assert(Files.size(path) > 0L, "expected non-empty canonical protected resource")
+      }
+
+      val corpus = decodeCanonicalCorpus(corpusPath)
+      val policy = BeautyQProtectedAcceptancePolicy.load(policyPath) match {
+        case Right(value) => value
+        case Left(_) => fail("expected canonical protected policy to decode")
+      }
+      val audit = decodeCanonicalAudit(auditPath)
+      assert(corpus.cases.size == 24)
+      assert(policy.expectedCaseCount == corpus.cases.size)
+      assert(audit.frozen)
+
+      val temporaryDirectory = root.resolve("target/codex-sbt/protected-freeze-canonical")
+      val temporaryAudit = temporaryDirectory.resolve("audit.json")
+      Files.createDirectories(temporaryDirectory)
+      Files.deleteIfExists(temporaryAudit): Unit
+      try {
+        val arguments = new BeautyQProtectedInputFreezeMain.Arguments(
+          corpusPath,
+          policyPath,
+          authorDraftPath,
+          judgedDraftPath,
+          temporaryAudit,
+          audit.sourceRevision,
+          audit.authorPassId,
+          audit.judgePassId,
+          audit.auditPassId,
+        )
+        BeautyQProtectedInputFreezeMain.freezeAt(
+          arguments,
+          temporaryAudit,
+          () => Right(audit.sourceRevision),
+        ) match {
+          case Right(summary) =>
+            val expectedBytes = Files.readAllBytes(auditPath).toVector
+            val actualBytes = Files.readAllBytes(temporaryAudit).toVector
+            assert(actualBytes == expectedBytes, "tracked aggregate audit must be reproducible")
+            assert(summary.protectedCaseCount == audit.protectedCaseCount)
+          case Left(_) => fail("expected tracked protected inputs to reproduce their freeze audit")
+        }
+      } finally {
+        Files.deleteIfExists(temporaryAudit): Unit
+        Files.deleteIfExists(temporaryDirectory): Unit
+      }
+    }
   }
 
   private final class FixturePaths(val corpus: Path, val policy: Path, val authorDraft: Path, val judgedDraft: Path, val audit: Path)
@@ -340,5 +400,31 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
     Files.deleteIfExists(paths.judgedDraft): Unit
     Files.deleteIfExists(paths.corpus): Unit
     Files.deleteIfExists(paths.corpus.getParent): Unit
+  }
+
+  private def repositoryRoot(start: Path): Path = {
+    if (Files.isRegularFile(start.resolve("build.sbt"))) start
+    else Option(start.getParent) match {
+      case Some(parent) => repositoryRoot(parent)
+      case None => fail("repository root with build.sbt was not found")
+    }
+  }
+
+  private def decodeCanonicalCorpus(path: Path): BeautyQEvaluationCorpus = {
+    val json = io.circe.parser.parse(Files.readString(path, StandardCharsets.UTF_8)) match {
+      case Right(value) => value
+      case Left(_) => fail("expected canonical protected corpus JSON")
+    }
+    BeautyQEvaluationCorpus.decodeFromJson(json) match {
+      case Right(value) => value
+      case Left(_) => fail("expected canonical protected corpus to decode")
+    }
+  }
+
+  private def decodeCanonicalAudit(path: Path): BeautyQProtectedInputAudit = {
+    BeautyQProtectedInputAudit.decodeString(Files.readString(path, StandardCharsets.UTF_8)) match {
+      case Right(value) => value
+      case Left(_) => fail("expected canonical protected audit to decode")
+    }
   }
 }

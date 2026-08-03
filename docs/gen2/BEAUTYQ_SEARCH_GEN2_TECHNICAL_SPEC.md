@@ -2144,8 +2144,10 @@ remain open.
 
 `beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
 evidence, deterministic cutover report encoding, the completed Gen1 deletion inventory, a canonical
-89-case BeautyQ evaluation corpus, domain evaluation policy and adapters. All 89 migrated cases are
-visible regression/partial judgments; no protected holdout exists yet.
+89-case BeautyQ evaluation corpus, the frozen protected Q2-I corpus/policy/audit and provenance
+resources, domain evaluation policy and adapters. The visible 89 migrated cases remain
+regression/partial judgments; the protected fixture is a test/evaluation input and does not enter
+production serving classpaths.
 
 The Distage communication owner retains the four-query readiness smoke and also executes all 89
 canonical cases through one Required/FullSearch native application and the real Elasticsearch, Qdrant
@@ -2173,10 +2175,12 @@ Qdrant candidate plans, and hydration remains a second hard-constraint check. No
 threshold, corpus-label change, materialized-shape change or lifecycle redesign is used. The complete
 managed 89-case rerun passed: zero forbidden hits, all hard/no-harm checks green, no threshold
 required. Protected-acceptance machinery is implemented as a BeautyQ eval owner: it strictly decodes
-an ordered private holdout corpus and a separate protected-acceptance policy, reuses the same measured
+an ordered protected holdout corpus and a separate protected-acceptance policy, reuses the same measured
 application execution path, emits aggregate-only protected report/measurement/gate artifacts, and
-derives a candidate baseline only after a green protected gate. The private product inputs are not
-present in this checkout, so protected acceptance and the first accepted manifest remain pending.
+derives a candidate baseline only after a green protected gate. The frozen protected corpus, policy,
+aggregate audit and author/judge provenance drafts are versioned under `src/test/resources` and are
+available after an ordinary checkout. Protected bootstrap has not run, and accepted-manifest
+generation remains pending.
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
 candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
 resource and compares ordered aggregate observations. The first accepted manifest must be

@@ -16,7 +16,7 @@ import java.text.Normalizer
 import java.util.Locale
 import scala.annotation.tailrec
 
-/** Manual, non-discovered, no-search owner that validates and freezes private protected inputs. */
+/** Manual, non-discovered, no-search owner that validates and freezes protected inputs. */
 object BeautyQProtectedInputFreezeMain {
   final class Arguments private[search] (
     val protectedCorpus: Path,

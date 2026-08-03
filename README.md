@@ -20,11 +20,12 @@ BeautyQ Search Gen2 is the complete native serving architecture. Its declaration
 lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete; the approved Q2
 visible-regression intent correction is implemented and proved through the complete managed 89-case
 hard/no-harm run. Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
-owners are implemented. Q2-I private protected inputs were model-assisted, source-grounded,
-catalog-bound, audited, and frozen; Q2-A migration scope-drift audit is completed, while protected
-bootstrap and accepted-baseline promotion/verify remain pending. The private inputs are operator-owned:
-`target/search-gen2/private` is only a disposable local execution copy and must be restored from
-durable operator storage before protected work. No recovery-wave Gen1/legacy
+owners are implemented. Q2-I protected inputs were model-assisted, source-grounded,
+catalog-bound, audited, and frozen as versioned test resources under `beautyq-search-gen2-eval`;
+an ordinary checkout contains them. “Protected” means excluded from output-driven tuning and emitted
+only through aggregate protected reports; these inputs are not production serving resources. Q2-A
+migration scope-drift audit is completed, while protected bootstrap and accepted-baseline promotion/verify
+remain pending. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
 reintroduction was found. No external
 employee or separately hired reviewer is required: the
 checkout operator is the approval authority, provenance is recorded, and inputs are frozen before

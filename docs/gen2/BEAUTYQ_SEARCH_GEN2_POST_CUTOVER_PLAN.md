@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I private protected inputs authored, audited, and frozen; Q2-A recovery-wave scope-drift audit completed; protected bootstrap, candidate review, accepted-baseline promotion, and verify pending; D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I protected inputs authored, audited, and frozen as tracked eval resources; Q2-A recovery-wave scope-drift audit completed; protected bootstrap, candidate review, accepted-baseline promotion, and verify pending; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -15,9 +15,8 @@ remaining work is:
 
 - protected execution has not run;
 - the first accepted manifest has not been promoted or verified;
-- availability of the disposable private execution copies is an operator precondition; they must be
-  restored byte-exact from durable operator storage or replaced by a new Q2-I author/judge/audit/freeze
-  cycle before protected bootstrap;
+- the frozen Q2-I corpus, policy, audit and provenance drafts are tracked under
+  `beautyq-search-gen2-eval/src/test/resources` and are available after an ordinary checkout;
 - the root aggregate suite must be green on the committed supplement-boundary closeout before the
   first protected bootstrap;
 - D1 has not started and still requires second-domain product input;
@@ -328,7 +327,7 @@ violations do block continued rollout.
 
 ### Q2-I — Protected Input Authoring and Freeze
 
-Q2-I is the pre-execution owner for the first private protected inputs. A source-grounded author pass
+Q2-I is the pre-execution owner for the first protected inputs. A source-grounded author pass
 creates unused requests without seeing the visible corpus, intent aliases or search output. A separate
 judge pass assigns partial typed judgments from the canonical catalog without search output. Only the
 later audit pass compares against visible regression evidence and the intent vocabulary, rejects exact
@@ -339,25 +338,26 @@ The checkout operator is the approval authority; no external employee or separat
 required. “Synthetic acceptance data” means labels or thresholds derived from search output. It does
 not include source-grounded model-assisted cases authored before execution and independently audited
 against typed source/catalog evidence. Bootstrap and verify remain read-only consumers: they may never
-author, relabel or modify private inputs. Revealed protected cases still move permanently into the
+author, relabel or modify protected inputs. Revealed protected cases still move permanently into the
 visible regression set and must be replaced by independently authored, unused, operator-approved
 cases before the holdout is reused.
 
 The first Q2-I corpus and acceptance policy are authored, independently judged, catalog-bound, audited
-against the visible corpus, and frozen as ignored operator-owned inputs. Their aggregate audit binds
+against the visible corpus, and frozen as tracked `beautyq-search-gen2-eval` test resources. Their aggregate audit binds
 the actual starting HEAD, typed corpus/policy and canonical source fingerprints, corpus/policy and
 author/judge-draft hashes, ordered slice counts, zero catalog-identity failures, exact-intent
 completeness, and zero visible or internal exact/normalized query overlap. No semantic-similarity
 duplicate detection is claimed. No protected search execution or accepted-manifest generation belongs
 to Q2-I; those remain the next clean-revision procedure.
 
-The Q2-I freeze completed; its ignored outputs use the disposable
-`target/search-gen2/private` execution directory, which is not repository-persisted durable storage.
-The repository does not assert local availability. Recorded hashes or fingerprints cannot reconstruct
-missing bytes. Before bootstrap, the operator must check for local copies and either restore and
-strictly verify the corpus, policy, and audit from durable storage or repeat Q2-I with new
-author/judge/audit provenance, identities, hashes, and fingerprints. Do not synthesize or infer the old
-set from documentation, the visible corpus, or search output.
+The Q2-I freeze completed and its five inputs are versioned under
+`beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/`, with
+author and judged drafts under the adjacent `provenance/` directory. A fresh checkout contains the
+same bytes; `target/search-gen2/private` is only a disposable verification-audit/output directory.
+“Protected” is an evaluation-process classification, not a confidentiality or storage classification.
+The fixture may not be relabeled or tuned after protected output is inspected. A case deliberately
+exposed for diagnosis moves to the visible regression corpus and is replaced through a reviewed tracked
+Q2-I update. Q2-B no longer waits for external restoration.
 
 ### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
 
@@ -372,16 +372,16 @@ post-cutover status documentation, corrected here.
 
 Q2-A is a coordinator-owned audit record, not an executable runtime owner. The canonical accepted-
 baseline resource remains absent until manual promotion. Q2-A remains completed and is not reopened by
-the separate private-input durability precondition.
+the removed external-input durability precondition.
 
 ### Q2-B — Protected bootstrap and candidate review
 
 Status: **PENDING**
 
 Protected bootstrap may proceed only after two operational preconditions are satisfied: the committed
-supplement-boundary closeout has a green root aggregate suite, and the operator has either restored and
-verified byte-exact frozen corpus/policy/audit inputs from durable storage or completed a new Q2-I
-cycle. Bootstrap runs from a clean committed revision, proves the protected aggregate gate, and writes
+supplement-boundary closeout has a green root aggregate suite, and the tracked canonical corpus,
+policy, audit and provenance resources pass their focused reproducibility proof. Bootstrap runs from a
+clean committed revision, proves the protected aggregate gate, and writes
 an aggregate-only accepted-baseline candidate. It then stops. The same delegated task must not promote
 the candidate or run verify.
 
@@ -399,8 +399,8 @@ clean committed application-revision identity. Promotion copies the preserved ca
 into the one canonical eval resource, so the worktree then necessarily contains that reviewed tracked
 resource. No search, evaluation-policy, lifecycle, route or corpus source may change between review
 and verify. Q2-C verifies digest/equality, runs the focused canonical-resource proofs, and performs an
-independent real verify with the same application-revision identity and restored frozen inputs. Q2
-documentation may close only after green verify. Candidate generation does not authorize promotion,
+independent real verify with the same application-revision identity and verified tracked canonical
+inputs. Q2 documentation may close only after green verify. Candidate generation does not authorize promotion,
 and no automated promotion service is introduced.
 
 ## 5. Eval-first second-domain workflow
@@ -494,8 +494,9 @@ denylist, result-ID special case, threshold or generic backend policy changed.
 
 The complete managed 89-case rerun proved the correction: one warmup pass, three measured passes /
 267 measured executions, zero forbidden hits, all hard/no-harm checks passed. The correction gate is
-green, the quality threshold is `not_required`, and no score threshold was added. Protected
-holdout is not configured and the accepted baseline is not generated.
+green, the quality threshold is `not_required`, and no score threshold was added. The frozen protected
+holdout fixture exists, but protected execution has not run and the accepted baseline has not been
+generated.
 
 The current generated artifact paths are:
 
@@ -529,10 +530,10 @@ non-forbidden `0.44723216`. Therefore a single global Qdrant threshold was not a
 and was not added. The intent-policy correction (r058/r062 paraphrase extensions, r088 ServiceAny)
 repaired the three regression cases without a threshold. The complete 89-case managed rerun now
 passes: zero forbidden hits, all hard/no-harm checks green. Q2 visible-regression correction is
-proved; protected acceptance machinery now provides strict private-corpus/policy decoding, shared
+proved; protected acceptance machinery now provides strict protected-corpus/policy decoding, shared
 visible/protected execution, aggregate-only protected report encoding, a typed protected gate and a
-candidate-baseline adapter. Q2 as a whole remains open for private inputs created through Q2-I,
-protected execution and generation of the first accepted manifest from a clean committed revision.
+candidate-baseline adapter. Q2 as a whole remains open for protected execution and generation of the
+first accepted manifest from a clean committed revision.
 The protected runner and bootstrap do not create or modify those inputs; missing frozen inputs remain
 an operational failure at those later stages, not a requirement for an external employee.
 

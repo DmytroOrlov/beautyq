@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I private protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit completed, protected bootstrap and accepted-baseline promotion/verify pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit completed, protected bootstrap and accepted-baseline promotion/verify pending, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -179,7 +179,7 @@ cleaner is permitted.
 
 ## Protected input authoring and freeze
 
-The private protected corpus and policy are created before protected execution through separated
+The protected corpus and policy are created before protected execution through separated
 model-assisted author and judge passes, followed by an audit pass that alone may compare their query
 inventory with the visible corpus. No external employee is required; the checkout operator approves
 the first source-grounded set. The passes cannot inspect protected search output, and evaluation output
@@ -189,16 +189,22 @@ The freeze runner executes no search and acquires no Elasticsearch, Qdrant, embe
 startup resource. It strictly validates the corpus and policy, checks every judgment identity against
 the canonical typed seed catalog, requires an acceptable variant for every exact-intent case, applies
 exact and deterministic NFKC query-leakage audits against visible and protected inputs, binds both
-input-file hashes plus both authoring-draft hashes and the canonical source fingerprint, and writes only:
+input-file hashes plus both authoring-draft hashes and the canonical source fingerprint, and verifies
+the five versioned test resources owned by `beautyq-search-gen2-eval`:
 
-- `target/search-gen2/private/beautyq-protected-holdout-v1.json` (read-only input);
-- `target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json` (read-only input);
-- `target/search-gen2/private/beautyq-protected-input-audit-v2.json` (aggregate operational evidence).
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json` — protected evaluation input;
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json` — protected acceptance-gate input;
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json` — immutable aggregate integrity/provenance evidence;
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json` — author-pass provenance input;
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json` — judge-pass provenance input.
 
-All three files remain ignored and untracked. The audit record is evidence about validation and freeze;
-it contains no cases or judgments and is not an acceptance-policy owner. Exact and normalized duplicate
-checks detect direct leakage only; they are not semantic-similarity or fuzzy-search claims. Bootstrap
-and verify consume the frozen corpus and policy read-only and never author or modify them.
+All five are tracked test resources available after an ordinary checkout. “Protected” means frozen
+and excluded from output-driven tuning; it does not mean confidential. They are not production
+`src/main/resources`, and no external restore or CI secret provisioning is required. The audit record
+is evidence about validation and freeze, contains no cases or judgments, and is not an acceptance-policy
+owner. Exact and normalized duplicate checks detect direct leakage only; they are not semantic-similarity
+or fuzzy-search claims. Bootstrap and verify consume the frozen corpus and policy read-only and never
+author or modify them.
 
 The exact freeze invocation is:
 
@@ -209,10 +215,10 @@ sbt --batch --no-global \
   -Dsbt.ivy.home=target/codex-sbt/ivy2 \
   'leaderboard-app-shell/Test/runMain \
     leaderboard.search.BeautyQProtectedInputFreezeMain \
-    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
-    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
-    --author-draft target/search-gen2/private/work/beautyq-protected-author-draft-v1.json \
-    --judged-draft target/search-gen2/private/work/beautyq-protected-judged-draft-v1.json \
+    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
+    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
+    --author-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json \
+    --judged-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json \
     --audit-output target/search-gen2/private/beautyq-protected-input-audit-v2.json \
     --source-revision <starting-40-hex-revision> \
     --author-pass-id <stable-author-pass-id> \
@@ -229,15 +235,15 @@ sbt --batch --no-global \
   -Dsbt.ivy.home=target/codex-sbt/ivy2 \
   'leaderboard-app-shell/Test/runMain \
     leaderboard.search.BeautyQProtectedInputFreezeMain \
-    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
-    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
-    --author-draft target/search-gen2/private/work/beautyq-protected-author-draft-v1.json \
-    --judged-draft target/search-gen2/private/work/beautyq-protected-judged-draft-v1.json \
+    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
+    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
+    --author-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json \
+    --judged-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json \
     --audit-output target/search-gen2/private/beautyq-protected-input-audit-v2.json \
-    --source-revision 18d5046cd9dafb594724c1a3efbab62c78b11801 \
-    --author-pass-id q2i-author-v1 \
-    --judge-pass-id q2i-judge-v1 \
-    --audit-pass-id q2i-audit-v1'
+    --source-revision 3f55a3082d617fcca55be8104111893fb251b906 \
+    --author-pass-id q2i-recovery-author-v2 \
+    --judge-pass-id q2i-recovery-judge-v2 \
+    --audit-pass-id q2i-recovery-audit-v2'
 ```
 
 The completed freeze produced an aggregate audit binding source revision, typed corpus/policy and
@@ -246,38 +252,41 @@ and catalog/leakage validation outcomes. Those exact values belong to the operat
 record rather than this public runbook. Protected execution has not occurred, and no accepted manifest
 has been generated.
 
-## Private Q2-I input durability
+## Canonical Q2-I evaluation resources
 
-The private corpus, policy, aggregate audit, and optional author/judge drafts are operator-owned. Their
-durable originals must be stored outside every disposable repository `target` directory. The paths
-under `target/search-gen2/private` are only ignored local execution copies: deleting `target` deletes
-those copies, while Git intentionally tracks none of the private files.
+The first Q2-I fixture is versioned under `beautyq-search-gen2-eval/src/test/resources` and is
+available after an ordinary checkout. The canonical files are:
 
-Before protected bootstrap, restore byte-exact corpus, policy, and audit copies from durable operator
-storage. Verify their SHA-256 values and strictly decode the aggregate audit fields before execution.
-Hashes and fingerprints prove equality of restored bytes but cannot reconstruct missing content. If no
-durable backup exists, do not synthesize replacements from documentation, visible cases, or search
-output. Run a new Q2-I author/judge/audit/freeze cycle with new provenance, hashes, and fingerprints.
+- `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json` — protected evaluation input;
+- `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json` — protected acceptance-gate input;
+- `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json` — immutable aggregate integrity/provenance evidence;
+- `leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json` — author-pass provenance input;
+- `leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json` — judge-pass provenance input.
 
-**Clean-build safety:** ordinary clean builds remain allowed, but any procedure that removes `target`
-must first preserve durable operator-owned originals. Restore the private execution copies before a
-protected workflow. The repository does not persist, distribute, or reconstruct those execution
-copies. The operator must check their local presence before protected work; when they are absent,
-restore them byte-exact from durable storage or run a new Q2-I cycle. Availability of a durable backup
-is an operator precondition, not a repository claim.
+All five are tracked test resources owned by the BeautyQ evaluation module. They are not production
+`src/main/resources`, and no external restore or CI secret provisioning is required. The author and
+judged drafts reproduce the separated author/judge provenance used by the freeze audit; they are not
+bootstrap runtime inputs. “Protected” is an evaluation-process classification: ordinary development
+must not tune labels, thresholds, vocabulary, or search behavior from protected execution output.
+Aggregate-only execution and break-glass migration/replenishment rules remain unchanged.
+
+The freeze runner reads the four source inputs from these canonical test-resource paths and writes only
+a verification audit under `target/search-gen2/private/beautyq-protected-input-audit-v2.json`. After
+freeze, the generated audit must compare byte-for-byte with the tracked canonical audit resource.
+Deleting `target` therefore removes only disposable generated output and never destroys the canonical
+Q2-I inputs.
 
 ## Protected acceptance and first baseline (manual only)
 
 ### Phase 1 — protected acceptance and bootstrap candidate only
 
 Begin only after the coordinator has recorded a green root aggregate suite for the committed
-supplement-boundary closeout and the byte-exact private inputs have been restored and verified.
-Protected acceptance inputs are private operator-owned files and are not checked into the
-repository:
+supplement-boundary closeout and the tracked canonical test resources have been verified.
+Protected acceptance inputs are versioned evaluation resources, not production resources:
 
-- `target/search-gen2/private/beautyq-protected-holdout-v1.json`
-- `target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json`
-- `target/search-gen2/private/beautyq-protected-input-audit-v2.json`
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json`
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json`
+- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json`
 
 The test-owned runner is not an auto-discovered suite. Invoke it only from a clean committed
 revision with an explicit application revision property:
@@ -286,8 +295,8 @@ revision with an explicit application revision property:
 sbt --batch --no-global \
   -Dsearch.gen2.eval.application-revision=<clean-commit> \
   'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQProtectedAcceptanceMain \
-    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
-    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
+    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
+    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
     --output-dir target/search-gen2/protected'
 ```
 
@@ -299,19 +308,19 @@ The protected runner writes exactly three aggregate-only artifacts:
 - `beautyq-protected-measurement.json`
 - `beautyq-protected-acceptance-gate.json`
 
-It never emits protected case IDs, queries or result IDs. Missing or malformed private inputs and
+It never emits protected case IDs, queries or result IDs. Missing or malformed protected inputs and
 unavailable external resources are non-zero operational failures, not synthetic acceptance.
 
 After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
-same clean committed application revision and restored byte-exact inputs:
+same clean committed application revision and verified tracked canonical inputs:
 
 ```bash
 sbt --batch --no-global \
   -Dsearch.gen2.eval.application-revision=<clean-commit> \
   'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQAcceptedBaselineMain \
     --mode bootstrap \
-    --protected-corpus target/search-gen2/private/beautyq-protected-holdout-v1.json \
-    --protected-policy target/search-gen2/private/beautyq-protected-acceptance-policy-v1.json \
+    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
+    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
     --output-dir target/search-gen2/protected'
 ```
 
@@ -339,16 +348,16 @@ not authorize promotion.
 ### Phase 2 — explicit promotion and verify
 
 Begin this phase only after explicit coordinator/operator approval of the preserved Phase 1 candidate.
-Require the same application-revision identity recorded in Phase 1, the same restored frozen inputs,
-and the unchanged candidate. Copy it byte-for-byte to the single aggregate-only classpath resource:
+Require the same application-revision identity recorded in Phase 1, the same verified tracked canonical
+inputs, and the unchanged candidate. Copy it byte-for-byte to the single aggregate-only classpath resource:
 
 `beautyq-search-gen2-eval/src/main/resources/leaderboard/search/beautyq/gen2/eval/beautyq_accepted_evaluation_baseline_v1.json`
 
 Verify byte equality and digest before running focused canonical-resource tests. The promoted resource
 necessarily makes the worktree non-clean; no search, evaluation-policy, lifecycle, route or corpus
 source may change after Phase 1. Then run the existing accepted-baseline owner independently with
-`--mode verify` against the same real evidence path, application-revision identity, and restored
-inputs. Verify loads only the canonical resource, writes
+`--mode verify` against the same real evidence path, application-revision identity, and verified
+tracked canonical inputs. Verify loads only the canonical resource, writes
 `beautyq-accepted-baseline-verification.json`, and compares ordered aggregate observations and stable
 provenance. It does not use these run-specific audit fields as equality requirements: application
 revision, Elasticsearch generation reference, Qdrant generation ID, visible report digest, protected
