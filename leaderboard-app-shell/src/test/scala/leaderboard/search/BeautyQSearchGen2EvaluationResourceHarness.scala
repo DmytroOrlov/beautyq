@@ -75,13 +75,24 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     applicationRevision: String,
   ): Either[String, ProtectedAcceptanceExecution] =
     withApplicationRevision(applicationRevision) {
-      executeProtectedAcceptanceInScopedRevision(protectedCorpusPath, protectedPolicyPath, outputDir)
+      executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = false)
     }
 
-  private def executeProtectedAcceptanceInScopedRevision(
+  private[search] def executeProtectedForBreakGlass(
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
+    applicationRevision: String,
+  ): Either[String, ProtectedAcceptanceExecution] =
+    withApplicationRevision(applicationRevision) {
+      executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = true)
+    }
+
+  private def executeProtectedEvaluation(
+    protectedCorpusPath: Path,
+    protectedPolicyPath: Path,
+    outputDir: Path,
+    retainRedExecution: Boolean,
   ): Either[String, ProtectedAcceptanceExecution] = {
     val visibleCorpus = BeautyQEvaluationCorpus.loadCanonical() match {
       case Right(value) => value
@@ -153,7 +164,8 @@ object BeautyQSearchGen2EvaluationResourceHarness {
         writeArtifact(outputDir.resolve("beautyq-protected-aggregate.json"), protectedRun.protectedReportJson)
         writeArtifact(outputDir.resolve("beautyq-protected-measurement.json"), protectedRun.measurementJson)
         writeArtifact(outputDir.resolve("beautyq-protected-acceptance-gate.json"), acceptance.toJson)
-        if (acceptance.passed) Right(new ProtectedAcceptanceExecution(visible, protectedRun, protectedCorpus, protectedPolicy, acceptance))
+        if (retainProtectedExecution(acceptance.passed, retainRedExecution))
+          Right(new ProtectedAcceptanceExecution(visible, protectedRun, protectedCorpus, protectedPolicy, acceptance))
         else Left("PROTECTED_ACCEPTANCE_RED")
       } finally {
         cleanupExactResources(esClient, qdrantHttp, Vector(prepared.expectedElasticsearchTarget))
@@ -163,6 +175,9 @@ object BeautyQSearchGen2EvaluationResourceHarness {
 
   private[search] def isValidApplicationRevision(value: String): Boolean =
     value.nonEmpty && value.trim == value && value != "working-tree"
+
+  private[search] def retainProtectedExecution(acceptancePassed: Boolean, retainRedExecution: Boolean): Boolean =
+    acceptancePassed || retainRedExecution
 
   private[search] def withApplicationRevision[A](applicationRevision: String)(operation: => A): A = {
     val previous = Option(System.getProperty(ApplicationRevisionProperty))

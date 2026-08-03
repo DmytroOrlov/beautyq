@@ -29,16 +29,17 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
       }
     }
 
-    "have exactly 89 cases" in {
-      assert(corpus.cases.length == 89)
+    "have exactly 96 cases after permanent break-glass migration" in {
+      assert(corpus.cases.length == 96)
+      assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-migrated")) == 7)
     }
 
     "have first case ID q_nails_001" in {
       assert(corpus.cases(0).caseId.value == "q_nails_001")
     }
 
-    "have last case ID q_holdout_nails_gel_correction_design_001" in {
-      assert(corpus.cases(corpus.cases.length - 1).caseId.value == "q_holdout_nails_gel_correction_design_001")
+    "append the final disclosed case after the pre-existing visible inventory" in {
+      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i2_case_008"))
     }
 
     "preserve explicit source order for first 3 cases" in {

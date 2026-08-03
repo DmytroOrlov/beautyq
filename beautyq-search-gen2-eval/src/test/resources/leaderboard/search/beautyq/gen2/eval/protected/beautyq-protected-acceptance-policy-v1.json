@@ -2,7 +2,7 @@
   "schemaVersion": "beautyq-protected-acceptance-policy-v1",
   "evaluationPolicyVersion": "beautyq-evaluation-policy-v1",
   "protectedAcceptancePolicyVersion": "beautyq-protected-acceptance-policy-v1",
-  "expectedCorpusFingerprint": "825ca2862ad99b61002bcf04bfe000168eccc61760d9a1d091c0c4320afc9bb0",
+  "expectedCorpusFingerprint": "7a654c7323f822f26bccc6d5ae7adde3faf4bfd790984ae63fb25c34978c9188",
   "expectedCaseCount": 24,
   "requiredSliceMinimums": [
     {"sliceId": "exact-intent", "minimumCaseCount": 8},

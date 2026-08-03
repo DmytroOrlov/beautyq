@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit completed, correctly attributed protected Q2-B gate red, operator-owned root evidence green, break-glass decision pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — authorized Q2-B break-glass correction source ready, 96-case visible managed proof green, protected holdout independently replenished and frozen, commit/root evidence/fresh protected acceptance pending, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -315,17 +315,27 @@ unavailable external resources are non-zero operational failures, not synthetic 
 
 ### Latest protected Q2-B disposition
 
-The latest manual protected execution used committed revision
-`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` through `--application-revision` and reported
-`applicationRevisionSource=system-property`. It wrote the three aggregate-only artifacts under an
-ignored `target/search-gen2/q2b-runs/<run-id>/acceptance` directory. The protected gate is red on
-`metric-protected-slice:exact-intent-variants/success/10`; bootstrap and candidate generation are
-therefore not authorized. Protected identities and metric values remain undisclosed, and no
-output-driven tuning or break-glass disclosure occurred. Operator-owned `sbt test` completed GREEN
-for the committed source revision with exit zero in 86 seconds; exact suite/test counts were not
-recorded. Only documentation files were dirty during that run, so no Scala, test, build or CI input
-differed from the committed source. The explicit break-glass decision remains pending, and the earlier
-`working-tree-default` artifacts remain preserved as non-authoritative diagnostic evidence.
+The last correctly attributed protected acceptance used committed revision
+`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`, reported `applicationRevisionSource=system-property`,
+and was red only on `metric-protected-slice:exact-intent-variants/success/10`. The coordinator then
+authorized `q2-break-glass-exact-intent-variants-success-10-v1`. Before disclosure, an isolated
+48-case replacement reserve was independently authored, judged, structurally audited, and frozen.
+The break-glass owner disclosed only the seven cases contributing to that authorized check, using the
+minimal typed top-cutoff projection and without emitting metric values, thresholds, unrelated
+identities, or passing protected cases.
+
+All seven disclosed cases are now permanent visible Regression evidence. The BeautyQ vocabulary owns
+the source correction, including the appended r089 declaration; generic precedence, ranking, metric,
+threshold, and lifecycle owners were not changed. The managed visible communication proof passed with
+96 warmup executions and 288 measured executions, including every hard/no-harm gate. Seven replacements
+were selected only from the frozen pre-disclosure reserve. The protected corpus was audited and frozen
+again at 24 cases with slice counts 8/6/4/3/3.
+
+This correction source has not yet been committed or evaluated through post-correction protected
+acceptance. Preserve the earlier RED artifacts as historical evidence. Next, review and commit this
+source patch, obtain operator-owned root evidence for that exact commit, and run one fresh correctly
+attributed protected acceptance. Bootstrap and candidate generation remain unauthorized until that
+fresh protected gate is green; promotion and verify remain later boundaries.
 
 After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
 same clean committed application revision and verified tracked canonical inputs:

@@ -17,19 +17,21 @@ Start here:
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
 
 BeautyQ Search Gen2 is the complete native serving architecture. Its declaration, baseline/supplement,
-lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete; the approved Q2
-visible-regression intent correction is implemented and proved through the complete managed 89-case
-hard/no-harm run. Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
+lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete. The authorized
+Q2 break-glass correction migrated seven disclosed failures permanently into visible regression
+evidence, extended the BeautyQ-owned intent vocabulary, and passed the complete managed 96-case / 288-
+execution hard/no-harm run. Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
 owners are implemented. Q2-I protected inputs were model-assisted, source-grounded,
 catalog-bound, audited, and frozen as versioned test resources under `beautyq-search-gen2-eval`;
 an ordinary checkout contains them. “Protected” means excluded from output-driven tuning and emitted
 only through aggregate protected reports; these inputs are not production serving resources. Q2-A
-migration scope-drift audit is completed. The correctly attributed protected Q2-B execution produced
-aggregate-only artifacts but remains red on `metric-protected-slice:exact-intent-variants/success/10`;
-bootstrap, candidate generation, accepted-baseline promotion and verify remain pending. Operator-owned
-current-source root `sbt test` evidence is GREEN for the committed revision; the explicit break-glass
-decision remains pending. No protected identities were disclosed and no output-driven tuning was
-performed. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
+migration scope-drift audit is completed. The authorized disclosure was limited to the one failed Q2-B
+check and its minimal contributing set; every disclosed case is now visible regression evidence. The
+protected holdout was independently replenished from a frozen pre-disclosure reserve, audited, and
+refrozen at 24 cases with its required slice inventory. Post-correction protected acceptance, bootstrap,
+candidate generation, accepted-baseline promotion, and verify remain pending until this source patch is
+reviewed, committed, and receives exact-revision root evidence. No output-driven threshold, label, or
+judgment tuning was performed. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
 reintroduction was found. No external
 employee or separately hired reviewer is required: the
 checkout operator is the approval authority, provenance is recorded, and inputs are frozen before

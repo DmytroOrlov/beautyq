@@ -1,44 +1,12 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "3f55a3082d617fcca55be8104111893fb251b906",
-  "authorPassId": "q2i-recovery-author-v2",
+  "sourceRevision": "89811d5f2ad5327b24b2aac4641f4716d781000e",
+  "authorPassId": "q2-break-glass-replenishment-author-v1",
   "cases": [
-    {
-      "id": "q2i2_case_001",
-      "query": "Gel-Maniküre mit Entfernung und schlichtem Finish",
-      "language": "de",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Manicure with gel polish and removal",
-      "notes": ["Exact service and attribute request from the canonical seed vocabulary."]
-    },
-    {
-      "id": "q2i2_case_002",
-      "query": "маникюр с гель-лаком",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Manicure with gel polish",
-      "notes": ["Exact manicure request with a source-backed nail coating attribute."]
-    },
-    {
-      "id": "q2i2_case_003",
-      "query": "Pediküre für gepflegte Zehennägel",
-      "language": "de",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Pedicure",
-      "notes": ["Exact pedicure service request from the canonical seed."]
-    },
-    {
-      "id": "q2i2_case_004",
-      "query": "lash lift und wimpern styling",
-      "language": "mixed",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Eyelash service",
-      "notes": ["Exact eyelash service request using the seeded lashes service."]
-    },
+    {"id":"q2i3_case_001","query":"Нужен уход для рук с гель-лаком без дизайна","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Manicure with gel polish and no design","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {"id":"q2i3_case_002","query":"Ищу педикюр без какого-либо покрытия","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Pedicure without coating","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {"id":"q2i3_case_003","query":"Хочу аккуратно снять наращённые ресницы","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Eyelash extension removal","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {"id":"q2i3_case_004","query":"Нужно ламинирование бровей вместе с окрашиванием","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Brow lamination with tinting","notes":["Selected from the independently frozen pre-disclosure reserve."]},
     {
       "id": "q2i2_case_005",
       "query": "оформление и коррекция бровей",
@@ -48,33 +16,9 @@
       "userIntent": "Brow service",
       "notes": ["Exact brow service request from the canonical service taxonomy."]
     },
-    {
-      "id": "q2i2_case_006",
-      "query": "facial cleansing and skin care",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Facial cosmetology",
-      "notes": ["Exact face-cosmetology request from the seeded service."]
-    },
-    {
-      "id": "q2i2_case_007",
-      "query": "пудровый перманент бровей",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Permanent make-up for brows",
-      "notes": ["Exact PMU brow request using the seeded PMU service and brows area."]
-    },
-    {
-      "id": "q2i2_case_008",
-      "query": "hair removal for underarms",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Hair removal",
-      "notes": ["Exact hair-removal service request from the canonical seed."]
-    },
+    {"id":"q2i3_case_005","query":"Ищу перманент губ с последующей коррекцией","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Permanent makeup for lips with correction","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {"id":"q2i3_case_006","query":"Нужна процедура аквафейшл для лица","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Aquafacial for the face","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {"id":"q2i3_case_007","query":"Ищу лазерное удаление волос в зоне подмышек","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Laser hair removal for armpits","notes":["Selected from the independently frozen pre-disclosure reserve."]},
     {
       "id": "q2i2_case_009",
       "query": "мне нужно привести руки в порядок перед праздником",

@@ -620,6 +620,31 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
 
       assert(actual == expected)
     }
+
+    "derive typed hard constraints for every disclosed exact-intent language form" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val cases = Vector(
+        ("Gel-Maniküre mit Entfernung und schlichtem Finish", Set(fields.serviceCode.id -> Set("manicure"), fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"), fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"))),
+        ("маникюр с гель-лаком", Set(fields.serviceCode.id -> Set("manicure"), fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"), fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"))),
+        ("Pediküre für gepflegte Zehennägel", Set(fields.serviceCode.id -> Set("pedicure"), fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"))),
+        ("lash lift und wimpern styling", Set(fields.serviceCode.id -> Set("lashes"), fields.enumAttributesByCode("lash_service_type").id -> Set("lifting"))),
+        ("facial cleansing and skin care", Set(fields.serviceCode.id -> Set("facial"), fields.enumAttributesByCode("facial_treatment_type").id -> Set("cleansing"), fields.enumAttributesByCode("body_area").id -> Set("face"))),
+        ("пудровый перманент бровей", Set(fields.serviceCode.id -> Set("pmu"), fields.enumAttributesByCode("pmu_area").id -> Set("brows"))),
+        ("hair removal for underarms", Set(fields.serviceCode.id -> Set("hair_removal"), fields.enumAttributesByCode("body_area").id -> Set("armpits"))),
+      )
+
+      cases.foreach { case (query, expected) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            assert(actual == expected, s"unexpected parsed constraints for '$query': $actual")
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
   }
 
   "the provenance trust boundary" should {

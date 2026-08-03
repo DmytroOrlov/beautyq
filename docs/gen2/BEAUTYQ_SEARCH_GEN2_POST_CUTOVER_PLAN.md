@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I protected inputs authored, audited, and frozen as tracked eval resources; Q2-A recovery-wave scope-drift audit completed; correctly attributed protected Q2-B gate red, operator-owned root evidence green, break-glass decision pending; D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — authorized Q2-B break-glass correction source and 96-case visible proof ready; protected holdout independently replenished and frozen; commit, exact-revision root evidence, and fresh protected acceptance pending; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -376,21 +376,28 @@ the removed external-input durability precondition.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **BLOCKED — CORRECTLY ATTRIBUTED PROTECTED GATE RED; ROOT EVIDENCE AND BREAK-GLASS DECISION PENDING**
+Status: **CORRECTION SOURCE READY — COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE PENDING**
 
-The current committed fork-safe runner executed the protected acceptance path from
-`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` and reported `applicationRevisionSource=system-property`.
-It wrote the three required aggregate-only artifacts, but the protected gate is red on
-`metric-protected-slice:exact-intent-variants/success/10`. The protected identities and metric values
-remain undisclosed; no output-driven tuning, label change, threshold change or break-glass disclosure
-was performed. Bootstrap and candidate generation were not run.
+The correctly attributed protected gate from committed revision
+`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` was red only on
+`metric-protected-slice:exact-intent-variants/success/10`. The coordinator explicitly authorized the
+bounded break-glass disclosure. A complete 48-case replacement reserve was independently authored,
+judged, audited, and frozen before disclosure. The break-glass owner then disclosed only the seven
+minimal contributors to the authorized check; it did not disclose numeric metric values, thresholds,
+unrelated identities, passing protected cases, or a complete ranking.
 
-Operator-owned `sbt test` is GREEN for committed source revision
-`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`, with exit zero and duration 86 seconds; exact suite/test
-counts were not supplied and are not inferred. Only the explicit break-glass decision remains before
-a separate disclosure, visible-regression migration or protected-holdout replenishment milestone may
-be authorized. The existing `working-tree-default` run remains non-authoritative historical evidence
-and is not overwritten.
+Every disclosed case was permanently migrated into the visible Regression corpus. The source-grounded
+correction remains BeautyQ vocabulary-owned and adds r089 without changing generic precedence, ranking,
+thresholds, labels, judgments, or lifecycle behavior. The canonical visible corpus now contains 96
+Regression cases. Its managed Required/FullSearch proof completed 96 warmups and 288 measured
+executions with all hard/no-harm gates green. Seven replacements came only from the frozen
+pre-disclosure reserve; the replenished protected corpus was audited and frozen at 24 cases with slice
+counts 8/6/4/3/3.
+
+No post-correction protected acceptance was run. Bootstrap and candidate generation remain pending.
+The next boundary is review and commit of this correction source, operator-owned root evidence for that
+exact commit, and one fresh correctly attributed protected acceptance. The previous RED artifacts
+remain historical evidence and do not authorize candidate generation.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -471,7 +478,7 @@ Completed:
 - updated module firewall/build-DAG proofs;
 - corrected the technical specification's current quality claims.
 
-The current visible 89 cases are regression cases, not a protected holdout.
+The current visible 96 cases are regression cases, not a protected holdout.
 
 ### Patch O0 — supplement startup policy and safe kill switch **O0 COMPLETED**
 
@@ -509,7 +516,7 @@ Disabled is selected before provisioning and its retained managed graph does not
 - stop for a bounded corrective patch if hard/no-harm gates fail;
 - do not tune labels or thresholds to make existing output green.
 
-Implemented measurement evidence:
+Implemented historical measurement evidence before the break-glass migration:
 
 - the canonical 89-case regression corpus executes through one native `BeautyQSearchApplication`
   startup with `SupplementStartupPolicy.Required` and `ServingMode.FullSearch`;
@@ -536,6 +543,13 @@ three aggregate-only artifacts, and remained red on
 `metric-protected-slice:exact-intent-variants/success/10`. The accepted baseline candidate was not
 generated, and the earlier `working-tree-default` artifacts remain preserved as non-authoritative
 diagnostic evidence.
+
+The later authorized break-glass vertical permanently added seven disclosed cases to the visible
+Regression corpus. The current managed corpus therefore contains 96 cases; one warmup pass and three
+measured passes completed 96 and 288 executions respectively, with every hard/no-harm gate green. The
+protected holdout was replenished independently from a reserve frozen before disclosure and remains 24
+cases with slice counts 8/6/4/3/3. This is source/visible evidence only: post-correction protected
+acceptance, bootstrap, promotion, and verify were not run.
 
 The current generated artifact paths are:
 
@@ -567,12 +581,13 @@ two-observation dry-run protocol; no automatic GC or unpersisted creation-time a
 The original measured supplement score ranges overlapped: maximum forbidden `0.54429233`, minimum
 non-forbidden `0.44723216`. Therefore a single global Qdrant threshold was not an honest correction
 and was not added. The intent-policy correction (r058/r062 paraphrase extensions, r088 ServiceAny)
-repaired the three regression cases without a threshold. The complete 89-case managed rerun now
-passes: zero forbidden hits, all hard/no-harm checks green. Q2 visible-regression correction is
-proved; protected acceptance machinery now provides strict protected-corpus/policy decoding, shared
+repaired the original three regression cases without a threshold. That historical 89-case managed
+rerun passed with zero forbidden hits and all hard/no-harm checks green. The subsequent authorized
+break-glass correction expanded the permanent visible Regression corpus to 96 cases, and its managed
+96/288 proof is green. Protected acceptance machinery provides strict protected-corpus/policy decoding, shared
 visible/protected execution, aggregate-only protected report encoding, a typed protected gate and a
-candidate-baseline adapter. Q2 as a whole remains open for protected execution and generation of the
-first accepted manifest from a clean committed revision.
+candidate-baseline adapter. Q2 as a whole remains open for post-correction protected execution and
+generation of the first accepted manifest from a clean committed revision.
 The protected runner and bootstrap do not create or modify those inputs; missing frozen inputs remain
 an operational failure at those later stages, not a requirement for an external employee.
 
