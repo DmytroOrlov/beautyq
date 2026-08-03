@@ -1,12 +1,19 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "89811d5f2ad5327b24b2aac4641f4716d781000e",
-  "authorPassId": "q2-break-glass-replenishment-author-v1",
+  "sourceRevision": "655ebd9d21920d0b03c08df487acc8b4bd0db590",
+  "authorPassId": "q2-break-glass-cycle2-replenishment-author-v1",
   "cases": [
-    {"id":"q2i3_case_001","query":"Нужен уход для рук с гель-лаком без дизайна","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Manicure with gel polish and no design","notes":["Selected from the independently frozen pre-disclosure reserve."]},
-    {"id":"q2i3_case_002","query":"Ищу педикюр без какого-либо покрытия","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Pedicure without coating","notes":["Selected from the independently frozen pre-disclosure reserve."]},
-    {"id":"q2i3_case_003","query":"Хочу аккуратно снять наращённые ресницы","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Eyelash extension removal","notes":["Selected from the independently frozen pre-disclosure reserve."]},
-    {"id":"q2i3_case_004","query":"Нужно ламинирование бровей вместе с окрашиванием","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Brow lamination with tinting","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {
+      "id": "q2i3_case_001",
+      "query": "Нужен уход для рук с гель-лаком без дизайна",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with gel polish and no design",
+      "notes": [
+        "Selected from the independently frozen pre-disclosure reserve."
+      ]
+    },
     {
       "id": "q2i2_case_005",
       "query": "оформление и коррекция бровей",
@@ -14,11 +21,32 @@
       "primarySlice": "exact-intent",
       "additionalSlices": [],
       "userIntent": "Brow service",
-      "notes": ["Exact brow service request from the canonical service taxonomy."]
+      "notes": [
+        "Exact brow service request from the canonical service taxonomy."
+      ]
     },
-    {"id":"q2i3_case_005","query":"Ищу перманент губ с последующей коррекцией","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Permanent makeup for lips with correction","notes":["Selected from the independently frozen pre-disclosure reserve."]},
-    {"id":"q2i3_case_006","query":"Нужна процедура аквафейшл для лица","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Aquafacial for the face","notes":["Selected from the independently frozen pre-disclosure reserve."]},
-    {"id":"q2i3_case_007","query":"Ищу лазерное удаление волос в зоне подмышек","language":"ru","primarySlice":"exact-intent","additionalSlices":[],"userIntent":"Laser hair removal for armpits","notes":["Selected from the independently frozen pre-disclosure reserve."]},
+    {
+      "id": "q2i3_case_005",
+      "query": "Ищу перманент губ с последующей коррекцией",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Permanent makeup for lips with correction",
+      "notes": [
+        "Selected from the independently frozen pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i3_case_007",
+      "query": "Ищу лазерное удаление волос в зоне подмышек",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Laser hair removal for armpits",
+      "notes": [
+        "Selected from the independently frozen pre-disclosure reserve."
+      ]
+    },
     {
       "id": "q2i2_case_009",
       "query": "мне нужно привести руки в порядок перед праздником",
@@ -26,7 +54,9 @@
       "primarySlice": "conversational",
       "additionalSlices": [],
       "userIntent": "Conversational request for hand and nail care",
-      "notes": ["Conversational wording without copying a visible evaluation query."]
+      "notes": [
+        "Conversational wording without copying a visible evaluation query."
+      ]
     },
     {
       "id": "q2i2_case_010",
@@ -35,7 +65,9 @@
       "primarySlice": "conversational",
       "additionalSlices": [],
       "userIntent": "Conversational request for a beauty appointment",
-      "notes": ["Broad conversational request grounded in the available beauty services."]
+      "notes": [
+        "Broad conversational request grounded in the available beauty services."
+      ]
     },
     {
       "id": "q2i2_case_011",
@@ -44,7 +76,9 @@
       "primarySlice": "conversational",
       "additionalSlices": [],
       "userIntent": "Conversational nail-care request",
-      "notes": ["Conversational German request with no output-derived judgment."]
+      "notes": [
+        "Conversational German request with no output-derived judgment."
+      ]
     },
     {
       "id": "q2i2_case_012",
@@ -53,7 +87,9 @@
       "primarySlice": "conversational",
       "additionalSlices": [],
       "userIntent": "Conversational brow-care request",
-      "notes": ["Conversational Russian request grounded in the seeded brow service."]
+      "notes": [
+        "Conversational Russian request grounded in the seeded brow service."
+      ]
     },
     {
       "id": "q2i2_case_013",
@@ -62,7 +98,9 @@
       "primarySlice": "conversational",
       "additionalSlices": [],
       "userIntent": "Conversational face-care request",
-      "notes": ["Conversational English request grounded in face cosmetology."]
+      "notes": [
+        "Conversational English request grounded in face cosmetology."
+      ]
     },
     {
       "id": "q2i2_case_014",
@@ -71,7 +109,9 @@
       "primarySlice": "conversational",
       "additionalSlices": [],
       "userIntent": "Conversational eyelash-care request",
-      "notes": ["Conversational German request grounded in the lashes service."]
+      "notes": [
+        "Conversational German request grounded in the lashes service."
+      ]
     },
     {
       "id": "q2i2_case_015",
@@ -80,7 +120,9 @@
       "primarySlice": "nearby",
       "additionalSlices": [],
       "userIntent": "Nearby manicure",
-      "notes": ["Nearby slice combines seeded manicure service with the canonical locality."]
+      "notes": [
+        "Nearby slice combines seeded manicure service with the canonical locality."
+      ]
     },
     {
       "id": "q2i2_case_016",
@@ -89,7 +131,9 @@
       "primarySlice": "nearby",
       "additionalSlices": [],
       "userIntent": "Nearby facial cosmetology",
-      "notes": ["Nearby English request uses the canonical Wandsbek location label."]
+      "notes": [
+        "Nearby English request uses the canonical Wandsbek location label."
+      ]
     },
     {
       "id": "q2i2_case_017",
@@ -98,7 +142,9 @@
       "primarySlice": "nearby",
       "additionalSlices": [],
       "userIntent": "Nearby face-care service",
-      "notes": ["Nearby German request grounded in the face-cosmetology service."]
+      "notes": [
+        "Nearby German request grounded in the face-cosmetology service."
+      ]
     },
     {
       "id": "q2i2_case_018",
@@ -107,7 +153,9 @@
       "primarySlice": "nearby",
       "additionalSlices": [],
       "userIntent": "Nearby eyelash service",
-      "notes": ["Nearby mixed-language request grounded in the lashes service."]
+      "notes": [
+        "Nearby mixed-language request grounded in the lashes service."
+      ]
     },
     {
       "id": "q2i2_case_019",
@@ -116,7 +164,9 @@
       "primarySlice": "multilingual",
       "additionalSlices": [],
       "userIntent": "English manicure request",
-      "notes": ["Multilingual slice with a source-backed manicure attribute."]
+      "notes": [
+        "Multilingual slice with a source-backed manicure attribute."
+      ]
     },
     {
       "id": "q2i2_case_020",
@@ -125,7 +175,9 @@
       "primarySlice": "multilingual",
       "additionalSlices": [],
       "userIntent": "German facial-treatment request",
-      "notes": ["Multilingual slice grounded in face cosmetology."]
+      "notes": [
+        "Multilingual slice grounded in face cosmetology."
+      ]
     },
     {
       "id": "q2i2_case_021",
@@ -134,7 +186,9 @@
       "primarySlice": "multilingual",
       "additionalSlices": [],
       "userIntent": "Mixed-language eyelash and brow request",
-      "notes": ["Mixed-language request uses only seeded lashes and brows services."]
+      "notes": [
+        "Mixed-language request uses only seeded lashes and brows services."
+      ]
     },
     {
       "id": "q2i2_case_022",
@@ -143,7 +197,9 @@
       "primarySlice": "broad-safe",
       "additionalSlices": [],
       "userIntent": "Broad self-care discovery",
-      "notes": ["Broad-safe request with no single inferred service identity."]
+      "notes": [
+        "Broad-safe request with no single inferred service identity."
+      ]
     },
     {
       "id": "q2i2_case_023",
@@ -152,7 +208,9 @@
       "primarySlice": "broad-safe",
       "additionalSlices": [],
       "userIntent": "Broad beauty discovery",
-      "notes": ["Broad-safe English request without a hidden output expectation."]
+      "notes": [
+        "Broad-safe English request without a hidden output expectation."
+      ]
     },
     {
       "id": "q2i2_case_024",
@@ -161,7 +219,53 @@
       "primarySlice": "broad-safe",
       "additionalSlices": [],
       "userIntent": "Broad beauty discovery",
-      "notes": ["Broad-safe German request without a single required service."]
+      "notes": [
+        "Broad-safe German request without a single required service."
+      ]
+    },
+    {
+      "id": "q2i4_case_001",
+      "query": "Fußnägel mit Gel-Farbe behandeln",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "pedicure with gel polish",
+      "notes": [
+        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i4_case_002",
+      "query": "нужен уход за руками без цветного покрытия",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "manicure without coating",
+      "notes": [
+        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i4_case_003",
+      "query": "hand nail care with ordinary polish",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "manicure with regular polish",
+      "notes": [
+        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i4_case_004",
+      "query": "künstliche Nägel aus Acryl verlängern",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "acrylic nail extension",
+      "notes": [
+        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+      ]
     }
   ]
 }

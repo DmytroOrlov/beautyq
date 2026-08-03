@@ -25,9 +25,32 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
     "pin dynamic naming prefixes and stable rule IDs" in {
       val dynamicNames = BeautyQPublicFilterRegistry.fields.drop(5).map(_.name.value)
       assert(dynamicNames.forall(name => name.startsWith("attribute.int.") || name.startsWith("attribute.decimal.") || name.startsWith("attribute.enum.") || name.startsWith("attribute.boolean.")))
-      assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 89).map(index => f"r$index%03d").toVector)
+      assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 90).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
+    }
+  }
+
+  "BeautyQ intent matching text" should {
+    "canonicalize reusable Russian inflections and AquaFacial transliterations without changing public normalization" in {
+      assert(BeautyQIntentTextGen2.normalize("Нужно ламинирование бровей вместе с окрашиванием") == "нужно ламинирование бровей вместе с окрашиванием")
+      assert(
+        BeautyQIntentTextGen2.tokenizeForIntentMatching("Нужно ламинирование бровей вместе с окрашиванием") ==
+          Vector("ламинирование", "брови", "с", "окрашивание")
+      )
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("процедуру аква-фэйшл для лица") == Vector("aquafacial", "лица"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("Нужна процедура аквафейшл для лица") == Vector("aquafacial", "лица"))
+    }
+
+    "remove only finite request-carrier tokens while retaining semantic action words" in {
+      assert(
+        BeautyQIntentTextGen2.tokenizeForIntentMatching("Хочу аккуратно снять наращённые ресницы") ==
+          Vector("снять", "наращенные", "ресницы")
+      )
+      assert(
+        BeautyQIntentTextGen2.tokenizeForIntentMatching("Ищу педикюр без какого-либо покрытия") ==
+          Vector("педикюр", "без", "покрытия")
+      )
     }
   }
 

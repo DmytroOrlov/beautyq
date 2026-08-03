@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — authorized Q2-B break-glass correction source and 96-case visible proof ready; protected holdout independently replenished and frozen; commit, exact-revision root evidence, and fresh protected acceptance pending; D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — second Q2-B correction source and 100-case visible proof ready; protected holdout independently replenished and frozen; commit, exact-revision root evidence, and fresh protected acceptance pending; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -13,12 +13,12 @@ The native Gen2 route, module cutover, evaluation foundation, supplement startup
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
 remaining work is:
 
-- protected execution has not run;
+- protected acceptance has not run against the uncommitted second correction source;
 - the first accepted manifest has not been promoted or verified;
 - the frozen Q2-I corpus, policy, audit and provenance drafts are tracked under
   `beautyq-search-gen2-eval/src/test/resources` and are available after an ordinary checkout;
-- the root aggregate suite must be green on the committed supplement-boundary closeout before the
-  first protected bootstrap;
+- the second correction requires operator-owned root evidence on its future exact committed revision
+  before fresh protected acceptance;
 - D1 has not started and still requires second-domain product input;
 - successful Qdrant generations are intentionally not deleted automatically;
 - CDC/hot refresh, automatic readiness promotion, persistent embedding caching, automatic Qdrant GC,
@@ -376,7 +376,7 @@ the removed external-input durability precondition.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **CORRECTION SOURCE READY — COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE PENDING**
+Status: **SECOND CORRECTION SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
 
 The correctly attributed protected gate from committed revision
 `ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` was red only on
@@ -394,10 +394,29 @@ executions with all hard/no-harm gates green. Seven replacements came only from 
 pre-disclosure reserve; the replenished protected corpus was audited and frozen at 24 cases with slice
 counts 8/6/4/3/3.
 
-No post-correction protected acceptance was run. Bootstrap and candidate generation remain pending.
-The next boundary is review and commit of this correction source, operator-owned root evidence for that
-exact commit, and one fresh correctly attributed protected acceptance. The previous RED artifacts
-remain historical evidence and do not authorize candidate generation.
+After commit and green operator-owned root evidence, the independently replenished holdout was run
+against revision `655ebd9d21920d0b03c08df487acc8b4bd0db590`. It was correctly attributed and again
+red only on `metric-protected-slice:exact-intent-variants/success/10`, proving that the first correction
+did not generalize to the new blind exact-intent population. No bootstrap or candidate generation ran.
+
+A second authorization was bound exactly to that revision, corpus/policy fingerprints and failed
+check. Before disclosure, a new 16-case exact-intent reserve was independently authored, judged,
+audited and frozen. Four minimal contributors were disclosed and permanently migrated. Cross-generation
+diagnosis located the first divergence in BeautyQ intent normalization before the generic matcher, not
+in generic precedence or backend realization. The structural correction introduces finite request-
+carrier removal, reusable Russian inflection and AquaFacial transliteration equivalence, and the
+contextual r090 lash-removal action. It does not copy disclosed queries into aliases or change ranking,
+thresholds, policy meanings, labels, judgments or lifecycle behavior.
+
+The canonical visible corpus now contains 100 Regression cases. Its managed Required/FullSearch proof
+completed 100 warmups and 300 measured executions with every hard/no-harm gate green and zero forbidden
+hits. Four replacements came only from the second pre-disclosure frozen reserve. The protected corpus
+was audited and frozen at 24 cases with slice counts 8/6/4/3/3.
+
+No protected acceptance was run after editing this second correction source. The next boundary is
+review and commit, operator-owned root evidence for that exact commit, and one fresh correctly
+attributed protected acceptance. Earlier RED artifacts remain historical evidence and do not authorize
+candidate generation.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -478,7 +497,7 @@ Completed:
 - updated module firewall/build-DAG proofs;
 - corrected the technical specification's current quality claims.
 
-The current visible 96 cases are regression cases, not a protected holdout.
+The current visible 100 cases are regression cases, not a protected holdout.
 
 ### Patch O0 — supplement startup policy and safe kill switch **O0 COMPLETED**
 
@@ -544,12 +563,12 @@ three aggregate-only artifacts, and remained red on
 generated, and the earlier `working-tree-default` artifacts remain preserved as non-authoritative
 diagnostic evidence.
 
-The later authorized break-glass vertical permanently added seven disclosed cases to the visible
-Regression corpus. The current managed corpus therefore contains 96 cases; one warmup pass and three
-measured passes completed 96 and 288 executions respectively, with every hard/no-harm gate green. The
-protected holdout was replenished independently from a reserve frozen before disclosure and remains 24
-cases with slice counts 8/6/4/3/3. This is source/visible evidence only: post-correction protected
-acceptance, bootstrap, promotion, and verify were not run.
+Two authorized break-glass cycles permanently added eleven disclosed cases to the visible Regression
+corpus. The current managed corpus therefore contains 100 cases; one warmup pass and three measured
+passes completed 100 and 300 executions respectively, with every hard/no-harm gate green. Each cycle
+used a reserve frozen before its disclosure; after the second migration the protected holdout remains
+24 cases with slice counts 8/6/4/3/3. This is source/visible evidence only: protected acceptance after
+the second source correction, bootstrap, promotion, and verify were not run.
 
 The current generated artifact paths are:
 
@@ -582,9 +601,9 @@ The original measured supplement score ranges overlapped: maximum forbidden `0.5
 non-forbidden `0.44723216`. Therefore a single global Qdrant threshold was not an honest correction
 and was not added. The intent-policy correction (r058/r062 paraphrase extensions, r088 ServiceAny)
 repaired the original three regression cases without a threshold. That historical 89-case managed
-rerun passed with zero forbidden hits and all hard/no-harm checks green. The subsequent authorized
-break-glass correction expanded the permanent visible Regression corpus to 96 cases, and its managed
-96/288 proof is green. Protected acceptance machinery provides strict protected-corpus/policy decoding, shared
+rerun passed with zero forbidden hits and all hard/no-harm checks green. The two authorized
+break-glass cycles expanded the permanent visible Regression corpus to 100 cases, and its current
+100/300 proof is green. Protected acceptance machinery provides strict protected-corpus/policy decoding, shared
 visible/protected execution, aggregate-only protected report encoding, a typed protected gate and a
 candidate-baseline adapter. Q2 as a whole remains open for post-correction protected execution and
 generation of the first accepted manifest from a clean committed revision.

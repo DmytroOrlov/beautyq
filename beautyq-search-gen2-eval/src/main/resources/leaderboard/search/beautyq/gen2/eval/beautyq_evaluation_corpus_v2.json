@@ -5273,12 +5273,421 @@
         }
       }
     },
-    {"id":"q2i2_case_001","partition":"regression","judgmentMode":"partial","query":"Gel-Maniküre mit Entfernung und schlichtem Finish","language":"de","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Manicure with gel polish and removal","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["1fcd6e17-c6bb-5901-9f63-205668897659"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}},
-    {"id":"q2i2_case_002","partition":"regression","judgmentMode":"partial","query":"маникюр с гель-лаком","language":"ru","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Manicure with gel polish","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}},
-    {"id":"q2i2_case_003","partition":"regression","judgmentMode":"partial","query":"Pediküre für gepflegte Zehennägel","language":"de","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Pedicure","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["2193db11-d035-58a0-997c-8a96f6d98b01"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}},
-    {"id":"q2i2_case_004","partition":"regression","judgmentMode":"partial","query":"lash lift und wimpern styling","language":"mixed","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Eyelash service","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["d658c194-38f7-5396-b8cb-cf155739c235"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}},
-    {"id":"q2i2_case_006","partition":"regression","judgmentMode":"partial","query":"facial cleansing and skin care","language":"en","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Facial cosmetology","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["54568273-7762-5881-a027-0900965ddba4"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}},
-    {"id":"q2i2_case_007","partition":"regression","judgmentMode":"partial","query":"пудровый перманент бровей","language":"ru","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Permanent make-up for brows","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["c3bf48ba-6b81-5447-b6eb-c6320def9ed4"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}},
-    {"id":"q2i2_case_008","partition":"regression","judgmentMode":"partial","query":"hair removal for underarms","language":"en","slices":["exact-intent","q2-break-glass-migrated"],"userIntent":"Hair removal","notes":["Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."],"judgments":{"variants":{"acceptableIds":["d7ec2ffe-e84d-5782-b54e-b95540a58ef2"],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"providers":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]},"serviceIntents":{"acceptableIds":[],"forbiddenIds":[],"neutralIds":[],"gradedGains":[]}}}
+    {
+      "id": "q2i2_case_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Gel-Maniküre mit Entfernung und schlichtem Finish",
+      "language": "de",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Manicure with gel polish and removal",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i2_case_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникюр с гель-лаком",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Manicure with gel polish",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i2_case_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Pediküre für gepflegte Zehennägel",
+      "language": "de",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Pedicure",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "2193db11-d035-58a0-997c-8a96f6d98b01"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i2_case_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "lash lift und wimpern styling",
+      "language": "mixed",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Eyelash service",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d658c194-38f7-5396-b8cb-cf155739c235"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i2_case_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "facial cleansing and skin care",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Facial cosmetology",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i2_case_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "пудровый перманент бровей",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Permanent make-up for brows",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i2_case_008",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "hair removal for underarms",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-migrated"
+      ],
+      "userIntent": "Hair removal",
+      "notes": [
+        "Permanently disclosed and migrated from the first Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i3_case_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Ищу педикюр без какого-либо покрытия",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-cycle2-migrated"
+      ],
+      "userIntent": "Pedicure without coating",
+      "notes": [
+        "Permanently disclosed and migrated from the second authorized Q2 exact-intent success/10 break-glass cycle."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "2193db11-d035-58a0-997c-8a96f6d98b01"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i3_case_003",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Хочу аккуратно снять наращённые ресницы",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-cycle2-migrated"
+      ],
+      "userIntent": "Eyelash extension removal",
+      "notes": [
+        "Permanently disclosed and migrated from the second authorized Q2 exact-intent success/10 break-glass cycle."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i3_case_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Нужно ламинирование бровей вместе с окрашиванием",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-cycle2-migrated"
+      ],
+      "userIntent": "Brow lamination with tinting",
+      "notes": [
+        "Permanently disclosed and migrated from the second authorized Q2 exact-intent success/10 break-glass cycle."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
+            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "504424ba-7d46-5cc9-a6b7-1ee064e610fd"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i3_case_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "Нужна процедура аквафейшл для лица",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-break-glass-cycle2-migrated"
+      ],
+      "userIntent": "Aquafacial for the face",
+      "notes": [
+        "Permanently disclosed and migrated from the second authorized Q2 exact-intent success/10 break-glass cycle."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    }
   ]
 }

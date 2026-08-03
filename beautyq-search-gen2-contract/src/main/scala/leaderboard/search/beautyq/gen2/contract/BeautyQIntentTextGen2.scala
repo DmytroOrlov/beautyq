@@ -23,6 +23,33 @@ import java.util.Locale
   */
 object BeautyQIntentTextGen2 {
 
+  private val IntentCarrierTokens = Set(
+    "аккуратно",
+    "для",
+    "ищу",
+    "какого",
+    "либо",
+    "любого",
+    "нужен",
+    "нужна",
+    "нужно",
+    "пожалуйста",
+    "процедура",
+    "процедуру",
+    "совсем",
+    "вместе",
+    "хочу",
+  )
+
+  private val CanonicalIntentTokens = Map(
+    "аквафейшл" -> "aquafacial",
+    "аквафэйшл" -> "aquafacial",
+    "бровей" -> "брови",
+    "окраской" -> "окрашивание",
+    "окрашиванием" -> "окрашивание",
+    "окрашивания" -> "окрашивание",
+  )
+
   def normalize(value: String): String =
     value
       .toLowerCase(Locale.ROOT)
@@ -51,4 +78,24 @@ object BeautyQIntentTextGen2 {
 
   def tokenizeNormalized(value: String): Vector[String] =
     normalize(value).split(' ').toVector.map(_.trim).filter(_.nonEmpty)
+
+  /** BeautyQ-owned lexical equivalence used only for intent declaration matching. Public query
+    * normalization remains lossless; semantic candidate text still uses [[normalize]]. The finite
+    * map covers repository-supported request carriers, Russian inflections and the established
+    * AquaFacial transliteration family without teaching the generic matcher BeautyQ vocabulary. */
+  def tokenizeForIntentMatching(value: String): Vector[String] = {
+    val canonical = tokenizeNormalized(value).flatMap { token =>
+      if (IntentCarrierTokens.contains(token)) Vector.empty
+      else Vector(CanonicalIntentTokens.getOrElse(token, token))
+    }
+    canonical.foldLeft(Vector.empty[String]) { (acc, token) =>
+      (acc.lastOption, token) match {
+        case (Some("аква"), "фейшл" | "фэйшл") => acc.dropRight(1) :+ "aquafacial"
+        case _ => acc :+ token
+      }
+    }
+  }
+
+  def intentMatchingKey(value: String): String =
+    tokenizeForIntentMatching(value).mkString(" ")
 }

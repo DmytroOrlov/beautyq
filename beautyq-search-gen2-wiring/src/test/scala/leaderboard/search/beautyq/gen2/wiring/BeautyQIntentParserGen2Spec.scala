@@ -645,6 +645,91 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         }
       }
     }
+
+    "derive exact typed constraints for every second-cycle migrated exact-intent form" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val cases = Vector(
+        (
+          "Ищу педикюр без какого-либо покрытия",
+          Vector("r004", "r031"),
+          Set(
+            fields.serviceCode.id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating"),
+          ),
+        ),
+        (
+          "Хочу аккуратно снять наращённые ресницы",
+          Vector("r090", "r006"),
+          Set(
+            fields.serviceCode.id -> Set("lashes"),
+            fields.enumAttributesByCode("lash_service_type").id -> Set("removal"),
+            fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+          ),
+        ),
+        (
+          "Нужно ламинирование бровей вместе с окрашиванием",
+          Vector("r046", "r007", "r053"),
+          Set(
+            fields.serviceCode.id -> Set("brows"),
+            fields.enumAttributesByCode("brow_service_type").id -> Set("lamination"),
+            fields.booleanAttributesByCode("with_tinting").id -> Set("true"),
+          ),
+        ),
+        (
+          "Нужна процедура аквафейшл для лица",
+          Vector("r060"),
+          Set(
+            fields.serviceCode.id -> Set("facial"),
+            fields.enumAttributesByCode("facial_treatment_type").id -> Set("aquafacial"),
+            fields.enumAttributesByCode("body_area").id -> Set("face"),
+          ),
+        ),
+      )
+
+      cases.foreach { case (query, expectedRules, expectedConstraints) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            assert(intent.matchedRuleIds.map(_.value) == expectedRules, s"unexpected rules for '$query'")
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            assert(actual == expectedConstraints, s"unexpected parsed constraints for '$query': $actual")
+            assert(intent.hardConstraints.size == expectedConstraints.size)
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
+
+    "generalize each repaired semantic class to independently authored visible paraphrases" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val cases = Vector(
+        "педикюр без любого покрытия" -> (fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating")),
+        "хочу педикюр совсем без покрытия" -> (fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating")),
+        "снять старые ресницы" -> (fields.enumAttributesByCode("lash_service_type").id -> Set("removal")),
+        "пожалуйста снять накладные ресницы" -> (fields.enumAttributesByCode("lash_service_type").id -> Set("removal")),
+        "ламинирование бровей с окраской" -> (fields.booleanAttributesByCode("with_tinting").id -> Set("true")),
+        "хочу окрашивание и ламинирование бровей" -> (fields.enumAttributesByCode("brow_service_type").id -> Set("lamination")),
+        "аквафэйшл для кожи" -> (fields.enumAttributesByCode("facial_treatment_type").id -> Set("aquafacial")),
+        "процедуру аква-фейшл для лица" -> (fields.enumAttributesByCode("facial_treatment_type").id -> Set("aquafacial")),
+      )
+
+      cases.foreach { case (query, (expectedField, expectedValues)) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            assert(
+              intent.hardConstraints.exists {
+                case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                  field.id == expectedField && values.map(field.codec.encodeCanonical) == expectedValues
+                case _ => false
+              },
+              s"missing generalized constraint for '$query': ${intent.hardConstraints}",
+            )
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
   }
 
   "the provenance trust boundary" should {

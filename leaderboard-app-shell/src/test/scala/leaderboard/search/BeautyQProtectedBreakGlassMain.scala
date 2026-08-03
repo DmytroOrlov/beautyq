@@ -52,8 +52,9 @@ object BeautyQProtectedBreakGlassMain {
           failed <- byName.get("--expected-failed-check").toRight("PRODUCT_INPUT_REQUIRED")
           authorization <- byName.get("--authorization-id").toRight("PRODUCT_INPUT_REQUIRED")
           _ <- Either.cond(BeautyQSearchGen2EvaluationResourceHarness.isValidApplicationRevision(revision), (), "INVALID_ARGUMENTS")
-          _ <- Either.cond(failed == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, (), "BREAK_GLASS_AUTHORIZATION_MISMATCH")
-          _ <- Either.cond(authorization == BeautyQProtectedBreakGlassDisclosure.AuthorizationId, (), "BREAK_GLASS_AUTHORIZATION_MISMATCH")
+          record <- BeautyQProtectedBreakGlassDisclosure.authorizationById(authorization).toRight("BREAK_GLASS_AUTHORIZATION_MISMATCH")
+          _ <- Either.cond(failed == record.failedCheckCode, (), "BREAK_GLASS_AUTHORIZATION_MISMATCH")
+          _ <- Either.cond(revision == record.applicationRevision, (), "BREAK_GLASS_AUTHORIZATION_MISMATCH")
         } yield new Arguments(Paths.get(corpus), Paths.get(policy), Paths.get(runRoot), revision, failed, authorization)
       }
     }

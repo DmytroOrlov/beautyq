@@ -86,6 +86,36 @@ object BeautyQProtectedBreakGlassDisclosure {
   val CurrentSchemaVersion = "beautyq-protected-break-glass-disclosure-v1"
   val AuthorizedCheckCode = "metric-protected-slice:exact-intent-variants/success/10"
   val AuthorizationId = "q2-break-glass-exact-intent-variants-success-10-v1"
+  val Cycle2AuthorizationId = "q2-break-glass-exact-intent-variants-success-10-cycle-2-v1"
+
+  final class AuthorizationRecord private[eval] (
+    val id: String,
+    val applicationRevision: String,
+    val protectedCorpusFingerprint: String,
+    val policyFingerprint: String,
+    val failedCheckCode: String,
+  )
+
+  val FirstAuthorization: AuthorizationRecord = new AuthorizationRecord(
+    AuthorizationId,
+    "89811d5f2ad5327b24b2aac4641f4716d781000e",
+    "825ca2862ad99b61002bcf04bfe000168eccc61760d9a1d091c0c4320afc9bb0",
+    "0f86960495e64b430e2ba55eac012bf00a8e80f0eb8d1500c967d582cd673098",
+    AuthorizedCheckCode,
+  )
+
+  val Cycle2Authorization: AuthorizationRecord = new AuthorizationRecord(
+    Cycle2AuthorizationId,
+    "655ebd9d21920d0b03c08df487acc8b4bd0db590",
+    "7a654c7323f822f26bccc6d5ae7adde3faf4bfd790984ae63fb25c34978c9188",
+    "905894412cb68ed8447ecc9c99ffe1ac9ee94e22001f6a8c206cdd81c9a165ce",
+    AuthorizedCheckCode,
+  )
+
+  val Authorizations: Vector[AuthorizationRecord] = Vector(FirstAuthorization, Cycle2Authorization)
+
+  def authorizationById(id: String): Option[AuthorizationRecord] =
+    Authorizations.find(_.id == id)
 
   def derive(
     acceptance: BeautyQProtectedAcceptanceResult,
@@ -96,12 +126,39 @@ object BeautyQProtectedBreakGlassDisclosure {
     authorizationId: String,
     failedCheckCode: String,
   ): Either[String, BeautyQProtectedBreakGlassDisclosure] = {
+    authorizationById(authorizationId) match {
+      case None => Left("invalid_authorization_id")
+      case Some(authorization) => deriveAuthorized(
+        acceptance,
+        report,
+        corpus,
+        policy,
+        applicationRevision,
+        authorization,
+        failedCheckCode,
+      )
+    }
+  }
+
+  private[eval] def deriveAuthorized(
+    acceptance: BeautyQProtectedAcceptanceResult,
+    report: EvaluationReport,
+    corpus: BeautyQEvaluationCorpus,
+    policy: BeautyQProtectedAcceptancePolicy,
+    applicationRevision: String,
+    authorization: AuthorizationRecord,
+    failedCheckCode: String,
+  ): Either[String, BeautyQProtectedBreakGlassDisclosure] = {
     val failedCodes = acceptance.checks.filterNot(_.passed).map(_.code)
     if (applicationRevision.isEmpty || applicationRevision.trim != applicationRevision || applicationRevision == "working-tree")
       Left("invalid_application_revision")
-    else if (authorizationId != AuthorizationId)
-      Left("invalid_authorization_id")
-    else if (failedCheckCode != AuthorizedCheckCode)
+    else if (applicationRevision != authorization.applicationRevision)
+      Left("break_glass_authorization_revision_mismatch")
+    else if (corpus.corpusFingerprint != authorization.protectedCorpusFingerprint)
+      Left("break_glass_authorization_corpus_mismatch")
+    else if (policy.fingerprint != authorization.policyFingerprint)
+      Left("break_glass_authorization_policy_mismatch")
+    else if (failedCheckCode != authorization.failedCheckCode)
       Left("failed_check_not_authorized")
     else if (acceptance.passed || failedCodes != Vector(failedCheckCode))
       Left("break_glass_evidence_changed")
@@ -147,7 +204,7 @@ object BeautyQProtectedBreakGlassDisclosure {
               if (selected.isEmpty || selected.exists(_.isEmpty)) Left("no_contributing_cases_for_failed_check")
               else Right(new BeautyQProtectedBreakGlassDisclosure(
                 applicationRevision,
-                authorizationId,
+                authorization.id,
                 failedCheckCode,
                 corpus.corpusFingerprint,
                 policy.fingerprint,

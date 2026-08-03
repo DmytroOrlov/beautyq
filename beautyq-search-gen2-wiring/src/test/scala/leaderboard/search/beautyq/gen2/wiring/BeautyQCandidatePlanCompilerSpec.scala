@@ -219,5 +219,24 @@ final class BeautyQCandidatePlanCompilerSpec extends AnyWordSpec {
         case other => fail(s"expected Eligible, got $other")
       }
     }
+
+    "carry the second-cycle compiled exact-intent constraints unchanged into candidate evaluation" in {
+      val queries = Vector(
+        "Ищу педикюр без какого-либо покрытия",
+        "Хочу аккуратно снять наращённые ресницы",
+        "Нужно ламинирование бровей вместе с окрашиванием",
+        "Нужна процедура аквафейшл для лица",
+      )
+
+      queries.foreach { query =>
+        val fixture = compiled(rawRequest(query = Some(query)))
+        compileOrFail(fixture).decision match {
+          case CandidatePlanDecision.Eligible(plan) =>
+            assert(plan.hardConstraints == fixture.plan.hardConstraints)
+            assert(plan.hardConstraints.nonEmpty)
+          case other => fail(s"expected Eligible for '$query', got $other")
+        }
+      }
+    }
   }
 }

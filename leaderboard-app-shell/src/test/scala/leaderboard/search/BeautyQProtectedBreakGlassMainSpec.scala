@@ -10,9 +10,9 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
     "parse the exact authorization and derive both outputs from one run root" in {
       parse(validArguments) match {
         case arguments =>
-          assert(arguments.applicationRevision == "commit-visible-123")
+          assert(arguments.applicationRevision == "655ebd9d21920d0b03c08df487acc8b4bd0db590")
           assert(arguments.expectedFailedCheck == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
-          assert(arguments.authorizationId == BeautyQProtectedBreakGlassDisclosure.AuthorizationId)
+          assert(arguments.authorizationId == BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId)
           assert(arguments.aggregateOutput == arguments.runRoot.resolve("aggregate-safe"))
           assert(arguments.disclosureOutput == arguments.runRoot.resolve("beautyq-protected-break-glass-disclosure.json"))
       }
@@ -27,6 +27,18 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
       assert(BeautyQProtectedBreakGlassMain.parseArguments(replaceValue("--application-revision", "working-tree")).isLeft)
       assert(BeautyQProtectedBreakGlassMain.parseArguments(replaceValue("--authorization-id", "another-authorization")).isLeft)
       assert(BeautyQProtectedBreakGlassMain.parseArguments(replaceValue("--expected-failed-check", "metric-other")).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(replaceValue("--authorization-id", BeautyQProtectedBreakGlassDisclosure.AuthorizationId)).isLeft)
+    }
+
+    "retain the historical authorization only with its historical revision" in {
+      val historical = replaceValue(
+        replaceValue(validArguments, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.AuthorizationId),
+        "--application-revision",
+        "89811d5f2ad5327b24b2aac4641f4716d781000e",
+      )
+      val parsed = BeautyQProtectedBreakGlassMain.parseArguments(historical).fold(error => fail(error), identity)
+      assert(parsed.authorizationId == BeautyQProtectedBreakGlassDisclosure.AuthorizationId)
+      assert(parsed.applicationRevision == "89811d5f2ad5327b24b2aac4641f4716d781000e")
     }
 
     "accept only one fresh ignored run root and never overwrite it" in {
@@ -86,15 +98,19 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
     "--protected-corpus", "protected.json",
     "--protected-policy", "policy.json",
     "--run-root", "target/search-gen2/q2-break-glass/fresh-owner-spec",
-    "--application-revision", "commit-visible-123",
+    "--application-revision", "655ebd9d21920d0b03c08df487acc8b4bd0db590",
     "--expected-failed-check", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
-    "--authorization-id", BeautyQProtectedBreakGlassDisclosure.AuthorizationId,
+    "--authorization-id", BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId,
   )
 
   private def replaceValue(option: String, value: String): Vector[String] = {
-    val index = validArguments.indexOf(option)
+    replaceValue(validArguments, option, value)
+  }
+
+  private def replaceValue(values: Vector[String], option: String, value: String): Vector[String] = {
+    val index = values.indexOf(option)
     if (index < 0) fail(s"missing option $option")
-    else validArguments.updated(index + 1, value)
+    else values.updated(index + 1, value)
   }
 
   private def parse(values: Vector[String]): BeautyQProtectedBreakGlassMain.Arguments =

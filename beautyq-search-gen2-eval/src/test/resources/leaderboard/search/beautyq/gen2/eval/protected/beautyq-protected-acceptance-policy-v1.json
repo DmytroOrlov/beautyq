@@ -2,14 +2,29 @@
   "schemaVersion": "beautyq-protected-acceptance-policy-v1",
   "evaluationPolicyVersion": "beautyq-evaluation-policy-v1",
   "protectedAcceptancePolicyVersion": "beautyq-protected-acceptance-policy-v1",
-  "expectedCorpusFingerprint": "7a654c7323f822f26bccc6d5ae7adde3faf4bfd790984ae63fb25c34978c9188",
+  "expectedCorpusFingerprint": "23fe801f0b1c48b77847a94d0eb260ee5e2faac5018c67bab5debce382b5f2d0",
   "expectedCaseCount": 24,
   "requiredSliceMinimums": [
-    {"sliceId": "exact-intent", "minimumCaseCount": 8},
-    {"sliceId": "conversational", "minimumCaseCount": 6},
-    {"sliceId": "nearby", "minimumCaseCount": 4},
-    {"sliceId": "multilingual", "minimumCaseCount": 3},
-    {"sliceId": "broad-safe", "minimumCaseCount": 3}
+    {
+      "sliceId": "exact-intent",
+      "minimumCaseCount": 8
+    },
+    {
+      "sliceId": "conversational",
+      "minimumCaseCount": 6
+    },
+    {
+      "sliceId": "nearby",
+      "minimumCaseCount": 4
+    },
+    {
+      "sliceId": "multilingual",
+      "minimumCaseCount": 3
+    },
+    {
+      "sliceId": "broad-safe",
+      "minimumCaseCount": 3
+    }
   ],
   "requiredMetricMinimums": [
     {

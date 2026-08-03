@@ -304,6 +304,11 @@ object BeautyQIntentVocabulary {
       enumAttr("nail_service_type", "manicure"),
       enumAttr("nail_coating_type", "gel_polish"),
     ),
+    rule("r090", "снять")(
+      service("lashes"),
+      enumAttr("lash_service_type", "removal"),
+      bool("with_removal", true),
+    )(using mode = IntentRuleMode.Contextual, requires = Vector(service("lashes"))),
   )
 
   val validation: Either[NonEmptyErrors[BeautyIntentVocabularyError], BeautyQIntentVocabulary] = validate(sourceRules)
@@ -328,6 +333,8 @@ object BeautyQIntentVocabulary {
     val ruleErrors = candidate.flatMap { rule =>
       val idErrors = if (rule.id.value.trim.isEmpty) Vector(BeautyIntentVocabularyError.BlankRuleId(rule.id)) else Vector.empty
 
+      // Declaration hygiene stays lossless: two legitimate public aliases may collapse to the same
+      // matching key after finite carrier removal. Cross-rule ambiguity below uses that matching key.
       val normalizedAliases = rule.aliases.map(BeautyQIntentTextGen2.normalize)
       val aliasErrors =
         (if (rule.aliases.isEmpty) Vector(BeautyIntentVocabularyError.EmptyAliases(rule.id)) else Vector.empty) ++
@@ -355,7 +362,7 @@ object BeautyQIntentVocabulary {
       idErrors ++ aliasErrors ++ noiseErrors ++ actionValueErrors ++ alternativeCollectionErrors ++ labelErrors ++ unresolvedRequiresErrors ++ unresolvedExcludesErrors
     }
 
-    val independentAliases = candidate.filter(_.mode == IntentRuleMode.Independent).flatMap(rule => rule.aliases.map(BeautyQIntentTextGen2.normalize).map(_ -> rule.id))
+    val independentAliases = candidate.filter(_.mode == IntentRuleMode.Independent).flatMap(rule => rule.aliases.map(BeautyQIntentTextGen2.intentMatchingKey).map(_ -> rule.id))
     val ambiguous = independentAliases.groupBy(_._1).collect {
       case (alias, values) if values.map(_._2).distinct.size > 1 =>
         values match {

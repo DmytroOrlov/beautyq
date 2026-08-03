@@ -29,17 +29,18 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
       }
     }
 
-    "have exactly 96 cases after permanent break-glass migration" in {
-      assert(corpus.cases.length == 96)
+    "have exactly 100 cases after both permanent break-glass migrations" in {
+      assert(corpus.cases.length == 100)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-migrated")) == 7)
+      assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle2-migrated")) == 4)
     }
 
     "have first case ID q_nails_001" in {
       assert(corpus.cases(0).caseId.value == "q_nails_001")
     }
 
-    "append the final disclosed case after the pre-existing visible inventory" in {
-      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i2_case_008"))
+    "append the final second-cycle disclosed case after the pre-existing visible inventory" in {
+      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i3_case_006"))
     }
 
     "preserve explicit source order for first 3 cases" in {

@@ -18,11 +18,11 @@ object BeautyQIntentParserGen2 {
   ): Either[NonEmptyErrors[BeautyIntentParseError], ParsedBeautyIntentGen2] = {
     val (budget, queryForMatching) = extractBudget(request.query.getOrElse(""))
     val normalized = BeautyQIntentTextGen2.normalize(queryForMatching)
-    val tokens = BeautyQIntentTextGen2.tokenizeNormalized(queryForMatching)
+    val tokens = BeautyQIntentTextGen2.tokenizeForIntentMatching(queryForMatching)
     val matches = SearchIntentMatcher.select(
       vocabulary.rules,
       tokens,
-      BeautyQIntentTextGen2.tokenizeNormalized,
+      BeautyQIntentTextGen2.tokenizeForIntentMatching,
       BeautyQIntentRuleView,
       BeautyIntentAction.covers,
     )

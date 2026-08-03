@@ -16,7 +16,7 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       assert(disclosure.disclosedCases.map(_.cutoff) == Vector(10))
       assert(disclosure.applicationRevision == "commit-visible-123")
       assert(disclosure.applicationRevisionSource == "system-property")
-      assert(disclosure.authorizationId == BeautyQProtectedBreakGlassDisclosure.AuthorizationId)
+      assert(disclosure.authorizationId == "synthetic-authorization")
 
       val encoded = disclosure.toJson.noSpaces
       assert(encoded.contains("protected-failing"))
@@ -50,7 +50,7 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
         failedResult(), fixture.report, fixture.corpus, fixture.policy,
-        "working-tree", BeautyQProtectedBreakGlassDisclosure.AuthorizationId,
+        "working-tree", BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId,
         BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
       ), "invalid_application_revision")
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
@@ -58,6 +58,32 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         "commit-visible-123", "another-authorization",
         BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
       ), "invalid_authorization_id")
+    }
+
+    "bind both authorization cycles and reject cross-cycle provenance" in {
+      val first = BeautyQProtectedBreakGlassDisclosure.FirstAuthorization
+      val second = BeautyQProtectedBreakGlassDisclosure.Cycle2Authorization
+      assert(first.id == BeautyQProtectedBreakGlassDisclosure.AuthorizationId)
+      assert(first.applicationRevision == "89811d5f2ad5327b24b2aac4641f4716d781000e")
+      assert(first.protectedCorpusFingerprint == "825ca2862ad99b61002bcf04bfe000168eccc61760d9a1d091c0c4320afc9bb0")
+      assert(first.policyFingerprint == "0f86960495e64b430e2ba55eac012bf00a8e80f0eb8d1500c967d582cd673098")
+      assert(second.id == BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId)
+      assert(second.applicationRevision == "655ebd9d21920d0b03c08df487acc8b4bd0db590")
+      assert(second.protectedCorpusFingerprint == "7a654c7323f822f26bccc6d5ae7adde3faf4bfd790984ae63fb25c34978c9188")
+      assert(second.policyFingerprint == "905894412cb68ed8447ecc9c99ffe1ac9ee94e22001f6a8c206cdd81c9a165ce")
+      assert(first.failedCheckCode == second.failedCheckCode)
+
+      val fixture = syntheticFixture()
+      assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        second.applicationRevision, BeautyQProtectedBreakGlassDisclosure.AuthorizationId,
+        BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ), "break_glass_authorization_revision_mismatch")
+      assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        second.applicationRevision, BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId,
+        BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ), "break_glass_authorization_corpus_mismatch")
     }
 
     "encode deterministically while the ordinary protected report remains aggregate-only" in {
@@ -193,13 +219,19 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
     fixture: Fixture,
     acceptance: BeautyQProtectedAcceptanceResult,
   ): Either[String, BeautyQProtectedBreakGlassDisclosure] =
-    BeautyQProtectedBreakGlassDisclosure.derive(
+    BeautyQProtectedBreakGlassDisclosure.deriveAuthorized(
       acceptance,
       fixture.report,
       fixture.corpus,
       fixture.policy,
       "commit-visible-123",
-      BeautyQProtectedBreakGlassDisclosure.AuthorizationId,
+      new BeautyQProtectedBreakGlassDisclosure.AuthorizationRecord(
+        "synthetic-authorization",
+        "commit-visible-123",
+        fixture.corpus.corpusFingerprint,
+        fixture.policy.fingerprint,
+        BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ),
       BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
     )
 

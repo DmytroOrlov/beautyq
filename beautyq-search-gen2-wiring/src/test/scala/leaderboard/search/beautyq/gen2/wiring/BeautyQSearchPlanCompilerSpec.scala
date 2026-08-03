@@ -346,6 +346,43 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
         case other => fail(s"expected exactly two merged parsed Terms filters, got $other")
       }
     }
+
+    "compile second-cycle semantic variants as exact ParsedHard filters without suppression" in {
+      val cases = Vector(
+        "Ищу педикюр без какого-либо покрытия" -> Set(
+          Fields.serviceCode.id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating"),
+        ),
+        "Хочу аккуратно снять наращённые ресницы" -> Set(
+          Fields.serviceCode.id -> Set("lashes"),
+          Fields.enumAttributesByCode("lash_service_type").id -> Set("removal"),
+          Fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+        ),
+        "Нужно ламинирование бровей вместе с окрашиванием" -> Set(
+          Fields.serviceCode.id -> Set("brows"),
+          Fields.enumAttributesByCode("brow_service_type").id -> Set("lamination"),
+          Fields.booleanAttributesByCode("with_tinting").id -> Set("true"),
+        ),
+        "Нужна процедура аквафейшл для лица" -> Set(
+          Fields.serviceCode.id -> Set("facial"),
+          Fields.enumAttributesByCode("facial_treatment_type").id -> Set("aquafacial"),
+          Fields.enumAttributesByCode("body_area").id -> Set("face"),
+        ),
+      )
+
+      cases.foreach { case (query, expected) =>
+        val (request, intent) = build(query = Some(query))
+        val result = compile(request, intent)
+        val actual = result.plan.appliedFilters.collect {
+          case AppliedFilter(SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard)) =>
+            field.id -> values.map(field.codec.encodeCanonical)
+        }.toSet
+        assert(actual == expected, s"unexpected applied filters for '$query': $actual")
+        assert(result.plan.appliedFilters.size == expected.size)
+        assert(result.plan.diagnostics.suppressedFilters.isEmpty)
+      }
+    }
   }
 
   // ---- Constraint shapes ----
