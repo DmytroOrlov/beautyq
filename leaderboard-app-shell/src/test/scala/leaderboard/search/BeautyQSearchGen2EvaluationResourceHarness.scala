@@ -30,6 +30,20 @@ import java.time.{Clock, Duration, Instant}
 
 /** Test-owned resource mechanics shared by visible and protected evaluation runners. */
 object BeautyQSearchGen2EvaluationResourceHarness {
+  private val PrivacySafeExcludedConstructorPrefixes = Set(
+    "Some",
+    "None",
+    "Vector",
+    "List",
+    "::",
+    "Nil",
+    "NonEmptyErrors",
+    "Tuple2",
+    "Tuple3",
+  )
+  private val PrivacySafeMaximumTraversalDepth = 16
+  private val PrivacySafeMaximumConstructors = 8
+
   final case class ManagedPorts(elasticsearch: ElasticsearchPortCfg, qdrant: QdrantGen2PortCfg)
   final case class Prepared(versioned: VersionedSnapshot[BeautyQSearchSnapshot], expectedElasticsearchTarget: String)
 
@@ -305,7 +319,8 @@ object BeautyQSearchGen2EvaluationResourceHarness {
 
   def sanitizedProtectedError(error: leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError): String = error match {
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Request(_, _, _) => "protected_request_failed"
-    case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Application(_, _, _, _) => "protected_application_failed"
+    case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Application(_, _, _, applicationError) =>
+      privacySafeApplicationErrorCode(applicationError)
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Projection(_, _, _, _) => "protected_projection_failed"
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Evidence(_, _, _, _) => "protected_evidence_failed"
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Identity(_, _, _, _, _, _) => "protected_identity_failed"
@@ -317,6 +332,43 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Provenance(_) => "protected_provenance_failed"
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Corpus(_) => "protected_provenance_failed"
     case leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Startup(_, _) => "protected_environment_failed"
+  }
+
+  private[search] def privacySafeApplicationErrorCode(
+    error: BeautyQSearchApplicationError,
+  ): String =
+    s"protected_application_failed:${privacySafeConstructorPath(error).mkString("/")}"
+
+  private[search] def privacySafeConstructorPath(value: Any): Vector[String] = {
+    def traverse(current: Any, depth: Int, constructors: Vector[String]): Vector[String] =
+      if (depth > PrivacySafeMaximumTraversalDepth || constructors.size >= PrivacySafeMaximumConstructors) constructors
+      else
+        current match {
+          case _: String => constructors
+          case values: Iterable[?] =>
+            values.iterator.foldLeft(constructors) { (accumulated, element) =>
+              if (accumulated.size >= PrivacySafeMaximumConstructors) accumulated
+              else traverse(element, depth + 1, accumulated)
+            }
+          case product: Product =>
+            val prefix = product.productPrefix
+            val withPrefix =
+              if (
+                prefix.nonEmpty &&
+                !PrivacySafeExcludedConstructorPrefixes.contains(prefix) &&
+                !constructors.contains(prefix)
+              ) constructors :+ prefix
+              else constructors
+
+            product.productIterator.foldLeft(withPrefix) { (accumulated, element) =>
+              if (accumulated.size >= PrivacySafeMaximumConstructors) accumulated
+              else traverse(element, depth + 1, accumulated)
+            }
+          case _ => constructors
+        }
+
+    val constructors = traverse(value, depth = 0, constructors = Vector.empty)
+    if (constructors.nonEmpty) constructors else Vector("Unknown")
   }
 
   private def fail(message: String): Nothing = throw new IllegalStateException(message)

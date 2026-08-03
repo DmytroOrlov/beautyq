@@ -5,6 +5,24 @@ import java.nio.file.{Files, Paths}
 import java.nio.charset.StandardCharsets
 
 final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
+  private final case class SyntheticRoot(
+    first: Option[SyntheticBranch],
+    repeated: List[SyntheticBranch],
+    sentinel: String,
+  )
+  private final case class SyntheticBranch(leaf: SyntheticLeaf, sentinel: String)
+  private final case class SyntheticLeaf(sentinel: String)
+
+  private final case class Constructor1(next: Constructor2)
+  private final case class Constructor2(next: Constructor3)
+  private final case class Constructor3(next: Constructor4)
+  private final case class Constructor4(next: Constructor5)
+  private final case class Constructor5(next: Constructor6)
+  private final case class Constructor6(next: Constructor7)
+  private final case class Constructor7(next: Constructor8)
+  private final case class Constructor8(next: Constructor9)
+  private final case class Constructor9(sentinel: String)
+
   "BeautyQProtectedAcceptanceMain" should {
     "parse exactly the three required option/value pairs" in {
       val parsed = BeautyQProtectedAcceptanceMain.parseArguments(Vector(
@@ -125,6 +143,54 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
       assert(!projSanitized.contains("sentinel"))
     }
 
+    "report an application failure through constructor names without protected values" in {
+      val error = leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationExecutionError.Application(
+        "sentinel-case-id",
+        "sentinel-query",
+        "sentinel-pass",
+        leaderboard.search.beautyq.gen2.wiring.BeautyQSearchApplicationError.Orchestration(
+          leaderboard.search.beautyq.gen2.wiring.BeautyQSearchOrchestrationError.BoundPlanMismatch(
+            "sentinel-expected",
+            "sentinel-actual",
+          )
+        ),
+      )
+
+      val sanitized = BeautyQSearchGen2EvaluationResourceHarness.sanitizedProtectedError(error)
+
+      assert(sanitized == "protected_application_failed:Orchestration/BoundPlanMismatch")
+      Vector("sentinel", "case-id", "query", "expected", "actual").foreach { forbidden =>
+        assert(!sanitized.contains(forbidden))
+      }
+    }
+
+    "traverse wrappers while preserving unique constructor encounter order" in {
+      val value = SyntheticRoot(
+        first = Some(SyntheticBranch(SyntheticLeaf("sentinel-first"), "sentinel-branch")),
+        repeated = List(
+          SyntheticBranch(SyntheticLeaf("sentinel-second"), "sentinel-repeated"),
+        ),
+        sentinel = "sentinel-root",
+      )
+
+      val path = BeautyQSearchGen2EvaluationResourceHarness.privacySafeConstructorPath(value)
+
+      assert(path == Vector("SyntheticRoot", "SyntheticBranch", "SyntheticLeaf"))
+      Vector("Some", "None", "Vector", "List", "::", "Nil").foreach { wrapper =>
+        assert(!path.contains(wrapper))
+      }
+      assert(!path.exists(_.contains("sentinel")))
+    }
+
+    "bound a privacy-safe constructor path to eight names" in {
+      val value = Constructor1(Constructor2(Constructor3(Constructor4(Constructor5(Constructor6(Constructor7(Constructor8(Constructor9("sentinel")))))))))
+
+      val path = BeautyQSearchGen2EvaluationResourceHarness.privacySafeConstructorPath(value)
+
+      assert(path == Vector("Constructor1", "Constructor2", "Constructor3", "Constructor4", "Constructor5", "Constructor6", "Constructor7", "Constructor8"))
+      assert(path.size == 8)
+      assert(!path.contains("Constructor9"))
+    }
 
   }
 }
