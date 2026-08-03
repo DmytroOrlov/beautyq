@@ -24,8 +24,12 @@ owners are implemented. Q2-I protected inputs were model-assisted, source-ground
 catalog-bound, audited, and frozen as versioned test resources under `beautyq-search-gen2-eval`;
 an ordinary checkout contains them. “Protected” means excluded from output-driven tuning and emitted
 only through aggregate protected reports; these inputs are not production serving resources. Q2-A
-migration scope-drift audit is completed, while protected bootstrap and accepted-baseline promotion/verify
-remain pending. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
+migration scope-drift audit is completed. The correctly attributed protected Q2-B execution produced
+aggregate-only artifacts but remains red on `metric-protected-slice:exact-intent-variants/success/10`;
+bootstrap, candidate generation, accepted-baseline promotion and verify remain pending. Operator-owned
+current-source root `sbt test` evidence is GREEN for the committed revision; the explicit break-glass
+decision remains pending. No protected identities were disclosed and no output-driven tuning was
+performed. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
 reintroduction was found. No external
 employee or separately hired reviewer is required: the
 checkout operator is the approval authority, provenance is recorded, and inputs are frozen before

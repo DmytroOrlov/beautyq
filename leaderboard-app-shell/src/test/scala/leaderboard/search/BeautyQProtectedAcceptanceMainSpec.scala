@@ -1,8 +1,10 @@
 package leaderboard.search
 
+import leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationEnvironment
 import org.scalatest.wordspec.AnyWordSpec
 import java.nio.file.{Files, Paths}
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 
 final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
   private final case class SyntheticRoot(
@@ -24,17 +26,19 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
   private final case class Constructor9(sentinel: String)
 
   "BeautyQProtectedAcceptanceMain" should {
-    "parse exactly the three required option/value pairs" in {
+    "parse exactly the four required option/value pairs" in {
       val parsed = BeautyQProtectedAcceptanceMain.parseArguments(Vector(
         "--protected-policy", "policy.json",
         "--protected-corpus", "corpus.json",
         "--output-dir", "out",
+        "--application-revision", "commit-visible-123",
       ))
       parsed match {
         case Right(arguments) =>
           assert(arguments.protectedPolicy.toString == "policy.json")
           assert(arguments.protectedCorpus.toString == "corpus.json")
           assert(arguments.outputDir.toString == "out")
+          assert(arguments.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
     }
@@ -56,6 +60,37 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         "--protected-corpus", " ",
         "--protected-policy", "p",
         "--output-dir", "o",
+        "--application-revision", "commit-visible-123",
+      )).isLeft)
+      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+      )).isLeft)
+      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", " ",
+      )).isLeft)
+      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", " commit-visible-123",
+      )).isLeft)
+      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", "working-tree",
+      )).isLeft)
+      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", "commit-visible-123",
+        "--application-revision", "commit-visible-456",
       )).isLeft)
     }
 
@@ -64,6 +99,7 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         Paths.get("target/search-gen2/private/missing-protected-corpus.json"),
         Paths.get("target/search-gen2/private/missing-protected-policy.json"),
         Paths.get("target/search-gen2/protected-test-output"),
+        "commit-visible-123",
       )
       assert(result.startsWith("PRODUCT_INPUT_REQUIRED"))
     }
@@ -77,6 +113,7 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         Paths.get("target/search-gen2/private/missing-protected-corpus.json"),
         policyPath,
         Paths.get("target/search-gen2/protected-test-output"),
+        "commit-visible-123",
       )
       val cleanup = () => {
         Files.deleteIfExists(policyPath): Unit
@@ -110,6 +147,7 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
           "--protected-corpus", absentPath.toString,
           "--protected-policy", absentPath.toString,
           "--output-dir", outputDir.toString,
+          "--application-revision", "commit-visible-123",
         ))
       }
       val message = exception.getMessage
@@ -190,6 +228,47 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
       assert(path == Vector("Constructor1", "Constructor2", "Constructor3", "Constructor4", "Constructor5", "Constructor6", "Constructor7", "Constructor8"))
       assert(path.size == 8)
       assert(!path.contains("Constructor9"))
+    }
+
+    "propagate and restore the application revision property around evaluation setup" in {
+      val property = "search.gen2.eval.application-revision"
+      val original = Option(System.getProperty(property))
+      try {
+        System.setProperty(property, "previous-visible-456")
+        val environment = BeautyQSearchGen2EvaluationResourceHarness.withApplicationRevision("commit-visible-123") {
+          BeautyQEvaluationEnvironment.fromSystem(Instant.EPOCH, "source", "elasticsearch", "qdrant") match {
+            case Right(value) => value
+            case Left(error) => fail(s"expected environment, got $error")
+          }
+        }
+        assert(environment.applicationRevision == "commit-visible-123")
+        assert(environment.applicationRevisionSource == "system-property")
+        assert(Option(System.getProperty(property)).contains("previous-visible-456"))
+
+        System.clearProperty(property)
+        val absentEnvironment = BeautyQSearchGen2EvaluationResourceHarness.withApplicationRevision("commit-visible-123") {
+          BeautyQEvaluationEnvironment.fromSystem(Instant.EPOCH, "source", "elasticsearch", "qdrant") match {
+            case Right(value) => value
+            case Left(error) => fail(s"expected environment, got $error")
+          }
+        }
+        assert(absentEnvironment.applicationRevision == "commit-visible-123")
+        assert(absentEnvironment.applicationRevisionSource == "system-property")
+        assert(Option(System.getProperty(property)).isEmpty)
+
+        System.setProperty(property, "previous-visible-456")
+        intercept[IllegalStateException] {
+          BeautyQSearchGen2EvaluationResourceHarness.withApplicationRevision("commit-visible-123") {
+            throw new IllegalStateException("synthetic evaluation failure")
+          }
+        }
+        assert(Option(System.getProperty(property)).contains("previous-visible-456"))
+      } finally {
+        original match {
+          case Some(value) => System.setProperty(property, value): Unit
+          case None        => System.clearProperty(property): Unit
+        }
+      }
     }
 
   }

@@ -2179,8 +2179,13 @@ an ordered protected holdout corpus and a separate protected-acceptance policy, 
 application execution path, emits aggregate-only protected report/measurement/gate artifacts, and
 derives a candidate baseline only after a green protected gate. The frozen protected corpus, policy,
 aggregate audit and author/judge provenance drafts are versioned under `src/test/resources` and are
-available after an ordinary checkout. Protected bootstrap has not run, and accepted-manifest
-generation remains pending.
+available after an ordinary checkout. The latest correctly attributed protected execution used
+committed revision `ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`, reported
+`applicationRevisionSource=system-property`, emitted the three aggregate-only artifacts, and
+remained red on `metric-protected-slice:exact-intent-variants/success/10`; protected identities and
+metric values were not disclosed or used for tuning. Protected bootstrap and accepted-manifest
+generation remain pending. Operator-owned current-source root evidence is GREEN; the explicit
+break-glass decision remains pending.
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
 candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
 resource and compares ordered aggregate observations. The first accepted manifest must be

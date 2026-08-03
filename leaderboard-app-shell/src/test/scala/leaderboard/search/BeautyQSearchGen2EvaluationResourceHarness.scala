@@ -30,6 +30,7 @@ import java.time.{Clock, Duration, Instant}
 
 /** Test-owned resource mechanics shared by visible and protected evaluation runners. */
 object BeautyQSearchGen2EvaluationResourceHarness {
+  private val ApplicationRevisionProperty = "search.gen2.eval.application-revision"
   private val PrivacySafeExcludedConstructorPrefixes = Set(
     "Some",
     "None",
@@ -59,14 +60,25 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
+    applicationRevision: String,
   ): String = {
-    executeProtectedAcceptance(protectedCorpusPath, protectedPolicyPath, outputDir) match {
+    executeProtectedAcceptance(protectedCorpusPath, protectedPolicyPath, outputDir, applicationRevision) match {
       case Right(_) => "PROTECTED_ACCEPTANCE_EVALUATION_GREEN"
       case Left(error) => error
     }
   }
 
   def executeProtectedAcceptance(
+    protectedCorpusPath: Path,
+    protectedPolicyPath: Path,
+    outputDir: Path,
+    applicationRevision: String,
+  ): Either[String, ProtectedAcceptanceExecution] =
+    withApplicationRevision(applicationRevision) {
+      executeProtectedAcceptanceInScopedRevision(protectedCorpusPath, protectedPolicyPath, outputDir)
+    }
+
+  private def executeProtectedAcceptanceInScopedRevision(
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
@@ -145,6 +157,21 @@ object BeautyQSearchGen2EvaluationResourceHarness {
         else Left("PROTECTED_ACCEPTANCE_RED")
       } finally {
         cleanupExactResources(esClient, qdrantHttp, Vector(prepared.expectedElasticsearchTarget))
+      }
+    }
+  }
+
+  private[search] def isValidApplicationRevision(value: String): Boolean =
+    value.nonEmpty && value.trim == value && value != "working-tree"
+
+  private[search] def withApplicationRevision[A](applicationRevision: String)(operation: => A): A = {
+    val previous = Option(System.getProperty(ApplicationRevisionProperty))
+    System.setProperty(ApplicationRevisionProperty, applicationRevision)
+    try operation
+    finally {
+      previous match {
+        case Some(value) => System.setProperty(ApplicationRevisionProperty, value): Unit
+        case None        => System.clearProperty(ApplicationRevisionProperty): Unit
       }
     }
   }

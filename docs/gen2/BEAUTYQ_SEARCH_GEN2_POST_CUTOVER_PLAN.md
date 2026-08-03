@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I protected inputs authored, audited, and frozen as tracked eval resources; Q2-A recovery-wave scope-drift audit completed; protected bootstrap, candidate review, accepted-baseline promotion, and verify pending; D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible-regression intent correction proved; Q2-I protected inputs authored, audited, and frozen as tracked eval resources; Q2-A recovery-wave scope-drift audit completed; correctly attributed protected Q2-B gate red, operator-owned root evidence green, break-glass decision pending; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -376,14 +376,21 @@ the removed external-input durability precondition.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **PENDING**
+Status: **BLOCKED — CORRECTLY ATTRIBUTED PROTECTED GATE RED; ROOT EVIDENCE AND BREAK-GLASS DECISION PENDING**
 
-Protected bootstrap may proceed only after two operational preconditions are satisfied: the committed
-supplement-boundary closeout has a green root aggregate suite, and the tracked canonical corpus,
-policy, audit and provenance resources pass their focused reproducibility proof. Bootstrap runs from a
-clean committed revision, proves the protected aggregate gate, and writes
-an aggregate-only accepted-baseline candidate. It then stops. The same delegated task must not promote
-the candidate or run verify.
+The current committed fork-safe runner executed the protected acceptance path from
+`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` and reported `applicationRevisionSource=system-property`.
+It wrote the three required aggregate-only artifacts, but the protected gate is red on
+`metric-protected-slice:exact-intent-variants/success/10`. The protected identities and metric values
+remain undisclosed; no output-driven tuning, label change, threshold change or break-glass disclosure
+was performed. Bootstrap and candidate generation were not run.
+
+Operator-owned `sbt test` is GREEN for committed source revision
+`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`, with exit zero and duration 86 seconds; exact suite/test
+counts were not supplied and are not inferred. Only the explicit break-glass decision remains before
+a separate disclosure, visible-regression migration or protected-holdout replenishment milestone may
+be authorized. The existing `working-tree-default` run remains non-authoritative historical evidence
+and is not overwritten.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -423,6 +430,34 @@ Detailed query-level reports are available for development/regression sets. Prot
 are aggregate/slice-only unless the break-glass migration-and-replenishment procedure above is used.
 
 ## 6. Delivery sequence
+
+### Delivery milestones and Git evidence boundaries
+
+The five named patches in this plan — Q1, O0, Q2, O1 and D1 — are cohesive delivery milestones, not
+a promise that each milestone maps to exactly one Git commit. Q1, O0 and O1 are complete; the remaining
+approved product scope is Q2 and D1. Clean committed-revision requirements create additional Git and
+provenance boundaries inside those milestones. The minimum happy-path remainder is six commits:
+
+| Commit | Boundary | Minimum contents |
+| ---: | --- | --- |
+| 1 | Q2 break-glass correction source | Minimal disclosure, permanent visible-regression migration, production correction and visible proofs, plus independently authored replenishment, audit and freeze. |
+| 2 | Q2 candidate promotion | Promote the reviewed candidate byte-for-byte to the tracked canonical accepted-baseline resource. |
+| 3 | Q2 verify closeout | Verify the already committed canonical resource and close Q2. |
+| 4 | D1 product/evaluation contract | Domain identity, source topology, catalog, query/judgment policy, visible evidence, protected-authoring protocol and simplest baseline. |
+| 5 | D1 backend-rich source | Declarations, materialization, Elasticsearch/Qdrant realization, hydration, orchestration, route, readiness and visible proofs. |
+| 6 | D1 acceptance closeout | Operator-owned root evidence and protected acceptance against the exact committed backend revision, reusable-consumer proof and D1 closeout. |
+| 7, conditional | Neutral generic-kernel extension | Permitted only when D1 proves a source-confirmed reusable framework gap that cannot remain domain-owned. |
+
+Operational executions and root evidence are not themselves Git commits. Evidence produced for commit
+N must not be attributed to an amended or otherwise changed source revision. Acceptance-closeout
+documentation written after protected execution therefore belongs to a later commit unless it was
+already present in the evidenced commit. Six is a lower bound, not a guaranteed cap: repeated
+protected-RED correction loops are not reserved in advance. The conditional neutral-kernel commit is
+not pre-approved work and becomes available only after a source-confirmed D1 gap.
+
+This accounting does not expand the approved scope. Hot reconciliation or CDC, automatic promotion,
+persistent embedding caching, automatic Qdrant GC and cross-environment latency gating remain
+deferred.
 
 ### Patch Q1 — executable evaluation foundation **COMPLETED**
 
@@ -495,8 +530,12 @@ denylist, result-ID special case, threshold or generic backend policy changed.
 The complete managed 89-case rerun proved the correction: one warmup pass, three measured passes /
 267 measured executions, zero forbidden hits, all hard/no-harm checks passed. The correction gate is
 green, the quality threshold is `not_required`, and no score threshold was added. The frozen protected
-holdout fixture exists, but protected execution has not run and the accepted baseline has not been
-generated.
+holdout was then executed from the fork-safe committed revision
+`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`; it reported `system-property` provenance, wrote the
+three aggregate-only artifacts, and remained red on
+`metric-protected-slice:exact-intent-variants/success/10`. The accepted baseline candidate was not
+generated, and the earlier `working-tree-default` artifacts remain preserved as non-authoritative
+diagnostic evidence.
 
 The current generated artifact paths are:
 

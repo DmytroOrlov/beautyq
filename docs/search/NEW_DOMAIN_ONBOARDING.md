@@ -683,6 +683,24 @@ For protected acceptance, keep the private corpus and protected-acceptance polic
 domain-owned inputs. Decode both strictly with ordered arrays, execute visible and protected cases
 through the same startup/application path, redact protected identities from reports, and derive an
 accepted manifest only after a green protected gate from a clean committed application revision.
+
+For D1, preserve this provenance sequence:
+
+```text
+backend-rich source
+-> commit
+-> operator-owned root evidence for that exact commit
+-> protected execution with that exact application revision
+-> acceptance and reusable-consumer closeout in the following commit
+```
+
+Protected acceptance must not be used to close the same uncommitted backend patch it evaluates.
+Amending the backend-source commit after evidence invalidates its revision attribution, and a
+documentation-only closeout written afterward does not retroactively become evidence for the new
+commit hash. D1 therefore normally has separate backend-source and acceptance-closeout Git boundaries.
+This provenance rule does not prescribe canonical-baseline promotion or verify for D1 unless its later
+approved domain contract explicitly requires that lifecycle.
+
 Missing private inputs block protected execution and bootstrap, but do not block the dedicated
 pre-execution input-authoring workflow. Machine-assisted authoring is allowed when it is separated from
 execution, cannot observe protected results, records provenance, and freezes inputs before use; a

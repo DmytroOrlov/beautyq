@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit completed, protected bootstrap and accepted-baseline promotion/verify pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — visible correction proved, Q2-I protected inputs authored, audited, and frozen, Q2-A migration scope-drift audit completed, correctly attributed protected Q2-B gate red, operator-owned root evidence green, break-glass decision pending, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -289,15 +289,17 @@ Protected acceptance inputs are versioned evaluation resources, not production r
 - `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json`
 
 The test-owned runner is not an auto-discovered suite. Invoke it only from a clean committed
-revision with an explicit application revision property:
+revision with an explicit application revision argument. The manual main installs that value as
+`search.gen2.eval.application-revision` inside its forked JVM before constructing the evaluation
+environment and restores any prior process value after execution:
 
 ```bash
 sbt --batch --no-global \
-  -Dsearch.gen2.eval.application-revision=<clean-commit> \
   'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQProtectedAcceptanceMain \
     --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
     --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
-    --output-dir target/search-gen2/protected'
+    --output-dir target/search-gen2/protected \
+    --application-revision <clean-commit>'
 ```
 
 The runner loads both inputs strictly, proves the visible acceptance gate before executing any
@@ -311,17 +313,31 @@ The protected runner writes exactly three aggregate-only artifacts:
 It never emits protected case IDs, queries or result IDs. Missing or malformed protected inputs and
 unavailable external resources are non-zero operational failures, not synthetic acceptance.
 
+### Latest protected Q2-B disposition
+
+The latest manual protected execution used committed revision
+`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` through `--application-revision` and reported
+`applicationRevisionSource=system-property`. It wrote the three aggregate-only artifacts under an
+ignored `target/search-gen2/q2b-runs/<run-id>/acceptance` directory. The protected gate is red on
+`metric-protected-slice:exact-intent-variants/success/10`; bootstrap and candidate generation are
+therefore not authorized. Protected identities and metric values remain undisclosed, and no
+output-driven tuning or break-glass disclosure occurred. Operator-owned `sbt test` completed GREEN
+for the committed source revision with exit zero in 86 seconds; exact suite/test counts were not
+recorded. Only documentation files were dirty during that run, so no Scala, test, build or CI input
+differed from the committed source. The explicit break-glass decision remains pending, and the earlier
+`working-tree-default` artifacts remain preserved as non-authoritative diagnostic evidence.
+
 After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
 same clean committed application revision and verified tracked canonical inputs:
 
 ```bash
 sbt --batch --no-global \
-  -Dsearch.gen2.eval.application-revision=<clean-commit> \
   'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQAcceptedBaselineMain \
     --mode bootstrap \
     --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
     --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
-    --output-dir target/search-gen2/protected'
+    --output-dir target/search-gen2/protected \
+    --application-revision <clean-commit>'
 ```
 
 Bootstrap derives `beautyq-accepted-baseline-candidate.json` only after the existing protected gate is
@@ -356,8 +372,9 @@ inputs, and the unchanged candidate. Copy it byte-for-byte to the single aggrega
 Verify byte equality and digest before running focused canonical-resource tests. The promoted resource
 necessarily makes the worktree non-clean; no search, evaluation-policy, lifecycle, route or corpus
 source may change after Phase 1. Then run the existing accepted-baseline owner independently with
-`--mode verify` against the same real evidence path, application-revision identity, and verified
-tracked canonical inputs. Verify loads only the canonical resource, writes
+`--mode verify --application-revision <clean-commit>` against the same real evidence path,
+application-revision identity, and verified tracked canonical inputs. The verify main uses the same
+fork-safe scoped property installation and restoration. Verify loads only the canonical resource, writes
 `beautyq-accepted-baseline-verification.json`, and compares ordered aggregate observations and stable
 provenance. It does not use these run-specific audit fields as equality requirements: application
 revision, Elasticsearch generation reference, Qdrant generation ID, visible report digest, protected

@@ -11,12 +11,13 @@ import java.nio.file.{Files, Path, Paths}
 
 final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
   "BeautyQAcceptedBaselineMain" should {
-    "accept exactly one valid mode and all three input paths" in {
+    "accept each valid mode and all four required input values" in {
       val parsed = BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "bootstrap",
         "--protected-corpus", "private/corpus.json",
         "--protected-policy", "private/policy.json",
         "--output-dir", "target/out",
+        "--application-revision", "commit-visible-123",
       ))
       parsed match {
         case Right(arguments) =>
@@ -24,7 +25,19 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
           assert(arguments.protectedCorpus.toString == "private/corpus.json")
           assert(arguments.protectedPolicy.toString == "private/policy.json")
           assert(arguments.outputDir.toString == "target/out")
+          assert(arguments.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
+      }
+      val verify = BeautyQAcceptedBaselineMain.parseArguments(Vector(
+        "--mode", "verify",
+        "--protected-corpus", "private/corpus.json",
+        "--protected-policy", "private/policy.json",
+        "--output-dir", "target/out",
+        "--application-revision", "commit-visible-123",
+      ))
+      verify match {
+        case Right(arguments) => assert(arguments.mode == "verify")
+        case Left(error) => fail(s"expected valid verify arguments, got $error")
       }
     }
 
@@ -35,6 +48,7 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-corpus", "c",
         "--protected-policy", "p",
         "--output-dir", "o",
+        "--application-revision", "commit-visible-123",
       )).isLeft)
       assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "verify",
@@ -49,6 +63,42 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-policy", "p",
         "--output-dir", "o",
         "--canonical-manifest", "manifest.json",
+        "--application-revision", "commit-visible-123",
+      )).isLeft)
+      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
+        "--mode", "bootstrap",
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+      )).isLeft)
+      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
+        "--mode", "bootstrap",
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", " ",
+      )).isLeft)
+      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
+        "--mode", "bootstrap",
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", " commit-visible-123",
+      )).isLeft)
+      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
+        "--mode", "bootstrap",
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", "working-tree",
+      )).isLeft)
+      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
+        "--mode", "bootstrap",
+        "--protected-corpus", "c",
+        "--protected-policy", "p",
+        "--output-dir", "o",
+        "--application-revision", "commit-visible-123",
+        "--application-revision", "commit-visible-456",
       )).isLeft)
     }
 
