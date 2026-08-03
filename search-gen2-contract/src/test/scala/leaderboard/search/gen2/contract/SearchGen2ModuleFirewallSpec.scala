@@ -77,7 +77,11 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
         "search-gen2-elasticsearch",
         "search-gen2-qdrant",
       ),
-      additionalTestPackagePrefixes = List("leaderboard.search.beautyq.gen2.boundary"),
+      additionalTestPackagePrefixes = List(
+        "leaderboard.search.beautyq.gen2.boundary",
+        "leaderboard.search.gen2.elasticsearch.lifecycle",
+        "leaderboard.search.gen2.qdrant",
+      ),
     )
   private val beautyqSearchGen2EvalNode =
     ModuleNode(
@@ -398,15 +402,76 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
           if (Files.isDirectory(mainRoot)) Nil
           else List(s"${node.displayName}: expected main source directory src/main/scala to exist")
 
-        val mainViolations = scalaFilesUnder(s"${node.displayName}/src/main/scala").flatMap(path => packagePrefixViolation(path, node.packagePrefix))
-        val testViolations = scalaFilesUnder(s"${node.displayName}/src/test/scala").flatMap { path =>
-          packagePrefixViolation(path, node.packagePrefix, node.additionalTestPackagePrefixes)
-        }
+        val mainViolations =
+          scalaFilesUnder(s"${node.displayName}/src/main/scala")
+            .flatMap(path => packagePrefixViolations(path, node.packagePrefix))
+
+        val testViolations =
+          scalaFilesUnder(s"${node.displayName}/src/test/scala").flatMap { path =>
+            packagePrefixViolations(
+              path,
+              node.packagePrefix,
+              node.additionalTestPackagePrefixes,
+            )
+          }
 
         mainRootViolation ++ mainViolations ++ testViolations
       }
 
       assertNoViolations("Gen2 package/source layout violations", violations)
+    }
+
+    "parse and validate every braced package declaration in one Scala source" in {
+      val source =
+        """package leaderboard.search.gen2.elasticsearch.lifecycle {
+          |  object ElasticsearchFixture
+          |}
+          |
+          |package leaderboard.search.gen2.qdrant {
+          |  object QdrantFixture
+          |}
+          |
+          |package leaderboard.search.beautyq.gen2.wiring {
+          |  object BeautyQFixture
+          |}
+          |""".stripMargin
+
+      assert(
+        packageDeclarationsOf(source) == List(
+          "leaderboard.search.gen2.elasticsearch.lifecycle",
+          "leaderboard.search.gen2.qdrant",
+          "leaderboard.search.beautyq.gen2.wiring",
+        )
+      )
+
+      val accepted =
+        packagePrefixViolations(
+          "synthetic/MultiPackageFixture.scala",
+          source,
+          "leaderboard.search.beautyq.gen2.wiring",
+          List(
+            "leaderboard.search.gen2.elasticsearch.lifecycle",
+            "leaderboard.search.gen2.qdrant",
+          ),
+        )
+
+      assert(accepted.isEmpty)
+
+      val rejected =
+        packagePrefixViolations(
+          "synthetic/MultiPackageFixture.scala",
+          source,
+          "leaderboard.search.beautyq.gen2.wiring",
+          List("leaderboard.search.gen2.elasticsearch.lifecycle"),
+        )
+
+      assert(
+        rejected == List(
+          "synthetic/MultiPackageFixture.scala: expected package prefix " +
+            "'leaderboard.search.beautyq.gen2.wiring' but found " +
+            "'leaderboard.search.gen2.qdrant'"
+        )
+      )
     }
   }
 
@@ -682,16 +747,53 @@ final class SearchGen2ModuleFirewallSpec extends AnyWordSpec {
     }
   }
 
-  private def packagePrefixViolation(path: Path, expectedPrefix: String, additionalPrefixes: List[String] = Nil): Option[String] = {
-    val declaredPackage = read(path).linesIterator.map(_.trim).find(_.startsWith("package ")).map(_.stripPrefix("package ").trim)
+  private def packagePrefixViolations(
+    path: Path,
+    expectedPrefix: String,
+    additionalPrefixes: List[String] = Nil,
+  ): List[String] =
+    packagePrefixViolations(
+      relative(path),
+      read(path),
+      expectedPrefix,
+      additionalPrefixes,
+    )
 
+  private def packagePrefixViolations(
+    displayPath: String,
+    content: String,
+    expectedPrefix: String,
+    additionalPrefixes: List[String],
+  ): List[String] = {
+    val declaredPackages = packageDeclarationsOf(content)
     val acceptedPrefixes = expectedPrefix :: additionalPrefixes
-    declaredPackage match {
-      case Some(pkg) if acceptedPrefixes.exists(prefix => pkg == prefix || pkg.startsWith(prefix + ".")) => None
-      case Some(pkg) => Some(s"${relative(path)}: expected package prefix '$expectedPrefix' but found '$pkg'")
-      case None      => Some(s"${relative(path)}: expected a package declaration with prefix '$expectedPrefix'")
+
+    if (declaredPackages.isEmpty) {
+      List(
+        s"$displayPath: expected a package declaration with prefix '$expectedPrefix'"
+      )
+    } else {
+      declaredPackages.collect {
+        case pkg
+            if !acceptedPrefixes.exists(prefix =>
+              pkg == prefix || pkg.startsWith(prefix + ".")
+            ) =>
+          s"$displayPath: expected package prefix '$expectedPrefix' but found '$pkg'"
+      }
     }
   }
+
+  private def packageDeclarationsOf(content: String): List[String] =
+    content.linesIterator
+      .map(_.trim)
+      .collect {
+        case line if line.startsWith("package ") =>
+          line
+            .stripPrefix("package ")
+            .stripSuffix("{")
+            .trim
+      }
+      .toList
 
   private def buildBlock(projectId: String): String = {
     val lines      = read(repoRoot.resolve("build.sbt")).linesIterator.toList
