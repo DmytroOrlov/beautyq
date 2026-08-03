@@ -326,6 +326,26 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
       val second = compile(request, intent)
       assert(first.plan.diagnostics.suppressedFilters == second.plan.diagnostics.suppressedFilters)
     }
+
+    "compile merged parsed Terms for manicure and pedicure without a lower-tier conflict" in {
+      val (request, intent) = build(query = Some("маникюр педикюр"))
+      val result = compile(request, intent)
+
+      result.plan.appliedFilters match {
+        case Vector(
+              AppliedFilter(SourcedConstraint(PlannedConstraint.Terms(serviceField, serviceValues), serviceProvenance)),
+              AppliedFilter(SourcedConstraint(PlannedConstraint.Terms(nailField, nailValues), nailProvenance)),
+            ) =>
+          assert(serviceField.id == Fields.serviceCode.id)
+          assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("manicure", "pedicure"))
+          assert(serviceProvenance == ConstraintProvenance.ParsedHard)
+          assert(nailField.id == Fields.enumAttributesByCode("nail_service_type").id)
+          assert(nailValues.map(nailField.codec.encodeCanonical) == Set("manicure", "pedicure"))
+          assert(nailProvenance == ConstraintProvenance.ParsedHard)
+          assert(result.plan.diagnostics.suppressedFilters.isEmpty)
+        case other => fail(s"expected exactly two merged parsed Terms filters, got $other")
+      }
+    }
   }
 
   // ---- Constraint shapes ----

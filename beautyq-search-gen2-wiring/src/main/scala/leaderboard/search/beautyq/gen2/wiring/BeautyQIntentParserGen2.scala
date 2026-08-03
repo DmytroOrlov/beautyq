@@ -39,7 +39,8 @@ object BeautyQIntentParserGen2 {
         if (nearUserRequested) request.userLocation.map(origin => PlannedSignal.GeoProximitySignal(BeautyQSearchDeclarations.variants.Fields.location, origin)).toVector
         else Vector.empty
       val hardActions = matches.flatMap(value => value.hardActions.flatMap(BeautyQIntentActionCompiler.hardConstraints))
-      val hardConstraints = (hardActions ++ budgetConstraint.map(value => SourcedConstraint(value, ConstraintProvenance.ParsedHard))).toVector
+      val parsedHardConstraints = (hardActions ++ budgetConstraint.map(value => SourcedConstraint(value, ConstraintProvenance.ParsedHard))).toVector
+      val hardConstraints = normalizeParsedHardConstraints(parsedHardConstraints)
       val residual = SearchIntentMatcher.residualTokens(tokens, matches).mkString(" ")
       val labels = matches.flatMap(value => value.labels ++ (value.hardActions ++ value.semanticActions).flatMap(BeautyQSemanticLabelPolicy.forAction)).foldLeft(Vector.empty[CanonicalSemanticLabel]) { (acc, label) =>
         if (acc.exists(_.stableKey == label.stableKey)) acc else acc :+ label
@@ -67,6 +68,53 @@ object BeautyQIntentParserGen2 {
   }
 
   private def nonEmpty(value: String): Option[String] = if (value.isEmpty) None else Some(value)
+
+  private def normalizeParsedHardConstraints(
+    constraints: Vector[SourcedConstraint[VariantSearchDocumentGen2]],
+  ): Vector[SourcedConstraint[VariantSearchDocumentGen2]] =
+    constraints.foldLeft(Vector.empty[SourcedConstraint[VariantSearchDocumentGen2]]) { (acc, current) =>
+      if (current.provenance != ConstraintProvenance.ParsedHard) acc :+ current
+      else {
+        acc.indexWhere(existing => existing.provenance == ConstraintProvenance.ParsedHard && sameTermsSlot(existing, current)) match {
+          case -1 => acc :+ current
+          case index => acc.updated(index, mergeTerms(acc(index), current))
+        }
+      }
+    }
+
+  private def sameTermsSlot(
+    left: SourcedConstraint[VariantSearchDocumentGen2],
+    right: SourcedConstraint[VariantSearchDocumentGen2],
+  ): Boolean =
+    (left.constraint, right.constraint) match {
+      case (PlannedConstraint.Terms(leftField, _), PlannedConstraint.Terms(rightField, _)) =>
+        leftField.id == rightField.id
+      case _ => false
+    }
+
+  private def mergeTerms(
+    first: SourcedConstraint[VariantSearchDocumentGen2],
+    next: SourcedConstraint[VariantSearchDocumentGen2],
+  ): SourcedConstraint[VariantSearchDocumentGen2] =
+    (first.constraint, next.constraint) match {
+      case (PlannedConstraint.Terms(firstField, firstValues), PlannedConstraint.Terms(nextField, nextValues)) =>
+        val nextCanonicalValues = nextValues.iterator.map(nextField.codec.encodeCanonical).toVector
+        val decodedNextValues = nextCanonicalValues.map { value =>
+          firstField.codec.decodeCanonical(value) match {
+            case Right(decoded) => decoded
+            case Left(_) =>
+              throw new IllegalStateException(
+                s"BeautyQ parsed Terms fields with id '${firstField.id.value}' have incompatible canonical values"
+              )
+          }
+        }
+        SourcedConstraint(
+          PlannedConstraint.Terms(firstField, firstValues ++ decodedNextValues),
+          ConstraintProvenance.ParsedHard,
+        )
+      case _ => first
+    }
+
   private def singleError(error: BeautyIntentParseError): NonEmptyErrors[BeautyIntentParseError] =
     NonEmptyErrors.fromHead(error, Vector.empty)
 }

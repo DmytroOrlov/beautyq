@@ -467,6 +467,56 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         case Left(errors) => fail(s"parse failed: ${errors.toVector}")
       }
     }
+
+    "merge same-slot parsed Terms for manicure and pedicure without changing rule order" in {
+      BeautyQIntentParserGen2.parse(request(Some("маникюр педикюр")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r001"), IntentRuleId("r004")))
+          intent.hardConstraints match {
+            case Vector(
+                  SourcedConstraint(PlannedConstraint.Terms(serviceField, serviceValues), serviceProvenance),
+                  SourcedConstraint(PlannedConstraint.Terms(nailField, nailValues), nailProvenance),
+                ) =>
+              assert(serviceField.id == BeautyQSearchDeclarations.variants.Fields.serviceCode.id)
+              assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("manicure", "pedicure"))
+              assert(serviceProvenance == ConstraintProvenance.ParsedHard)
+              assert(nailField.id == BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_service_type").id)
+              assert(nailValues.map(nailField.codec.encodeCanonical) == Set("manicure", "pedicure"))
+              assert(nailProvenance == ConstraintProvenance.ParsedHard)
+              assert(Vector(serviceField.id, nailField.id).distinct.size == 2)
+            case other => fail(s"expected two merged parsed Terms constraints, got $other")
+          }
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "preserve first parsed slot order and keep a budget IntervalOverlap unchanged" in {
+      BeautyQIntentParserGen2.parse(request(Some("маникюр педикюр under 50")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r001"), IntentRuleId("r004")))
+          intent.hardConstraints match {
+            case Vector(
+                  SourcedConstraint(PlannedConstraint.Terms(serviceField, serviceValues), serviceProvenance),
+                  SourcedConstraint(PlannedConstraint.Terms(nailField, nailValues), nailProvenance),
+                  SourcedConstraint(PlannedConstraint.IntervalOverlap(from, to, bounds), budgetProvenance),
+                ) =>
+              assert(serviceField.id == BeautyQSearchDeclarations.variants.Fields.serviceCode.id)
+              assert(serviceValues.map(serviceField.codec.encodeCanonical) == Set("manicure", "pedicure"))
+              assert(serviceProvenance == ConstraintProvenance.ParsedHard)
+              assert(nailField.id == BeautyQSearchDeclarations.variants.Fields.enumAttributesByCode("nail_service_type").id)
+              assert(nailValues.map(nailField.codec.encodeCanonical) == Set("manicure", "pedicure"))
+              assert(nailProvenance == ConstraintProvenance.ParsedHard)
+              assert(from.id == BeautyQSearchDeclarations.variants.Fields.priceFrom.id)
+              assert(to.id == BeautyQSearchDeclarations.variants.Fields.priceTo.id)
+              assert(bounds == RangeBounds(Bound.Unbounded, Bound.Inclusive(BigDecimal(50))))
+              assert(budgetProvenance == ConstraintProvenance.ParsedHard)
+            case other => fail(s"expected merged Terms followed by the original budget constraint, got $other")
+          }
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
   }
 
   // Independent evidence, not derived from BeautyIntentTrace or any other production traversal helper:
