@@ -32,5 +32,25 @@ final class BeautyQCanonicalSeedEvaluationCatalogSpec extends AnyWordSpec {
         case Left(error) => fail(s"expected canonical seed catalog, got $error")
       }
     }
+
+    "bind coating and design attributes exclusively to the canonical nail-service family" in {
+      BeautyQCanonicalSeedEvaluationCatalog.load() match {
+        case Right(value) =>
+          val servicesById = value.snapshot.services.map(service => service.id -> service.code.value).toMap
+          val attributeOwners = value.snapshot.serviceVariantSchemas.flatMap { schema =>
+            val relevant = schema.items.map(_.attribute.code).filter(code => code == "nail_coating_type" || code == "with_design").toSet
+            if (relevant.isEmpty) Vector.empty
+            else Vector(servicesById.getOrElse(schema.serviceId, fail(s"missing service for schema ${schema.serviceId}")) -> relevant)
+          }.toMap
+          assert(
+            attributeOwners == Map(
+              "manicure" -> Set("nail_coating_type", "with_design"),
+              "pedicure" -> Set("nail_coating_type", "with_design"),
+              "nail_modeling" -> Set("nail_coating_type", "with_design"),
+            )
+          )
+        case Left(error) => fail(s"expected canonical seed catalog, got $error")
+      }
+    }
   }
 }

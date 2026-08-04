@@ -10,161 +10,6 @@
   },
   "cases": [
     {
-      "id": "q2i3_case_001",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "Нужен уход для рук с гель-лаком без дизайна",
-      "language": "ru",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Manicure with gel polish and no design",
-      "notes": [
-        "Selected from the independently frozen pre-disclosure reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "1fcd6e17-c6bb-5901-9f63-205668897659"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [
-            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i2_case_005",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "оформление и коррекция бровей",
-      "language": "ru",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Brow service",
-      "notes": [
-        "Exact brow service request from the canonical service taxonomy."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "245cf7ad-666b-5df1-8c0f-868741458337"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i3_case_005",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "Ищу перманент губ с последующей коррекцией",
-      "language": "ru",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Permanent makeup for lips with correction",
-      "notes": [
-        "Selected from the independently frozen pre-disclosure reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
-            "b5ec4ac7-c364-512b-ab12-5e19d523284e",
-            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
-            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [
-            "5fc44f25-2cbb-56e3-a336-41b10a63569b"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i3_case_007",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "Ищу лазерное удаление волос в зоне подмышек",
-      "language": "ru",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Laser hair removal for armpits",
-      "notes": [
-        "Selected from the independently frozen pre-disclosure reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "d7ec2ffe-e84d-5782-b54e-b95540a58ef2",
-            "cb9843b3-3f6a-5dda-bd74-d79084476f94",
-            "a5a90236-d10c-5021-9dd7-cc56367a3b19"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [
-            "8d2f6611-e23b-5626-848c-9022f6e7d76c"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
       "id": "q2i2_case_009",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
@@ -740,61 +585,22 @@
       }
     },
     {
-      "id": "q2i4_case_001",
+      "id": "q2i5_reserve_001",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Fußnägel mit Gel-Farbe behandeln",
-      "language": "de",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "pedicure with gel polish",
-      "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
-            "083f3849-b865-5a7e-ac02-90b5945320f8"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [
-            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i4_case_002",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "нужен уход за руками без цветного покрытия",
+      "query": "нужна услуга по маникюру",
       "language": "ru",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure without coating",
+      "userIntent": "manicure service",
       "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "36b4ddff-7800-5965-9dce-856b4776eea0"
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -817,17 +623,133 @@
       }
     },
     {
-      "id": "q2i4_case_003",
+      "id": "q2i5_reserve_004",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "hand nail care with ordinary polish",
-      "language": "en",
+      "query": "маникюр с гелевым покрытием",
+      "language": "ru",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure with regular polish",
+      "userIntent": "manicure with gel polish",
       "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_007",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "маникюр и педикюр в одном запросе",
+      "language": "ru",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "manicure or pedicure services",
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "083f3849-b865-5a7e-ac02-90b5945320f8"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_010",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "подберите процедуру bb glow для лица",
+      "language": "mixed",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "BB Glow facial",
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_013",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "маникюрную процедуру пожалуйста",
+      "language": "ru",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "manicure service",
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
       ],
       "judgments": {
         "variants": {
@@ -855,22 +777,22 @@
       }
     },
     {
-      "id": "q2i4_case_004",
+      "id": "q2i5_reserve_016",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "künstliche Nägel aus Acryl verlängern",
-      "language": "de",
+      "query": "маникур с гель лаком",
+      "language": "ru-translit",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "acrylic nail extension",
+      "userIntent": "manicure with gel polish",
       "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -884,7 +806,83 @@
         },
         "serviceIntents": {
           "acceptableIds": [
-            "9587c0ce-951e-5dae-8dae-a522e189567b"
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_019",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "gesichtsreinigung behandlung",
+      "language": "de",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "facial cleansing",
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_022",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "ресницы снять без наращивания",
+      "language": "ru",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "lash removal",
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
           ],
           "forbiddenIds": [],
           "neutralIds": [],

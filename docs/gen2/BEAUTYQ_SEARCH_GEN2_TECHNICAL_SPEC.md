@@ -2138,19 +2138,20 @@ communication verification.
 ## 15. Quality and evaluation
 
 Q1 evaluation kernel and canonical BeautyQ corpus are implemented. Q2 executes that corpus and
-produces measured evidence. Two explicitly authorized bounded break-glass cycles migrated eleven
-minimal contributors into permanent visible Regression evidence; the current 100-case corpus passed
-its complete managed hard/no-harm run. Protected acceptance after the second source correction and
-accepted-manifest generation remain open.
+produces measured evidence. Two explicitly authorized minimal-contributor break-glass cycles migrated
+eleven cases, then a final bounded escalation migrated the complete current eight-case exact-intent
+slice; no other protected slice was disclosed. The current 108-case corpus passed its complete managed
+hard/no-harm run. Protected acceptance after the exact-intent closure correction and accepted-manifest
+generation remain open.
 
 `beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
 evidence, deterministic cutover report encoding, the completed Gen1 deletion inventory, a canonical
 100-case BeautyQ evaluation corpus, the frozen protected Q2-I corpus/policy/audit and provenance
-resources, domain evaluation policy and adapters. The visible 100 cases remain
+resources, domain evaluation policy and adapters. The visible 108 cases remain
 regression/partial judgments; the protected fixture is a test/evaluation input and does not enter
 production serving classpaths.
 
-The Distage communication owner retains the four-query readiness smoke and also executes all 100
+The Distage communication owner retains the four-query readiness smoke and also executes all 108
 canonical cases through one Required/FullSearch native application and the real Elasticsearch, Qdrant
 and embedding paths. It performs one full warmup pass followed by three measured passes at concurrency
 one. Only `BeautyQSearchApplication.execute` is timed; startup, materialization and projection are
@@ -2191,14 +2192,29 @@ correction is structural, adds the contextual r090 lash-removal action, and leav
 precedence resolver, backends, ranking and evaluation policy unchanged. The managed 100-case run
 completed 100 warmups and 300 measured executions with every hard/no-harm gate green.
 
+The independently replenished holdout then repeated the same exact-intent failure against the committed
+second correction. Because two minimal-contributor cycles had not established generalization, the final
+authorization disclosed and permanently migrated the complete current eight-case exact-intent slice;
+no other protected slice was disclosed. A new 24-case reserve and semantic coverage matrix had already
+been authored, judged, audited and frozen without protected/visible inventory or search-output access.
+Cross-generation diagnosis identified the boundary between
+`BeautyQIntentTextGen2.tokenizeForIntentMatching` and BeautyQ declaration ownership as the first
+divergence. The text owner retains only mechanical one-token spelling, inflection and transliteration
+normalization. Multi-token service, coating and design semantics are owned and traced by the typed
+`BeautyQIntentVocabulary`, including r091 and the nail-family-contextual r092; the tokenizer contains no
+shadow semantic phrase vocabulary and does not globally discard action-bearing tokens. This implements
+the correction without a generic-kernel, judgment, threshold or query-specific change. The managed
+108-case run completed 108 warmups and 324 measured executions with every hard/no-harm gate green,
+deterministic rankings and zero forbidden hits.
+
 Protected-acceptance machinery is implemented as a BeautyQ eval owner: it strictly decodes
 an ordered protected holdout corpus and a separate protected-acceptance policy, reuses the same measured
 application execution path, emits aggregate-only protected report/measurement/gate artifacts, and
 derives a candidate baseline only after a green protected gate. The frozen protected corpus, policy,
 aggregate audit and author/judge provenance drafts are versioned under `src/test/resources` and are
-available after an ordinary checkout. The second cycle selected four replacements only from its new
+available after an ordinary checkout. The final cycle selected eight replacements only from its new
 pre-disclosure frozen reserve; the replenished protected corpus was audited and frozen at 24 cases with
-slice counts 8/6/4/3/3. No protected acceptance was run after the second source correction. Protected bootstrap and
+slice counts 8/6/4/3/3. No protected acceptance was run after the exact-intent closure source correction. Protected bootstrap and
 accepted-manifest generation remain pending until that correction is reviewed and committed, exact-
 revision root evidence is obtained, and a fresh correctly attributed protected gate passes.
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the

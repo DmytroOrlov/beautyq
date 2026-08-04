@@ -25,7 +25,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
     "pin dynamic naming prefixes and stable rule IDs" in {
       val dynamicNames = BeautyQPublicFilterRegistry.fields.drop(5).map(_.name.value)
       assert(dynamicNames.forall(name => name.startsWith("attribute.int.") || name.startsWith("attribute.decimal.") || name.startsWith("attribute.enum.") || name.startsWith("attribute.boolean.")))
-      assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 90).map(index => f"r$index%03d").toVector)
+      assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 92).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
     }
@@ -51,6 +51,37 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
         BeautyQIntentTextGen2.tokenizeForIntentMatching("Ищу педикюр без какого-либо покрытия") ==
           Vector("педикюр", "без", "покрытия")
       )
+      assert(
+        BeautyQIntentTextGen2.tokenizeForIntentMatching("Fußnägel mit Gel-Farbe behandeln") ==
+          Vector("fußnägel", "mit", "gel", "farbe", "behandeln")
+      )
+      assert(
+        BeautyQIntentTextGen2.tokenizeForIntentMatching("künstliche Nägel aus Acryl verlängern") ==
+          Vector("künstliche", "nägel", "aus", "acrylic", "verlängern")
+      )
+    }
+
+    "leave multi-token service and attribute meaning to the typed vocabulary" in {
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("уход для рук с гель-лаком") == Vector("уход", "рук", "с", "гель", "лаком"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("hand nail care with ordinary polish") == Vector("hand", "nail", "care", "with", "ordinary", "polish"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("gesichtsreinigung behandlung") == Vector("gesichtsreinigung", "behandlung"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("перманент губ с коррекцией") == Vector("перманент", "губ", "с", "коррекция"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("лазерное удаление волос в зоне подмышек") == Vector("лазер", "удаление", "волос", "в", "зоне", "подмышки"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("без цветного покрытия") == Vector("без", "цветного", "покрытия"))
+    }
+
+    "canonicalize mechanical matching tokens idempotently" in {
+      val fixtures = Vector(
+        "Нужно ламинирование бровей вместе с окрашиванием",
+        "процедуру аква-фэйшл для лица",
+        "künstliche Nägel aus Acryl verlängern",
+        "лазерное удаление волос в зоне подмышек",
+        "lash lifting mit färben",
+      )
+      fixtures.foreach { fixture =>
+        val once = BeautyQIntentTextGen2.tokenizeForIntentMatching(fixture)
+        assert(BeautyQIntentTextGen2.tokenizeForIntentMatching(once.mkString(" ")) == once)
+      }
     }
   }
 

@@ -730,6 +730,175 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         }
       }
     }
+
+    "derive exact typed constraints for the complete migrated exact-intent closure slice" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val cases = Vector(
+        "Нужен уход для рук с гель-лаком без дизайна" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+          fields.booleanAttributesByCode("with_design").id -> Set("false"),
+        ),
+        "оформление и коррекция бровей" -> Set(
+          fields.serviceCode.id -> Set("brows"),
+          fields.enumAttributesByCode("brow_service_type").id -> Set("shaping"),
+        ),
+        "Ищу перманент губ с последующей коррекцией" -> Set(
+          fields.serviceCode.id -> Set("pmu"),
+          fields.enumAttributesByCode("pmu_area").id -> Set("lips"),
+          fields.booleanAttributesByCode("with_correction").id -> Set("true"),
+        ),
+        "Ищу лазерное удаление волос в зоне подмышек" -> Set(
+          fields.serviceCode.id -> Set("hair_removal"),
+          fields.enumAttributesByCode("hair_removal_method").id -> Set("laser"),
+          fields.enumAttributesByCode("body_area").id -> Set("armpits"),
+        ),
+        "Fußnägel mit Gel-Farbe behandeln" -> Set(
+          fields.serviceCode.id -> Set("pedicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "нужен уход за руками без цветного покрытия" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating"),
+        ),
+        "hand nail care with ordinary polish" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+        ),
+        "künstliche Nägel aus Acryl verlängern" -> Set(
+          fields.serviceCode.id -> Set("nail_modeling"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
+        ),
+      )
+
+      cases.foreach { case (query, expected) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            assert(actual == expected, s"unexpected closure constraints for '$query': $actual")
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
+
+    "generalize every closure semantic class to exact independently authored visible constraints" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val cases = Vector(
+        "care for hands with regular polish" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+        ),
+        "уход за руками с обычным лаком" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+        ),
+        "foot nail care with gel polish" -> Set(
+          fields.serviceCode.id -> Set("pedicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "Pflege der Fußnägel mit Gel-Lack" -> Set(
+          fields.serviceCode.id -> Set("pedicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "artificial nails acrylic" -> Set(
+          fields.serviceCode.id -> Set("nail_modeling"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
+        ),
+        "künstliche Nägel Acryl" -> Set(
+          fields.serviceCode.id -> Set("nail_modeling"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
+        ),
+        "маникюр без дизайна" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.booleanAttributesByCode("with_design").id -> Set("false"),
+        ),
+        "маникюр without design" -> Set(
+          fields.serviceCode.id -> Set("manicure"),
+          fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          fields.booleanAttributesByCode("with_design").id -> Set("false"),
+        ),
+      )
+
+      cases.foreach { case (query, expected) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            assert(actual == expected, s"unexpected closure semantic class for '$query': $actual")
+            assert(intent.hardConstraints.size == expected.size)
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
+
+    "keep no-design contextual to the catalog-owned nail service family" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val cases = Vector(
+        ("facial without design", "without design", Set(fields.serviceCode.id -> Set("facial"))),
+        ("брови без дизайна", "без дизайна", Set(fields.serviceCode.id -> Set("brows"))),
+        ("lashes ohne design", "ohne design", Set(fields.serviceCode.id -> Set("lashes"))),
+      )
+
+      cases.foreach { case (query, expectedResidual, expected) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            assert(actual == expected, s"no-design leaked outside nail context for '$query': $actual")
+            assert(!intent.matchedRuleIds.contains(IntentRuleId("r092")))
+            assert(intent.residualText.contains(expectedResidual))
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
+
+    "keep explicit regular-polish semantics valid as a standalone nail attribute" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("regular polish")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r091")))
+          assert(intent.hardConstraints match {
+            case Vector(SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard)) =>
+              field.id == fields.enumAttributesByCode("nail_coating_type").id &&
+                values.map(field.codec.encodeCanonical) == Set("regular_polish")
+            case _ => false
+          })
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "preserve action and relation words outside declaration-owned phrase matches" in {
+      val cases = Vector(
+        "Fußnägel mit Gel-Farbe behandeln" -> "mit behandeln",
+        "künstliche Nägel aus Acryl verlängern" -> "aus verlängern",
+      )
+      cases.foreach { case (query, expectedResidual) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) => assert(intent.residualText.contains(expectedResidual))
+          case Left(errors)  => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
   }
 
   "the provenance trust boundary" should {

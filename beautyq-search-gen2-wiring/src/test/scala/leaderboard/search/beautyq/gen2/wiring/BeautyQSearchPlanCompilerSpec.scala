@@ -291,6 +291,25 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
       assert(result.plan.diagnostics.suppressedFilters.exists(sf => sf.reason == SuppressionReason.OverriddenByHigherPrecedence && sf.source.provenance == ConstraintProvenance.ParsedHard))
     }
 
+    "preserve an explicit public service when a new declaration-owned hand-care alias disagrees" in {
+      val (request, intent) = build(query = Some("hand care"), filters = Vector(serviceFilter("pedicure")))
+      val result = compile(request, intent)
+      assert(
+        result.plan.appliedFilters.collect {
+          case AppliedFilter(SourcedConstraint(PlannedConstraint.Terms(field, values), provenance)) =>
+            field.id -> (values.map(field.codec.encodeCanonical), provenance)
+        } == Vector(
+          Fields.serviceCode.id -> (Set("pedicure"), ConstraintProvenance.ExplicitUi),
+          Fields.enumAttributesByCode("nail_service_type").id -> (Set("manicure"), ConstraintProvenance.ParsedHard),
+        )
+      )
+      assert(result.plan.diagnostics.suppressedFilters match {
+        case Vector(SuppressedFilter(SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard), SuppressionReason.OverriddenByHigherPrecedence)) =>
+          field.id == Fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("manicure")
+        case _ => false
+      })
+    }
+
     "apply a parsed constraint in a slot different from any public constraint" in {
       val (request, intent) = build(query = Some("гель наращивание ногтей"), filters = Vector(serviceFilter("manicure")))
       val result = compile(request, intent)
@@ -379,6 +398,44 @@ final class BeautyQSearchPlanCompilerSpec extends AnyWordSpec {
             field.id -> values.map(field.codec.encodeCanonical)
         }.toSet
         assert(actual == expected, s"unexpected applied filters for '$query': $actual")
+        assert(result.plan.appliedFilters.size == expected.size)
+        assert(result.plan.diagnostics.suppressedFilters.isEmpty)
+      }
+    }
+
+    "compile the formerly blind exact-intent classes as exact ParsedHard filters without suppression" in {
+      val cases = Vector(
+        "Нужен уход для рук с гель-лаком без дизайна" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+          Fields.booleanAttributesByCode("with_design").id -> Set("false"),
+        ),
+        "Fußnägel mit Gel-Farbe behandeln" -> Set(
+          Fields.serviceCode.id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "hand nail care with ordinary polish" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+        ),
+        "künstliche Nägel aus Acryl verlängern" -> Set(
+          Fields.serviceCode.id -> Set("nail_modeling"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
+        ),
+      )
+
+      cases.foreach { case (query, expected) =>
+        val (request, intent) = build(query = Some(query))
+        val result = compile(request, intent)
+        val actual = result.plan.appliedFilters.collect {
+          case AppliedFilter(SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard)) =>
+            field.id -> values.map(field.codec.encodeCanonical)
+        }.toSet
+        assert(actual == expected, s"unexpected closure filters for '$query': $actual")
         assert(result.plan.appliedFilters.size == expected.size)
         assert(result.plan.diagnostics.suppressedFilters.isEmpty)
       }

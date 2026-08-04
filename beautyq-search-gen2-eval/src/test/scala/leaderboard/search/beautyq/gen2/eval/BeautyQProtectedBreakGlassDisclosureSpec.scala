@@ -63,6 +63,7 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
     "bind both authorization cycles and reject cross-cycle provenance" in {
       val first = BeautyQProtectedBreakGlassDisclosure.FirstAuthorization
       val second = BeautyQProtectedBreakGlassDisclosure.Cycle2Authorization
+      val third = BeautyQProtectedBreakGlassDisclosure.FullSliceCycle3Authorization
       assert(first.id == BeautyQProtectedBreakGlassDisclosure.AuthorizationId)
       assert(first.applicationRevision == "89811d5f2ad5327b24b2aac4641f4716d781000e")
       assert(first.protectedCorpusFingerprint == "825ca2862ad99b61002bcf04bfe000168eccc61760d9a1d091c0c4320afc9bb0")
@@ -72,6 +73,11 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       assert(second.protectedCorpusFingerprint == "7a654c7323f822f26bccc6d5ae7adde3faf4bfd790984ae63fb25c34978c9188")
       assert(second.policyFingerprint == "905894412cb68ed8447ecc9c99ffe1ac9ee94e22001f6a8c206cdd81c9a165ce")
       assert(first.failedCheckCode == second.failedCheckCode)
+      assert(third.id == BeautyQProtectedBreakGlassDisclosure.FullSliceCycle3AuthorizationId)
+      assert(third.applicationRevision == "718660275e72b287c24aec494c174c3d3a55bef0")
+      assert(third.protectedCorpusFingerprint == "23fe801f0b1c48b77847a94d0eb260ee5e2faac5018c67bab5debce382b5f2d0")
+      assert(third.policyFingerprint == "c80f15f5cb7beb8ad5f01bec82146c67e17d8a3bc0a31e4e88a49fd115e9b360")
+      assert(third.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
 
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
@@ -84,6 +90,52 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         second.applicationRevision, BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId,
         BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
       ), "break_glass_authorization_corpus_mismatch")
+    }
+
+    "disclose the complete authorized slice while recursively excluding every other slice" in {
+      val fixture = syntheticFixture()
+      val authorization = new BeautyQProtectedBreakGlassDisclosure.AuthorizationRecord(
+        "synthetic-full-slice",
+        "commit-visible-123",
+        fixture.corpus.corpusFingerprint,
+        fixture.policy.fingerprint,
+        BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+        BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice("exact-intent", expectedCount = 2),
+      )
+      val disclosure = BeautyQProtectedBreakGlassDisclosure.deriveAuthorized(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        "commit-visible-123", authorization, BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ).fold(error => fail(error), identity)
+
+      assert(disclosure.disclosedCases.map(_.corpusCase.caseId.value) == Vector("protected-failing", "protected-passing"))
+      val encoded = disclosure.toJson.noSpaces
+      assert(encoded.contains("protected-failing"))
+      assert(encoded.contains("protected-passing"))
+      assert(!encoded.contains("protected-other-slice"))
+      assert(!encoded.contains("other-slice-sentinel"))
+    }
+
+    "reject a full-slice authorization whose expected disclosure count or slice differs" in {
+      val fixture = syntheticFixture()
+      val wrongCount = new BeautyQProtectedBreakGlassDisclosure.AuthorizationRecord(
+        "wrong-count", "commit-visible-123", fixture.corpus.corpusFingerprint, fixture.policy.fingerprint,
+        BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+        BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice("exact-intent", expectedCount = 8),
+      )
+      val wrongSlice = new BeautyQProtectedBreakGlassDisclosure.AuthorizationRecord(
+        "wrong-slice", "commit-visible-123", fixture.corpus.corpusFingerprint, fixture.policy.fingerprint,
+        BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+        BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice("other", expectedCount = 2),
+      )
+
+      assertLeft(BeautyQProtectedBreakGlassDisclosure.deriveAuthorized(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        "commit-visible-123", wrongCount, BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ), "break_glass_authorization_disclosed_count_mismatch")
+      assertLeft(BeautyQProtectedBreakGlassDisclosure.deriveAuthorized(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        "commit-visible-123", wrongSlice, BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ), "break_glass_authorization_slice_mismatch")
     }
 
     "encode deterministically while the ordinary protected report remains aggregate-only" in {
@@ -231,6 +283,7 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         fixture.corpus.corpusFingerprint,
         fixture.policy.fingerprint,
         BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+        BeautyQProtectedBreakGlassDisclosure.DisclosureScope.MinimalContributors,
       ),
       BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
     )

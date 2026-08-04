@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — second Q2-B correction source and 100-case visible proof ready; protected holdout independently replenished and frozen; commit, exact-revision root evidence, and fresh protected acceptance pending; D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — exact-intent closure source and 108-case visible proof ready; protected holdout independently replenished and frozen; commit, exact-revision root evidence, and fresh protected acceptance pending; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -376,7 +376,7 @@ the removed external-input durability precondition.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **SECOND CORRECTION SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
+Status: **EXACT-INTENT CLOSURE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
 
 The correctly attributed protected gate from committed revision
 `ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` was red only on
@@ -417,6 +417,32 @@ No protected acceptance was run after editing this second correction source. The
 review and commit, operator-owned root evidence for that exact commit, and one fresh correctly
 attributed protected acceptance. Earlier RED artifacts remain historical evidence and do not authorize
 candidate generation.
+
+After that second correction was committed and received green operator-owned root evidence, a fresh
+correctly attributed run against revision `718660275e72b287c24aec494c174c3d3a55bef0` again failed only
+the exact-intent success/10 check. Two minimal-contributor cycles had therefore not established
+generalization. The final bounded authorization disclosed the complete current eight-case exact-intent
+slice and no other protected slice; every disclosed case was permanently migrated to visible
+Regression evidence.
+
+A new 24-case exact-intent reserve and source-grounded coverage matrix were authored, judged, audited
+and frozen before that disclosure without protected/visible inventory or search-output access.
+Cross-generation diagnosis located the first divergence at the boundary between
+`BeautyQIntentTextGen2.tokenizeForIntentMatching` and BeautyQ declaration ownership. Mechanical
+one-token spelling, inflection and transliteration normalization remains in the text owner; multi-token
+service, coating and design semantics are owned by the typed `BeautyQIntentVocabulary`, including r091
+and the nail-family-contextual r092. No shadow semantic phrase vocabulary remains in the tokenizer, and
+action-bearing tokens are not globally discarded. The coherent correction adds no query/result
+branching and changes no protected thresholds, policy meanings, labels or judgments. Eight
+replacements came only from the frozen reserve; the protected corpus was audited and frozen at 24
+cases with slice counts 8/6/4/3/3.
+
+The canonical visible corpus now contains 108 Regression cases. Its managed Required/FullSearch proof
+completed 108 warmups and 324 measured executions with every hard/no-harm gate green, deterministic
+rankings and zero forbidden hits. No protected acceptance was run after editing this closure source.
+The next boundary is review and commit, operator-owned root evidence for that exact commit, and one
+fresh correctly attributed protected acceptance. No fourth automatic exact-intent disclosure cycle is
+authorized; bootstrap and candidate generation still require a green protected gate.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -497,7 +523,7 @@ Completed:
 - updated module firewall/build-DAG proofs;
 - corrected the technical specification's current quality claims.
 
-The current visible 100 cases are regression cases, not a protected holdout.
+The current visible 108 cases are regression cases, not a protected holdout.
 
 ### Patch O0 — supplement startup policy and safe kill switch **O0 COMPLETED**
 

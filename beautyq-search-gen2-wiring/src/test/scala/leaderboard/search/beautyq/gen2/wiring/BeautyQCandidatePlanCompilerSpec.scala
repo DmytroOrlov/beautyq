@@ -238,5 +238,62 @@ final class BeautyQCandidatePlanCompilerSpec extends AnyWordSpec {
         }
       }
     }
+
+    "carry every formerly blind exact-intent class unchanged into candidate evaluation" in {
+      val cases = Vector(
+        "Нужен уход для рук с гель-лаком без дизайна" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+          Fields.booleanAttributesByCode("with_design").id -> Set("false"),
+        ),
+        "Fußnägel mit Gel-Farbe behandeln" -> Set(
+          Fields.serviceCode.id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "hand nail care with ordinary polish" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+        ),
+        "künstliche Nägel aus Acryl verlängern" -> Set(
+          Fields.serviceCode.id -> Set("nail_modeling"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
+        ),
+      )
+
+      cases.foreach { case (query, expected) =>
+        val fixture = compiled(rawRequest(query = Some(query)))
+        compileOrFail(fixture).decision match {
+          case CandidatePlanDecision.Eligible(plan) =>
+            assert(plan.hardConstraints == fixture.plan.hardConstraints)
+            val actual = plan.hardConstraints.collect {
+              case PlannedConstraint.Terms(field, values) => field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            assert(actual == expected, s"unexpected candidate constraints for '$query': $actual")
+          case other => fail(s"expected Eligible for '$query', got $other")
+        }
+      }
+    }
+
+    "exclude no-design from candidate constraints outside a declared nail-service context" in {
+      val fixture = compiled(rawRequest(query = Some("facial without design")))
+      compileOrFail(fixture).decision match {
+        case CandidatePlanDecision.Eligible(plan) =>
+          assert(plan.hardConstraints == fixture.plan.hardConstraints)
+          assert(plan.hardConstraints match {
+            case Vector(PlannedConstraint.Terms(field, values)) =>
+              field.id == Fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("facial")
+            case _ => false
+          })
+          assert(!plan.hardConstraints.exists {
+            case PlannedConstraint.Terms(field, _) => field.id == Fields.booleanAttributesByCode("with_design").id
+            case _                                 => false
+          })
+        case other => fail(s"expected Eligible, got $other")
+      }
+    }
   }
 }

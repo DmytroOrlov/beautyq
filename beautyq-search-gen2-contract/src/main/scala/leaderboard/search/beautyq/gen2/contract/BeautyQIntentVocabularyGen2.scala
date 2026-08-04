@@ -174,6 +174,13 @@ object BeautyQIntentVocabulary {
     case Right(code) => BeautyIntentAction.Category(code)
     case Left(_)     => throw new IllegalStateException(s"invalid source CategoryCode '$value'")
   }
+  private val nailServiceFamily = BeautyIntentAction.ServiceAny(
+    Vector(
+      codeService("manicure").code,
+      codeService("pedicure").code,
+      codeService("nail_modeling").code,
+    )
+  )
 
   private def rule(
     id: String,
@@ -195,11 +202,11 @@ object BeautyQIntentVocabulary {
 
   // Business-facing intent policy starts here; keep aliases and stable codes readable in one list.
   private val sourceRules: Vector[BeautyIntentRule] = Vector(
-    rule("r001", "маникюр", "манекюр")(service("manicure"), enumAttr("nail_service_type", "manicure")),
+    rule("r001", "маникюр", "манекюр", "уход для рук", "уход за руками", "hand nail care", "care for hands", "hand care")(service("manicure"), enumAttr("nail_service_type", "manicure")),
     rule("r002", "обычный маникюр")(service("manicure"), enumAttr("nail_service_type", "manicure")),
     rule("r003", "дешевый маникюр рядом")(service("manicure"), enumAttr("nail_service_type", "manicure")),
-    rule("r004", "педикюр", "pedicure", "pediküre", "fußpflege")(service("pedicure"), enumAttr("nail_service_type", "pedicure")),
-    rule("r005", "наращивание и моделирование ногтей", "наращивание ногтей", "acrylic nails", "nagelmodellage")(service("nail_modeling"), enumAttr("nail_service_type", "extension")),
+    rule("r004", "педикюр", "pedicure", "pediküre", "fußpflege", "foot nail care", "pflege der fußnägel", "fußnägel")(service("pedicure"), enumAttr("nail_service_type", "pedicure")),
+    rule("r005", "наращивание и моделирование ногтей", "наращивание ногтей", "acrylic nails", "nagelmodellage", "künstliche nägel", "artificial nails")(service("nail_modeling"), enumAttr("nail_service_type", "extension")),
     rule("r006", "ресницы", "lashes", "wimpern")(service("lashes")),
     rule("r007", "брови", "augenbrauen")(service("brows")),
     rule("r008", "pmu", "permanent makeup", "permanent make-up", "перманент", "татуаж")(service("pmu")),
@@ -215,7 +222,7 @@ object BeautyQIntentVocabulary {
     rule("r018", "lashes and brows")(BeautyIntentAction.ServiceAny(Vector(codeService("lashes").code, codeService("brows").code))),
     rule("r019", "что-то для лица рядом", "что-то для лица")(service("facial")),
     rule("r020", "недорогие ногти рядом")(BeautyIntentAction.ServiceAny(Vector(codeService("manicure").code, codeService("pedicure").code))),
-    rule("r021", "гель лак", "гель-лаком", "gel polish")(enumAttr("nail_coating_type", "gel_polish")),
+    rule("r021", "гель лак", "гель-лаком", "gel polish", "gel farbe", "gel lack", "гелевым покрытием")(enumAttr("nail_coating_type", "gel_polish")),
     rule("r022", "shellac", "шелак")(enumAttr("nail_coating_type", "shellac")),
     rule("r023", "реснички 2д корр")(service("lashes"), enumAttr("lash_volume", "volume2_d"), enumAttr("lash_service_type", "refill"), bool("with_correction", true)),
     rule("r024", "с shellac и снятием")(enumAttr("nail_coating_type", "shellac"), bool("with_removal", true)),
@@ -225,7 +232,7 @@ object BeautyQIntentVocabulary {
     rule("r028", "коррекция гелевых ногтей с дизайном")(service("nail_modeling"), enumAttr("nail_service_type", "refill"), enumAttr("nail_coating_type", "gel"), bool("with_correction", true), bool("with_design", true)),
     rule("r029", "коррекция гелевых ногтей")(service("nail_modeling"), enumAttr("nail_service_type", "refill"), enumAttr("nail_coating_type", "gel"), bool("with_correction", true)),
     noiseRule("r030", "не татуаж"),
-    rule("r031", "без лака", "без покрытия", "no coating")(enumAttr("nail_coating_type", "no_coating")),
+    rule("r031", "без лака", "без покрытия", "no coating", "без цветного покрытия")(enumAttr("nail_coating_type", "no_coating")),
     rule("r032", "гель", "gel")(enumAttr("nail_coating_type", "gel"))(using mode = IntentRuleMode.Contextual, requires = Vector(enumAttr("nail_service_type", "extension"))),
     rule("r033", "acrylic")(enumAttr("nail_coating_type", "acrylic"))(using mode = IntentRuleMode.Contextual, requires = Vector(enumAttr("nail_service_type", "extension"))),
     rule("r034", "классика", "classic", "1d", "1 д", "classic1_d")(enumAttr("lash_volume", "classic1_d"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("lashes"))),
@@ -257,7 +264,7 @@ object BeautyQIntentVocabulary {
     rule("r060", "aquafacial")(service("facial"), enumAttr("facial_treatment_type", "aquafacial"), enumAttr("body_area", "face")),
     rule("r061", "microneedling")(service("facial"), enumAttr("facial_treatment_type", "microneedling"), enumAttr("body_area", "face")),
     rule("r062", "bb glow", "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа")(service("facial"), enumAttr("facial_treatment_type", "bb_glow"), enumAttr("body_area", "face")),
-    rule("r063", "чистка лица", "facial cleansing")(service("facial"), enumAttr("facial_treatment_type", "cleansing"), enumAttr("body_area", "face")),
+    rule("r063", "чистка лица", "facial cleansing", "gesichtsreinigung")(service("facial"), enumAttr("facial_treatment_type", "cleansing"), enumAttr("body_area", "face")),
     rule("r064", "классический уход лицо")(service("facial"), enumAttr("facial_treatment_type", "classic"), enumAttr("body_area", "face")),
     rule("r065", "увлажнение лица")(service("facial"), enumAttr("facial_treatment_type", "hydration"), enumAttr("body_area", "face_neck_decollete")),
     noiseRule("r066", "3 сеанса скидка"),
@@ -309,6 +316,12 @@ object BeautyQIntentVocabulary {
       enumAttr("lash_service_type", "removal"),
       bool("with_removal", true),
     )(using mode = IntentRuleMode.Contextual, requires = Vector(service("lashes"))),
+    rule("r091", "regular polish", "ordinary polish", "обычный лак", "обычным лаком", "normaler lack")(
+      enumAttr("nail_coating_type", "regular_polish"),
+    ),
+    rule("r092", "без дизайна", "without design", "ohne design")(
+      bool("with_design", false),
+    )(using mode = IntentRuleMode.Contextual, requires = Vector(nailServiceFamily)),
   )
 
   val validation: Either[NonEmptyErrors[BeautyIntentVocabularyError], BeautyQIntentVocabulary] = validate(sourceRules)

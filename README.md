@@ -18,23 +18,30 @@ Start here:
 
 BeautyQ Search Gen2 is the complete native serving architecture. Its declaration, baseline/supplement,
 lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete. The authorized
-Q2 required a second explicitly authorized bounded disclosure after the first correction did not
-generalize to the independently replenished exact-intent holdout. Four new minimal contributors were
-permanently migrated to visible regression evidence. A structural BeautyQ-owned normalization and
-contextual-action correction now covers reusable Russian inflection, request-carrier and AquaFacial
-transliteration classes; the complete managed 100-case / 300-execution hard/no-harm run is green.
+Q2 required two explicitly authorized minimal-contributor disclosures, but neither correction
+generalized to the next independently replenished exact-intent holdout. The final bounded escalation
+disclosed the complete current eight-case exact-intent slice and permanently migrated it to visible
+Regression evidence; no other protected slice was disclosed. Cross-generation diagnosis placed the
+first divergence in BeautyQ lexical normalization and declaration ownership. Mechanical one-token
+spelling, inflection and transliteration normalization remains in `BeautyQIntentTextGen2`; multi-token
+service, coating and design meaning is owned and traced by the typed `BeautyQIntentVocabulary`,
+including context-safe r091/r092 declarations. The tokenizer contains no shadow semantic phrase
+vocabulary and does not globally erase action-bearing words. The correction does not branch on
+disclosed queries. The complete managed 108-case / 324-execution
+hard/no-harm run is green with zero forbidden hits.
 Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
 owners are implemented. Q2-I protected inputs were model-assisted, source-grounded,
 catalog-bound, audited, and frozen as versioned test resources under `beautyq-search-gen2-eval`;
 an ordinary checkout contains them. “Protected” means excluded from output-driven tuning and emitted
 only through aggregate protected reports; these inputs are not production serving resources. Q2-A
-migration scope-drift audit is completed. Both authorized disclosures were limited to the same exact
-failed Q2-B check and their minimal contributing sets; every disclosed case is now visible regression
-evidence. The protected holdout was independently replenished from a new reserve frozen before the
-second disclosure, audited, and refrozen at 24 cases with its required slice inventory. Post-correction protected acceptance, bootstrap,
+migration scope-drift audit is completed. All nineteen cases disclosed across the two minimal cycles
+and the final full-slice escalation are now visible regression evidence. A new 24-case exact-intent
+reserve was authored, judged, audited and frozen before the final disclosure; eight replacements were
+then selected from it, and the protected holdout was refrozen at 24 cases with slice counts 8/6/4/3/3.
+Post-correction protected acceptance, bootstrap,
 candidate generation, accepted-baseline promotion, and verify remain pending until this source patch is
 reviewed, committed, and receives exact-revision root evidence. No output-driven threshold, label, or
-judgment tuning was performed. Q2-B is **SECOND CORRECTION SOURCE READY; COMMIT, ROOT EVIDENCE, AND
+judgment tuning was performed. Q2-B is **EXACT-INTENT CLOSURE SOURCE READY; COMMIT, ROOT EVIDENCE, AND
 FRESH PROTECTED ACCEPTANCE REQUIRED**. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
 reintroduction was found. No external
 employee or separately hired reviewer is required: the

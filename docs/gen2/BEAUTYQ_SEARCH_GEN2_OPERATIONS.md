@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — second Q2-B correction source ready, 100-case visible managed proof green, protected holdout independently replenished and frozen, commit/root evidence/fresh protected acceptance pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — exact-intent closure source ready, 108-case visible managed proof green, protected holdout independently replenished and frozen, commit/root evidence/fresh protected acceptance pending, D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -346,11 +346,30 @@ hard/no-harm gate and zero forbidden hits. Four replacements were selected in st
 the frozen second-cycle reserve; the protected corpus was audited and frozen again at 24 cases with
 slice counts 8/6/4/3/3.
 
-This second correction source has not yet been committed or evaluated through post-correction
-protected acceptance. Preserve both earlier RED generations as historical evidence. Next, review and
-commit this source patch, obtain operator-owned root evidence for that exact commit, and run one fresh
-correctly attributed protected acceptance. Bootstrap and candidate generation remain unauthorized
-until that fresh protected gate is green; promotion and verify remain later boundaries.
+The committed second correction was covered by green operator-owned root evidence, but the next blind
+holdout again failed only the same exact-intent success/10 check. Because two minimal-contributor
+cycles had not established generalization, the final authorization disclosed the complete current
+eight-case exact-intent slice; no case from another protected slice was disclosed. All eight cases are
+now permanent visible Regression evidence.
+
+Before that disclosure, a new 24-case reserve covering the public exact-intent conformance matrix was
+authored, judged, structurally audited and frozen without protected/visible inventory or search-output
+access. Cross-generation diagnosis located the first divergence at the boundary between
+`BeautyQIntentTextGen2.tokenizeForIntentMatching` and BeautyQ declaration ownership. The text owner now
+performs only mechanical one-token spelling, inflection and transliteration normalization. Multi-token
+service, coating and design semantics are declared and traced in the typed
+`BeautyQIntentVocabulary`, including r091 and the nail-family-contextual r092. There is no tokenizer
+shadow phrase vocabulary, and action-bearing German tokens are retained instead of being globally
+discarded. The semantic correction introduces no query branches, threshold changes or judgment
+changes. Eight replacements were selected only from the frozen reserve. The protected corpus is
+audited and frozen at 24 cases with slice counts 8/6/4/3/3.
+
+The managed visible proof passed with 108 warmups and 324 measured executions, every hard/no-harm gate
+green and zero forbidden hits. This exact-intent closure source has not been evaluated through
+post-correction protected acceptance. Preserve all earlier RED generations as historical evidence.
+Next, review and commit this source patch, obtain operator-owned root evidence for that exact commit,
+and run one fresh correctly attributed protected acceptance. Bootstrap and candidate generation remain
+unauthorized until that fresh protected gate is green; promotion and verify remain later boundaries.
 
 After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
 same clean committed application revision and verified tracked canonical inputs:

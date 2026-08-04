@@ -42,12 +42,22 @@ object BeautyQIntentTextGen2 {
   )
 
   private val CanonicalIntentTokens = Map(
+    "acryl" -> "acrylic",
     "аквафейшл" -> "aquafacial",
     "аквафэйшл" -> "aquafacial",
+    "бровная" -> "брови",
     "бровей" -> "брови",
+    "ламинация" -> "ламинирование",
+    "маникур" -> "маникюр",
+    "маникюрную" -> "маникюр",
+    "коррекцией" -> "коррекция",
+    "лазерное" -> "лазер",
     "окраской" -> "окрашивание",
     "окрашиванием" -> "окрашивание",
     "окрашивания" -> "окрашивание",
+    "педикур" -> "педикюр",
+    "педикюрные" -> "педикюр",
+    "подмышек" -> "подмышки",
   )
 
   def normalize(value: String): String =
@@ -79,10 +89,11 @@ object BeautyQIntentTextGen2 {
   def tokenizeNormalized(value: String): Vector[String] =
     normalize(value).split(' ').toVector.map(_.trim).filter(_.nonEmpty)
 
-  /** BeautyQ-owned lexical equivalence used only for intent declaration matching. Public query
-    * normalization remains lossless; semantic candidate text still uses [[normalize]]. The finite
-    * map covers repository-supported request carriers, Russian inflections and the established
-    * AquaFacial transliteration family without teaching the generic matcher BeautyQ vocabulary. */
+  /** BeautyQ-owned mechanical lexical equivalence used only for intent declaration matching. Public
+    * query normalization remains lossless; semantic candidate text still uses [[normalize]]. This
+    * boundary removes finite request carriers and canonicalizes one-token spelling, inflection and
+    * transliteration variants of the same semantic atom. Multi-token service and attribute meaning
+    * belongs exclusively to [[BeautyQIntentVocabulary]]. */
   def tokenizeForIntentMatching(value: String): Vector[String] = {
     val canonical = tokenizeNormalized(value).flatMap { token =>
       if (IntentCarrierTokens.contains(token)) Vector.empty

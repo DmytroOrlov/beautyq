@@ -1,52 +1,8 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "655ebd9d21920d0b03c08df487acc8b4bd0db590",
-  "authorPassId": "q2-break-glass-cycle2-replenishment-author-v1",
+  "sourceRevision": "718660275e72b287c24aec494c174c3d3a55bef0",
+  "authorPassId": "q2-exact-intent-full-slice-cycle3-replenishment-author-v1",
   "cases": [
-    {
-      "id": "q2i3_case_001",
-      "query": "Нужен уход для рук с гель-лаком без дизайна",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Manicure with gel polish and no design",
-      "notes": [
-        "Selected from the independently frozen pre-disclosure reserve."
-      ]
-    },
-    {
-      "id": "q2i2_case_005",
-      "query": "оформление и коррекция бровей",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Brow service",
-      "notes": [
-        "Exact brow service request from the canonical service taxonomy."
-      ]
-    },
-    {
-      "id": "q2i3_case_005",
-      "query": "Ищу перманент губ с последующей коррекцией",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Permanent makeup for lips with correction",
-      "notes": [
-        "Selected from the independently frozen pre-disclosure reserve."
-      ]
-    },
-    {
-      "id": "q2i3_case_007",
-      "query": "Ищу лазерное удаление волос в зоне подмышек",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Laser hair removal for armpits",
-      "notes": [
-        "Selected from the independently frozen pre-disclosure reserve."
-      ]
-    },
     {
       "id": "q2i2_case_009",
       "query": "мне нужно привести руки в порядок перед праздником",
@@ -224,47 +180,91 @@
       ]
     },
     {
-      "id": "q2i4_case_001",
-      "query": "Fußnägel mit Gel-Farbe behandeln",
-      "language": "de",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "pedicure with gel polish",
-      "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
-      ]
-    },
-    {
-      "id": "q2i4_case_002",
-      "query": "нужен уход за руками без цветного покрытия",
+      "id": "q2i5_reserve_001",
+      "query": "нужна услуга по маникюру",
       "language": "ru",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "manicure without coating",
+      "userIntent": null,
       "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
       ]
     },
     {
-      "id": "q2i4_case_003",
-      "query": "hand nail care with ordinary polish",
-      "language": "en",
+      "id": "q2i5_reserve_004",
+      "query": "маникюр с гелевым покрытием",
+      "language": "ru",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "manicure with regular polish",
+      "userIntent": null,
       "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
       ]
     },
     {
-      "id": "q2i4_case_004",
-      "query": "künstliche Nägel aus Acryl verlängern",
+      "id": "q2i5_reserve_007",
+      "query": "маникюр и педикюр в одном запросе",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": null,
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i5_reserve_010",
+      "query": "подберите процедуру bb glow для лица",
+      "language": "mixed",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": null,
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i5_reserve_013",
+      "query": "маникюрную процедуру пожалуйста",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": null,
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i5_reserve_016",
+      "query": "маникур с гель лаком",
+      "language": "ru-translit",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": null,
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i5_reserve_019",
+      "query": "gesichtsreinigung behandlung",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "acrylic nail extension",
+      "userIntent": null,
       "notes": [
-        "Selected in stable order from the independently frozen second-cycle pre-disclosure reserve."
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+      ]
+    },
+    {
+      "id": "q2i5_reserve_022",
+      "query": "ресницы снять без наращивания",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": null,
+      "notes": [
+        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
       ]
     }
   ]
