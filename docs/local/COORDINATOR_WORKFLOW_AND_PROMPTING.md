@@ -245,6 +245,7 @@ Do not paste all of `AGENTS.md` into prompts. Inline only task-specific guardrai
 
 - `[ALL][CONTINUATION]` Preserve the same uncommitted patch; a fresh session is a handoff, not a separate logical task.
 - `[ALL][CONTINUATION]` Before handoff or compaction, save a checkpoint under `target/agent-checkpoint/` containing raw `git status --short`, `git diff --stat`, `git diff --name-status`, completed edits, the last successful command, the complete current failure, and the next exact command.
+- `[ALL][CONTINUATION]` Checkpoints under target are ephemeral and may be deleted by build cleanup. They must not be the only copy of decision-critical continuation state.
 - `[ALL][CONTINUATION]` The next prompt inlines the checkpoint summary and does not repeat discovery or already successful checks without a source-confirmed reason.
 - `[W]` Prefer exact snippets and replacement hunks. `[M]` Allow bounded mechanical closure inside named frontiers. `[S]` Prefer bounded source inspection over duplicating large stable source.
 - `[ALL]` Large documents, diffs, successful logs, status, and inventories stay in repo-local artifacts; include only summaries and unexpected excerpts in the conversation.
@@ -322,6 +323,7 @@ Do not include full `target`, generated build output, screenshots, stale numbere
 When explicitly requested, a bundle must:
 
 - use a repo-local `.review-bundles/<topic>-<timestamp>-$RANDOM` workspace;
+- `.review-bundles` is ignored transport storage, not durable source truth. `git clean -dfx` may delete it. Upload or externalize required evidence immediately and never use it as the only continuation copy.
 - include task-relevant status, bounded anchors, diffs, and manifests;
 - use NUL-safe untracked-file capture when untracked files matter;
 - truncate large text output;

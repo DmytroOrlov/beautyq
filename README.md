@@ -11,97 +11,15 @@ Start here:
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide domain/search ownership principles
 * [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical domain authoring, lifecycle composition, proof selection, and focused validation
 * [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, verification ownership, and delivery closure
-* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0/O1 foundations, the active Q2 recovery boundary, and eval-first second-domain work
+* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — remaining approved delivery milestones
 * [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — Required/Preferred/Disabled launcher modes, operator status, response warnings, restart-only recovery, and partial-activation procedures
-* [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
 
-BeautyQ Search Gen2 is the complete native serving architecture. Its declaration, baseline/supplement,
-lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete; Q2 remains active
-and D1 has not started. Mechanical one-token spelling, inflection and transliteration normalization is
-owned by `BeautyQIntentTextGen2`; multi-token service and attribute meaning is owned and traced by the
-typed `BeautyQIntentVocabulary`. Disclosed protected cases are permanent visible Regression evidence.
+**Historical material:** [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation. This is not current implementation guidance.
 
-The convergence replenishment reserve was rejected because most candidate variant judgments
-were absent from the canonical typed catalog. No product identity was invented to rescue it. A
-fresh isolated recovery reserve was authored from public typed contracts and canonical catalog
-identities, and has remained immutable through all selection cycles. Five disclosure cycles have
-now permanently migrated 35 cases to the visible Regression corpus. The post-recovery exact-intent
-slice was corrected and disclosed; the first selected candidate of every recovery bucket is
-consumed and visible. The first eligible non-consumed candidate whose normalized query was not already
-visible of every bucket was frozen into the 24-case
-protected holdout with slices 8/6/4/3/3. Visible corpus is now 124 cases; accepted visible
-managed evidence is 124 warmups / 372 measured executions, zero forbidden hits, and deterministic
-rankings. Post-correction protected acceptance, bootstrap, candidate generation, promotion and
-verify were not run. Q2 remains active pending review, commit, root evidence and fresh protected
-acceptance.
+BeautyQ Search Gen2 is the native serving architecture. Its current architecture and invariants are documented in the technical specification; operator procedures are documented in the operations runbook; remaining delivery work is owned only by the post-cutover plan.
 
-The route/Qdrant sections below are current operational truth.
-
-Current BeautyQ route truth:
-
-* The default search route is native Gen2 `POST /beauty-search` with the full Elasticsearch + Qdrant + embedding graph.
-* `GET /beauty-search/status` exposes operator status: condition, policy, serving mode, restart requirement, fingerprints and active generations.
-* `/beauty-search-gen2` and the Gen1 request/response route are absent.
-* There is no fallback, fusion, or rerank.
-* `SupplementStartupPolicy` controls startup: `required` (default) fails startup on supplement unavailability; `preferred` permits degraded baseline-only serving; `disabled` is the operator kill switch.
-* Startup state is immutable for the process lifetime; recovery requires restart.
-
-Run the local managed launcher:
-
-```bash
-./launcher -u scene:managed :leaderboard
-```
-
-Local managed startup prepares all local data `/beauty-search` needs before the HTTP server serves:
-BeautyQ seed is loaded into SQL/Postgres, the Elasticsearch baseline index is built, and the Qdrant
-supplement collection/vectors are indexed. Repeated starts skip the ES/Qdrant rebuild when the local
-bootstrap fingerprint still matches the seed/search/vector/embedding inputs and the prepared resources
-are present and compatible; changed inputs, a missing ES index, a missing Qdrant collection, or an
-incompatible Qdrant vector spec forces rebuild or fails fast before bind. Full supplement readiness is
-required by default; baseline-only startup is available only through explicit `preferred` degradation
-or the `disabled` operator kill switch. Operators
-never create or index the Qdrant collection by hand — startup does it automatically. The launcher HTTP
-server binds to source-confirmed port `8080`.
-
-The Gen2 snapshot materialization branch depends on `BeautyQSeedReady`, an explicit Distage lifecycle
-resource that proves all seven repository tables (including `master_service_offer_variant`) exist
-and seed data is loaded. Distage cannot infer SQL table dependencies from query text; this DI edge
-ensures the snapshot source never queries a missing table on first start. The HTTP route stays
-unavailable until both seed readiness and Gen2 activation succeed.
-
-The local embedding endpoint is configured at `llama-cpp-embedding` in
-`leaderboard-app-shell/src/main/resources/common-reference.conf` (default base URL
-`http://localhost:8081`, endpoint path `/v1/embeddings`; base URL override
-`M18_QDRANT_EMBEDDING_ENDPOINT`). The managed launcher reads that value through Distage config, and
-the Scala constructors do not carry runtime endpoint defaults. The managed bootstrap exercises the
-embedding endpoint before full-search readiness. Malformed output, model mismatch, an empty embedding,
-or the wrong vector dimension (expected `1024`) is a hard failure. Preferred-mode transport/unavailability
-publishes typed `baseline_only` with an operator warning; it is not a hidden Gen1 fallback. Required
-mode fails startup, and disabled mode does not construct, probe or
-activate Qdrant/embedding resources; it still requires the complete Elasticsearch baseline.
-
-Gen2 append probe:
-
-```bash
-curl -sS -X POST 'http://localhost:8080/beauty-search' \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"beauty near Wandsbek Markt","filters":[],"requestedFacets":[],"sort":[],"page":{"size":20}}' \
-| jq '{hits: (.hits | length), supplementStatus, supplementStatusCode, supplementCount, origins: ([.hits[].origin] | unique)}'
-```
-
-Expected: `supplementStatus` is `supplemented`, `supplementCount` is at least 1, and one hit origin is `qdrant_supplement`.
-
-Gen2 used with no append:
-
-```bash
-curl -sS -X POST 'http://localhost:8080/beauty-search' \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"маникюр","filters":[],"requestedFacets":[],"sort":[],"page":{"size":20}}' \
-| jq '{hits: (.hits | length), supplementStatus, supplementStatusCode, supplementCount, origins: ([.hits[].origin] | unique)}'
-```
-
-Expected: `supplementStatus` is `no_append`, `supplementCount` is 0, and origins is only `["es_baseline"]`.
+For local startup, status inspection and request probes, use the BeautyQ Search Gen2 operations runbook.
 
 ## Eval and measurement guardrails
 

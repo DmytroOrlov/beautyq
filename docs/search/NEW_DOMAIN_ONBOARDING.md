@@ -328,7 +328,7 @@ Opaque model wrappers are declared in the model scope and consumed from a separa
 scope, matching the production module boundary and keeping their nominal typeclass evidence
 unambiguous.
 
-### Plan-policy example (Brick 4F)
+### Plan-policy example
 
 Combining a domain's already-validated public request and parsed intent into one validated `SearchPlan`
 follows the same split: business policy stays explicit, everything mechanical is reused from
@@ -422,7 +422,7 @@ also aliases `Fields.document`, keep every dependency either inside `Fields` or 
 root; do not capture a sibling root value. This cyclic shape is unsupported; see technical specification
 §7.1.
 
-### Candidate-policy example (Brick 4G-A)
+### Candidate-policy example
 
 Declare only the domain's reason type, semantic parts, active gate order and each gate's typed outcome.
 The framework owns non-blank semantic text, ordered evaluation and first-failure selection. Exact API and
@@ -486,7 +486,7 @@ A thin domain compiler derives facts such as first-page/default-sort from its co
 eligible `CandidatePlan`, and propagates `CandidateEvaluationError`. Do not copy BeautyQ reasons, cursor
 policy or backend retrieval knobs.
 
-### Elasticsearch index-policy example (Brick 5A)
+### Elasticsearch index-policy example
 
 A domain supplies only its already-declared document, one explicit Elasticsearch policy version, and an
 framework-known analyzer choice for each of its own declared searchable text fields (BeautyQ uses
@@ -512,7 +512,7 @@ cannot substitute one). A domain never recreates a field handle or mapping/sourc
 framework normalizes analyzer assignments into the same static-then-dynamic document order - vector
 order is not a separate business policy.
 
-### Elasticsearch search-policy example (Brick 5B)
+### Elasticsearch search-policy example
 
 The index policy above is only half of what a domain executes against Elasticsearch. Query-time choices -
 which text fields rank the query, how they're weighted, whether geo proximity contributes to score, how
@@ -551,7 +551,7 @@ domain resource names; keep domain-specific group/carousel projection at the wir
 public response from the domain's single bound orchestration result rather than separately supplied plan,
 baseline and supplement values.
 
-## Qdrant candidate and hydration policy (6A/6C boundary)
+## Qdrant candidate and hydration policy
 
 After the document declaration and semantic candidate policy exist, a domain supplies only the
 identity field, searchable embedding field, named-vector/model identity, distance and retrieval
@@ -682,24 +682,13 @@ slices, thresholds and stop conditions are domain policy and must not be copied 
 For protected acceptance, keep the private corpus and protected-acceptance policy as separate
 domain-owned inputs. Decode both strictly with ordered arrays, execute visible and protected cases
 through the same startup/application path, redact protected identities from reports, and derive an
-accepted manifest only after a green protected gate from a clean committed application revision.
+accepted manifest only after a green protected gate carrying an explicit
+immutable application-source identity.
 
-For D1, preserve this provenance sequence:
-
-```text
-backend-rich source
--> commit
--> operator-owned root evidence for that exact commit
--> protected execution with that exact application revision
--> acceptance and reusable-consumer closeout in the following commit
-```
-
-Protected acceptance must not be used to close the same uncommitted backend patch it evaluates.
-Amending the backend-source commit after evidence invalidates its revision attribution, and a
-documentation-only closeout written afterward does not retroactively become evidence for the new
-commit hash. D1 therefore normally has separate backend-source and acceptance-closeout Git boundaries.
-This provenance rule does not prescribe canonical-baseline promotion or verify for D1 unless its later
-approved domain contract explicitly requires that lifecycle.
+Protected evidence must carry an explicit immutable identity for the
+evaluated application source. Evidence becomes stale when those source
+bytes change. Exact Git choreography belongs to the active project plan,
+not to generic domain onboarding.
 
 Missing private inputs block protected execution and bootstrap, but do not block the dedicated
 pre-execution input-authoring workflow. Machine-assisted authoring is allowed when it is separated from
@@ -710,7 +699,8 @@ must never author, relabel or modify the frozen inputs, and no default threshold
 operator-approved policy. The freeze must also bind every judgment identity to the canonical typed
 catalog, require an acceptable variant for each exact-intent case, prove zero exact/normalized query
 duplicates both against visible evidence and internally, bind author/judge draft hashes and the
-canonical source fingerprint, and compare the declared source revision with the actual clean base.
+canonical source fingerprint, and bind the declared application-source identity to the exact evaluated
+source state.
 These are aggregate integrity checks; semantic-similarity duplicate detection is not claimed.
 The approved reusable-kernel and BeautyQ corpus migration are implemented in
 [Q1 of the post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).

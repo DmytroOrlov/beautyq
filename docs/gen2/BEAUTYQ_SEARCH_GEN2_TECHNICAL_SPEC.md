@@ -45,7 +45,7 @@ accepted shared domain/API additions were allowed
             + deletion of Gen1 search modules and aliases
 ```
 
-Small implementation bricks were required. Incremental ownership migration inside Gen1 was forbidden.
+Small implementation steps were required. Incremental ownership migration inside Gen1 was forbidden.
 
 ## 3. Non-goals
 
@@ -380,8 +380,8 @@ The rule applies to main and test sources, except for an explicitly named compar
 
 ### 5.3 Neutral clients
 
-Brick 6B-A introduces `search-gen2-transport` because endpoint validation, safe path/query assembly,
-timeouts, headers, synchronous JDK execution, JSON decoding and typed HTTP failures now have two real
+`search-gen2-transport` owns the neutral transport mechanics: endpoint validation, safe path/query assembly,
+timeouts, headers, synchronous JDK execution, JSON decoding and typed HTTP failures. It has two real
 Gen2 backend consumers. Elasticsearch keeps a thin backend-named adapter; Qdrant owns only its exact
 REST method/path/body protocol. Transport contains no search semantics, backend resource lifecycle or
 BeautyQ policy. Gen1 search modules are absent.
@@ -392,7 +392,7 @@ parameters and headers; path confinement, UTF-8 JSON decoding, redirect refusal,
 typed HTTP/connection/JSON errors remain transport-owned. `ElasticsearchGen2JsonClient` preserves its
 existing six-method caller surface as a thin adapter. `QdrantGen2Client` binds only the exact collection,
 alias, waited-index/upsert, exact-count and `/points/query` paths; it accepts only a validated resource-name
-segment and performs no lifecycle authorization. Brick 6B-B binds an authorized physical target internally
+segment and performs no lifecycle authorization. The Qdrant lifecycle owner binds an authorized physical target internally
 before invoking it; there is no second HTTP implementation.
 
 ### 5.4 Gen1 references are classified, not dependencies
@@ -614,7 +614,7 @@ explicit `PlanContractVersion`, and canonicalizes the unique typed contribution 
 `ContractFingerprint` is framework-produced and has no public string constructor; its package-scoped
 internal constructor is available only inside `leaderboard.search.gen2.core.plan`, not to backend
 packages. BeautyQ now contributes the one `elasticsearch`-keyed entry `BeautyQElasticsearchPolicy` derives
-from its analyzer assignments and framework-owned compiler/index-format versions (Brick 5A);
+from its analyzer assignments and framework-owned compiler/index-format versions;
 `BeautyQSearchPlanCompiler`'s cursor-bound plan identity and the Elasticsearch generation artifact consume
 that exact same contribution and fingerprint value, never a second hash protocol or an independently
 maintained one. The fingerprint does not hash a rendered tree.
@@ -804,8 +804,8 @@ ElasticsearchFullSearchResult[Document, Id](
 )
 ```
 
-Qdrant receives a candidate plan only after semantic-text and eligibility compilation succeeds. Brick 4G-A
-owns the backend-neutral candidate contract itself, in `search-gen2-contract`:
+Qdrant receives a candidate plan only after semantic-text and eligibility compilation succeeds. `search-gen2-contract`
+owns the backend-neutral candidate contract itself:
 
 ```scala
 opaque type SemanticQueryText = String // SemanticQueryText.from rejects empty/whitespace-only input
@@ -829,7 +829,7 @@ final case class CandidateSearchResult[Id](
 
 `CandidatePlan` is a plain generic value; the canonical BeautyQ compiler supplies the compiled plan's
 hard constraints, but the generic constructor does not enforce their provenance. It carries no retrieval
-knob: `topK`, threshold and oversampling policy are Brick 6A's
+knob: `topK`, threshold and oversampling policy are the Qdrant request compiler's
 `CandidatePlan -> Qdrant request` compiler concern, not this contract type. `CandidatePlanDecision` is
 generic in `Reason`: the generic contract declares no ineligibility vocabulary of its own (no
 `NoSemanticQueryText`/`NotFirstPage`/`NonDefaultSort` case lives here). BeautyQ's own three-case
@@ -864,8 +864,9 @@ text was still missing - meaning no active gate actually tracked it - and preser
 `SemanticQueryText` gate's predicate checks exactly `semanticText.isRight`, so missing text always fails
 that gate first. Only `Right` produces the compiler-bound `CompiledCandidateEvaluation` that
 `BeautyQCandidatePlanTrace.render` accepts; a `Left` propagates unchanged and is never rendered as
-ineligibility. Cursor binding is already owned by Brick 4G-B; the pure Qdrant retrieval compiler is
-owned by Brick 6A, while transport and resource authorization remain the separate 6B boundary.
+ineligibility. Cursor binding is owned by the cursor envelope; the pure Qdrant retrieval
+compiler owns request compilation, while transport and resource
+authorization remain separate owners.
 
 `CandidateEvaluation[Gate, Plan, Reason]` itself is a read-only, framework-produced result: it is a type
 alias for `SemanticCandidateEvaluation.Result`, whose constructor is private to
@@ -1112,7 +1113,7 @@ modes, semantic labels, matched rule IDs, user-location source, public names or 
 classification — those stay domain policy, applied by the domain compiler between `prepare` and
 `prepared.assemble(finalNotices)` (§10.2), never after `assemble`/`compile` already returned.
 
-### 7.10 Append-only supplement selection and lifecycle-bound membership (implemented, Brick 7A)
+### 7.10 Append-only supplement selection and lifecycle-bound membership
 
 `BaselineMembershipResult[Id]` is a final class with a private constructor and a
 `private[gen2] fromBackend` factory. Domain wiring (`leaderboard.search.beautyq.gen2`) cannot call
@@ -1492,7 +1493,7 @@ aggregation names, identity tie-breakers, contract fingerprint input and structu
 from that policy plus the canonical document/plan declarations. Operational host credentials are
 configuration; fixed superseded-generation cleanup is lifecycle mechanics, not business policy.
 
-### 11.1 Mapping and ingestion (implemented, Brick 5A)
+### 11.1 Mapping and ingestion
 
 `ElasticsearchIndexPolicy[Document, Id]` binds one `SearchDocumentDeclaration[Document, Id]`, its
 `PlanContractVersion`, an explicit `ElasticsearchPolicyVersion`, and the domain's ordered
@@ -1510,7 +1511,7 @@ cannot substitute one. Its only construction paths are `ElasticsearchIndexPolicy
 - no assignment to an undeclared, foreign-document, or non-searchable/non-`Text` handle - a `SearchField`
   belonging to another document type fails to compile rather than reaching this runtime check.
 
-Brick 5C-D closes the initial public analyzer algebra to framework-known built-ins (`standard` and
+The Elasticsearch policy/lifecycle layer closes the initial public analyzer algebra to framework-known built-ins (`standard` and
 `whitespace`) and rejects arbitrary names before index creation; BeautyQ uses `standard`, and arbitrary
 custom analyzer support is not an initial framework feature.
 
@@ -1539,9 +1540,9 @@ through itself, never to match its field's declared backend kind), so it is a ty
 For the identity field specifically, emptiness is checked on its extracted canonical value before
 backend-kind decoding ever runs, so an empty identity is always `EmptyDocumentId`, never `ValueEncoding`,
 regardless of the identity field's declared kind. `EmptyDocumentId` and `ValueEncoding` are the complete
-Brick 5A document-shape validation surface; complete live Elasticsearch acceptance - including backend
-limits such as the 512-byte `_id` size cap and configured analyzer/mapping availability - is a Brick 5C
-concern, not implemented here.
+document compiler's validation surface; complete live Elasticsearch acceptance - including backend
+limits such as the 512-byte `_id` size cap and configured analyzer/mapping availability - is a
+lifecycle/communication proof concern, not implemented here.
 
 `ElasticsearchGenerationCompiler.compile` calls both compilers exactly once each over the same policy and
 `MaterializedSearchDocuments`, and derives one `ElasticsearchGenerationIdentity` (source content,
@@ -1551,7 +1552,7 @@ Id]` - a `final` class whose constructor is private to the compiler, with no pub
 `apply`/`copy`/subclassing path - binding the compiled mapping, ordered indexed documents and identity
 together, so a caller cannot independently pair a different declaration, contract fingerprint, projected
 fingerprint, or independently compiled mapping/document vector. HTTP bulk encoding and alias activation
-(Brick 5C) consume that artifact later; they do not rebuild it.
+consume that artifact later; they do not rebuild it.
 
 BeautyQ's own `BeautyQElasticsearchPolicy` declares only its five canonical searchable text fields
 (`Fields.allText`/`serviceText`/`attributeText`/`providerText`/`locationText`), all using the standard
@@ -1563,10 +1564,10 @@ identity and analyzer - is the exact same value `BeautyQSearchPlanCompiler`'s cu
 and the ES generation artifact both consume; no handwritten final fingerprint or second hash protocol
 exists.
 
-### 11.2 Request compilation (implemented, Brick 5B)
+### 11.2 Request compilation
 
 `ElasticsearchPolicy[Document, Id]` is the one complete, fingerprint-owning executable policy: it binds
-one `ElasticsearchIndexPolicy` (Brick 5A's mapping/source concern, now index-only - it no longer carries
+one `ElasticsearchIndexPolicy` (the mapping/source concern, now index-only - it no longer carries
 `contributions`/`contractFingerprint` itself) to the domain's query choices - weighted searchable text
 fields (`ElasticsearchWeightedTextField`, each a declared searchable-text handle plus a positive
 `ElasticsearchQueryWeight`), an `ElasticsearchTextOperator`, an optional `ElasticsearchGeoScoringPolicy`
@@ -1641,7 +1642,7 @@ against the compiled sort vector. This module only encodes/decodes its own opaqu
 and binding the envelope itself remains solely `SearchCursorEnvelope`'s concern.
 
 Query-value encoding reuses `ElasticsearchScalarCompiler.toBackendJson` - the same shared kind-to-JSON
-mechanic Brick 5A's document compiler uses for indexed source values - so a query value and an indexed
+mechanic the document compiler uses for indexed source values - so a query value and an indexed
 value for the same field always follow the same backend representation rules; each caller wraps the
 shared `SearchValueDecodeError` with its own context (`ElasticsearchQueryValueContext.Constraint` or
 `.Facet`, versus the document compiler's `documentIndex`).
@@ -1653,13 +1654,13 @@ closed `AuthorizedElasticsearchSearchRequest`, which adds the resolved generatio
 has a public `apply`/`copy`/subclass path; the response decoder consumes only the authorized aggregate and
 never a separately supplied plan, facet list, sort shape, policy or target.
 
-### 11.3 Response decoding (baseline implemented, group extension in Brick 5D)
+### 11.3 Response decoding (baseline implemented, group extension complete)
 
 `ElasticsearchSearchResponseDecoder.decode(authorizedRequest, responseJson)` returns
-`Either[ElasticsearchSearchResponseErrors, BaselineSearchPage[Document, Id]]`. The Brick 5D group executor
+`Either[ElasticsearchSearchResponseErrors, BaselineSearchPage[Document, Id]]`. The group executor
 decodes each requested composite traversal into an exact generic group result, and the full baseline
 aggregate joins the page and group values. Only these role-specific Elasticsearch types decode a response;
-BeautyQ adds its typed carousel projection in wiring, never a generic domain type. Brick 5B types decode
+BeautyQ adds its typed carousel projection in wiring, never a generic domain type. The request-compilation types decode
 the baseline response - never Qdrant candidate
 slots or an HTTP client's own response type. `BaselineSearchPage[Document, Id]` is a decoder-owned,
 private-constructor, `final` read-only aggregate (hits, exact/qualified total, typed facets, validated
@@ -1689,10 +1690,10 @@ last *included* hit's sort tuple - never the lookahead hit itself - encoding the
 reference via `SearchCursorEnvelope.issue` against the same bound plan; when it does not, no next cursor
 is issued at all.
 
-Group buckets, representative data and metrics are decoded by the Brick 5D group executor after the
+Group buckets, representative data and metrics are decoded by the group executor after the
 baseline page; they are not reconstructed from the returned hit window.
 
-### 11.4 Group implementation (implemented, Brick 5D)
+### 11.4 Group implementation
 
 A plain `terms` aggregation is not sufficient. The prepared request retains the typed group vector and
 the generic Elasticsearch owner executes one deterministic composite traversal per group with the same
@@ -1721,7 +1722,7 @@ does not recreate field handles or group IDs.
 
 ### 11.5 Lifecycle
 
-Brick 5C uses deterministic versioned physical indexes and one stable alias:
+The lifecycle uses deterministic versioned physical indexes and one stable alias:
 
 ```text
 compiled generation
@@ -1747,7 +1748,7 @@ build never changes the alias. A physical index created by the current call is c
 mapping/count validation succeeds; a concurrently existing or already validated generation is never
 blindly deleted.
 
-Brick 5C-D implements deletion only for generations atomically marked by the lifecycle-owned
+The Elasticsearch lifecycle owner implements deletion only for generations atomically marked by the lifecycle-owned
 `<active-alias>--superseded` alias. A metadata-valid, not-yet-active candidate has neither lifecycle
 alias and is therefore not a cleanup candidate. During activation, old active targets are moved to the
 superseded alias in the same exact `_aliases` operation that installs the new active target. Cleanup
@@ -1777,12 +1778,12 @@ present, results are accepted only in Elasticsearch's structured
 `status`, and raw `error`), with declaration order preserved. The baseline
 service authorizes a prepared request through lifecycle, sends its unchanged JSON to the authorized
 physical target, and delegates the raw response to the existing typed decoder. BeautyQ declares only its
-resource names and composes these generic owners; repository materialization belongs to Brick 8 runtime
-composition.
+resource names and composes these generic owners; repository materialization belongs to the runtime
+composition owned by the wiring module.
 
 ## 12. Qdrant Gen2 requirements
 
-`search-gen2-qdrant` owns the neutral Qdrant 1.18.3 transport, collection lifecycle, authorization, response decoding, and candidate execution. BeautyQ application composition owns query embedding and candidate hydration. `QdrantGen2DockerPlugin` is the sole Distage-managed Qdrant container owner, and `QdrantGen2PortCfg` is the sole Qdrant endpoint view. No Gen1 Qdrant search runtime remains.
+`search-gen2-qdrant` owns the neutral Qdrant transport, collection lifecycle, authorization, response decoding, and candidate execution. BeautyQ application composition owns query embedding and candidate hydration. `QdrantGen2DockerPlugin` is the sole Distage-managed Qdrant container owner, and `QdrantGen2PortCfg` is the sole Qdrant endpoint view. No Gen1 Qdrant search runtime remains.
 
 ### 12.1 Semantic query text policy
 
@@ -1822,7 +1823,7 @@ declared typed gates once and returns
 decision; ineligible decisions carry the domain's reason instead. `CandidateEvaluationError` remains a
 distinct malformed-policy error and is never translated into BeautyQ business ineligibility.
 
-### 12.2 Policy and deterministic collection artifacts (Brick 6A)
+### 12.2 Policy and deterministic collection artifacts
 
 `QdrantPolicy[Document, Id]` is one validated, declaration-owned policy. Its identity and embedding
 handles must belong to the same `SearchDocumentDeclaration`; the identity is keyword/integer/long,
@@ -1869,15 +1870,15 @@ Compile:
 
 Qdrant does not receive facets, groups or public page requests.
 
-### 12.6 Candidate decoding (Brick 6A) and hydration (Brick 6C)
+### 12.6 Candidate decoding and hydration
 
-Brick 6A decodes the Qdrant response to the candidate-only
+The Qdrant candidate decoder decodes the Qdrant response to the candidate-only
 `QdrantCandidateSearchResult[Id]`, retaining ordered typed hits and duplicate/elapsed diagnostics. The
-6B service wraps that decoder result in a private-constructor
+candidate service wraps that decoder result in a private-constructor
 `QdrantAuthorizedCandidateResult[Id]` carrying the exact authorized physical collection and persisted
 `QdrantGenerationMetadata`; callers cannot supply either value.
 
-Brick 6C exposes a synchronous typed `QdrantQueryEmbeddingPort` and one executable
+The hydration layer exposes a synchronous typed `QdrantQueryEmbeddingPort` and one executable
 `QdrantCandidatePipeline`: `prepare -> embed -> complete -> authorized service`. Its
 `ExecutedQdrantCandidatePlan` binds the original `CandidatePlan`, declaration, request, authorized target,
 metadata and diagnostics before hydration. The generic core then checks source/projected/projection
@@ -1898,16 +1899,16 @@ hydrated documents, scores, provenance, authorized target, persisted metadata an
 no totals, facets, groups or public pagination. The implemented composition in section 13 appends these
 candidates without transferring full-result ownership away from Elasticsearch.
 
-### 12.7 Transport and physical collection lifecycle (Brick 6B)
+### 12.7 Transport and physical collection lifecycle
 
-Brick 6B-A implements the neutral Gen2 JSON transport and the Qdrant wire adapter. The adapter owns its
-exact 1.18.3 paths and bodies:
+The transport layer implements the neutral Gen2 JSON transport and the Qdrant wire adapter. The adapter owns the
+supported Qdrant paths and bodies:
 collection details and aliases, collection creation, waited payload-index creation, waited point upsert,
 exact count, atomic alias updates and `/points/query`. The optional `api-key` is transport configuration,
 never domain policy or a rendered diagnostic value. The Elasticsearch client is a thin compatibility
 adapter over the same transport; `search-gen2-core` remains HTTP-free.
 
-Brick 6B-B implements the following lifecycle and execution contract:
+The lifecycle owner implements the following lifecycle and execution contract:
 
 The lifecycle consumes only a compiler-owned `QdrantCompiledGeneration`. A deterministic physical
 collection is convergently created or completed, then accepted only when named-vector configuration,
@@ -2108,7 +2109,7 @@ historical `derive(result)` shortcut is removed. The only accepted evidence
 construction path is `BeautyQNoHarmSupplementEvidence.fromExecution`.
 The Distage-managed ES/Qdrant communication proof covers those two backend wire contracts and passes;
 it is not cutover approval. Its deterministic embedding is a contract fixture, not an
-embedding-service communication claim. Brick 8A binds the Gen2 embedding adapter from the existing
+embedding-service communication claim. The application shell binds the Gen2 embedding adapter from the existing
 `LlamaCppEmbeddingClientConfig` (base URL + `/v1/embeddings` endpoint path) and proves the real
 endpoint: a managed scenario calls the production `BeautyQGen2EmbeddingClient`, validates the
 configured model identity, asserts the returned vector's exact dimension against
@@ -2116,18 +2117,18 @@ configured model identity, asserts the returned vector's exact dimension against
 candidate path, executes the `BeautyQSearchGen2Runtime`, projects the native Gen2 response, and
 exercises `POST /beauty-search` through the real route adapter. The same managed communication
 proof also exercises the Gen2 `/points/query` wire path against the single
-Distage-managed Qdrant 1.18.3 process. An unreachable llama.cpp endpoint is a precise
+Distage-managed Qdrant process. An unreachable llama.cpp endpoint is a precise
 `VERIFICATION BLOCKED`; a reachable endpoint that returns malformed JSON, the wrong model, an empty
 vector or the wrong dimension is red. The Gen2 embedding response model is bound to the
 requested model identity: a missing, non-string or mismatched `model` field is a typed
 `InvalidResult(QdrantEmbeddingError.ModelMismatch)` and never degrades to `Unavailable`/`Timeout`.
-The four typed cutover fixtures executed through the Brick 8A native
+The four typed cutover fixtures executed through the native
 application graph. FullSearch readiness was established, the no-harm gate
 passed, and the deterministic cutover and Gen1 deletion-inventory reports were
 written under `target/search-gen2/`. The runner does not invoke the HTTP route, does not
 synthesise IDs, does not rebuild result IDs, does not execute a second baseline search for comparison,
 and reuses the existing test-owned Distage managed-resource support. Distage injects the managed
-Elasticsearch endpoint and the single Distage-managed Qdrant 1.18.3 endpoint (canonical view
+Elasticsearch endpoint and the single Distage-managed Qdrant endpoint (canonical view
 `QdrantGen2PortCfg`). The managed communication proof exercises the Gen2 `/points/query` wire path
 against that single endpoint. The resource gate reads the exact reserved
 Qdrant alias before mutation and fails closed if it is occupied, regardless of its target. Alias and
@@ -2167,22 +2168,17 @@ permits candidate derivation only after a green protected gate. A reusable holdo
 catalog identity validation, separate author and judge provenance, deterministic hash/fingerprint
 binding, visible/protected disjointness and reproducible freeze/audit evidence.
 
-Q2 protected correction completed post-recovery provenance and freeze proofs. The convergence
-replenishment reserve was found to violate canonical catalog identity validation and was rejected.
-A catalog-bound recovery reserve was independently authored and judged from public typed product
-declarations and canonical catalog identities, with no access to protected search output or
-protected query inventories. Five disclosure cycles permanently migrated 35 cases; the recovery
-reserve itself remains immutable. Consumed candidates are visible Regression evidence; the next
-eligible candidates were selected as the first non-consumed candidate in each bucket whose
-normalized query was not already visible. The holdout was rebuilt at 24 cases (slices 8/6/4/3/3),
-provenance resources are tracked, and the freeze/audit proofs are reproducible from an ordinary
-checkout. Fresh protected acceptance has not run. Future invalid reserves must still be rejected
-under the same contract: recovery author/judge passes must remain isolated and catalog-bound.
+Q2 uses a catalog-bound recovery reserve with separate author and judge
+provenance, deterministic selection, visible/protected disjointness and
+reproducible freeze/audit binding. Consumed candidates become visible
+Regression evidence; protected selection chooses the first eligible
+non-consumed candidate whose normalized query is not already visible.
+Current milestone status belongs to the post-cutover plan.
 
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
 candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
 resource and compares ordered aggregate observations. The first accepted manifest must be
-bootstrapped from a clean committed application revision; a `working-tree` revision is rejected.
+bootstrapped only after a green protected gate carrying an explicit immutable application-source identity.
 The verifier reports but does not compare these run-specific audit fields as baseline identity:
 application revision, Elasticsearch generation reference, Qdrant generation ID, visible report
 digest, protected report digest and top-level manifest report digest. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
@@ -2225,27 +2221,26 @@ Required gates include:
 - Gen2 uses separate resources/namespaces;
 - no V1-to-V2 production adapter was created;
 - V1 fixtures were read only from eval/test code;
-- every Gen2 brick was independently testable.
+- every Gen2 component was independently testable.
 
-Cutover passed: 380/380 across 55 suites.
+### 16.2 Current cutover invariants
 
-### 16.2 One cutover change set
-
-The final cutover change set:
+The current cutover state:
 
 - `/beauty-search` owns native Gen2 request/response; `/beauty-search-gen2` is absent;
 - Gen1 search modules and compatibility DTOs are absent;
 - internal Gen2 type/module/package names remain intentionally stable;
 - deleted-generation cursors return HTTP 409 `stale_search_cursor`;
 - the client must restart pagination without the cursor;
-- one managed Qdrant 1.18.3 remains;
-- production serving has no eval dependency;
-- rollback is a revert of the complete Brick 9 change set.
+- one managed Qdrant remains;
+- production serving has no eval dependency.
+
+Rollback follows the current deployment and source-control recovery
+procedure; this specification does not identify a historical implementation
+patch as the rollback unit.
 
 No application-level rate limiter is introduced as a Gen2 completion artifact: the repository has no
 accepted caller-identity or quota policy. Deployment ingress owns that operational concern.
-
-The change set is reverted as a unit if the cutover gate or post-merge smoke tests fail.
 
 ## 17. Required tests
 
@@ -2362,18 +2357,8 @@ Anything beyond that plan still requires a product requirement or a source-confi
 
 This technical specification records which proof layer owns each architectural claim; it does not own step-by-step test recipes. Pure policy, Distage graph, HTTP contract, and real-resource communication are separate proof layers. `BeautyQGen2CutoverGateSpec` is the pure gate owner; `BeautyQSearchGen2CutoverCommunicationSpec` is the real-resource communication owner. Operational commands and practical proof-selection guidance belong to [`NEW_DOMAIN_ONBOARDING.md`](../search/NEW_DOMAIN_ONBOARDING.md).
 
-Before the later startup-readiness ordering dofix, the recorded clean root `sbt test` completed
-successfully. Across the 13 aggregated project test tasks:
-- 1727 tests passed;
-- 176 suites completed;
-- 0 failed, canceled, ignored, or pending.
-
-The final `380 tests / 55 suites` block belongs only to `leaderboard-app-shell`; it is not the
-repository-wide total. The repository-wide total was obtained by adding the separate subproject
-summaries from the same clean root run.
-
-A new repository-wide count must be recorded only after the full root suite is rerun on the post-dofix
-tree; this document does not infer that count.
+Concrete run outcomes belong to evidence reports and commit closeout, not
+to this specification.
 
 ### Accepted limits
 

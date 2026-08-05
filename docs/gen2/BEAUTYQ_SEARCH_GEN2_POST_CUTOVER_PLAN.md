@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — POST-RECOVERY EXACT-INTENT DISCLOSED; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; 124-case visible managed proof green; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); five disclosure cycles migrated 35 cases; D1 requires second-domain product input**
+Status: **Q1, O0 and O1 are complete. Q2 is active. D1 has not started.**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -331,7 +331,7 @@ seeing output.
    input recovery contract above.
 7. Rerun development/regression evidence and then the replenished protected holdout without changing
    its labels or thresholds in response to output.
-8. Run the manual bootstrap from the exact clean committed application revision. Preserve the
+8. Run the manual bootstrap from the exact explicit immutable application-source identity. Preserve the
    aggregate-only candidate and stop for separate coordinator/operator review; do not promote it in
    the same delegated task, check in the full report, or hand-copy its counts.
 9. Only after explicit approval, promote the reviewed candidate byte-for-byte to the one canonical
@@ -391,27 +391,8 @@ resource remains absent until manual promotion.
 
 Status: **POST-RECOVERY EXACT-INTENT DISCLOSED; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
 
-Five disclosure cycles (7 + 4 + 8 + 8 + 8 cases) permanently migrated 35 cases to visible Regression.
-The visible corpus contains 124 cases; its managed proof completed 124 warmups and 372 measured
-executions with all hard gates green and zero forbidden hits.
-
-The convergence replenishment reserve was rejected because most of its candidate variant judgments were
-absent from the canonical typed catalog. No product identity was invented to rescue it. A fresh
-32-candidate recovery reserve was independently authored from public typed contracts and canonical
-catalog identities, judged without search or protected output access, and audited for catalog
-validation and author/judge separation. The recovery reserve itself remains immutable through all
-selection cycles. Consumed candidates are visible Regression evidence; the next eligible candidates
-are protected within the rebuilt 24-case holdout (slices 8/6/4/3/3). Eight final replacements were
-selected as the first eligible non-consumed candidate in each bucket whose normalized query was not
-already visible. The author draft, judged draft, holdout and audit were regenerated through the
-existing freeze owner. Historical disclosure authorizations remain unchanged; the recovery pass is
-replenishment provenance, not a rewrite of historical disclosure.
-
-All thirty-five disclosed cases (7 + 4 + 8 + 8 + 8) remain visible regression evidence. The canonical
-audit binds the exact file hashes, deterministic corpus/policy fingerprints, catalog validation GREEN,
-visible/protected disjointness GREEN, exact slice inventory GREEN, stable ordering and audit
-reproduction. Post-correction protected acceptance, bootstrap, candidate generation, promotion and
-verify did not run.
+Catalog-bound recovery source and deterministic freeze proofs are complete. Fresh protected
+acceptance remains pending. Bootstrap, promotion and verify remain behind their documented gates.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -423,7 +404,7 @@ identities, judgments, and metric values remain private.
 Status: **PENDING ON Q2-B APPROVAL**
 
 Only explicit coordinator/operator approval of the Q2-B candidate starts Q2-C. Phase 1 records the
-clean committed application-revision identity. Promotion copies the preserved candidate byte-for-byte
+explicit immutable application-source identity. Promotion copies the preserved candidate byte-for-byte
 into the one canonical eval resource, so the worktree then necessarily contains that reviewed tracked
 resource. No search, evaluation-policy, lifecycle, route or corpus source may change between review
 and verify. Q2-C verifies digest/equality, runs the focused canonical-resource proofs, and performs an
@@ -456,25 +437,20 @@ are aggregate/slice-only unless the break-glass migration-and-replenishment proc
 
 The five named patches in this plan — Q1, O0, Q2, O1 and D1 — are cohesive delivery milestones, not
 a promise that each milestone maps to exactly one Git commit. Q1, O0 and O1 are complete; the remaining
-approved product scope is Q2 and D1. Clean committed-revision requirements create additional Git and
-provenance boundaries inside those milestones. The minimum happy-path remainder is six commits:
+approved product scope is Q2 and D1.
 
-| Commit | Boundary | Minimum contents |
-| ---: | --- | --- |
-| 1 | Q2 protected-input recovery | Reject the invalid reserve, create a catalog-bound replacement through isolated author/judge passes, and reproduce the tracked freeze audit before protected execution. |
-| 2 | Q2 candidate promotion | Promote the reviewed candidate byte-for-byte to the tracked canonical accepted-baseline resource. |
-| 3 | Q2 verify closeout | Verify the already committed canonical resource and close Q2. |
-| 4 | D1 product/evaluation contract | Domain identity, source topology, catalog, query/judgment policy, visible evidence, protected-authoring protocol and simplest baseline. |
-| 5 | D1 backend-rich source | Declarations, materialization, Elasticsearch/Qdrant realization, hydration, orchestration, route, readiness and visible proofs. |
-| 6 | D1 acceptance closeout | Operator-owned root evidence and protected acceptance against the exact committed backend revision, reusable-consumer proof and D1 closeout. |
-| 7, conditional | Neutral generic-kernel extension | Permitted only when D1 proves a source-confirmed reusable framework gap that cannot remain domain-owned. |
+Remaining approved boundaries:
 
-Operational executions and root evidence are not themselves Git commits. Evidence produced for commit
-N must not be attributed to an amended or otherwise changed source revision. Acceptance-closeout
-documentation written after protected execution therefore belongs to a later commit unless it was
-already present in the evidenced commit. Six is a lower bound, not a guaranteed cap: repeated
-protected-RED correction loops are not reserved in advance. The conditional neutral-kernel commit is
-not pre-approved work and becomes available only after a source-confirmed D1 gap.
+- Q2 candidate promotion;
+- Q2 verify closeout;
+- D1 product/evaluation contract;
+- D1 backend-rich source;
+- D1 acceptance closeout;
+- conditional neutral generic-kernel extension, only after a source-confirmed
+  reusable gap.
+
+Operational executions and root evidence are not themselves Git commits. Evidence produced for a given
+source identity must not be attributed to an amended or otherwise changed source revision.
 
 This accounting does not expand the approved scope. Hot reconciliation or CDC, automatic promotion,
 persistent embedding caching, automatic Qdrant GC and cross-environment latency gating remain
@@ -532,17 +508,8 @@ Disabled is selected before provisioning and its retained managed graph does not
 
 Execution outcomes, corpus sizes, revision bindings and generated artifact hashes are recorded in
 Q2 evidence reports rather than this plan. The catalog-bound recovery and deterministic freeze/audit contract is
-satisfied. Protected acceptance remains behind the future committed revision and its operator-owned
-root evidence; bootstrap remains behind a green protected gate.
-
-The current generated artifact paths are:
-
-- `target/search-gen2/beautyq-evaluation-detailed.json`;
-- `target/search-gen2/beautyq-evaluation-measurement.json`;
-- `target/search-gen2/beautyq-evaluation-score-separation.json`;
-- `target/search-gen2/beautyq-evaluation-correction-gate.json`.
-
-They are run evidence, not tracked executable policy.
+satisfied. Protected acceptance remains behind operator-owned root evidence for the
+evaluated application-source identity; bootstrap remains behind a green protected gate.
 
 ### Patch O1 — remaining bounded operational hardening
 
@@ -566,8 +533,8 @@ A global Qdrant threshold must not be introduced merely to hide overlapping meas
 Intent-policy corrections remain domain-owned, while generic ranking and supplement contracts remain
 unchanged. Protected acceptance machinery provides strict corpus/policy decoding, shared
 visible/protected execution, aggregate-only report encoding, a typed protected gate and a
-candidate-baseline adapter. Q2 remains open for commit, exact-revision root evidence and fresh
-protected acceptance. Accepted-manifest generation remains behind a green protected gate.
+candidate-baseline adapter. Q2 remains open until protected acceptance, candidate promotion and verify
+closeout are complete. Accepted-manifest generation remains behind a green protected gate.
 
 The protected runner and bootstrap do not create or modify those inputs; missing or unverified inputs
 remain an operational failure at those later stages, not a requirement for an external employee.

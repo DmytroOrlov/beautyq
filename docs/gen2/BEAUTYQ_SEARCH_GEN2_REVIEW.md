@@ -1,5 +1,11 @@
 # BeautyQ Search Gen2 — evidence-backed review
 
+> HISTORICAL SNAPSHOT — retained as architectural background only.
+> Do not use this document for current implementation state, module ownership,
+> runtime topology, task planning or verification status.
+> Use the technical specification, operations runbook and post-cutover plan
+> for current truth.
+
 Status: **source review retained; delivery strategy corrected for side-by-side Gen2**
 Source evidence commit: `e1a9f03a8204ef54d2f82cae5b2e88946816fdc8`
 Planning revision baseline: clean `923cdfac` (the intervening change contains only the four Gen2 documents)
