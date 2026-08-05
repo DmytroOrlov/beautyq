@@ -61,10 +61,10 @@ object BeautyQProtectedBreakGlassMain {
   }
 
   private[search] def validateDestinations(arguments: Arguments, repositoryRoot: Path): Either[String, Unit] = {
-    val permittedRoot = repositoryRoot.resolve("target/search-gen2/q2-break-glass").toAbsolutePath.normalize
-    val runRoot = arguments.runRoot.toAbsolutePath.normalize
-    val aggregateOutput = arguments.aggregateOutput.toAbsolutePath.normalize
-    val disclosureOutput = arguments.disclosureOutput.toAbsolutePath.normalize
+    val permittedRoot = repositoryRoot.resolve(".evidence-runs/q2-break-glass").toAbsolutePath.normalize
+    val runRoot = if (arguments.runRoot.isAbsolute) arguments.runRoot.toAbsolutePath.normalize else repositoryRoot.resolve(arguments.runRoot).toAbsolutePath.normalize
+    val aggregateOutput = if (arguments.aggregateOutput.isAbsolute) arguments.aggregateOutput.toAbsolutePath.normalize else repositoryRoot.resolve(arguments.aggregateOutput).toAbsolutePath.normalize
+    val disclosureOutput = if (arguments.disclosureOutput.isAbsolute) arguments.disclosureOutput.toAbsolutePath.normalize else repositoryRoot.resolve(arguments.disclosureOutput).toAbsolutePath.normalize
     if (!runRoot.startsWith(permittedRoot) || runRoot == permittedRoot) Left("invalid_break_glass_run_root")
     else if (Files.exists(runRoot)) Left("break_glass_run_root_already_exists")
     else if (!aggregateOutput.startsWith(runRoot) || !disclosureOutput.startsWith(runRoot)) Left("invalid_break_glass_output_path")
@@ -84,6 +84,9 @@ object BeautyQProtectedBreakGlassMain {
     loop(start.toAbsolutePath.normalize)
   }
 
+  private[search] def resolveIfRelative(path: Path, repositoryRoot: Path): Path =
+    if (path.isAbsolute) path.normalize else repositoryRoot.resolve(path).normalize
+
   def main(args: Array[String]): Unit = {
     val arguments = parseArguments(args.toVector) match {
       case Right(value) => value
@@ -98,9 +101,9 @@ object BeautyQProtectedBreakGlassMain {
       case Left(error) => throw new IllegalArgumentException(error)
     }
     val execution = BeautyQSearchGen2EvaluationResourceHarness.executeProtectedForBreakGlass(
-      arguments.protectedCorpus,
-      arguments.protectedPolicy,
-      arguments.aggregateOutput,
+      resolveIfRelative(arguments.protectedCorpus, repositoryRoot),
+      resolveIfRelative(arguments.protectedPolicy, repositoryRoot),
+      resolveIfRelative(arguments.aggregateOutput, repositoryRoot),
       arguments.applicationRevision,
     ) match {
       case Right(value) => value
@@ -118,7 +121,7 @@ object BeautyQProtectedBreakGlassMain {
       case Right(value) => value
       case Left(error) => throw new IllegalStateException(error)
     }
-    BeautyQSearchGen2EvaluationResourceHarness.writeArtifact(arguments.disclosureOutput, disclosure.toJson)
+    BeautyQSearchGen2EvaluationResourceHarness.writeArtifact(resolveIfRelative(arguments.disclosureOutput, repositoryRoot), disclosure.toJson)
     println(
       s"Q2_BREAK_GLASS_DISCLOSURE_READY disclosedCaseCount=${disclosure.disclosedCases.size} " +
         s"failedCheck=${arguments.expectedFailedCheck}"

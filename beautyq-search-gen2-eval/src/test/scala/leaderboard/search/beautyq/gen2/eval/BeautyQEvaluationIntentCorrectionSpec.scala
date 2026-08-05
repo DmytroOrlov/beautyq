@@ -39,8 +39,8 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 124 cases after the post-recovery exact-intent migration" in {
-      assert(corpus.cases.length == 124)
+    "have exactly 132 cases after the recovery-rotation-2 exact-intent migration" in {
+      assert(corpus.cases.length == 132)
     }
 
     "have every case as Regression" in {
@@ -197,7 +197,7 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "q2 post-recovery migrated cases" should {
-    "retain exact typed parser constraints for all eight visible migrations" in {
+    "retain exact typed parser constraints for all sixteen bindable post-recovery migrations" in {
       val cases = Vector(
         "q2i7_recovery_001" -> Set(
           Fields.serviceCode.id -> Set("manicure"),
@@ -233,10 +233,47 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
           Fields.enumAttributesByCode("hair_removal_method").id -> Set("laser"),
           Fields.enumAttributesByCode("body_area").id -> Set("upper_lip"),
         ),
+        "q2i7_recovery_026" -> Set(
+          Fields.serviceCode.id -> Set("hair_removal"),
+          Fields.enumAttributesByCode("hair_removal_method").id -> Set("wax"),
+          Fields.enumAttributesByCode("body_area").id -> Set("upper_lip"),
+        ),
         "q2i7_recovery_029" -> Set(
           Fields.serviceCode.id -> Set("nail_modeling"),
           Fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
           Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+        ),
+        "q2i7_recovery_002" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("shellac"),
+        ),
+        "q2i7_recovery_006" -> Set(
+          Fields.serviceCode.id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "q2i7_recovery_010" -> Set(
+          Fields.serviceCode.id -> Set("lashes"),
+          Fields.enumAttributesByCode("lash_volume").id -> Set("volume3_d"),
+        ),
+        "q2i7_recovery_014" -> Set(
+          Fields.serviceCode.id -> Set("brows"),
+          Fields.booleanAttributesByCode("with_tinting").id -> Set("true"),
+        ),
+        "q2i7_recovery_018" -> Set(
+          Fields.serviceCode.id -> Set("pmu"),
+          Fields.enumAttributesByCode("pmu_area").id -> Set("eyeliner"),
+        ),
+        "q2i7_recovery_022" -> Set(
+          Fields.serviceCode.id -> Set("facial"),
+          Fields.enumAttributesByCode("facial_treatment_type").id -> Set("cleansing"),
+          Fields.enumAttributesByCode("body_area").id -> Set("face"),
+        ),
+        "q2i7_recovery_031" -> Set(
+          Fields.serviceCode.id -> Set("nail_modeling"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
         ),
       )
 

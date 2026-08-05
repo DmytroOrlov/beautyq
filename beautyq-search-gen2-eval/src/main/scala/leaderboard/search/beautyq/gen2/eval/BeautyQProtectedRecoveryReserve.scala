@@ -59,7 +59,7 @@ object BeautyQProtectedRecoveryReserve {
   private val JudgedReserveResource =
     "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v1.json"
   private val SelectionAuditResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v2.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v3.json"
   private val VisibleCorpusResource =
     "leaderboard/search/beautyq/gen2/eval/beautyq_evaluation_corpus_v2.json"
   private val FinalAuthorDraftResource =
@@ -87,7 +87,7 @@ object BeautyQProtectedRecoveryReserve {
     "finalAuthorDraftSha256", "finalJudgedHoldoutSha256", "finalProtectedCorpusFingerprint",
     "finalProtectedPolicyFingerprint", "canonicalCatalogFingerprint",
   )
-  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v2"
+  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v3"
 
   def load(readResource: ResourceReader): Either[String, BeautyQProtectedRecoveryReserve] = for {
     authorRaw <- readResource(AuthorReserveResource)
@@ -166,7 +166,8 @@ object BeautyQProtectedRecoveryReserve {
   }
 
   private def validateSelection(audit: SelectionAudit, author: AuthorReserve): Either[String, Unit] = {
-    if (audit.consumedCaseIds.size != audit.orderedBuckets.size) Left("recovery_consumed_count_mismatch")
+    if (audit.consumedCaseIds.size % audit.orderedBuckets.size != 0) Left("recovery_consumed_count_not_multiple_of_buckets")
+    else if (audit.consumedCaseIds.isEmpty) Left("recovery_consumed_empty")
     else if (audit.consumedCaseIds.distinct.size != audit.consumedCaseIds.size) Left("recovery_consumed_duplicate_ids")
     else if (audit.selectedCaseIds.size != audit.orderedBuckets.size) Left("recovery_selected_count_mismatch")
     else if (audit.selectedCaseIds.distinct.size != audit.selectedCaseIds.size) Left("recovery_selected_duplicate_ids")
@@ -193,41 +194,44 @@ object BeautyQProtectedRecoveryReserve {
     val orderedBuckets = audit.orderedBuckets
     val consumedCaseIds = audit.consumedCaseIds
     val selectedCaseIds = audit.selectedCaseIds
+    val bucketCount = orderedBuckets.size
     val bucketOrderDeclared = author.cases.map(_.coverageBucket).distinct
-    if (orderedBuckets.size != 8) Left("recovery_ordered_bucket_count_not_eight")
+    if (bucketCount != 8) Left("recovery_ordered_bucket_count_not_eight")
     else if (orderedBuckets.distinct.size != orderedBuckets.size) Left("recovery_duplicate_ordered_bucket")
     else if (orderedBuckets != bucketOrderDeclared) Left("recovery_bucket_order_mismatch")
+    else if (consumedCaseIds.size % bucketCount != 0) Left("recovery_consumed_count_not_multiple_of_buckets")
     else {
-      val consumedPairs = orderedBuckets.zip(consumedCaseIds)
-      val consumedBroken = consumedPairs.find { case (bucket, consumedId) =>
+      val consumedSet = consumedCaseIds.toSet
+      val reserveIds = author.cases.map(_.id).toSet
+      val nonReserveVisibleNormalized =
+        visible.cases.iterator
+          .filterNot(c => reserveIds.contains(c.caseId.value))
+          .map(c => BeautyQEvaluationQueryIdentity.normalize(c.query))
+          .toSet
+      val roundCount = consumedCaseIds.size / bucketCount
+      val consumedBroken = orderedBuckets.zipWithIndex.exists { case (bucket, bucketIndex) =>
         val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
-        val bucketHead = bucketCandidates.headOption.map(_.id)
-        !(bucketHead.contains(consumedId) && bucketCandidates.exists(_.id == consumedId))
+        val eligibleIds = bucketCandidates.filterNot(c =>
+          nonReserveVisibleNormalized.contains(BeautyQEvaluationQueryIdentity.normalize(c.query))
+        ).map(_.id)
+        val bucketConsumedIds = (0 until roundCount).map(r => consumedCaseIds(r * bucketCount + bucketIndex))
+        bucketConsumedIds != eligibleIds.take(roundCount)
       }
-      consumedBroken match {
-        case Some((bucket, consumedId)) =>
-          val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
-          if (!bucketCandidates.exists(_.id == consumedId)) Left("recovery_consumed_case_not_in_paired_bucket")
-          else Left("recovery_consumed_not_first_candidate")
-        case None =>
-          val consumedSet = consumedCaseIds.toSet
-          val visibleNormalized = visible.cases.map(c => BeautyQEvaluationQueryIdentity.normalize(c.query)).toSet
-          val selectedBroken = orderedBuckets.zip(selectedCaseIds).find { case (bucket, selectedId) =>
+      if (consumedBroken) Left("recovery_consumed_not_positional_per_round")
+      else {
+        orderedBuckets.zip(selectedCaseIds).foldLeft[Either[String, Unit]](Right(())) {
+          case (Left(err), _) => Left(err)
+          case (Right(_), (bucket, selectedId)) =>
             val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
             val remainingCandidates = bucketCandidates.filter(c =>
               !consumedSet.contains(c.id) &&
-              !visibleNormalized.contains(BeautyQEvaluationQueryIdentity.normalize(c.query))
+              !nonReserveVisibleNormalized.contains(BeautyQEvaluationQueryIdentity.normalize(c.query))
             )
-            val firstRemaining = remainingCandidates.headOption.map(_.id)
-            !(firstRemaining.contains(selectedId) && bucketCandidates.exists(_.id == selectedId))
-          }
-          selectedBroken match {
-            case Some((bucket, selectedId)) =>
-              val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
-              if (!bucketCandidates.exists(_.id == selectedId)) Left("recovery_selected_case_not_in_paired_bucket")
-              else Left("recovery_selected_not_first_eligible_candidate")
-            case None => Right(())
-          }
+            if (remainingCandidates.headOption.isEmpty) Left("recovery_no_next_eligible_candidate")
+            else if (!bucketCandidates.exists(_.id == selectedId)) Left("recovery_selected_case_not_in_paired_bucket")
+            else if (!remainingCandidates.headOption.exists(_.id == selectedId)) Left("recovery_selected_not_first_eligible_candidate")
+            else Right(())
+        }
       }
     }
   }

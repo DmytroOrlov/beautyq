@@ -901,6 +901,77 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         }
       }
     }
+
+    "parse waxing oberlippe with hard constraints for hair_removal, wax method and upper_lip body area" in {
+      BeautyQIntentParserGen2.parse(request(Some("waxing oberlippe termin vereinbaren")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val fields = BeautyQSearchDeclarations.variants.Fields
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("hair_removal"),
+            fields.enumAttributesByCode("hair_removal_method").id -> Set("wax"),
+            fields.enumAttributesByCode("body_area").id -> Set("upper_lip"),
+          )
+          assert(actual == expected)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "parse acrylic nail modeling extension with hard constraints for nail_modeling, extension and acrylic coating" in {
+      BeautyQIntentParserGen2.parse(request(Some("acrylic nail modeling extension")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val fields = BeautyQSearchDeclarations.variants.Fields
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("acrylic"),
+          )
+          assert(actual == expected)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "not emit body_area=upper_lip for oberlippe without a hair-removal service" in {
+      BeautyQIntentParserGen2.parse(request(Some("oberlippe termin vereinbaren")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val fields = BeautyQSearchDeclarations.variants.Fields
+          val hasUpperLip = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.enumAttributesByCode("body_area").id && values.map(field.codec.encodeCanonical) == Set("upper_lip")
+            case _ => false
+          }
+          assert(!hasUpperLip, s"oberlippe leaked body_area=upper_lip without hair_removal service: ${intent.hardConstraints}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "not activate nail-modeling service or nail_service_type=extension through r005 for lash extension" in {
+      BeautyQIntentParserGen2.parse(request(Some("lash extension")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val fields = BeautyQSearchDeclarations.variants.Fields
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r005")))
+          val hasNailModeling = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("nail_modeling")
+            case _ => false
+          }
+          val hasNailExtension = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.enumAttributesByCode("nail_service_type").id && values.map(field.codec.encodeCanonical) == Set("extension")
+            case _ => false
+          }
+          assert(!hasNailModeling, s"nail_modeling leaked for lash extension: ${intent.hardConstraints}")
+          assert(!hasNailExtension, s"nail_service_type=extension leaked for lash extension: ${intent.hardConstraints}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
   }
 
   "the provenance trust boundary" should {

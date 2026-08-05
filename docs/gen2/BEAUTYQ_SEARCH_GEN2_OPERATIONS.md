@@ -220,7 +220,7 @@ sbt --batch --no-global \
     --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
     --author-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json \
     --judged-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json \
-    --audit-output target/search-gen2/private/beautyq-protected-input-audit-v2.json \
+     --audit-output .evidence-runs/q2-freeze/<run-id>/beautyq-protected-input-audit-v2.json \
     --source-revision <starting-40-hex-revision> \
     --author-pass-id <stable-author-pass-id> \
     --judge-pass-id <stable-judge-pass-id> \
@@ -251,7 +251,7 @@ catalog identity validation and deterministic audit reproduction must all pass f
 thresholds, vocabulary or search behavior from protected execution output.
 
 The freeze runner reads the four source inputs from these canonical test-resource paths and writes only
-a verification audit under `target/search-gen2/private/beautyq-protected-input-audit-v2.json`. After
+a verification audit under `.evidence-runs/q2-freeze/<run-id>/beautyq-protected-input-audit-v2.json`. After
 freeze, the generated audit must compare byte-for-byte with the tracked canonical audit resource.
 Deleting `target` therefore removes only disposable generated output and never destroys the canonical
 Q2-I inputs.

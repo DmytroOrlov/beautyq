@@ -67,7 +67,7 @@ object BeautyQProtectedInputFreezeMain {
     "--audit-pass-id",
   )
   private val AllowedOptions = OptionNames.toSet
-  private val ExpectedAuditOutput = Paths.get("target/search-gen2/private/beautyq-protected-input-audit-v2.json")
+  private val AuditOutputPattern = java.util.regex.Pattern.compile("^\\.evidence-runs/q2-freeze/[^/]+/beautyq-protected-input-audit-v2\\.json$")
 
   def parseArguments(args: Vector[String]): Either[String, Arguments] = {
     if (args.size != OptionNames.size * 2 || args.size % 2 != 0) Left("invalid_argument_count")
@@ -123,18 +123,19 @@ object BeautyQProtectedInputFreezeMain {
       arguments.judgePassId,
       arguments.auditPassId,
     )
-    freezeAt(resolved, resolveFrom(repositoryRoot, ExpectedAuditOutput), currentRevision(repositoryRoot))
+    freezeAt(resolved, repositoryRoot, currentRevision(repositoryRoot))
   }
 
   private[search] def freezeAt(
     arguments: Arguments,
-    permittedAuditOutput: Path,
+    repositoryRoot: Path,
     revisionReader: () => Either[String, String],
   ): Either[String, FreezeSummary] = {
-    val expectedOutput = permittedAuditOutput.toAbsolutePath.normalize
-    val actualOutput = arguments.auditOutput.toAbsolutePath.normalize
-    if (actualOutput != expectedOutput) Left("invalid_audit_output_path")
-    else if (Files.exists(arguments.auditOutput)) Left("audit_output_already_exists")
+    val resolvedRoot = repositoryRoot.toAbsolutePath.normalize
+    val auditPath = arguments.auditOutput.toAbsolutePath.normalize
+    val relativePath = resolvedRoot.relativize(auditPath)
+    if (!AuditOutputPattern.matcher(relativePath.toString).matches()) Left("invalid_audit_output_path")
+    else if (Files.exists(auditPath)) Left("audit_output_already_exists")
     else for {
       actualRevision <- revisionReader().flatMap(value => Either.cond(RevisionPattern.matches(value), value, "invalid_current_revision"))
       _ <- Either.cond(actualRevision == arguments.sourceRevision, (), "source_revision_mismatch")

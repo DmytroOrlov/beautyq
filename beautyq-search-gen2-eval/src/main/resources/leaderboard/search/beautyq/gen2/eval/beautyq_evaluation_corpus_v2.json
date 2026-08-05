@@ -6622,6 +6622,302 @@
           "gradedGains": []
         }
       }
+    },
+    {
+      "id": "q2i7_recovery_002",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "shellac manicure with design near me",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Manicure with shellac coating and design",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "798c4326-e081-59a9-b659-98671f1fd656"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_006",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "педикюр с гель-лаком недорого",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Pedicure with gel polish coating",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "d850b4ca-0f64-5527-81cb-ae6fc212b102"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_010",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "volume lashes 3d appointment",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Volume 3D lash extensions",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_014",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "окрашивание бровей краской",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Brow tinting with dye",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_018",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "pmu eyeliner tattoo appointment",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "PMU eyeliner tattoo",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_022",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "классическая чистка лица глубокое очищение",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Classic facial cleansing",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_026",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "waxing oberlippe termin vereinbaren",
+      "language": "de",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Wax upper lip hair removal",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "94575ead-5606-58fc-9bff-7f2918344c74"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_031",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "acrylic nail modeling extension",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Acrylic nail modeling",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
     }
   ]
 }

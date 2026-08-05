@@ -1,7 +1,7 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "54e488690124c69f87f82346de3a9e1e300db49c",
-  "authorPassId": "q2-exact-intent-post-recovery-replenishment-author-v1",
+  "sourceRevision": "440fdf2827a880ea02c36fb3044c18d1b1874c23",
+  "authorPassId": "q2-exact-intent-recovery-rotation-2-author-v1",
   "cases": [
     {
       "id": "q2i2_case_009",
@@ -180,91 +180,91 @@
       ]
     },
     {
-      "id": "q2i7_recovery_002",
-      "query": "shellac manicure with design near me",
-      "language": "en",
+      "id": "q2i7_recovery_003",
+      "query": "гель-лак маникюр рядом со мной",
+      "language": "ru",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Manicure with shellac coating and design",
+      "userIntent": "Manicure with gel polish coating",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_006",
-      "query": "педикюр с гель-лаком недорого",
-      "language": "ru",
+      "id": "q2i7_recovery_007",
+      "query": "pedicure with gel polish near me",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
       "userIntent": "Pedicure with gel polish coating",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_010",
-      "query": "volume lashes 3d appointment",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Volume 3D lash extensions",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_014",
-      "query": "окрашивание бровей краской",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Brow tinting with dye",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_018",
-      "query": "pmu eyeliner tattoo appointment",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "PMU eyeliner tattoo",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_022",
-      "query": "классическая чистка лица глубокое очищение",
-      "language": "ru",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Classic facial cleansing",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_026",
-      "query": "waxing oberlippe termin vereinbaren",
+      "id": "q2i7_recovery_011",
+      "query": "lash lifting mit färben buchen",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Wax upper lip hair removal",
+      "userIntent": "Lash lifting with tinting",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_031",
-      "query": "acrylic nail modeling extension",
+      "id": "q2i7_recovery_015",
+      "query": "henna brows treatment booking",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Acrylic nail modeling",
+      "userIntent": "Henna brow treatment",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_019",
+      "query": "перманентный макияж бровей",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "PMU brows permanent makeup",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_023",
+      "query": "microneedling facial treatment session",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Microneedling facial treatment",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_027",
+      "query": "sugaring oberlippe zuhause nah",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Sugaring upper lip hair removal",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_032",
+      "query": "снятие наращенных ногтей и уход",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Nail modeling removal and care",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ]
     }
   ]

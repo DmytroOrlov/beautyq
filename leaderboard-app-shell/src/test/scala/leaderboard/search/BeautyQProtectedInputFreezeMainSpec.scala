@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
 final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
+  private lazy val testRoot = repositoryRoot(Paths.get(".").toAbsolutePath.normalize)
+
   "BeautyQProtectedInputFreezeMain" should {
     "parse the exact nine options" in {
       parse(validArguments()) match {
@@ -57,7 +59,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       Files.writeString(fixture.audit, "existing", StandardCharsets.UTF_8)
       try {
         val arguments = parseOrFail(argumentsFor(fixture))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, fixture.audit, () => throw new AssertionError("revision reader must not run")) == Left("audit_output_already_exists"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => throw new AssertionError("revision reader must not run")) == Left("audit_output_already_exists"))
       } finally cleanup(fixture)
     }
 
@@ -66,7 +68,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       prepareFixture(fixture)
       try {
         val arguments = parseOrFail(argumentsFor(fixture))
-        BeautyQProtectedInputFreezeMain.freezeAt(arguments, fixture.audit, () => Right(arguments.sourceRevision)) match {
+        BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right(arguments.sourceRevision)) match {
           case Right(summary) =>
             assert(Files.isRegularFile(fixture.audit))
             assert(summary.protectedCaseCount == 1)
@@ -94,7 +96,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       try {
         Files.deleteIfExists(missing.authorDraft): Unit
         val arguments = parseOrFail(argumentsFor(missing))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, missing.audit, () => Right(arguments.sourceRevision)) == Left("author_draft_invalid"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right(arguments.sourceRevision)) == Left("author_draft_invalid"))
       } finally cleanup(missing)
 
       val empty = fixturePaths("empty-draft")
@@ -102,7 +104,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       try {
         Files.writeString(empty.judgedDraft, "", StandardCharsets.UTF_8)
         val arguments = parseOrFail(argumentsFor(empty))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, empty.audit, () => Right(arguments.sourceRevision)) == Left("judged_draft_invalid"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right(arguments.sourceRevision)) == Left("judged_draft_invalid"))
       } finally cleanup(empty)
     }
 
@@ -111,9 +113,9 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       prepareFixture(fixture)
       try {
         val arguments = parseOrFail(argumentsFor(fixture))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, fixture.audit, () => Right("b" * 40)) == Left("source_revision_mismatch"))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, fixture.audit, () => Right("not-a-revision")) == Left("invalid_current_revision"))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, fixture.audit, () => Left("source_revision_unavailable")) == Left("source_revision_unavailable"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right("b" * 40)) == Left("source_revision_mismatch"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right("not-a-revision")) == Left("invalid_current_revision"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Left("source_revision_unavailable")) == Left("source_revision_unavailable"))
       } finally cleanup(fixture)
     }
 
@@ -242,8 +244,8 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       assert(policy.expectedCaseCount == corpus.cases.size)
       assert(audit.frozen)
 
-      val temporaryDirectory = root.resolve("target/codex-sbt/protected-freeze-canonical")
-      val temporaryAudit = temporaryDirectory.resolve("audit.json")
+      val temporaryDirectory = root.resolve(".evidence-runs/q2-freeze/protected-freeze-canonical")
+      val temporaryAudit = temporaryDirectory.resolve("beautyq-protected-input-audit-v2.json")
       Files.createDirectories(temporaryDirectory)
       Files.deleteIfExists(temporaryAudit): Unit
       try {
@@ -260,7 +262,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
         )
         BeautyQProtectedInputFreezeMain.freezeAt(
           arguments,
-          temporaryAudit,
+          root,
           () => Right(audit.sourceRevision),
         ) match {
           case Right(summary) =>
@@ -280,13 +282,13 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
   private final class FixturePaths(val corpus: Path, val policy: Path, val authorDraft: Path, val judgedDraft: Path, val audit: Path)
 
   private def fixturePaths(name: String): FixturePaths = {
-    val directory = Paths.get("target/codex-sbt", s"protected-freeze-$name")
+    val directory = Paths.get(".evidence-runs", "q2-freeze", name)
     new FixturePaths(
       directory.resolve("corpus.json"),
       directory.resolve("policy.json"),
       directory.resolve("author-draft.json"),
       directory.resolve("judged-draft.json"),
-      directory.resolve("audit.json"),
+      directory.resolve("beautyq-protected-input-audit-v2.json"),
     )
   }
 

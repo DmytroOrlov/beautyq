@@ -1,9 +1,9 @@
 {
-  "schemaVersion": "beautyq-protected-recovery-selection-audit-v2",
+  "schemaVersion": "beautyq-protected-recovery-selection-audit-v3",
   "sourceRevision": "93f6dd2dabbe9ab61bc2f3a4a9af1caf61540f0d",
   "authorReservePassId": "q2i7-recovery-reserve-author-v1",
   "judgeReservePassId": "q2i7-recovery-reserve-judge-v1",
-  "auditPassId": "q2i7-recovery-reserve-reselection-audit-v1",
+  "auditPassId": "q2i7-recovery-reserve-reselection-audit-v2",
   "authorReserveSha256": "e0fe01d2b46661d8f09dd02e90208ffe16fed458b6b61c1900053db2564b570d",
   "judgedReserveSha256": "d39bd29e20352143641617617f033b2bad0bfbf6aad8be448640175f6e8ecd98",
   "candidateCount": 32,
@@ -25,9 +25,7 @@
     "q2i7_recovery_017",
     "q2i7_recovery_021",
     "q2i7_recovery_025",
-    "q2i7_recovery_029"
-  ],
-  "selectedCaseIds": [
+    "q2i7_recovery_029",
     "q2i7_recovery_002",
     "q2i7_recovery_006",
     "q2i7_recovery_010",
@@ -37,9 +35,19 @@
     "q2i7_recovery_026",
     "q2i7_recovery_031"
   ],
-  "finalAuthorDraftSha256": "05c3e8541db825db7e2e6eb19b70d5de570774b34281cbaf947c5e6909c40ee0",
-  "finalJudgedHoldoutSha256": "8cb610876c0de0b2961d7f9dfb0c75d4eca944e2ba93787245b8bae1b2ec1d6c",
-  "finalProtectedCorpusFingerprint": "87002a0e79984365320b40f31f8cf4c76c7a4757d86ab3a4e1674819514651af",
-  "finalProtectedPolicyFingerprint": "14781a4c2832374ee0f46540c8a532fc853d291841715ed816f12d0fa23c8045",
+  "selectedCaseIds": [
+    "q2i7_recovery_003",
+    "q2i7_recovery_007",
+    "q2i7_recovery_011",
+    "q2i7_recovery_015",
+    "q2i7_recovery_019",
+    "q2i7_recovery_023",
+    "q2i7_recovery_027",
+    "q2i7_recovery_032"
+  ],
+  "finalAuthorDraftSha256": "50dbe967e4a0b2f8b093d5e7300716b4494d3270451927b96b9ca60899bd1fed",
+  "finalJudgedHoldoutSha256": "1e67db56025a1470cd16de05c704035aa2f3ef9b947a508b75250576aebb3361",
+  "finalProtectedCorpusFingerprint": "f531e287027595a602fe97f44cae7d7cfbe2759be8f1b18d594d21ecbdb83f6e",
+  "finalProtectedPolicyFingerprint": "c9c0677f25b45310376d0e2aa4c678a1e579a984f0dc8cd2e8ef0bba6990289b",
   "canonicalCatalogFingerprint": "c94327bc85913d44edfa7eb3cc255193a71e1e48382704ba2645ae07bd8b9c81"
 }

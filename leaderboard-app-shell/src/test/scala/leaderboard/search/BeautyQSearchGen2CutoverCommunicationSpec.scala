@@ -163,8 +163,8 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
           writeArtifact("target/search-gen2/beautyq-evaluation-score-separation.json", measured.scoreSeparationJson)
           writeArtifact("target/search-gen2/beautyq-evaluation-correction-gate.json", measured.correctionGate.toJson)
 
-          assert(measured.warmupExecutions == 124)
-          assert(measured.measuredExecutions == 372)
+          assert(measured.warmupExecutions == 132)
+          assert(measured.measuredExecutions == 396)
           if (!measured.correctionGate.passed) {
             val failed = measured.correctionGate.checks.filterNot(_.passed)
             val separation = measured.correctionGate.supplementScoreSeparation

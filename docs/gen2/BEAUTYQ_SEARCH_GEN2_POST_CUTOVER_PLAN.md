@@ -389,10 +389,13 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **POST-RECOVERY EXACT-INTENT DISCLOSED; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
+Status: **RECOVERY ROTATION 2 SOURCE AND FREEZE READY FOR REVIEW;
+FRESH PROTECTED ACCEPTANCE REQUIRED**
 
-Catalog-bound recovery source and deterministic freeze proofs are complete. Fresh protected
-acceptance remains pending. Bootstrap, promotion and verify remain behind their documented gates.
+Another authorized exact-intent recovery rotation has been materialized.
+Recovery source and deterministic freeze proofs are ready for review.
+Fresh protected acceptance remains pending; bootstrap, promotion and verify
+have not run.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation

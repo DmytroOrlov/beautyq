@@ -585,22 +585,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_002",
+      "id": "q2i7_recovery_003",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "shellac manicure with design near me",
-      "language": "en",
+      "query": "гель-лак маникюр рядом со мной",
+      "language": "ru",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Manicure with shellac coating and design",
+      "userIntent": "Manicure with gel polish coating",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "798c4326-e081-59a9-b659-98671f1fd656"
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -621,22 +621,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_006",
+      "id": "q2i7_recovery_007",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "педикюр с гель-лаком недорого",
-      "language": "ru",
+      "query": "pedicure with gel polish near me",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
       "userIntent": "Pedicure with gel polish coating",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "d850b4ca-0f64-5527-81cb-ae6fc212b102"
+            "083f3849-b865-5a7e-ac02-90b5945320f8"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -657,166 +657,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_010",
+      "id": "q2i7_recovery_011",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "volume lashes 3d appointment",
-      "language": "en",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Volume 3D lash extensions",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "0642fde2-37fc-5977-81b4-0320d176f6b8"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i7_recovery_014",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "окрашивание бровей краской",
-      "language": "ru",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Brow tinting with dye",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "28d5239f-82ce-518c-819b-e59ad79038eb"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i7_recovery_018",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "pmu eyeliner tattoo appointment",
-      "language": "en",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "PMU eyeliner tattoo",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "af1c4586-deba-5c90-bf0f-6fb85abd76f7"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i7_recovery_022",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "классическая чистка лица глубокое очищение",
-      "language": "ru",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Classic facial cleansing",
-      "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "54568273-7762-5881-a027-0900965ddba4"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i7_recovery_026",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "waxing oberlippe termin vereinbaren",
+      "query": "lash lifting mit färben buchen",
       "language": "de",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Wax upper lip hair removal",
+      "userIntent": "Lash lifting with tinting",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "94575ead-5606-58fc-9bff-7f2918344c74"
+            "d658c194-38f7-5396-b8cb-cf155739c235"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -837,22 +693,166 @@
       }
     },
     {
-      "id": "q2i7_recovery_031",
+      "id": "q2i7_recovery_015",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "acrylic nail modeling extension",
+      "query": "henna brows treatment booking",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Acrylic nail modeling",
+      "userIntent": "Henna brow treatment",
       "notes": [
-        "Selected as the first unused candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_019",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "перманентный макияж бровей",
+      "language": "ru",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "PMU brows permanent makeup",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c3bf48ba-6b81-5447-b6eb-c6320def9ed4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_023",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "microneedling facial treatment session",
+      "language": "en",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "Microneedling facial treatment",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "bf052e78-8be1-5267-93bb-fd92ff9b7f68"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_027",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "sugaring oberlippe zuhause nah",
+      "language": "de",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "Sugaring upper lip hair removal",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "97bd38cc-a019-5306-972c-ca72dbd52b77"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_032",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "снятие наращенных ногтей и уход",
+      "language": "ru",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "Nail modeling removal and care",
+      "notes": [
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored catalog-bound recovery reserve."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "8dd7a820-e280-5a64-a390-bb1fb810b77a"
           ],
           "forbiddenIds": [],
           "neutralIds": [],

@@ -33,6 +33,9 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("lip"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("nail extension"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("builder gel"))
+      assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r005").exists(_.aliases.contains("nail modeling")))
+      assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r070").exists(_.aliases.contains("waxing")))
+      assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r078").exists(_.aliases.contains("oberlippe")))
     }
   }
 
@@ -438,6 +441,11 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
           assert(satisfies, s"rule ${rule.id.value} requires $required which no rule produces")
         }
       }
+    }
+    "keep oberlippe r078 contextual and require service(hair_removal)" in {
+      val r078 = BeautyQIntentVocabulary.rules.find(_.id.value == "r078").getOrElse(fail("r078 not found"))
+      assert(r078.mode == IntentRuleMode.Contextual)
+      assert(r078.requires.contains(service("hair_removal")))
     }
   }
 }

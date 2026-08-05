@@ -103,8 +103,21 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
           assert(expectedCount == 8)
         case other => fail(s"expected post-recovery full-slice authorization, got $other")
       }
-      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 5)
-      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 5)
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 6)
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 6)
+
+      val sixth = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2Authorization
+      assert(sixth.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId)
+      assert(sixth.applicationRevision == "440fdf2827a880ea02c36fb3044c18d1b1874c23")
+      assert(sixth.protectedCorpusFingerprint == "87002a0e79984365320b40f31f8cf4c76c7a4757d86ab3a4e1674819514651af")
+      assert(sixth.policyFingerprint == "14781a4c2832374ee0f46540c8a532fc853d291841715ed816f12d0fa23c8045")
+      assert(sixth.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      sixth.disclosureScope match {
+        case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+          assert(sliceId == "exact-intent")
+          assert(expectedCount == 8)
+        case other => fail(s"expected recovery-rotation-2 full-slice authorization, got $other")
+      }
 
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(

@@ -92,15 +92,36 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
       ).isLeft)
     }
 
+    "accept the recovery-rotation-2 authorization only with its exact revision and failed check" in {
+      val rotation2 = replaceValue(
+        replaceValue(validArguments, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId),
+        "--application-revision",
+        "440fdf2827a880ea02c36fb3044c18d1b1874c23",
+      )
+      val parsed = BeautyQProtectedBreakGlassMain.parseArguments(rotation2).fold(error => fail(error), identity)
+      assert(parsed.authorizationId == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId)
+      assert(parsed.applicationRevision == "440fdf2827a880ea02c36fb3044c18d1b1874c23")
+      assert(parsed.expectedFailedCheck == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(rotation2, "--application-revision", "718660275e72b287c24aec494c174c3d3a55bef0")
+      ).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(rotation2, "--expected-failed-check", "metric-other")
+      ).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(rotation2, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.PostRecoveryAuthorizationId)
+      ).isLeft)
+    }
+
     "accept only one fresh ignored run root and never overwrite it" in {
       val repositoryRoot = Paths.get("").toAbsolutePath.normalize
       val fresh = parse(validArguments)
       assert(BeautyQProtectedBreakGlassMain.validateDestinations(fresh, repositoryRoot).isRight)
 
-      val existingPath = repositoryRoot.resolve("target/search-gen2/q2-break-glass/existing-owner-spec")
+      val existingPath = repositoryRoot.resolve(".evidence-runs/q2-break-glass/existing-owner-spec")
       Files.createDirectories(existingPath)
       try {
-        val existing = parse(replaceValue("--run-root", "target/search-gen2/q2-break-glass/existing-owner-spec"))
+        val existing = parse(replaceValue("--run-root", ".evidence-runs/q2-break-glass/existing-owner-spec"))
         BeautyQProtectedBreakGlassMain.validateDestinations(existing, repositoryRoot) match {
           case Left(value) =>
             assert(value == "break_glass_run_root_already_exists")
@@ -118,7 +139,7 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
         "docs/q2-break-glass",
         "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/run",
         "beautyq-search-gen2-eval/src/main/resources/leaderboard/search/beautyq/gen2/eval/run",
-        "target/search-gen2/q2-break-glass/../escaped",
+        ".evidence-runs/q2-break-glass/../docs",
       )
       rejected.foreach { path =>
         val arguments = parse(replaceValue("--run-root", path))
@@ -148,7 +169,7 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
   private val validArguments = Vector(
     "--protected-corpus", "protected.json",
     "--protected-policy", "policy.json",
-    "--run-root", "target/search-gen2/q2-break-glass/fresh-owner-spec",
+    "--run-root", ".evidence-runs/q2-break-glass/fresh-owner-spec",
     "--application-revision", "718660275e72b287c24aec494c174c3d3a55bef0",
     "--expected-failed-check", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
     "--authorization-id", BeautyQProtectedBreakGlassDisclosure.FullSliceCycle3AuthorizationId,

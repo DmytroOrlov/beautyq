@@ -90,6 +90,7 @@ object BeautyQProtectedBreakGlassDisclosure {
   val FullSliceCycle3AuthorizationId = "q2-break-glass-exact-intent-full-slice-cycle-3-v1"
   val ConvergenceAuthorizationId = "q2-break-glass-exact-intent-convergence-v1"
   val PostRecoveryAuthorizationId = "q2-break-glass-exact-intent-post-recovery-v1"
+  val RecoveryRotation2AuthorizationId = "q2-break-glass-exact-intent-recovery-rotation-2-v1"
   val AuthorizedSliceId = "exact-intent"
 
   private[eval] sealed trait DisclosureScope
@@ -152,8 +153,17 @@ object BeautyQProtectedBreakGlassDisclosure {
     DisclosureScope.CompleteSlice(AuthorizedSliceId, expectedCount = 8),
   )
 
+  val RecoveryRotation2Authorization: AuthorizationRecord = new AuthorizationRecord(
+    RecoveryRotation2AuthorizationId,
+    "440fdf2827a880ea02c36fb3044c18d1b1874c23",
+    "87002a0e79984365320b40f31f8cf4c76c7a4757d86ab3a4e1674819514651af",
+    "14781a4c2832374ee0f46540c8a532fc853d291841715ed816f12d0fa23c8045",
+    AuthorizedCheckCode,
+    DisclosureScope.CompleteSlice(AuthorizedSliceId, expectedCount = 8),
+  )
+
   val Authorizations: Vector[AuthorizationRecord] =
-    Vector(FirstAuthorization, Cycle2Authorization, FullSliceCycle3Authorization, ConvergenceAuthorization, PostRecoveryAuthorization)
+    Vector(FirstAuthorization, Cycle2Authorization, FullSliceCycle3Authorization, ConvergenceAuthorization, PostRecoveryAuthorization, RecoveryRotation2Authorization)
 
   def authorizationById(id: String): Option[AuthorizationRecord] =
     Authorizations.find(_.id == id)
