@@ -39,8 +39,8 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 108 cases after the exact-intent full-slice migration" in {
-      assert(corpus.cases.length == 108)
+    "have exactly 116 cases after the exact-intent convergence migration" in {
+      assert(corpus.cases.length == 116)
     }
 
     "have every case as Regression" in {
@@ -139,6 +139,60 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
         case other => fail(s"expected the exact powder-brow constraints, got $other")
       }
       assert(intent.residualText.isEmpty)
+    }
+  }
+
+  "q2 convergence migrated cases" should {
+    "retain exact typed parser constraints for all eight visible migrations" in {
+      val cases = Vector(
+        "q2i5_reserve_001" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+        ),
+        "q2i5_reserve_004" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "q2i5_reserve_007" -> Set(
+          Fields.serviceCode.id -> Set("manicure", "pedicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure", "pedicure"),
+        ),
+        "q2i5_reserve_010" -> Set(
+          Fields.serviceCode.id -> Set("facial"),
+          Fields.enumAttributesByCode("facial_treatment_type").id -> Set("bb_glow"),
+          Fields.enumAttributesByCode("body_area").id -> Set("face"),
+        ),
+        "q2i5_reserve_013" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+        ),
+        "q2i5_reserve_016" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "q2i5_reserve_019" -> Set(
+          Fields.serviceCode.id -> Set("facial"),
+          Fields.enumAttributesByCode("facial_treatment_type").id -> Set("cleansing"),
+          Fields.enumAttributesByCode("body_area").id -> Set("face"),
+        ),
+        "q2i5_reserve_022" -> Set(
+          Fields.serviceCode.id -> Set("lashes"),
+          Fields.enumAttributesByCode("lash_service_type").id -> Set("removal"),
+          Fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+        ),
+      )
+
+      cases.foreach { case (id, expected) =>
+        val intent = parseFromCorpus(exactlyOneCase(id))
+        val actual = intent.hardConstraints.collect {
+          case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+            field.id -> values.map(field.codec.encodeCanonical)
+        }.toSet
+        assert(actual == expected, s"unexpected convergence constraints for '$id': $actual")
+        assert(intent.hardConstraints.size == expected.size)
+      }
     }
   }
 }

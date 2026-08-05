@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — exact-intent closure source ready, 108-case visible managed proof green, protected holdout independently replenished and frozen, commit/root evidence/fresh protected acceptance pending, D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — CONVERGENCE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; 116-case visible managed proof green; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -198,13 +198,13 @@ the five versioned test resources owned by `beautyq-search-gen2-eval`:
 - `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json` — author-pass provenance input;
 - `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json` — judge-pass provenance input.
 
-All five are tracked test resources available after an ordinary checkout. “Protected” means frozen
-and excluded from output-driven tuning; it does not mean confidential. They are not production
-`src/main/resources`, and no external restore or CI secret provisioning is required. The audit record
-is evidence about validation and freeze, contains no cases or judgments, and is not an acceptance-policy
-owner. Exact and normalized duplicate checks detect direct leakage only; they are not semantic-similarity
-or fuzzy-search claims. Bootstrap and verify consume the frozen corpus and policy read-only and never
-author or modify them.
+All five are tracked test-resource paths available after an ordinary checkout. “Protected” means
+excluded from output-driven tuning; it does not mean confidential or imply that the current bytes have
+passed freeze validation. They are not production `src/main/resources`, and no external restore or CI
+secret provisioning is required. The audit record is evidence about validation and freeze, contains no
+cases or judgments, and is not an acceptance-policy owner. Exact and normalized duplicate checks detect
+direct leakage only; they are not semantic-similarity or fuzzy-search claims. Bootstrap and verify
+consume only a reproducibly frozen corpus and policy and never author or modify them.
 
 The exact freeze invocation is:
 
@@ -226,36 +226,15 @@ sbt --batch --no-global \
     --audit-pass-id <stable-audit-pass-id>'
 ```
 
-The integrity closeout freeze completed with this exact invocation:
-
-```bash
-sbt --batch --no-global \
-  -Dsbt.server=false \
-  -Dsbt.server.forcestart=true \
-  -Dsbt.ivy.home=target/codex-sbt/ivy2 \
-  'leaderboard-app-shell/Test/runMain \
-    leaderboard.search.BeautyQProtectedInputFreezeMain \
-    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
-    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
-    --author-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json \
-    --judged-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json \
-    --audit-output target/search-gen2/private/beautyq-protected-input-audit-v2.json \
-    --source-revision 3f55a3082d617fcca55be8104111893fb251b906 \
-    --author-pass-id q2i-recovery-author-v2 \
-    --judge-pass-id q2i-recovery-judge-v2 \
-    --audit-pass-id q2i-recovery-audit-v2'
-```
-
-The completed freeze produced an aggregate audit binding source revision, typed corpus/policy and
-canonical-source fingerprints, input/draft hashes, ordered slice counts, exact-intent completeness,
-and catalog/leakage validation outcomes. Those exact values belong to the operator's protected audit
-record rather than this public runbook. Protected execution has not occurred, and no accepted manifest
-has been generated.
+The command is valid only when the four source inputs already satisfy the author/judge separation,
+canonical catalog identity, disjointness and schema contracts. A generated audit is evidence only when
+strict decoding succeeds and its bytes reproduce the reviewed tracked audit. Invocation success from
+an earlier input generation must not be used to bless a later replenishment.
 
 ## Canonical Q2-I evaluation resources
 
-The first Q2-I fixture is versioned under `beautyq-search-gen2-eval/src/test/resources` and is
-available after an ordinary checkout. The canonical files are:
+Protected input owners are versioned under `beautyq-search-gen2-eval/src/test/resources` and are
+available after an ordinary checkout. The canonical paths are:
 
 - `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json` — protected evaluation input;
 - `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json` — protected acceptance-gate input;
@@ -263,12 +242,14 @@ available after an ordinary checkout. The canonical files are:
 - `leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json` — author-pass provenance input;
 - `leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json` — judge-pass provenance input.
 
-All five are tracked test resources owned by the BeautyQ evaluation module. They are not production
-`src/main/resources`, and no external restore or CI secret provisioning is required. The author and
-judged drafts reproduce the separated author/judge provenance used by the freeze audit; they are not
-bootstrap runtime inputs. “Protected” is an evaluation-process classification: ordinary development
-must not tune labels, thresholds, vocabulary, or search behavior from protected execution output.
-Aggregate-only execution and break-glass migration/replenishment rules remain unchanged.
+All five paths are tracked test-resource owners in the BeautyQ evaluation module. They are not
+production `src/main/resources`, and no external restore or CI secret provisioning is required. Their
+presence does not prove that a particular replenishment is valid: author/judge separation, canonical
+catalog identity validation and deterministic audit reproduction must all pass for the same bytes.
+The current convergence recovery has completed all source-side proofs; the tracked holdout is frozen at
+24 cases with slices 8/6/4/3/3. Fresh protected acceptance has not run.
+"Protected" is an evaluation-process classification: ordinary development must not tune labels,
+thresholds, vocabulary or search behavior from protected execution output.
 
 The freeze runner reads the four source inputs from these canonical test-resource paths and writes only
 a verification audit under `target/search-gen2/private/beautyq-protected-input-audit-v2.json`. After
@@ -280,8 +261,9 @@ Q2-I inputs.
 
 ### Phase 1 — protected acceptance and bootstrap candidate only
 
-Begin only after the coordinator has recorded a green root aggregate suite for the committed
-supplement-boundary closeout and the tracked canonical test resources have been verified.
+Begin only after the tracked protected inputs have passed canonical catalog validation and
+deterministic freeze/audit reproduction, and the coordinator has accepted root evidence for the exact
+committed application revision being evaluated.
 Protected acceptance inputs are versioned evaluation resources, not production resources:
 
 - `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json`
@@ -313,63 +295,16 @@ The protected runner writes exactly three aggregate-only artifacts:
 It never emits protected case IDs, queries or result IDs. Missing or malformed protected inputs and
 unavailable external resources are non-zero operational failures, not synthetic acceptance.
 
-### Latest protected Q2-B disposition
+### Current protected Q2 boundary
 
-The last correctly attributed protected acceptance used committed revision
-`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`, reported `applicationRevisionSource=system-property`,
-and was red only on `metric-protected-slice:exact-intent-variants/success/10`. The coordinator then
-authorized `q2-break-glass-exact-intent-variants-success-10-v1`. Before disclosure, an isolated
-48-case replacement reserve was independently authored, judged, structurally audited, and frozen.
-The break-glass owner disclosed only the seven cases contributing to that authorized check, using the
-minimal typed top-cutoff projection and without emitting metric values, thresholds, unrelated
-identities, or passing protected cases.
+Q2 protected correction is in convergence-recovery-source state. The holdout has been rebuilt at
+24 cases (slices 8/6/4/3/3) from a catalog-bound recovery reserve with tracked provenance under
+`beautyq-search-gen2-eval/src/test/resources/`. Fresh protected acceptance has not run.
 
-All seven disclosed cases are now permanent visible Regression evidence. The BeautyQ vocabulary owns
-the source correction, including the appended r089 declaration; generic precedence, ranking, metric,
-threshold, and lifecycle owners were not changed. The managed visible communication proof passed with
-96 warmup executions and 288 measured executions, including every hard/no-harm gate. Seven replacements
-were selected only from the frozen pre-disclosure reserve. The protected corpus was audited and frozen
-again at 24 cases with slice counts 8/6/4/3/3.
-
-The first correction was committed and covered by green operator-owned root evidence, but its fresh,
-correctly attributed protected run was again red only on the same exact-intent success/10 check. A
-second authorization was bound to that revision and its corpus/policy fingerprints. A new 16-case
-exact-intent reserve was authored, judged, audited and frozen before disclosure. The owner disclosed
-only four minimal contributors, all now permanent visible Regression evidence.
-
-The first divergent boundary was BeautyQ intent normalization before the generic matcher. The second
-correction adds finite request-carrier removal, reusable Russian inflection and AquaFacial
-transliteration equivalence, plus the contextual r090 lash-removal action. It does not change generic
-precedence, ranking, thresholds, protected policy meanings, labels, judgments or lifecycle behavior.
-The managed visible proof passed with 100 warmups and 300 measured executions, including every
-hard/no-harm gate and zero forbidden hits. Four replacements were selected in stable order only from
-the frozen second-cycle reserve; the protected corpus was audited and frozen again at 24 cases with
-slice counts 8/6/4/3/3.
-
-The committed second correction was covered by green operator-owned root evidence, but the next blind
-holdout again failed only the same exact-intent success/10 check. Because two minimal-contributor
-cycles had not established generalization, the final authorization disclosed the complete current
-eight-case exact-intent slice; no case from another protected slice was disclosed. All eight cases are
-now permanent visible Regression evidence.
-
-Before that disclosure, a new 24-case reserve covering the public exact-intent conformance matrix was
-authored, judged, structurally audited and frozen without protected/visible inventory or search-output
-access. Cross-generation diagnosis located the first divergence at the boundary between
-`BeautyQIntentTextGen2.tokenizeForIntentMatching` and BeautyQ declaration ownership. The text owner now
-performs only mechanical one-token spelling, inflection and transliteration normalization. Multi-token
-service, coating and design semantics are declared and traced in the typed
-`BeautyQIntentVocabulary`, including r091 and the nail-family-contextual r092. There is no tokenizer
-shadow phrase vocabulary, and action-bearing German tokens are retained instead of being globally
-discarded. The semantic correction introduces no query branches, threshold changes or judgment
-changes. Eight replacements were selected only from the frozen reserve. The protected corpus is
-audited and frozen at 24 cases with slice counts 8/6/4/3/3.
-
-The managed visible proof passed with 108 warmups and 324 measured executions, every hard/no-harm gate
-green and zero forbidden hits. This exact-intent closure source has not been evaluated through
-post-correction protected acceptance. Preserve all earlier RED generations as historical evidence.
-Next, review and commit this source patch, obtain operator-owned root evidence for that exact commit,
-and run one fresh correctly attributed protected acceptance. Bootstrap and candidate generation remain
-unauthorized until that fresh protected gate is green; promotion and verify remain later boundaries.
+The recovery reserve was independently authored from public typed contracts and canonical catalog
+identities with separate author and judge passes. The selection audit binds resource hashes, final
+fingerprints, and deterministic selection. Future invalid reserves must still be rejected under the
+same contract. Recovery author/judge passes must remain isolated and catalog-bound.
 
 After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
 same clean committed application revision and verified tracked canonical inputs:

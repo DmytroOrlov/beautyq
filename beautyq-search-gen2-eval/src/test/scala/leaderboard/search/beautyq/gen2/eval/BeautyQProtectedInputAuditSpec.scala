@@ -3,6 +3,9 @@ package leaderboard.search.beautyq.gen2.eval
 import io.circe.Json
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.security.MessageDigest
+import scala.io.Source
+
 final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
   "BeautyQProtectedInputAudit" should {
     "construct exact validated evidence and preserve deterministic ordered JSON" in {
@@ -81,6 +84,44 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       val encoded = validFixture().audit.toJson.noSpaces
       val forbidden = Vector("caseId", "query", "acceptableIds", "forbiddenIds", "resultId", "judgments", "notes")
       assert(forbidden.forall(value => !encoded.contains(value)))
+    }
+
+    "keep the convergence author draft strict, author-only, and separate from judged bytes" in {
+      val authorRaw = readResource(AuthorDraftResource)
+      val judgedRaw = readResource(JudgedDraftResource)
+      val protectedCorpus = BeautyQProtectedEvaluationCorpus.load(
+        resourcePath(ProtectedCorpusResource),
+        BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity),
+        BeautyQProtectedAcceptancePolicy.load(resourcePath(PolicyResource)).fold(error => fail(error.toString), identity),
+      ).fold(error => fail(error.toString), identity)
+
+      val author = BeautyQProtectedAuthorDraft.decodeString(authorRaw).fold(error => fail(error), identity)
+      assert(author.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
+      assert(author.sourceRevision == "eeccefe8bde82a1ac93f426aa4e58cf936178640")
+      assert(author.authorPassId == "q2-exact-intent-convergence-recovery-author-v1")
+      assert(author.cases.size == 24)
+      assert(BeautyQProtectedAuthorDraft.correspondsTo(author, protectedCorpus).isRight)
+      assert(authorRaw != judgedRaw)
+      Vector("judgments", "acceptableIds", "forbiddenIds", "neutralIds", "gradedGains", "resultId", "providerId", "serviceIntentId")
+        .foreach(field => assert(!authorRaw.contains(field), s"author draft leaked $field"))
+      assert(judgedRaw == readResource(ProtectedCorpusResource))
+    }
+
+    "bind the tracked audit to both independent loads and exact resource hashes" in {
+      val audit = BeautyQProtectedInputAudit.decodeString(readResource(AuditResource)).fold(error => fail(error.stableCode), identity)
+      val corpus = BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity)
+      val policy = BeautyQProtectedAcceptancePolicy.load(resourcePath(PolicyResource)).fold(error => fail(error.toString), identity)
+      assert(audit.protectedCorpusFingerprint == BeautyQProtectedEvaluationCorpus.load(
+        resourcePath(ProtectedCorpusResource), corpus, policy,
+      ).fold(error => fail(error.toString), identity).corpusFingerprint)
+      assert(audit.protectedPolicyFingerprint == policy.fingerprint)
+      assert(audit.protectedCorpusSha256 == sha256(resourcePath(ProtectedCorpusResource)))
+      assert(audit.protectedPolicySha256 == sha256(resourcePath(PolicyResource)))
+      assert(audit.judgedDraftSha256 == sha256(resourcePath(JudgedDraftResource)))
+      assert(audit.authorDraftSha256 == sha256(resourcePath(AuthorDraftResource)))
+      assert(audit.authorDraftSha256 != audit.judgedDraftSha256)
+      assert(audit.protectedCorpusFingerprint == "bd821a976622ad0157ec4c818f92187c60e08b2b5123f6306dea7878ef0aad17")
+      assert(audit.protectedPolicyFingerprint == "5422773856685e4ff781b04c39b266c6ac5de06c0fadfb63f8d4f6bea3929755")
     }
 
     "close direct construction, copy and subclassing" in {
@@ -267,6 +308,27 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       "minimum" -> Json.fromString("1.000000000000"),
     )),
   )
+
+  private def resourcePath(name: String): java.nio.file.Path =
+    Option(getClass.getClassLoader.getResource(name)) match {
+      case Some(resource) => java.nio.file.Paths.get(resource.toURI)
+      case None => fail(s"missing resource: $name")
+    }
+
+  private def readResource(name: String): String = {
+    val stream = Option(getClass.getClassLoader.getResourceAsStream(name)).getOrElse(fail(s"missing resource: $name"))
+    try Source.fromInputStream(stream, "UTF-8").mkString
+    finally stream.close()
+  }
+
+  private val AuthorDraftResource = "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json"
+  private val JudgedDraftResource = "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json"
+  private val ProtectedCorpusResource = "leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json"
+  private val PolicyResource = "leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json"
+  private val AuditResource = "leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json"
+
+  private def sha256(path: java.nio.file.Path): String =
+    MessageDigest.getInstance("SHA-256").digest(java.nio.file.Files.readAllBytes(path)).map(byte => f"${byte & 0xff}%02x").mkString
 
   private def decodeCorpus(json: Json): BeautyQEvaluationCorpus =
     BeautyQEvaluationCorpus.decodeFromJson(json) match {

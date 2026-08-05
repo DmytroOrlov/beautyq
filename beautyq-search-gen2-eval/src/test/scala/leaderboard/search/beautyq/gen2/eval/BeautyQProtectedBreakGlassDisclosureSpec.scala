@@ -64,6 +64,7 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       val first = BeautyQProtectedBreakGlassDisclosure.FirstAuthorization
       val second = BeautyQProtectedBreakGlassDisclosure.Cycle2Authorization
       val third = BeautyQProtectedBreakGlassDisclosure.FullSliceCycle3Authorization
+      val convergence = BeautyQProtectedBreakGlassDisclosure.ConvergenceAuthorization
       assert(first.id == BeautyQProtectedBreakGlassDisclosure.AuthorizationId)
       assert(first.applicationRevision == "89811d5f2ad5327b24b2aac4641f4716d781000e")
       assert(first.protectedCorpusFingerprint == "825ca2862ad99b61002bcf04bfe000168eccc61760d9a1d091c0c4320afc9bb0")
@@ -78,6 +79,17 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       assert(third.protectedCorpusFingerprint == "23fe801f0b1c48b77847a94d0eb260ee5e2faac5018c67bab5debce382b5f2d0")
       assert(third.policyFingerprint == "c80f15f5cb7beb8ad5f01bec82146c67e17d8a3bc0a31e4e88a49fd115e9b360")
       assert(third.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      assert(convergence.id == BeautyQProtectedBreakGlassDisclosure.ConvergenceAuthorizationId)
+      assert(convergence.applicationRevision == "eeccefe8bde82a1ac93f426aa4e58cf936178640")
+      assert(convergence.protectedCorpusFingerprint == "d72b29d6d9e13e21b34722fa4c8219975aae7613ba0c003326baefc5da056a6e")
+      assert(convergence.policyFingerprint == "6a8a4f68f69d85467db941284dfc5181f48bfb3f7d3d7631d87fd9c17261c622")
+      assert(convergence.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      convergence.disclosureScope match {
+        case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+          assert(sliceId == "exact-intent")
+          assert(expectedCount == 8)
+        case other => fail(s"expected convergence full-slice authorization, got $other")
+      }
 
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
@@ -113,6 +125,8 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       assert(encoded.contains("protected-passing"))
       assert(!encoded.contains("protected-other-slice"))
       assert(!encoded.contains("other-slice-sentinel"))
+      assert(!encoded.contains("accepted-baseline"))
+      assert(!encoded.contains("canonical"))
     }
 
     "reject a full-slice authorization whose expected disclosure count or slice differs" in {

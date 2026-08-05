@@ -11,42 +11,24 @@ Start here:
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide domain/search ownership principles
 * [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical domain authoring, lifecycle composition, proof selection, and focused validation
 * [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, verification ownership, and delivery closure
-* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0/O1 foundations, the active Q2 correction and its measured evidence, and eval-first second-domain work
+* [BeautyQ Search Gen2 post-cutover plan](docs/gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md) — completed Q1/O0/O1 foundations, the active Q2 recovery boundary, and eval-first second-domain work
 * [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — Required/Preferred/Disabled launcher modes, operator status, response warnings, restart-only recovery, and partial-activation procedures
 * [BeautyQ Search Gen2 architecture review](docs/gen2/BEAUTYQ_SEARCH_GEN2_REVIEW.md) — historical Gen1 evidence and architectural motivation
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow and anti-scope-drift rules
 
 BeautyQ Search Gen2 is the complete native serving architecture. Its declaration, baseline/supplement,
-lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete. The authorized
-Q2 required two explicitly authorized minimal-contributor disclosures, but neither correction
-generalized to the next independently replenished exact-intent holdout. The final bounded escalation
-disclosed the complete current eight-case exact-intent slice and permanently migrated it to visible
-Regression evidence; no other protected slice was disclosed. Cross-generation diagnosis placed the
-first divergence in BeautyQ lexical normalization and declaration ownership. Mechanical one-token
-spelling, inflection and transliteration normalization remains in `BeautyQIntentTextGen2`; multi-token
-service, coating and design meaning is owned and traced by the typed `BeautyQIntentVocabulary`,
-including context-safe r091/r092 declarations. The tokenizer contains no shadow semantic phrase
-vocabulary and does not globally erase action-bearing words. The correction does not branch on
-disclosed queries. The complete managed 108-case / 324-execution
-hard/no-harm run is green with zero forbidden hits.
-Protected-acceptance machinery and the manual accepted-baseline bootstrap/verify
-owners are implemented. Q2-I protected inputs were model-assisted, source-grounded,
-catalog-bound, audited, and frozen as versioned test resources under `beautyq-search-gen2-eval`;
-an ordinary checkout contains them. “Protected” means excluded from output-driven tuning and emitted
-only through aggregate protected reports; these inputs are not production serving resources. Q2-A
-migration scope-drift audit is completed. All nineteen cases disclosed across the two minimal cycles
-and the final full-slice escalation are now visible regression evidence. A new 24-case exact-intent
-reserve was authored, judged, audited and frozen before the final disclosure; eight replacements were
-then selected from it, and the protected holdout was refrozen at 24 cases with slice counts 8/6/4/3/3.
-Post-correction protected acceptance, bootstrap,
-candidate generation, accepted-baseline promotion, and verify remain pending until this source patch is
-reviewed, committed, and receives exact-revision root evidence. No output-driven threshold, label, or
-judgment tuning was performed. Q2-B is **EXACT-INTENT CLOSURE SOURCE READY; COMMIT, ROOT EVIDENCE, AND
-FRESH PROTECTED ACCEPTANCE REQUIRED**. No external restore or CI secret provisioning is required. No recovery-wave Gen1/legacy
-reintroduction was found. No external
-employee or separately hired reviewer is required: the
-checkout operator is the approval authority, provenance is recorded, and inputs are frozen before
-protected execution. D1 is not started and requires second-domain product input.
+lifecycle-authorization, and route ownership are frozen. Q1, O0 and O1 are complete; Q2 remains active
+and D1 has not started. Mechanical one-token spelling, inflection and transliteration normalization is
+owned by `BeautyQIntentTextGen2`; multi-token service and attribute meaning is owned and traced by the
+typed `BeautyQIntentVocabulary`. Disclosed protected cases are permanent visible Regression evidence.
+
+The convergence replenishment reserve was rejected because most candidate variant judgments
+were absent from the canonical typed catalog. No product identity was invented to rescue it. A
+fresh isolated recovery reserve was authored from public typed contracts and canonical catalog
+identities. The protected holdout was rebuilt at 24 cases with slices 8/6/4/3/3. Visible corpus
+remains 116 cases; accepted visible managed evidence remains 116 warmups / 348 measured executions,
+zero forbidden hits, and deterministic rankings. Post-correction protected acceptance, bootstrap,
+candidate generation, promotion and verify were not run.
 
 The route/Qdrant sections below are current operational truth.
 

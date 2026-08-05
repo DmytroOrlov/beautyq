@@ -1,0 +1,391 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-author-reserve-v1",
+  "sourceRevision": "93f6dd2dabbe9ab61bc2f3a4a9af1caf61540f0d",
+  "authorPassId": "q2i7-recovery-reserve-author-v1",
+  "cases": [
+    {
+      "id": "q2i7_recovery_001",
+      "query": "gel polish manicure appointment nearby",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with gel polish coating",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_002",
+      "query": "shellac manicure with design near me",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with shellac coating and design",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_003",
+      "query": "гель-лак маникюр рядом со мной",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with gel polish coating",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_004",
+      "query": "Gel-Nagellack Maniküre buchen",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with gel polish coating",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_005",
+      "query": "classic pedicure with regular polish",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with regular polish coating",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_006",
+      "query": "педикюр с гель-лаком недорого",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with gel polish coating",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_007",
+      "query": "pedicure with gel polish near me",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with gel polish coating",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_008",
+      "query": "Shellac Pediküre in der Nähe",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with shellac coating",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_009",
+      "query": "classic lash extensions 1d near me",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Classic 1D lash extensions",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_010",
+      "query": "volume lashes 3d appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Volume 3D lash extensions",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_011",
+      "query": "lash lifting mit färben buchen",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Lash lifting with tinting",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_012",
+      "query": "lifting ресниц без наращивания",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Lash lifting without extensions",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_013",
+      "query": "brow lamination and tinting near me",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Brow lamination with tinting",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_014",
+      "query": "окрашивание бровей краской",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Brow tinting with dye",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_015",
+      "query": "henna brows treatment booking",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Henna brow treatment",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_016",
+      "query": "Brauen Laminierung mit Färbung",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Brow lamination with tinting",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_017",
+      "query": "pmu eyebrows permanent makeup",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "PMU brows permanent makeup",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_018",
+      "query": "pmu eyeliner tattoo appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "PMU eyeliner tattoo",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_019",
+      "query": "перманентный макияж бровей",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "PMU brows permanent makeup",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_020",
+      "query": "PMU Augenbrauen Permanent Make-up",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "PMU brows permanent makeup",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_021",
+      "query": "aquafacial hydrafacial treatment near me",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Aquafacial hydrafacial treatment",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_022",
+      "query": "классическая чистка лица глубокое очищение",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Classic facial cleansing",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_023",
+      "query": "microneedling facial treatment session",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Microneedling facial treatment",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_024",
+      "query": "klassische Gesichtsbehandlung buchen",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Classic facial treatment",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_025",
+      "query": "laser lip hair removal permanent",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Laser upper lip hair removal",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_026",
+      "query": "waxing oberlippe termin vereinbaren",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Wax upper lip hair removal",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_027",
+      "query": "sugaring oberlippe zuhause nah",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Sugaring upper lip hair removal",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_028",
+      "query": "лазерная эпиляция верхней губы",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Laser upper lip hair removal",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_029",
+      "query": "gel nail extension builder gel",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Nail extension with gel",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_030",
+      "query": "коррекция гелевых ногтей с дизайном",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Gel nail correction with design",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_031",
+      "query": "acrylic nail modeling extension",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Acrylic nail modeling",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_032",
+      "query": "снятие наращенных ногтей и уход",
+      "language": "ru",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Nail modeling removal and care",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+      ]
+    }
+  ]
+}

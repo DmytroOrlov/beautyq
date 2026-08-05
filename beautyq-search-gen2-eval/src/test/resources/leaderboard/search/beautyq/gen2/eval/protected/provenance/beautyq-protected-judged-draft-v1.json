@@ -1,8 +1,8 @@
 {
   "schemaVersion": "beautyq-evaluation-corpus-v2",
-  "corpusId": "beautyq-protected-holdout-q2i-recovery-v2",
+  "corpusId": "beautyq-protected-holdout-q2i-recovery-v3",
   "dataset": "beautyq-protected-holdout",
-  "version": 2,
+  "version": 3,
   "defaultUserLocation": {
     "label": "Wandsbek Markt",
     "lat": 53.572,
@@ -585,17 +585,17 @@
       }
     },
     {
-      "id": "q2i5_reserve_001",
+      "id": "q2i7_recovery_001",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "нужна услуга по маникюру",
-      "language": "ru",
+      "query": "gel polish manicure appointment nearby",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure service",
+      "userIntent": "Manicure with gel polish coating",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
@@ -613,9 +613,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -623,22 +621,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_004",
+      "id": "q2i7_recovery_005",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "маникюр с гелевым покрытием",
-      "language": "ru",
+      "query": "classic pedicure with regular polish",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure with gel polish",
+      "userIntent": "Pedicure with regular polish coating",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "1fcd6e17-c6bb-5901-9f63-205668897659"
+            "2193db11-d035-58a0-997c-8a96f6d98b01"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -651,9 +649,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -661,23 +657,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_007",
+      "id": "q2i7_recovery_009",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "маникюр и педикюр в одном запросе",
-      "language": "ru",
+      "query": "classic lash extensions 1d near me",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure or pedicure services",
+      "userIntent": "Classic 1D lash extensions",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "1fcd6e17-c6bb-5901-9f63-205668897659",
-            "083f3849-b865-5a7e-ac02-90b5945320f8"
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -690,10 +685,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
-            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -701,22 +693,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_010",
+      "id": "q2i7_recovery_013",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "подберите процедуру bb glow для лица",
-      "language": "mixed",
+      "query": "brow lamination and tinting near me",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "BB Glow facial",
+      "userIntent": "Brow lamination with tinting",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -729,9 +721,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -739,22 +729,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_013",
+      "id": "q2i7_recovery_017",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "маникюрную процедуру пожалуйста",
-      "language": "ru",
+      "query": "pmu eyebrows permanent makeup",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure service",
+      "userIntent": "PMU brows permanent makeup",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "28a47e01-a4fc-5c14-bef2-79e2624245d8"
+            "e52e0840-34dc-559b-8512-0dba9d4130c3"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -767,9 +757,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -777,22 +765,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_016",
+      "id": "q2i7_recovery_021",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "маникур с гель лаком",
-      "language": "ru-translit",
+      "query": "aquafacial hydrafacial treatment near me",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "manicure with gel polish",
+      "userIntent": "Aquafacial hydrafacial treatment",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -805,9 +793,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -815,22 +801,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_019",
+      "id": "q2i7_recovery_025",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "gesichtsreinigung behandlung",
-      "language": "de",
+      "query": "laser lip hair removal permanent",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "facial cleansing",
+      "userIntent": "Laser upper lip hair removal",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "54568273-7762-5881-a027-0900965ddba4"
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -843,9 +829,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []
@@ -853,22 +837,22 @@
       }
     },
     {
-      "id": "q2i5_reserve_022",
+      "id": "q2i7_recovery_029",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "ресницы снять без наращивания",
-      "language": "ru",
+      "query": "gel nail extension builder gel",
+      "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "lash removal",
+      "userIntent": "Nail extension with gel",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "5b917daf-ead8-53a2-a850-83a4e0c19713"
+            "a4a01672-c103-51b0-8276-49e8aa5d4091"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -881,9 +865,7 @@
           "gradedGains": []
         },
         "serviceIntents": {
-          "acceptableIds": [
-            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
-          ],
+          "acceptableIds": [],
           "forbiddenIds": [],
           "neutralIds": [],
           "gradedGains": []

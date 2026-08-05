@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — exact-intent closure source and 108-case visible proof ready; protected holdout independently replenished and frozen; commit, exact-revision root evidence, and fresh protected acceptance pending; D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — CONVERGENCE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -13,12 +13,15 @@ The native Gen2 route, module cutover, evaluation foundation, supplement startup
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
 remaining work is:
 
-- protected acceptance has not run against the uncommitted second correction source;
+- the convergence recovery source and deterministic freeze proofs are complete;
+- the cumulative patch requires review and commit;
+- operator-owned root evidence on that exact commit and one fresh correctly attributed protected
+  acceptance remain pending;
 - the first accepted manifest has not been promoted or verified;
-- the frozen Q2-I corpus, policy, audit and provenance drafts are tracked under
-  `beautyq-search-gen2-eval/src/test/resources` and are available after an ordinary checkout;
-- the second correction requires operator-owned root evidence on its future exact committed revision
-  before fresh protected acceptance;
+- protected corpus, policy, audit and provenance resource paths are tracked under
+  `beautyq-search-gen2-eval/src/test/resources`; tracked presence does not imply a replenishment has
+  passed deterministic freeze reproduction;
+
 - D1 has not started and still requires second-domain product input;
 - successful Qdrant generations are intentionally not deleted automatically;
 - CDC/hot refresh, automatic readiness promotion, persistent embedding caching, automatic Qdrant GC,
@@ -263,16 +266,30 @@ Move, do not copy, the 89-query corpus into the BeautyQ eval project. Decode and
 - language, query-class and boundary slices;
 - corpus version and deterministic content fingerprint.
 
-Generate corpus counts and validation reports from the decoded owner. Remove the stale 74-query report
-and both old corpus locations. Preserve the four cutover probes as a small smoke subset derived from the
+Generate corpus counts and validation reports from the decoded owner. Retire superseded generated
+reports and corpus locations. Preserve the cutover probes as a small smoke subset derived from the
 canonical corpus or explicitly identified as synthetic operational probes; they are not the complete
 quality corpus.
 
 ### Generated reports and accepted baselines
 
 The canonical corpus and typed domain evaluation policy are the only operator-approved quality inputs.
-Machine-assisted authoring is permitted in the dedicated pre-evaluation Q2-I stage when it cannot
-observe protected search output, records provenance, and freezes corpus and policy before execution.
+Normal protected authoring occurs before protected execution. Machine-assisted authoring is permitted
+when it cannot observe protected search output, records provenance, and freezes corpus and policy
+before execution.
+
+If a pre-disclosure reserve is later found structurally invalid or not bound to the canonical typed
+catalog before the replenished holdout is reused, that reserve must be rejected. An explicitly
+authorized recovery author/judge pass may create a fresh reserve provided that:
+
+- it receives no protected search output;
+- it receives no disclosed or undisclosed protected query inventory;
+- it uses only public typed product declarations and canonical catalog identities;
+- author and judge passes remain separate;
+- the resulting holdout receives a fresh deterministic audit and freeze before any protected
+  acceptance run.
+
+This is input recovery, not output-driven tuning.
 Development/regression per-query reports and protected-holdout aggregate/slice verdicts live under
 `target/search-gen2/` and CI artifacts; the standard protected artifact does not encode case
 identities, and no report is copied back into source.
@@ -308,8 +325,10 @@ seeing output.
 5. Protected-holdout execution reports aggregate/slice verdicts by default, not case identities. A
    failing holdout blocks acceptance; ordinary tuning does not inspect its cases.
 6. Revealing protected cases requires an explicit break-glass label review. Every revealed case moves
-   permanently into the regression set, and independently authored, unused, operator-approved cases replenish the protected
-   holdout before it can again serve as acceptance evidence.
+   permanently into the regression set. Independently authored, unused, operator-approved cases may
+   replenish the protected holdout only after canonical catalog identity validation and a reproducible
+   freeze audit. A reserve discovered invalid before holdout reuse is rejected and follows the protected
+   input recovery contract above.
 7. Rerun development/regression evidence and then the replenished protected holdout without changing
    its labels or thresholds in response to output.
 8. Run the manual bootstrap from the exact clean committed application revision. Preserve the
@@ -342,107 +361,55 @@ author, relabel or modify protected inputs. Revealed protected cases still move 
 visible regression set and must be replaced by independently authored, unused, operator-approved
 cases before the holdout is reused.
 
-The first Q2-I corpus and acceptance policy are authored, independently judged, catalog-bound, audited
-against the visible corpus, and frozen as tracked `beautyq-search-gen2-eval` test resources. Their aggregate audit binds
-the actual starting HEAD, typed corpus/policy and canonical source fingerprints, corpus/policy and
-author/judge-draft hashes, ordered slice counts, zero catalog-identity failures, exact-intent
-completeness, and zero visible or internal exact/normalized query overlap. No semantic-similarity
-duplicate detection is claimed. No protected search execution or accepted-manifest generation belongs
-to Q2-I; those remain the next clean-revision procedure.
-
-The Q2-I freeze completed and its five inputs are versioned under
+Tracked protected inputs live under
 `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/`, with
-author and judged drafts under the adjacent `provenance/` directory. A fresh checkout contains the
-same bytes; `target/search-gen2/private` is only a disposable verification-audit/output directory.
+author and judged drafts under the adjacent `provenance/` directory. A valid freeze binds the source
+revision, typed corpus/policy and canonical catalog fingerprints, exact input hashes, separated pass
+identities, ordered slice counts, catalog-identity validation and query-disjointness checks. No
+semantic-similarity duplicate detection is claimed. `target/search-gen2/private` is only a disposable
+verification-audit/output directory.
+
 “Protected” is an evaluation-process classification, not a confidentiality or storage classification.
 The fixture may not be relabeled or tuned after protected output is inspected. A case deliberately
-exposed for diagnosis moves to the visible regression corpus and is replaced through a reviewed tracked
-Q2-I update. Q2-B no longer waits for external restoration.
+exposed for diagnosis moves permanently to the visible regression corpus. If its pre-disclosure
+replacement reserve later fails structural or catalog validation, the reserve is rejected and an
+explicitly authorized recovery pass must rebuild the author, judge and audit chain without access to
+protected queries or search output. The current convergence recovery has completed deterministic source-side
+freeze reproduction. It must not be used for protected acceptance until the cumulative patch is
+committed and exact-revision root evidence is obtained.
 
 ### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
 
 Status: **COMPLETED**
 
-The historical architecture audit closed the full Gen1 dependency and owner-removal findings. The
-follow-up audit examined the exact ten-commit recovery range from `1b3bac45` through `681e23c8` and
-found no exact Gen1/legacy reintroduction, no missing reopened owner, and no source-confirmed second
-production canonical owner. Temporary startup reference factories were removed by the final closeout.
-No source-confirmed code correction remains from the audit; the only discovered drift was stale
-post-cutover status documentation, corrected here.
-
-Q2-A is a coordinator-owned audit record, not an executable runtime owner. The canonical accepted-
-baseline resource remains absent until manual promotion. Q2-A remains completed and is not reopened by
-the removed external-input durability precondition.
+Q2-A is a coordinator-owned historical audit record, not an executable runtime owner. It covers the
+Gen1 dependency, removal and canonical-owner scope of its recorded commit window; it does not certify
+later protected-input authoring, replenishment or freeze validity. The canonical accepted-baseline
+resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **EXACT-INTENT CLOSURE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
+Status: **CONVERGENCE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
 
-The correctly attributed protected gate from committed revision
-`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524` was red only on
-`metric-protected-slice:exact-intent-variants/success/10`. The coordinator explicitly authorized the
-bounded break-glass disclosure. A complete 48-case replacement reserve was independently authored,
-judged, audited, and frozen before disclosure. The break-glass owner then disclosed only the seven
-minimal contributors to the authorized check; it did not disclose numeric metric values, thresholds,
-unrelated identities, passing protected cases, or a complete ranking.
+Four disclosure cycles (7 + 4 + 8 + 8 cases) permanently migrated 27 cases to visible Regression.
+The visible corpus contains 116 cases; its managed proof completed 116 warmups and 348 measured
+executions with all hard gates green and zero forbidden hits.
 
-Every disclosed case was permanently migrated into the visible Regression corpus. The source-grounded
-correction remains BeautyQ vocabulary-owned and adds r089 without changing generic precedence, ranking,
-thresholds, labels, judgments, or lifecycle behavior. The canonical visible corpus now contains 96
-Regression cases. Its managed Required/FullSearch proof completed 96 warmups and 288 measured
-executions with all hard/no-harm gates green. Seven replacements came only from the frozen
-pre-disclosure reserve; the replenished protected corpus was audited and frozen at 24 cases with slice
-counts 8/6/4/3/3.
+The convergence replenishment reserve was rejected because most of its candidate variant judgments were
+absent from the canonical typed catalog. No product identity was invented to rescue it. A fresh
+32-candidate recovery reserve was independently authored from public typed contracts and canonical
+catalog identities, judged without search or protected output access, and audited for catalog
+validation and author/judge separation. Eight final replacements were selected from the recovery
+reserve in stable bucket order. The protected holdout was rebuilt at 24 cases with slice counts
+8/6/4/3/3. The author draft, judged draft, holdout and audit were regenerated through the existing
+freeze owner. Historical disclosure authorizations remain unchanged; the recovery pass is
+replenishment provenance, not a rewrite of historical disclosure.
 
-After commit and green operator-owned root evidence, the independently replenished holdout was run
-against revision `655ebd9d21920d0b03c08df487acc8b4bd0db590`. It was correctly attributed and again
-red only on `metric-protected-slice:exact-intent-variants/success/10`, proving that the first correction
-did not generalize to the new blind exact-intent population. No bootstrap or candidate generation ran.
-
-A second authorization was bound exactly to that revision, corpus/policy fingerprints and failed
-check. Before disclosure, a new 16-case exact-intent reserve was independently authored, judged,
-audited and frozen. Four minimal contributors were disclosed and permanently migrated. Cross-generation
-diagnosis located the first divergence in BeautyQ intent normalization before the generic matcher, not
-in generic precedence or backend realization. The structural correction introduces finite request-
-carrier removal, reusable Russian inflection and AquaFacial transliteration equivalence, and the
-contextual r090 lash-removal action. It does not copy disclosed queries into aliases or change ranking,
-thresholds, policy meanings, labels, judgments or lifecycle behavior.
-
-The canonical visible corpus now contains 100 Regression cases. Its managed Required/FullSearch proof
-completed 100 warmups and 300 measured executions with every hard/no-harm gate green and zero forbidden
-hits. Four replacements came only from the second pre-disclosure frozen reserve. The protected corpus
-was audited and frozen at 24 cases with slice counts 8/6/4/3/3.
-
-No protected acceptance was run after editing this second correction source. The next boundary is
-review and commit, operator-owned root evidence for that exact commit, and one fresh correctly
-attributed protected acceptance. Earlier RED artifacts remain historical evidence and do not authorize
-candidate generation.
-
-After that second correction was committed and received green operator-owned root evidence, a fresh
-correctly attributed run against revision `718660275e72b287c24aec494c174c3d3a55bef0` again failed only
-the exact-intent success/10 check. Two minimal-contributor cycles had therefore not established
-generalization. The final bounded authorization disclosed the complete current eight-case exact-intent
-slice and no other protected slice; every disclosed case was permanently migrated to visible
-Regression evidence.
-
-A new 24-case exact-intent reserve and source-grounded coverage matrix were authored, judged, audited
-and frozen before that disclosure without protected/visible inventory or search-output access.
-Cross-generation diagnosis located the first divergence at the boundary between
-`BeautyQIntentTextGen2.tokenizeForIntentMatching` and BeautyQ declaration ownership. Mechanical
-one-token spelling, inflection and transliteration normalization remains in the text owner; multi-token
-service, coating and design semantics are owned by the typed `BeautyQIntentVocabulary`, including r091
-and the nail-family-contextual r092. No shadow semantic phrase vocabulary remains in the tokenizer, and
-action-bearing tokens are not globally discarded. The coherent correction adds no query/result
-branching and changes no protected thresholds, policy meanings, labels or judgments. Eight
-replacements came only from the frozen reserve; the protected corpus was audited and frozen at 24
-cases with slice counts 8/6/4/3/3.
-
-The canonical visible corpus now contains 108 Regression cases. Its managed Required/FullSearch proof
-completed 108 warmups and 324 measured executions with every hard/no-harm gate green, deterministic
-rankings and zero forbidden hits. No protected acceptance was run after editing this closure source.
-The next boundary is review and commit, operator-owned root evidence for that exact commit, and one
-fresh correctly attributed protected acceptance. No fourth automatic exact-intent disclosure cycle is
-authorized; bootstrap and candidate generation still require a green protected gate.
+All twenty-seven disclosed cases (7 + 4 + 8 + 8) remain visible regression evidence. The canonical
+audit binds the exact file hashes, deterministic corpus/policy fingerprints, catalog validation GREEN,
+visible/protected disjointness GREEN, exact slice inventory GREEN, stable ordering and audit
+reproduction. Post-correction protected acceptance, bootstrap, candidate generation, promotion and
+verify did not run.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -492,7 +459,7 @@ provenance boundaries inside those milestones. The minimum happy-path remainder 
 
 | Commit | Boundary | Minimum contents |
 | ---: | --- | --- |
-| 1 | Q2 break-glass correction source | Minimal disclosure, permanent visible-regression migration, production correction and visible proofs, plus independently authored replenishment, audit and freeze. |
+| 1 | Q2 protected-input recovery | Reject the invalid reserve, create a catalog-bound replacement through isolated author/judge passes, and reproduce the tracked freeze audit before protected execution. |
 | 2 | Q2 candidate promotion | Promote the reviewed candidate byte-for-byte to the tracked canonical accepted-baseline resource. |
 | 3 | Q2 verify closeout | Verify the already committed canonical resource and close Q2. |
 | 4 | D1 product/evaluation contract | Domain identity, source topology, catalog, query/judgment policy, visible evidence, protected-authoring protocol and simplest baseline. |
@@ -523,7 +490,7 @@ Completed:
 - updated module firewall/build-DAG proofs;
 - corrected the technical specification's current quality claims.
 
-The current visible 108 cases are regression cases, not a protected holdout.
+The canonical visible corpus contains regression evidence, not a protected holdout.
 
 ### Patch O0 — supplement startup policy and safe kill switch **O0 COMPLETED**
 
@@ -540,7 +507,7 @@ The current visible 108 cases are regression cases, not a protected holdout.
 
 Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
-### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — VISIBLE REGRESSION CORRECTION PROVED; PROTECTED ACCEPTANCE PENDING**
+### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — CONVERGENCE RECOVERY SOURCE READY; PROTECTED ACCEPTANCE PENDING**
 
 - execute the complete corpus through native Gen2 application/projector owners;
 - produce deterministic per-query reports for development/regression and aggregate/slice-only
@@ -561,40 +528,10 @@ Disabled is selected before provisioning and its retained managed graph does not
 - stop for a bounded corrective patch if hard/no-harm gates fail;
 - do not tune labels or thresholds to make existing output green.
 
-Implemented historical measurement evidence before the break-glass migration:
-
-- the canonical 89-case regression corpus executes through one native `BeautyQSearchApplication`
-  startup with `SupplementStartupPolicy.Required` and `ServingMode.FullSearch`;
-- one complete warmup pass and three complete measured passes run sequentially at concurrency one;
-- the generated detailed, measurement and correction-gate artifacts record corpus, snapshot,
-  generation, backend, embedding-model and environment identities;
-- application execution latency is reported separately from startup, materialization and projection;
-- measured rankings are deterministic, no request degraded, public identities remain unique, and the
-  baseline prefix, baseline-owned components and append budget remain preserved.
-
-The first real correction gate was red: three canonical regression cases returned a corpus-declared
-forbidden variant; across three measured passes this was nine forbidden-hit observations. The approved
-bounded correction is declared in the single BeautyQ vocabulary: the Russian powder-brow paraphrase
-extends r058, the Russian BB Glow paraphrase extends r062, and r088 owns the broad self-care ServiceAny
-allowlist `manicure, lashes, brows, facial` while r087 continues to own NearUser. No corpus label,
-denylist, result-ID special case, threshold or generic backend policy changed.
-
-The complete managed 89-case rerun proved the correction: one warmup pass, three measured passes /
-267 measured executions, zero forbidden hits, all hard/no-harm checks passed. The correction gate is
-green, the quality threshold is `not_required`, and no score threshold was added. The frozen protected
-holdout was then executed from the fork-safe committed revision
-`ddc9f2b9bd39abdb08a4eab4a8f2e08043d0c524`; it reported `system-property` provenance, wrote the
-three aggregate-only artifacts, and remained red on
-`metric-protected-slice:exact-intent-variants/success/10`. The accepted baseline candidate was not
-generated, and the earlier `working-tree-default` artifacts remain preserved as non-authoritative
-diagnostic evidence.
-
-Two authorized break-glass cycles permanently added eleven disclosed cases to the visible Regression
-corpus. The current managed corpus therefore contains 100 cases; one warmup pass and three measured
-passes completed 100 and 300 executions respectively, with every hard/no-harm gate green. Each cycle
-used a reserve frozen before its disclosure; after the second migration the protected holdout remains
-24 cases with slice counts 8/6/4/3/3. This is source/visible evidence only: protected acceptance after
-the second source correction, bootstrap, promotion, and verify were not run.
+Execution outcomes, corpus sizes, revision bindings and generated artifact hashes are recorded in
+Q2 evidence reports rather than this plan. The catalog-bound recovery and deterministic freeze/audit contract is
+satisfied. Protected acceptance remains behind the future committed revision and its operator-owned
+root evidence; bootstrap remains behind a green protected gate.
 
 The current generated artifact paths are:
 
@@ -623,18 +560,15 @@ The cleanup procedure is owned by the canonical
 [`BEAUTYQ_SEARCH_GEN2_OPERATIONS.md`](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) runbook. It is a fenced,
 two-observation dry-run protocol; no automatic GC or unpersisted creation-time assumption exists.
 
-The original measured supplement score ranges overlapped: maximum forbidden `0.54429233`, minimum
-non-forbidden `0.44723216`. Therefore a single global Qdrant threshold was not an honest correction
-and was not added. The intent-policy correction (r058/r062 paraphrase extensions, r088 ServiceAny)
-repaired the original three regression cases without a threshold. That historical 89-case managed
-rerun passed with zero forbidden hits and all hard/no-harm checks green. The two authorized
-break-glass cycles expanded the permanent visible Regression corpus to 100 cases, and its current
-100/300 proof is green. Protected acceptance machinery provides strict protected-corpus/policy decoding, shared
-visible/protected execution, aggregate-only protected report encoding, a typed protected gate and a
-candidate-baseline adapter. Q2 as a whole remains open for post-correction protected execution and
-generation of the first accepted manifest from a clean committed revision.
-The protected runner and bootstrap do not create or modify those inputs; missing frozen inputs remain
-an operational failure at those later stages, not a requirement for an external employee.
+A global Qdrant threshold must not be introduced merely to hide overlapping measured score ranges.
+Intent-policy corrections remain domain-owned, while generic ranking and supplement contracts remain
+unchanged. Protected acceptance machinery provides strict corpus/policy decoding, shared
+visible/protected execution, aggregate-only report encoding, a typed protected gate and a
+candidate-baseline adapter. Q2 remains open for commit, exact-revision root evidence and fresh
+protected acceptance. Accepted-manifest generation remains behind a green protected gate.
+
+The protected runner and bootstrap do not create or modify those inputs; missing or unverified inputs
+remain an operational failure at those later stages, not a requirement for an external employee.
 
 ### Patch D1 — eval-first second-domain vertical
 

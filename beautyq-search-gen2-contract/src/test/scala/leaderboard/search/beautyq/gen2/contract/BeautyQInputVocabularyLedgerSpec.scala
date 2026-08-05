@@ -40,9 +40,22 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
       )
       assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("процедуру аква-фэйшл для лица") == Vector("aquafacial", "лица"))
       assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("Нужна процедура аквафейшл для лица") == Vector("aquafacial", "лица"))
+      val canonicalMappings = Vector(
+        "гелевой" -> "гель",
+        "гелевым" -> "гель",
+        "маникюра" -> "маникюр",
+        "маникюру" -> "маникюр",
+        "наращиванием" -> "наращивание",
+        "наращивания" -> "наращивание",
+        "покрытием" -> "покрытие",
+      )
+      canonicalMappings.foreach { case (input, expected) =>
+        assert(BeautyQIntentTextGen2.tokenizeForIntentMatching(input) == Vector(expected))
+        assert(BeautyQIntentTextGen2.tokenizeForIntentMatching(expected) == Vector(expected))
+      }
     }
 
-    "remove only finite request-carrier tokens while retaining semantic action words" in {
+    "remove only proven request scaffolding while retaining semantic and relational words" in {
       assert(
         BeautyQIntentTextGen2.tokenizeForIntentMatching("Хочу аккуратно снять наращённые ресницы") ==
           Vector("снять", "наращенные", "ресницы")
@@ -59,6 +72,11 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
         BeautyQIntentTextGen2.tokenizeForIntentMatching("künstliche Nägel aus Acryl verlängern") ==
           Vector("künstliche", "nägel", "aus", "acrylic", "verlängern")
       )
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("одна услуга") == Vector("одна"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("подберите одну услугу") == Vector("одну"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("в одном запросе") == Vector("в", "одном"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("услуга маникюра") == Vector("маникюр"))
+      assert(BeautyQIntentTextGen2.tokenizeForIntentMatching("запросе подберите услуги") == Vector.empty)
     }
 
     "leave multi-token service and attribute meaning to the typed vocabulary" in {

@@ -6012,6 +6012,320 @@
           "gradedGains": []
         }
       }
+    },
+    {
+      "id": "q2i5_reserve_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "нужна услуга по маникюру",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "manicure service",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_004",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникюр с гелевым покрытием",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "manicure with gel polish",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_007",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникюр и педикюр в одном запросе",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "manicure or pedicure services",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "083f3849-b865-5a7e-ac02-90b5945320f8"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4",
+            "a9d6911c-f69a-5b3b-86c7-8241d13272ec"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_010",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "подберите процедуру bb glow для лица",
+      "language": "mixed",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "BB Glow facial",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "a32c399d-db3a-5806-8556-e66c4ad4ea1c"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_013",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникюрную процедуру пожалуйста",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "manicure service",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "28a47e01-a4fc-5c14-bef2-79e2624245d8"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_016",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "маникур с гель лаком",
+      "language": "ru-translit",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "manicure with gel polish",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "a1085253-a9bf-517c-80c4-262b0bf9a5a4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_019",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "gesichtsreinigung behandlung",
+      "language": "de",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "facial cleansing",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "bbc1ec9c-0493-5fe4-b637-bbfbfe7aa72d"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i5_reserve_022",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "ресницы снять без наращивания",
+      "language": "ru",
+      "slices": [
+        "exact-intent",
+        "q2-convergence-migrated"
+      ],
+      "userIntent": "lash removal",
+      "notes": [
+        "Permanently disclosed and migrated from the Q2 convergence protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "5b917daf-ead8-53a2-a850-83a4e0c19713"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [
+            "3e6816cc-1b0d-5420-9113-f13d78802a5e"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
     }
   ]
 }

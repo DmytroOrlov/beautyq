@@ -180,6 +180,42 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       }
     }
 
+    "validate a catalog-bound reserve candidate and reject cross-surface or invented identities" in {
+      BeautyQCanonicalSeedEvaluationCatalog.load() match {
+        case Right(catalog) =>
+          val variantId = firstResultId(catalog.variantResultIds)
+          val providerId = firstResultId(catalog.providerResultIds)
+          val serviceIntentId = firstResultId(catalog.serviceIntentResultIds)
+
+          val validVariantCorpus = decodeCorpus(protectedCorpusJson(variantId = Some(variantId)))
+          val validProviderCorpus = decodeCorpus(protectedCorpusJson(providerId = Some(providerId)))
+          val validServiceCorpus = decodeCorpus(protectedCorpusJson(serviceIntentId = Some(serviceIntentId)))
+          assert(BeautyQProtectedInputFreezeMain.catalogValidationForTest(validVariantCorpus).isRight)
+          assert(BeautyQProtectedInputFreezeMain.catalogValidationForTest(validProviderCorpus).isRight)
+          assert(BeautyQProtectedInputFreezeMain.catalogValidationForTest(validServiceCorpus).isRight)
+
+          val inventedVariant = decodeCorpus(protectedCorpusJson(variantId = Some("ffffffff-ffff-ffff-ffff-ffffffffffff")))
+          BeautyQProtectedInputFreezeMain.catalogValidationForTest(inventedVariant) match {
+            case Right(counts) => assert(counts.invalidVariantJudgmentIdentityCount == 1)
+            case Left(error) => fail(s"expected catalog validation, got $error")
+          }
+
+          val providerOnVariant = decodeCorpus(protectedCorpusJson(variantId = Some(providerId)))
+          BeautyQProtectedInputFreezeMain.catalogValidationForTest(providerOnVariant) match {
+            case Right(counts) => assert(counts.invalidVariantJudgmentIdentityCount == 1)
+            case Left(error) => fail(s"expected catalog validation, got $error")
+          }
+
+          val variantOnProvider = decodeCorpus(protectedCorpusJson(providerId = Some(variantId)))
+          BeautyQProtectedInputFreezeMain.catalogValidationForTest(variantOnProvider) match {
+            case Right(counts) => assert(counts.invalidProviderJudgmentIdentityCount == 1)
+            case Left(error) => fail(s"expected catalog validation, got $error")
+          }
+
+        case Left(error) => fail(s"expected canonical catalog, got $error")
+      }
+    }
+
     "reproduce the tracked Q2-I freeze audit from canonical test resources" in {
       val root = repositoryRoot(Paths.get(".").toAbsolutePath.normalize)
       val resourceRoot = root.resolve(
@@ -285,7 +321,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       case Left(error) => fail(s"expected valid policy fixture, got $error")
     }
     Files.writeString(paths.policy, policy.canonicalJson.noSpaces + "\n", StandardCharsets.UTF_8)
-    Files.writeString(paths.authorDraft, "author draft", StandardCharsets.UTF_8)
+    Files.writeString(paths.authorDraft, authorDraftJson().noSpaces + "\n", StandardCharsets.UTF_8)
     Files.writeString(paths.judgedDraft, "judged draft", StandardCharsets.UTF_8)
     Files.deleteIfExists(paths.audit): Unit
   }
@@ -318,6 +354,21 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       "providers" -> providerId.map(singleJudgment).getOrElse(emptyJudgments),
       "serviceIntents" -> serviceIntentId.map(singleJudgment).getOrElse(emptyJudgments),
       ),
+    )),
+  )
+
+  private def authorDraftJson(): Json = Json.obj(
+    "schemaVersion" -> Json.fromString("beautyq-protected-author-draft-v1"),
+    "sourceRevision" -> Json.fromString("a" * 40),
+    "authorPassId" -> Json.fromString("author-pass"),
+    "cases" -> Json.arr(Json.obj(
+      "id" -> Json.fromString("private-freeze-sentinel-id"),
+      "query" -> Json.fromString("private-freeze-sentinel-query"),
+      "language" -> Json.fromString("en"),
+      "primarySlice" -> Json.fromString("exact-intent"),
+      "additionalSlices" -> Json.arr(),
+      "userIntent" -> Json.fromString("fixture"),
+      "notes" -> Json.arr(),
     )),
   )
 

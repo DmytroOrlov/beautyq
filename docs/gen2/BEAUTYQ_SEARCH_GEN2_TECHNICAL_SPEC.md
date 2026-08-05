@@ -2137,86 +2137,45 @@ communication verification.
 
 ## 15. Quality and evaluation
 
-Q1 evaluation kernel and canonical BeautyQ corpus are implemented. Q2 executes that corpus and
-produces measured evidence. Two explicitly authorized minimal-contributor break-glass cycles migrated
-eleven cases, then a final bounded escalation migrated the complete current eight-case exact-intent
-slice; no other protected slice was disclosed. The current 108-case corpus passed its complete managed
-hard/no-harm run. Protected acceptance after the exact-intent closure correction and accepted-manifest
-generation remain open.
+Q1 evaluation kernel and the canonical BeautyQ corpus are implemented. Q2 uses the same
+domain-owned corpus/request adapters and production application path to produce deterministic visible
+and aggregate-only protected evidence.
 
-`beautyq-search-gen2-eval` owns the four-query readiness-aware cutover gate, append-only no-harm
-evidence, deterministic cutover report encoding, the completed Gen1 deletion inventory, a canonical
-100-case BeautyQ evaluation corpus, the frozen protected Q2-I corpus/policy/audit and provenance
-resources, domain evaluation policy and adapters. The visible 108 cases remain
-regression/partial judgments; the protected fixture is a test/evaluation input and does not enter
-production serving classpaths.
-
-The Distage communication owner retains the four-query readiness smoke and also executes all 108
-canonical cases through one Required/FullSearch native application and the real Elasticsearch, Qdrant
-and embedding paths. It performs one full warmup pass followed by three measured passes at concurrency
-one. Only `BeautyQSearchApplication.execute` is timed; startup, materialization and projection are
-excluded. Generated artifacts contain the deterministic detailed quality report, the measurement
-environment/latency report, the strict `beautyq-evaluation-score-separation-v1` artifact and the
-machine-readable correction-gate result. The communication spec writes all artifacts before failing
-when the measured quality gate is red; a red gate is never reported as a successful communication run.
+`beautyq-search-gen2-eval` owns the readiness-aware cutover gate, append-only no-harm evidence,
+deterministic report encoding, protected input codecs and audits, domain evaluation policy and adapters.
+The Distage communication owner executes the canonical visible corpus through one
+Required/FullSearch native application and the real Elasticsearch, Qdrant and embedding paths. It runs
+one warmup pass followed by three measured passes at concurrency one. Only
+`BeautyQSearchApplication.execute` is timed; startup, materialization and projection are excluded.
+Generated detailed reports remain artifacts and a red quality gate is never reported as a successful
+communication run.
 
 The domain-neutral `search-gen2-eval` project supplies stable evaluation identities, ranked metric
-mathematics (with declared-cutoff denominators), ordered scope/cutoff aggregation, comparison and
-deterministic report/manifest codecs. Domain corpus schemas,
-request construction, labels, slices, thresholds, and gates remain in each domain's eval project.
-Serving modules continue to have no eval dependency.
+mathematics, ordered scope/cutoff aggregation, comparison and deterministic report/manifest codecs.
+Domain corpus schemas, request construction, labels, slices, thresholds and gates remain in each
+domain's eval project. Serving modules have no eval dependency.
 
-Q2 execution and measured reporting are implemented. The first real run preserved deterministic
-rankings, request readiness, public identity uniqueness, the Elasticsearch baseline prefix and owned
-components, and the append-only budget. Its `no-forbidden-hits` check was red: three canonical cases
-contained a returned forbidden variant, producing nine observations across the three measured passes.
-The approved correction is owned solely by the BeautyQ vocabulary: r058 and r062 gain the measured
-Russian paraphrases, and r088 declares the broad self-care ServiceAny allowlist; r087 remains the
-NearUser overlay. Typed hard constraints continue unchanged through the Elasticsearch baseline and
-Qdrant candidate plans, and hydration remains a second hard-constraint check. No result filtering,
-threshold, corpus-label change, materialized-shape change or lifecycle redesign is used. The historical
-managed 89-case rerun passed: zero forbidden hits, all hard/no-harm checks green, no threshold required.
-A later correctly attributed protected execution isolated one failed exact-intent slice check. Under
-explicit coordinator authorization, the break-glass owner disclosed only its seven minimal contributors
-after a 48-case replacement reserve had been independently authored, judged, audited, and frozen. The
-disclosed cases were migrated permanently into visible Regression evidence; the BeautyQ vocabulary owns
-the general correction, including r089. The resulting managed 96-case run completed 96 warmups and 288
-measured executions with all hard/no-harm gates green. Generic precedence, ranking, thresholds, labels,
-judgments, and lifecycle behavior were unchanged. The independently replenished holdout then repeated
-the same failed exact-intent check against the committed first correction. A second authorization
-disclosed four minimal contributors after a new 16-case exact-intent reserve had been independently
-authored, judged, audited and frozen. Cross-generation diagnosis located the first divergence in
-`BeautyQIntentTextGen2` matching normalization: request carriers, Russian inflections and AquaFacial
-transliteration variants were not mapped to the established typed declaration semantics. The second
-correction is structural, adds the contextual r090 lash-removal action, and leaves the generic matcher,
-precedence resolver, backends, ranking and evaluation policy unchanged. The managed 100-case run
-completed 100 warmups and 300 measured executions with every hard/no-harm gate green.
+Mechanical one-token spelling, inflection and transliteration normalization is owned by
+`BeautyQIntentTextGen2`; multi-token service and attribute semantics are declared and traced by the
+typed `BeautyQIntentVocabulary`. Generic precedence, ranking and backend realization remain separate
+owners. Break-glass disclosure requires exact authorization binding. Every disclosed protected case
+moves permanently to visible Regression evidence and never returns to protected ownership.
 
-The independently replenished holdout then repeated the same exact-intent failure against the committed
-second correction. Because two minimal-contributor cycles had not established generalization, the final
-authorization disclosed and permanently migrated the complete current eight-case exact-intent slice;
-no other protected slice was disclosed. A new 24-case reserve and semantic coverage matrix had already
-been authored, judged, audited and frozen without protected/visible inventory or search-output access.
-Cross-generation diagnosis identified the boundary between
-`BeautyQIntentTextGen2.tokenizeForIntentMatching` and BeautyQ declaration ownership as the first
-divergence. The text owner retains only mechanical one-token spelling, inflection and transliteration
-normalization. Multi-token service, coating and design semantics are owned and traced by the typed
-`BeautyQIntentVocabulary`, including r091 and the nail-family-contextual r092; the tokenizer contains no
-shadow semantic phrase vocabulary and does not globally discard action-bearing tokens. This implements
-the correction without a generic-kernel, judgment, threshold or query-specific change. The managed
-108-case run completed 108 warmups and 324 measured executions with every hard/no-harm gate green,
-deterministic rankings and zero forbidden hits.
+Protected-acceptance machinery strictly decodes an ordered holdout and separate acceptance policy,
+reuses the measured application path, emits aggregate-only report/measurement/gate artifacts, and
+permits candidate derivation only after a green protected gate. A reusable holdout requires canonical
+catalog identity validation, separate author and judge provenance, deterministic hash/fingerprint
+binding, visible/protected disjointness and reproducible freeze/audit evidence.
 
-Protected-acceptance machinery is implemented as a BeautyQ eval owner: it strictly decodes
-an ordered protected holdout corpus and a separate protected-acceptance policy, reuses the same measured
-application execution path, emits aggregate-only protected report/measurement/gate artifacts, and
-derives a candidate baseline only after a green protected gate. The frozen protected corpus, policy,
-aggregate audit and author/judge provenance drafts are versioned under `src/test/resources` and are
-available after an ordinary checkout. The final cycle selected eight replacements only from its new
-pre-disclosure frozen reserve; the replenished protected corpus was audited and frozen at 24 cases with
-slice counts 8/6/4/3/3. No protected acceptance was run after the exact-intent closure source correction. Protected bootstrap and
-accepted-manifest generation remain pending until that correction is reviewed and committed, exact-
-revision root evidence is obtained, and a fresh correctly attributed protected gate passes.
+Q2 protected correction is in convergence-recovery-source state. The current convergence
+replenishment reserve was found to violate canonical catalog identity validation and was rejected.
+A catalog-bound recovery reserve was authored and judged independently from public typed product
+declarations and canonical catalog identities, with no access to protected search output or
+protected query inventories. The holdout was rebuilt at 24 cases (slices 8/6/4/3/3), provenance
+resources are tracked, and the freeze/audit proofs are reproducible from an ordinary checkout.
+Fresh protected acceptance has not run. Future invalid reserves must still be rejected under the
+same contract: recovery author/judge passes must remain isolated and catalog-bound.
+
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
 candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
 resource and compares ordered aggregate observations. The first accepted manifest must be
@@ -2231,12 +2190,10 @@ Full reports remain generated artifacts.
 
 The score-separation artifact records every visible returned identity with its query, projector-owned
 origin, score, corpus judgment, supplement status, degradation reason, baseline identities and appended
-identities. Protected cases, when configured, contribute only redacted aggregate ranges. The first score
-analysis found maximum forbidden supplement score `0.54429233` and minimum non-forbidden supplement score
-`0.44723216`. These ranges overlapped, so no single Qdrant score threshold could remove every
-observed forbidden append without also removing observed non-forbidden appends. The intent-policy
-correction repaired the three regression cases without a threshold; the managed rerun recorded zero
-observed forbidden supplements.
+identities. Protected cases, when configured, contribute only redacted aggregate ranges. A global
+Qdrant score threshold is not inferred from one execution: overlapping acceptable and forbidden score
+ranges require an explicit domain-policy decision backed by current evidence. Run-specific extrema and
+correction outcomes belong to evaluation reports rather than this specification.
 
 The public HTTP boundary enforces the BeautyQ-owned request budget before backend execution through the
 executable [`BeautyQSearchRequestBudget`](../../beautyq-search-gen2-contract/src/main/scala/leaderboard/search/beautyq/gen2/contract/BeautyQSearchRequestBudget.scala)

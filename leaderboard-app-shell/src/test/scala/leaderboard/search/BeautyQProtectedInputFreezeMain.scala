@@ -7,6 +7,7 @@ import leaderboard.search.beautyq.gen2.eval.{
   BeautyQProtectedEvaluationCorpus,
   BeautyQProtectedEvaluationCorpusError,
   BeautyQProtectedInputAudit,
+  BeautyQProtectedAuthorDraft,
 }
 
 import java.nio.charset.StandardCharsets
@@ -143,6 +144,10 @@ object BeautyQProtectedInputFreezeMain {
       policy <- BeautyQProtectedAcceptancePolicy.load(arguments.protectedPolicy).left.map(protectedPolicyErrorCode)
       protectedCorpus <- BeautyQProtectedEvaluationCorpus.load(arguments.protectedCorpus, visible, policy)
         .left.map(error => protectedCorpusErrorCode(error, arguments.protectedCorpus, policy))
+      authorDraft <- BeautyQProtectedAuthorDraft.load(arguments.authorDraft)
+      _ <- Either.cond(authorDraft.sourceRevision == arguments.sourceRevision, (), "author_draft_revision_mismatch")
+      _ <- Either.cond(authorDraft.authorPassId == arguments.authorPassId, (), "author_draft_pass_mismatch")
+      _ <- BeautyQProtectedAuthorDraft.correspondsTo(authorDraft, protectedCorpus)
       catalog <- BeautyQCanonicalSeedEvaluationCatalog.load().left.map(_ => "canonical_catalog_unavailable")
       corpusBytes <- readBytes(arguments.protectedCorpus, "protected_corpus_read_failed")
       policyBytes <- readBytes(arguments.protectedPolicy, "protected_policy_read_failed")

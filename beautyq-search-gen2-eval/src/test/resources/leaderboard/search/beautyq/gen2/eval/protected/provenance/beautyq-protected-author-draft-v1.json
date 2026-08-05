@@ -1,7 +1,7 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "718660275e72b287c24aec494c174c3d3a55bef0",
-  "authorPassId": "q2-exact-intent-full-slice-cycle3-replenishment-author-v1",
+  "sourceRevision": "eeccefe8bde82a1ac93f426aa4e58cf936178640",
+  "authorPassId": "q2-exact-intent-convergence-recovery-author-v1",
   "cases": [
     {
       "id": "q2i2_case_009",
@@ -180,91 +180,91 @@
       ]
     },
     {
-      "id": "q2i5_reserve_001",
-      "query": "нужна услуга по маникюру",
-      "language": "ru",
+      "id": "q2i7_recovery_001",
+      "query": "gel polish manicure appointment nearby",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Manicure with gel polish coating",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_004",
-      "query": "маникюр с гелевым покрытием",
-      "language": "ru",
+      "id": "q2i7_recovery_005",
+      "query": "classic pedicure with regular polish",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Pedicure with regular polish coating",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_007",
-      "query": "маникюр и педикюр в одном запросе",
-      "language": "ru",
+      "id": "q2i7_recovery_009",
+      "query": "classic lash extensions 1d near me",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Classic 1D lash extensions",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_010",
-      "query": "подберите процедуру bb glow для лица",
-      "language": "mixed",
+      "id": "q2i7_recovery_013",
+      "query": "brow lamination and tinting near me",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Brow lamination with tinting",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_013",
-      "query": "маникюрную процедуру пожалуйста",
-      "language": "ru",
+      "id": "q2i7_recovery_017",
+      "query": "pmu eyebrows permanent makeup",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "PMU brows permanent makeup",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_016",
-      "query": "маникур с гель лаком",
-      "language": "ru-translit",
+      "id": "q2i7_recovery_021",
+      "query": "aquafacial hydrafacial treatment near me",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Aquafacial hydrafacial treatment",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_019",
-      "query": "gesichtsreinigung behandlung",
-      "language": "de",
+      "id": "q2i7_recovery_025",
+      "query": "laser lip hair removal permanent",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Laser upper lip hair removal",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i5_reserve_022",
-      "query": "ресницы снять без наращивания",
-      "language": "ru",
+      "id": "q2i7_recovery_029",
+      "query": "gel nail extension builder gel",
+      "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": null,
+      "userIntent": "Nail extension with gel",
       "notes": [
-        "Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve."
+        "Selected in stable order from the independently authored catalog-bound recovery reserve."
       ]
     }
   ]

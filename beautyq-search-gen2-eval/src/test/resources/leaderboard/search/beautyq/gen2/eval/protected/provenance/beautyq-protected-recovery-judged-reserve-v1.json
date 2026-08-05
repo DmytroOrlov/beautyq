@@ -1,0 +1,1171 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-judged-reserve-v1",
+  "sourceRevision": "93f6dd2dabbe9ab61bc2f3a4a9af1caf61540f0d",
+  "judgePassId": "q2i7-recovery-reserve-judge-v1",
+  "corpus":
+    {
+      "schemaVersion": "beautyq-evaluation-corpus-v2",
+      "corpusId": "beautyq-protected-recovery-judged-reserve-v1",
+      "dataset": "protected-recovery-reserve",
+      "version": 1,
+      "defaultUserLocation": {
+        "label": "default",
+        "lat": 53.55,
+        "lon": 10.0
+      },
+      "cases": [
+        {
+          "id": "q2i7_recovery_001",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "gel polish manicure appointment nearby",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Manicure with gel polish coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "1fcd6e17-c6bb-5901-9f63-205668897659"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_002",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "shellac manicure with design near me",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Manicure with shellac coating and design",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "798c4326-e081-59a9-b659-98671f1fd656"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_003",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "гель-лак маникюр рядом со мной",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Manicure with gel polish coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_004",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "Gel-Nagellack Maniküre buchen",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Manicure with gel polish coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_005",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "classic pedicure with regular polish",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Pedicure with regular polish coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "2193db11-d035-58a0-997c-8a96f6d98b01"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_006",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "педикюр с гель-лаком недорого",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Pedicure with gel polish coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "d850b4ca-0f64-5527-81cb-ae6fc212b102"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_007",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "pedicure with gel polish near me",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Pedicure with gel polish coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "083f3849-b865-5a7e-ac02-90b5945320f8"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_008",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "Shellac Pediküre in der Nähe",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Pedicure with shellac coating",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "7ce84040-4005-5796-89d6-e0a51e3fb369"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_009",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "classic lash extensions 1d near me",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Classic 1D lash extensions",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_010",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "volume lashes 3d appointment",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Volume 3D lash extensions",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "0642fde2-37fc-5977-81b4-0320d176f6b8"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_011",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "lash lifting mit färben buchen",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Lash lifting with tinting",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "d658c194-38f7-5396-b8cb-cf155739c235"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_012",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "lifting ресниц без наращивания",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Lash lifting without extensions",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "3160f0f7-4940-52a7-80e4-fc82adbcfb5d"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_013",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "brow lamination and tinting near me",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Brow lamination with tinting",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_014",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "окрашивание бровей краской",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Brow tinting with dye",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "28d5239f-82ce-518c-819b-e59ad79038eb"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_015",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "henna brows treatment booking",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Henna brow treatment",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_016",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "Brauen Laminierung mit Färbung",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Brow lamination with tinting",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_017",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "pmu eyebrows permanent makeup",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "PMU brows permanent makeup",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "e52e0840-34dc-559b-8512-0dba9d4130c3"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_018",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "pmu eyeliner tattoo appointment",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "PMU eyeliner tattoo",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "af1c4586-deba-5c90-bf0f-6fb85abd76f7"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_019",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "перманентный макияж бровей",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "PMU brows permanent makeup",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "c3bf48ba-6b81-5447-b6eb-c6320def9ed4"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_020",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "PMU Augenbrauen Permanent Make-up",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "PMU brows permanent makeup",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "0656e5a5-d2eb-5ce7-a1e6-8ed2392217e9"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_021",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "aquafacial hydrafacial treatment near me",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Aquafacial hydrafacial treatment",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "f018b7f8-1997-596f-8c32-414d6cf8f538"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_022",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "классическая чистка лица глубокое очищение",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Classic facial cleansing",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "54568273-7762-5881-a027-0900965ddba4"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_023",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "microneedling facial treatment session",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Microneedling facial treatment",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "bf052e78-8be1-5267-93bb-fd92ff9b7f68"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_024",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "klassische Gesichtsbehandlung buchen",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Classic facial treatment",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "b8150d36-f350-51d7-a07c-22beeec96d1c"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_025",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "laser lip hair removal permanent",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Laser upper lip hair removal",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "e593119b-3ec4-547f-89cb-5a1d9eaa5859"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_026",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "waxing oberlippe termin vereinbaren",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Wax upper lip hair removal",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "94575ead-5606-58fc-9bff-7f2918344c74"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_027",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "sugaring oberlippe zuhause nah",
+          "language": "de",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Sugaring upper lip hair removal",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "97bd38cc-a019-5306-972c-ca72dbd52b77"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_028",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "лазерная эпиляция верхней губы",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Laser upper lip hair removal",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "17fe4477-4866-507c-84f9-0dd9b63295cc"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_029",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "gel nail extension builder gel",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Nail extension with gel",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "a4a01672-c103-51b0-8276-49e8aa5d4091"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_030",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "коррекция гелевых ногтей с дизайном",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Gel nail correction with design",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "51cc8284-3879-5bdb-8780-7b43e47f1251"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_031",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "acrylic nail modeling extension",
+          "language": "en",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Acrylic nail modeling",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "693c3807-16f2-552a-ae5e-8ffdc638ed29"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        },
+        {
+          "id": "q2i7_recovery_032",
+          "partition": "protected-holdout",
+          "judgmentMode": "partial",
+          "query": "снятие наращенных ногтей и уход",
+          "language": "ru",
+          "slices": [
+            "exact-intent"
+          ],
+          "userIntent": "Nail modeling removal and care",
+          "notes": [
+            "Authored independently from the public BeautyQ typed vocabulary and canonical seed catalog before selection."
+          ],
+          "judgments": {
+            "variants": {
+              "acceptableIds": [
+                "8dd7a820-e280-5a64-a390-bb1fb810b77a"
+              ],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "providers": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            },
+            "serviceIntents": {
+              "acceptableIds": [],
+              "forbiddenIds": [],
+              "neutralIds": [],
+              "gradedGains": []
+            }
+          }
+        }
+      ]
+    }
+}

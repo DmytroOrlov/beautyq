@@ -29,8 +29,8 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
       }
     }
 
-    "have exactly 108 cases after all permanent break-glass migrations" in {
-      assert(corpus.cases.length == 108)
+    "have exactly 116 cases after all permanent break-glass migrations" in {
+      assert(corpus.cases.length == 116)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-migrated")) == 7)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle2-migrated")) == 4)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle3-full-slice-migrated")) == 8)
@@ -41,7 +41,7 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
     }
 
     "append the final full-slice disclosed case after the pre-existing visible inventory" in {
-      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i4_case_004"))
+      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i5_reserve_022"))
     }
 
     "preserve explicit source order for first 3 cases" in {
@@ -73,7 +73,7 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
 
     "have exact language inventory de, en, mixed, ru" in {
       val languages = corpus.cases.map(_.language).distinct.sorted
-      assert(languages == Vector("de", "en", "mixed", "ru"))
+      assert(languages == Vector("de", "en", "mixed", "ru", "ru-translit"))
     }
 
     "preserve q_nails_001 query text, acceptable variant UUIDs, forbidden variant UUIDs, provider UUIDs, and service intent UUID" in {
