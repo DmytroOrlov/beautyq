@@ -1,6 +1,6 @@
 # BeautyQ Search Gen2 — post-cutover quality and operations plan
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — CONVERGENCE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — POST-RECOVERY EXACT-INTENT DISCLOSED; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; 124-case visible managed proof green; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); five disclosure cycles migrated 35 cases; D1 requires second-domain product input**
 
 Owner: post-cutover quality, bounded operational hardening, and eval-first second-domain delivery.
 The [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) remains the owner of current
@@ -13,7 +13,7 @@ The native Gen2 route, module cutover, evaluation foundation, supplement startup
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
 remaining work is:
 
-- the convergence recovery source and deterministic freeze proofs are complete;
+- the post-recovery provenance and deterministic freeze proofs are complete;
 - the cumulative patch requires review and commit;
 - operator-owned root evidence on that exact commit and one fresh correctly attributed protected
   acceptance remain pending;
@@ -374,7 +374,7 @@ The fixture may not be relabeled or tuned after protected output is inspected. A
 exposed for diagnosis moves permanently to the visible regression corpus. If its pre-disclosure
 replacement reserve later fails structural or catalog validation, the reserve is rejected and an
 explicitly authorized recovery pass must rebuild the author, judge and audit chain without access to
-protected queries or search output. The current convergence recovery has completed deterministic source-side
+protected queries or search output. The post-recovery provenance has completed deterministic source-side
 freeze reproduction. It must not be used for protected acceptance until the cumulative patch is
 committed and exact-revision root evidence is obtained.
 
@@ -389,23 +389,25 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **CONVERGENCE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
+Status: **POST-RECOVERY EXACT-INTENT DISCLOSED; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED**
 
-Four disclosure cycles (7 + 4 + 8 + 8 cases) permanently migrated 27 cases to visible Regression.
-The visible corpus contains 116 cases; its managed proof completed 116 warmups and 348 measured
+Five disclosure cycles (7 + 4 + 8 + 8 + 8 cases) permanently migrated 35 cases to visible Regression.
+The visible corpus contains 124 cases; its managed proof completed 124 warmups and 372 measured
 executions with all hard gates green and zero forbidden hits.
 
 The convergence replenishment reserve was rejected because most of its candidate variant judgments were
 absent from the canonical typed catalog. No product identity was invented to rescue it. A fresh
 32-candidate recovery reserve was independently authored from public typed contracts and canonical
 catalog identities, judged without search or protected output access, and audited for catalog
-validation and author/judge separation. Eight final replacements were selected from the recovery
-reserve in stable bucket order. The protected holdout was rebuilt at 24 cases with slice counts
-8/6/4/3/3. The author draft, judged draft, holdout and audit were regenerated through the existing
-freeze owner. Historical disclosure authorizations remain unchanged; the recovery pass is
+validation and author/judge separation. The recovery reserve itself remains immutable through all
+selection cycles. Consumed candidates are visible Regression evidence; the next eligible candidates
+are protected within the rebuilt 24-case holdout (slices 8/6/4/3/3). Eight final replacements were
+selected as the first eligible non-consumed candidate in each bucket whose normalized query was not
+already visible. The author draft, judged draft, holdout and audit were regenerated through the
+existing freeze owner. Historical disclosure authorizations remain unchanged; the recovery pass is
 replenishment provenance, not a rewrite of historical disclosure.
 
-All twenty-seven disclosed cases (7 + 4 + 8 + 8) remain visible regression evidence. The canonical
+All thirty-five disclosed cases (7 + 4 + 8 + 8 + 8) remain visible regression evidence. The canonical
 audit binds the exact file hashes, deterministic corpus/policy fingerprints, catalog validation GREEN,
 visible/protected disjointness GREEN, exact slice inventory GREEN, stable ordering and audit
 reproduction. Post-correction protected acceptance, bootstrap, candidate generation, promotion and
@@ -507,7 +509,7 @@ The canonical visible corpus contains regression evidence, not a protected holdo
 
 Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
-### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — CONVERGENCE RECOVERY SOURCE READY; PROTECTED ACCEPTANCE PENDING**
+### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — POST-RECOVERY EXACT-INTENT DISCLOSED; PROTECTED ACCEPTANCE PENDING**
 
 - execute the complete corpus through native Gen2 application/projector owners;
 - produce deterministic per-query reports for development/regression and aggregate/slice-only

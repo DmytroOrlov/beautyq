@@ -39,8 +39,8 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 116 cases after the exact-intent convergence migration" in {
-      assert(corpus.cases.length == 116)
+    "have exactly 124 cases after the post-recovery exact-intent migration" in {
+      assert(corpus.cases.length == 124)
     }
 
     "have every case as Regression" in {
@@ -191,6 +191,62 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
             field.id -> values.map(field.codec.encodeCanonical)
         }.toSet
         assert(actual == expected, s"unexpected convergence constraints for '$id': $actual")
+        assert(intent.hardConstraints.size == expected.size)
+      }
+    }
+  }
+
+  "q2 post-recovery migrated cases" should {
+    "retain exact typed parser constraints for all eight visible migrations" in {
+      val cases = Vector(
+        "q2i7_recovery_001" -> Set(
+          Fields.serviceCode.id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+        ),
+        "q2i7_recovery_005" -> Set(
+          Fields.serviceCode.id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+        ),
+        "q2i7_recovery_009" -> Set(
+          Fields.serviceCode.id -> Set("lashes"),
+          Fields.enumAttributesByCode("lash_volume").id -> Set("classic1_d"),
+          Fields.enumAttributesByCode("lash_service_type").id -> Set("extension"),
+        ),
+        "q2i7_recovery_013" -> Set(
+          Fields.serviceCode.id -> Set("brows"),
+          Fields.enumAttributesByCode("brow_service_type").id -> Set("lamination"),
+          Fields.booleanAttributesByCode("with_tinting").id -> Set("true"),
+        ),
+        "q2i7_recovery_017" -> Set(
+          Fields.serviceCode.id -> Set("pmu"),
+          Fields.enumAttributesByCode("pmu_area").id -> Set("brows"),
+        ),
+        "q2i7_recovery_021" -> Set(
+          Fields.serviceCode.id -> Set("facial"),
+          Fields.enumAttributesByCode("facial_treatment_type").id -> Set("aquafacial"),
+          Fields.enumAttributesByCode("body_area").id -> Set("face"),
+        ),
+        "q2i7_recovery_025" -> Set(
+          Fields.serviceCode.id -> Set("hair_removal"),
+          Fields.enumAttributesByCode("hair_removal_method").id -> Set("laser"),
+          Fields.enumAttributesByCode("body_area").id -> Set("upper_lip"),
+        ),
+        "q2i7_recovery_029" -> Set(
+          Fields.serviceCode.id -> Set("nail_modeling"),
+          Fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+        ),
+      )
+
+      cases.foreach { case (id, expected) =>
+        val intent = parseFromCorpus(exactlyOneCase(id))
+        val actual = intent.hardConstraints.collect {
+          case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+            field.id -> values.map(field.codec.encodeCanonical)
+        }.toSet
+        assert(actual == expected, s"unexpected post-recovery constraints for '$id': $actual")
         assert(intent.hardConstraints.size == expected.size)
       }
     }

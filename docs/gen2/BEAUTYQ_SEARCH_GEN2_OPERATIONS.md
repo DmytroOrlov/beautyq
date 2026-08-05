@@ -2,7 +2,7 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It does not own architecture, business policy, implementation sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, post-cutover plan, and Git history respectively.
 
-Status: **Q1 completed, O0 completed, O1 completed, Q2 active — CONVERGENCE SOURCE READY; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; 116-case visible managed proof green; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); D1 requires second-domain product input**
+Status: **Q1 completed, O0 completed, O1 completed, Q2 active — POST-RECOVERY EXACT-INTENT DISCLOSED; COMMIT, ROOT EVIDENCE, AND FRESH PROTECTED ACCEPTANCE REQUIRED; 124-case visible managed proof green; protected holdout rebuilt from catalog-bound recovery reserve at 24 cases (8/6/4/3/3); five disclosure cycles migrated 35 cases; D1 requires second-domain product input**
 
 ## Supplement startup policy
 
@@ -246,7 +246,7 @@ All five paths are tracked test-resource owners in the BeautyQ evaluation module
 production `src/main/resources`, and no external restore or CI secret provisioning is required. Their
 presence does not prove that a particular replenishment is valid: author/judge separation, canonical
 catalog identity validation and deterministic audit reproduction must all pass for the same bytes.
-The current convergence recovery has completed all source-side proofs; the tracked holdout is frozen at
+The current post-recovery provenance and freeze proofs are complete; the tracked holdout is frozen at
 24 cases with slices 8/6/4/3/3. Fresh protected acceptance has not run.
 "Protected" is an evaluation-process classification: ordinary development must not tune labels,
 thresholds, vocabulary or search behavior from protected execution output.
@@ -297,7 +297,7 @@ unavailable external resources are non-zero operational failures, not synthetic 
 
 ### Current protected Q2 boundary
 
-Q2 protected correction is in convergence-recovery-source state. The holdout has been rebuilt at
+Q2 protected correction completed post-recovery provenance and freeze proofs. The holdout has been rebuilt at
 24 cases (slices 8/6/4/3/3) from a catalog-bound recovery reserve with tracked provenance under
 `beautyq-search-gen2-eval/src/test/resources/`. Fresh protected acceptance has not run.
 

@@ -2167,14 +2167,17 @@ permits candidate derivation only after a green protected gate. A reusable holdo
 catalog identity validation, separate author and judge provenance, deterministic hash/fingerprint
 binding, visible/protected disjointness and reproducible freeze/audit evidence.
 
-Q2 protected correction is in convergence-recovery-source state. The current convergence
+Q2 protected correction completed post-recovery provenance and freeze proofs. The convergence
 replenishment reserve was found to violate canonical catalog identity validation and was rejected.
-A catalog-bound recovery reserve was authored and judged independently from public typed product
+A catalog-bound recovery reserve was independently authored and judged from public typed product
 declarations and canonical catalog identities, with no access to protected search output or
-protected query inventories. The holdout was rebuilt at 24 cases (slices 8/6/4/3/3), provenance
-resources are tracked, and the freeze/audit proofs are reproducible from an ordinary checkout.
-Fresh protected acceptance has not run. Future invalid reserves must still be rejected under the
-same contract: recovery author/judge passes must remain isolated and catalog-bound.
+protected query inventories. Five disclosure cycles permanently migrated 35 cases; the recovery
+reserve itself remains immutable. Consumed candidates are visible Regression evidence; the next
+eligible candidates were selected as the first non-consumed candidate in each bucket whose
+normalized query was not already visible. The holdout was rebuilt at 24 cases (slices 8/6/4/3/3),
+provenance resources are tracked, and the freeze/audit proofs are reproducible from an ordinary
+checkout. Fresh protected acceptance has not run. Future invalid reserves must still be rejected
+under the same contract: recovery author/judge passes must remain isolated and catalog-bound.
 
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
 candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath

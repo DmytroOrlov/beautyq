@@ -25,10 +25,16 @@ typed `BeautyQIntentVocabulary`. Disclosed protected cases are permanent visible
 The convergence replenishment reserve was rejected because most candidate variant judgments
 were absent from the canonical typed catalog. No product identity was invented to rescue it. A
 fresh isolated recovery reserve was authored from public typed contracts and canonical catalog
-identities. The protected holdout was rebuilt at 24 cases with slices 8/6/4/3/3. Visible corpus
-remains 116 cases; accepted visible managed evidence remains 116 warmups / 348 measured executions,
-zero forbidden hits, and deterministic rankings. Post-correction protected acceptance, bootstrap,
-candidate generation, promotion and verify were not run.
+identities, and has remained immutable through all selection cycles. Five disclosure cycles have
+now permanently migrated 35 cases to the visible Regression corpus. The post-recovery exact-intent
+slice was corrected and disclosed; the first selected candidate of every recovery bucket is
+consumed and visible. The first eligible non-consumed candidate whose normalized query was not already
+visible of every bucket was frozen into the 24-case
+protected holdout with slices 8/6/4/3/3. Visible corpus is now 124 cases; accepted visible
+managed evidence is 124 warmups / 372 measured executions, zero forbidden hits, and deterministic
+rankings. Post-correction protected acceptance, bootstrap, candidate generation, promotion and
+verify were not run. Q2 remains active pending review, commit, root evidence and fresh protected
+acceptance.
 
 The route/Qdrant sections below are current operational truth.
 

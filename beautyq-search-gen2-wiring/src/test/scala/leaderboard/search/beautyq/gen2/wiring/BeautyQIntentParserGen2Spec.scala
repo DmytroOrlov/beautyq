@@ -603,10 +603,12 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
           ).mkString("\n"),
           Vector(
             "intent.normalized-query=\"manicure nearby\"",
-            "intent.matched-rules=[r087]",
+            "intent.matched-rules=[r001,r087]",
+            "intent.hard[0] provenance=ParsedHard constraint.terms field=serviceCode:ServiceCode values=[manicure]",
+            "intent.hard[1] provenance=ParsedHard constraint.terms field=enumAttributes.nail_service_type:string values=[manicure]",
             "intent.soft[0] signal.geo-proximity field=location:geo-point origin=52.5,13.4",
-            "intent.residual=manicure",
-            "intent.labels=[location:near-user:near user]",
+            "intent.residual=absent",
+            "intent.labels=[service:manicure:manicure,attribute.enum:nail_service_type=manicure:nail service type: manicure,location:near-user:near user]",
           ).mkString("\n"),
         )
 

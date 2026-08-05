@@ -2,6 +2,7 @@ package leaderboard.search
 
 import leaderboard.search.beautyq.gen2.eval.{
   BeautyQEvaluationCorpus,
+  BeautyQEvaluationQueryIdentity,
   BeautyQProtectedAcceptancePolicy,
   BeautyQProtectedAcceptancePolicyError,
   BeautyQProtectedEvaluationCorpus,
@@ -13,8 +14,6 @@ import leaderboard.search.beautyq.gen2.eval.{
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.security.MessageDigest
-import java.text.Normalizer
-import java.util.Locale
 import scala.annotation.tailrec
 
 /** Manual, non-discovered, no-search owner that validates and freezes protected inputs. */
@@ -109,7 +108,7 @@ object BeautyQProtectedInputFreezeMain {
   }
 
   def normalizeQuery(value: String): String =
-    Normalizer.normalize(value, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT).trim.replaceAll("\\s+", " ")
+    BeautyQEvaluationQueryIdentity.normalize(value)
 
   def freeze(arguments: Arguments): Either[String, FreezeSummary] = {
     val repositoryRoot = locateRepositoryRoot(Paths.get("").toAbsolutePath.normalize)

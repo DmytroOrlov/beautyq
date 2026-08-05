@@ -6326,6 +6326,302 @@
           "gradedGains": []
         }
       }
+    },
+    {
+      "id": "q2i7_recovery_001",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "gel polish manicure appointment nearby",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Manicure with gel polish coating",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_005",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "classic pedicure with regular polish",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Pedicure with regular polish coating",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "2193db11-d035-58a0-997c-8a96f6d98b01"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_009",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "classic lash extensions 1d near me",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Classic 1D lash extensions",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "5848ff40-41eb-5981-b56e-84c5ae8c9e07"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_013",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "brow lamination and tinting near me",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Brow lamination with tinting",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_017",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "pmu eyebrows permanent makeup",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "PMU brows permanent makeup",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "e52e0840-34dc-559b-8512-0dba9d4130c3"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_021",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "aquafacial hydrafacial treatment near me",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Aquafacial hydrafacial treatment",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_025",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "laser lip hair removal permanent",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Laser upper lip hair removal",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "e593119b-3ec4-547f-89cb-5a1d9eaa5859"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_029",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "gel nail extension builder gel",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Nail extension with gel",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "a4a01672-c103-51b0-8276-49e8aa5d4091"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
     }
   ]
 }

@@ -71,6 +71,27 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
       ).isLeft)
     }
 
+    "accept the post-recovery authorization only with its exact revision and failed check" in {
+      val postRecovery = replaceValue(
+        replaceValue(validArguments, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.PostRecoveryAuthorizationId),
+        "--application-revision",
+        "54e488690124c69f87f82346de3a9e1e300db49c",
+      )
+      val parsed = BeautyQProtectedBreakGlassMain.parseArguments(postRecovery).fold(error => fail(error), identity)
+      assert(parsed.authorizationId == BeautyQProtectedBreakGlassDisclosure.PostRecoveryAuthorizationId)
+      assert(parsed.applicationRevision == "54e488690124c69f87f82346de3a9e1e300db49c")
+      assert(parsed.expectedFailedCheck == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(postRecovery, "--application-revision", "718660275e72b287c24aec494c174c3d3a55bef0")
+      ).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(postRecovery, "--expected-failed-check", "metric-other")
+      ).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(postRecovery, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.ConvergenceAuthorizationId)
+      ).isLeft)
+    }
+
     "accept only one fresh ignored run root and never overwrite it" in {
       val repositoryRoot = Paths.get("").toAbsolutePath.normalize
       val fresh = parse(validArguments)

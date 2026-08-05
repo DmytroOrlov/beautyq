@@ -2,6 +2,7 @@ package leaderboard.search.beautyq.gen2.eval
 
 import io.circe.{Json, JsonObject}
 import io.circe.parser.parse
+import leaderboard.search.gen2.eval.{EvaluationPartition, EvaluationSliceId}
 
 import java.security.MessageDigest
 import java.nio.charset.StandardCharsets
@@ -44,6 +45,7 @@ object BeautyQProtectedRecoveryReserve {
     val judgedReserveSha256: String,
     val candidateCount: Int,
     val orderedBuckets: Vector[String],
+    val consumedCaseIds: Vector[String],
     val selectedCaseIds: Vector[String],
     val finalAuthorDraftSha256: String,
     val finalJudgedHoldoutSha256: String,
@@ -57,7 +59,9 @@ object BeautyQProtectedRecoveryReserve {
   private val JudgedReserveResource =
     "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v1.json"
   private val SelectionAuditResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v1.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v2.json"
+  private val VisibleCorpusResource =
+    "leaderboard/search/beautyq/gen2/eval/beautyq_evaluation_corpus_v2.json"
   private val FinalAuthorDraftResource =
     "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json"
   private val FinalJudgedDraftResource =
@@ -79,19 +83,23 @@ object BeautyQProtectedRecoveryReserve {
 
   private val SelectionAuditRootFields = Set(
     "schemaVersion", "sourceRevision", "authorReservePassId", "judgeReservePassId", "auditPassId",
-    "authorReserveSha256", "judgedReserveSha256", "candidateCount", "orderedBuckets", "selectedCaseIds",
+    "authorReserveSha256", "judgedReserveSha256", "candidateCount", "orderedBuckets", "consumedCaseIds", "selectedCaseIds",
     "finalAuthorDraftSha256", "finalJudgedHoldoutSha256", "finalProtectedCorpusFingerprint",
     "finalProtectedPolicyFingerprint", "canonicalCatalogFingerprint",
   )
-  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v1"
+  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v2"
 
   def load(readResource: ResourceReader): Either[String, BeautyQProtectedRecoveryReserve] = for {
     authorRaw <- readResource(AuthorReserveResource)
     judgedRaw <- readResource(JudgedReserveResource)
     auditRaw <- readResource(SelectionAuditResource)
+    visibleRaw <- readResource(VisibleCorpusResource)
     author <- decodeAuthorReserve(authorRaw)
     judged <- decodeJudgedReserve(judgedRaw)
     audit <- decodeSelectionAudit(auditRaw)
+    visible <- parse(visibleRaw).left.map(_ => "recovery_visible_corpus_invalid_json")
+      .flatMap(BeautyQEvaluationCorpus.decodeFromJson)
+      .left.map(_ => "recovery_visible_corpus_decode_failed")
     _ <- validateHashes(authorRaw, judgedRaw, audit)
     _ <- validateSourceRevisions(author, judged, audit)
     _ <- validatePassBinding(author, judged, audit)
@@ -99,8 +107,11 @@ object BeautyQProtectedRecoveryReserve {
     _ <- validateInventories(author, judged.corpus, audit)
     _ <- validateBucketStructure(author)
     _ <- validateSelection(audit, author)
-    _ <- validatePositionalSelection(audit, author)
+    _ <- validateConsumedSelection(audit)
+    _ <- validatePositionalSelection(audit, author, visible)
     _ <- validateAuthorJudgeCorrespondence(author, judged.corpus)
+    _ <- validateSelectedNotVisible(audit, author, visible)
+    _ <- validateConsumedVisibleProof(author, judged.corpus, audit, visible)
     _ <- validateFinalBindings(readResource, audit, author, judged.corpus)
   } yield new BeautyQProtectedRecoveryReserve(author, judged, audit)
 
@@ -155,36 +166,68 @@ object BeautyQProtectedRecoveryReserve {
   }
 
   private def validateSelection(audit: SelectionAudit, author: AuthorReserve): Either[String, Unit] = {
-    if (audit.selectedCaseIds.size != audit.orderedBuckets.size) Left("recovery_selected_count_mismatch")
+    if (audit.consumedCaseIds.size != audit.orderedBuckets.size) Left("recovery_consumed_count_mismatch")
+    else if (audit.consumedCaseIds.distinct.size != audit.consumedCaseIds.size) Left("recovery_consumed_duplicate_ids")
+    else if (audit.selectedCaseIds.size != audit.orderedBuckets.size) Left("recovery_selected_count_mismatch")
     else if (audit.selectedCaseIds.distinct.size != audit.selectedCaseIds.size) Left("recovery_selected_duplicate_ids")
     else {
-      val authorIds = author.cases.map(_.id)
-      val allSelectedExist = audit.selectedCaseIds.forall(authorIds.contains)
-      if (!allSelectedExist) Left("recovery_selected_case_not_found")
-      else Right(())
+      val authorIds = author.cases.map(_.id).toSet
+      val allConsumedExist = audit.consumedCaseIds.forall(authorIds.contains)
+      if (!allConsumedExist) Left("recovery_consumed_case_not_found")
+      else {
+        val allSelectedExist = audit.selectedCaseIds.forall(authorIds.contains)
+        if (!allSelectedExist) Left("recovery_selected_case_not_found")
+        else Right(())
+      }
     }
   }
 
-  private def validatePositionalSelection(audit: SelectionAudit, author: AuthorReserve): Either[String, Unit] = {
+  private def validateConsumedSelection(audit: SelectionAudit): Either[String, Unit] = {
+    val consumedSet = audit.consumedCaseIds.toSet
+    val selectedSet = audit.selectedCaseIds.toSet
+    if (consumedSet.intersect(selectedSet).nonEmpty) Left("recovery_consumed_selected_overlap")
+    else Right(())
+  }
+
+  private def validatePositionalSelection(audit: SelectionAudit, author: AuthorReserve, visible: BeautyQEvaluationCorpus): Either[String, Unit] = {
     val orderedBuckets = audit.orderedBuckets
+    val consumedCaseIds = audit.consumedCaseIds
     val selectedCaseIds = audit.selectedCaseIds
     val bucketOrderDeclared = author.cases.map(_.coverageBucket).distinct
     if (orderedBuckets.size != 8) Left("recovery_ordered_bucket_count_not_eight")
     else if (orderedBuckets.distinct.size != orderedBuckets.size) Left("recovery_duplicate_ordered_bucket")
     else if (orderedBuckets != bucketOrderDeclared) Left("recovery_bucket_order_mismatch")
     else {
-      val pairs = orderedBuckets.zip(selectedCaseIds)
-      val broken = pairs.find { case (bucket, selectedId) =>
+      val consumedPairs = orderedBuckets.zip(consumedCaseIds)
+      val consumedBroken = consumedPairs.find { case (bucket, consumedId) =>
         val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
         val bucketHead = bucketCandidates.headOption.map(_.id)
-        !(bucketHead.contains(selectedId) && bucketCandidates.exists(_.id == selectedId))
+        !(bucketHead.contains(consumedId) && bucketCandidates.exists(_.id == consumedId))
       }
-      broken match {
-        case Some((bucket, selectedId)) =>
+      consumedBroken match {
+        case Some((bucket, consumedId)) =>
           val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
-          if (!bucketCandidates.exists(_.id == selectedId)) Left("recovery_selected_case_not_in_paired_bucket")
-          else Left("recovery_selected_not_first_candidate")
-        case None => Right(())
+          if (!bucketCandidates.exists(_.id == consumedId)) Left("recovery_consumed_case_not_in_paired_bucket")
+          else Left("recovery_consumed_not_first_candidate")
+        case None =>
+          val consumedSet = consumedCaseIds.toSet
+          val visibleNormalized = visible.cases.map(c => BeautyQEvaluationQueryIdentity.normalize(c.query)).toSet
+          val selectedBroken = orderedBuckets.zip(selectedCaseIds).find { case (bucket, selectedId) =>
+            val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
+            val remainingCandidates = bucketCandidates.filter(c =>
+              !consumedSet.contains(c.id) &&
+              !visibleNormalized.contains(BeautyQEvaluationQueryIdentity.normalize(c.query))
+            )
+            val firstRemaining = remainingCandidates.headOption.map(_.id)
+            !(firstRemaining.contains(selectedId) && bucketCandidates.exists(_.id == selectedId))
+          }
+          selectedBroken match {
+            case Some((bucket, selectedId)) =>
+              val bucketCandidates = author.cases.filter(_.coverageBucket == bucket)
+              if (!bucketCandidates.exists(_.id == selectedId)) Left("recovery_selected_case_not_in_paired_bucket")
+              else Left("recovery_selected_not_first_eligible_candidate")
+            case None => Right(())
+          }
       }
     }
   }
@@ -202,6 +245,72 @@ object BeautyQProtectedRecoveryReserve {
     mismatchCategory match {
       case Some(category) => Left(s"recovery_author_judge_mismatch_${category}")
       case None => Right(())
+    }
+  }
+
+  private def validateConsumedVisibleProof(
+    author: AuthorReserve,
+    judged: BeautyQEvaluationCorpus,
+    audit: SelectionAudit,
+    visible: BeautyQEvaluationCorpus,
+  ): Either[String, Unit] = {
+    val allReserveIds = author.cases.map(_.id).toSet
+    val visibleReserveCases = visible.cases.filter(c => allReserveIds.contains(c.caseId.value))
+    if (visibleReserveCases.map(_.caseId.value) != audit.consumedCaseIds)
+      Left("recovery_consumed_visible_inventory_mismatch")
+    else {
+      val judgedById = judged.cases.map(c => c.caseId.value -> c).toMap
+      val mismatches = visibleReserveCases.flatMap { vc =>
+        val jc = judgedById(vc.caseId.value)
+        if (vc.caseId != jc.caseId) Vector("id")
+        else if (vc.judgmentMode != jc.judgmentMode) Vector("judgment_mode")
+        else if (vc.query != jc.query) Vector("query")
+        else if (vc.language != jc.language) Vector("language")
+        else if (vc.userIntent != jc.userIntent) Vector("user_intent")
+        else if (vc.variantJudgments != jc.variantJudgments) Vector("variant_judgments")
+        else if (vc.providerJudgments != jc.providerJudgments) Vector("provider_judgments")
+        else if (vc.serviceIntentJudgments != jc.serviceIntentJudgments) Vector("service_intent_judgments")
+        else Vector.empty
+      }
+      mismatches.headOption match {
+        case Some(category) => Left(s"recovery_consumed_visible_mismatch_${category}")
+        case None =>
+          if (!visibleReserveCases.forall(_.partition == EvaluationPartition.Regression))
+            Left("recovery_consumed_visible_partition_not_regression")
+          else {
+            val sliceMismatch = visibleReserveCases.find { vc =>
+              val jc = judgedById(vc.caseId.value)
+              val expectedSlices = jc.slices :+ EvaluationSliceId.from("q2-post-recovery-migrated").getOrElse(
+                throw new AssertionError("q2-post-recovery-migrated slice id is invalid")
+              )
+              vc.slices != expectedSlices
+            }
+            sliceMismatch match {
+              case Some(_) => Left("recovery_consumed_visible_slice_mismatch")
+              case None => Right(())
+            }
+          }
+      }
+    }
+  }
+
+  private def validateSelectedNotVisible(
+    audit: SelectionAudit,
+    author: AuthorReserve,
+    visible: BeautyQEvaluationCorpus,
+  ): Either[String, Unit] = {
+    val visibleIds = visible.cases.map(_.caseId.value).toSet
+    val selectedIds = audit.selectedCaseIds.toSet
+    if (selectedIds.intersect(visibleIds).nonEmpty) Left("recovery_selected_id_already_visible")
+    else {
+      val visibleNormalized = visible.cases.map(c => BeautyQEvaluationQueryIdentity.normalize(c.query)).toSet
+      val authorById = author.cases.map(c => c.id -> c).toMap
+      val selectedQueryVisible = audit.selectedCaseIds.exists { sid =>
+        val query = authorById(sid).query
+        visibleNormalized.contains(BeautyQEvaluationQueryIdentity.normalize(query))
+      }
+      if (selectedQueryVisible) Left("recovery_selected_query_already_visible")
+      else Right(())
     }
   }
 
@@ -429,6 +538,9 @@ object BeautyQProtectedRecoveryReserve {
         selectedRaw <- root("selectedCaseIds").flatMap(_.asArray).toRight("recovery_selection_audit_selected_invalid")
         selected <- parseStringArray(selectedRaw, "recovery_selection_audit_selected_element_invalid")
         _ <- Either.cond(selected.nonEmpty, (), "recovery_selection_audit_selected_empty")
+        consumedRaw <- root("consumedCaseIds").flatMap(_.asArray).toRight("recovery_selection_audit_consumed_invalid")
+        consumed <- parseStringArray(consumedRaw, "recovery_selection_audit_consumed_element_invalid")
+        _ <- Either.cond(consumed.nonEmpty, (), "recovery_selection_audit_consumed_empty")
         finalAuthorSha <- string(root, "finalAuthorDraftSha256")
         _ <- Either.cond(DigestPattern.matches(finalAuthorSha), (), "recovery_selection_audit_final_author_sha_invalid")
         finalJudgedSha <- string(root, "finalJudgedHoldoutSha256")
@@ -441,7 +553,7 @@ object BeautyQProtectedRecoveryReserve {
         _ <- Either.cond(DigestPattern.matches(catalogFp), (), "recovery_selection_audit_catalog_fp_invalid")
       } yield new SelectionAudit(
         schema, revision, authorReservePassId, judgeReservePassId, auditPassId,
-        authorSha, judgedSha, count, buckets, selected,
+        authorSha, judgedSha, count, buckets, consumed, selected,
         finalAuthorSha, finalJudgedSha, finalCorpusFp, finalPolicyFp, catalogFp,
       )
     }

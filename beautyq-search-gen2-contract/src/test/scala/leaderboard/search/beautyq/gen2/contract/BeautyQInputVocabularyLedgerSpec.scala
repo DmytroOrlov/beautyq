@@ -28,6 +28,11 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 92).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
+      assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("eyebrows"))
+      assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("hydrafacial"))
+      assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("lip"))
+      assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("nail extension"))
+      assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("builder gel"))
     }
   }
 
@@ -341,7 +346,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
       assert(BeautyQIntentVocabulary.validate(Vector(provider, consumer)).isRight)
     }
 
-    "report duplicate rule IDs before any per-rule content errors" in {
+    "reject duplicate rule IDs before any per-rule content errors" in {
       val ruleA = BeautyIntentRule(IntentRuleId("dup"), Vector("alias-a"), IntentRuleMode.Independent, Vector.empty, Vector.empty, Vector.empty, Vector.empty, noise = false)
       val ruleB = BeautyIntentRule(IntentRuleId("dup"), Vector(""), IntentRuleMode.Independent, Vector.empty, Vector.empty, Vector.empty, Vector.empty, noise = false)
       BeautyQIntentVocabulary.validate(Vector(ruleA, ruleB)) match {
@@ -381,6 +386,57 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
               )
           )
         case Right(value) => fail(s"expected rejection, got: $value")
+      }
+    }
+  }
+
+  "BeautyQ intent vocabulary collision detection" should {
+    "keep manicure aliases from classifying pedicure" in {
+      val manicureRule = BeautyQIntentVocabulary.rules.find(_.id.value == "r001").getOrElse(fail("r001 not found"))
+      assert(!manicureRule.hardActions.contains(service("pedicure")))
+      val pedicureRule = BeautyQIntentVocabulary.rules.find(_.id.value == "r004").getOrElse(fail("r004 not found"))
+      assert(!pedicureRule.hardActions.contains(service("manicure")))
+    }
+
+    "keep PMU lip/brow language from activating hair-removal body-area rules" in {
+      val pmuLipRule = BeautyQIntentVocabulary.rules.find(_.id.value == "r055").getOrElse(fail("r055 not found"))
+      assert(pmuLipRule.aliases.contains("lips"))
+      assert(pmuLipRule.aliases.contains("губы"))
+      assert(!BeautyQIntentVocabulary.rules.exists(r =>
+        r.requires.contains(service("hair_removal")) &&
+          (r.aliases.contains("lips") || r.aliases.contains("brows"))
+      ))
+    }
+
+    "keep lash extensions from activating nail-modeling rules" in {
+      val lashExtensionRule = BeautyQIntentVocabulary.rules.find(_.id.value == "r038").getOrElse(fail("r038 not found"))
+      assert(lashExtensionRule.aliases.contains("extensions"))
+      assert(lashExtensionRule.requires.contains(service("lashes")))
+      assert(!lashExtensionRule.hardActions.exists {
+        case BeautyIntentAction.Service(code) => code.value == "nail_modeling"
+        case _ => false
+      })
+    }
+
+    "keep nail extensions from activating lash rules" in {
+      val nailExtensionRule = BeautyQIntentVocabulary.rules.find(_.id.value == "r005").getOrElse(fail("r005 not found"))
+      assert(nailExtensionRule.aliases.contains("nail extension"))
+      assert(nailExtensionRule.hardActions.contains(service("nail_modeling")))
+      assert(!nailExtensionRule.requires.contains(service("lashes")))
+    }
+
+    "keep contextual attributes inactive without their required service" in {
+      val contextualRules = BeautyQIntentVocabulary.rules.filter(r =>
+        r.mode == IntentRuleMode.Contextual && r.requires.nonEmpty
+      )
+      contextualRules.foreach { rule =>
+        rule.requires.foreach { required =>
+          val satisfies = BeautyQIntentVocabulary.rules.exists(r =>
+            r.hardActions.exists(action => BeautyIntentAction.covers(action, required)) ||
+              r.semanticActions.exists(action => BeautyIntentAction.covers(action, required))
+          )
+          assert(satisfies, s"rule ${rule.id.value} requires $required which no rule produces")
+        }
       }
     }
   }

@@ -1,9 +1,9 @@
 {
-  "schemaVersion": "beautyq-protected-recovery-selection-audit-v1",
+  "schemaVersion": "beautyq-protected-recovery-selection-audit-v2",
   "sourceRevision": "93f6dd2dabbe9ab61bc2f3a4a9af1caf61540f0d",
   "authorReservePassId": "q2i7-recovery-reserve-author-v1",
   "judgeReservePassId": "q2i7-recovery-reserve-judge-v1",
-  "auditPassId": "q2i7-recovery-reserve-audit-v1",
+  "auditPassId": "q2i7-recovery-reserve-reselection-audit-v1",
   "authorReserveSha256": "e0fe01d2b46661d8f09dd02e90208ffe16fed458b6b61c1900053db2564b570d",
   "judgedReserveSha256": "d39bd29e20352143641617617f033b2bad0bfbf6aad8be448640175f6e8ecd98",
   "candidateCount": 32,
@@ -17,7 +17,7 @@
     "hair-removal",
     "nail-modeling"
   ],
-  "selectedCaseIds": [
+  "consumedCaseIds": [
     "q2i7_recovery_001",
     "q2i7_recovery_005",
     "q2i7_recovery_009",
@@ -27,9 +27,19 @@
     "q2i7_recovery_025",
     "q2i7_recovery_029"
   ],
-  "finalAuthorDraftSha256": "9d6e2b328b83cb72305647f813b5dbce7991a783b7fd6d6fa026eafd7c3f7ba4",
-  "finalJudgedHoldoutSha256": "a56f45bed37298accffd15e73b0d9774b76f1725e357b4f35e46769a8c95ada7",
-  "finalProtectedCorpusFingerprint": "bd821a976622ad0157ec4c818f92187c60e08b2b5123f6306dea7878ef0aad17",
-  "finalProtectedPolicyFingerprint": "5422773856685e4ff781b04c39b266c6ac5de06c0fadfb63f8d4f6bea3929755",
+  "selectedCaseIds": [
+    "q2i7_recovery_002",
+    "q2i7_recovery_006",
+    "q2i7_recovery_010",
+    "q2i7_recovery_014",
+    "q2i7_recovery_018",
+    "q2i7_recovery_022",
+    "q2i7_recovery_026",
+    "q2i7_recovery_031"
+  ],
+  "finalAuthorDraftSha256": "05c3e8541db825db7e2e6eb19b70d5de570774b34281cbaf947c5e6909c40ee0",
+  "finalJudgedHoldoutSha256": "8cb610876c0de0b2961d7f9dfb0c75d4eca944e2ba93787245b8bae1b2ec1d6c",
+  "finalProtectedCorpusFingerprint": "87002a0e79984365320b40f31f8cf4c76c7a4757d86ab3a4e1674819514651af",
+  "finalProtectedPolicyFingerprint": "14781a4c2832374ee0f46540c8a532fc853d291841715ed816f12d0fa23c8045",
   "canonicalCatalogFingerprint": "c94327bc85913d44edfa7eb3cc255193a71e1e48382704ba2645ae07bd8b9c81"
 }

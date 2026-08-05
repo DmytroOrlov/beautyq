@@ -86,7 +86,7 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       assert(forbidden.forall(value => !encoded.contains(value)))
     }
 
-    "keep the convergence author draft strict, author-only, and separate from judged bytes" in {
+    "keep the post-recovery author draft strict, author-only, and separate from judged bytes" in {
       val authorRaw = readResource(AuthorDraftResource)
       val judgedRaw = readResource(JudgedDraftResource)
       val protectedCorpus = BeautyQProtectedEvaluationCorpus.load(
@@ -97,8 +97,8 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
 
       val author = BeautyQProtectedAuthorDraft.decodeString(authorRaw).fold(error => fail(error), identity)
       assert(author.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
-      assert(author.sourceRevision == "eeccefe8bde82a1ac93f426aa4e58cf936178640")
-      assert(author.authorPassId == "q2-exact-intent-convergence-recovery-author-v1")
+      assert(author.sourceRevision == "54e488690124c69f87f82346de3a9e1e300db49c")
+      assert(author.authorPassId == "q2-exact-intent-post-recovery-replenishment-author-v1")
       assert(author.cases.size == 24)
       assert(BeautyQProtectedAuthorDraft.correspondsTo(author, protectedCorpus).isRight)
       assert(authorRaw != judgedRaw)
@@ -120,8 +120,12 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       assert(audit.judgedDraftSha256 == sha256(resourcePath(JudgedDraftResource)))
       assert(audit.authorDraftSha256 == sha256(resourcePath(AuthorDraftResource)))
       assert(audit.authorDraftSha256 != audit.judgedDraftSha256)
-      assert(audit.protectedCorpusFingerprint == "bd821a976622ad0157ec4c818f92187c60e08b2b5123f6306dea7878ef0aad17")
-      assert(audit.protectedPolicyFingerprint == "5422773856685e4ff781b04c39b266c6ac5de06c0fadfb63f8d4f6bea3929755")
+      assert(audit.protectedCorpusFingerprint.length == 64)
+      assert(audit.protectedPolicyFingerprint.length == 64)
+      assert(audit.protectedCorpusFingerprint ==
+        "87002a0e79984365320b40f31f8cf4c76c7a4757d86ab3a4e1674819514651af")
+      assert(audit.protectedPolicyFingerprint ==
+        "14781a4c2832374ee0f46540c8a532fc853d291841715ed816f12d0fa23c8045")
     }
 
     "close direct construction, copy and subclassing" in {

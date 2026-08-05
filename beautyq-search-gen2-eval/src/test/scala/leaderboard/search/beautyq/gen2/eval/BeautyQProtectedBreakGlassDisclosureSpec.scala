@@ -91,6 +91,21 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         case other => fail(s"expected convergence full-slice authorization, got $other")
       }
 
+      val fifth = BeautyQProtectedBreakGlassDisclosure.PostRecoveryAuthorization
+      assert(fifth.id == BeautyQProtectedBreakGlassDisclosure.PostRecoveryAuthorizationId)
+      assert(fifth.applicationRevision == "54e488690124c69f87f82346de3a9e1e300db49c")
+      assert(fifth.protectedCorpusFingerprint == "bd821a976622ad0157ec4c818f92187c60e08b2b5123f6306dea7878ef0aad17")
+      assert(fifth.policyFingerprint == "5422773856685e4ff781b04c39b266c6ac5de06c0fadfb63f8d4f6bea3929755")
+      assert(fifth.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      fifth.disclosureScope match {
+        case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+          assert(sliceId == "exact-intent")
+          assert(expectedCount == 8)
+        case other => fail(s"expected post-recovery full-slice authorization, got $other")
+      }
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 5)
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 5)
+
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
         failedResult(), fixture.report, fixture.corpus, fixture.policy,
