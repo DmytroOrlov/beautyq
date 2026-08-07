@@ -103,8 +103,8 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
           assert(expectedCount == 8)
         case other => fail(s"expected post-recovery full-slice authorization, got $other")
       }
-      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 6)
-      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 6)
+       assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 7)
+       assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 7)
 
       val sixth = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2Authorization
       assert(sixth.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId)
@@ -119,6 +119,19 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         case other => fail(s"expected recovery-rotation-2 full-slice authorization, got $other")
       }
 
+      val seventh = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation3Authorization
+      assert(seventh.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation3AuthorizationId)
+      assert(seventh.applicationRevision == "4e3f6aed518a3d86d8336e4b575edee7012832e9")
+      assert(seventh.protectedCorpusFingerprint == "f531e287027595a602fe97f44cae7d7cfbe2759be8f1b18d594d21ecbdb83f6e")
+      assert(seventh.policyFingerprint == "c9c0677f25b45310376d0e2aa4c678a1e579a984f0dc8cd2e8ef0bba6990289b")
+      assert(seventh.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      seventh.disclosureScope match {
+        case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+          assert(sliceId == "exact-intent")
+          assert(expectedCount == 8)
+        case other => fail(s"expected recovery-rotation-3 full-slice authorization, got $other")
+      }
+
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
         failedResult(), fixture.report, fixture.corpus, fixture.policy,
@@ -129,6 +142,10 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         failedResult(), fixture.report, fixture.corpus, fixture.policy,
         second.applicationRevision, BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId,
         BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ), "break_glass_authorization_corpus_mismatch")
+      assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        seventh.applicationRevision, seventh.id, BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
       ), "break_glass_authorization_corpus_mismatch")
     }
 

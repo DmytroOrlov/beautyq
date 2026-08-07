@@ -227,7 +227,7 @@ object BeautyQIntentVocabulary {
     rule("r023", "реснички 2д корр")(service("lashes"), enumAttr("lash_volume", "volume2_d"), enumAttr("lash_service_type", "refill"), bool("with_correction", true)),
     rule("r024", "с shellac и снятием")(enumAttr("nail_coating_type", "shellac"), bool("with_removal", true)),
     rule("r025", "shellac entfernen und neu")(enumAttr("nail_coating_type", "shellac"), bool("with_removal", true)),
-    rule("r026", "снять гель с ногтей", "снять гель")(service("nail_modeling"), enumAttr("nail_service_type", "removal"), enumAttr("nail_coating_type", "gel"), bool("with_removal", true)),
+     rule("r026", "снять гель с ногтей", "снять гель")(service("nail_modeling"), enumAttr("nail_service_type", "removal"), enumAttr("nail_coating_type", "gel"), bool("with_removal", true)),
     rule("r027", "gel removal")(service("nail_modeling"), enumAttr("nail_service_type", "removal"), enumAttr("nail_coating_type", "gel")),
     rule("r028", "коррекция гелевых ногтей с дизайном")(service("nail_modeling"), enumAttr("nail_service_type", "refill"), enumAttr("nail_coating_type", "gel"), bool("with_correction", true), bool("with_design", true)),
     rule("r029", "коррекция гелевых ногтей")(service("nail_modeling"), enumAttr("nail_service_type", "refill"), enumAttr("nail_coating_type", "gel"), bool("with_correction", true)),
@@ -258,9 +258,9 @@ object BeautyQIntentVocabulary {
     rule("r054", "färben", "tint", "окрашивание", "tinting")(bool("with_tinting", true))(using mode = IntentRuleMode.Contextual, requires = Vector(service("lashes"))),
     rule("r055", "губы", "губ", "lips")(enumAttr("pmu_area", "lips"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
     rule("r056", "eyeliner")(enumAttr("pmu_area", "eyeliner"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
-    rule("r057", "correction", "коррекция")(bool("with_correction", true))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
-    rule("r058", "powder brows", "пудровый перманент бровей", "брови с мягким пудровым эффектом надолго")(service("pmu"), enumAttr("pmu_area", "brows")),
-    rule("r059", "brows", "eyebrows")(enumAttr("pmu_area", "brows"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
+     rule("r057", "correction", "коррекция")(bool("with_correction", true))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
+    rule("r058", "powder brows", "пудровый перманент бровей", "брови с мягким пудровым эффектом надолго", "перманентный макияж бровей")(service("pmu"), enumAttr("pmu_area", "brows")),
+    rule("r059", "brows", "eyebrows", "бровей")(enumAttr("pmu_area", "brows"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("pmu"))),
     rule("r060", "aquafacial", "hydrafacial")(service("facial"), enumAttr("facial_treatment_type", "aquafacial"), enumAttr("body_area", "face")),
     rule("r061", "microneedling")(service("facial"), enumAttr("facial_treatment_type", "microneedling"), enumAttr("body_area", "face")),
     rule("r062", "bb glow", "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа")(service("facial"), enumAttr("facial_treatment_type", "bb_glow"), enumAttr("body_area", "face")),
@@ -319,9 +319,19 @@ object BeautyQIntentVocabulary {
     rule("r091", "regular polish", "ordinary polish", "обычный лак", "обычным лаком", "normaler lack")(
       enumAttr("nail_coating_type", "regular_polish"),
     ),
-    rule("r092", "без дизайна", "without design", "ohne design")(
+     rule("r092", "без дизайна", "without design", "ohne design")(
       bool("with_design", false),
     )(using mode = IntentRuleMode.Contextual, requires = Vector(nailServiceFamily)),
+     rule("r093", "снятие наращенных ногтей")(
+       service("nail_modeling"),
+       enumAttr("nail_service_type", "removal"),
+       bool("with_removal", true),
+     ),
+     rule("r094", "henna brows")(
+       service("brows"),
+       enumAttr("brow_service_type", "henna"),
+       bool("with_tinting", true),
+     ),
   )
 
   val validation: Either[NonEmptyErrors[BeautyIntentVocabularyError], BeautyQIntentVocabulary] = validate(sourceRules)

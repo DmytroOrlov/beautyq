@@ -26,6 +26,13 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
   private lazy val reserve = BeautyQProtectedRecoveryReserve.load(classpathReader).fold(error => fail(error), identity)
   private lazy val reserve2 = BeautyQProtectedRecoveryReserve.load(classpathReader).fold(error => fail(error), identity)
 
+  private val CurrentAuthorReserveResource =
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-author-reserve-v2.json"
+  private val CurrentJudgedReserveResource =
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v2.json"
+  private val CurrentSelectionAuditResource =
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v4.json"
+
   private val AuthorReserveResource =
     "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-author-reserve-v1.json"
   private val SelectionAuditResource =
@@ -42,14 +49,62 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
     "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v1.json"
   private val VisibleCorpusResource =
     "leaderboard/search/beautyq/gen2/eval/beautyq_evaluation_corpus_v2.json"
+  private val FreshDisclosedIds = Set(
+    "q2i7_recovery_003", "q2i7_recovery_007", "q2i7_recovery_011", "q2i7_recovery_015",
+    "q2i7_recovery_019", "q2i7_recovery_023", "q2i7_recovery_027", "q2i7_recovery_032",
+  )
+
+  private def loadLegacyFixture(
+    reader: BeautyQProtectedRecoveryReserve.ResourceReader,
+    preserveVisible: Boolean = false,
+  ): Either[String, BeautyQProtectedRecoveryReserve] = {
+    def schema(raw: String, expected: String): Either[String, String] =
+      parse(raw).left.map(_.message).map(_.mapObject(_.add("schemaVersion", io.circe.Json.fromString(expected))).noSpaces)
+
+    val authorRaw = reader(AuthorReserveResource).flatMap(schema(_, "beautyq-protected-recovery-author-reserve-v2"))
+    val judgedRaw = reader(JudgedReserveResource).flatMap(schema(_, "beautyq-protected-recovery-judged-reserve-v2"))
+    val auditRaw = for {
+      author <- authorRaw
+      judged <- judgedRaw
+      raw <- reader(SelectionAuditResource)
+      authorSha = sha256(author)
+      judgedSha = sha256(judged)
+      normalized <- parse(raw).left.map(_.message).map { json =>
+        json.mapObject(_.add("schemaVersion", io.circe.Json.fromString("beautyq-protected-recovery-selection-audit-v4"))
+          .add("authorReserveSha256", io.circe.Json.fromString(authorSha))
+          .add("judgedReserveSha256", io.circe.Json.fromString(judgedSha)))
+          .noSpaces
+      }
+    } yield normalized
+
+    BeautyQProtectedRecoveryReserve.load { path =>
+      path match {
+        case CurrentAuthorReserveResource => authorRaw
+        case CurrentJudgedReserveResource => judgedRaw
+        case CurrentSelectionAuditResource => auditRaw
+        case VisibleCorpusResource if !preserveVisible => Right(legacyVisibleRaw)
+        case other => reader(other)
+      }
+    }
+  }
+
+  private def legacyVisibleRaw: String = {
+    val raw = classpathReader(VisibleCorpusResource).getOrElse(fail("missing visible corpus"))
+    parse(raw).getOrElse(fail("invalid visible json")).mapObject { obj =>
+      val cases = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
+      obj.add("cases", io.circe.Json.fromValues(cases.filterNot { value =>
+        value.asObject.flatMap(_("id")).flatMap(_.asString).exists(FreshDisclosedIds.contains)
+      }))
+    }.noSpaces
+  }
 
   "BeautyQProtectedRecoveryReserve" should {
     "load tracked resources from classpath without target dependency" in {
       BeautyQProtectedRecoveryReserve.load(classpathReader) match {
         case Right(value) =>
-          assert(value.authorReserve.cases.size == 32)
-          assert(value.selectionAudit.orderedBuckets.size == 8)
-          assert(value.selectionAudit.candidateCount == 32)
+           assert(value.authorReserve.cases.size == 8)
+           assert(value.selectionAudit.orderedBuckets.size == 8)
+           assert(value.selectionAudit.candidateCount == 8)
         case Left(error) => fail(error)
       }
     }
@@ -73,22 +128,73 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       assert(ids.distinct.size == ids.size)
     }
 
-    "have exact 8 x 4 bucket structure" in {
+    "have exact 8 x 1 bucket structure" in {
       val buckets = reserve.authorReserve.cases.groupBy(_.coverageBucket)
       assert(buckets.size == 8)
-      buckets.values.foreach(cases => assert(cases.size == 4))
+      buckets.values.foreach(cases => assert(cases.size == 1))
       val declared = reserve.authorReserve.cases.map(_.coverageBucket).distinct
       assert(declared == reserve.selectionAudit.orderedBuckets)
     }
 
-    "have exact positional selection with two complete consumed rounds and non-reserve visible exclusion" in {
+    "reject uneven positive bucket counts" in {
+      val rawAuthor = classpathReader(CurrentAuthorReserveResource).getOrElse(fail("missing author reserve"))
+      val rawJudged = classpathReader(CurrentJudgedReserveResource).getOrElse(fail("missing judged reserve"))
+      val authorJson = parse(rawAuthor).getOrElse(fail("invalid author reserve"))
+      val judgedJson = parse(rawJudged).getOrElse(fail("invalid judged reserve"))
+      val authorCases = authorJson.hcursor.downField("cases").focus.flatMap(_.asArray).getOrElse(fail("author cases missing"))
+      val judgedCorpus = judgedJson.hcursor.downField("corpus").focus.flatMap(_.asObject).getOrElse(fail("judged corpus missing"))
+      val judgedCases = judgedCorpus("cases").flatMap(_.asArray).getOrElse(fail("judged cases missing"))
+      val extraAuthor = authorCases.headOption.getOrElse(fail("author cases empty")).mapObject(_.add(
+        "id", io.circe.Json.fromString("q2i7_recovery_041"),
+      ).add("query", io.circe.Json.fromString("manicure no coating alternate")))
+      val extraJudged = judgedCases.headOption.getOrElse(fail("judged cases empty")).mapObject(_.add(
+        "id", io.circe.Json.fromString("q2i7_recovery_041"),
+      ).add("query", io.circe.Json.fromString("manicure no coating alternate")))
+      val newAuthor = authorJson.mapObject(_.add("cases", io.circe.Json.fromValues(authorCases :+ extraAuthor))).noSpaces
+      val newJudged = judgedJson.mapObject(_.add(
+        "corpus", io.circe.Json.fromJsonObject(judgedCorpus.add("cases", io.circe.Json.fromValues(judgedCases :+ extraJudged))),
+      )).noSpaces
+      val newAuthorSha = sha256(newAuthor)
+      val newJudgedSha = sha256(newJudged)
+      val reader: BeautyQProtectedRecoveryReserve.ResourceReader = {
+        case CurrentAuthorReserveResource => Right(newAuthor)
+        case CurrentJudgedReserveResource => Right(newJudged)
+        case CurrentSelectionAuditResource => classpathReader(CurrentSelectionAuditResource).map { raw =>
+          parse(raw).getOrElse(fail("invalid selection audit")).mapObject(_.add("candidateCount", io.circe.Json.fromInt(9))
+            .add("authorReserveSha256", io.circe.Json.fromString(newAuthorSha))
+            .add("judgedReserveSha256", io.circe.Json.fromString(newJudgedSha))).noSpaces
+        }
+        case other => classpathReader(other)
+      }
+      assert(BeautyQProtectedRecoveryReserve.load(reader) == Left("recovery_bucket_candidate_count_not_uniform_positive"))
+    }
+
+    "reject a missing bucket" in {
+      val rawAuthor = classpathReader(CurrentAuthorReserveResource).getOrElse(fail("missing author reserve"))
+      val modifiedAuthor = parse(rawAuthor).getOrElse(fail("invalid author reserve")).mapObject { obj =>
+        val cases = obj("cases").flatMap(_.asArray).getOrElse(fail("author cases missing"))
+        val first = cases.headOption.getOrElse(fail("author cases empty")).mapObject(_.add("coverageBucket", io.circe.Json.fromString("pedicure")))
+        obj.add("cases", io.circe.Json.fromValues(first +: cases.drop(1)))
+      }.noSpaces
+      val authorSha = sha256(modifiedAuthor)
+      val reader: BeautyQProtectedRecoveryReserve.ResourceReader = {
+        case CurrentAuthorReserveResource => Right(modifiedAuthor)
+        case CurrentSelectionAuditResource => classpathReader(CurrentSelectionAuditResource).map { raw =>
+          parse(raw).getOrElse(fail("invalid selection audit")).mapObject(_.add("authorReserveSha256", io.circe.Json.fromString(authorSha))).noSpaces
+        }
+        case other => classpathReader(other)
+      }
+      assert(BeautyQProtectedRecoveryReserve.load(reader) == Left("recovery_bucket_count_not_eight"))
+    }
+
+    "have exact positional selection with an empty consumed inventory" in {
       val visible = BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity)
       val orderedBuckets = reserve.selectionAudit.orderedBuckets
       val consumedCaseIds = reserve.selectionAudit.consumedCaseIds
       val bucketCount = orderedBuckets.size
       val roundCount = consumedCaseIds.size / bucketCount
-      assert(roundCount == 2)
-      assert(consumedCaseIds.size == 16)
+       assert(roundCount == 0)
+       assert(consumedCaseIds.isEmpty)
       val consumedSet = consumedCaseIds.toSet
       val reserveIds = reserve.authorReserve.cases.map(_.id).toSet
       val nonReserveVisibleNormalized = visible.cases.iterator.filterNot(c => reserveIds.contains(c.caseId.value)).map(c => BeautyQEvaluationQueryIdentity.normalize(c.query)).toSet
@@ -112,7 +218,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       }
     }
 
-    "correspond all 32 author cases with judged cases including notes" in {
+     "correspond all 8 author cases with judged cases including notes" in {
       val pairs = reserve.authorReserve.cases.zip(reserve.judgedReserve.corpus.cases)
       pairs.foreach { case (ac, jc) =>
         assert(ac.id == jc.caseId.value)
@@ -219,7 +325,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("author_revision")))
     }
 
@@ -231,7 +337,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("author_revision")))
     }
 
@@ -252,7 +358,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("pass_ids_not_distinct")))
     }
 
@@ -266,7 +372,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("pass_ids_not_distinct")))
     }
 
@@ -280,7 +386,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("pass_ids_not_distinct")))
     }
 
@@ -303,7 +409,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("consumed_not_positional_per_round")))
     }
 
@@ -326,7 +432,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("selected_not_first_eligible_candidate")))
     }
 
@@ -349,7 +455,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("consumed_duplicate_ids")))
     }
 
@@ -372,7 +478,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("consumed_case_not_found")))
     }
 
@@ -395,7 +501,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("consumed_selected_overlap")))
     }
 
@@ -418,7 +524,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("consumed_not_positional_per_round")))
     }
 
@@ -433,7 +539,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result == Left("recovery_consumed_count_not_multiple_of_buckets"))
     }
 
@@ -449,7 +555,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result == Left("recovery_consumed_not_positional_per_round"))
     }
 
@@ -464,7 +570,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result == Left("recovery_consumed_not_positional_per_round"))
     }
 
@@ -491,7 +597,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result == Left("recovery_no_next_eligible_candidate"))
     }
 
@@ -514,7 +620,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("bucket_order")))
     }
 
@@ -537,7 +643,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("duplicate_ordered_bucket")))
     }
 
@@ -558,8 +664,8 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
-      assert(result.left.exists(_.contains("bucket_candidate_count_not_four")))
+      val result = loadLegacyFixture(failReader)
+      assert(result.left.exists(_.contains("bucket_candidate_count_not_uniform_positive")))
     }
 
     "reject duplicate author candidate ID" in {
@@ -579,7 +685,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("duplicate_case_id")))
     }
 
@@ -602,7 +708,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("selected_case_not_found")))
     }
 
@@ -610,7 +716,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       val rawAuthorDraft = classpathReader(FinalAuthorDraftResource).getOrElse(fail("missing author draft"))
       val modifiedJson = parse(rawAuthorDraft).getOrElse(fail("invalid json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
-        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_003"))
+        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_033"))
         if (reserveCaseIdx < 0) obj
         else {
           val modified = casesArray(reserveCaseIdx).mapObject(_.add("query", io.circe.Json.fromString("wrong query")))
@@ -627,7 +733,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("recovery_selected_final_author_mismatch_query")))
     }
 
@@ -635,7 +741,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       val rawJudged = classpathReader(FinalJudgedDraftResource).getOrElse(fail("missing judged draft"))
       val modifiedJson = parse(rawJudged).getOrElse(fail("invalid json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
-        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_003"))
+        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_033"))
         if (reserveCaseIdx < 0) obj
         else {
           val modified = casesArray(reserveCaseIdx).mapObject(_.add("judgmentMode", io.circe.Json.fromString("strict")))
@@ -652,7 +758,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.isLeft)
     }
 
@@ -660,7 +766,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       val rawJudged = classpathReader(FinalJudgedDraftResource).getOrElse(fail("missing judged draft"))
       val modifiedJson = parse(rawJudged).getOrElse(fail("invalid json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
-        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_003"))
+        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_033"))
         if (reserveCaseIdx < 0) obj
         else {
           val caseObj = casesArray(reserveCaseIdx).asObject.getOrElse(fail("case not object"))
@@ -688,7 +794,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.isLeft)
     }
 
@@ -696,7 +802,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       val rawJudged = classpathReader(FinalJudgedDraftResource).getOrElse(fail("missing judged draft"))
       val modifiedJson = parse(rawJudged).getOrElse(fail("invalid json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
-        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_003"))
+        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_033"))
         if (reserveCaseIdx < 0) obj
         else {
           val caseObj = casesArray(reserveCaseIdx).asObject.getOrElse(fail("case not object"))
@@ -724,7 +830,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.isLeft)
     }
 
@@ -732,7 +838,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       val rawJudged = classpathReader(FinalJudgedDraftResource).getOrElse(fail("missing judged draft"))
       val modifiedJson = parse(rawJudged).getOrElse(fail("invalid json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
-        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_003"))
+        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_033"))
         if (reserveCaseIdx < 0) obj
         else {
           val caseObj = casesArray(reserveCaseIdx).asObject.getOrElse(fail("case not object"))
@@ -760,7 +866,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.isLeft)
     }
 
@@ -776,7 +882,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.isLeft)
     }
 
@@ -788,7 +894,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("policy_fingerprint")))
     }
 
@@ -796,7 +902,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
       val rawAuthorDraft = classpathReader(FinalAuthorDraftResource).getOrElse(fail("missing author draft"))
       val modifiedJson = parse(rawAuthorDraft).getOrElse(fail("invalid json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
-        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_003"))
+        val reserveCaseIdx = casesArray.indexWhere(c => c.asObject.flatMap(_("id")).flatMap(_.asString).contains("q2i7_recovery_033"))
         if (reserveCaseIdx < 0) obj
         else {
           val modified = casesArray(reserveCaseIdx).mapObject(_.add("notes", io.circe.Json.arr(io.circe.Json.fromString("wrong note"))))
@@ -813,7 +919,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("recovery_selected_final_note_provenance_mismatch")))
     }
 
@@ -851,30 +957,27 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         } else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("recovery_selected_judge_corpus_mismatch_variant_judgments")))
     }
 
-    "select q2i7_recovery_032 for the nail-modeling bucket without an ID-specific exception" in {
-      val consumedId = reserve.selectionAudit.consumedCaseIds(reserve.selectionAudit.orderedBuckets.indexOf("nail-modeling") + reserve.selectionAudit.orderedBuckets.size)
+    "select q2i7_recovery_040 for the fresh nail-modeling bucket without an ID-specific exception" in {
       val selectedId = reserve.selectionAudit.selectedCaseIds(reserve.selectionAudit.orderedBuckets.indexOf("nail-modeling"))
-      assert(consumedId == "q2i7_recovery_031")
-      assert(selectedId == "q2i7_recovery_032")
+      assert(reserve.selectionAudit.consumedCaseIds.isEmpty)
+      assert(selectedId == "q2i7_recovery_040")
       assert(!reserve.selectionAudit.selectedCaseIds.contains("q2i7_recovery_031"))
     }
 
     "exclude q2i7_recovery_030 because its normalized query collides with a visible case" in {
       val visible = BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity)
-      val candidate = reserve.authorReserve.cases.find(_.id == "q2i7_recovery_030").getOrElse(fail("missing q2i7_recovery_030"))
-      val candidateNormalized = BeautyQEvaluationQueryIdentity.normalize(candidate.query)
+      val candidateNormalized = BeautyQEvaluationQueryIdentity.normalize("коррекция гелевых ногтей с дизайном")
       val visibleNormalized = visible.cases.map(c => BeautyQEvaluationQueryIdentity.normalize(c.query)).toSet
       assert(visibleNormalized.contains(candidateNormalized), s"q2i7_recovery_030 normalized query '$candidateNormalized' must already be visible")
     }
 
     "reject when removing the non-reserve visible collision for q2i7_recovery_030 makes the second consumed nail-modeling candidate non-positional" in {
-      val candidate = reserve.authorReserve.cases.find(_.id == "q2i7_recovery_030").getOrElse(fail("missing q2i7_recovery_030"))
-      val candidateNormalized = BeautyQEvaluationQueryIdentity.normalize(candidate.query)
-      val visibleRaw = classpathReader(VisibleCorpusResource).getOrElse(fail("missing visible corpus"))
+      val candidateNormalized = BeautyQEvaluationQueryIdentity.normalize("коррекция гелевых ногтей с дизайном")
+      val visibleRaw = legacyVisibleRaw
       val modifiedVisible = parse(visibleRaw).getOrElse(fail("invalid visible json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
         val filteredCases = casesArray.filterNot { c =>
@@ -887,12 +990,12 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
         if (path == VisibleCorpusResource) Right(modifiedVisible.noSpaces)
         else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader, preserveVisible = true)
       assert(result.left.exists(_.contains("recovery_consumed_not_positional_per_round")))
     }
 
     "reject a missing consumed visible case" in {
-      val visibleRaw = classpathReader(VisibleCorpusResource).getOrElse(fail("missing visible corpus"))
+      val visibleRaw = legacyVisibleRaw
       val modifiedVisible = parse(visibleRaw).getOrElse(fail("invalid visible json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
         val filteredCases = casesArray.filterNot { c =>
@@ -904,12 +1007,12 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
         if (path == VisibleCorpusResource) Right(modifiedVisible.noSpaces)
         else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader, preserveVisible = true)
       assert(result.left.exists(_.contains("consumed_visible_inventory_mismatch")))
     }
 
     "reject changed second-round consumed variant judgments" in {
-      val visibleRaw = classpathReader(VisibleCorpusResource).getOrElse(fail("missing visible corpus"))
+      val visibleRaw = legacyVisibleRaw
       val modifiedVisible = parse(visibleRaw).getOrElse(fail("invalid visible json")).mapObject { obj =>
         val casesArray = obj("cases").flatMap(_.asArray).getOrElse(fail("cases missing"))
         val modifiedCases = casesArray.map { c =>
@@ -935,7 +1038,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
         if (path == VisibleCorpusResource) Right(modifiedVisible.noSpaces)
         else classpathReader(path)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader, preserveVisible = true)
       assert(result == Left("recovery_consumed_visible_mismatch_variant_judgments"))
     }
 
@@ -993,7 +1096,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("final_author_sha_invalid")))
     }
 
@@ -1005,7 +1108,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("final_judged_sha_invalid")))
     }
 
@@ -1017,7 +1120,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("final_corpus_fp_invalid")))
     }
 
@@ -1029,7 +1132,7 @@ final class BeautyQProtectedRecoveryReserveSpec extends AnyWordSpec {
           }
         case other => classpathReader(other)
       }
-      val result = BeautyQProtectedRecoveryReserve.load(failReader)
+      val result = loadLegacyFixture(failReader)
       assert(result.left.exists(_.contains("final_policy_fp_invalid")))
     }
   }

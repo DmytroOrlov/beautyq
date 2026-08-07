@@ -16,8 +16,8 @@ final class BeautyQProtectedRecoveryReserveCompositionSpec extends AnyWordSpec {
     }
 
     "load recovery through the eval owner from app-shell classpath" in {
-      assert(composition.recovery.authorReserve.cases.size == 32)
-      assert(composition.recovery.judgedReserve.corpus.cases.size == 32)
+      assert(composition.recovery.authorReserve.cases.size == 8)
+      assert(composition.recovery.judgedReserve.corpus.cases.size == 8)
       assert(composition.recovery.selectionAudit.selectedCaseIds.size == 8)
     }
 

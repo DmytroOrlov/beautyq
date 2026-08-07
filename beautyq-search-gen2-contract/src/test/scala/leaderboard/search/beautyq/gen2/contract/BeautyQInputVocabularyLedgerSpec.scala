@@ -25,7 +25,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
     "pin dynamic naming prefixes and stable rule IDs" in {
       val dynamicNames = BeautyQPublicFilterRegistry.fields.drop(5).map(_.name.value)
       assert(dynamicNames.forall(name => name.startsWith("attribute.int.") || name.startsWith("attribute.decimal.") || name.startsWith("attribute.enum.") || name.startsWith("attribute.boolean.")))
-      assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 92).map(index => f"r$index%03d").toVector)
+       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 94).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("eyebrows"))
@@ -35,7 +35,23 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("builder gel"))
       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r005").exists(_.aliases.contains("nail modeling")))
       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r070").exists(_.aliases.contains("waxing")))
-      assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r078").exists(_.aliases.contains("oberlippe")))
+       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r078").exists(_.aliases.contains("oberlippe")))
+        val r007 = BeautyQIntentVocabulary.rules.find(_.id.value == "r007").getOrElse(fail("r007 not found"))
+        assert(r007.aliases == Vector("брови", "augenbrauen"))
+        assert(r007.hardActions.contains(service("brows")))
+        assert(r007.excludes.isEmpty)
+        assert(!r007.aliases.contains("henna brows"))
+        assert(!r007.aliases.contains("brows"))
+       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r059").exists(_.aliases.contains("бровей")))
+       val r094 = BeautyQIntentVocabulary.rules.find(_.id.value == "r094").getOrElse(fail("r094 not found"))
+       assert(r094.aliases == Vector("henna brows"))
+       assert(r094.hardActions == Vector(
+         service("brows"),
+         BeautyIntentAction.EnumAttribute("brow_service_type", "henna"),
+         BeautyIntentAction.BooleanAttribute("with_tinting", true),
+       ))
+       assert(r094.excludes.isEmpty)
+       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r093").exists(_.aliases.contains("снятие наращенных ногтей")))
     }
   }
 

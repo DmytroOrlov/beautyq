@@ -223,10 +223,12 @@ Validation:
 - do not run the full repository suite
 
 Report:
-- changed files
+- runtime or generated evidence that is not recoverable from the patch
 - focused command results
-- deviations or diagnostic-driven fixes
+- diagnostic-driven deviations from the requested plan
 - remaining uncertainty
+
+Reports are delta-only. Do not list changed files or restate diff-visible edits when the reviewer can recover them from the patch. Mention files only for scope deviations or generated/untracked evidence, and explain rationale only when it is not visible from the code or diagnostic.
 
 Scope expansion:
 - exact files, symbols, diagnostics, and smallest next action
@@ -251,7 +253,13 @@ Do not paste all of `AGENTS.md` into prompts. Inline only task-specific guardrai
 - `[ALL]` Large documents, diffs, successful logs, status, and inventories stay in repo-local artifacts; include only summaries and unexpected excerpts in the conversation.
 - `[ALL]` Follow `AGENTS.md` for diagnostics, sbt execution, deletion safety, and failure triage instead of repeating those rules here.
 - `[W][DOCS]` Multiple large documents may use a fresh docs continuation in the same uncommitted patch with exact replacement anchors; do not defer required live documentation to a later logical task.
-- `[ALL]` Split on observable triggers: a new architecture or ownership decision, a diagnostic opening several unplanned retained owners, a second unrelated root cause, repeated compile/search cycles, or lost verified state after compaction.
+- `[ALL]` Split on observable triggers: a new architecture or ownership decision, a diagnostic opening several unplanned retained owners, a second unrelated root cause, repeated compile/search cycles, a generated result that determines later edit content, or lost verified state after compaction.
+
+## 4.2.2 Prompt and execution economy
+
+- Distinguish `Read first` from the edit and validation manifest. Pre-read only decision-critical owners, exact templates, and current diagnostics; an edit target or validation owner does not need to be read before it becomes relevant. Within a phase, batch coherent edits per owner and re-read only bounded changed ranges or diagnostics.
+- Inline each decision-critical fact once, preferably as a compact manifest or table. Omit coordinator self-talk, inherited repository rules, and facts that neither change an edit decision nor prevent broad discovery.
+- For large multi-module patches, run compile and pure owning specs before managed or external-resource suites. Rerun only the failed layer and downstream layers affected by its fix; do not repeat an already-green layer without a source-confirmed reason.
 
 ## 4.3 Runtime safety inheritance
 
@@ -391,7 +399,7 @@ When asked to edit this guide or another text document, provide a ready replacem
 
 # 8. Model recommendations
 
-Keep model recommendations outside delegated prompts. Recommend the cheapest tier likely to complete the task without expensive retries.
+Keep model recommendations outside delegated prompts. Recommend the cheapest tier likely to complete the task without expensive retries. A recommendation saves cost only when dispatch actually selects that tier and reasoning variant; do not use a strong or `xhigh` variant for source-confirmed bounded work unless the strong-tier criterion is met.
 
 Decision order:
 

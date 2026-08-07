@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-author-reserve-v2",
+  "sourceRevision": "4e3f6aed518a3d86d8336e4b575edee7012832e9",
+  "authorPassId": "q2i7-recovery-fresh-reserve-author-v1",
+  "cases": [
+    {
+      "id": "q2i7_recovery_033",
+      "query": "manicure no coating appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure without coating",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_034",
+      "query": "classic pedicure no coating booking",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure without coating",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_035",
+      "query": "2d lash extensions appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "2D lash extensions",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_036",
+      "query": "brow shaping appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Brow shaping",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_037",
+      "query": "pmu lips permanent makeup booking",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "PMU lips permanent makeup",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_038",
+      "query": "peeling face treatment appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Facial peeling for face",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_039",
+      "query": "threading chin hair removal appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Threading chin hair removal",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_040",
+      "query": "gel nail refill with design",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Gel nail refill with design",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    }
+  ]
+}

@@ -13,14 +13,9 @@ The native Gen2 route, module cutover, evaluation foundation, supplement startup
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
 remaining work is:
 
-- the post-recovery provenance and deterministic freeze proofs are complete;
-- the cumulative patch requires review and commit;
-- operator-owned root evidence on that exact commit and one fresh correctly attributed protected
-  acceptance remain pending;
-- the first accepted manifest has not been promoted or verified;
-- protected corpus, policy, audit and provenance resource paths are tracked under
-  `beautyq-search-gen2-eval/src/test/resources`; tracked presence does not imply a replenishment has
-  passed deterministic freeze reproduction;
+- recovery rotation 3 source and deterministic freeze proofs are ready for review;
+- fresh protected acceptance remains pending;
+- bootstrap, candidate generation, promotion and verify have not run.
 
 - D1 has not started and still requires second-domain product input;
 - successful Qdrant generations are intentionally not deleted automatically;
@@ -365,9 +360,8 @@ Tracked protected inputs live under
 `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/`, with
 author and judged drafts under the adjacent `provenance/` directory. A valid freeze binds the source
 revision, typed corpus/policy and canonical catalog fingerprints, exact input hashes, separated pass
-identities, ordered slice counts, catalog-identity validation and query-disjointness checks. No
-semantic-similarity duplicate detection is claimed. `target/search-gen2/private` is only a disposable
-verification-audit/output directory.
+identities, ordered slice counts, catalog-identity validation and query-disjointness checks.
+Transient break-glass and freeze evidence paths are owned by BEAUTYQ_SEARCH_GEN2_OPERATIONS.md.
 
 “Protected” is an evaluation-process classification, not a confidentiality or storage classification.
 The fixture may not be relabeled or tuned after protected output is inspected. A case deliberately
@@ -389,13 +383,13 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **RECOVERY ROTATION 2 SOURCE AND FREEZE READY FOR REVIEW;
+Status: **RECOVERY ROTATION 3 SOURCE AND FREEZE READY FOR REVIEW;
 FRESH PROTECTED ACCEPTANCE REQUIRED**
 
 Another authorized exact-intent recovery rotation has been materialized.
 Recovery source and deterministic freeze proofs are ready for review.
-Fresh protected acceptance remains pending; bootstrap, promotion and verify
-have not run.
+Fresh protected acceptance remains pending; bootstrap, candidate generation,
+promotion and verify have not run.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation

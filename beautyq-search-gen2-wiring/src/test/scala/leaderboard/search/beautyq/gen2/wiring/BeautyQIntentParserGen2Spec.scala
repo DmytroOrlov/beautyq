@@ -972,6 +972,163 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
         case Left(errors) => fail(s"parse failed: ${errors.toVector}")
       }
     }
+
+    "emit only manicure, manicure-type and gel-polish for gel-lac-manicure-with-me query without inferred removal or design" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("гель-лак маникюр рядом со мной"), Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4")))), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("manicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_removal").id
+            case _ => false
+          }, "with_removal must not be emitted")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_design").id
+            case _ => false
+          }, "with_design must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only pedicure, pedicure-type and gel-polish for pedicure-with-gel-polish-near-me without inferred removal or design" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("pedicure with gel polish near me"), Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4")))), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_removal").id
+            case _ => false
+          }, "with_removal must not be emitted")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_design").id
+            case _ => false
+          }, "with_design must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only brows, henna and tinting for henna-brows-treatment-booking without inferred correction" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("henna brows treatment booking")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("brows"),
+            fields.enumAttributesByCode("brow_service_type").id -> Set("henna"),
+            fields.booleanAttributesByCode("with_tinting").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_correction").id
+            case _ => false
+          }, "with_correction must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only PMU, pmu_area=brows and with_correction=true for permanent-makeup-brows-correction-included without brows service" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("permanent makeup brows correction included")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("pmu"),
+            fields.enumAttributesByCode("pmu_area").id -> Set("brows"),
+            fields.booleanAttributesByCode("with_correction").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("brows")
+            case _ => false
+          }, "brows service must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only PMU and pmu_area=brows for permanent-makeup-brows without inferred correction" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("перманентный макияж бровей")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("pmu"),
+            fields.enumAttributesByCode("pmu_area").id -> Set("brows"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_correction").id
+            case _ => false
+          }, "with_correction must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit nail-modeling, removal and with_removal for extended-nail-removal-and-care without inferred gel, design or correction" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("снятие наращенных ногтей и уход")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("removal"),
+            fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.enumAttributesByCode("nail_coating_type").id && values.map(field.codec.encodeCanonical) == Set("gel")
+            case _ => false
+          }, "gel coating must not be emitted")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_design").id
+            case _ => false
+          }, "with_design must not be emitted")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_correction").id
+            case _ => false
+          }, "with_correction must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
   }
 
   "the provenance trust boundary" should {
