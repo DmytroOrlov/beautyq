@@ -22,7 +22,8 @@ final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
       assert(protectedCorpus.cases.count(_.notes.contains("Selected in stable order from the independently frozen second-cycle pre-disclosure reserve.")) == 0)
       assert(protectedCorpus.cases.count(_.notes.contains("Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve.")) == 0)
       assert(protectedCorpus.cases.count(_.notes.contains("Authored independently from the public BeautyQ typed vocabulary before the Q2 convergence disclosure.")) == 0)
-       assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve.")) == 8)
+       assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve.")) == 0)
+      assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve.")) == 8)
       assert(protectedCorpus.cases.groupMapReduce(_.slices.headOption.map(_.value).getOrElse("missing"))(_ => 1)(_ + _) == Map(
         "exact-intent" -> 8,
         "conversational" -> 6,
@@ -35,17 +36,17 @@ final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
       assert(!protectedCorpus.cases.exists(_.caseId.value.startsWith("q2i5_reserve_")))
       assert(!protectedCorpus.cases.exists(_.caseId.value.startsWith("q2i6_reserve_")))
       assert(protectedCorpus.cases.takeRight(8).map(_.caseId.value) == Vector(
-         "q2i7_recovery_033", "q2i7_recovery_034", "q2i7_recovery_035", "q2i7_recovery_036",
-         "q2i7_recovery_037", "q2i7_recovery_038", "q2i7_recovery_039", "q2i7_recovery_040",
+         "q2i7_recovery_041", "q2i7_recovery_042", "q2i7_recovery_043", "q2i7_recovery_044",
+         "q2i7_recovery_045", "q2i7_recovery_046", "q2i7_recovery_047", "q2i7_recovery_048",
       ))
        assert(visible.cases.takeRight(8).map(_.caseId.value) == Vector(
-         "q2i7_recovery_003", "q2i7_recovery_007", "q2i7_recovery_011", "q2i7_recovery_015",
-         "q2i7_recovery_019", "q2i7_recovery_023", "q2i7_recovery_027", "q2i7_recovery_032",
+         "q2i7_recovery_033", "q2i7_recovery_034", "q2i7_recovery_035", "q2i7_recovery_036",
+         "q2i7_recovery_037", "q2i7_recovery_038", "q2i7_recovery_039", "q2i7_recovery_040",
        ))
       assert(judgedDraft == protectedRaw)
       assert(authorDraft.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
-       assert(authorDraft.sourceRevision == "4e3f6aed518a3d86d8336e4b575edee7012832e9")
-       assert(authorDraft.authorPassId == "q2-exact-intent-recovery-rotation-3-author-v1")
+       assert(authorDraft.sourceRevision == "cacc7eb4d0d99bd7acc592e99aad2549e19c5ebf")
+       assert(authorDraft.authorPassId == "q2-exact-intent-recovery-rotation-4-author-v1")
       val protectedEvaluationCorpus = BeautyQProtectedEvaluationCorpus.fromJson(
         parse(protectedRaw).getOrElse(fail("invalid protected json")),
         visible,
@@ -60,7 +61,7 @@ final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
         s"recovery corpus fingerprint=${protectedCorpus.corpusFingerprint}",
       )
       assert(protectedCorpus.corpusFingerprint ==
-         "2cf8cf77085faf5ab84d2eafd8b68e0020f64bf89df794f0419d8ce55684ef2f")
+         "3893ad32b8bb8dc4a77df85ae40dd0537a32090111ae2ee2528e42090f9c1874")
     }
   }
 

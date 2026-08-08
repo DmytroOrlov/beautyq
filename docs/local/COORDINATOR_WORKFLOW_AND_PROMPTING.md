@@ -303,7 +303,7 @@ Clarifications:
 
 This does not remove the bundle section below; bundle scripts remain available as optional coordinator evidence capture.
 
-## 6.1 Bundle scripts must be read-only
+## 6.1 Bundle scripts must not mutate repository state
 
 Allowed:
 
@@ -364,21 +364,12 @@ Forbidden:
 
 Use local flags and conditional branches. On failure, print `BLOCKED` or `MISSING`, skip dependent steps, and still print diagnostics.
 
-## 6.4 No `/tmp` for persisted evidence
+## 6.4 Repository-local evidence
 
-`/tmp` is only for disposable scratch or short-lived bundles.
+Temporary files, bundles, and generated evidence follow the repository-local
+path rules in `AGENTS.md`.
 
-Multi-iteration evidence workspaces must use project-local paths, defaulting to:
-
-```text
-./.evidence-runs/<run-id>/
-```
-
-The path must be gitignored or added to `.git/info/exclude` before use.
-
-Use `$HOME` or external paths only when the user explicitly asks.
-
----
+Multi-iteration evidence workspaces default to `./.evidence-runs/<run-id>/`.
 
 # 7. Documentation ownership
 

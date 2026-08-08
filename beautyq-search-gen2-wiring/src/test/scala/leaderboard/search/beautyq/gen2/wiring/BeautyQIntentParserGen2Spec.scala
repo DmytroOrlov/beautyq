@@ -163,6 +163,28 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       }
     }
 
+    "compose refill, gel coating and design from three compositional rules (\"gel nail refill with design\")" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("gel nail refill with design")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r097"), IntentRuleId("r096"), IntentRuleId("r098")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("refill"),
+            fields.booleanAttributesByCode("with_correction").id -> Set("true"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+            fields.booleanAttributesByCode("with_design").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
     "let a produced ServiceAny satisfy a singular Service requirement (\"lashes and brows volume2_d\")" in {
       BeautyQIntentParserGen2.parse(request(Some("lashes and brows volume2_d")), BeautyQIntentVocabulary.value) match {
         case Right(intent) =>
@@ -873,6 +895,21 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       }
     }
 
+    "keep with-design contextual to the catalog-owned nail service family" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("facial with design")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          assert(actual == Set(fields.serviceCode.id -> Set("facial")), s"with-design leaked outside nail context: $actual")
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r098")))
+          assert(intent.residualText.contains("with design"))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
     "keep explicit regular-polish semantics valid as a standalone nail attribute" in {
       val fields = BeautyQSearchDeclarations.variants.Fields
       BeautyQIntentParserGen2.parse(request(Some("regular polish")), BeautyQIntentVocabulary.value) match {
@@ -1126,6 +1163,57 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
               field.id == fields.booleanAttributesByCode("with_correction").id
             case _ => false
           }, "with_correction must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit brows and shaping for brow-shaping-appointment without inferred correction" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("brow shaping appointment")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r095")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("brows"),
+            fields.enumAttributesByCode("brow_service_type").id -> Set("shaping"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_correction").id
+            case _ => false
+          }, "with_correction must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit pedicure and no-coating for classic-pedicure-no-coating-booking without inferred removal or design" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("classic pedicure no coating booking")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_removal").id
+            case _ => false
+          }, "with_removal must not be emitted")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_design").id
+            case _ => false
+          }, "with_design must not be emitted")
         case Left(errors) => fail(s"parse failed: ${errors.toVector}")
       }
     }

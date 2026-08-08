@@ -25,7 +25,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
     "pin dynamic naming prefixes and stable rule IDs" in {
       val dynamicNames = BeautyQPublicFilterRegistry.fields.drop(5).map(_.name.value)
       assert(dynamicNames.forall(name => name.startsWith("attribute.int.") || name.startsWith("attribute.decimal.") || name.startsWith("attribute.enum.") || name.startsWith("attribute.boolean.")))
-       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 94).map(index => f"r$index%03d").toVector)
+       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 98).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("eyebrows"))
@@ -52,6 +52,17 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
        ))
        assert(r094.excludes.isEmpty)
        assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r093").exists(_.aliases.contains("снятие наращенных ногтей")))
+       val r095 = BeautyQIntentVocabulary.rules.find(_.id.value == "r095").getOrElse(fail("r095 not found"))
+       assert(r095.aliases == Vector("brow shaping"))
+       assert(r095.hardActions == Vector(
+         service("brows"),
+         BeautyIntentAction.EnumAttribute("brow_service_type", "shaping"),
+       ))
+       assert(r095.mode == IntentRuleMode.Independent)
+       assert(r095.semanticActions.isEmpty)
+       assert(r095.requires.isEmpty)
+       assert(r095.excludes.isEmpty)
+       assert(!r095.noise)
     }
   }
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "beautyq-evaluation-corpus-v2",
-  "corpusId": "beautyq-protected-holdout-q2i-recovery-v5",
+  "corpusId": "beautyq-protected-holdout-q2i-recovery-v6",
   "dataset": "beautyq-protected-holdout",
-  "version": 5,
+  "version": 6,
   "defaultUserLocation": {
     "label": "Wandsbek Markt",
     "lat": 53.572,
@@ -13,7 +13,7 @@
       "id": "q2i2_case_009",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "мне нужно привести руки в порядок перед праздником",
+      "query": "\u043c\u043d\u0435 \u043d\u0443\u0436\u043d\u043e \u043f\u0440\u0438\u0432\u0435\u0441\u0442\u0438 \u0440\u0443\u043a\u0438 \u0432 \u043f\u043e\u0440\u044f\u0434\u043e\u043a \u043f\u0435\u0440\u0435\u0434 \u043f\u0440\u0430\u0437\u0434\u043d\u0438\u043a\u043e\u043c",
       "language": "ru",
       "slices": [
         "conversational"
@@ -81,7 +81,7 @@
       "id": "q2i2_case_011",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "ich möchte meine Nägel schön und haltbar machen lassen",
+      "query": "ich m\u00f6chte meine N\u00e4gel sch\u00f6n und haltbar machen lassen",
       "language": "de",
       "slices": [
         "conversational"
@@ -117,7 +117,7 @@
       "id": "q2i2_case_012",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "хочу аккуратно обновить брови к отпуску",
+      "query": "\u0445\u043e\u0447\u0443 \u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u043e \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0431\u0440\u043e\u0432\u0438 \u043a \u043e\u0442\u043f\u0443\u0441\u043a\u0443",
       "language": "ru",
       "slices": [
         "conversational"
@@ -189,7 +189,7 @@
       "id": "q2i2_case_014",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "ich suche eine passende Behandlung für Wimpern",
+      "query": "ich suche eine passende Behandlung f\u00fcr Wimpern",
       "language": "de",
       "slices": [
         "conversational"
@@ -225,7 +225,7 @@
       "id": "q2i2_case_015",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "маникюр рядом с Wandsbeker Markt",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0440\u044f\u0434\u043e\u043c \u0441 Wandsbeker Markt",
       "language": "mixed",
       "slices": [
         "nearby"
@@ -301,7 +301,7 @@
       "id": "q2i2_case_017",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Kosmetik und Hautpflege in der Nähe vom Wandsbeker Markt",
+      "query": "Kosmetik und Hautpflege in der N\u00e4he vom Wandsbeker Markt",
       "language": "de",
       "slices": [
         "nearby"
@@ -339,7 +339,7 @@
       "id": "q2i2_case_018",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "ресницы поблизости у Wandsbek Markt",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0446\u044b \u043f\u043e\u0431\u043b\u0438\u0437\u043e\u0441\u0442\u0438 \u0443 Wandsbek Markt",
       "language": "mixed",
       "slices": [
         "nearby"
@@ -413,7 +413,7 @@
       "id": "q2i2_case_020",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Gesichtsbehandlung für ein ebenmäßiges Hautbild",
+      "query": "Gesichtsbehandlung f\u00fcr ein ebenm\u00e4\u00dfiges Hautbild",
       "language": "de",
       "slices": [
         "multilingual"
@@ -449,7 +449,7 @@
       "id": "q2i2_case_021",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "хочу lashes und аккуратные брови",
+      "query": "\u0445\u043e\u0447\u0443 lashes und \u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u044b\u0435 \u0431\u0440\u043e\u0432\u0438",
       "language": "mixed",
       "slices": [
         "multilingual"
@@ -486,7 +486,7 @@
       "id": "q2i2_case_022",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "что можно сделать для ухода за собой",
+      "query": "\u0447\u0442\u043e \u043c\u043e\u0436\u043d\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c \u0434\u043b\u044f \u0443\u0445\u043e\u0434\u0430 \u0437\u0430 \u0441\u043e\u0431\u043e\u0439",
       "language": "ru",
       "slices": [
         "broad-safe"
@@ -554,7 +554,7 @@
       "id": "q2i2_case_024",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "etwas Schönes für meine nächste Auszeit",
+      "query": "etwas Sch\u00f6nes f\u00fcr meine n\u00e4chste Auszeit",
       "language": "de",
       "slices": [
         "broad-safe"
@@ -585,22 +585,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_033",
+      "id": "q2i7_recovery_041",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "manicure no coating appointment",
+      "query": "gel manicure appointment near me",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Manicure without coating",
+      "userIntent": "Gel polish manicure near my location",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "36b4ddff-7800-5965-9dce-856b4776eea0"
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -621,22 +622,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_034",
+      "id": "q2i7_recovery_042",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "classic pedicure no coating booking",
+      "query": "book pedicure with shellac today",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Pedicure without coating",
+      "userIntent": "Pedicure with shellac coating",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "35d22810-ef04-52e8-8c06-ee4836f4ef97"
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -657,22 +658,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_035",
+      "id": "q2i7_recovery_043",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "2d lash extensions appointment",
+      "query": "3d volume lash appointment",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "2D lash extensions",
+      "userIntent": "3D volume lash extensions",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "507552fc-58b8-5614-844f-4e0f95acec1c"
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -693,22 +694,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_036",
+      "id": "q2i7_recovery_044",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "brow shaping appointment",
+      "query": "henna brow tint session",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Brow shaping",
+      "userIntent": "Henna brow tinting",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "91cdce5c-7400-5b06-817c-2d04208be28c"
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -729,22 +730,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_037",
+      "id": "q2i7_recovery_045",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "pmu lips permanent makeup booking",
+      "query": "permanent eyeliner for eyes",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "PMU lips permanent makeup",
+      "userIntent": "Permanent eyeliner PMU",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3"
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -765,22 +767,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_038",
+      "id": "q2i7_recovery_046",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "peeling face treatment appointment",
+      "query": "book hydrafacial appointment",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Facial peeling for face",
+      "userIntent": "Hydrafacial aquafacial treatment",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "7c0663da-bd96-585a-ab3d-d7e63e3fc766"
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -801,22 +803,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_039",
+      "id": "q2i7_recovery_047",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "threading chin hair removal appointment",
+      "query": "wax bikini area hair removal",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Threading chin hair removal",
+      "userIntent": "Wax hair removal for bikini area",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "36dfdb33-659e-55bd-929c-83e5abaf0ee4"
+            "b036712b-991b-538e-80ef-aec745be2aba"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -837,22 +839,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_040",
+      "id": "q2i7_recovery_048",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "gel nail refill with design",
+      "query": "acrylic nail extension appointment",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Gel nail refill with design",
+      "userIntent": "Acrylic nail extension",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "51cc8284-3879-5bdb-8780-7b43e47f1251"
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
           ],
           "forbiddenIds": [],
           "neutralIds": [],

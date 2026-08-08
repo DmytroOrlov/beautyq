@@ -13,7 +13,7 @@ The native Gen2 route, module cutover, evaluation foundation, supplement startup
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
 remaining work is:
 
-- recovery rotation 3 source and deterministic freeze proofs are ready for review;
+- recovery rotation 4 source and deterministic freeze ready for review;
 - fresh protected acceptance remains pending;
 - bootstrap, candidate generation, promotion and verify have not run.
 

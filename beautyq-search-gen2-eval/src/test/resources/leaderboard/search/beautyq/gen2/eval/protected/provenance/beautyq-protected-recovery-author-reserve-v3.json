@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-author-reserve-v3",
+  "sourceRevision": "cacc7eb4d0d99bd7acc592e99aad2549e19c5ebf",
+  "authorPassId": "q2i7-recovery-rotation-4-fresh-reserve-author-v1",
+  "cases": [
+    {
+      "id": "q2i7_recovery_041",
+      "query": "gel manicure appointment near me",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Gel polish manicure near my location",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_042",
+      "query": "book pedicure with shellac today",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with shellac coating",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_043",
+      "query": "3d volume lash appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "3D volume lash extensions",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_044",
+      "query": "henna brow tint session",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Henna brow tinting",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_045",
+      "query": "permanent eyeliner for eyes",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Permanent eyeliner PMU",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_046",
+      "query": "book hydrafacial appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Hydrafacial aquafacial treatment",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_047",
+      "query": "wax bikini area hair removal",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Wax hair removal for bikini area",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_048",
+      "query": "acrylic nail extension appointment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Acrylic nail extension",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before selection."
+      ]
+    }
+  ]
+}

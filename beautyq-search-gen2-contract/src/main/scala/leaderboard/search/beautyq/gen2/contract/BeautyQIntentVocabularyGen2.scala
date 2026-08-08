@@ -332,6 +332,29 @@ object BeautyQIntentVocabulary {
        enumAttr("brow_service_type", "henna"),
        bool("with_tinting", true),
      ),
+      rule("r095", "brow shaping")(
+        service("brows"),
+        enumAttr("brow_service_type", "shaping"),
+      ),
+      rule("r096", "nail refill")(
+        service("nail_modeling"),
+        enumAttr("nail_service_type", "refill"),
+        bool("with_correction", true),
+      ),
+
+      rule("r097", "gel")(
+        enumAttr("nail_coating_type", "gel"),
+      )(using
+        mode = IntentRuleMode.Contextual,
+        requires = Vector(enumAttr("nail_service_type", "refill")),
+      ),
+
+      rule("r098", "with design")(
+        bool("with_design", true),
+      )(using
+        mode = IntentRuleMode.Contextual,
+        requires = Vector(nailServiceFamily),
+      ),
   )
 
   val validation: Either[NonEmptyErrors[BeautyIntentVocabularyError], BeautyQIntentVocabulary] = validate(sourceRules)

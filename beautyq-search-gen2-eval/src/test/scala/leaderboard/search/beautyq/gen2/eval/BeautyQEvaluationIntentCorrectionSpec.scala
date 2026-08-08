@@ -39,8 +39,8 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 140 cases after the recovery-rotation-3 exact-intent migration" in {
-      assert(corpus.cases.length == 140)
+    "have exactly 148 cases after the recovery-rotation-4 exact-intent migration" in {
+      assert(corpus.cases.length == 148)
     }
 
     "have every case as Regression" in {
@@ -247,6 +247,7 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
           Fields.serviceCode.id -> Set("manicure"),
           Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
           Fields.enumAttributesByCode("nail_coating_type").id -> Set("shellac"),
+          Fields.booleanAttributesByCode("with_design").id -> Set("true"),
         ),
         "q2i7_recovery_006" -> Set(
           Fields.serviceCode.id -> Set("pedicure"),
@@ -314,7 +315,47 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
            Fields.enumAttributesByCode("nail_service_type").id -> Set("removal"),
            Fields.booleanAttributesByCode("with_removal").id -> Set("true"),
          ),
-       )
+         "q2i7_recovery_033" -> Set(
+           Fields.serviceCode.id -> Set("manicure"),
+           Fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+           Fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating"),
+         ),
+         "q2i7_recovery_034" -> Set(
+           Fields.serviceCode.id -> Set("pedicure"),
+           Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+           Fields.enumAttributesByCode("nail_coating_type").id -> Set("no_coating"),
+         ),
+         "q2i7_recovery_035" -> Set(
+           Fields.serviceCode.id -> Set("lashes"),
+           Fields.enumAttributesByCode("lash_volume").id -> Set("volume2_d"),
+           Fields.enumAttributesByCode("lash_service_type").id -> Set("extension"),
+         ),
+         "q2i7_recovery_036" -> Set(
+           Fields.serviceCode.id -> Set("brows"),
+           Fields.enumAttributesByCode("brow_service_type").id -> Set("shaping"),
+         ),
+         "q2i7_recovery_037" -> Set(
+           Fields.serviceCode.id -> Set("pmu"),
+           Fields.enumAttributesByCode("pmu_area").id -> Set("lips"),
+         ),
+         "q2i7_recovery_038" -> Set(
+           Fields.serviceCode.id -> Set("facial"),
+           Fields.enumAttributesByCode("facial_treatment_type").id -> Set("peeling"),
+           Fields.enumAttributesByCode("body_area").id -> Set("face"),
+         ),
+         "q2i7_recovery_039" -> Set(
+           Fields.serviceCode.id -> Set("hair_removal"),
+           Fields.enumAttributesByCode("hair_removal_method").id -> Set("threading"),
+           Fields.enumAttributesByCode("body_area").id -> Set("chin"),
+         ),
+          "q2i7_recovery_040" -> Set(
+            Fields.serviceCode.id -> Set("nail_modeling"),
+            Fields.enumAttributesByCode("nail_service_type").id -> Set("refill"),
+            Fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+            Fields.booleanAttributesByCode("with_correction").id -> Set("true"),
+            Fields.booleanAttributesByCode("with_design").id -> Set("true"),
+          ),
+        )
 
       cases.foreach { case (id, expected) =>
         val intent = parseFromCorpus(exactlyOneCase(id))
