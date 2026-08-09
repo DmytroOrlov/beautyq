@@ -10,9 +10,9 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
     "parse the exact authorization and derive both outputs from one run root" in {
       parse(validArguments) match {
         case arguments =>
-           assert(arguments.applicationRevision == "83caf9fb8bcde8da569cedd175a72be62855b8e7")
+           assert(arguments.applicationRevision == "020e2c4f3ab02b4ee735f42b35731e4e784a5f32")
            assert(arguments.expectedFailedCheck == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
-           assert(arguments.authorizationId == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation4AuthorizationId)
+           assert(arguments.authorizationId == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation5AuthorizationId)
           assert(arguments.aggregateOutput == arguments.runRoot.resolve("aggregate-safe"))
           assert(arguments.disclosureOutput == arguments.runRoot.resolve("beautyq-protected-break-glass-disclosure.json"))
       }
@@ -143,6 +143,27 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
       ).isLeft)
     }
 
+    "accept the recovery-rotation-4 authorization only with its exact revision and reject rotation-5 provenance" in {
+      val rotation4 = replaceValue(
+        replaceValue(validArguments, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.RecoveryRotation4AuthorizationId),
+        "--application-revision",
+        "83caf9fb8bcde8da569cedd175a72be62855b8e7",
+      )
+      val parsed = BeautyQProtectedBreakGlassMain.parseArguments(rotation4).fold(error => fail(error), identity)
+      assert(parsed.authorizationId == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation4AuthorizationId)
+      assert(parsed.applicationRevision == "83caf9fb8bcde8da569cedd175a72be62855b8e7")
+      assert(parsed.expectedFailedCheck == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(rotation4, "--application-revision", "020e2c4f3ab02b4ee735f42b35731e4e784a5f32")
+      ).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(rotation4, "--expected-failed-check", "metric-other")
+      ).isLeft)
+      assert(BeautyQProtectedBreakGlassMain.parseArguments(
+        replaceValue(rotation4, "--authorization-id", BeautyQProtectedBreakGlassDisclosure.RecoveryRotation5AuthorizationId)
+      ).isLeft)
+    }
+
     "accept only one fresh ignored run root and never overwrite it" in {
       val repositoryRoot = Paths.get("").toAbsolutePath.normalize
       val fresh = parse(validArguments)
@@ -200,9 +221,9 @@ final class BeautyQProtectedBreakGlassMainSpec extends AnyWordSpec {
     "--protected-corpus", "protected.json",
     "--protected-policy", "policy.json",
     "--run-root", ".evidence-runs/q2-break-glass/fresh-owner-spec",
-     "--application-revision", "83caf9fb8bcde8da569cedd175a72be62855b8e7",
+     "--application-revision", "020e2c4f3ab02b4ee735f42b35731e4e784a5f32",
     "--expected-failed-check", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
-     "--authorization-id", BeautyQProtectedBreakGlassDisclosure.RecoveryRotation4AuthorizationId,
+     "--authorization-id", BeautyQProtectedBreakGlassDisclosure.RecoveryRotation5AuthorizationId,
   )
 
   private def replaceValue(option: String, value: String): Vector[String] = {

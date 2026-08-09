@@ -13,7 +13,7 @@
       "id": "q_nails_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникюр гель лак",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0433\u0435\u043b\u044c \u043b\u0430\u043a",
       "language": "ru",
       "slices": [
         "direct",
@@ -70,7 +70,7 @@
       "id": "q_nails_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникюр с shellac и снятием",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0441 shellac \u0438 \u0441\u043d\u044f\u0442\u0438\u0435\u043c",
       "language": "ru",
       "slices": [
         "mixed_language",
@@ -79,7 +79,7 @@
       ],
       "userIntent": "Find shellac manicure where removal is included.",
       "notes": [
-        "The word снятие/removal must mean nail coating removal, not depilation."
+        "The word \u0441\u043d\u044f\u0442\u0438\u0435/removal must mean nail coating removal, not depilation."
       ],
       "judgments": {
         "variants": {
@@ -195,7 +195,7 @@
       "id": "q_nails_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "обычный маникюр без покрытия",
+      "query": "\u043e\u0431\u044b\u0447\u043d\u044b\u0439 \u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0431\u0435\u0437 \u043f\u043e\u043a\u0440\u044b\u0442\u0438\u044f",
       "language": "ru",
       "slices": [
         "direct",
@@ -258,7 +258,7 @@
       "id": "q_nails_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "дешевый маникюр рядом",
+      "query": "\u0434\u0435\u0448\u0435\u0432\u044b\u0439 \u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0440\u044f\u0434\u043e\u043c",
       "language": "ru",
       "slices": [
         "broad",
@@ -396,7 +396,7 @@
       "id": "q_nails_006",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "педикюр без лака",
+      "query": "\u043f\u0435\u0434\u0438\u043a\u044e\u0440 \u0431\u0435\u0437 \u043b\u0430\u043a\u0430",
       "language": "ru",
       "slices": [
         "direct",
@@ -517,7 +517,7 @@
       "id": "q_nails_008",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Fußpflege Shellac Wandsbek",
+      "query": "Fu\u00dfpflege Shellac Wandsbek",
       "language": "de",
       "slices": [
         "german",
@@ -573,7 +573,7 @@
       "id": "q_nails_009",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "наращивание ногтей гель",
+      "query": "\u043d\u0430\u0440\u0430\u0449\u0438\u0432\u0430\u043d\u0438\u0435 \u043d\u043e\u0433\u0442\u0435\u0439 \u0433\u0435\u043b\u044c",
       "language": "ru",
       "slices": [
         "direct",
@@ -644,7 +644,7 @@
       "id": "q_nails_010",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "коррекция гелевых ногтей с дизайном",
+      "query": "\u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u044f \u0433\u0435\u043b\u0435\u0432\u044b\u0445 \u043d\u043e\u0433\u0442\u0435\u0439 \u0441 \u0434\u0438\u0437\u0430\u0439\u043d\u043e\u043c",
       "language": "ru",
       "slices": [
         "attribute_heavy"
@@ -700,7 +700,7 @@
       "id": "q_nails_011",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "снять гель с ногтей",
+      "query": "\u0441\u043d\u044f\u0442\u044c \u0433\u0435\u043b\u044c \u0441 \u043d\u043e\u0433\u0442\u0435\u0439",
       "language": "ru",
       "slices": [
         "hard_negative",
@@ -815,7 +815,7 @@
       "id": "q_lashes_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "ресницы классика",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0446\u044b \u043a\u043b\u0430\u0441\u0441\u0438\u043a\u0430",
       "language": "ru",
       "slices": [
         "direct",
@@ -869,7 +869,7 @@
       "id": "q_lashes_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "ресницы 2д",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0446\u044b 2\u0434",
       "language": "ru",
       "slices": [
         "direct",
@@ -1028,7 +1028,7 @@
       "id": "q_lashes_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "коррекция ресниц 2д",
+      "query": "\u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u044f \u0440\u0435\u0441\u043d\u0438\u0446 2\u0434",
       "language": "ru",
       "slices": [
         "attribute_heavy",
@@ -1080,7 +1080,7 @@
       "id": "q_lashes_006",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "lash lifting mit färben",
+      "query": "lash lifting mit f\u00e4rben",
       "language": "de",
       "slices": [
         "german",
@@ -1137,7 +1137,7 @@
       "id": "q_lashes_007",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "снять ресницы",
+      "query": "\u0441\u043d\u044f\u0442\u044c \u0440\u0435\u0441\u043d\u0438\u0446\u044b",
       "language": "ru",
       "slices": [
         "direct",
@@ -1252,7 +1252,7 @@
       "id": "q_brows_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "брови ламинирование с окрашиванием",
+      "query": "\u0431\u0440\u043e\u0432\u0438 \u043b\u0430\u043c\u0438\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0441 \u043e\u043a\u0440\u0430\u0448\u0438\u0432\u0430\u043d\u0438\u0435\u043c",
       "language": "ru",
       "slices": [
         "direct",
@@ -1376,7 +1376,7 @@
       "id": "q_brows_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "коррекция бровей",
+      "query": "\u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u044f \u0431\u0440\u043e\u0432\u0435\u0439",
       "language": "ru",
       "slices": [
         "direct"
@@ -1432,7 +1432,7 @@
       "id": "q_brows_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Augenbrauen färben",
+      "query": "Augenbrauen f\u00e4rben",
       "language": "de",
       "slices": [
         "german",
@@ -1492,7 +1492,7 @@
       "id": "q_brows_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "брови хна",
+      "query": "\u0431\u0440\u043e\u0432\u0438 \u0445\u043d\u0430",
       "language": "ru",
       "slices": [
         "direct",
@@ -1620,7 +1620,7 @@
       "id": "q_hair_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "депиляция верхняя губа воском",
+      "query": "\u0434\u0435\u043f\u0438\u043b\u044f\u0446\u0438\u044f \u0432\u0435\u0440\u0445\u043d\u044f\u044f \u0433\u0443\u0431\u0430 \u0432\u043e\u0441\u043a\u043e\u043c",
       "language": "ru",
       "slices": [
         "direct",
@@ -1836,7 +1836,7 @@
       "id": "q_hair_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "лазер подмышки 6 сеансов",
+      "query": "\u043b\u0430\u0437\u0435\u0440 \u043f\u043e\u0434\u043c\u044b\u0448\u043a\u0438 6 \u0441\u0435\u0430\u043d\u0441\u043e\u0432",
       "language": "ru",
       "slices": [
         "attribute_heavy",
@@ -2004,7 +2004,7 @@
       "id": "q_hair_008",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "sugaring upper lip рядом",
+      "query": "sugaring upper lip \u0440\u044f\u0434\u043e\u043c",
       "language": "mixed",
       "slices": [
         "english",
@@ -2113,7 +2113,7 @@
       "id": "q_hair_010",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "бикини воск недорого",
+      "query": "\u0431\u0438\u043a\u0438\u043d\u0438 \u0432\u043e\u0441\u043a \u043d\u0435\u0434\u043e\u0440\u043e\u0433\u043e",
       "language": "ru",
       "slices": [
         "price",
@@ -2170,7 +2170,7 @@
       "id": "q_pmu_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "перманент губы",
+      "query": "\u043f\u0435\u0440\u043c\u0430\u043d\u0435\u043d\u0442 \u0433\u0443\u0431\u044b",
       "language": "ru",
       "slices": [
         "direct",
@@ -2472,7 +2472,7 @@
       "id": "q_pmu_006",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "татуаж губ коррекция",
+      "query": "\u0442\u0430\u0442\u0443\u0430\u0436 \u0433\u0443\u0431 \u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u044f",
       "language": "ru",
       "slices": [
         "synonym",
@@ -2663,7 +2663,7 @@
       "id": "q_face_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "чистка лица",
+      "query": "\u0447\u0438\u0441\u0442\u043a\u0430 \u043b\u0438\u0446\u0430",
       "language": "ru",
       "slices": [
         "synonym",
@@ -2894,7 +2894,7 @@
       "id": "q_face_007",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "увлажнение лица 3 сеанса скидка",
+      "query": "\u0443\u0432\u043b\u0430\u0436\u043d\u0435\u043d\u0438\u0435 \u043b\u0438\u0446\u0430 3 \u0441\u0435\u0430\u043d\u0441\u0430 \u0441\u043a\u0438\u0434\u043a\u0430",
       "language": "ru",
       "slices": [
         "numeric",
@@ -2951,7 +2951,7 @@
       "id": "q_face_008",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "классический уход лицо",
+      "query": "\u043a\u043b\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0443\u0445\u043e\u0434 \u043b\u0438\u0446\u043e",
       "language": "ru",
       "slices": [
         "direct",
@@ -3008,7 +3008,7 @@
       "id": "q_home_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "выездной уход для двоих",
+      "query": "\u0432\u044b\u0435\u0437\u0434\u043d\u043e\u0439 \u0443\u0445\u043e\u0434 \u0434\u043b\u044f \u0434\u0432\u043e\u0438\u0445",
       "language": "ru",
       "slices": [
         "conversational",
@@ -3132,7 +3132,7 @@
       "id": "q_broad_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "салон красоты wandsbek ногти",
+      "query": "\u0441\u0430\u043b\u043e\u043d \u043a\u0440\u0430\u0441\u043e\u0442\u044b wandsbek \u043d\u043e\u0433\u0442\u0438",
       "language": "ru",
       "slices": [
         "broad",
@@ -3294,7 +3294,7 @@
       "id": "q_broad_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "что-то для лица рядом",
+      "query": "\u0447\u0442\u043e-\u0442\u043e \u0434\u043b\u044f \u043b\u0438\u0446\u0430 \u0440\u044f\u0434\u043e\u043c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -3375,7 +3375,7 @@
       "id": "q_broad_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "хочу привести себя в порядок рядом",
+      "query": "\u0445\u043e\u0447\u0443 \u043f\u0440\u0438\u0432\u0435\u0441\u0442\u0438 \u0441\u0435\u0431\u044f \u0432 \u043f\u043e\u0440\u044f\u0434\u043e\u043a \u0440\u044f\u0434\u043e\u043c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -3466,7 +3466,7 @@
       "id": "q_broad_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "недорогие ногти рядом",
+      "query": "\u043d\u0435\u0434\u043e\u0440\u043e\u0433\u0438\u0435 \u043d\u043e\u0433\u0442\u0438 \u0440\u044f\u0434\u043e\u043c",
       "language": "ru",
       "slices": [
         "price",
@@ -3639,7 +3639,7 @@
       "id": "q_noise_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "манекюр шелак",
+      "query": "\u043c\u0430\u043d\u0435\u043a\u044e\u0440 \u0448\u0435\u043b\u0430\u043a",
       "language": "ru",
       "slices": [
         "typo",
@@ -3706,7 +3706,7 @@
       "id": "q_noise_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "реснички 2д корр",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0447\u043a\u0438 2\u0434 \u043a\u043e\u0440\u0440",
       "language": "ru",
       "slices": [
         "typo",
@@ -3757,7 +3757,7 @@
       "id": "q_noise_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "депиляция губа не татуаж",
+      "query": "\u0434\u0435\u043f\u0438\u043b\u044f\u0446\u0438\u044f \u0433\u0443\u0431\u0430 \u043d\u0435 \u0442\u0430\u0442\u0443\u0430\u0436",
       "language": "ru",
       "slices": [
         "hard_negative",
@@ -3908,7 +3908,7 @@
       "id": "q_semantic_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "хочу чтобы кожа выглядела свежей и напитанной перед событием",
+      "query": "\u0445\u043e\u0447\u0443 \u0447\u0442\u043e\u0431\u044b \u043a\u043e\u0436\u0430 \u0432\u044b\u0433\u043b\u044f\u0434\u0435\u043b\u0430 \u0441\u0432\u0435\u0436\u0435\u0439 \u0438 \u043d\u0430\u043f\u0438\u0442\u0430\u043d\u043d\u043e\u0439 \u043f\u0435\u0440\u0435\u0434 \u0441\u043e\u0431\u044b\u0442\u0438\u0435\u043c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -3953,7 +3953,7 @@
       "id": "q_semantic_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "лицо шея декольте anti age уход",
+      "query": "\u043b\u0438\u0446\u043e \u0448\u0435\u044f \u0434\u0435\u043a\u043e\u043b\u044c\u0442\u0435 anti age \u0443\u0445\u043e\u0434",
       "language": "mixed",
       "slices": [
         "mixed_language",
@@ -3997,7 +3997,7 @@
       "id": "q_semantic_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "убрать пушок над губой без лазера",
+      "query": "\u0443\u0431\u0440\u0430\u0442\u044c \u043f\u0443\u0448\u043e\u043a \u043d\u0430\u0434 \u0433\u0443\u0431\u043e\u0439 \u0431\u0435\u0437 \u043b\u0430\u0437\u0435\u0440\u0430",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4006,7 +4006,7 @@
       ],
       "userIntent": "Find non-laser upper-lip hair removal.",
       "notes": [
-        "Seed-backed semantic wording for upper_lip hair removal; `без лазера` is represented conservatively as non-laser acceptable methods without changing parser behavior.",
+        "Seed-backed semantic wording for upper_lip hair removal; `\u0431\u0435\u0437 \u043b\u0430\u0437\u0435\u0440\u0430` is represented conservatively as non-laser acceptable methods without changing parser behavior.",
         "Accepted as static eval fixture evidence only; no ES, Qdrant, hybrid, fusion, or reranking setting is changed."
       ],
       "judgments": {
@@ -4049,7 +4049,7 @@
       "id": "q_semantic_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "аккуратные брови чтобы не рисовать карандашом",
+      "query": "\u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u044b\u0435 \u0431\u0440\u043e\u0432\u0438 \u0447\u0442\u043e\u0431\u044b \u043d\u0435 \u0440\u0438\u0441\u043e\u0432\u0430\u0442\u044c \u043a\u0430\u0440\u0430\u043d\u0434\u0430\u0448\u043e\u043c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4097,7 +4097,7 @@
       "id": "q_semantic_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "ресницы выглядят натурально но заметнее",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0446\u044b \u0432\u044b\u0433\u043b\u044f\u0434\u044f\u0442 \u043d\u0430\u0442\u0443\u0440\u0430\u043b\u044c\u043d\u043e \u043d\u043e \u0437\u0430\u043c\u0435\u0442\u043d\u0435\u0435",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4141,7 +4141,7 @@
       "id": "q_semantic_006",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "обновить нарощенные ресницы не полный сет",
+      "query": "\u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u043d\u0430\u0440\u043e\u0449\u0435\u043d\u043d\u044b\u0435 \u0440\u0435\u0441\u043d\u0438\u0446\u044b \u043d\u0435 \u043f\u043e\u043b\u043d\u044b\u0439 \u0441\u0435\u0442",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4190,7 +4190,7 @@
       "id": "q_semantic_007",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "снять старый гель и привести ногти в порядок",
+      "query": "\u0441\u043d\u044f\u0442\u044c \u0441\u0442\u0430\u0440\u044b\u0439 \u0433\u0435\u043b\u044c \u0438 \u043f\u0440\u0438\u0432\u0435\u0441\u0442\u0438 \u043d\u043e\u0433\u0442\u0438 \u0432 \u043f\u043e\u0440\u044f\u0434\u043e\u043a",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4237,7 +4237,7 @@
       "id": "q_semantic_008",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "домашний уход для подруг небольшой компанией",
+      "query": "\u0434\u043e\u043c\u0430\u0448\u043d\u0438\u0439 \u0443\u0445\u043e\u0434 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u0443\u0433 \u043d\u0435\u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0435\u0439",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4281,7 +4281,7 @@
       "id": "q_semantic_009",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "перманент чтобы губы были ярче без ежедневной помады",
+      "query": "\u043f\u0435\u0440\u043c\u0430\u043d\u0435\u043d\u0442 \u0447\u0442\u043e\u0431\u044b \u0433\u0443\u0431\u044b \u0431\u044b\u043b\u0438 \u044f\u0440\u0447\u0435 \u0431\u0435\u0437 \u0435\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u043e\u0439 \u043f\u043e\u043c\u0430\u0434\u044b",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4329,7 +4329,7 @@
       "id": "q_semantic_010",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "быстро убрать волосы в подмышках курсом",
+      "query": "\u0431\u044b\u0441\u0442\u0440\u043e \u0443\u0431\u0440\u0430\u0442\u044c \u0432\u043e\u043b\u043e\u0441\u044b \u0432 \u043f\u043e\u0434\u043c\u044b\u0448\u043a\u0430\u0445 \u043a\u0443\u0440\u0441\u043e\u043c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4375,7 +4375,7 @@
       "id": "q_holdout_pmu_lips_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "губы ярче чтобы не красить каждый день",
+      "query": "\u0433\u0443\u0431\u044b \u044f\u0440\u0447\u0435 \u0447\u0442\u043e\u0431\u044b \u043d\u0435 \u043a\u0440\u0430\u0441\u0438\u0442\u044c \u043a\u0430\u0436\u0434\u044b\u0439 \u0434\u0435\u043d\u044c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4427,7 +4427,7 @@
       "id": "q_holdout_lashes_2d_wandsbek_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "хочу 2д ресницы в Вандсбеке",
+      "query": "\u0445\u043e\u0447\u0443 2\u0434 \u0440\u0435\u0441\u043d\u0438\u0446\u044b \u0432 \u0412\u0430\u043d\u0434\u0441\u0431\u0435\u043a\u0435",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4485,7 +4485,7 @@
       "id": "q_holdout_lashes_2d_natural_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "ресницы пообъемнее но без мега объема",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0446\u044b \u043f\u043e\u043e\u0431\u044a\u0435\u043c\u043d\u0435\u0435 \u043d\u043e \u0431\u0435\u0437 \u043c\u0435\u0433\u0430 \u043e\u0431\u044a\u0435\u043c\u0430",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4539,7 +4539,7 @@
       "id": "q_holdout_lashes_classic_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "натуральные ресницы классический эффект",
+      "query": "\u043d\u0430\u0442\u0443\u0440\u0430\u043b\u044c\u043d\u044b\u0435 \u0440\u0435\u0441\u043d\u0438\u0446\u044b \u043a\u043b\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u044d\u0444\u0444\u0435\u043a\u0442",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4595,7 +4595,7 @@
       "id": "q_holdout_face_aquafacial_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "глубоко очистить и освежить лицо без инъекций",
+      "query": "\u0433\u043b\u0443\u0431\u043e\u043a\u043e \u043e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0438 \u043e\u0441\u0432\u0435\u0436\u0438\u0442\u044c \u043b\u0438\u0446\u043e \u0431\u0435\u0437 \u0438\u043d\u044a\u0435\u043a\u0446\u0438\u0439",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4657,7 +4657,7 @@
       "id": "q_holdout_face_bb_glow_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "хочу чтобы тон лица выглядел ровнее без ежедневного макияжа",
+      "query": "\u0445\u043e\u0447\u0443 \u0447\u0442\u043e\u0431\u044b \u0442\u043e\u043d \u043b\u0438\u0446\u0430 \u0432\u044b\u0433\u043b\u044f\u0434\u0435\u043b \u0440\u043e\u0432\u043d\u0435\u0435 \u0431\u0435\u0437 \u0435\u0436\u0435\u0434\u043d\u0435\u0432\u043d\u043e\u0433\u043e \u043c\u0430\u043a\u0438\u044f\u0436\u0430",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4714,16 +4714,16 @@
       "id": "q_holdout_face_anti_age_decollete_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "уход чтобы лицо шея и декольте выглядели моложе",
+      "query": "\u0443\u0445\u043e\u0434 \u0447\u0442\u043e\u0431\u044b \u043b\u0438\u0446\u043e \u0448\u0435\u044f \u0438 \u0434\u0435\u043a\u043e\u043b\u044c\u0442\u0435 \u0432\u044b\u0433\u043b\u044f\u0434\u0435\u043b\u0438 \u043c\u043e\u043b\u043e\u0436\u0435",
       "language": "ru",
       "slices": [
         "conversational",
         "attribute_heavy",
         "synonym"
       ],
-      "userIntent": "Find anti-aging care for face, neck, and décolleté in user-language phrasing.",
+      "userIntent": "Find anti-aging care for face, neck, and d\u00e9collet\u00e9 in user-language phrasing.",
       "notes": [
-        "Materialized semantic holdout for anti-aging face/neck/décolleté anchor q_face_005; expected/scoring cloned from anchor."
+        "Materialized semantic holdout for anti-aging face/neck/d\u00e9collet\u00e9 anchor q_face_005; expected/scoring cloned from anchor."
       ],
       "judgments": {
         "variants": {
@@ -4784,14 +4784,14 @@
       "id": "q_holdout_face_anti_age_decollete_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "хочу омолодить лицо и зону декольте без операции",
+      "query": "\u0445\u043e\u0447\u0443 \u043e\u043c\u043e\u043b\u043e\u0434\u0438\u0442\u044c \u043b\u0438\u0446\u043e \u0438 \u0437\u043e\u043d\u0443 \u0434\u0435\u043a\u043e\u043b\u044c\u0442\u0435 \u0431\u0435\u0437 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438",
       "language": "ru",
       "slices": [
         "conversational",
         "attribute_heavy",
         "synonym"
       ],
-      "userIntent": "Find non-surgical rejuvenation for face and décolleté in outcome-language phrasing.",
+      "userIntent": "Find non-surgical rejuvenation for face and d\u00e9collet\u00e9 in outcome-language phrasing.",
       "notes": [
         "Materialized semantic holdout for attribute-heavy semantic anchor q_semantic_002; expected/scoring cloned from anchor."
       ],
@@ -4828,7 +4828,7 @@
       "id": "q_holdout_hair_armpits_laser_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "убрать волосы под мышками надолго курсом",
+      "query": "\u0443\u0431\u0440\u0430\u0442\u044c \u0432\u043e\u043b\u043e\u0441\u044b \u043f\u043e\u0434 \u043c\u044b\u0448\u043a\u0430\u043c\u0438 \u043d\u0430\u0434\u043e\u043b\u0433\u043e \u043a\u0443\u0440\u0441\u043e\u043c",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4894,7 +4894,7 @@
       "id": "q_holdout_hair_armpits_laser_course_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "курс чтобы подмышки дольше оставались гладкими",
+      "query": "\u043a\u0443\u0440\u0441 \u0447\u0442\u043e\u0431\u044b \u043f\u043e\u0434\u043c\u044b\u0448\u043a\u0438 \u0434\u043e\u043b\u044c\u0448\u0435 \u043e\u0441\u0442\u0430\u0432\u0430\u043b\u0438\u0441\u044c \u0433\u043b\u0430\u0434\u043a\u0438\u043c\u0438",
       "language": "ru",
       "slices": [
         "conversational",
@@ -4957,7 +4957,7 @@
       "id": "q_holdout_pmu_powder_brows_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "брови с мягким пудровым эффектом надолго",
+      "query": "\u0431\u0440\u043e\u0432\u0438 \u0441 \u043c\u044f\u0433\u043a\u0438\u043c \u043f\u0443\u0434\u0440\u043e\u0432\u044b\u043c \u044d\u0444\u0444\u0435\u043a\u0442\u043e\u043c \u043d\u0430\u0434\u043e\u043b\u0433\u043e",
       "language": "ru",
       "slices": [
         "conversational",
@@ -5020,7 +5020,7 @@
       "id": "q_holdout_brows_lamination_wandsbek_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "уложить брови надолго рядом с Wandsbek",
+      "query": "\u0443\u043b\u043e\u0436\u0438\u0442\u044c \u0431\u0440\u043e\u0432\u0438 \u043d\u0430\u0434\u043e\u043b\u0433\u043e \u0440\u044f\u0434\u043e\u043c \u0441 Wandsbek",
       "language": "ru",
       "slices": [
         "conversational",
@@ -5085,7 +5085,7 @@
       "id": "q_holdout_brows_henna_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "окрасить брови хной чтобы держалось дольше",
+      "query": "\u043e\u043a\u0440\u0430\u0441\u0438\u0442\u044c \u0431\u0440\u043e\u0432\u0438 \u0445\u043d\u043e\u0439 \u0447\u0442\u043e\u0431\u044b \u0434\u0435\u0440\u0436\u0430\u043b\u043e\u0441\u044c \u0434\u043e\u043b\u044c\u0448\u0435",
       "language": "ru",
       "slices": [
         "conversational",
@@ -5148,7 +5148,7 @@
       "id": "q_holdout_nails_shellac_refresh_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "снять старый shellac и сделать новый аккуратный маникюр",
+      "query": "\u0441\u043d\u044f\u0442\u044c \u0441\u0442\u0430\u0440\u044b\u0439 shellac \u0438 \u0441\u0434\u0435\u043b\u0430\u0442\u044c \u043d\u043e\u0432\u044b\u0439 \u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u044b\u0439 \u043c\u0430\u043d\u0438\u043a\u044e\u0440",
       "language": "mixed",
       "slices": [
         "mixed_language",
@@ -5218,7 +5218,7 @@
       "id": "q_holdout_nails_gel_correction_design_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "обновить гелевые ногти и добавить небольшой дизайн",
+      "query": "\u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0433\u0435\u043b\u0435\u0432\u044b\u0435 \u043d\u043e\u0433\u0442\u0438 \u0438 \u0434\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043d\u0435\u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u0434\u0438\u0437\u0430\u0439\u043d",
       "language": "ru",
       "slices": [
         "conversational",
@@ -5277,7 +5277,7 @@
       "id": "q2i2_case_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Gel-Maniküre mit Entfernung und schlichtem Finish",
+      "query": "Gel-Manik\u00fcre mit Entfernung und schlichtem Finish",
       "language": "de",
       "slices": [
         "exact-intent",
@@ -5314,7 +5314,7 @@
       "id": "q2i2_case_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникюр с гель-лаком",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0441 \u0433\u0435\u043b\u044c-\u043b\u0430\u043a\u043e\u043c",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5351,7 +5351,7 @@
       "id": "q2i2_case_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Pediküre für gepflegte Zehennägel",
+      "query": "Pedik\u00fcre f\u00fcr gepflegte Zehenn\u00e4gel",
       "language": "de",
       "slices": [
         "exact-intent",
@@ -5462,7 +5462,7 @@
       "id": "q2i2_case_007",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "пудровый перманент бровей",
+      "query": "\u043f\u0443\u0434\u0440\u043e\u0432\u044b\u0439 \u043f\u0435\u0440\u043c\u0430\u043d\u0435\u043d\u0442 \u0431\u0440\u043e\u0432\u0435\u0439",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5536,7 +5536,7 @@
       "id": "q2i3_case_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Ищу педикюр без какого-либо покрытия",
+      "query": "\u0418\u0449\u0443 \u043f\u0435\u0434\u0438\u043a\u044e\u0440 \u0431\u0435\u0437 \u043a\u0430\u043a\u043e\u0433\u043e-\u043b\u0438\u0431\u043e \u043f\u043e\u043a\u0440\u044b\u0442\u0438\u044f",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5575,7 +5575,7 @@
       "id": "q2i3_case_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Хочу аккуратно снять наращённые ресницы",
+      "query": "\u0425\u043e\u0447\u0443 \u0430\u043a\u043a\u0443\u0440\u0430\u0442\u043d\u043e \u0441\u043d\u044f\u0442\u044c \u043d\u0430\u0440\u0430\u0449\u0451\u043d\u043d\u044b\u0435 \u0440\u0435\u0441\u043d\u0438\u0446\u044b",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5614,7 +5614,7 @@
       "id": "q2i3_case_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Нужно ламинирование бровей вместе с окрашиванием",
+      "query": "\u041d\u0443\u0436\u043d\u043e \u043b\u0430\u043c\u0438\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0431\u0440\u043e\u0432\u0435\u0439 \u0432\u043c\u0435\u0441\u0442\u0435 \u0441 \u043e\u043a\u0440\u0430\u0448\u0438\u0432\u0430\u043d\u0438\u0435\u043c",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5654,7 +5654,7 @@
       "id": "q2i3_case_006",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Нужна процедура аквафейшл для лица",
+      "query": "\u041d\u0443\u0436\u043d\u0430 \u043f\u0440\u043e\u0446\u0435\u0434\u0443\u0440\u0430 \u0430\u043a\u0432\u0430\u0444\u0435\u0439\u0448\u043b \u0434\u043b\u044f \u043b\u0438\u0446\u0430",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5693,7 +5693,7 @@
       "id": "q2i3_case_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Нужен уход для рук с гель-лаком без дизайна",
+      "query": "\u041d\u0443\u0436\u0435\u043d \u0443\u0445\u043e\u0434 \u0434\u043b\u044f \u0440\u0443\u043a \u0441 \u0433\u0435\u043b\u044c-\u043b\u0430\u043a\u043e\u043c \u0431\u0435\u0437 \u0434\u0438\u0437\u0430\u0439\u043d\u0430",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5733,7 +5733,7 @@
       "id": "q2i2_case_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "оформление и коррекция бровей",
+      "query": "\u043e\u0444\u043e\u0440\u043c\u043b\u0435\u043d\u0438\u0435 \u0438 \u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u044f \u0431\u0440\u043e\u0432\u0435\u0439",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5771,7 +5771,7 @@
       "id": "q2i3_case_005",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Ищу перманент губ с последующей коррекцией",
+      "query": "\u0418\u0449\u0443 \u043f\u0435\u0440\u043c\u0430\u043d\u0435\u043d\u0442 \u0433\u0443\u0431 \u0441 \u043f\u043e\u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0435\u0439 \u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u0435\u0439",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5814,7 +5814,7 @@
       "id": "q2i3_case_007",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Ищу лазерное удаление волос в зоне подмышек",
+      "query": "\u0418\u0449\u0443 \u043b\u0430\u0437\u0435\u0440\u043d\u043e\u0435 \u0443\u0434\u0430\u043b\u0435\u043d\u0438\u0435 \u0432\u043e\u043b\u043e\u0441 \u0432 \u0437\u043e\u043d\u0435 \u043f\u043e\u0434\u043c\u044b\u0448\u0435\u043a",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5856,7 +5856,7 @@
       "id": "q2i4_case_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "Fußnägel mit Gel-Farbe behandeln",
+      "query": "Fu\u00dfn\u00e4gel mit Gel-Farbe behandeln",
       "language": "de",
       "slices": [
         "exact-intent",
@@ -5897,7 +5897,7 @@
       "id": "q2i4_case_002",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "нужен уход за руками без цветного покрытия",
+      "query": "\u043d\u0443\u0436\u0435\u043d \u0443\u0445\u043e\u0434 \u0437\u0430 \u0440\u0443\u043a\u0430\u043c\u0438 \u0431\u0435\u0437 \u0446\u0432\u0435\u0442\u043d\u043e\u0433\u043e \u043f\u043e\u043a\u0440\u044b\u0442\u0438\u044f",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -5977,7 +5977,7 @@
       "id": "q2i4_case_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "künstliche Nägel aus Acryl verlängern",
+      "query": "k\u00fcnstliche N\u00e4gel aus Acryl verl\u00e4ngern",
       "language": "de",
       "slices": [
         "exact-intent",
@@ -6017,7 +6017,7 @@
       "id": "q2i5_reserve_001",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "нужна услуга по маникюру",
+      "query": "\u043d\u0443\u0436\u043d\u0430 \u0443\u0441\u043b\u0443\u0433\u0430 \u043f\u043e \u043c\u0430\u043d\u0438\u043a\u044e\u0440\u0443",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6056,7 +6056,7 @@
       "id": "q2i5_reserve_004",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникюр с гелевым покрытием",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0441 \u0433\u0435\u043b\u0435\u0432\u044b\u043c \u043f\u043e\u043a\u0440\u044b\u0442\u0438\u0435\u043c",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6095,7 +6095,7 @@
       "id": "q2i5_reserve_007",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникюр и педикюр в одном запросе",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0438 \u043f\u0435\u0434\u0438\u043a\u044e\u0440 \u0432 \u043e\u0434\u043d\u043e\u043c \u0437\u0430\u043f\u0440\u043e\u0441\u0435",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6136,7 +6136,7 @@
       "id": "q2i5_reserve_010",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "подберите процедуру bb glow для лица",
+      "query": "\u043f\u043e\u0434\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u0440\u043e\u0446\u0435\u0434\u0443\u0440\u0443 bb glow \u0434\u043b\u044f \u043b\u0438\u0446\u0430",
       "language": "mixed",
       "slices": [
         "exact-intent",
@@ -6175,7 +6175,7 @@
       "id": "q2i5_reserve_013",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникюрную процедуру пожалуйста",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u044e\u0440\u043d\u0443\u044e \u043f\u0440\u043e\u0446\u0435\u0434\u0443\u0440\u0443 \u043f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6214,7 +6214,7 @@
       "id": "q2i5_reserve_016",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "маникур с гель лаком",
+      "query": "\u043c\u0430\u043d\u0438\u043a\u0443\u0440 \u0441 \u0433\u0435\u043b\u044c \u043b\u0430\u043a\u043e\u043c",
       "language": "ru-translit",
       "slices": [
         "exact-intent",
@@ -6292,7 +6292,7 @@
       "id": "q2i5_reserve_022",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "ресницы снять без наращивания",
+      "query": "\u0440\u0435\u0441\u043d\u0438\u0446\u044b \u0441\u043d\u044f\u0442\u044c \u0431\u0435\u0437 \u043d\u0430\u0440\u0430\u0449\u0438\u0432\u0430\u043d\u0438\u044f",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6664,7 +6664,7 @@
       "id": "q2i7_recovery_006",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "педикюр с гель-лаком недорого",
+      "query": "\u043f\u0435\u0434\u0438\u043a\u044e\u0440 \u0441 \u0433\u0435\u043b\u044c-\u043b\u0430\u043a\u043e\u043c \u043d\u0435\u0434\u043e\u0440\u043e\u0433\u043e",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6738,7 +6738,7 @@
       "id": "q2i7_recovery_014",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "окрашивание бровей краской",
+      "query": "\u043e\u043a\u0440\u0430\u0448\u0438\u0432\u0430\u043d\u0438\u0435 \u0431\u0440\u043e\u0432\u0435\u0439 \u043a\u0440\u0430\u0441\u043a\u043e\u0439",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6812,7 +6812,7 @@
       "id": "q2i7_recovery_022",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "классическая чистка лица глубокое очищение",
+      "query": "\u043a\u043b\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u0447\u0438\u0441\u0442\u043a\u0430 \u043b\u0438\u0446\u0430 \u0433\u043b\u0443\u0431\u043e\u043a\u043e\u0435 \u043e\u0447\u0438\u0449\u0435\u043d\u0438\u0435",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6923,7 +6923,7 @@
       "id": "q2i7_recovery_003",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "гель-лак маникюр рядом со мной",
+      "query": "\u0433\u0435\u043b\u044c-\u043b\u0430\u043a \u043c\u0430\u043d\u0438\u043a\u044e\u0440 \u0440\u044f\u0434\u043e\u043c \u0441\u043e \u043c\u043d\u043e\u0439",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -6997,7 +6997,7 @@
       "id": "q2i7_recovery_011",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "lash lifting mit färben buchen",
+      "query": "lash lifting mit f\u00e4rben buchen",
       "language": "de",
       "slices": [
         "exact-intent",
@@ -7071,7 +7071,7 @@
       "id": "q2i7_recovery_019",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "перманентный макияж бровей",
+      "query": "\u043f\u0435\u0440\u043c\u0430\u043d\u0435\u043d\u0442\u043d\u044b\u0439 \u043c\u0430\u043a\u0438\u044f\u0436 \u0431\u0440\u043e\u0432\u0435\u0439",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -7182,7 +7182,7 @@
       "id": "q2i7_recovery_032",
       "partition": "regression",
       "judgmentMode": "partial",
-      "query": "снятие наращенных ногтей и уход",
+      "query": "\u0441\u043d\u044f\u0442\u0438\u0435 \u043d\u0430\u0440\u0430\u0449\u0435\u043d\u043d\u044b\u0445 \u043d\u043e\u0433\u0442\u0435\u0439 \u0438 \u0443\u0445\u043e\u0434",
       "language": "ru",
       "slices": [
         "exact-intent",
@@ -7494,6 +7494,304 @@
         "variants": {
           "acceptableIds": [
             "51cc8284-3879-5bdb-8780-7b43e47f1251"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_041",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "gel manicure appointment near me",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Gel polish manicure near my location",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_042",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "book pedicure with shellac today",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Pedicure with shellac coating",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_043",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "3d volume lash appointment",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "3D volume lash extensions",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_044",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "henna brow tint session",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Henna brow tinting",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_045",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "permanent eyeliner for eyes",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Permanent eyeliner PMU",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7",
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_046",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "book hydrafacial appointment",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Hydrafacial aquafacial treatment",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "f018b7f8-1997-596f-8c32-414d6cf8f538"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_047",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "wax bikini area hair removal",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Wax hair removal for bikini area",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "b036712b-991b-538e-80ef-aec745be2aba"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i7_recovery_048",
+      "partition": "regression",
+      "judgmentMode": "partial",
+      "query": "acrylic nail extension appointment",
+      "language": "en",
+      "slices": [
+        "exact-intent",
+        "q2-post-recovery-migrated"
+      ],
+      "userIntent": "Acrylic nail extension",
+      "notes": [
+        "Permanently disclosed and migrated from the post-recovery Q2 protected holdout after the authorized exact-intent success/10 break-glass."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
           ],
           "forbiddenIds": [],
           "neutralIds": [],

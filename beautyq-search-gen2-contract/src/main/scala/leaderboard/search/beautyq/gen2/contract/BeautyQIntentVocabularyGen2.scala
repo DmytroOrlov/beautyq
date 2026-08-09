@@ -306,7 +306,7 @@ object BeautyQIntentVocabulary {
         )
       )
     ),
-    rule("r089", "gel-maniküre")(
+    rule("r089", "gel-maniküre", "gel manicure")(
       service("manicure"),
       enumAttr("nail_service_type", "manicure"),
       enumAttr("nail_coating_type", "gel_polish"),
@@ -319,42 +319,49 @@ object BeautyQIntentVocabulary {
     rule("r091", "regular polish", "ordinary polish", "обычный лак", "обычным лаком", "normaler lack")(
       enumAttr("nail_coating_type", "regular_polish"),
     ),
-     rule("r092", "без дизайна", "without design", "ohne design")(
+    rule("r092", "без дизайна", "without design", "ohne design")(
       bool("with_design", false),
     )(using mode = IntentRuleMode.Contextual, requires = Vector(nailServiceFamily)),
-     rule("r093", "снятие наращенных ногтей")(
-       service("nail_modeling"),
-       enumAttr("nail_service_type", "removal"),
-       bool("with_removal", true),
-     ),
-     rule("r094", "henna brows")(
-       service("brows"),
-       enumAttr("brow_service_type", "henna"),
-       bool("with_tinting", true),
-     ),
-      rule("r095", "brow shaping")(
-        service("brows"),
-        enumAttr("brow_service_type", "shaping"),
-      ),
-      rule("r096", "nail refill")(
-        service("nail_modeling"),
-        enumAttr("nail_service_type", "refill"),
-        bool("with_correction", true),
-      ),
-
-      rule("r097", "gel")(
-        enumAttr("nail_coating_type", "gel"),
-      )(using
-        mode = IntentRuleMode.Contextual,
-        requires = Vector(enumAttr("nail_service_type", "refill")),
-      ),
-
-      rule("r098", "with design")(
-        bool("with_design", true),
-      )(using
-        mode = IntentRuleMode.Contextual,
-        requires = Vector(nailServiceFamily),
-      ),
+    rule("r093", "снятие наращенных ногтей")(
+      service("nail_modeling"),
+      enumAttr("nail_service_type", "removal"),
+      bool("with_removal", true),
+    ),
+    rule("r094", "henna brows", "henna brow")(
+      service("brows"),
+      enumAttr("brow_service_type", "henna"),
+      bool("with_tinting", true),
+    ),
+    rule("r095", "brow shaping")(
+      service("brows"),
+      enumAttr("brow_service_type", "shaping"),
+    ),
+    rule("r096", "nail refill")(
+      service("nail_modeling"),
+      enumAttr("nail_service_type", "refill"),
+      bool("with_correction", true),
+    ),
+    rule("r097", "gel")(
+      enumAttr("nail_coating_type", "gel"),
+    )(using
+      mode = IntentRuleMode.Contextual,
+      requires = Vector(enumAttr("nail_service_type", "refill")),
+    ),
+    rule("r098", "with design")(
+      bool("with_design", true),
+    )(using
+      mode = IntentRuleMode.Contextual,
+      requires = Vector(nailServiceFamily),
+    ),
+    rule("r099", "3d volume lash", "3d volume lashes")(
+      service("lashes"),
+      enumAttr("lash_service_type", "extension"),
+      enumAttr("lash_volume", "volume3_d"),
+    ),
+    rule("r100", "permanent eyeliner")(
+      service("pmu"),
+      enumAttr("pmu_area", "eyeliner"),
+    ),
   )
 
   val validation: Either[NonEmptyErrors[BeautyIntentVocabularyError], BeautyQIntentVocabulary] = validate(sourceRules)

@@ -16,9 +16,10 @@ import org.scalatest.wordspec.AnyWordSpec
   * Gen1's 86 declarations map to Gen2 r001..r086 index-for-index (Gen2 did not reorder them); r087
   * is the Gen2 NearUser overlay; r088 is the measured Gen2 broad self-care correction; r089 is the
   * first disclosed multilingual exact-intent correction; r090 is the contextual lash-removal action;
- * r091 and r092 own regular-polish and explicit no-design typed semantics; r093 owns explicit extended-nail removal semantics; r094 owns the explicit
- * henna-brows phrase; r095 owns the explicit brow-shaping phrase; r096..r098 own the composed refill+gel+design recovery
- * vocabulary.
+  * r091 and r092 own regular-polish and explicit no-design typed semantics; r093 owns explicit
+  * extended-nail removal semantics; r094 owns the explicit henna-brows phrase; r095 owns the
+  * explicit brow-shaping phrase; r096..r098 own the composed refill+gel+design recovery vocabulary;
+  * r099 owns the 3d volume lash extension phrase; r100 owns the permanent eyeliner phrase.
   */
 final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
 
@@ -199,7 +200,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
     }
 
   "the Gen1 disposition ledger" should {
-    "cover exactly 86 Gen1 declarations, index-for-index, with r087..r092 excluded as Gen2-only" in {
+    "cover exactly 86 Gen1 declarations, index-for-index, with r087..r100 excluded as Gen2-only" in {
       assert(ledger.map(_.sourceIndex) == (1 to 86).toVector)
       assert(ledger.map(_.gen2RuleId) == (1 to 86).map(index => f"r$index%03d").toVector)
       assert(!ledger.exists(_.gen2RuleId == "r087"))
@@ -208,6 +209,14 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
       assert(!ledger.exists(_.gen2RuleId == "r090"))
       assert(!ledger.exists(_.gen2RuleId == "r091"))
       assert(!ledger.exists(_.gen2RuleId == "r092"))
+      assert(!ledger.exists(_.gen2RuleId == "r093"))
+      assert(!ledger.exists(_.gen2RuleId == "r094"))
+      assert(!ledger.exists(_.gen2RuleId == "r095"))
+      assert(!ledger.exists(_.gen2RuleId == "r096"))
+      assert(!ledger.exists(_.gen2RuleId == "r097"))
+      assert(!ledger.exists(_.gen2RuleId == "r098"))
+      assert(!ledger.exists(_.gen2RuleId == "r099"))
+      assert(!ledger.exists(_.gen2RuleId == "r100"))
     }
 
     "match every ledgered rule's actual hard/semantic/requires/excludes action tags exactly" in {
@@ -250,9 +259,9 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
   }
 
   "the Gen2 rule inventory" should {
-    "contain exactly 98 rules, r001..r098 in order, with the final twelve rules explicitly Gen2-owned" in {
+    "contain exactly 100 rules, r001..r100 in order, with the final fourteen rules explicitly Gen2-owned" in {
       val rules = BeautyQIntentVocabulary.rules
-      assert(rules.map(_.id.value) == (1 to 98).map(index => f"r$index%03d").toVector)
+      assert(rules.map(_.id.value) == (1 to 100).map(index => f"r$index%03d").toVector)
       val nearUserRule = rules.find(_.id.value == "r087").getOrElse(fail("expected r087 to exist"))
       assert(nearUserRule.semanticActions == Vector(BeautyIntentAction.NearUser))
       assert(nearUserRule.hardActions.isEmpty)
@@ -275,7 +284,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
       assert(broadRule.excludes.isEmpty)
       assert(!broadRule.noise)
       val gelManicureRule = rules.find(_.id.value == "r089").getOrElse(fail("expected r089 to exist"))
-      assert(gelManicureRule.aliases == Vector("gel-maniküre"))
+      assert(gelManicureRule.aliases == Vector("gel-maniküre", "gel manicure"))
       assert(gelManicureRule.mode == IntentRuleMode.Independent)
       assert(gelManicureRule.hardActions match {
         case Vector(
@@ -322,13 +331,42 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
       })
       val rotation3Rule = rules.find(_.id.value == "r093").getOrElse(fail("expected r093 to exist"))
       assert(rotation3Rule.mode == IntentRuleMode.Independent)
+      val r099Rule = rules.find(_.id.value == "r099").getOrElse(fail("expected r099 to exist"))
+      assert(r099Rule.aliases == Vector("3d volume lash", "3d volume lashes"))
+      assert(r099Rule.mode == IntentRuleMode.Independent)
+      assert(r099Rule.hardActions match {
+        case Vector(
+              BeautyIntentAction.Service(service),
+              BeautyIntentAction.EnumAttribute("lash_service_type", "extension"),
+              BeautyIntentAction.EnumAttribute("lash_volume", "volume3_d"),
+            ) => service.value == "lashes"
+        case _ => false
+      })
+      assert(r099Rule.semanticActions.isEmpty)
+      assert(r099Rule.requires.isEmpty)
+      assert(r099Rule.excludes.isEmpty)
+      assert(!r099Rule.noise)
+      val r100Rule = rules.find(_.id.value == "r100").getOrElse(fail("expected r100 to exist"))
+      assert(r100Rule.aliases == Vector("permanent eyeliner"))
+      assert(r100Rule.mode == IntentRuleMode.Independent)
+      assert(r100Rule.hardActions match {
+        case Vector(
+              BeautyIntentAction.Service(service),
+              BeautyIntentAction.EnumAttribute("pmu_area", "eyeliner"),
+            ) => service.value == "pmu"
+        case _ => false
+      })
+      assert(r100Rule.semanticActions.isEmpty)
+      assert(r100Rule.requires.isEmpty)
+      assert(r100Rule.excludes.isEmpty)
+      assert(!r100Rule.noise)
     }
 
     // Independent evidence, not derived from BeautyIntentRuleTrace or any other production traversal
     // helper: every string below was authored by hand against the Gen1 source and the accepted Gen2
     // correction, then verified to match production output byte-for-byte. This must fail the moment any
-    // alias, action, relation, mode or disposition changes for any of the 98 rules.
-    "render the exact literal trace for every one of the 98 rules" in {
+    // alias, action, relation, mode or disposition changes for any of the 100 rules.
+    "render the exact literal trace for every one of the 100 rules" in {
       val expected = Vector(
         "rule id=r001 aliases=[маникюр,манекюр,уход для рук,уход за руками,hand nail care,care for hands,hand care,manicure] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r002 aliases=[обычный маникюр] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
@@ -418,18 +456,20 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
         "rule id=r086 aliases=[lower legs] mode=Contextual hard=[enum(body_area=lower_legs)] semantic=[] requires=[service(hair_removal)] excludes=[] noise=false label=absent",
         "rule id=r087 aliases=[рядом,near me,nearby] mode=SemanticOverlay hard=[] semantic=[near-user] requires=[] excludes=[service(hair_removal)] noise=false label=absent",
         "rule id=r088 aliases=[хочу привести себя в порядок,привести себя в порядок] mode=Independent hard=[service-any(manicure,lashes,brows,facial)] semantic=[] requires=[] excludes=[] noise=false label=absent",
-        "rule id=r089 aliases=[gel maniküre] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure),enum(nail_coating_type=gel_polish)] semantic=[] requires=[] excludes=[] noise=false label=absent",
+        "rule id=r089 aliases=[gel maniküre,gel manicure] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure),enum(nail_coating_type=gel_polish)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r090 aliases=[снять] mode=Contextual hard=[service(lashes),enum(lash_service_type=removal),bool(with_removal=true)] semantic=[] requires=[service(lashes)] excludes=[] noise=false label=absent",
         "rule id=r091 aliases=[regular polish,ordinary polish,обычный лак,обычным лаком,normaler lack] mode=Independent hard=[enum(nail_coating_type=regular_polish)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r092 aliases=[без дизайна,without design,ohne design] mode=Contextual hard=[bool(with_design=false)] semantic=[] requires=[service-any(manicure,pedicure,nail_modeling)] excludes=[] noise=false label=absent",
         "rule id=r093 aliases=[снятие наращенных ногтей] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=removal),bool(with_removal=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
-        "rule id=r094 aliases=[henna brows] mode=Independent hard=[service(brows),enum(brow_service_type=henna),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
+        "rule id=r094 aliases=[henna brows,henna brow] mode=Independent hard=[service(brows),enum(brow_service_type=henna),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r095 aliases=[brow shaping] mode=Independent hard=[service(brows),enum(brow_service_type=shaping)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r096 aliases=[nail refill] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=refill),bool(with_correction=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r097 aliases=[gel] mode=Contextual hard=[enum(nail_coating_type=gel)] semantic=[] requires=[enum(nail_service_type=refill)] excludes=[] noise=false label=absent",
         "rule id=r098 aliases=[with design] mode=Contextual hard=[bool(with_design=true)] semantic=[] requires=[service-any(manicure,pedicure,nail_modeling)] excludes=[] noise=false label=absent",
+        "rule id=r099 aliases=[3d volume lash,3d volume lashes] mode=Independent hard=[service(lashes),enum(lash_service_type=extension),enum(lash_volume=volume3_d)] semantic=[] requires=[] excludes=[] noise=false label=absent",
+        "rule id=r100 aliases=[permanent eyeliner] mode=Independent hard=[service(pmu),enum(pmu_area=eyeliner)] semantic=[] requires=[] excludes=[] noise=false label=absent",
       )
-      assert(expected.size == 98)
+      assert(expected.size == 100)
       val actual = BeautyQIntentVocabulary.rules.map(BeautyIntentRuleTrace.render)
       assert(actual == expected)
     }

@@ -97,8 +97,8 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
 
       val author = BeautyQProtectedAuthorDraft.decodeString(authorRaw).fold(error => fail(error), identity)
       assert(author.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
-      assert(author.sourceRevision == "cacc7eb4d0d99bd7acc592e99aad2549e19c5ebf")
-      assert(author.authorPassId == "q2-exact-intent-recovery-rotation-4-author-v1")
+      assert(author.sourceRevision == "37fedad89d40b45a2f0dc4b3c31a3dab07ceb9cb")
+      assert(author.authorPassId == "q2-exact-intent-recovery-rotation-5-author-v1")
       assert(author.cases.size == 24)
       assert(BeautyQProtectedAuthorDraft.correspondsTo(author, protectedCorpus).isRight)
       assert(authorRaw != judgedRaw)
@@ -123,9 +123,9 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       assert(audit.protectedCorpusFingerprint.length == 64)
       assert(audit.protectedPolicyFingerprint.length == 64)
       assert(audit.protectedCorpusFingerprint ==
-         "3893ad32b8bb8dc4a77df85ae40dd0537a32090111ae2ee2528e42090f9c1874")
+         "2f8757514fcc49d7c93db013717cb9cc093b0c28e20632cde94e7c698bfa48b8")
       assert(audit.protectedPolicyFingerprint ==
-        "5a47394dcc6eb0e483c9998a9e481083522b3876c1ad8a084d683961a16d38b7")
+        "40493e9fd4928fdb58b129c93e2460c15b681438ff9a89731acff87ecbcb3e24")
     }
 
     "close direct construction, copy and subclassing" in {

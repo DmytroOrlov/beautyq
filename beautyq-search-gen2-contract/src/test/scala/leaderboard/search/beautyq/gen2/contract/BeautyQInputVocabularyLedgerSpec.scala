@@ -25,7 +25,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
     "pin dynamic naming prefixes and stable rule IDs" in {
       val dynamicNames = BeautyQPublicFilterRegistry.fields.drop(5).map(_.name.value)
       assert(dynamicNames.forall(name => name.startsWith("attribute.int.") || name.startsWith("attribute.decimal.") || name.startsWith("attribute.enum.") || name.startsWith("attribute.boolean.")))
-       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 98).map(index => f"r$index%03d").toVector)
+       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 100).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("eyebrows"))
@@ -44,7 +44,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
         assert(!r007.aliases.contains("brows"))
        assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r059").exists(_.aliases.contains("бровей")))
        val r094 = BeautyQIntentVocabulary.rules.find(_.id.value == "r094").getOrElse(fail("r094 not found"))
-       assert(r094.aliases == Vector("henna brows"))
+        assert(r094.aliases == Vector("henna brows", "henna brow"))
        assert(r094.hardActions == Vector(
          service("brows"),
          BeautyIntentAction.EnumAttribute("brow_service_type", "henna"),
@@ -63,6 +63,29 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
        assert(r095.requires.isEmpty)
        assert(r095.excludes.isEmpty)
        assert(!r095.noise)
+       val r099 = BeautyQIntentVocabulary.rules.find(_.id.value == "r099").getOrElse(fail("r099 not found"))
+       assert(r099.aliases == Vector("3d volume lash", "3d volume lashes"))
+       assert(r099.hardActions == Vector(
+         service("lashes"),
+         BeautyIntentAction.EnumAttribute("lash_service_type", "extension"),
+         BeautyIntentAction.EnumAttribute("lash_volume", "volume3_d"),
+       ))
+       assert(r099.mode == IntentRuleMode.Independent)
+       assert(r099.semanticActions.isEmpty)
+       assert(r099.requires.isEmpty)
+       assert(r099.excludes.isEmpty)
+       assert(!r099.noise)
+       val r100 = BeautyQIntentVocabulary.rules.find(_.id.value == "r100").getOrElse(fail("r100 not found"))
+       assert(r100.aliases == Vector("permanent eyeliner"))
+       assert(r100.hardActions == Vector(
+         service("pmu"),
+         BeautyIntentAction.EnumAttribute("pmu_area", "eyeliner"),
+       ))
+       assert(r100.mode == IntentRuleMode.Independent)
+       assert(r100.semanticActions.isEmpty)
+       assert(r100.requires.isEmpty)
+       assert(r100.excludes.isEmpty)
+       assert(!r100.noise)
     }
   }
 

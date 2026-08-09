@@ -103,8 +103,8 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
           assert(expectedCount == 8)
         case other => fail(s"expected post-recovery full-slice authorization, got $other")
       }
-       assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 8)
-       assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 8)
+       assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 9)
+       assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 9)
 
       val sixth = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2Authorization
       assert(sixth.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId)
@@ -143,6 +143,19 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
           assert(sliceId == "exact-intent")
           assert(expectedCount == 8)
         case other => fail(s"expected recovery-rotation-4 full-slice authorization, got $other")
+      }
+
+      val ninth = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation5Authorization
+      assert(ninth.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation5AuthorizationId)
+      assert(ninth.applicationRevision == "020e2c4f3ab02b4ee735f42b35731e4e784a5f32")
+      assert(ninth.protectedCorpusFingerprint == "3893ad32b8bb8dc4a77df85ae40dd0537a32090111ae2ee2528e42090f9c1874")
+      assert(ninth.policyFingerprint == "5a47394dcc6eb0e483c9998a9e481083522b3876c1ad8a084d683961a16d38b7")
+      assert(ninth.failedCheckCode == BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode)
+      ninth.disclosureScope match {
+        case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+          assert(sliceId == "exact-intent")
+          assert(expectedCount == 8)
+        case other => fail(s"expected recovery-rotation-5 full-slice authorization, got $other")
       }
 
       val fixture = syntheticFixture()

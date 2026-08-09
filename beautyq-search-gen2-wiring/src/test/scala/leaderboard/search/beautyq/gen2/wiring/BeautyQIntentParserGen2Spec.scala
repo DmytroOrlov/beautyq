@@ -670,6 +670,27 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       }
     }
 
+    "parse henna brow tint session to r094 with brows + henna + tinting and no PMU" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("henna brow tint session")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds.map(_.value).contains("r094"))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          assert(actual.contains(fields.serviceCode.id -> Set("brows")))
+          assert(actual.contains(fields.enumAttributesByCode("brow_service_type").id -> Set("henna")))
+          assert(actual.contains(fields.booleanAttributesByCode("with_tinting").id -> Set("true")))
+          val services = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(f, values), _) if f eq fields.serviceCode =>
+              values.map(f.codec.encodeCanonical)
+          }
+          assert(!services.exists(_.contains("pmu")), "must not match pmu service")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
     "derive exact typed constraints for every second-cycle migrated exact-intent form" in {
       val fields = BeautyQSearchDeclarations.variants.Fields
       val cases = Vector(
@@ -1214,6 +1235,80 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
               field.id == fields.booleanAttributesByCode("with_design").id
             case _ => false
           }, "with_design must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only manicure, manicure-type and gel-polish for gel-manicure-appointment-near-me without inferred removal or design" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("gel manicure appointment near me"), Some(GeoPoint(BigDecimal("52.5"), BigDecimal("13.4")))), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("manicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel_polish"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_removal").id
+            case _ => false
+          }, "with_removal must not be emitted")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_design").id
+            case _ => false
+          }, "with_design must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only lashes, extension and volume3_d for 3d volume lash appointment without inferred refill" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("3d volume lash appointment")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("lashes"),
+            fields.enumAttributesByCode("lash_service_type").id -> Set("extension"),
+            fields.enumAttributesByCode("lash_volume").id -> Set("volume3_d"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r036")), "r036 must not be matched, longer r099 wins")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_correction").id
+            case _ => false
+          }, "with_correction must not be emitted")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "emit only PMU and pmu_area=eyeliner for permanent eyeliner for eyes without inferred correction" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("permanent eyeliner for eyes")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("pmu"),
+            fields.enumAttributesByCode("pmu_area").id -> Set("eyeliner"),
+          )
+          assert(actual == expected, s"unexpected constraints: $actual")
+          assert(!intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.booleanAttributesByCode("with_correction").id
+            case _ => false
+          }, "with_correction must not be emitted")
         case Left(errors) => fail(s"parse failed: ${errors.toVector}")
       }
     }

@@ -100,24 +100,19 @@ Section 1.1 is protected and has higher priority than the requested output shape
 
 # 2. Role split and prompt forms
 
-Coordinator owns architecture, source-truth audit, patch strategy, decomposition, acceptance decisions, commit messages, and downstream planning.
+Coordinator owns architecture, source-truth audit, patch strategy, decomposition, acceptance decisions, commit messages, evidence capture, and downstream planning.
 
-Delegated agents own bounded edits, focused tests, mechanical verification, and narrow claim checks.
+Delegated agents own bounded tracked edits and the focused validation required to prove those edits.
+
+A delegated task must have an expected non-empty tracked patch. Validation-only, evidence-only, inventory-only, review-only, and read-only tasks are coordinator/user work, not delegated-agent tasks.
 
 The coordinator must resolve architecture before delegation; never leave an agent with `NEED_ARCHITECTURE_DECISION`.
 
-Audit conclusions, architecture, and source-sufficiency decisions are coordinator-owned. Exact read-only inventory or evidence capture may be delegated when paths, commands, output limits, and report shape are fixed.
+Audit conclusions, architecture, source-sufficiency decisions, and mechanical source/evidence capture are coordinator-owned.
 
-Do not present interpretive audit or architecture work as a delegated prompt merely by adding `Do not edit files`.
+Allowed reusable prompt form:
 
-Allowed reusable prompt forms:
-
-- `Task:` for delegated edit work;
-- `Task:` for exact mechanical inventory or evidence capture when paths,
-  commands, output limits, and report shape are fixed.
-
-Mechanical inventory tasks must not contain architecture interpretation or
-patch design.
+- `Task:` for delegated edit work.
 
 Forbidden reusable prompt labels:
 
@@ -147,9 +142,11 @@ After an accepted review:
 Mandatory review and verification are plumbing, not downstream options. A user reply containing only an option number selects work; it is not evidence. Do not manufacture alternatives after the task is complete.
 ## 3.2 Verification
 
-Delegated workers never run an unscoped full repository suite.
+Delegated workers validate only as part of a patch-producing task and never run an unscoped full repository suite.
 
 The primary/coordinator may run an exact full command only when the user explicitly requests it. Otherwise use focused checks and ask the user in plain language to run the exact broader command before committing when that confidence is warranted.
+
+Any coordinator-provided sbt validation uses one chained batch invocation (`sbt --batch --no-global ...`) for the requested validation phase. Never emit plain/interactive `sbt ...` or multiple standalone sbt launches when one chained invocation can cover the same checks.
 
 Every report states exactly what ran and what remains unknown. Do not encode confidence as synthetic status labels.
 ## 3.2.1 Risk-to-validation matrix
@@ -191,7 +188,7 @@ Do not imply that focused checks cover the full repository.
 
 Apply section 1.1 before writing a prompt: close decision-critical seams and request focused bundles only for missing decision evidence. Do not duplicate mechanically discoverable imports, callers, or local signatures for `[M/S]` unless they are known traps.
 
-The prompt must not ask the agent to reconstruct missing architecture or deletion inventory with broad repository search unless discovery is explicitly the task.
+The prompt must not ask the agent to reconstruct missing architecture or deletion inventory with broad repository search. Bounded discovery is allowed only inside the approved edit frontier when needed to complete the tracked patch.
 
 Do not say "use attached bundle". Inline relevant facts.
 
@@ -263,7 +260,7 @@ Do not paste all of `AGENTS.md` into prompts. Inline only task-specific guardrai
 
 ## 4.3 Runtime safety inheritance
 
-Do not duplicate the Scala, test-double, unsafe-extraction, DI, lifecycle, HTTP, or sbt rules from `AGENTS.md`. Inline only the task-specific hazard the chosen model is likely to violate.
+Do not duplicate the Scala, test-double, unsafe-extraction, DI, lifecycle, HTTP, or sbt rules from `AGENTS.md`. Inline only the task-specific hazard the chosen model is likely to violate. Coordinator-emitted sbt commands must satisfy section 3.2.
 
 ---
 
@@ -293,15 +290,11 @@ If anchors are still missing after review for the selected task, request a focus
 
 ## 6.0 Delegated-agent bundle restriction
 
-Delegated agents must not create review bundles, zip archives, or grep-report archives by default. Delegated patch prompts should request focused validation and concise reporting only. Review bundles are allowed only when the user/coordinator explicitly requests evidence capture for that task.
+Delegated agents do not create review bundles, zip archives, grep-report archives, or evidence-only capture tasks.
 
-Clarifications:
+Source-truth and closeout bundles are coordinator-owned scripts executed by the user or primary/coordinator when anchors are missing or handoff evidence is required. Generated artifacts that are part of a patch's actual runtime/product DoD are not review bundles and may be produced only inside a patch-producing task.
 
-- Source-truth bundles (section 6.1–6.3) may still be requested by the coordinator when anchors are missing — that is coordinator-run evidence gathering, not a delegated-agent action.
-- Coordinator-owned bundle scripts are not default delegated patch closeout; see the optional bundle rule in section 3.1.
-- Full repository tests remain forbidden for delegated workers; section 3.2 governs explicit primary/coordinator runs.
-
-This does not remove the bundle section below; bundle scripts remain available as optional coordinator evidence capture.
+Full repository tests remain governed by section 3.2.
 
 ## 6.1 Bundle scripts must not mutate repository state
 
@@ -402,7 +395,7 @@ Decision order:
 
 | Tier | Example | Best fit |
 |---|---|---|
-| Weak | Qwen3.6 | exact mechanical patches, narrow dofixes, exact manifests |
+| Weak | Qwen3.6 | exact mechanical patches and narrow dofixes |
 | Medium | MiniMax-M3 | source-confirmed multi-module work, bounded dependency closure |
 | Strong | strong frontier model | source reconciliation, architecture, high-risk lifecycle or ownership changes |
 
@@ -411,7 +404,7 @@ Do not use a stronger model to invent missing source truth.
 
 # 9. Senior audit playbook
 
-Senior audit interpretation is coordinator-owned source-truth work. Exact mechanical evidence capture may be delegated when paths, commands, output limits, and report shape are fixed.
+Senior audit interpretation and exact mechanical evidence capture are coordinator-owned source-truth work.
 
 Run audit waves independently and read-only. Each wave ends with either source-confirmed edit seams, no issue found, or a focused bundle request. An audit finding never skips the source-truth gate.
 
@@ -434,11 +427,12 @@ Before sending a delegated prompt:
 
 - Is the architecture already decided?
 - Are decision-critical source anchors confirmed?
+- Does the task have an expected non-empty tracked patch?
 - Is the prompt sized for the chosen model tier?
 - Are edit targets, retained owners, and forbidden changes explicit?
 - Does a continuation include the standard checkpoint: status, diff summaries, completed edits, last success, complete failure, and next command?
 - Are large outputs kept in repo-local artifacts?
-- Does validation follow the risk-to-validation matrix?
+- Does validation follow section 3.2 and the risk-to-validation matrix?
 - Are product/domain/task-specific facts kept out of these two guides?
 - Is any rule duplicated unnecessarily?
 

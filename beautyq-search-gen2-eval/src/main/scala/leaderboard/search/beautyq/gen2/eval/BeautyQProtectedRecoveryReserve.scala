@@ -55,11 +55,11 @@ object BeautyQProtectedRecoveryReserve {
   )
 
   private val AuthorReserveResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-author-reserve-v3.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-author-reserve-v4.json"
   private val JudgedReserveResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v3.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v4.json"
   private val SelectionAuditResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v5.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v6.json"
   private val VisibleCorpusResource =
     "leaderboard/search/beautyq/gen2/eval/beautyq_evaluation_corpus_v2.json"
   private val FinalAuthorDraftResource =
@@ -76,10 +76,10 @@ object BeautyQProtectedRecoveryReserve {
 
   private val AuthorReserveRootFields = Set("schemaVersion", "sourceRevision", "authorPassId", "cases")
   private val AuthorReserveCaseFields = Set("id", "query", "language", "primarySlice", "additionalSlices", "userIntent", "notes", "coverageBucket")
-  private val CurrentAuthorSchema = "beautyq-protected-recovery-author-reserve-v3"
+  private val CurrentAuthorSchema = "beautyq-protected-recovery-author-reserve-v4"
 
   private val JudgedReserveRootFields = Set("schemaVersion", "sourceRevision", "judgePassId", "corpus")
-  private val CurrentJudgedSchema = "beautyq-protected-recovery-judged-reserve-v3"
+  private val CurrentJudgedSchema = "beautyq-protected-recovery-judged-reserve-v4"
 
   private val SelectionAuditRootFields = Set(
     "schemaVersion", "sourceRevision", "authorReservePassId", "judgeReservePassId", "auditPassId",
@@ -87,7 +87,7 @@ object BeautyQProtectedRecoveryReserve {
     "finalAuthorDraftSha256", "finalJudgedHoldoutSha256", "finalProtectedCorpusFingerprint",
     "finalProtectedPolicyFingerprint", "canonicalCatalogFingerprint",
   )
-  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v5"
+  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v6"
 
   def load(readResource: ResourceReader): Either[String, BeautyQProtectedRecoveryReserve] = for {
     authorRaw <- readResource(AuthorReserveResource)

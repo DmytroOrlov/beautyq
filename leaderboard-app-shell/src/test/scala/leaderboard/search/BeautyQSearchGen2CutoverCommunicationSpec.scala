@@ -94,7 +94,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
       }
     }
 
-    "execute all 148 canonical regression cases through one Required startup and write measured correction evidence" in {
+    "execute all 156 canonical regression cases through one Required startup and write measured correction evidence" in {
       val embeddingConfig = LlamaCppEmbeddingClientConfig(
         baseUrl = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081"),
         endpointPath = "/v1/embeddings",
@@ -103,7 +103,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
       if (!probeEmbeddingReachability(embeddingEndpoint)) {
         cancel(
           s"VERIFICATION BLOCKED: real BeautyQ Gen2 embedding endpoint is unreachable at $embeddingEndpoint; " +
-            s"cannot execute the 148-case Q2 evaluation."
+            s"cannot execute the 156-case Q2 evaluation."
         )
       }
 
@@ -163,8 +163,8 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
           writeArtifact("target/search-gen2/beautyq-evaluation-score-separation.json", measured.scoreSeparationJson)
           writeArtifact("target/search-gen2/beautyq-evaluation-correction-gate.json", measured.correctionGate.toJson)
 
-          assert(measured.warmupExecutions == 148)
-          assert(measured.measuredExecutions == 444)
+          assert(measured.warmupExecutions == 156)
+          assert(measured.measuredExecutions == 468)
           if (!measured.correctionGate.passed) {
             val failed = measured.correctionGate.checks.filterNot(_.passed)
             val separation = measured.correctionGate.supplementScoreSeparation

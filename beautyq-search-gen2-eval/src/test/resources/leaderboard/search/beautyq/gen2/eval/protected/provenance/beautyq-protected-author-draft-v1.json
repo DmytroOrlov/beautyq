@@ -1,7 +1,7 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "cacc7eb4d0d99bd7acc592e99aad2549e19c5ebf",
-  "authorPassId": "q2-exact-intent-recovery-rotation-4-author-v1",
+  "sourceRevision": "37fedad89d40b45a2f0dc4b3c31a3dab07ceb9cb",
+  "authorPassId": "q2-exact-intent-recovery-rotation-5-author-v1",
   "cases": [
     {
       "id": "q2i2_case_009",
@@ -180,91 +180,91 @@
       ]
     },
     {
-      "id": "q2i7_recovery_041",
-      "query": "gel manicure appointment near me",
+      "id": "q2i7_recovery_049",
+      "query": "regular polish manicure",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Gel polish manicure near my location",
+      "userIntent": "Manicure with regular polish",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_042",
-      "query": "book pedicure with shellac today",
+      "id": "q2i7_recovery_050",
+      "query": "gel pedicure appointment",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Pedicure with shellac coating",
+      "userIntent": "Gel polish pedicure",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_043",
-      "query": "3d volume lash appointment",
+      "id": "q2i7_recovery_051",
+      "query": "mega volume lash extensions",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "3D volume lash extensions",
+      "userIntent": "Mega volume lash extensions",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_044",
-      "query": "henna brow tint session",
+      "id": "q2i7_recovery_052",
+      "query": "brow lamination treatment",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Henna brow tinting",
+      "userIntent": "Brow lamination",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_045",
-      "query": "permanent eyeliner for eyes",
+      "id": "q2i7_recovery_053",
+      "query": "pmu lips appointment",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Permanent eyeliner PMU",
+      "userIntent": "Lip PMU",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_046",
-      "query": "book hydrafacial appointment",
+      "id": "q2i7_recovery_054",
+      "query": "classic facial treatment",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Hydrafacial aquafacial treatment",
+      "userIntent": "Classic facial",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_047",
-      "query": "wax bikini area hair removal",
+      "id": "q2i7_recovery_055",
+      "query": "threading chin hair removal",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Wax hair removal for bikini area",
+      "userIntent": "Threading hair removal for chin",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     },
     {
-      "id": "q2i7_recovery_048",
-      "query": "acrylic nail extension appointment",
+      "id": "q2i7_recovery_056",
+      "query": "gel nail extension removal",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Acrylic nail extension",
+      "userIntent": "Gel nail extension removal",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve."
+        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
       ]
     }
   ]

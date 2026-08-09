@@ -29,12 +29,12 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
       }
     }
 
-    "have exactly 148 cases after all permanent break-glass migrations" in {
-      assert(corpus.cases.length == 148)
+    "have exactly 156 cases after all permanent break-glass migrations" in {
+      assert(corpus.cases.length == 156)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-migrated")) == 7)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle2-migrated")) == 4)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle3-full-slice-migrated")) == 8)
-      assert(corpus.cases.count(_.slices.exists(_.value == "q2-post-recovery-migrated")) == 32)
+      assert(corpus.cases.count(_.slices.exists(_.value == "q2-post-recovery-migrated")) == 40)
     }
 
     "have first case ID q_nails_001" in {
@@ -42,7 +42,7 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
     }
 
     "append the final post-recovery disclosed case after the pre-existing visible inventory" in {
-      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i7_recovery_040"))
+      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i7_recovery_048"))
     }
 
     "preserve explicit source order for first 3 cases" in {
