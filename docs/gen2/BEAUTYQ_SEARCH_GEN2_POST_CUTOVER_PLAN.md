@@ -13,8 +13,9 @@ The native Gen2 route, module cutover, evaluation foundation, supplement startup
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
 remaining work is:
 
-- recovery rotation 5 source and deterministic freeze ready for review;
-- fresh protected acceptance remains pending;
+- fresh protected acceptance completed and RED only on the exact-intent variants success/10 protected check;
+- rotation-6 break-glass authorization materialized;
+- disclosure, recovery and replenishment pending;
 - bootstrap, candidate generation, promotion and verify have not run.
 
 - D1 has not started and still requires second-domain product input;
@@ -383,13 +384,15 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **RECOVERY ROTATION 5 SOURCE AND FREEZE READY FOR REVIEW;
-FRESH PROTECTED ACCEPTANCE REQUIRED**
+Status: **RECOVERY ROTATION 6 AUTHORIZATION MATERIALIZED;
+DISCLOSURE, RECOVERY AND REPLENISHMENT PENDING**
 
-Another authorized exact-intent recovery rotation has been materialized.
-Recovery source and deterministic freeze proofs are ready for review.
-Fresh protected acceptance remains pending; bootstrap, candidate generation,
-promotion and verify have not run.
+Fresh protected acceptance was performed against the current committed source
+and failed only the exact-intent variants success/10 protected check. A sixth
+bounded complete-slice break-glass authorization is now materialized against
+that exact revision and its observed corpus and policy fingerprints.
+Disclosure, recovery, replenishment and deterministic freeze remain pending;
+bootstrap, candidate generation, promotion and verify have not run.
 
 The coordinator/operator reviews the candidate's application revision, schema and policy versions,
 corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
@@ -482,7 +485,7 @@ The canonical visible corpus contains regression evidence, not a protected holdo
 
 Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
-### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — POST-RECOVERY EXACT-INTENT DISCLOSED; PROTECTED ACCEPTANCE PENDING**
+### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — PROTECTED ACCEPTANCE RED; ROTATION-6 AUTHORIZATION MATERIALIZED; DISCLOSURE AND RECOVERY PENDING**
 
 - execute the complete corpus through native Gen2 application/projector owners;
 - produce deterministic per-query reports for development/regression and aggregate/slice-only
