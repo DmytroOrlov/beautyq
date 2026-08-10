@@ -81,16 +81,27 @@ object BeautyQAcceptedBaselineMain {
     }
   }
 
+  private[search] def resolveArgumentsFrom(repositoryRoot: Path, arguments: Arguments): Arguments =
+    new Arguments(
+      arguments.mode,
+      BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.protectedCorpus),
+      BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.protectedPolicy),
+      BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.outputDir),
+      arguments.applicationRevision,
+    )
+
   def main(args: Array[String]): Unit = {
     val arguments = parseArguments(args.toVector) match {
       case Right(value) => value
       case Left(error) => throw new IllegalArgumentException(error)
     }
+    val root = BeautyQProtectedPathResolution.locateRepositoryRoot(Paths.get("").toAbsolutePath.normalize)
+    val resolved = resolveArgumentsFrom(root, arguments)
     BeautyQSearchGen2EvaluationResourceHarness.executeProtectedAcceptance(
-      arguments.protectedCorpus,
-      arguments.protectedPolicy,
-      arguments.outputDir,
-      arguments.applicationRevision,
+      resolved.protectedCorpus,
+      resolved.protectedPolicy,
+      resolved.outputDir,
+      resolved.applicationRevision,
     ) match {
       case Left(error) => throw new IllegalStateException(error)
       case Right(run) =>
@@ -105,10 +116,10 @@ object BeautyQAcceptedBaselineMain {
           case Left(error) => throw new IllegalStateException(s"BASELINE_PROVENANCE_INVALID: $error")
         }
         postExecution(
-          arguments.mode,
+          resolved.mode,
           candidate,
           run.protectedPolicy,
-          arguments.outputDir,
+          resolved.outputDir,
           () => BeautyQAcceptedEvaluationBaselineResource.loadCanonical(),
           BeautyQSearchGen2EvaluationResourceHarness.writeArtifact,
         ) match {

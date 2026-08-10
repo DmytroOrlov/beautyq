@@ -271,5 +271,65 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
       }
     }
 
+    "resolve arguments from the repository root instead of the forked working directory" in {
+      val root = BeautyQProtectedPathResolution.locateRepositoryRoot(Paths.get(".").toAbsolutePath.normalize)
+      BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-policy",
+        "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json",
+        "--protected-corpus",
+        "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json",
+        "--output-dir", "target/search-gen2/protected",
+        "--application-revision", "commit-visible-123",
+      )) match {
+        case Right(arguments) =>
+          val resolved = BeautyQProtectedAcceptanceMain.resolveArgumentsFrom(root, arguments)
+          assert(resolved.protectedPolicy.toString.endsWith(
+            "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json",
+          ))
+          assert(!resolved.protectedPolicy.toString.contains("leaderboard-app-shell"))
+          assert(resolved.protectedCorpus.toString.endsWith(
+            "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json",
+          ))
+          assert(!resolved.protectedCorpus.toString.contains("leaderboard-app-shell"))
+          assert(resolved.outputDir.toString.endsWith("target/search-gen2/protected"))
+          assert(!resolved.outputDir.toString.contains("leaderboard-app-shell"))
+          assert(resolved.applicationRevision == "commit-visible-123")
+        case Left(error) => fail(s"expected valid arguments, got $error")
+      }
+    }
+
+    "preserve absolute paths and application revision during argument resolution" in {
+      val root = BeautyQProtectedPathResolution.locateRepositoryRoot(Paths.get(".").toAbsolutePath.normalize)
+      val absoluteDir = Paths.get("/tmp/absolute-dir").toAbsolutePath.normalize.toString
+      BeautyQProtectedAcceptanceMain.parseArguments(Vector(
+        "--protected-policy", absoluteDir + "/policy.json",
+        "--protected-corpus", absoluteDir + "/corpus.json",
+        "--output-dir", absoluteDir + "/output",
+        "--application-revision", "commit-visible-123",
+      )) match {
+        case Right(arguments) =>
+          val resolved = BeautyQProtectedAcceptanceMain.resolveArgumentsFrom(root, arguments)
+          assert(resolved.protectedPolicy.isAbsolute)
+          assert(resolved.protectedCorpus.isAbsolute)
+          assert(resolved.outputDir.isAbsolute)
+          assert(resolved.applicationRevision == "commit-visible-123")
+        case Left(error) => fail(s"expected valid arguments, got $error")
+      }
+    }
+
+    "throw IllegalStateException from main for missing product inputs without leaking path names" in {
+      val exception = intercept[IllegalStateException] {
+        BeautyQProtectedAcceptanceMain.main(Array(
+          "--protected-corpus", "target/codex-sbt/absent-protected-input.json",
+          "--protected-policy", "target/codex-sbt/absent-protected-input.json",
+          "--output-dir", "target/codex-sbt/protected-main-test-output",
+          "--application-revision", "commit-visible-123",
+        ))
+      }
+      val message = exception.getMessage
+      assert(message.startsWith("PRODUCT_INPUT_REQUIRED"))
+      assert(!message.contains("absent"))
+    }
+
   }
 }

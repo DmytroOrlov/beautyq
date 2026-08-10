@@ -33,16 +33,26 @@ object BeautyQProtectedAcceptanceMain {
     }
   }
 
+  private[search] def resolveArgumentsFrom(repositoryRoot: Path, arguments: Arguments): Arguments =
+    Arguments(
+      BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.protectedCorpus),
+      BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.protectedPolicy),
+      BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.outputDir),
+      arguments.applicationRevision,
+    )
+
   def main(args: Array[String]): Unit = {
     val arguments = parseArguments(args.toVector) match {
       case Right(value) => value
       case Left(error) => throw new IllegalArgumentException(error)
     }
+    val root = BeautyQProtectedPathResolution.locateRepositoryRoot(Paths.get("").toAbsolutePath.normalize)
+    val resolved = resolveArgumentsFrom(root, arguments)
     val result = BeautyQSearchGen2EvaluationResourceHarness.runProtectedAcceptance(
-      arguments.protectedCorpus,
-      arguments.protectedPolicy,
-      arguments.outputDir,
-      arguments.applicationRevision,
+      resolved.protectedCorpus,
+      resolved.protectedPolicy,
+      resolved.outputDir,
+      resolved.applicationRevision,
     )
     if (result.startsWith("PRODUCT_INPUT_REQUIRED") || result.startsWith("VERIFICATION BLOCKED"))
       throw new IllegalStateException(result)
