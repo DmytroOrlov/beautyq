@@ -2362,11 +2362,16 @@ to this specification.
 
 ### Accepted limits
 
-These are accepted limits, not open defects or roadmap commitments:
+These are accepted architectural limits, not open defects or roadmap commitments:
 
 - no second production search domain yet;
-- no CDC materialization;
+- no CDC materialization or hot refresh;
 - no authenticated cursor state;
+- no automatic readiness promotion;
+- no multi-process generation coordination where no coordination contract exists;
+- no persistent embedding caching or checkpointing;
+- no automatic Qdrant GC;
+- no cross-environment latency gating where no stable measurement contract exists;
 - no arbitrary custom-analyzer framework;
 - no universal supplement acceptance threshold;
 - generic multi-valued field support remains limited to documented shapes;

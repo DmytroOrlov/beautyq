@@ -190,18 +190,10 @@ startup resource. It strictly validates the corpus and policy, checks every judg
 the canonical typed seed catalog, requires an acceptable variant for every exact-intent case, applies
 exact and deterministic NFKC query-leakage audits against visible and protected inputs, binds both
 input-file hashes plus both authoring-draft hashes and the canonical source fingerprint, and verifies
-the five versioned test resources owned by `beautyq-search-gen2-eval`:
-
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json` — protected evaluation input;
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json` — protected acceptance-gate input;
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json` — canonical audit for the currently frozen protected inputs;
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json` — author-pass provenance input;
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json` — judge-pass provenance input.
-
-All five are tracked test-resource paths available after an ordinary checkout. “Protected” means
+the five versioned test resources (see
+[Canonical Q2-I evaluation resources](#canonical-q2-i-evaluation-resources)). “Protected” means
 excluded from output-driven tuning; it does not mean confidential or imply that the current bytes have
-passed freeze validation. They are not production `src/main/resources`, and no external restore or CI
-secret provisioning is required. Any protected-input change requires a newly reproduced and reviewed audit.
+passed freeze validation. Any protected-input change requires a newly reproduced and reviewed audit.
 The audit record is evidence about validation and freeze, contains no
 cases or judgments, and is not an acceptance-policy owner. Exact and normalized duplicate checks detect
 direct leakage only; they are not semantic-similarity or fuzzy-search claims. Bootstrap and verify
@@ -300,7 +292,7 @@ unavailable external resources are non-zero operational failures, not synthetic 
 
 ### Protected workflow ownership
 
-The post-cutover plan owns the current Q2 milestone state. This runbook defines only the protected acceptance, bootstrap, promotion and verify procedures.
+The post-cutover plan owns the current Q2 milestone state. This protected-workflow section owns the protected acceptance, bootstrap, promotion and verify procedures.
 
 After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
 same explicit immutable application-source identity and verified tracked canonical inputs:

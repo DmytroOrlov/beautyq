@@ -10,21 +10,13 @@ the authority as each item is implemented.
 ## 1. Current source-confirmed remaining work
 
 The native Gen2 route, module cutover, evaluation foundation, supplement startup policy, operator
-status, request budgets, bounded Qdrant work, and managed restart evidence are complete. The current
-remaining work is:
+status, request budgets, bounded Qdrant work, and managed restart evidence are complete.
 
-- fresh protected acceptance completed and RED only on the exact-intent variants success/10 protected check;
-- rotation-6 break-glass authorization materialized;
-- disclosure, recovery and replenishment pending;
-- bootstrap, candidate generation, promotion and verify have not run.
-
-- D1 has not started and still requires second-domain product input;
-- successful Qdrant generations are intentionally not deleted automatically;
-- CDC/hot refresh, automatic readiness promotion, persistent embedding caching, automatic Qdrant GC,
-  and cross-environment latency gating remain deferred.
-
-These gaps do not reopen the accepted declaration, plan, baseline/supplement, lifecycle-authorization,
-or route architecture.
+- Q2 remains active in bounded rotation-6 recovery; current Q2 execution state is owned by Q2-B below.
+- D1 has not started and still requires second-domain product input.
+- successful Qdrant generations are intentionally not deleted automatically.
+- Deferred capabilities remain outside approved current scope; see
+  [Technical Specification accepted limits](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits).
 
 ## 2. Selected decisions
 
@@ -94,100 +86,23 @@ or route architecture.
 
 ## 3. Supplement startup and serving contract
 
-Use a closed configuration policy rather than an ambiguous Boolean:
+The following delivery decisions are closed:
 
-The typed policy belongs to BeautyQ wiring. App-shell config decodes its stable value and passes it
-explicitly into startup; wiring never reads environment/config directly, and app-http never decides
-startup policy.
+- `SupplementStartupPolicy` is closed over `required`, `preferred`, and `disabled`.
+- `required` is the default.
+- `disabled` must be effective before supplement resource construction; the disabled DI branch must
+  reach baseline readiness without constructing, probing or activating Qdrant/embedding resources.
+- Startup serving state is immutable for the process lifetime; no mode promotes itself after startup.
+- Recovery or a policy change requires a coordinated restart; no automatic promotion exists.
+- The initial supported topology is one process or a coordinated stop/start.
 
-| `SupplementStartupPolicy` | Startup behavior | `ServingMode` | Recovery |
-|---|---|---|---|
-| `required` | Qdrant/embedding transport unavailability fails startup | no route is published | restart after dependency recovery |
-| `preferred` | attempt full activation; transport/unavailability may publish the complete ES baseline | `baseline_only`, degraded with exact reason | restart required |
-| `disabled` | intentionally skip supplement activation/execution | `baseline_only`, operator-limited supplement | restart with another policy |
+The technical specification owns implemented architecture, invariants, fail-closed rules, partial
+cross-backend activation semantics, Kubernetes-facing probe interpretation and response-warning
+matrices. Operations owns launcher commands, status inspection and recovery procedures.
 
-`required` is the default. `preferred` is the explicit “optional Qdrant” flag. `disabled` is an
-operator kill switch for a measured quality regression or incident; it is not a hidden fallback and
-must never pretend that a dependency failed.
-
-Invalid embedding result/model identity, incompatible generation metadata, malformed backend state, or
-unsupported policy remains hard in every mode except that `disabled` does not attempt the disabled
-supplement.
-
-`Disabled` must be effective before supplement resource construction: successful baseline serving in
-that policy does not require Qdrant connectivity, embedding preflight, Qdrant generation activation, or
-candidate-service execution. App-shell composition must make those dependencies unrooted, inert, or
-lazy in the disabled branch; it is not sufficient to catch their failure after Distage has already
-provisioned them. Elasticsearch, source snapshot/materialization and baseline integrity remain hard
-requirements.
-
-### Partial cross-backend activation
-
-Current executable order is:
-
-```text
-prepare Qdrant generation
--> activate Elasticsearch generation/alias
--> activate Qdrant generation/alias
-```
-
-The selected fail-closed policy does not pretend this is a distributed transaction. Only one process
-or coordinated stop/start is supported: old processes must not keep serving during activation. If ES
-has switched and final Qdrant activation fails hard, the new process remains not-ready, no automatic ES
-rollback runs, and the operator fixes the exact typed cause and restarts. Deterministic lifecycle
-reconverges on the same generation identities. The runbook must show both exact alias targets and the
-typed failure before retry. Arbitrary parallel rollout remains unsupported until a separate
-cross-backend coordination protocol is accepted.
-
-### Kubernetes-facing semantics
-
-Kubernetes liveness and readiness are binary, so a deliberately serving baseline-only process must not
-return a failing readiness probe:
-
-- liveness is `UP` while the process can make progress;
-- readiness is `UP` for `full_search`, permitted `baseline_only`, and operator-disabled supplement;
-- required-mode startup failure never becomes ready;
-- a separate typed status condition reports `healthy`, `degraded`, or `limited`, with serving mode,
-  stable reason code, sanitized detail, and `restartRequired`;
-- no status probe changes serving mode or retries activation.
-
-The status is “yellow” (`degraded`) only when `preferred` lost its supplement. Intentional `disabled`
-policy is `limited`, not falsely reported as an outage.
-
-### Logs and public response
-
-Immutable `StartupServingStatus` is the source of:
-
-- a structured `WARN` startup event for permitted degradation;
-- a structured `INFO/WARN` event for intentional disabled policy;
-- an operator-facing status endpoint condition with sanitized operational details;
-- a top-level `servingMode`;
-- a persistent warning in every degraded/limited search response.
-
-The request's existing orchestrator outcome independently supplies request-time supplement status,
-stable reason and diagnostics. A process that started in `full_search` does not mutate startup status
-when one request times out. Its response adds a request-specific warning, and counters expose failure
-frequency. The status endpoint continues to describe immutable startup state.
-
-| Startup state | Request outcome | Response warning | `restartRequired` |
-|---|---|---|---|
-| healthy `full_search` | success/no candidates | none | `false` |
-| healthy `full_search` | request-time supplement failure | request failure code | `false` |
-| degraded `baseline_only` from `preferred` | supplement not executed | startup unavailability code | `true` |
-| limited `baseline_only` from `disabled` | supplement not executed | operator-disabled code | `true` |
-
-The encoder may place `warnings` last for readability, but JSON field order is not a protocol contract.
-The external search response exposes only stable serving mode, safe warning code/message and
-`restartRequired`; it never exposes snapshot fingerprints or generation IDs. Startup warnings use
-stable codes such as `qdrant_supplement_unavailable` and
-`qdrant_supplement_operator_disabled`, say that the complete Elasticsearch baseline was returned, and
-say that restart is required. Request-time warnings use the exact existing typed supplement outcome and
-do not falsely claim that restart is required for a transient request failure. Raw transport bodies,
-credentials, fingerprints, generation IDs and unstable exception prose are not public. Ingress access
-to the richer operator endpoint is deployment policy.
-
-Do not emit an identical server log for every request; that would hide useful signals in log volume.
-Use the startup event, status view, response warning, and a counter by stable serving/reason code.
+See:
+- [Technical Specification §13](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#13-baseline-plus-supplement-orchestration) for architecture and invariants;
+- [Operations](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) for commands, status and recovery procedures.
 
 ## 4. Evaluation ownership
 
@@ -250,9 +165,10 @@ fails the structural acceptance gate. Relevance metrics deduplicate by first occ
 diagnostic evidence for that invalid run; they cannot satisfy a release gate. Result identity is
 domain-owned public hit identity, which for BeautyQ is the variant identity.
 
-### BeautyQ migration
+### Historical BeautyQ Q1 migration
 
-Move, do not copy, the 89-query corpus into the BeautyQ eval project. Decode and validate:
+Q1 moved the then-89-query visible corpus into the BeautyQ eval project after strict decoding and
+validation:
 
 - non-empty unique stable query IDs and explicit active order;
 - query text, optional location and public request inputs;
@@ -262,30 +178,15 @@ Move, do not copy, the 89-query corpus into the BeautyQ eval project. Decode and
 - language, query-class and boundary slices;
 - corpus version and deterministic content fingerprint.
 
-Generate corpus counts and validation reports from the decoded owner. Retire superseded generated
-reports and corpus locations. Preserve the cutover probes as a small smoke subset derived from the
-canonical corpus or explicitly identified as synthetic operational probes; they are not the complete
-quality corpus.
+Q1 generated corpus counts and validation reports from the decoded owner and retired superseded
+generated reports and corpus locations. The cutover probes remain as a small smoke subset derived
+from the canonical corpus or explicitly identified as synthetic operational probes; they are not the
+complete quality corpus.
 
 ### Generated reports and accepted baselines
 
 The canonical corpus and typed domain evaluation policy are the only operator-approved quality inputs.
-Normal protected authoring occurs before protected execution. Machine-assisted authoring is permitted
-when it cannot observe protected search output, records provenance, and freezes corpus and policy
-before execution.
-
-If a pre-disclosure reserve is later found structurally invalid or not bound to the canonical typed
-catalog before the replenished holdout is reused, that reserve must be rejected. An explicitly
-authorized recovery author/judge pass may create a fresh reserve provided that:
-
-- it receives no protected search output;
-- it receives no disclosed or undisclosed protected query inventory;
-- it uses only public typed product declarations and canonical catalog identities;
-- author and judge passes remain separate;
-- the resulting holdout receives a fresh deterministic audit and freeze before any protected
-  acceptance run.
-
-This is input recovery, not output-driven tuning.
+Protected input authoring, recovery, replenishment and freeze are owned by Q2-I below.
 Development/regression per-query reports and protected-holdout aggregate/slice verdicts live under
 `target/search-gen2/` and CI artifacts; the standard protected artifact does not encode case
 identities, and no report is copied back into source.
@@ -369,9 +270,13 @@ The fixture may not be relabeled or tuned after protected output is inspected. A
 exposed for diagnosis moves permanently to the visible regression corpus. If its pre-disclosure
 replacement reserve later fails structural or catalog validation, the reserve is rejected and an
 explicitly authorized recovery pass must rebuild the author, judge and audit chain without access to
-protected queries or search output. The post-recovery provenance has completed deterministic source-side
-freeze reproduction. It must not be used for protected acceptance until the cumulative patch is
-committed and exact-revision root evidence is obtained.
+protected queries or search output.
+
+Rotation-5 completed a deterministic source-side freeze of its protected inputs. Once those
+protected cases were disclosed for rotation 6, the replenished protected input set does not yet
+exist; rotation-6 recovery must create, audit and freeze the replenished inputs before another
+protected acceptance. A protected input set must not be used for protected acceptance until its
+cumulative patch is committed and exact-revision root evidence is obtained.
 
 ### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
 
@@ -384,20 +289,24 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **RECOVERY ROTATION 6 AUTHORIZATION MATERIALIZED;
-DISCLOSURE, RECOVERY AND REPLENISHMENT PENDING**
+Status: **ACTIVE — ROTATION-6 RECOVERY**
 
-Fresh protected acceptance was performed against the current committed source
-and failed only the exact-intent variants success/10 protected check. A sixth
-bounded complete-slice break-glass authorization is now materialized against
-that exact revision and its observed corpus and policy fingerprints.
-Disclosure, recovery, replenishment and deterministic freeze remain pending;
+Fresh protected acceptance produced a RED that triggered bounded rotation-6
+recovery. Rotation-6 authorization and authorized disclosure are complete.
+Semantic recovery, replenishment and deterministic freeze are now pending;
 bootstrap, candidate generation, promotion and verify have not run.
+Q2 is not complete.
 
-The coordinator/operator reviews the candidate's application revision, schema and policy versions,
-corpus and policy fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
-keys and counts, candidate digest, and absence of protected identity fields. Queries, case/result
-identities, judgments, and metric values remain private.
+Exact revision, failed-check code, corpus count, hashes and generated artifact
+facts belong to the authorization and evidence owners.
+
+Candidate review — after recovery source is committed and exact-revision root
+evidence is obtained, after a fresh protected acceptance produces GREEN, and
+after bootstrap produces a candidate — the coordinator/operator reviews the
+candidate's application revision, schema and policy versions, corpus and policy
+fingerprints, gate pass/fail codes, provenance IDs, ordered aggregate observation
+keys and counts, candidate digest, and absence of protected identity fields.
+Queries, case/result identities, judgments, and metric values remain private.
 
 ### Q2-C — Explicit promotion, verify, and Q2 closeout
 
@@ -441,6 +350,9 @@ approved product scope is Q2 and D1.
 
 Remaining approved boundaries:
 
+- Q2 bounded recovery source/replenishment/freeze (when required by protected RED);
+- fresh protected acceptance (operator execution, not a Git boundary);
+- candidate bootstrap/review (operator/generated evidence);
 - Q2 candidate promotion;
 - Q2 verify closeout;
 - D1 product/evaluation contract;
@@ -452,9 +364,8 @@ Remaining approved boundaries:
 Operational executions and root evidence are not themselves Git commits. Evidence produced for a given
 source identity must not be attributed to an amended or otherwise changed source revision.
 
-This accounting does not expand the approved scope. Hot reconciliation or CDC, automatic promotion,
-persistent embedding caching, automatic Qdrant GC and cross-environment latency gating remain
-deferred.
+This accounting does not expand the approved scope. Deferred capabilities remain outside approved
+current scope; see [Technical Specification accepted limits](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits).
 
 ### Patch Q1 — executable evaluation foundation **COMPLETED**
 
@@ -485,7 +396,7 @@ The canonical visible corpus contains regression evidence, not a protected holdo
 
 Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources. Executable retained-plan proofs cover Required, Preferred and Disabled, including exclusion of the managed Qdrant container from the Disabled graph.
 
-### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE — PROTECTED ACCEPTANCE RED; ROTATION-6 AUTHORIZATION MATERIALIZED; DISCLOSURE AND RECOVERY PENDING**
+### Patch Q2 — measured BeautyQ Gen2 report and correction gate **ACTIVE**
 
 - execute the complete corpus through native Gen2 application/projector owners;
 - produce deterministic per-query reports for development/regression and aggregate/slice-only
@@ -507,9 +418,11 @@ Disabled is selected before provisioning and its retained managed graph does not
 - do not tune labels or thresholds to make existing output green.
 
 Execution outcomes, corpus sizes, revision bindings and generated artifact hashes are recorded in
-Q2 evidence reports rather than this plan. The catalog-bound recovery and deterministic freeze/audit contract is
-satisfied. Protected acceptance remains behind operator-owned root evidence for the
-evaluated application-source identity; bootstrap remains behind a green protected gate.
+Q2 evidence reports rather than this plan; exact revision, failed-check code, counts, hashes and
+run artifacts belong to the authorization and evidence owners.
+The rotation-5 catalog-bound recovery and deterministic freeze/audit contract was satisfied.
+Protected acceptance remains behind operator-owned root evidence for an explicit immutable
+application-source identity; bootstrap remains behind a green protected gate.
 
 ### Patch O1 — remaining bounded operational hardening
 
@@ -533,8 +446,9 @@ A global Qdrant threshold must not be introduced merely to hide overlapping meas
 Intent-policy corrections remain domain-owned, while generic ranking and supplement contracts remain
 unchanged. Protected acceptance machinery provides strict corpus/policy decoding, shared
 visible/protected execution, aggregate-only report encoding, a typed protected gate and a
-candidate-baseline adapter. Q2 remains open until protected acceptance, candidate promotion and verify
-closeout are complete. Accepted-manifest generation remains behind a green protected gate.
+candidate-baseline adapter. Q2 closeout requires green protected acceptance, candidate promotion and verify
+(see Q2-B above for current state). Accepted-manifest generation remains behind a
+green protected gate.
 
 The protected runner and bootstrap do not create or modify those inputs; missing or unverified inputs
 remain an operational failure at those later stages, not a requirement for an external employee.
@@ -546,5 +460,5 @@ starts with its corpus and simplest baseline, not with a copied BeautyQ module t
 domain slice carries its quality evidence.
 
 Hot reconciliation, CDC, automatic readiness promotion, multi-process generation coordination,
-persistent embedding caches, and automatic Qdrant GC remain deferred. They require a new product or
-scale requirement and a source-confirmed coordination design.
+persistent embedding caches, and automatic Qdrant GC remain outside approved current scope; see
+[Technical Specification accepted limits](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits).
