@@ -5,8 +5,7 @@ Scope: the sole search architecture in the repository
 Delivery rule: one final cutover completed; Gen1 search modules and routes are absent
 
 Sections explicitly labelled implemented describe current source. All backend/runtime sections
-are implemented; delivery closure is recorded below. Approved but unimplemented evaluation and
-operational corrections belong to
+are implemented; delivery closure is recorded below. Remaining approved work belongs to
 [BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md](BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).
 
 ## 1. Goal
@@ -397,9 +396,8 @@ before invoking it; there is no second HTTP implementation.
 
 ### 5.4 Gen1 references are classified, not dependencies
 
-`BEAUTYQ_SEARCH_GEN2_REVIEW.md` owns historical Gen1 findings;
-`BeautyQGen1SearchDeletionInventory` owns typed completed-cutover evidence;
-delivery closure is recorded in the delivery status section below.
+`BeautyQGen1SearchDeletionInventory` owns typed completed-cutover evidence; delivery closure is
+recorded in the delivery status section below. Historical Gen1 findings live in Git history.
 
 Being generic in Scala type parameters does not make a class reusable across the module firewall. A
 symbol located in `search-core`, `search-elasticsearch`, `search-qdrant` or a BeautyQ Gen1 search
@@ -1197,8 +1195,7 @@ BeautyQSearchGen2
 ```
 
 Every facade member is a direct reference to an implemented owner; it contains no copied policy and no
-placeholder Qdrant, public-response, quality or evaluation branch. Future implemented branches are added
-to this facade without making the backend-neutral contract module depend on downstream modules.
+placeholder Qdrant, public-response, quality or evaluation branch.
 
 ### 8.1 Stable identities
 
@@ -2303,9 +2300,9 @@ Initial report-only operational evidence:
 Latency is not a release gate until the measurement environment/protocol and domain-owned thresholds
 are separately approved. Cross-environment latency comparisons are initially forbidden.
 
-## 18. Definition of done
+## 18. Completeness invariants
 
-Gen2 is complete when:
+BeautyQ Search Gen2 satisfies these completeness invariants:
 
 1. all runtime code lives in the new Gen2 DAG;
 2. no Gen2 module depends on a Gen1 search module;
@@ -2325,7 +2322,7 @@ Gen2 is complete when:
 14. serving modules do not depend on evaluation corpus/report code;
 15. generated structural documentation and readable scenario views remain deterministic views of the executable root rather than shadow contracts;
 16. the independent Gen2 composition passes the cutover gate, including full-search readiness with Qdrant available;
-17. the final cutover removes Gen1 search modules, routes, aliases and obsolete scaffolding;
+17. the final cutover has removed Gen1 search modules, routes, aliases and obsolete scaffolding;
 18. repository documentation describes Gen2 as the sole search framework.
 
 ## Delivery status and operational closure
@@ -2348,10 +2345,10 @@ completes seed insertion first.
 In provided composition, `BeautyQSeedReady.Noop` preserves externally owned database readiness while
 keeping the startup dependency explicit.
 
-The core architecture is frozen. The source-confirmed evaluation ownership mismatch, explicit
-supplement-startup policy, public request budgets, bounded Qdrant batching, restart-only operational
-contract and eval-first second-domain path are approved bounded work in the post-cutover plan.
-Anything beyond that plan still requires a product requirement or a source-confirmed defect.
+The core architecture is frozen. Remaining approved work (BeautyQ protected acceptance, bootstrap,
+candidate review, promotion, verify and the eval-first second-domain vertical) is owned by
+[BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md](BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md). Anything beyond
+that plan still requires a product requirement or a source-confirmed defect.
 
 ### Verification ownership
 

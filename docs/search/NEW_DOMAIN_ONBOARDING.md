@@ -1,6 +1,6 @@
 # New domain onboarding
 
-Owner: new-domain onboarding. The Gen2 [technical specification §7.10](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#710-append-only-supplement-selection-and-lifecycle-bound-membership-implemented-brick-7a)
+Owner: new-domain onboarding. The Gen2 [technical specification §7.10](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#710-append-only-supplement-selection-and-lifecycle-bound-membership)
 and [§13](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#13-baseline-plus-supplement-orchestration)
 own the reusable append-only and orchestration mechanics. Each domain's
 executable supplement/readiness/evaluation policy owns its measured thresholds,
@@ -13,9 +13,8 @@ loader, and a projection). The repository-wide authoring contract is
 now generic and reusable as-is from what every domain still writes itself as deliberate business
 policy.
 
-BeautyQ is this repository's only production consumer of the Search Gen2 declaration/materialization
-kernel today, so it is the richest worked example below. Exact supported document/value/snapshot
-shapes belong to the
+BeautyQ is the reference consumer of the Search Gen2 declaration/materialization kernel, and is
+the richest worked example below. Exact supported document/value/snapshot shapes belong to the
 [technical specification](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md).
 
 This is not a claim that a new domain is zero-code. It still needs nominal ids, model case classes,
@@ -55,7 +54,7 @@ automatically once your types have the right shape:
 
 - `UuidBackedId[A]` (`leaderboard-core`) - the trait every UUID-backed opaque id extends.
 - Generic Doobie `Meta[A]` for any `UuidBackedId[A]` (`beautyq-search-repositories`'s
-  `leaderboard.repo` package object today; a new domain in its own repo module writes the same
+  `leaderboard.repo` package object; a new domain in its own repo module writes the same
   one-line generic `given` once, keyed off `UuidBackedId[A]`, not per id).
 - Generic Tapir `Codec[String, A, CodecFormat.TextPlain]`/`Schema[A]` support through
   `leaderboard.http.tapir.UuidBackedIdTapirSupport` (`app-http`) - import
@@ -121,8 +120,7 @@ These are business-policy surfaces. Nothing above infers, derives, or guesses th
 - Projection logic: joins, missing-entity messages, schema/business-invariant validation, text/token
   normalization. Projection owns its own row metadata (built from your repositories' `entity`/
   `valueSource` vals) as local implementation detail - it is not, and should not become, a shared
-  catalog-graph facade (see "Nodes/projection boundary cleanup scope" in the handoff doc for why one
-  used to exist and was removed).
+  catalog-graph facade.
 - Public request policy: caller-facing filter/sort/facet names, any deliberate narrowing of the
   capability-derived operator matrix, typed field/interval/geo choices and domain-specific value
   decoding.
@@ -621,7 +619,7 @@ Reuse existing generic Gen2 mechanics before adding another framework abstractio
 
 Before wiring any new-domain search supplement (a candidate source added alongside a baseline
 backend) toward production, prove it locally first. Reuse the mechanics from
-[technical specification §7.10](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#710-append-only-supplement-selection-and-lifecycle-bound-membership-implemented-brick-7a)
+[technical specification §7.10](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#710-append-only-supplement-selection-and-lifecycle-bound-membership)
 and [§13](../gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#13-baseline-plus-supplement-orchestration),
 but do not reuse BeautyQ thresholds or query text. Each domain declares and proves its own measured
 policy.
@@ -702,5 +700,3 @@ duplicates both against visible evidence and internally, bind author/judge draft
 canonical source fingerprint, and bind the declared application-source identity to the exact evaluated
 source state.
 These are aggregate integrity checks; semantic-similarity duplicate detection is not claimed.
-The approved reusable-kernel and BeautyQ corpus migration are implemented in
-[Q1 of the post-cutover plan](../gen2/BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).

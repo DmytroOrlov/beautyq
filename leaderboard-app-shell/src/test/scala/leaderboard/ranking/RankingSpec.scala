@@ -28,7 +28,7 @@ abstract class LadderTest extends LeaderboardTest {
       for {
         user1  <- rnd[UserId]
         score1 <- rnd[Score]
-        user2  <- rnd[UserId]
+        user2  <- rnd[UserId].repeatUntil(_ != user1)
         score2 <- rnd[Score]
 
         _      <- ladder.submitScore(user1, score1)
@@ -108,7 +108,7 @@ abstract class RanksTest extends LeaderboardTest {
         desc1  <- rnd[String]
         score1 <- rnd[Score]
 
-        user2  <- rnd[UserId]
+        user2  <- rnd[UserId].repeatUntil(_ != user1)
         name2  <- rnd[String]
         desc2  <- rnd[String]
         score2 <- rnd[Score]

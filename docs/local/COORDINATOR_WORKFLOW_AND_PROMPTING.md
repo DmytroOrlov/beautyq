@@ -1,6 +1,6 @@
 # COORDINATOR_WORKFLOW_AND_PROMPTING.md
 
-Model tags: `[ALL]` every model, `[W]` weak/Qwen3.6, `[M]` medium/MiniMax-M3, `[S]` strong. Task tags are used only where behavior differs, such as `[CONTINUATION]` and `[DOCS]`. Untagged review and safety rules apply to all.
+Capability tags: `[ALL]` every model, `[W]` CHEAP MODEL OK, `[M]` MID MODEL RECOMMENDED, `[S]` SMART MODEL REQUIRED, `[NO]` NO MODEL — OPERATOR STEP. Task tags are used only where behavior differs, such as `[CONTINUATION]` and `[DOCS]`. Untagged review and safety rules apply to all.
 
 Purpose: canonical coordinator guide for source-truth gating, patch acceptance, delegated prompts, review closeout, verification evidence, bundles, docs ownership, audits, and model recommendations.
 
@@ -96,6 +96,27 @@ If a selected path uses saved artifacts or fixtures, provenance must say so. Do 
 ## 1.5 Protected source-truth invariant
 
 Section 1.1 is protected and has higher priority than the requested output shape. Do not weaken it, move it into `AGENTS.md`, or produce a delegated prompt while decision-critical source anchors are missing.
+
+## 1.6 Coordinator invariants
+
+These invariants apply to every delegated patch, prompt and evidence cycle. They are general workflow
+rules; product- or milestone-specific history does not belong here.
+
+- **Never include `Starting revision` / `Starting HEAD` in delegated prompts.** A delegated agent
+  must derive the exact evaluated source identity from the coordinator's already-accepted tracked
+  boundary, never from a free-text prompt header.
+- **Source-confirm sbt project IDs.** Project IDs are taken from `build.sbt`/the build graph, not from
+  directory names. A directory rename or repackage does not move a project ID.
+- **Delegated reports are delta-only.** A delegated report must not request or restate facts that the
+  reviewer can recover directly from the patch or diff. Mention files only for scope deviations or
+  generated/untracked evidence, and explain rationale only when it is not visible from the code or
+  diagnostic.
+- **Finish an accepted tracked boundary with the proper commit message before downstream evidence
+  generation.** Evidence captured against an uncommitted or amended boundary cannot be attributed to
+  the source it claims to evaluate.
+- **Never amend or rewrite an evidence-bearing revision.** Once evidence is bound to a source
+  revision, that revision is immutable. Attribute the old evidence to its original identity; do not
+  re-attribute it to a new commit.
 ---
 
 # 2. Role split and prompt forms
@@ -383,7 +404,21 @@ When asked to edit this guide or another text document, provide a ready replacem
 
 # 8. Model recommendations
 
-Keep model recommendations outside delegated prompts. Recommend the cheapest tier likely to complete the task without expensive retries. A recommendation saves cost only when dispatch actually selects that tier and reasoning variant; do not use a strong or `xhigh` variant for source-confirmed bounded work unless the strong-tier criterion is met.
+Keep model recommendations outside delegated prompts. Recommend the cheapest capability/cost tier
+likely to complete the task without expensive retries. A recommendation saves cost only when
+dispatch actually selects that tier and reasoning variant; do not use a strong or `xhigh` variant
+for source-confirmed bounded work unless the strong-tier criterion is met.
+
+Capability/cost labels:
+
+- `CHEAP MODEL OK` — narrow mechanical patches, exact replacements, well-bounded dofixes whose
+  anchors and validation are already in the prompt.
+- `MID MODEL RECOMMENDED` — source-confirmed multi-module work, bounded dependency closure,
+  typical feature or refactor patches.
+- `SMART MODEL REQUIRED` — source reconciliation, architecture, ownership changes, high-risk
+  lifecycle or compatibility changes.
+- `NO MODEL — OPERATOR STEP` — work that must be performed by the human coordinator or user,
+  not by any delegated model.
 
 Decision order:
 
@@ -391,13 +426,7 @@ Decision order:
 2. task type and risk;
 3. expected discovery and output size;
 4. user preference;
-5. model tier.
-
-| Tier | Example | Best fit |
-|---|---|---|
-| Weak | Qwen3.6 | exact mechanical patches and narrow dofixes |
-| Medium | MiniMax-M3 | source-confirmed multi-module work, bounded dependency closure |
-| Strong | strong frontier model | source reconciliation, architecture, high-risk lifecycle or ownership changes |
+5. capability/cost tier.
 
 Do not use a stronger model to invent missing source truth.
 ---

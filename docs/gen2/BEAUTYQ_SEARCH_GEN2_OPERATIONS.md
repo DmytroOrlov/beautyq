@@ -29,7 +29,7 @@ Current delivery status is owned by BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md.
 | `preferred` | eligible transport/unavailability degrades to baseline-only | `degraded` | HTTP 200 |
 | `disabled` | baseline-only serving; supplement resources are excluded at plan time | `limited` | HTTP 200 |
 
-`BeautyQSupplementStartup` is the app-shell Distage activation adapter. The choice is applied before planning; Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources.
+`BeautyQSupplementStartup` is the app-shell Distage activation adapter. The choice is applied before planning.
 
 ### Immutable startup state
 
@@ -348,11 +348,8 @@ report digest and top-level manifest report digest. It never overwrites the cano
 or blocked run produces no verification manifest. Close Q2 documentation only after green verify; no
 automated promotion service exists.
 
-## Not implemented
+## Accepted limits
 
-- Hot reconciliation or CDC
-- Background recovery or automatic promotion
-- Multi-process generation coordination
-- Persistent embedding caches
-- Automatic Qdrant GC
-- Metrics exporter
+The accepted architectural limits are documented in
+[Technical Specification accepted limits](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md#accepted-limits) and
+remain outside approved scope for this runbook.
