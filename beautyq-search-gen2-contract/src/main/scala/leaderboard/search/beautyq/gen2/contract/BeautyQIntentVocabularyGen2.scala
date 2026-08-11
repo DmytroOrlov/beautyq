@@ -322,7 +322,7 @@ object BeautyQIntentVocabulary {
     rule("r092", "без дизайна", "without design", "ohne design")(
       bool("with_design", false),
     )(using mode = IntentRuleMode.Contextual, requires = Vector(nailServiceFamily)),
-    rule("r093", "снятие наращенных ногтей")(
+    rule("r093", "снятие наращенных ногтей", "nail extension removal", "nail modeling removal")(
       service("nail_modeling"),
       enumAttr("nail_service_type", "removal"),
       bool("with_removal", true),
@@ -361,6 +361,12 @@ object BeautyQIntentVocabulary {
     rule("r100", "permanent eyeliner")(
       service("pmu"),
       enumAttr("pmu_area", "eyeliner"),
+    ),
+    rule("r101", "gel")(
+      enumAttr("nail_coating_type", "gel"),
+    )(using
+      mode = IntentRuleMode.Contextual,
+      requires = Vector(enumAttr("nail_service_type", "removal")),
     ),
   )
 

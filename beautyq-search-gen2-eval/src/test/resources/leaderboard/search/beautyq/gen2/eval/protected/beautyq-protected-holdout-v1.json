@@ -585,17 +585,17 @@
       }
     },
     {
-      "id": "q2i7_recovery_049",
+      "id": "q2i7_recovery_057",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "regular polish manicure",
-      "language": "en",
+      "query": "manicure normaler lack",
+      "language": "de",
       "slices": [
         "exact-intent"
       ],
       "userIntent": "Manicure with regular polish",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
@@ -621,23 +621,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_050",
+      "id": "q2i7_recovery_058",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "gel pedicure appointment",
-      "language": "en",
+      "query": "pediküre normaler lack",
+      "language": "de",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Gel polish pedicure",
+      "userIntent": "Pedicure with regular polish",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
-            "083f3849-b865-5a7e-ac02-90b5945320f8"
+            "2193db11-d035-58a0-997c-8a96f6d98b01",
+            "35d22810-ef04-52e8-8c06-ee4836f4ef97"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -658,22 +658,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_051",
+      "id": "q2i7_recovery_059",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "mega volume lash extensions",
+      "query": "lash lift tint",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Mega volume lash extensions",
+      "userIntent": "Lash lifting with tinting",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "269c7210-4120-5e6c-a674-866f9bf98fcd"
+            "3160f0f7-4940-52a7-80e4-fc82adbcfb5d",
+            "d658c194-38f7-5396-b8cb-cf155739c235"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -694,23 +695,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_052",
+      "id": "q2i7_recovery_060",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "brow lamination treatment",
+      "query": "brow tint service",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Brow lamination",
+      "userIntent": "Brow tinting",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
-            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+            "28d5239f-82ce-518c-819b-e59ad79038eb"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -731,25 +731,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_053",
+      "id": "q2i7_recovery_061",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "pmu lips appointment",
+      "query": "eyeliner permanent makeup",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Lip PMU",
+      "userIntent": "Permanent eyeliner PMU",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
-            "b5ec4ac7-c364-512b-ab12-5e19d523284e",
-            "d7396477-8242-5086-9b6e-b60eeadcf3fc",
-            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3"
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -770,22 +768,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_054",
+      "id": "q2i7_recovery_062",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "classic facial treatment",
+      "query": "facial hydration treatment",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Classic facial",
+      "userIntent": "Facial hydration",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "b8150d36-f350-51d7-a07c-22beeec96d1c"
+            "29e98624-eaf8-563a-bc97-02a9ea8c17f0"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -806,22 +804,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_055",
+      "id": "q2i7_recovery_063",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "threading chin hair removal",
+      "query": "laser bikini hair removal",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Threading hair removal for chin",
+      "userIntent": "Laser bikini hair removal",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "36dfdb33-659e-55bd-929c-83e5abaf0ee4"
+            "010a2eb5-a541-5763-91d9-29971dfdda35",
+            "d103456e-61f3-5987-995d-03550bdf0230"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -842,17 +841,17 @@
       }
     },
     {
-      "id": "q2i7_recovery_056",
+      "id": "q2i7_recovery_064",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "gel nail extension removal",
+      "query": "remove gel nail modeling",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
       "userIntent": "Gel nail extension removal",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ],
       "judgments": {
         "variants": {

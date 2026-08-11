@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-author-reserve-v5",
+  "sourceRevision": "ea9713e1390c505aa62df9825ba6c1dd14bbb8f4",
+  "authorPassId": "q2i7-recovery-rotation-6-fresh-reserve-author-v1",
+  "cases": [
+    {
+      "id": "q2i7_recovery_057",
+      "query": "manicure normaler lack",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Manicure with regular polish",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_058",
+      "query": "pediküre normaler lack",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with regular polish",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_059",
+      "query": "lash lift tint",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Lash lifting with tinting",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_060",
+      "query": "brow tint service",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Brow tinting",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_061",
+      "query": "eyeliner permanent makeup",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Permanent eyeliner PMU",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_062",
+      "query": "facial hydration treatment",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Facial hydration",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_063",
+      "query": "laser bikini hair removal",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Laser bikini hair removal",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_064",
+      "query": "remove gel nail modeling",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Gel nail extension removal",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    }
+  ]
+}

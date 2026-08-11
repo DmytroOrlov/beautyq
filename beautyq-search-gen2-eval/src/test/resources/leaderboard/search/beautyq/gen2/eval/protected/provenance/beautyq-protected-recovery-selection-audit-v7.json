@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-selection-audit-v7",
+  "sourceRevision": "ea9713e1390c505aa62df9825ba6c1dd14bbb8f4",
+  "authorReservePassId": "q2i7-recovery-rotation-6-fresh-reserve-author-v1",
+  "judgeReservePassId": "q2i7-recovery-rotation-6-fresh-reserve-judge-v1",
+  "auditPassId": "q2i7-recovery-rotation-6-fresh-reserve-selection-audit-v1",
+  "authorReserveSha256": "471cc137865fff9e1bc1569c016c692790e6d93b5fe53d5a05f0ba97fa4ea42f",
+  "judgedReserveSha256": "350c2cd65f52790953c555f11f689738efb1bdb44af5a46f4b45e0f4f4337b26",
+  "candidateCount": 8,
+  "orderedBuckets": ["manicure", "pedicure", "lashes", "brows", "pmu", "facials", "hair-removal", "nail-modeling"],
+  "consumedCaseIds": [],
+  "selectedCaseIds": [
+    "q2i7_recovery_057",
+    "q2i7_recovery_058",
+    "q2i7_recovery_059",
+    "q2i7_recovery_060",
+    "q2i7_recovery_061",
+    "q2i7_recovery_062",
+    "q2i7_recovery_063",
+    "q2i7_recovery_064"
+  ],
+  "finalAuthorDraftSha256": "d1264bf979e65ab0d9a7d496f8a31ac83f1910a2e0827abc638a07a8d8e804b7",
+  "finalJudgedHoldoutSha256": "87116a3446e97cc01ad0e2fa1f405b2d8c2ac14462118d4be7c8a5abcfc091d4",
+  "finalProtectedCorpusFingerprint": "f6f99a1e3ef5c44a06b0e0253ad6871e039197bd065cee8b00454e0c39e0a1c2",
+  "finalProtectedPolicyFingerprint": "75a03540f448fecd2a620872fb01fde772996d37822f81a447ab93b48e0c7ee8",
+  "canonicalCatalogFingerprint": "c94327bc85913d44edfa7eb3cc255193a71e1e48382704ba2645ae07bd8b9c81"
+}

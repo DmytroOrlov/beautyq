@@ -163,6 +163,26 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       }
     }
 
+    "compose gel nail-extension removal from shared typed removal and coating rules" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("gel nail extension removal")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds.toSet == Set(IntentRuleId("r093"), IntentRuleId("r101")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toMap
+          assert(actual == Map(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("removal"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+            fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+          ))
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
     "compose refill, gel coating and design from three compositional rules (\"gel nail refill with design\")" in {
       val fields = BeautyQSearchDeclarations.variants.Fields
       BeautyQIntentParserGen2.parse(request(Some("gel nail refill with design")), BeautyQIntentVocabulary.value) match {

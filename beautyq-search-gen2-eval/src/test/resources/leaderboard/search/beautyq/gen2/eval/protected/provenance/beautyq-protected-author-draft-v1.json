@@ -1,7 +1,7 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "37fedad89d40b45a2f0dc4b3c31a3dab07ceb9cb",
-  "authorPassId": "q2-exact-intent-recovery-rotation-5-author-v1",
+  "sourceRevision": "ea9713e1390c505aa62df9825ba6c1dd14bbb8f4",
+  "authorPassId": "q2i7-recovery-rotation-6-fresh-reserve-author-v1",
   "cases": [
     {
       "id": "q2i2_case_009",
@@ -180,91 +180,91 @@
       ]
     },
     {
-      "id": "q2i7_recovery_049",
-      "query": "regular polish manicure",
-      "language": "en",
+      "id": "q2i7_recovery_057",
+      "query": "manicure normaler lack",
+      "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
       "userIntent": "Manicure with regular polish",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_050",
-      "query": "gel pedicure appointment",
+      "id": "q2i7_recovery_058",
+      "query": "pediküre normaler lack",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with regular polish",
+      "notes": [
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_059",
+      "query": "lash lift tint",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Gel polish pedicure",
+      "userIntent": "Lash lifting with tinting",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_051",
-      "query": "mega volume lash extensions",
+      "id": "q2i7_recovery_060",
+      "query": "brow tint service",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Mega volume lash extensions",
+      "userIntent": "Brow tinting",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_052",
-      "query": "brow lamination treatment",
+      "id": "q2i7_recovery_061",
+      "query": "eyeliner permanent makeup",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Brow lamination",
+      "userIntent": "Permanent eyeliner PMU",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_053",
-      "query": "pmu lips appointment",
+      "id": "q2i7_recovery_062",
+      "query": "facial hydration treatment",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Lip PMU",
+      "userIntent": "Facial hydration",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_054",
-      "query": "classic facial treatment",
+      "id": "q2i7_recovery_063",
+      "query": "laser bikini hair removal",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Classic facial",
+      "userIntent": "Laser bikini hair removal",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_055",
-      "query": "threading chin hair removal",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Threading hair removal for chin",
-      "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_056",
-      "query": "gel nail extension removal",
+      "id": "q2i7_recovery_064",
+      "query": "remove gel nail modeling",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
       "userIntent": "Gel nail extension removal",
       "notes": [
-        "Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-5 independently authored fresh catalog-bound recovery reserve."
+        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
       ]
     }
   ]

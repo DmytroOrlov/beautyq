@@ -272,11 +272,11 @@ replacement reserve later fails structural or catalog validation, the reserve is
 explicitly authorized recovery pass must rebuild the author, judge and audit chain without access to
 protected queries or search output.
 
-Rotation-5 completed a deterministic source-side freeze of its protected inputs. Once those
-protected cases were disclosed for rotation 6, the replenished protected input set does not yet
-exist; rotation-6 recovery must create, audit and freeze the replenished inputs before another
-protected acceptance. A protected input set must not be used for protected acceptance until its
-cumulative patch is committed and exact-revision root evidence is obtained.
+Rotation-5 completed a deterministic source-side freeze of its protected inputs. Rotation-6 has
+now permanently migrated its authorized disclosed exact-intent cases, replenished the protected
+input set from a fresh catalog-bound reserve, and completed deterministic audit/freeze. The
+resulting inputs must not be used for protected acceptance until this cumulative patch is committed
+and exact-revision root evidence is obtained.
 
 ### Q2-A — Gen1→Gen2 Migration Scope-Drift Audit
 
@@ -289,13 +289,15 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **ACTIVE — ROTATION-6 RECOVERY**
+Status: **RECOVERY ROTATION 6 SOURCE AND FREEZE READY FOR REVIEW; FRESH PROTECTED ACCEPTANCE REQUIRED**
 
 Fresh protected acceptance produced a RED that triggered bounded rotation-6
-recovery. Rotation-6 authorization and authorized disclosure are complete.
-Semantic recovery, replenishment and deterministic freeze are now pending;
-bootstrap, candidate generation, promotion and verify have not run.
-Q2 is not complete.
+recovery. Rotation-6 authorization and authorized disclosure are complete;
+the complete disclosed exact-intent slice is now visible Regression evidence.
+The shared typed semantic correction, catalog-bound replacement reserve,
+replenishment and deterministic freeze are complete in this source patch.
+No fresh protected acceptance has run against this resulting source; bootstrap,
+candidate generation, promotion and verify have not run. Q2 is not complete.
 
 Exact revision, failed-check code, corpus count, hashes and generated artifact
 facts belong to the authorization and evidence owners.

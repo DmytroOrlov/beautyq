@@ -25,7 +25,7 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
     "pin dynamic naming prefixes and stable rule IDs" in {
       val dynamicNames = BeautyQPublicFilterRegistry.fields.drop(5).map(_.name.value)
       assert(dynamicNames.forall(name => name.startsWith("attribute.int.") || name.startsWith("attribute.decimal.") || name.startsWith("attribute.enum.") || name.startsWith("attribute.boolean.")))
-       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 100).map(index => f"r$index%03d").toVector)
+       assert(BeautyQIntentVocabulary.rules.map(_.id.value) == (1 to 101).map(index => f"r$index%03d").toVector)
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("маникюр"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("салон красоты"))
       assert(BeautyQIntentVocabulary.rules.flatMap(_.aliases).contains("eyebrows"))
@@ -52,6 +52,8 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
        ))
        assert(r094.excludes.isEmpty)
        assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r093").exists(_.aliases.contains("снятие наращенных ногтей")))
+       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r093").exists(_.aliases.contains("nail extension removal")))
+       assert(BeautyQIntentVocabulary.rules.find(_.id.value == "r093").exists(_.aliases.contains("nail modeling removal")))
        val r095 = BeautyQIntentVocabulary.rules.find(_.id.value == "r095").getOrElse(fail("r095 not found"))
        assert(r095.aliases == Vector("brow shaping"))
        assert(r095.hardActions == Vector(
@@ -86,6 +88,14 @@ final class BeautyQInputVocabularyLedgerSpec extends AnyWordSpec {
        assert(r100.requires.isEmpty)
        assert(r100.excludes.isEmpty)
        assert(!r100.noise)
+       val r101 = BeautyQIntentVocabulary.rules.find(_.id.value == "r101").getOrElse(fail("r101 not found"))
+       assert(r101.aliases == Vector("gel"))
+       assert(r101.hardActions == Vector(BeautyIntentAction.EnumAttribute("nail_coating_type", "gel")))
+       assert(r101.mode == IntentRuleMode.Contextual)
+       assert(r101.requires == Vector(BeautyIntentAction.EnumAttribute("nail_service_type", "removal")))
+       assert(r101.semanticActions.isEmpty)
+       assert(r101.excludes.isEmpty)
+       assert(!r101.noise)
     }
   }
 
