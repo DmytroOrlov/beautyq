@@ -12,7 +12,7 @@ the authority as each item is implemented.
 The native Gen2 route, module cutover, evaluation foundation, supplement startup policy, operator
 status, request budgets, bounded Qdrant work, and managed restart evidence are complete.
 
-- Q2 remains active in bounded rotation-6 recovery; current Q2 execution state is owned by Q2-B below.
+- Q2 remains active pending exact-revision evidence and fresh protected acceptance; rotation-6 source/replenishment/freeze is complete.
 - D1 has not started and still requires second-domain product input.
 - successful Qdrant generations are intentionally not deleted automatically.
 - Deferred capabilities remain outside approved current scope; see
@@ -289,13 +289,13 @@ resource remains absent until manual promotion.
 
 ### Q2-B — Protected bootstrap and candidate review
 
-Status: **RECOVERY ROTATION 6 SOURCE AND FREEZE READY FOR REVIEW; FRESH PROTECTED ACCEPTANCE REQUIRED**
+Status: **RECOVERY ROTATION 6 SOURCE AND FREEZE COMPLETE; FRESH PROTECTED ACCEPTANCE REQUIRED**
 
 Fresh protected acceptance produced a RED that triggered bounded rotation-6
 recovery. Rotation-6 authorization and authorized disclosure are complete;
 the complete disclosed exact-intent slice is now visible Regression evidence.
 The shared typed semantic correction, catalog-bound replacement reserve,
-replenishment and deterministic freeze are complete in this source patch.
+replenishment and deterministic freeze are complete in the resulting recovery source.
 No fresh protected acceptance has run against this resulting source; bootstrap,
 candidate generation, promotion and verify have not run. Q2 is not complete.
 
@@ -422,7 +422,7 @@ Disabled is selected before provisioning and its retained managed graph does not
 Execution outcomes, corpus sizes, revision bindings and generated artifact hashes are recorded in
 Q2 evidence reports rather than this plan; exact revision, failed-check code, counts, hashes and
 run artifacts belong to the authorization and evidence owners.
-The rotation-5 catalog-bound recovery and deterministic freeze/audit contract was satisfied.
+The latest completed bounded recovery has satisfied the catalog-bound recovery and deterministic freeze/audit contract.
 Protected acceptance remains behind operator-owned root evidence for an explicit immutable
 application-source identity; bootstrap remains behind a green protected gate.
 
