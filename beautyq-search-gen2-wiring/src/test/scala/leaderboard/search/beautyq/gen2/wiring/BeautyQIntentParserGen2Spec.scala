@@ -967,6 +967,270 @@ final class BeautyQIntentParserGen2Spec extends AnyWordSpec {
       }
     }
 
+    "rotate pedicure + normaler lack (q2i7_recovery_058) into typed pedicure + regular_polish hard filter" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("pediküre normaler lack")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds.toSet == Set(IntentRuleId("r004"), IntentRuleId("r091")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "rotate manicure + normaler lack into typed manicure + regular_polish (q2i7_recovery_057 must not regress)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("manicure normaler lack")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r001"), IntentRuleId("r091")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("manicure"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "rotate brow tint service into typed brows + tinting (q2i7_recovery_060)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("brow tint service")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r048")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("brows"),
+            fields.enumAttributesByCode("brow_service_type").id -> Set("tinting"),
+            fields.booleanAttributesByCode("with_tinting").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(intent.residualText.contains("service"))
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "rotate remove gel nail modeling into typed nail-modeling removal + gel (q2i7_recovery_064)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("remove gel nail modeling")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r102")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("removal"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+            fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(intent.residualText.isEmpty, s"unexpected residual text: ${intent.residualText}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "rotate remove nail modeling into typed nail-modeling removal without gel (q2i7_recovery_064)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("remove nail modeling")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r093")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("removal"),
+            fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(!intent.hardConstraints.exists(_.constraint match {
+            case PlannedConstraint.Terms(field, _) => field.id == fields.enumAttributesByCode("nail_coating_type").id
+            case _ => false
+          }), "nail_coating_type constraint must not be emitted for 'remove nail modeling' (no gel intent)")
+          assert(intent.residualText.isEmpty, s"unexpected residual text: ${intent.residualText}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "adversarial: bare 'remove' alone must not pick up a nail_modeling service" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("remove")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r102")), s"r102 fired without an explicit 'remove gel nail modeling' phrase: $intent")
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r093")), s"r093 fired without an explicit 'remove nail modeling' phrase: $intent")
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r005")), s"r005 must not be matched: $intent")
+          val hasNailModeling = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("nail_modeling")
+            case _ => false
+          }
+          assert(!hasNailModeling, s"bare 'remove' must not produce service=nail_modeling: ${intent.hardConstraints}")
+          assert(intent.residualText.contains("remove"), s"bare 'remove' must remain in residual: ${intent.residualText}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "adversarial: 'remove lash extensions' must not produce service=nail_modeling (q2i7_recovery_064 negative)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("remove lash extensions")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r102")), s"r102 fired without service(nail_modeling) context: $intent")
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r005")), s"r005 must not be matched: $intent")
+          val hasNailModeling = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("nail_modeling")
+            case _ => false
+          }
+          val hasNailServiceRemoval = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.enumAttributesByCode("nail_service_type").id && values.map(field.codec.encodeCanonical) == Set("removal")
+            case _ => false
+          }
+          assert(!hasNailModeling, s"'remove lash extensions' must not produce service=nail_modeling: ${intent.hardConstraints}")
+          assert(!hasNailServiceRemoval, s"'remove lash extensions' must not produce nail_service_type=removal: ${intent.hardConstraints}")
+          assert(intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("lashes")
+            case _ => false
+          }, s"'remove lash extensions' must still resolve to service=lashes: ${intent.hardConstraints}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "adversarial: 'remove brow tint' must not produce service=nail_modeling (q2i7_recovery_064 negative)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("remove brow tint")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r102")), s"r102 fired without service(nail_modeling) context: $intent")
+          assert(!intent.matchedRuleIds.contains(IntentRuleId("r005")), s"r005 must not be matched: $intent")
+          val hasNailModeling = intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("nail_modeling")
+            case _ => false
+          }
+          assert(!hasNailModeling, s"'remove brow tint' must not produce service=nail_modeling: ${intent.hardConstraints}")
+          assert(intent.hardConstraints.exists {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), _) =>
+              field.id == fields.serviceCode.id && values.map(field.codec.encodeCanonical) == Set("brows")
+            case _ => false
+          }, s"'remove brow tint' must still resolve to service=brows: ${intent.hardConstraints}")
+          assert(intent.residualText.contains("remove"), s"bare 'remove' must remain in residual: ${intent.residualText}")
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "preserve 'nail modeling' bare-extension semantics (q2i7_recovery_064 regression guard)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("nail modeling")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds == Vector(IntentRuleId("r005")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("extension"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "preserve 'gel nail extension removal' typed removal+gel composition (q2i7_recovery_064 regression guard)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      BeautyQIntentParserGen2.parse(request(Some("gel nail extension removal")), BeautyQIntentVocabulary.value) match {
+        case Right(intent) =>
+          assert(intent.matchedRuleIds.toSet == Set(IntentRuleId("r093"), IntentRuleId("r101")))
+          val actual = intent.hardConstraints.collect {
+            case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+              field.id -> values.map(field.codec.encodeCanonical)
+          }.toSet
+          val expected = Set(
+            fields.serviceCode.id -> Set("nail_modeling"),
+            fields.enumAttributesByCode("nail_service_type").id -> Set("removal"),
+            fields.enumAttributesByCode("nail_coating_type").id -> Set("gel"),
+            fields.booleanAttributesByCode("with_removal").id -> Set("true"),
+          )
+          assert(actual == expected, s"unexpected typed constraints: $actual")
+          assert(intent.residualText.isEmpty)
+        case Left(errors) => fail(s"parse failed: ${errors.toVector}")
+      }
+    }
+
+    "equivalence: pedicure + regular polish and pedicure + normaler lack must both hard-bind regular_polish (q2i7_recovery_058 equivalence)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val pairs = Vector(
+        "pedicure regular polish" -> Vector(IntentRuleId("r004"), IntentRuleId("r091")),
+        "pediküre normaler lack" -> Vector(IntentRuleId("r004"), IntentRuleId("r091")),
+      )
+      pairs.foreach { case (query, expectedRules) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            assert(intent.matchedRuleIds == expectedRules, s"unexpected matched rules for '$query': $intent")
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            val expected = Set(
+              fields.serviceCode.id -> Set("pedicure"),
+              fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+              fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+            )
+            assert(actual == expected, s"unexpected typed constraints for '$query': $actual")
+            assert(intent.residualText.isEmpty, s"unexpected residual for '$query': ${intent.residualText}")
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
+
+    "equivalence: manicure + regular polish and manicure + normaler lack must both hard-bind regular_polish (q2i7_recovery_058 equivalence)" in {
+      val fields = BeautyQSearchDeclarations.variants.Fields
+      val pairs = Vector(
+        "manicure regular polish" -> Vector(IntentRuleId("r001"), IntentRuleId("r091")),
+        "manicure normaler lack" -> Vector(IntentRuleId("r001"), IntentRuleId("r091")),
+      )
+      pairs.foreach { case (query, expectedRules) =>
+        BeautyQIntentParserGen2.parse(request(Some(query)), BeautyQIntentVocabulary.value) match {
+          case Right(intent) =>
+            assert(intent.matchedRuleIds == expectedRules, s"unexpected matched rules for '$query': $intent")
+            val actual = intent.hardConstraints.collect {
+              case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+                field.id -> values.map(field.codec.encodeCanonical)
+            }.toSet
+            val expected = Set(
+              fields.serviceCode.id -> Set("manicure"),
+              fields.enumAttributesByCode("nail_service_type").id -> Set("manicure"),
+              fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+            )
+            assert(actual == expected, s"unexpected typed constraints for '$query': $actual")
+            assert(intent.residualText.isEmpty, s"unexpected residual for '$query': ${intent.residualText}")
+          case Left(errors) => fail(s"parse failed for '$query': ${errors.toVector}")
+        }
+      }
+    }
+
     "preserve action and relation words outside declaration-owned phrase matches" in {
       val cases = Vector(
         "Fußnägel mit Gel-Farbe behandeln" -> "mit behandeln",

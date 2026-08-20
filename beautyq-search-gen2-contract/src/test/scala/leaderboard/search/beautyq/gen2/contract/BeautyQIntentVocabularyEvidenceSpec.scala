@@ -1,6 +1,5 @@
 package leaderboard.search.beautyq.gen2.contract
 
-import leaderboard.model.ServiceCode
 import org.scalatest.wordspec.AnyWordSpec
 
 /** Source-evidence ledger against Gen1's actual declaration source
@@ -17,12 +16,19 @@ import org.scalatest.wordspec.AnyWordSpec
   * Gen1's 86 declarations map to Gen2 r001..r086 index-for-index (Gen2 did not reorder them); r087
   * is the Gen2 NearUser overlay; r088 is the measured Gen2 broad self-care correction; r089 is the
   * first disclosed multilingual exact-intent correction; r090 is the contextual lash-removal action;
-  * r091 and r092 own regular-polish and explicit no-design typed semantics; r093 owns explicit
-  * extended-nail removal semantics; r094 owns the explicit henna-brows phrase; r095 owns the
-  * explicit brow-shaping phrase; r096..r098 own the composed refill+gel+design recovery vocabulary;
-  * r099 owns the 3d volume lash extension phrase; r100 owns the permanent eyeliner phrase; r101
-  * owns the contextual gel-removal composition (r093 already owned typed nail-extension removal
-  * as of rotation 3).
+  * r091 owns language-independent regular-polish semantics (all five aliases - English, German,
+  * Russian - are hard-equivalent and bound to nail_coating_type=regular_polish in any matched
+  * service context); r092 owns explicit
+  * no-design typed semantics; r093 owns explicit extended-nail removal semantics; r094 owns the
+  * explicit henna-brows phrase; r095 owns the explicit brow-shaping phrase; r096..r098 own the
+  * composed refill+gel+design recovery vocabulary; r099 owns the 3d volume lash extension phrase;
+  * r100 owns the permanent eyeliner phrase; r101 owns the contextual gel-removal composition
+  * (r093 already owned typed nail-extension removal as of rotation 3); r102 owns the explicit
+  * "remove gel nail modeling" removal phrase that emits service(nail_modeling) +
+  * nail_service_type=removal + nail_coating_type=gel + with_removal=true in one rule (the gel-intent
+  * is a hard part of that phrase, so the bounded "remove nail modeling" phrase without "gel" lives
+  * on r093 and never implies nail_coating_type=gel, and unrelated "remove ..." queries cannot acquire
+  * a nail_modeling service action through a bare independent "remove" alias).
   */
 final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
 
@@ -52,7 +58,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
     LedgerEntry(2, "r002", StableCodeHardActions, Vector("обычный маникюр"), Vector("service(manicure)", "enum(nail_service_type=manicure)"), Vector.empty, Vector.empty, Vector.empty),
     LedgerEntry(3, "r003", StableCodeHardActions, Vector("дешевый маникюр рядом"), Vector("service(manicure)", "enum(nail_service_type=manicure)"), Vector.empty, Vector.empty, Vector.empty),
     LedgerEntry(4, "r004", StableCodeHardActions, Vector("педикюр", "pedicure"), Vector("service(pedicure)", "enum(nail_service_type=pedicure)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(5, "r005", StableCodeHardActions, Vector("наращивание и моделирование ногтей", "наращивание ногтей", "nail modeling"), Vector("service(nail_modeling)", "enum(nail_service_type=extension)"), Vector.empty, Vector.empty, Vector.empty),
+    LedgerEntry(5, "r005", StableCodeHardActions, Vector("наращивание и моделирование ногтей", "наращивание ногтей", "nail modeling", "nail modeling extension"), Vector("service(nail_modeling)", "enum(nail_service_type=extension)"), Vector.empty, Vector.empty, Vector.empty),
     LedgerEntry(6, "r006", StableCodeHardActions, Vector("ресницы", "lashes"), Vector("service(lashes)"), Vector.empty, Vector.empty, Vector.empty),
     LedgerEntry(7, "r007", StableCodeHardActions, Vector("брови", "augenbrauen"), Vector("service(brows)"), Vector.empty, Vector.empty, Vector.empty),
     LedgerEntry(8, "r008", StableCodeHardActions, Vector("pmu", "татуаж"), Vector("service(pmu)"), Vector.empty, Vector.empty, Vector.empty),
@@ -203,7 +209,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
     }
 
   "the Gen1 disposition ledger" should {
-    "cover exactly 86 Gen1 declarations, index-for-index, with r087..r101 excluded as Gen2-only" in {
+    "cover exactly 86 Gen1 declarations, index-for-index, with r087..r102 excluded as Gen2-only" in {
       assert(ledger.map(_.sourceIndex) == (1 to 86).toVector)
       assert(ledger.map(_.gen2RuleId) == (1 to 86).map(index => f"r$index%03d").toVector)
       assert(!ledger.exists(_.gen2RuleId == "r087"))
@@ -220,6 +226,8 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
       assert(!ledger.exists(_.gen2RuleId == "r098"))
       assert(!ledger.exists(_.gen2RuleId == "r099"))
       assert(!ledger.exists(_.gen2RuleId == "r100"))
+      assert(!ledger.exists(_.gen2RuleId == "r101"))
+      assert(!ledger.exists(_.gen2RuleId == "r102"))
     }
 
     "match every ledgered rule's actual hard/semantic/requires/excludes action tags exactly" in {
@@ -262,9 +270,9 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
   }
 
   "the Gen2 rule inventory" should {
-    "contain exactly 101 rules, r001..r101 in order, with the final fifteen rules explicitly Gen2-owned" in {
+    "contain exactly 102 rules, r001..r102 in order, with the final sixteen rules explicitly Gen2-owned" in {
       val rules = BeautyQIntentVocabulary.rules
-      assert(rules.map(_.id.value) == (1 to 101).map(index => f"r$index%03d").toVector)
+      assert(rules.map(_.id.value) == (1 to 102).map(index => f"r$index%03d").toVector)
       val nearUserRule = rules.find(_.id.value == "r087").getOrElse(fail("expected r087 to exist"))
       assert(nearUserRule.semanticActions == Vector(BeautyIntentAction.NearUser))
       assert(nearUserRule.hardActions.isEmpty)
@@ -324,6 +332,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
       assert(regularPolishRule.mode == IntentRuleMode.Independent)
       assert(regularPolishRule.hardActions == Vector(BeautyIntentAction.EnumAttribute("nail_coating_type", "regular_polish")))
       assert(regularPolishRule.requires.isEmpty)
+      assert(regularPolishRule.excludes.isEmpty)
       val noDesignRule = rules.find(_.id.value == "r092").getOrElse(fail("expected r092 to exist"))
        assert(noDesignRule.aliases == Vector("без дизайна", "without design", "ohne design"))
       assert(noDesignRule.mode == IntentRuleMode.Contextual)
@@ -376,14 +385,14 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
     // Independent evidence, not derived from BeautyIntentRuleTrace or any other production traversal
     // helper: every string below was authored by hand against the Gen1 source and the accepted Gen2
     // correction, then verified to match production output byte-for-byte. This must fail the moment any
-    // alias, action, relation, mode or disposition changes for any of the 101 rules.
-    "render the exact literal trace for every one of the 101 rules" in {
+    // alias, action, relation, mode or disposition changes for any of the 102 rules.
+    "render the exact literal trace for every one of the 102 rules" in {
       val expected = Vector(
         "rule id=r001 aliases=[маникюр,манекюр,уход для рук,уход за руками,hand nail care,care for hands,hand care,manicure] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r002 aliases=[обычный маникюр] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r003 aliases=[дешевый маникюр рядом] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r004 aliases=[педикюр,pedicure,pediküre,fußpflege,foot nail care,pflege der fußnägel,fußnägel] mode=Independent hard=[service(pedicure),enum(nail_service_type=pedicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
-        "rule id=r005 aliases=[наращивание и моделирование ногтей,наращивание ногтей,acrylic nails,nagelmodellage,künstliche nägel,artificial nails,nail extension,builder gel,nail modeling] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=extension)] semantic=[] requires=[] excludes=[] noise=false label=absent",
+        "rule id=r005 aliases=[наращивание и моделирование ногтей,наращивание ногтей,acrylic nails,nagelmodellage,künstliche nägel,artificial nails,nail extension,builder gel,nail modeling,nail modeling extension] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=extension)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r006 aliases=[ресницы,lashes,wimpern,lash] mode=Independent hard=[service(lashes)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r007 aliases=[брови,augenbrauen] mode=Independent hard=[service(brows)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r008 aliases=[pmu,permanent makeup,permanent make up,перманент,татуаж] mode=Independent hard=[service(pmu)] semantic=[] requires=[] excludes=[] noise=false label=absent",
@@ -426,7 +435,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
         "rule id=r045 aliases=[хна,henna] mode=Contextual hard=[enum(brow_service_type=henna),bool(with_tinting=true)] semantic=[] requires=[service(brows)] excludes=[] noise=false label=absent",
         "rule id=r046 aliases=[lamination,ламинирование] mode=Contextual hard=[enum(brow_service_type=lamination)] semantic=[] requires=[service(brows)] excludes=[] noise=false label=absent",
         "rule id=r047 aliases=[brow lamination] mode=Independent hard=[enum(brow_service_type=lamination),service(brows)] semantic=[] requires=[] excludes=[] noise=false label=absent",
-        "rule id=r048 aliases=[augenbrauen färben] mode=Independent hard=[service(brows),enum(brow_service_type=tinting),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
+        "rule id=r048 aliases=[augenbrauen färben,brow tint] mode=Independent hard=[service(brows),enum(brow_service_type=tinting),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r049 aliases=[брови ламинирование с окрашиванием] mode=Independent hard=[service(brows),enum(brow_service_type=lamination),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r050 aliases=[shape and tint brows] mode=Independent hard=[service(brows),enum-any(brow_service_type=shaping,tinting),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r051 aliases=[коррекция бровей] mode=Independent hard=[enum(brow_service_type=shaping),service(brows)] semantic=[] requires=[] excludes=[] noise=false label=absent",
@@ -471,7 +480,7 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
         "rule id=r090 aliases=[снять] mode=Contextual hard=[service(lashes),enum(lash_service_type=removal),bool(with_removal=true)] semantic=[] requires=[service(lashes)] excludes=[] noise=false label=absent",
         "rule id=r091 aliases=[regular polish,ordinary polish,обычный лак,обычным лаком,normaler lack] mode=Independent hard=[enum(nail_coating_type=regular_polish)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r092 aliases=[без дизайна,without design,ohne design] mode=Contextual hard=[bool(with_design=false)] semantic=[] requires=[service-any(manicure,pedicure,nail_modeling)] excludes=[] noise=false label=absent",
-        "rule id=r093 aliases=[снятие наращенных ногтей,nail extension removal,nail modeling removal] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=removal),bool(with_removal=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
+        "rule id=r093 aliases=[снятие наращенных ногтей,nail extension removal,nail modeling removal,remove nail modeling] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=removal),bool(with_removal=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r094 aliases=[henna brows,henna brow] mode=Independent hard=[service(brows),enum(brow_service_type=henna),bool(with_tinting=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r095 aliases=[brow shaping] mode=Independent hard=[service(brows),enum(brow_service_type=shaping)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r096 aliases=[nail refill] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=refill),bool(with_correction=true)] semantic=[] requires=[] excludes=[] noise=false label=absent",
@@ -480,8 +489,9 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
         "rule id=r099 aliases=[3d volume lash,3d volume lashes] mode=Independent hard=[service(lashes),enum(lash_service_type=extension),enum(lash_volume=volume3_d)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r100 aliases=[permanent eyeliner] mode=Independent hard=[service(pmu),enum(pmu_area=eyeliner)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r101 aliases=[gel] mode=Contextual hard=[enum(nail_coating_type=gel)] semantic=[] requires=[enum(nail_service_type=removal)] excludes=[] noise=false label=absent",
+        "rule id=r102 aliases=[remove gel nail modeling] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=removal),bool(with_removal=true),enum(nail_coating_type=gel)] semantic=[] requires=[] excludes=[] noise=false label=absent",
       )
-      assert(expected.size == 101)
+      assert(expected.size == 102)
       val actual = BeautyQIntentVocabulary.rules.map(BeautyIntentRuleTrace.render)
       assert(actual == expected)
     }

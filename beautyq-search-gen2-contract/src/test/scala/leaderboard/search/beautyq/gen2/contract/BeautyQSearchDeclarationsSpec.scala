@@ -417,10 +417,13 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
           )
       assert(lines.slice(requestIndex, intentIndex) == expectedRequest)
 
-      val expectedIntent = Vector("    ├── intent-rules") ++ (1 to 101).map { index =>
-        val connector = if (index == 101) "└── " else "├── "
-        val ruleId = f"r$index%03d"
-        s"    │   $connector[${index - 1}] $ruleId"
+      val expectedIntent = {
+        val entries = (1 to 102).toVector.map { index =>
+          val ruleId = f"r$index%03d"
+          val connector = if (index == 102) "└── " else "├── "
+          s"    │   $connector[${index - 1}] $ruleId"
+        }
+        Vector("    ├── intent-rules") ++ entries
       }
       assert(lines.slice(intentIndex, planIndex) == expectedIntent)
 

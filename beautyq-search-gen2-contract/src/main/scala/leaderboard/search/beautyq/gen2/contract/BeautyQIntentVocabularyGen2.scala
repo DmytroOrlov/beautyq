@@ -206,7 +206,7 @@ object BeautyQIntentVocabulary {
     rule("r002", "обычный маникюр")(service("manicure"), enumAttr("nail_service_type", "manicure")),
     rule("r003", "дешевый маникюр рядом")(service("manicure"), enumAttr("nail_service_type", "manicure")),
     rule("r004", "педикюр", "pedicure", "pediküre", "fußpflege", "foot nail care", "pflege der fußnägel", "fußnägel")(service("pedicure"), enumAttr("nail_service_type", "pedicure")),
-    rule("r005", "наращивание и моделирование ногтей", "наращивание ногтей", "acrylic nails", "nagelmodellage", "künstliche nägel", "artificial nails", "nail extension", "builder gel", "nail modeling")(service("nail_modeling"), enumAttr("nail_service_type", "extension")),
+    rule("r005", "наращивание и моделирование ногтей", "наращивание ногтей", "acrylic nails", "nagelmodellage", "künstliche nägel", "artificial nails", "nail extension", "builder gel", "nail modeling", "nail modeling extension")(service("nail_modeling"), enumAttr("nail_service_type", "extension")),
     rule("r006", "ресницы", "lashes", "wimpern", "lash")(service("lashes")),
     rule("r007", "брови", "augenbrauen")(service("brows")),
     rule("r008", "pmu", "permanent makeup", "permanent make-up", "перманент", "татуаж")(service("pmu")),
@@ -249,7 +249,7 @@ object BeautyQIntentVocabulary {
     rule("r045", "хна", "henna")(enumAttr("brow_service_type", "henna"), bool("with_tinting", true))(using mode = IntentRuleMode.Contextual, requires = Vector(service("brows"))),
     rule("r046", "lamination", "ламинирование")(enumAttr("brow_service_type", "lamination"))(using mode = IntentRuleMode.Contextual, requires = Vector(service("brows"))),
     rule("r047", "brow lamination")(enumAttr("brow_service_type", "lamination"), service("brows")),
-    rule("r048", "augenbrauen färben")(service("brows"), enumAttr("brow_service_type", "tinting"), bool("with_tinting", true)),
+    rule("r048", "augenbrauen färben", "brow tint")(service("brows"), enumAttr("brow_service_type", "tinting"), bool("with_tinting", true)),
     rule("r049", "брови ламинирование с окрашиванием")(service("brows"), enumAttr("brow_service_type", "lamination"), bool("with_tinting", true)),
     rule("r050", "shape and tint brows")(service("brows"), BeautyIntentAction.EnumAttributeAny("brow_service_type", Vector("shaping", "tinting")), bool("with_tinting", true)),
     rule("r051", "коррекция бровей")(enumAttr("brow_service_type", "shaping"), service("brows")),
@@ -322,7 +322,7 @@ object BeautyQIntentVocabulary {
     rule("r092", "без дизайна", "without design", "ohne design")(
       bool("with_design", false),
     )(using mode = IntentRuleMode.Contextual, requires = Vector(nailServiceFamily)),
-    rule("r093", "снятие наращенных ногтей", "nail extension removal", "nail modeling removal")(
+    rule("r093", "снятие наращенных ногтей", "nail extension removal", "nail modeling removal", "remove nail modeling")(
       service("nail_modeling"),
       enumAttr("nail_service_type", "removal"),
       bool("with_removal", true),
@@ -367,6 +367,12 @@ object BeautyQIntentVocabulary {
     )(using
       mode = IntentRuleMode.Contextual,
       requires = Vector(enumAttr("nail_service_type", "removal")),
+    ),
+    rule("r102", "remove gel nail modeling")(
+      service("nail_modeling"),
+      enumAttr("nail_service_type", "removal"),
+      bool("with_removal", true),
+      enumAttr("nail_coating_type", "gel"),
     ),
   )
 
