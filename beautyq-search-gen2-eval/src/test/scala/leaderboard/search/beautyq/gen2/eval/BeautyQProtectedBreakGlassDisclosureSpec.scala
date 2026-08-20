@@ -103,8 +103,8 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
           assert(expectedCount == 8)
         case other => fail(s"expected post-recovery full-slice authorization, got $other")
       }
-      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 10)
-      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 10)
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 11)
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 11)
 
       val sixth = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2Authorization
       assert(sixth.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId)
@@ -171,11 +171,45 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
         case other => fail(s"expected recovery-rotation-6 full-slice authorization, got $other")
       }
 
+      val eleventh = BeautyQProtectedBreakGlassDisclosure.RecoveryRotation7Authorization
+      assert(eleventh.id == BeautyQProtectedBreakGlassDisclosure.RecoveryRotation7AuthorizationId)
+      assert(eleventh.applicationRevision == "05392db3b56e5e953ad2ea5dfa38df352c868839")
+      assert(eleventh.protectedCorpusFingerprint == "f6f99a1e3ef5c44a06b0e0253ad6871e039197bd065cee8b00454e0c39e0a1c2")
+      assert(eleventh.policyFingerprint == "75a03540f448fecd2a620872fb01fde772996d37822f81a447ab93b48e0c7ee8")
+      assert(eleventh.failedCheckCode == "metric-protected-slice:exact-intent-variants/success/10")
+      eleventh.disclosureScope match {
+        case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+          assert(sliceId == "exact-intent")
+          assert(expectedCount == 8)
+        case other => fail(s"expected recovery-rotation-7 full-slice authorization, got $other")
+      }
+
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.size == 11)
+      assert(BeautyQProtectedBreakGlassDisclosure.Authorizations.map(_.id).distinct.size == 11)
+
       assert(BeautyQProtectedBreakGlassDisclosure.authorizationById(ninth.id).contains(ninth))
       assert(BeautyQProtectedBreakGlassDisclosure.authorizationById(tenth.id).contains(tenth))
+      assert(BeautyQProtectedBreakGlassDisclosure.authorizationById(eleventh.id).contains(eleventh))
       assert(ninth.applicationRevision != tenth.applicationRevision)
       assert(ninth.protectedCorpusFingerprint != tenth.protectedCorpusFingerprint)
       assert(ninth.policyFingerprint != tenth.policyFingerprint)
+      assert(tenth.applicationRevision != eleventh.applicationRevision)
+      assert(tenth.protectedCorpusFingerprint != eleventh.protectedCorpusFingerprint)
+      assert(tenth.policyFingerprint != eleventh.policyFingerprint)
+
+      val historical = BeautyQProtectedBreakGlassDisclosure.Authorizations.take(10).map(authorizationSnapshot)
+      assert(historical == Vector(
+        (BeautyQProtectedBreakGlassDisclosure.AuthorizationId, "89811d5f2ad5327b24b2aac4641f4716d781000e", "825ca2862ad99b61002bcf04bfe000168eccc61760d9a1d091c0c4320afc9bb0", "0f86960495e64b430e2ba55eac012bf00a8e80f0eb8d1500c967d582cd673098", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "minimal", 0),
+        (BeautyQProtectedBreakGlassDisclosure.Cycle2AuthorizationId, "655ebd9d21920d0b03c08df487acc8b4bd0db590", "7a654c7323f822f26bccc6d5ae7adde3faf4bfd790984ae63fb25c34978c9188", "905894412cb68ed8447ecc9c99ffe1ac9ee94e22001f6a8c206cdd81c9a165ce", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "minimal", 0),
+        (BeautyQProtectedBreakGlassDisclosure.FullSliceCycle3AuthorizationId, "718660275e72b287c24aec494c174c3d3a55bef0", "23fe801f0b1c48b77847a94d0eb260ee5e2faac5018c67bab5debce382b5f2d0", "c80f15f5cb7beb8ad5f01bec82146c67e17d8a3bc0a31e4e88a49fd115e9b360", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.ConvergenceAuthorizationId, "eeccefe8bde82a1ac93f426aa4e58cf936178640", "d72b29d6d9e13e21b34722fa4c8219975aae7613ba0c003326baefc5da056a6e", "6a8a4f68f69d85467db941284dfc5181f48bfb3f7d3d7631d87fd9c17261c622", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.PostRecoveryAuthorizationId, "54e488690124c69f87f82346de3a9e1e300db49c", "bd821a976622ad0157ec4c818f92187c60e08b2b5123f6306dea7878ef0aad17", "5422773856685e4ff781b04c39b266c6ac5de06c0fadfb63f8d4f6bea3929755", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.RecoveryRotation2AuthorizationId, "440fdf2827a880ea02c36fb3044c18d1b1874c23", "87002a0e79984365320b40f31f8cf4c76c7a4757d86ab3a4e1674819514651af", "14781a4c2832374ee0f46540c8a532fc853d291841715ed816f12d0fa23c8045", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.RecoveryRotation3AuthorizationId, "4e3f6aed518a3d86d8336e4b575edee7012832e9", "f531e287027595a602fe97f44cae7d7cfbe2759be8f1b18d594d21ecbdb83f6e", "c9c0677f25b45310376d0e2aa4c678a1e579a984f0dc8cd2e8ef0bba6990289b", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.RecoveryRotation4AuthorizationId, "83caf9fb8bcde8da569cedd175a72be62855b8e7", "2cf8cf77085faf5ab84d2eafd8b68e0020f64bf89df794f0419d8ce55684ef2f", "30ab025069e175400dfdbd5f3c9e0a49dff23c1ac005537c3dc2114713c3fdb8", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.RecoveryRotation5AuthorizationId, "020e2c4f3ab02b4ee735f42b35731e4e784a5f32", "3893ad32b8bb8dc4a77df85ae40dd0537a32090111ae2ee2528e42090f9c1874", "5a47394dcc6eb0e483c9998a9e481083522b3876c1ad8a084d683961a16d38b7", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+        (BeautyQProtectedBreakGlassDisclosure.RecoveryRotation6AuthorizationId, "f118f0aa663ac363b404e848387c4a9fe4d48b12", "2f8757514fcc49d7c93db013717cb9cc093b0c28e20632cde94e7c698bfa48b8", "40493e9fd4928fdb58b129c93e2460c15b681438ff9a89731acff87ecbcb3e24", BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode, "exact-intent", 8),
+      ))
 
       val fixture = syntheticFixture()
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
@@ -191,6 +225,10 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
         failedResult(), fixture.report, fixture.corpus, fixture.policy,
         seventh.applicationRevision, seventh.id, BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
+      ), "break_glass_authorization_corpus_mismatch")
+      assertLeft(BeautyQProtectedBreakGlassDisclosure.derive(
+        failedResult(), fixture.report, fixture.corpus, fixture.policy,
+        eleventh.applicationRevision, eleventh.id, BeautyQProtectedBreakGlassDisclosure.AuthorizedCheckCode,
       ), "break_glass_authorization_corpus_mismatch")
     }
 
@@ -407,5 +445,16 @@ final class BeautyQProtectedBreakGlassDisclosureSpec extends AnyWordSpec {
       assert(value == expected)
       (): Unit
     case Right(_) => fail(s"expected Left($expected)")
+  }
+
+  private def authorizationSnapshot(
+    authorization: BeautyQProtectedBreakGlassDisclosure.AuthorizationRecord,
+  ): (String, String, String, String, String, String, Int) = {
+    authorization.disclosureScope match {
+      case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.MinimalContributors =>
+        (authorization.id, authorization.applicationRevision, authorization.protectedCorpusFingerprint, authorization.policyFingerprint, authorization.failedCheckCode, "minimal", 0)
+      case BeautyQProtectedBreakGlassDisclosure.DisclosureScope.CompleteSlice(sliceId, expectedCount) =>
+        (authorization.id, authorization.applicationRevision, authorization.protectedCorpusFingerprint, authorization.policyFingerprint, authorization.failedCheckCode, sliceId, expectedCount)
+    }
   }
 }
