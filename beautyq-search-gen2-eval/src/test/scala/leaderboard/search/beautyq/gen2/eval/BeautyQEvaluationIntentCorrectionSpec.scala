@@ -39,8 +39,8 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 164 cases after all permanent break-glass migrations" in {
-      assert(corpus.cases.length == 164)
+    "have exactly 172 cases after all permanent break-glass migrations" in {
+      assert(corpus.cases.length == 172)
     }
 
     "have every case as Regression" in {
@@ -197,7 +197,55 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "q2 post-recovery migrated cases" should {
-    "retain exact typed parser constraints for every bindable post-recovery migration" in {
+    "represent q2i7_recovery_058 as a typed fail-closed empty-positive regression" in {
+      val current = exactlyOneCase("q2i7_recovery_058")
+      assert(current.partition == EvaluationPartition.Regression)
+      assert(current.variantJudgments.acceptableIds.isEmpty)
+      assert(current.variantJudgments.forbiddenIds.nonEmpty)
+      assert(current.variantJudgments.gradedGains.isEmpty)
+      assert(current.notes.exists(_.contains("fail-closed")))
+
+      val intent = parseFromCorpus(current)
+      val actualConstraints = intent.hardConstraints.collect {
+        case SourcedConstraint(PlannedConstraint.Terms(field, values), ConstraintProvenance.ParsedHard) =>
+          field.id -> values.map(field.codec.encodeCanonical)
+      }.toSet
+      assert(actualConstraints == Set(
+        Fields.serviceCode.id -> Set("pedicure"),
+        Fields.enumAttributesByCode("nail_service_type").id -> Set("pedicure"),
+        Fields.enumAttributesByCode("nail_coating_type").id -> Set("regular_polish"),
+      ))
+
+      val surface = EvaluationSurfaceId.from("variants").getOrElse(fail("invalid variants surface"))
+      val cutoffs = EvaluationCutoffs.from(Vector(10)).getOrElse(fail("invalid cutoff"))
+      val input = RankingEvaluationInput.from(
+        current.caseId,
+        current.partition,
+        surface,
+        current.slices,
+        current.variantJudgments,
+        current.variantJudgments.forbiddenIds,
+        cutoffs,
+      ).getOrElse(fail("invalid q2i7_recovery_058 evaluation input"))
+      val row = RankingEvaluator.evaluate(input).metricRows match {
+        case Vector(value) => value
+        case other => fail(s"expected one metric row, got ${other.size}")
+      }
+      row.success match {
+        case MetricValue.NotApplicable(NotApplicableReason.EmptyAcceptableSet) => ()
+        case _ => fail("expected empty-positive success to be not applicable")
+      }
+      row.mrr match {
+        case MetricValue.NotApplicable(NotApplicableReason.EmptyAcceptableSet) => ()
+        case _ => fail("expected empty-positive MRR to be not applicable")
+      }
+      row.pooledNdcg match {
+        case MetricValue.NotApplicable(NotApplicableReason.RequiresPositiveGain) => ()
+        case _ => fail("expected empty-positive pooled NDCG to be not applicable")
+      }
+    }
+
+    "retain exact typed parser constraints for the established post-recovery migration inventory" in {
       val cases = Vector(
         "q2i7_recovery_001" -> Set(
           Fields.serviceCode.id -> Set("manicure"),

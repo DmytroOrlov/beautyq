@@ -8,7 +8,7 @@ import scala.io.Source
 
 final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
   "the recovery replenished protected holdout" should {
-    "replace the defective convergence reserve exact-intent slice from a fresh catalog-bound recovery reserve and preserve the required shape" in {
+    "migrate the disclosed exact-intent slice and preserve the rotation-7 protected shape" in {
       val visible = BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity)
       val protectedCorpus = decodeResource(ProtectedCorpusResource)
       val judgedDraft = readResource(JudgedDraftResource)
@@ -17,14 +17,17 @@ final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
       val authorDraft = BeautyQProtectedAuthorDraft.decodeString(authorDraftRaw).fold(error => fail(error), identity)
 
       assert(protectedCorpus.cases.size == 24)
+      assert(protectedCorpus.corpusId == "beautyq-protected-holdout-q2i-recovery-v8")
+      assert(protectedCorpus.version == 8)
+      assert(visible.cases.size == 172)
       assert(protectedCorpus.cases.forall(_.partition == EvaluationPartition.ProtectedHoldout))
       assert(protectedCorpus.cases.count(_.notes.contains("Selected from the independently frozen pre-disclosure reserve.")) == 0)
       assert(protectedCorpus.cases.count(_.notes.contains("Selected in stable order from the independently frozen second-cycle pre-disclosure reserve.")) == 0)
       assert(protectedCorpus.cases.count(_.notes.contains("Selected in stable coverage order from the independently frozen cycle-3 pre-disclosure reserve.")) == 0)
       assert(protectedCorpus.cases.count(_.notes.contains("Authored independently from the public BeautyQ typed vocabulary before the Q2 convergence disclosure.")) == 0)
-       assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve.")) == 0)
-       assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve.")) == 0)
-       assert(protectedCorpus.cases.count(_.notes.contains("Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection.")) == 8)
+      assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the independently authored fresh catalog-bound recovery reserve.")) == 0)
+      assert(protectedCorpus.cases.count(_.notes.contains("Selected as the first eligible non-consumed candidate in stable bucket order from the rotation-4 independently authored fresh catalog-bound recovery reserve.")) == 0)
+      assert(protectedCorpus.cases.count(_.notes.contains("Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection.")) == 8)
       assert(protectedCorpus.cases.groupMapReduce(_.slices.headOption.map(_.value).getOrElse("missing"))(_ => 1)(_ + _) == Map(
         "exact-intent" -> 8,
         "conversational" -> 6,
@@ -36,18 +39,22 @@ final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
       assert(protectedCorpus.cases.map(_.query).toSet.intersect(visible.cases.map(_.query).toSet).isEmpty)
       assert(!protectedCorpus.cases.exists(_.caseId.value.startsWith("q2i5_reserve_")))
       assert(!protectedCorpus.cases.exists(_.caseId.value.startsWith("q2i6_reserve_")))
-       assert(protectedCorpus.cases.takeRight(8).map(_.caseId.value) == Vector(
-          "q2i7_recovery_057", "q2i7_recovery_058", "q2i7_recovery_059", "q2i7_recovery_060",
-          "q2i7_recovery_061", "q2i7_recovery_062", "q2i7_recovery_063", "q2i7_recovery_064",
-       ))
-        assert(visible.cases.takeRight(8).map(_.caseId.value) == Vector(
-          "q2i7_recovery_049", "q2i7_recovery_050", "q2i7_recovery_051", "q2i7_recovery_052",
-          "q2i7_recovery_053", "q2i7_recovery_054", "q2i7_recovery_055", "q2i7_recovery_056",
-        ))
+      val disclosedIds = Vector(
+        "q2i7_recovery_057", "q2i7_recovery_058", "q2i7_recovery_059", "q2i7_recovery_060",
+        "q2i7_recovery_061", "q2i7_recovery_062", "q2i7_recovery_063", "q2i7_recovery_064",
+      )
+      val selectedIds = Vector(
+        "q2i7_recovery_065", "q2i7_recovery_066", "q2i7_recovery_067", "q2i7_recovery_068",
+        "q2i7_recovery_069", "q2i7_recovery_073", "q2i7_recovery_071", "q2i7_recovery_072",
+      )
+      assert(protectedCorpus.cases.takeRight(8).map(_.caseId.value) == selectedIds)
+      assert(visible.cases.takeRight(8).map(_.caseId.value) == disclosedIds)
+      assert(protectedCorpus.cases.forall(current => !disclosedIds.contains(current.caseId.value)))
+      assert(visible.cases.forall(current => !selectedIds.contains(current.caseId.value)))
       assert(judgedDraft == protectedRaw)
       assert(authorDraft.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
-        assert(authorDraft.sourceRevision == "ea9713e1390c505aa62df9825ba6c1dd14bbb8f4")
-        assert(authorDraft.authorPassId == "q2i7-recovery-rotation-6-fresh-reserve-author-v1")
+      assert(authorDraft.sourceRevision == "6652582525071773fbc14d02b0e081e58e8ef2ac")
+      assert(authorDraft.authorPassId == "q2i7-recovery-rotation-7-fresh-reserve-author-v3")
       val protectedEvaluationCorpus = BeautyQProtectedEvaluationCorpus.fromJson(
         parse(protectedRaw).getOrElse(fail("invalid protected json")),
         visible,
@@ -62,7 +69,8 @@ final class BeautyQProtectedReplenishmentSpec extends AnyWordSpec {
         s"recovery corpus fingerprint=${protectedCorpus.corpusFingerprint}",
       )
       assert(protectedCorpus.corpusFingerprint ==
-         "f6f99a1e3ef5c44a06b0e0253ad6871e039197bd065cee8b00454e0c39e0a1c2")
+        "ce020b49d28d4c1c45ee6abfc0959678a920e2fb6e2dc676e7b72525a272ac50")
+      assert(loadPolicy().protectedAcceptancePolicyVersion == "beautyq-protected-acceptance-policy-v7")
     }
   }
 

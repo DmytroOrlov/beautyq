@@ -1,7 +1,7 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "ea9713e1390c505aa62df9825ba6c1dd14bbb8f4",
-  "authorPassId": "q2i7-recovery-rotation-6-fresh-reserve-author-v1",
+  "sourceRevision": "6652582525071773fbc14d02b0e081e58e8ef2ac",
+  "authorPassId": "q2i7-recovery-rotation-7-fresh-reserve-author-v3",
   "cases": [
     {
       "id": "q2i2_case_009",
@@ -180,91 +180,91 @@
       ]
     },
     {
-      "id": "q2i7_recovery_057",
-      "query": "manicure normaler lack",
+      "id": "q2i7_recovery_065",
+      "query": "Maniküre mit Shellac-Lack und Ablöse",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Manicure with regular polish",
+      "userIntent": "Manicure with shellac polish including prior gel removal",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_058",
-      "query": "pediküre normaler lack",
+      "id": "q2i7_recovery_066",
+      "query": "Pedicure with gel polish",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Pedicure with gel polish coating",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i7_recovery_067",
+      "query": "Wimpernverlängerung Volumen 2D",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Pedicure with regular polish",
+      "userIntent": "Lash extension with 2D volume",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_059",
-      "query": "lash lift tint",
+      "id": "q2i7_recovery_068",
+      "query": "Brow lamination with tinting",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Lash lifting with tinting",
+      "userIntent": "Brow lamination including tinting",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_060",
-      "query": "brow tint service",
-      "language": "en",
+      "id": "q2i7_recovery_069",
+      "query": "Permanent Make-Up Lippen mit Korrektur",
+      "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Brow tinting",
+      "userIntent": "PMU lips with one included correction",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_061",
-      "query": "eyeliner permanent makeup",
+      "id": "q2i7_recovery_073",
+      "query": "Microneedling facial session for face",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Permanent eyeliner PMU",
+      "userIntent": "Single microneedling facial treatment session covering the face",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_062",
-      "query": "facial hydration treatment",
-      "language": "en",
+      "id": "q2i7_recovery_071",
+      "query": "Laser Haarentfernung Bikinizone",
+      "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Facial hydration",
+      "userIntent": "Laser hair removal for the bikini area",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_063",
-      "query": "laser bikini hair removal",
+      "id": "q2i7_recovery_072",
+      "query": "Nail extension refill with correction",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Laser bikini hair removal",
+      "userIntent": "Nail extension refill with correction",
       "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_064",
-      "query": "remove gel nail modeling",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Gel nail extension removal",
-      "notes": [
-        "Authored independently from public BeautyQ product declarations and the canonical seed catalog before disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
       ]
     }
   ]

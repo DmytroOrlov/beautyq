@@ -16,6 +16,13 @@ final class BeautyQProtectedRecoveryReserveCompositionSpec extends AnyWordSpec {
     }
 
     "load recovery through the eval owner from app-shell classpath" in {
+      assert(composition.recovery.authorReserve.schemaVersion == "beautyq-protected-recovery-author-reserve-v6")
+      assert(composition.recovery.judgedReserve.schemaVersion == "beautyq-protected-recovery-judged-reserve-v6")
+      assert(composition.recovery.selectionAudit.schemaVersion == "beautyq-protected-recovery-selection-audit-v8")
+      assert(composition.recovery.authorReserve.sourceRevision == "6652582525071773fbc14d02b0e081e58e8ef2ac")
+      assert(composition.recovery.authorReserve.authorPassId == "q2i7-recovery-rotation-7-fresh-reserve-author-v3")
+      assert(composition.recovery.judgedReserve.judgePassId == "q2i7-recovery-rotation-7-fresh-reserve-judge-v3")
+      assert(composition.recovery.selectionAudit.auditPassId == "q2i7-recovery-rotation-7-fresh-reserve-selection-audit-v1")
       assert(composition.recovery.authorReserve.cases.size == 8)
       assert(composition.recovery.judgedReserve.corpus.cases.size == 8)
       assert(composition.recovery.selectionAudit.selectedCaseIds.size == 8)

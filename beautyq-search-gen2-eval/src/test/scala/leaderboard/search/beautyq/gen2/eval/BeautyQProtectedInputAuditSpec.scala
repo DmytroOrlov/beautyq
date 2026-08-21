@@ -97,8 +97,8 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
 
       val author = BeautyQProtectedAuthorDraft.decodeString(authorRaw).fold(error => fail(error), identity)
       assert(author.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
-      assert(author.sourceRevision == "ea9713e1390c505aa62df9825ba6c1dd14bbb8f4")
-      assert(author.authorPassId == "q2i7-recovery-rotation-6-fresh-reserve-author-v1")
+      assert(author.sourceRevision == "6652582525071773fbc14d02b0e081e58e8ef2ac")
+      assert(author.authorPassId == "q2i7-recovery-rotation-7-fresh-reserve-author-v3")
       assert(author.cases.size == 24)
       assert(BeautyQProtectedAuthorDraft.correspondsTo(author, protectedCorpus).isRight)
       assert(authorRaw != judgedRaw)
@@ -111,6 +111,28 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       val audit = BeautyQProtectedInputAudit.decodeString(readResource(AuditResource)).fold(error => fail(error.stableCode), identity)
       val corpus = BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity)
       val policy = BeautyQProtectedAcceptancePolicy.load(resourcePath(PolicyResource)).fold(error => fail(error.toString), identity)
+      assert(audit.sourceRevision == "6652582525071773fbc14d02b0e081e58e8ef2ac")
+      assert(audit.authorPassId == "q2i7-recovery-rotation-7-fresh-reserve-author-v3")
+      assert(audit.judgePassId == "q2i7-recovery-rotation-7-fresh-reserve-judge-v3")
+      assert(audit.auditPassId == "q2i7-recovery-rotation-7-input-freeze-audit-v1")
+      assert(Vector(audit.authorPassId, audit.judgePassId, audit.auditPassId).distinct.size == 3)
+      assert(audit.protectedCaseCount == 24)
+      assert(audit.orderedRequiredSliceCounts.map { case (slice, count) => slice.value -> count } == Vector(
+        "exact-intent" -> 8,
+        "conversational" -> 6,
+        "nearby" -> 4,
+        "multilingual" -> 3,
+        "broad-safe" -> 3,
+      ))
+      assert(audit.exactVisibleQueryDuplicateCount == 0)
+      assert(audit.normalizedVisibleQueryDuplicateCount == 0)
+      assert(audit.visibleCaseIdOverlapCount == 0)
+      assert(audit.internalExactQueryDuplicateCount == 0)
+      assert(audit.internalNormalizedQueryDuplicateCount == 0)
+      assert(audit.exactIntentWithoutAcceptableVariantCount == 0)
+      assert(audit.invalidVariantJudgmentIdentityCount == 0)
+      assert(audit.invalidProviderJudgmentIdentityCount == 0)
+      assert(audit.invalidServiceIntentJudgmentIdentityCount == 0)
       assert(audit.protectedCorpusFingerprint == BeautyQProtectedEvaluationCorpus.load(
         resourcePath(ProtectedCorpusResource), corpus, policy,
       ).fold(error => fail(error.toString), identity).corpusFingerprint)
@@ -123,9 +145,9 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       assert(audit.protectedCorpusFingerprint.length == 64)
       assert(audit.protectedPolicyFingerprint.length == 64)
       assert(audit.protectedCorpusFingerprint ==
-         "f6f99a1e3ef5c44a06b0e0253ad6871e039197bd065cee8b00454e0c39e0a1c2")
+        "ce020b49d28d4c1c45ee6abfc0959678a920e2fb6e2dc676e7b72525a272ac50")
       assert(audit.protectedPolicyFingerprint ==
-        "75a03540f448fecd2a620872fb01fde772996d37822f81a447ab93b48e0c7ee8")
+        "89189e9400b870a86b50acfeb90a10b8cd31e66b913867ba05427cb826619c73")
     }
 
     "close direct construction, copy and subclassing" in {

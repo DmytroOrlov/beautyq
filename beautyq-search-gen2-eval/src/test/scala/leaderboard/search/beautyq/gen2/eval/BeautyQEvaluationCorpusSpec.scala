@@ -29,20 +29,24 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
       }
     }
 
-    "have exactly 164 cases after all permanent break-glass migrations" in {
-      assert(corpus.cases.length == 164)
+    "have exactly 172 cases after all permanent break-glass migrations" in {
+      assert(corpus.cases.length == 172)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-migrated")) == 7)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle2-migrated")) == 4)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle3-full-slice-migrated")) == 8)
-      assert(corpus.cases.count(_.slices.exists(_.value == "q2-post-recovery-migrated")) == 48)
+      assert(corpus.cases.count(_.slices.exists(_.value == "q2-post-recovery-migrated")) == 56)
     }
 
     "have first case ID q_nails_001" in {
       assert(corpus.cases(0).caseId.value == "q_nails_001")
     }
 
-    "append the final post-recovery disclosed case after the pre-existing visible inventory" in {
-      assert(corpus.cases.lastOption.exists(_.caseId.value == "q2i7_recovery_056"))
+    "append the rotation-7 disclosed cases after the pre-existing visible inventory" in {
+      assert(corpus.cases.takeRight(8).map(_.caseId.value) == Vector(
+        "q2i7_recovery_057", "q2i7_recovery_058", "q2i7_recovery_059", "q2i7_recovery_060",
+        "q2i7_recovery_061", "q2i7_recovery_062", "q2i7_recovery_063", "q2i7_recovery_064",
+      ))
+      assert(corpus.cases.takeRight(8).forall(_.slices.exists(_.value == "q2-post-recovery-migrated")))
     }
 
     "preserve explicit source order for first 3 cases" in {
