@@ -185,3 +185,32 @@ Unresolved seams become `INSUFFICIENT_EVIDENCE` naming the missing evidence and 
   the canonical feature-local `tasks.md`; decision execution follows those accepted tasks and still makes
   no source/build/test/runtime/normative-owner changes).
 - No Git/index/ref mutation; no digest/freeze/pass/fingerprint/baseline/review-bundle machinery.
+
+---
+
+## Closeout Reconciliation — Durable Conclusions and Evidence Index
+
+Added at human-verdict closeout. This section indexes the durable conclusions the decision rests on and
+points to the tracked evidence trail. It does not paste raw evidence and assigns no new disposition. The
+evidence directory is **supporting research, not normative authority**: current source/tests/normative docs
+remain authoritative, and the evidence files preserve the detailed archaeology/forensic trail.
+
+Detailed trail (tracked feature-local):
+`evidence/history-archaeology/README.md`, `.../raw-trace-test.md`, `.../raw-qdrant-framework.md`,
+`.../HANDOFF.md`, `.../QDRANT-VALUE-FORENSIC.md`.
+
+| # | Durable conclusion | Primary anchors | Detailed evidence |
+| --- | --- | --- | --- |
+| A | Qdrant reusable-capability and BeautyQ product-value/policy are separate decision units. | `docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md:373-377,797-829`; `docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md:7`; `build.sbt:207-252` | `HANDOFF.md` §4; `raw-qdrant-framework.md` |
+| B | A historical Gen1 full-corpus (74-query) ES-only vs ES+Qdrant relevance ablation existed: narrow acceptable wins (including `q_broad_006`, `q_lashes_008`) plus substantial semantic harm; the zero-harm `ExplicitConstraintsFilterPlusTop1` gate preserved `q_broad_006` but lost `q_lashes_008`; Y1 policy blocked. | `df0652b5`, `4f73070e`, `66f9e525`, `ffe32a5b`, `0259558c`, `e4359ec8`; ledger `fc06f9cb` | `QDRANT-VALUE-FORENSIC.md` §4, §7 |
+| C | QP18/QP19 "improvement" means structural append/no-worsening, not product relevance. | `438c3407` (QP18); `50650002` (QP19); `BeautyQCutoverGate.scala:216,238-257` | `QDRANT-VALUE-FORENSIC.md` §2, §3 |
+| D | The Gen1 value result is non-transferable to current Gen2, and the current Gen2 baseline-only vs Required/FullSearch marginal ablation was never produced. | `a67d9143`; `BeautyQEvaluationPolicy.scala:27`; `dee0c458` | `QDRANT-VALUE-FORENSIC.md` §5, §6 |
+| E | Trace simplification must add typed proof for `BeautyQSemanticLabelPolicy.forAction` `stableKey:text` + ordering FIRST. | `BeautyQIntentVocabularyGen2.scala:59`; `BeautyQIntentParserGen2Spec` | `HANDOFF.md` §2, §8; `raw-trace-test.md` |
+| F | `BeautyIntentRuleTrace` + the complete r001..r102 golden remains: the sole complete executable declaration-table regression owner. | `BeautyQIntentVocabularyEvidenceSpec:131-237`; `dee0c458` | `HANDOFF.md` §2; `raw-trace-test.md` |
+| G | `PlannedAlgebraTrace` remains: it has live production response-projection consumers. | `BeautyQSearchResponseGen2.scala:206,213` | `HANDOFF.md` §2; `raw-trace-test.md` |
+| H | After coordinated trace removal, `SearchPlanTrace.provenance` has no surviving consumer, so the whole `SearchPlanTrace` object can be removed. | `BeautyQInputTraceGen2.scala:16,35`; `BeautyQSearchPlanCompilationTrace.scala:35`; `SearchPlan.scala:69` (scaladoc-only reference) | decision record `SearchPlanTrace`/`provenance` boundary; `HANDOFF.md` §2; `raw-trace-test.md` |
+| I | Project-boundary KEEP preserves ownership/dependency properties (neutral two-backend transport, BeautyQ-free generic backends, eval isolation, SQL confinement); it does not sanctify the current sbt project count forever. | `build.sbt:144-170,207-252`; `SearchGen2ModuleFirewallSpec`; `dee0c458` | `HANDOFF.md` §5; `raw-qdrant-framework.md` |
+| J | `C-TEST-COVERAGE` concerns only the remaining non-trace corpus. | decision record `C-TEST-COVERAGE` | `HANDOFF.md` §3; `raw-trace-test.md` |
+
+These conclusions are retained in the decision record's dispositions and in this index; the evidence files
+do not become normative owners and do not authorize any implementation or evidence follow-up.
