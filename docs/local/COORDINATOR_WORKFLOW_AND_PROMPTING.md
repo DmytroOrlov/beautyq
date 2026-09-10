@@ -374,7 +374,8 @@ Typical delta:
 
 For feature-scoped phases:
 - identify the intended feature explicitly;
-- do not infer solely from ignored/mutable pointers;
+- when moving from feature A to feature B, pin/select B in the Spec Kit control plane **before** invoking the next `/speckit.*`; a feature path written in the phase brief does not switch the control plane;
+- verify the resolved feature before any materializing phase action;
 - if command machinery cannot target it unambiguously, stop and repair the control plane.
 
 ---
