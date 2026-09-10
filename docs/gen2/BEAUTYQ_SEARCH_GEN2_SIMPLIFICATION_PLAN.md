@@ -6,10 +6,13 @@ This document is a forward-looking hypothesis set about simplification work that
 unresolved. Completed cleanup is not recorded here; Git history owns completed work. Nothing in this
 document pre-decides a disposition or authorizes execution.
 
-**Feature ownership:** the framework leverage audit is
-`specs/003-beautyq-distage-izumi-leverage-audit`, and the still-unresolved simplification
-disposition/decision is `specs/004-beautyq-post-closeout-simplification-decision`. 003 may use this
-document as audit/input context; 004 owns the simplification decision.
+**Feature ownership:** `specs/003-beautyq-distage-izumi-leverage-audit` is the current optional
+framework-leverage research contract, and
+`specs/004-beautyq-post-closeout-simplification-decision` is the current decision-contract owner for the
+still-unresolved simplification disposition/decision if that explicit decision process is invoked. 003
+may use this document as audit/input context. Neither feature authorizes implementation, and neither
+prevents the human from explicitly authorizing a separately scoped task through another appropriate
+workflow.
 
 **Execution boundary:** this proposal authorizes nothing by itself. The
 [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md),

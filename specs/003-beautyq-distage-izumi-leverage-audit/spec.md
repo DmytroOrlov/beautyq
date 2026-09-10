@@ -6,7 +6,7 @@
 
 **Status**: Draft — durable **research contract**. Specification only; the read-only research may be invoked against an explicitly selected current source state when the human chooses. This document authorizes no source, framework, or architecture change.
 
-**Governing Constitution**: `.specify/memory/constitution.md` — BeautyQ Project Delivery Constitution v2.0.0 (effective 2026-09-08). Work under this feature re-derives the governing state at each phase and never trusts a prompt-supplied revision. The principles most load-bearing for this audit are I (human-owned Git/index), II (one canonical owner — this spec navigates to owners, it does not restate them), IV (evidence is not permission), V (evidence binds to the exact evaluated state — here, the exact framework version and BeautyQ baseline studied), VII (domain policy versus reusable mechanics), VIII (proposals are not accepted architecture), and XI (truthful validation scope).
+**Governing Constitution**: `.specify/memory/constitution.md` — BeautyQ Project Delivery Constitution v2.0.0 (effective 2026-09-08). Work under this feature re-derives the governing state at each phase and never trusts a prompt-supplied revision. The principles most load-bearing for this audit are I (human-owned Git/index), II (one canonical owner — this spec navigates to owners, it does not restate them), IV (evidence is not permission), V (evidence binds to the exact evaluated state — here, the exact framework version and evaluated BeautyQ source state studied), VII (domain policy versus reusable mechanics), VIII (proposals are not accepted architecture), and XI (truthful validation scope).
 
 **Input**: User description (abridged): "A read-only research contract that determines whether infrastructure/mechanics BeautyQ implemented locally are already well served by existing Distage/Izumi primitives and correctly used, supported but underused, supported but hard to discover, genuinely missing as reusable framework primitives, or inherently BeautyQ/domain-specific and correct to keep local. Optimize for discovering BOTH framework opportunities and evidence that no framework extraction is warranted; it is not an extraction mandate. Implementation/refactoring derived from the audit is not authorized."
 
@@ -33,8 +33,8 @@ The research may be run against an **explicitly selected current source state** 
 
 Findings from this audit **may inform** a later simplification decision, but the audit **does not authorize, perform, or gate** any simplification, and no simplification feature is required to consume it. The audit's completion condition is internal: its synthesis answering its standing questions on their own terms (Constitution Principle III).
 
-- This audit **does not approve, adopt, reject, or act on** any existing simplification proposal (its canonical non-normative owner is the [post-Q2 simplification proposal](../../docs/gen2/BEAUTYQ_SEARCH_GEN2_SIMPLIFICATION_PLAN.md), status *proposed*). It may observe where that proposal's assumptions about "framework-provided vs local" hold or fail, as findings — never as approvals or as edits to the proposal.
-- Where this audit identifies a candidate for framework extraction, that is a *recommendation awaiting a separate decision*, not a work item this feature opens.
+- This audit **does not approve, adopt, reject, or act on** any existing simplification proposal (its canonical non-normative owner is the [simplification proposal](../../docs/gen2/BEAUTYQ_SEARCH_GEN2_SIMPLIFICATION_PLAN.md), status *proposed*). It may observe where that proposal's assumptions about "framework-provided vs local" hold or fail, as findings — never as approvals or as edits to the proposal.
+- Where this audit identifies a candidate for framework extraction, that is a *recommendation awaiting a separately authorized human decision*, not a work item this feature opens.
 
 ## Ownership and Precedence
 
@@ -45,7 +45,7 @@ This contract navigates to current owners and does not duplicate their mutable c
 | Current BeautyQ architecture, semantics, invariants, accepted limits | the Gen2 technical specification |
 | Domain-versus-framework authoring boundary, proof selection, "what is generic now" | the search-domain authoring principles and the new-domain onboarding guide |
 | Operator-visible status, launch/activation modes, response/degradation procedures | the operations runbook |
-| The deferred-but-unapproved simplification ideas | the post-Q2 simplification proposal (non-normative here) |
+| The deferred-but-unapproved simplification ideas | the simplification proposal (non-normative here) |
 | Actual framework version available to the project | the repository build definition (dependency coordinates), verified at execution |
 | Distage/Izumi primitive behavior claims | the framework sources/APIs/examples/tests **of that pinned version** |
 | Agent Git/index and evidence-attribution rules | Constitution Principles I, IV, V, XI |
@@ -64,7 +64,7 @@ A reader (coordinator, architect, or maintainer deciding whether to open a follo
 
 **Acceptance Scenarios**:
 
-1. **Given** the selected source state and a mapped mechanic, **When** it is classified, **Then** it receives exactly one of `WELL_USED` / `UNDERUSED` / `HARD_TO_DISCOVER` / `MISSING_GENERIC_PRIMITIVE` / `BEAUTYQ_SPECIFIC`, with the framework-version and BeautyQ-baseline references that support the label.
+1. **Given** the selected source state and a mapped mechanic, **When** it is classified, **Then** it receives exactly one of `WELL_USED` / `UNDERUSED` / `HARD_TO_DISCOVER` / `MISSING_GENERIC_PRIMITIVE` / `BEAUTYQ_SPECIFIC`, with the framework-version and evaluated-source-state references that support the label.
 2. **Given** a mechanic where the framework already provides the capability and BeautyQ uses it directly, **When** classified, **Then** it is `WELL_USED` and no gap is manufactured to justify the run.
 3. **Given** a mechanic the framework provides but BeautyQ reimplements or bypasses without a documented reason, **When** classified, **Then** it is `UNDERUSED` and names the specific framework surface BeautyQ did not use.
 4. **Given** a mechanic whose framework capability exists but could not realistically be found or composed correctly from the current docs/examples/API naming by a competent developer or agent, **When** classified, **Then** it is `HARD_TO_DISCOVER` and is **not** reported as `MISSING_GENERIC_PRIMITIVE`.
@@ -90,7 +90,7 @@ The audit distinguishes *"the framework cannot do this"* from *"the framework ca
 
 ### User Story 3 - Human-Readable Synthesis with Evidence-Graded Recommendations (Priority: P3)
 
-The primary human result is a synthesis that answers the eight standing questions, not a raw inventory; and any recommendation strong enough to justify a follow-up implementation feature carries an explicit evidence grade.
+The primary human result is a synthesis that answers the eight standing questions, not a raw inventory; and any recommendation strong enough to inform a separately authorized follow-up implementation task or feature carries an explicit evidence grade.
 
 **Why this priority**: The audit's consumer is a *decision-maker*, so the deliverable's shape matters — a huge classified table with no synthesis fails even if every row is technically correct. P3 because it sits on top of P1/P2 output.
 
@@ -100,7 +100,7 @@ The primary human result is a synthesis that answers the eight standing question
 
 1. **Given** the classified findings, **When** the synthesis is written, **Then** it answers, in prose, each standing question (what the framework already provided; what BeautyQ used well; what BeautyQ rebuilt unnecessarily, if anything; which misses were discoverability; which generic primitives are actually missing, if any; what should stay BeautyQ-specific; which recommendations are docs/examples vs framework API/code; which have enough evidence for a follow-up).
 2. **Given** a `MISSING_GENERIC_PRIMITIVE` recommendation, **When** graded, **Then** it either shows the genericity filter satisfied on substantially all eight conditions *or* it is downgraded to `UNDERUSED`/`HARD_TO_DISCOVER`/`BEAUTYQ_SPECIFIC` with the failing condition named.
-3. **Given** a recommendation intended to seed a future feature, **When** stated, **Then** it names the concrete evidence behind it and remains visibly *a recommendation*, not an accepted change (Constitution Principle VIII).
+3. **Given** a recommendation intended to inform a separately authorized follow-up task or feature, **When** stated, **Then** it names the concrete evidence behind it and remains visibly *a recommendation*, not an accepted change (Constitution Principle VIII).
 
 ---
 
@@ -143,10 +143,10 @@ The primary human result is a synthesis that answers the eight standing question
   5. **E — Adversarial classification**: assign the five-way label while actively hunting counterexamples to the tempting label.
   6. **F — Recommendation after counterexamples**: emit recommendations only after counterexamples are considered and the genericity filter is applied.
 - **FR-010** Independent mappings (stage A/B/C slices) MAY be produced by **parallel read-only agents**; the audit MUST NOT require one context to hold all source findings.
-- **FR-011** Structured research memory MUST be **persisted in this feature's research artifacts**, not carried in conversation context, so that a later session resumes from durable intermediate state (Constitution Principle V: each finding names the baseline and framework version it was derived from).
+- **FR-011** Structured research memory MUST be **persisted in this feature's research artifacts**, not carried in conversation context, so that a later session resumes from durable intermediate state (Constitution Principle V: each finding names the source state and framework version it was derived from).
 - **FR-012** The primary human deliverable MUST be a **synthesis** that answers every question in `Output — Standing Questions`; a raw source inventory is explicitly **not** the product (it is a means to the classified findings).
 - **FR-013** The audit is **free to reject** any candidate research area in `Candidate Research Areas`; a rejected candidate is recorded with its basis and not forced into a positive finding.
-- **FR-014** Every framework-change recommendation MUST be tagged by kind — **docs/examples** or **framework API/code** — and, if it is meant to seed a follow-up feature, MUST state its evidence grade and remain phrased as a recommendation, never as an accepted change.
+- **FR-014** Every framework-change recommendation MUST be tagged by kind — **docs/examples** or **framework API/code** — and, if it is meant to inform a separately authorized follow-up task or feature, MUST state its evidence grade and remain phrased as a recommendation, never as an accepted change.
 - **FR-015** All work under this feature MUST be **worktree-only**: no agent commit, stage, unstage, stash, reset, restore, checkout/switch, history rewrite, or ref mutation; existing human-created index state is preserved exactly as found; every report states the actual `HEAD`/index/worktree state truthfully (Constitution Principle I).
 - **FR-016** This feature MUST NOT modify BeautyQ source/architecture, MUST NOT modify Distage/Izumi, and MUST NOT implement or scaffold any framework primitive.
 - **FR-017** This feature MUST NOT perform, approve, or reopen simplification. Its findings may inform a later simplification decision but gate none, and this feature **grants that decision no permission** (Constitution Principles III, IV, VIII).
@@ -191,13 +191,13 @@ These are starting hypotheses, **not** predetermined findings or a to-do list. A
 - Which generic framework primitives are actually missing, if any?
 - What should remain BeautyQ-specific?
 - Which recommendations are docs/examples versus framework API/code?
-- Which recommendations have enough evidence for a follow-up implementation feature?
+- Which recommendations have enough evidence for a separately authorized follow-up implementation task or feature?
 
 ### Key Entities
 
 - **Material candidate**: a local infrastructure/mechanic site (or grouped mechanic) large enough to warrant a classification; the unit that receives exactly one label.
 - **Classification**: one of the five labels, with its cited evidence (BeautyQ usage reference + framework surface or documented absence) and plain-language justification.
-- **BeautyQ baseline**: the exact accepted source identity the audit studies; the attribution anchor for every finding (Constitution Principle V).
+- **Evaluated BeautyQ source state**: the exact source state the audit studies; the attribution anchor for every finding (Constitution Principle V).
 - **Framework version reference**: the project's actually-resolved Distage/Izumi dependency used for every exists/does-not-exist claim (not latest upstream).
 - **Framework primitive inventory**: the pinned-version surfaces identified for a given need (method stage B).
 - **Discoverability assessment**: the finding of whether a real surface is findable/composable from current docs/examples/API naming (method stage D).
@@ -219,7 +219,7 @@ This feature does **NOT**:
 
 - modify BeautyQ architecture or source;
 - modify Distage/Izumi or implement any framework primitive;
-- perform simplification, or approve/reject/act on any existing simplification proposal (including the post-Q2 simplification proposal);
+- perform simplification, or approve/reject/act on any existing simplification proposal (including the simplification proposal);
 - create or scaffold a second production domain;
 - reopen the completed documentation-history review feature (`001-beautyq-doc-history-review`, frozen under its own constitution version);
 - prove that BeautyQ was overengineered (an excluded claim in the constitution's Non-Axioms — this audit neither assumes nor targets it);
