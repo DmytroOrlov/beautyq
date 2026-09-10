@@ -6,23 +6,10 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
   "BeautyQAcceptedBaselineVerifier" should {
-    "encode a working-tree candidate as a red compatibility result" in {
-      val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
-      val workingTree = fixture("working-tree", "system-property", policy.fingerprint)
-      val result = BeautyQAcceptedBaselineVerifier.verify(workingTree, baseline, policy)
-      result match {
-        case Right(value) =>
-          assert(!value.passed)
-          assert(value.checks.exists(check => check.code == "candidate-application-revision" && !check.passed))
-        case Left(error) => fail(s"expected encoded compatibility result, got ${error.code}")
-      }
-    }
-
     "encode a stable provenance mismatch as a failed stable check" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
-      val candidate = fixture("commit-b", "system-property", policy.fingerprint, sourceContent = "e" * 64)
+      val baseline = fixture(policy.fingerprint)
+      val candidate = fixture(policy.fingerprint, sourceContent = "e" * 64)
       val result = BeautyQAcceptedBaselineVerifier.verify(candidate, baseline, policy)
       result match {
         case Right(value) =>
@@ -40,7 +27,7 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "accept equal manifests and emit normalized zero deltas as decimal strings" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
+      val baseline = fixture(policy.fingerprint)
       val result = BeautyQAcceptedBaselineVerifier.verify(baseline, baseline, policy) match {
         case Right(value) => value
         case Left(error) => fail(s"expected verification result, got ${error.code}")
@@ -55,8 +42,8 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "treat a non-zero delta as informational evidence" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint, average = "0.800000000000")
-      val candidate = fixture("commit-b", "system-property", policy.fingerprint, average = "0.812345678901")
+      val baseline = fixture(policy.fingerprint, average = "0.800000000000")
+      val candidate = fixture(policy.fingerprint, average = "0.812345678901")
       val result = BeautyQAcceptedBaselineVerifier.verify(candidate, baseline, policy) match {
         case Right(value) => value
         case Left(error) => fail(s"expected compatible comparison, got ${error.code}")
@@ -68,8 +55,8 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "keep run-specific provenance differences outside the quality gate" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint, generation = "a", report = "d" * 64)
-      val candidate = fixture("commit-b", "system-property", policy.fingerprint, generation = "b", report = "e" * 64)
+      val baseline = fixture(policy.fingerprint, generation = "a", report = "d" * 64)
+      val candidate = fixture(policy.fingerprint, generation = "b", report = "e" * 64)
       val result = BeautyQAcceptedBaselineVerifier.verify(candidate, baseline, policy) match {
         case Right(value) => value
         case Left(error) => fail(s"expected run-specific differences to be informational, got ${error.code}")
@@ -79,7 +66,7 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "not collapse duplicate provenance at the strict codec boundary" in {
       val policy = policyFixture()
-      val json = AcceptedBaselineCodec.encode(fixture("commit-a", "system-property", policy.fingerprint))
+      val json = AcceptedBaselineCodec.encode(fixture(policy.fingerprint))
       val duplicate = json.hcursor.downField("provenance").focus match {
         case Some(value) => json.mapObject(_.add("provenance", value.asArray.map(values => io.circe.Json.fromValues(values ++ values.take(1))).getOrElse(value)))
         case None => fail("fixture did not encode provenance")
@@ -89,10 +76,10 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "reject metric, evaluation and protected-policy mismatches" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
-      val metric = fixture("commit-b", "system-property", policy.fingerprint, metricSchema = "metric-v2")
-      val evaluation = fixture("commit-b", "system-property", policy.fingerprint, evaluationPolicy = "eval-v2")
-      val protectedPolicy = fixture("commit-b", "system-property", "c" * 64)
+      val baseline = fixture(policy.fingerprint)
+      val metric = fixture(policy.fingerprint, metricSchema = "metric-v2")
+      val evaluation = fixture(policy.fingerprint, evaluationPolicy = "eval-v2")
+      val protectedPolicy = fixture("c" * 64)
       val metricResult = verify(metric, baseline, policy)
       val evaluationResult = verify(evaluation, baseline, policy)
       val protectedResult = verify(protectedPolicy, baseline, policy)
@@ -105,7 +92,7 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "report every stable provenance identity as a distinct compatibility check" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
+      val baseline = fixture(policy.fingerprint)
       val stableValues = Vector(
         "visible-corpus-fingerprint" -> ("c" * 64),
         "protected-corpus-fingerprint" -> ("c" * 64),
@@ -121,27 +108,27 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
         "qdrant-version" -> "1.19.0",
       )
       stableValues.foreach { case (id, value) =>
-        val candidate = fixture("commit-b", "system-property", policy.fingerprint, provenanceOverrides = Map(id -> value))
+        val candidate = fixture(policy.fingerprint, provenanceOverrides = Map(id -> value))
         assert(failed(verify(candidate, baseline, policy), s"stable-provenance-$id"), s"missing mismatch for $id")
       }
     }
 
     "reject missing run-specific provenance and preserve compatible run identities" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
-      val missing = fixture("commit-b", "system-property", policy.fingerprint, omitProvenance = Set("qdrant-generation-id"))
+      val baseline = fixture(policy.fingerprint)
+      val missing = fixture(policy.fingerprint, omitProvenance = Set("qdrant-generation-id"))
       val missingResult = verify(missing, baseline, policy)
       assert(failed(missingResult, "run-provenance-qdrant-generation-id"))
-      val changed = fixture("commit-b", "system-property", policy.fingerprint, generation = "different", report = "f" * 64)
+      val changed = fixture(policy.fingerprint, generation = "different", report = "f" * 64)
       assert(verify(changed, baseline, policy).exists(_.passed))
     }
 
     "reject aggregate order, missing and unexpected aggregate observations" in {
       val policy = policyFixture(Vector("first", "second"))
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint, aggregateKeys = Vector("first", "second"))
-      val reordered = fixture("commit-b", "system-property", policy.fingerprint, aggregateKeys = Vector("second", "first"))
-      val missing = fixture("commit-b", "system-property", policy.fingerprint, aggregateKeys = Vector("first"))
-      val unexpected = fixture("commit-b", "system-property", policy.fingerprint, aggregateKeys = Vector("first", "third"))
+      val baseline = fixture(policy.fingerprint, aggregateKeys = Vector("first", "second"))
+      val reordered = fixture(policy.fingerprint, aggregateKeys = Vector("second", "first"))
+      val missing = fixture(policy.fingerprint, aggregateKeys = Vector("first"))
+      val unexpected = fixture(policy.fingerprint, aggregateKeys = Vector("first", "third"))
       assert(failed(verify(reordered, baseline, policy), "aggregate-key-order"))
       assert(failed(verify(missing, baseline, policy), "missing-aggregate-keys"))
       assert(failed(verify(unexpected, baseline, policy), "unexpected-aggregate-keys"))
@@ -149,13 +136,13 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "reject metric scope order, missing and unexpected observations" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint,
+      val baseline = fixture(policy.fingerprint,
         metricObservations = Vector(("variants", "success", 1, "0.800000000000"), ("variants", "mrr", 1, "0.700000000000")))
-      val reordered = fixture("commit-b", "system-property", policy.fingerprint,
+      val reordered = fixture(policy.fingerprint,
         metricObservations = Vector(("variants", "mrr", 1, "0.700000000000"), ("variants", "success", 1, "0.800000000000")))
-      val missing = fixture("commit-b", "system-property", policy.fingerprint,
+      val missing = fixture(policy.fingerprint,
         metricObservations = Vector(("variants", "success", 1, "0.800000000000")))
-      val unexpected = fixture("commit-b", "system-property", policy.fingerprint,
+      val unexpected = fixture(policy.fingerprint,
         metricObservations = Vector(("variants", "success", 1, "0.800000000000"), ("variants", "recall", 1, "0.600000000000")))
       assert(failed(verify(reordered, baseline, policy), "metric-scope-order-0"))
       assert(failed(verify(missing, baseline, policy), "missing-metric-scopes-0"))
@@ -164,10 +151,10 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "reject aggregate and per-metric count mismatches" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint)
-      val structural = fixture("commit-b", "system-property", policy.fingerprint, structuralInvalidCount = 1)
-      val applicable = fixture("commit-b", "system-property", policy.fingerprint, metricApplicableCount = 2)
-      val notApplicable = fixture("commit-b", "system-property", policy.fingerprint, metricNotApplicableCount = 1)
+      val baseline = fixture(policy.fingerprint)
+      val structural = fixture(policy.fingerprint, structuralInvalidCount = 1)
+      val applicable = fixture(policy.fingerprint, metricApplicableCount = 2)
+      val notApplicable = fixture(policy.fingerprint, metricNotApplicableCount = 1)
       assert(failed(verify(structural, baseline, policy), "quality-counts-protected-global"))
       assert(failed(verify(applicable, baseline, policy), "applicable-count-0-0"))
       assert(failed(verify(notApplicable, baseline, policy), "not-applicable-count-0-0"))
@@ -175,8 +162,8 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "serialize failed checks without protected vocabulary and retain informational deltas" in {
       val policy = policyFixture()
-      val baseline = fixture("commit-a", "system-property", policy.fingerprint, average = "0.800000000000")
-      val candidate = fixture("commit-b", "system-property", policy.fingerprint, average = "0.812345678901", sourceContent = "e" * 64)
+      val baseline = fixture(policy.fingerprint, average = "0.800000000000")
+      val candidate = fixture(policy.fingerprint, average = "0.812345678901", sourceContent = "e" * 64)
       val result = verify(candidate, baseline, policy) match {
         case Right(value) => value
         case Left(error) => fail(error.code)
@@ -189,7 +176,7 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
       assert(!text.contains("rawRanking"))
       assert(!text.contains("resultId"))
       assert(!text.contains("query"))
-      val compatible = verify(fixture("commit-b", "system-property", policy.fingerprint, average = "0.812345678901"), baseline, policy) match {
+      val compatible = verify(fixture(policy.fingerprint, average = "0.812345678901"), baseline, policy) match {
         case Right(value) => value
         case Left(error) => fail(error.code)
       }
@@ -199,17 +186,15 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
 
     "keep the verification result construction boundary closed" in {
       assertDoesNotCompile(
-        """new leaderboard.search.beautyq.gen2.eval.BeautyQAcceptedBaselineVerificationResult(true, "a" * 64, "b" * 64, "commit", "commit", "a" * 64, "eval", "b" * 64, Vector.empty, Vector.empty)""",
+        """new leaderboard.search.beautyq.gen2.eval.BeautyQAcceptedBaselineVerificationResult(true, "a" * 64, "b" * 64, "a" * 64, "eval", "b" * 64, Vector.empty, Vector.empty)""",
       )
       assertDoesNotCompile(
-        """final class Forged extends leaderboard.search.beautyq.gen2.eval.BeautyQAcceptedBaselineVerificationResult(true, "a" * 64, "b" * 64, "commit", "commit", "a" * 64, "eval", "b" * 64, Vector.empty, Vector.empty)""",
+        """final class Forged extends leaderboard.search.beautyq.gen2.eval.BeautyQAcceptedBaselineVerificationResult(true, "a" * 64, "b" * 64, "a" * 64, "eval", "b" * 64, Vector.empty, Vector.empty)""",
       )
     }
   }
 
   private def fixture(
-    revision: String,
-    source: String,
     policyFingerprint: String,
     average: String = "0.800000000000",
     generation: String = "a",
@@ -232,8 +217,6 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
       "corpus-fingerprint" -> ("a" * 64),
       "evaluation-policy-version" -> evaluationPolicy,
       "metric-schema-version" -> metricSchema,
-      "application-revision" -> revision,
-      "application-revision-source" -> source,
       "visible-corpus-fingerprint" -> ("b" * 64),
       "protected-corpus-fingerprint" -> ("a" * 64),
       "protected-policy-fingerprint" -> policyFingerprint,
@@ -260,7 +243,6 @@ final class BeautyQAcceptedBaselineVerifierSpec extends AnyWordSpec {
       "corpusFingerprint" -> Json.fromString("a" * 64),
       "metricSchemaVersion" -> Json.fromString(metricSchema),
       "evaluationPolicyVersion" -> Json.fromString(evaluationPolicy),
-      "applicationRevision" -> Json.fromString(revision),
       "provenance" -> Json.fromValues(provenance.map(component => Json.obj(
         "id" -> Json.fromString(component.id.value),
         "value" -> Json.fromString(component.value),

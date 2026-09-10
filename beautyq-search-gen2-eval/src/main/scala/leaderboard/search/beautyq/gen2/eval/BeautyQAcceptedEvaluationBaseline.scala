@@ -6,8 +6,6 @@ import leaderboard.search.gen2.eval.{AcceptedEvaluationBaseline, AcceptedBaselin
 sealed trait BeautyQAcceptedEvaluationBaselineError
 object BeautyQAcceptedEvaluationBaselineError {
   case object GateNotGreen extends BeautyQAcceptedEvaluationBaselineError
-  case object WorkingTreeRevision extends BeautyQAcceptedEvaluationBaselineError
-  case object NonPropertyRevision extends BeautyQAcceptedEvaluationBaselineError
   final case class MissingProvenance(id: String) extends BeautyQAcceptedEvaluationBaselineError
   final case class InvalidBaseline(message: String) extends BeautyQAcceptedEvaluationBaselineError
 }
@@ -33,10 +31,6 @@ object BeautyQAcceptedEvaluationBaseline {
       _ <- Either.cond(acceptance.protectedCaseCount == protectedCorpus.caseCount, (), BeautyQAcceptedEvaluationBaselineError.InvalidBaseline("protected case count differs"))
       _ <- Either.cond(acceptance.protectedReportDigest == protectedRun.protectedReportDigest, (), BeautyQAcceptedEvaluationBaselineError.InvalidBaseline("protected report digest differs"))
       _ <- Either.cond(protectedRun.evaluationPolicyVersion == policy.evaluationPolicyVersion, (), BeautyQAcceptedEvaluationBaselineError.InvalidBaseline("protected run policy differs"))
-      actualRevision <- value("application-revision").toRight(BeautyQAcceptedEvaluationBaselineError.MissingProvenance("application-revision"))
-      revisionSource <- value("application-revision-source").toRight(BeautyQAcceptedEvaluationBaselineError.MissingProvenance("application-revision-source"))
-      _ <- Either.cond(actualRevision != "working-tree", (), BeautyQAcceptedEvaluationBaselineError.WorkingTreeRevision)
-      _ <- Either.cond(revisionSource == "system-property", (), BeautyQAcceptedEvaluationBaselineError.NonPropertyRevision)
       visibleCorpusFingerprint <- visible.report.provenanceComponents.find(_.id.value == "corpus-fingerprint").map(_.value)
         .toRight(BeautyQAcceptedEvaluationBaselineError.MissingProvenance("visible-corpus-fingerprint"))
       visibleReportDigest = visible.reportDigest
@@ -50,7 +44,6 @@ object BeautyQAcceptedEvaluationBaseline {
         protectedCorpus.corpusFingerprint,
         metricSchema,
         evaluationPolicy,
-        actualRevision,
         provenance ++ additionalProvenance(
           visibleCorpusFingerprint,
           visibleReportDigest,

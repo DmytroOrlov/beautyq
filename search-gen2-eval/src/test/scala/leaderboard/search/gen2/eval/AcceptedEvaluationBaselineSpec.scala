@@ -8,19 +8,32 @@ final class AcceptedEvaluationBaselineSpec extends AnyWordSpec {
   private def surface(raw: String): EvaluationSurfaceId = EvaluationSurfaceId.from(raw).getOrElse(fail(s"invalid surface id: $raw"))
   private def metric(raw: String): EvaluationMetricId = EvaluationMetricId.from(raw).getOrElse(fail(s"invalid metric id: $raw"))
 
-  private def sampleBaseline: AcceptedEvaluationBaseline = {
+  private def sampleBaseline: AcceptedEvaluationBaseline = baselineWithAverage(BigDecimal("1.000000000000"))
+
+  private def baselineWithAverage(average: BigDecimal): AcceptedEvaluationBaseline = {
     val provenance = ProvenanceComponent.from(provId("test-provenance"), "test-value").getOrElse(fail("valid provenance expected"))
     val scope = MetricKeyScope.from(surface("variants"), metric("success"), EvaluationCutoff.from(1).getOrElse(fail("valid cutoff")))
-    val observation = AggregateMetricObservation.from(scope, BigDecimal("1.000000000000"), 1, 0)
+    val observation = AggregateMetricObservation.from(scope, average, 1, 0)
     val section = AggregateSection.from(0, 0, 0, 0, 1, 0, Vector(observation))
-    AcceptedEvaluationBaseline.create("a" * 64, "metric-schema-v1", "policy-v1", "rev-1", Vector(provenance), "b" * 64, Vector("global" -> section)).getOrElse(fail("valid baseline expected"))
+    AcceptedEvaluationBaseline.create("a" * 64, "metric-schema-v1", "policy-v1", Vector(provenance), "b" * 64, Vector("global" -> section)).getOrElse(fail("valid baseline expected"))
+  }
+
+  private def singleAverage(baseline: AcceptedEvaluationBaseline): BigDecimal = {
+    val section = baseline.aggregateObservations.map(_._2) match {
+      case Vector(only) => only
+      case other => fail(s"expected exactly one aggregate section, got ${other.size}")
+    }
+    section.metricObservations match {
+      case Vector(only) => only.average
+      case other => fail(s"expected exactly one metric observation, got ${other.size}")
+    }
   }
 
   "AcceptedBaselineCodec" should {
     "keep derived values outside direct construction and copy boundaries" in {
-      assertDoesNotCompile("new AcceptedEvaluationBaseline(\"x\", \"x\", \"x\", \"x\", \"x\", Vector.empty, \"x\", Vector.empty)")
+      assertDoesNotCompile("new AcceptedEvaluationBaseline(\"x\", \"x\", \"x\", \"x\", Vector.empty, \"x\", Vector.empty)")
       assertDoesNotCompile("val baseline: AcceptedEvaluationBaseline = ???; baseline.copy()")
-      assertDoesNotCompile("final class Forged extends AcceptedEvaluationBaseline(???, ???, ???, ???, ???, ???, ???, ???)")
+      assertDoesNotCompile("final class Forged extends AcceptedEvaluationBaseline(???, ???, ???, ???, ???, ???, ???)")
       assertDoesNotCompile("new AggregateSection(0, 0, 0, 0, 0, 0, Vector.empty)")
       assertDoesNotCompile("new MetricDelta(???, ???, ???, BigDecimal(0), BigDecimal(0), BigDecimal(0))")
       assertDoesNotCompile("new RankingEvaluationResult(???, ???, ???, ???, ???)")
@@ -29,7 +42,7 @@ final class AcceptedEvaluationBaselineSpec extends AnyWordSpec {
       assertDoesNotCompile("new EvaluationReport(???, ???, ???, ???, ???, ???, ???)")
       assertDoesNotCompile("new CaseEvaluationResult(???, ???, ???, ???, ???)")
       assertDoesNotCompile("new SurfaceCaseResult(???, ???, ???, ???, ???)")
-      assertDoesNotCompile("new ComparisonResult(???, ???)")
+      assertDoesNotCompile("new ComparisonResult(???)")
     }
 
     "round-trip deterministically with ordered observations" in {
@@ -37,6 +50,40 @@ final class AcceptedEvaluationBaselineSpec extends AnyWordSpec {
       AcceptedBaselineCodec.decode(encoded) match {
         case Right(decoded) => assert(AcceptedBaselineCodec.encode(decoded).noSpaces == encoded.noSpaces)
         case Left(error) => fail(s"decode failed: $error")
+      }
+    }
+
+    "normalize a JSON-zero average to the owner's canonical scale-12 encoding" in {
+      val canonicalZero = AcceptedBaselineCodec.encode(baselineWithAverage(BigDecimal(0).setScale(12)))
+      assert(canonicalZero.noSpaces.contains("\"average\":0E-12"))
+      AcceptedBaselineCodec.decode(canonicalZero) match {
+        case Right(decoded) =>
+          assert(singleAverage(decoded).scale == 12)
+          assert(AcceptedBaselineCodec.encode(decoded).noSpaces == canonicalZero.noSpaces)
+        case Left(error) => fail(s"expected owner-encoded zero average to decode, got $error")
+      }
+      val parsedZero = AcceptedBaselineCodec.encode(baselineWithAverage(BigDecimal(0)))
+      assert(parsedZero.noSpaces.contains("\"average\":0,\"applicableCount\""))
+      AcceptedBaselineCodec.decode(parsedZero) match {
+        case Right(decoded) =>
+          val average = singleAverage(decoded)
+          assert(average.toString == "0E-12")
+          assert(average.scale == 12)
+          assert(AcceptedBaselineCodec.encode(decoded).noSpaces == canonicalZero.noSpaces)
+        case Left(error) => fail(s"expected numerically zero average to decode, got $error")
+      }
+    }
+
+    "normalize a numerically exact short-scale average to canonical scale 12" in {
+      val encoded = AcceptedBaselineCodec.encode(baselineWithAverage(BigDecimal("1.0")))
+      assert(encoded.noSpaces.contains("\"average\":1.0,"))
+      AcceptedBaselineCodec.decode(encoded) match {
+        case Right(decoded) =>
+          val average = singleAverage(decoded)
+          assert(average.toString == "1.000000000000")
+          assert(average.scale == 12)
+          assert(AcceptedBaselineCodec.encode(decoded).noSpaces.contains("\"average\":1.000000000000,"))
+        case Left(error) => fail(s"expected short-scale exact average to decode, got $error")
       }
     }
 
@@ -101,12 +148,12 @@ final class AcceptedEvaluationBaselineSpec extends AnyWordSpec {
 
     "reject empty and whitespace versions" in {
       val root = AcceptedBaselineCodec.encode(sampleBaseline).asObject.getOrElse(fail("expected object"))
-      AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("applicationRevision", Json.fromString("")))) match {
-        case Left(AcceptedBaselineDecodeError.EmptyVersionString("applicationRevision")) => ()
+      AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("metricSchemaVersion", Json.fromString("")))) match {
+        case Left(AcceptedBaselineDecodeError.EmptyVersionString("metricSchemaVersion")) => ()
         case other => fail(s"expected empty version error, got $other")
       }
-      AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("applicationRevision", Json.fromString(" rev ")))) match {
-        case Left(AcceptedBaselineDecodeError.WhitespaceVersionString("applicationRevision")) => ()
+      AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("metricSchemaVersion", Json.fromString(" v ")))) match {
+        case Left(AcceptedBaselineDecodeError.WhitespaceVersionString("metricSchemaVersion")) => ()
         case other => fail(s"expected whitespace version error, got $other")
       }
     }
@@ -145,7 +192,7 @@ final class AcceptedEvaluationBaselineSpec extends AnyWordSpec {
       }
     }
 
-    "reject negative counts, wrong scale and duplicate metric scopes" in {
+    "reject negative counts, over-precision averages and duplicate metric scopes" in {
       val root = AcceptedBaselineCodec.encode(sampleBaseline).asObject.getOrElse(fail("expected object"))
       val observation = root("aggregateObservations").flatMap(_.asArray).flatMap(_.headOption).flatMap(_.asObject).getOrElse(fail("expected observation"))
       val section = observation("section").flatMap(_.asObject).getOrElse(fail("expected section"))
@@ -155,11 +202,11 @@ final class AcceptedEvaluationBaselineSpec extends AnyWordSpec {
         case Left(AcceptedBaselineDecodeError.NegativeCount("forbiddenHitCount", -1)) => ()
         case other => fail(s"expected negative count error, got $other")
       }
-      val wrongScaleMetric = Json.fromJsonObject(metricObservation.add("average", Json.fromBigDecimal(BigDecimal("1.0"))))
-      val wrongScaleSection = Json.fromJsonObject(section.add("metricObservations", Json.fromValues(Vector(wrongScaleMetric))))
-      AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("aggregateObservations", Json.fromValues(Vector(Json.fromJsonObject(observation.add("section", wrongScaleSection))))))) match {
+      val overPrecisionMetric = Json.fromJsonObject(metricObservation.add("average", Json.fromBigDecimal(BigDecimal("0.5000000000001"))))
+      val overPrecisionSection = Json.fromJsonObject(section.add("metricObservations", Json.fromValues(Vector(overPrecisionMetric))))
+      AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("aggregateObservations", Json.fromValues(Vector(Json.fromJsonObject(observation.add("section", overPrecisionSection))))))) match {
         case Left(AcceptedBaselineDecodeError.InvalidScale("average", _)) => ()
-        case other => fail(s"expected scale error, got $other")
+        case other => fail(s"expected over-precision scale error, got $other")
       }
       val duplicateMetricSection = Json.fromJsonObject(section.add("metricObservations", Json.fromValues(Vector(Json.fromJsonObject(metricObservation), Json.fromJsonObject(metricObservation)))))
       AcceptedBaselineCodec.decode(Json.fromJsonObject(root.add("aggregateObservations", Json.fromValues(Vector(Json.fromJsonObject(observation.add("section", duplicateMetricSection))))))) match {

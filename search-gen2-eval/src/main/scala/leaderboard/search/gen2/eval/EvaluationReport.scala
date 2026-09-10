@@ -516,17 +516,16 @@ object MetricDelta {
 }
 
 final class ComparisonResult private (
-  val applicationRevision: String,
   val deltas: Vector[MetricDelta],
 ) {
   override def equals(obj: Any): Boolean = obj match {
-    case other: ComparisonResult => applicationRevision == other.applicationRevision && deltas == other.deltas
+    case other: ComparisonResult => deltas == other.deltas
     case _ => false
   }
-  override def hashCode(): Int = 31 * applicationRevision.hashCode + deltas.hashCode
+  override def hashCode(): Int = deltas.hashCode
 }
 object ComparisonResult {
-  private[eval] def from(applicationRevision: String, deltas: Vector[MetricDelta]): ComparisonResult = new ComparisonResult(applicationRevision, deltas)
+  private[eval] def from(deltas: Vector[MetricDelta]): ComparisonResult = new ComparisonResult(deltas)
 }
 
 object EvaluationComparator {
@@ -536,7 +535,6 @@ object EvaluationComparator {
   def compare(
     candidateSchema: ComparisonSchema,
     baselineSchema: ComparisonSchema,
-    applicationRevision: String,
     candidateAggregates: Vector[(EvaluationSurfaceId, AggregateSection)],
     baselineAggregates: Vector[(EvaluationSurfaceId, AggregateSection)],
   ): Either[ComparisonError, ComparisonResult] = {
@@ -586,7 +584,7 @@ object EvaluationComparator {
             baseline <- find(baselineAggregates, scope, "baseline")
           } yield deltas :+ MetricDelta.create(scope.surfaceId, scope.metricId, scope.cutoff, candidate.average, baseline.average, normalize(candidate.average - baseline.average))
         }
-      }.map(deltas => ComparisonResult.from(applicationRevision, deltas))
+      }.map(deltas => ComparisonResult.from(deltas))
       }
       }
     }

@@ -24,14 +24,12 @@ object BeautyQProtectedInputFreezeMain {
     val authorDraft: Path,
     val judgedDraft: Path,
     val auditOutput: Path,
-    val sourceRevision: String,
     val authorPassId: String,
     val judgePassId: String,
     val auditPassId: String,
   )
 
   final class FreezeSummary private[search] (
-    val sourceRevision: String,
     val protectedCorpusFingerprint: String,
     val protectedPolicyFingerprint: String,
     val protectedCaseCount: Int,
@@ -43,7 +41,7 @@ object BeautyQProtectedInputFreezeMain {
     val auditOutput: Path,
   ) {
     def successLine: String =
-      s"PROTECTED_INPUTS_FROZEN sourceRevision=$sourceRevision " +
+      s"PROTECTED_INPUTS_FROZEN " +
         s"protectedCorpusFingerprint=$protectedCorpusFingerprint " +
         s"protectedPolicyFingerprint=$protectedPolicyFingerprint " +
         s"protectedCaseCount=$protectedCaseCount " +
@@ -54,14 +52,12 @@ object BeautyQProtectedInputFreezeMain {
         s"auditOutput=${auditOutput.toString}"
   }
 
-  private val RevisionPattern = "^[0-9a-f]{40}$".r
   private val OptionNames = Vector(
     "--protected-corpus",
     "--protected-policy",
     "--author-draft",
     "--judged-draft",
     "--audit-output",
-    "--source-revision",
     "--author-pass-id",
     "--judge-pass-id",
     "--audit-pass-id",
@@ -92,12 +88,11 @@ object BeautyQProtectedInputFreezeMain {
             case (acc, name) => acc.flatMap(current => byName.get(name).toRight("missing_argument").map(current :+ _))
           }
           required.flatMap {
-            case Vector(corpus, policy, authorDraft, judgedDraft, output, sourceRevision, authorPassId, judgePassId, auditPassId) =>
+            case Vector(corpus, policy, authorDraft, judgedDraft, output, authorPassId, judgePassId, auditPassId) =>
               val passIds = Vector(authorPassId, judgePassId, auditPassId)
-              if (!RevisionPattern.matches(sourceRevision)) Left("invalid_source_revision")
-              else if (passIds.distinct.size != passIds.size) Left("duplicate_pass_identity")
+              if (passIds.distinct.size != passIds.size) Left("duplicate_pass_identity")
               else Right(new Arguments(
-                Paths.get(corpus), Paths.get(policy), Paths.get(authorDraft), Paths.get(judgedDraft), Paths.get(output), sourceRevision,
+                Paths.get(corpus), Paths.get(policy), Paths.get(authorDraft), Paths.get(judgedDraft), Paths.get(output),
                 authorPassId, judgePassId, auditPassId,
               ))
             case _ => Left("missing_argument")
@@ -118,18 +113,16 @@ object BeautyQProtectedInputFreezeMain {
       resolveFrom(repositoryRoot, arguments.authorDraft),
       resolveFrom(repositoryRoot, arguments.judgedDraft),
       resolveFrom(repositoryRoot, arguments.auditOutput),
-      arguments.sourceRevision,
       arguments.authorPassId,
       arguments.judgePassId,
       arguments.auditPassId,
     )
-    freezeAt(resolved, repositoryRoot, currentRevision(repositoryRoot))
+    freezeAt(resolved, repositoryRoot)
   }
 
   private[search] def freezeAt(
     arguments: Arguments,
     repositoryRoot: Path,
-    revisionReader: () => Either[String, String],
   ): Either[String, FreezeSummary] = {
     val resolvedRoot = repositoryRoot.toAbsolutePath.normalize
     val auditPath = arguments.auditOutput.toAbsolutePath.normalize
@@ -137,15 +130,12 @@ object BeautyQProtectedInputFreezeMain {
     if (!AuditOutputPattern.matcher(relativePath.toString).matches()) Left("invalid_audit_output_path")
     else if (Files.exists(auditPath)) Left("audit_output_already_exists")
     else for {
-      actualRevision <- revisionReader().flatMap(value => Either.cond(RevisionPattern.matches(value), value, "invalid_current_revision"))
-      _ <- Either.cond(actualRevision == arguments.sourceRevision, (), "source_revision_mismatch")
       draftHashes <- draftHashes(arguments.authorDraft, arguments.judgedDraft)
       visible <- BeautyQEvaluationCorpus.loadCanonical().left.map(_ => "visible_corpus_invalid")
       policy <- BeautyQProtectedAcceptancePolicy.load(arguments.protectedPolicy).left.map(protectedPolicyErrorCode)
       protectedCorpus <- BeautyQProtectedEvaluationCorpus.load(arguments.protectedCorpus, visible, policy)
         .left.map(error => protectedCorpusErrorCode(error, arguments.protectedCorpus, policy))
       authorDraft <- BeautyQProtectedAuthorDraft.load(arguments.authorDraft)
-      _ <- Either.cond(authorDraft.sourceRevision == arguments.sourceRevision, (), "author_draft_revision_mismatch")
       _ <- Either.cond(authorDraft.authorPassId == arguments.authorPassId, (), "author_draft_pass_mismatch")
       _ <- BeautyQProtectedAuthorDraft.correspondsTo(authorDraft, protectedCorpus)
       catalog <- BeautyQCanonicalSeedEvaluationCatalog.load().left.map(_ => "canonical_catalog_unavailable")
@@ -161,7 +151,6 @@ object BeautyQProtectedInputFreezeMain {
       caseIdOverlap = protectedCorpus.corpus.cases.count(current => visibleCaseIds.contains(current.caseId))
       catalogCounts = validateCatalog(protectedCorpus.corpus, catalog)
       audit <- BeautyQProtectedInputAudit.create(
-        arguments.sourceRevision,
         BeautyQProtectedInputAudit.CurrentAuthoringMethod,
         arguments.authorPassId,
         arguments.judgePassId,
@@ -189,7 +178,6 @@ object BeautyQProtectedInputFreezeMain {
       decoded <- BeautyQProtectedInputAudit.decodeString(written).left.map(_.stableCode)
       _ <- Either.cond(decoded == audit, (), "audit_round_trip_failed")
     } yield new FreezeSummary(
-      arguments.sourceRevision,
       protectedCorpus.corpusFingerprint,
       policy.fingerprint,
       protectedCorpus.caseCount,
@@ -279,23 +267,6 @@ object BeautyQProtectedInputFreezeMain {
     }
     CatalogCounts(invalidVariants, invalidProviders, invalidServiceIntents, exactCases.size, exactWithoutVariant)
   }
-
-  private def currentRevision(repositoryRoot: Path): () => Either[String, String] = () =>
-    try {
-      val process = new ProcessBuilder("git", "rev-parse", "HEAD")
-        .directory(repositoryRoot.toFile)
-        .redirectErrorStream(true)
-        .start()
-      val output = new String(process.getInputStream.readAllBytes(), StandardCharsets.UTF_8).trim
-      val exitCode = process.waitFor()
-      if (exitCode != 0 || output.isEmpty) Left("source_revision_unavailable")
-      else Right(output)
-    } catch {
-      case _: java.io.IOException => Left("source_revision_unavailable")
-      case _: InterruptedException =>
-        Thread.currentThread().interrupt()
-        Left("source_revision_unavailable")
-    }
 
   private def protectedPolicyErrorCode(error: BeautyQProtectedAcceptancePolicyError): String = error match {
     case BeautyQProtectedAcceptancePolicyError.InvalidDocument(_) => "protected_policy_invalid:invalid_document"

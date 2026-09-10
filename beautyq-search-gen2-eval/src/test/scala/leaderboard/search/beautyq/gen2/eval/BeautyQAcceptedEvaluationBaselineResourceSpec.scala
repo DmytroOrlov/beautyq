@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import scala.util.Using
 
 final class BeautyQAcceptedEvaluationBaselineResourceSpec extends AnyWordSpec {
   "BeautyQAcceptedEvaluationBaselineResource" should {
@@ -22,7 +23,6 @@ final class BeautyQAcceptedEvaluationBaselineResourceSpec extends AnyWordSpec {
         "a" * 64,
         "metric-v1",
         "evaluation-v1",
-        "commit-a",
         Vector(ProvenanceComponent.from(EvaluationProvenanceId.from("fixture").fold(error => fail(error), identity), "value").fold(error => fail(error), identity)),
         "b" * 64,
         Vector.empty,
@@ -64,14 +64,28 @@ final class BeautyQAcceptedEvaluationBaselineResourceSpec extends AnyWordSpec {
       }
     }
 
-    "fall back from a missing context loader and an absent explicit loader" in {
+    "fall back to the defining loader that resolves the promoted canonical resource" in {
       val original = Thread.currentThread().getContextClassLoader
       val defining = BeautyQAcceptedEvaluationBaselineResource.getClass.getClassLoader
       try {
         Thread.currentThread().setContextClassLoader(Option.empty[ClassLoader].orNull)
         assert(BeautyQAcceptedEvaluationBaselineResource.resolveClassLoader(None) == defining)
+        val canonicalText = new String(resourceBytes(defining), StandardCharsets.UTF_8)
+        assert(canonicalText.contains("\"average\" : 0E-12"))
         val result = BeautyQAcceptedEvaluationBaselineResource.loadCanonical(Option.empty[ClassLoader].orNull)
-        assert(result == Left(BeautyQAcceptedEvaluationBaselineResourceError.Missing))
+        val loaded = result match {
+          case Right(value) => value
+          case Left(error) => fail(s"expected the promoted canonical resource to decode, got ${error.code}")
+        }
+        val averages = loaded.aggregateObservations.flatMap(_._2.metricObservations).map(_.average)
+        assert(averages.exists(_.toString == "0E-12"))
+        assert(averages.forall(_.scale == 12))
+        val encoded = AcceptedBaselineCodec.encode(loaded)
+        val redecoded = AcceptedBaselineCodec.decode(encoded) match {
+          case Right(value) => value
+          case Left(error) => fail(s"expected deterministic re-decode, got $error")
+        }
+        assert(AcceptedBaselineCodec.encode(redecoded).noSpaces == encoded.noSpaces)
       } finally {
         Thread.currentThread().setContextClassLoader(original)
       }
@@ -121,4 +135,11 @@ final class BeautyQAcceptedEvaluationBaselineResourceSpec extends AnyWordSpec {
     override def getResourceAsStream(name: String): InputStream =
       new ByteArrayInputStream(bytes)
   }
+
+  private def resourceBytes(loader: ClassLoader): Array[Byte] =
+    Option(loader.getResourceAsStream(BeautyQAcceptedEvaluationBaselineResource.ResourcePath)) match {
+      case None => fail(s"promoted canonical resource ${BeautyQAcceptedEvaluationBaselineResource.ResourcePath} must be on the test classpath")
+      case Some(stream) =>
+        Using(stream)(_.readAllBytes()).fold(error => fail(s"failed to read the promoted canonical resource: $error"), identity)
+    }
 }

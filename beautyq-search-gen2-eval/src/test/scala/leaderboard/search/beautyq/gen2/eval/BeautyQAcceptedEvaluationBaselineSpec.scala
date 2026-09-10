@@ -196,44 +196,6 @@ final class BeautyQAcceptedEvaluationBaselineSpec extends AnyWordSpec {
       }
     }
 
-    "reject working-tree revision" in {
-      val fixture = greenFixture()
-      val revRun = measuredWithRevision("working-tree", "working-tree-default")
-      val revAcceptance = BeautyQProtectedAcceptanceResult.create(
-        passed = true,
-        fixture.policy.evaluationPolicyVersion,
-        fixture.policy.protectedAcceptancePolicyVersion,
-        fixture.policy.fingerprint,
-        fixture.protectedCorpus.corpusFingerprint,
-        fixture.protectedCorpus.caseCount,
-        revRun.protectedReportDigest,
-        Vector.empty,
-      )
-      val result = BeautyQAcceptedEvaluationBaseline.fromAcceptedProtectedRun(
-        fixture.visible, revRun, fixture.protectedCorpus, fixture.policy, revAcceptance,
-      )
-      assert(result == Left(BeautyQAcceptedEvaluationBaselineError.WorkingTreeRevision))
-    }
-
-    "reject non-system-property revision" in {
-      val fixture = greenFixture()
-      val revRun = measuredWithRevision("commit-def", "unknown-source")
-      val revAcceptance = BeautyQProtectedAcceptanceResult.create(
-        passed = true,
-        fixture.policy.evaluationPolicyVersion,
-        fixture.policy.protectedAcceptancePolicyVersion,
-        fixture.policy.fingerprint,
-        fixture.protectedCorpus.corpusFingerprint,
-        fixture.protectedCorpus.caseCount,
-        revRun.protectedReportDigest,
-        Vector.empty,
-      )
-      val result = BeautyQAcceptedEvaluationBaseline.fromAcceptedProtectedRun(
-        fixture.visible, revRun, fixture.protectedCorpus, fixture.policy, revAcceptance,
-      )
-      assert(result == Left(BeautyQAcceptedEvaluationBaselineError.NonPropertyRevision))
-    }
-
     "produce deterministic candidate JSON and digest" in {
       val fixture = greenFixture()
       val json1 = BeautyQAcceptedEvaluationBaseline.encodeCandidate(fixture.baseline)
@@ -276,7 +238,7 @@ final class BeautyQAcceptedEvaluationBaselineSpec extends AnyWordSpec {
       }
       val duplicate = json.mapObject(_.add("provenance", Json.fromValues(provenance ++ provenance)))
       assert(AcceptedBaselineCodec.decode(duplicate).isLeft)
-      val whitespace = json.mapObject(_.add("applicationRevision", Json.fromString(" commit")))
+      val whitespace = json.mapObject(_.add("evaluationPolicyVersion", Json.fromString(" commit")))
       assert(AcceptedBaselineCodec.decode(whitespace).isLeft)
     }
   }
@@ -312,8 +274,6 @@ final class BeautyQAcceptedEvaluationBaselineSpec extends AnyWordSpec {
       "corpus-fingerprint" -> ("a" * 64),
       "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
       "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
-      "application-revision" -> "commit-abc",
-      "application-revision-source" -> "system-property",
     ).foldLeft[Vector[ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
       val id = EvaluationProvenanceId.from(idText) match {
         case Right(actual) => actual
@@ -428,49 +388,6 @@ final class BeautyQAcceptedEvaluationBaselineSpec extends AnyWordSpec {
     )
   }
 
-  private def measuredWithRevision(revision: String, source: String): BeautyQMeasuredEvaluationResult = {
-    val caseId = cid("revision-case")
-    val resultId = rid("result-a")
-    val surface = BeautyQEvaluationPolicy.Variants
-    val smokeSlice = sid("smoke")
-    val judgments = RankingJudgments.from(JudgmentMode.Partial, Vector(resultId), Vector.empty, Vector.empty, Vector.empty) match {
-      case Right(value) => value
-      case Left(error) => fail(error.toString)
-    }
-    val ranking = RankingEvaluationInput.from(
-      caseId, EvaluationPartition.ProtectedHoldout, surface, Vector(smokeSlice), judgments,
-      Vector(resultId), BeautyQEvaluationPolicy.cutoffs,
-    ) match {
-      case Right(value) => RankingEvaluator.evaluate(value)
-      case Left(error) => fail(error.toString)
-    }
-    val provenance = Vector(
-      "corpus-fingerprint" -> ("a" * 64),
-      "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
-      "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
-      "application-revision" -> revision,
-      "application-revision-source" -> source,
-    ).foldLeft[Vector[ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
-      val id = EvaluationProvenanceId.from(idText) match {
-        case Right(actual) => actual
-        case Left(error) => fail(error.toString)
-      }
-      ProvenanceComponent.from(id, value) match {
-        case Right(actual) => done :+ actual
-        case Left(error) => fail(error.toString)
-      }
-    }
-    val reportInput = EvaluationReportCaseInput.from(
-      caseId, EvaluationPartition.ProtectedHoldout, JudgmentMode.Partial,
-      Some(Vector(smokeSlice)), Vector(surface -> ranking),
-    ) match {
-      case Right(value) => value
-      case Left(error) => fail(error.toString)
-    }
-    val report = EvaluationReportBuilder.build(provenance, Vector(reportInput))
-    measuredResult(report)
-  }
-
   private def decodePolicy(json: Json): BeautyQProtectedAcceptancePolicy =
     BeautyQProtectedAcceptancePolicy.fromJson(json) match {
       case Right(value) => value
@@ -502,7 +419,7 @@ final class BeautyQAcceptedEvaluationBaselineSpec extends AnyWordSpec {
       case Left(error) => fail(error)
     }
     AcceptedEvaluationBaseline.create(
-      "a" * 64, "metric-schema-v1", "evaluation-policy-v1", "commit-abc",
+      "a" * 64, "metric-schema-v1", "evaluation-policy-v1",
       Vector(provenance), "b" * 64, Vector.empty,
     ) match {
       case Right(value) => value

@@ -180,8 +180,6 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       "corpus-fingerprint" -> ("a" * 64),
       "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
       "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
-      "application-revision" -> "commit-abc",
-      "application-revision-source" -> "system-property",
     ).foldLeft[Vector[ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
       val id = EvaluationProvenanceId.from(idText) match {
         case Right(actual) => actual

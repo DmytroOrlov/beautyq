@@ -41,8 +41,6 @@ object BeautyQEvaluationExecutionError {
 }
 
 final class BeautyQEvaluationEnvironment private (
-  val applicationRevision: String,
-  val applicationRevisionSource: String,
   val snapshotCapturedAt: Instant,
   val sourceRevision: String,
   val elasticsearchVersion: String,
@@ -56,20 +54,12 @@ final class BeautyQEvaluationEnvironment private (
 )
 
 object BeautyQEvaluationEnvironment {
-  private val RevisionProperty = "search.gen2.eval.application-revision"
-
   def fromSystem(
     snapshotCapturedAt: Instant,
     sourceRevision: String,
     elasticsearchVersion: String,
     qdrantVersion: String,
   ): Either[String, BeautyQEvaluationEnvironment] = {
-    val configuredRevision = Option(System.getProperty(RevisionProperty))
-    val (revision, revisionSource) = configuredRevision match {
-      case Some(value) if value.nonEmpty && value.trim == value => value -> "system-property"
-      case Some(_) => return Left(s"$RevisionProperty must be non-empty and have no surrounding whitespace")
-      case None => "working-tree" -> "working-tree-default"
-    }
     val required = Vector(
       "sourceRevision" -> sourceRevision,
       "elasticsearchVersion" -> elasticsearchVersion,
@@ -79,8 +69,6 @@ object BeautyQEvaluationEnvironment {
       case Some((name, _)) => Left(s"$name must be non-empty and have no surrounding whitespace")
       case None =>
         Right(new BeautyQEvaluationEnvironment(
-          revision,
-          revisionSource,
           snapshotCapturedAt,
           sourceRevision,
           elasticsearchVersion,
@@ -535,8 +523,6 @@ object BeautyQMeasuredEvaluation {
       "qdrant-generation-id" -> status.qdrantGenerationId.getOrElse("missing"),
       "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
       "evaluation-policy-version" -> evaluationPolicyVersion,
-      "application-revision" -> environment.applicationRevision,
-      "application-revision-source" -> environment.applicationRevisionSource,
       "embedding-provider" -> model.provider,
       "embedding-model" -> model.model,
       "embedding-revision" -> model.revision,
@@ -642,8 +628,6 @@ object BeautyQMeasuredEvaluation {
               "embeddingTextFormatVersion" -> Json.fromString(model.textFormatVersion),
             ),
             "environment" -> Json.obj(
-              "applicationRevision" -> Json.fromString(environment.applicationRevision),
-              "applicationRevisionSource" -> Json.fromString(environment.applicationRevisionSource),
               "osName" -> Json.fromString(environment.osName),
               "osVersion" -> Json.fromString(environment.osVersion),
               "osArch" -> Json.fromString(environment.osArch),

@@ -71,8 +71,6 @@ final class BeautyQAcceptedBaselineVerificationResult private (
   val passed: Boolean,
   val candidateManifestDigest: String,
   val canonicalManifestDigest: String,
-  val candidateApplicationRevision: String,
-  val canonicalApplicationRevision: String,
   val protectedCorpusFingerprint: String,
   val evaluationPolicyVersion: String,
   val protectedPolicyFingerprint: String,
@@ -84,8 +82,6 @@ final class BeautyQAcceptedBaselineVerificationResult private (
     "passed" -> Json.fromBoolean(passed),
     "candidateManifestDigest" -> Json.fromString(candidateManifestDigest),
     "canonicalManifestDigest" -> Json.fromString(canonicalManifestDigest),
-    "candidateApplicationRevision" -> Json.fromString(candidateApplicationRevision),
-    "canonicalApplicationRevision" -> Json.fromString(canonicalApplicationRevision),
     "protectedCorpusFingerprint" -> Json.fromString(protectedCorpusFingerprint),
     "evaluationPolicyVersion" -> Json.fromString(evaluationPolicyVersion),
     "protectedPolicyFingerprint" -> Json.fromString(protectedPolicyFingerprint),
@@ -99,16 +95,14 @@ object BeautyQAcceptedBaselineVerificationResult {
     passed: Boolean,
     candidateManifestDigest: String,
     canonicalManifestDigest: String,
-    candidateApplicationRevision: String,
-    canonicalApplicationRevision: String,
     protectedCorpusFingerprint: String,
     evaluationPolicyVersion: String,
     protectedPolicyFingerprint: String,
     checks: Vector[BeautyQAcceptedBaselineVerificationCheck],
     orderedDeltas: Vector[BeautyQAcceptedBaselineDelta],
   ): BeautyQAcceptedBaselineVerificationResult = new BeautyQAcceptedBaselineVerificationResult(
-    passed, candidateManifestDigest, canonicalManifestDigest, candidateApplicationRevision,
-    canonicalApplicationRevision, protectedCorpusFingerprint, evaluationPolicyVersion,
+    passed, candidateManifestDigest, canonicalManifestDigest,
+    protectedCorpusFingerprint, evaluationPolicyVersion,
     protectedPolicyFingerprint, checks, orderedDeltas,
   )
 }
@@ -130,8 +124,6 @@ object BeautyQAcceptedBaselineVerifier {
   )
 
   private val RunSpecificProvenance = Vector(
-    "application-revision",
-    "application-revision-source",
     "elasticsearch-generation-reference",
     "qdrant-generation-id",
     "visible-report-digest",
@@ -151,8 +143,6 @@ object BeautyQAcceptedBaselineVerifier {
       equalityCheck("metric-schema-version", candidate.metricSchemaVersion, canonical.metricSchemaVersion),
       equalityCheck("evaluation-policy-version", candidate.evaluationPolicyVersion, canonical.evaluationPolicyVersion),
       equalityCheck("policy-evaluation-version", candidate.evaluationPolicyVersion, policy.evaluationPolicyVersion),
-      candidateRevisionCheck(candidate),
-      candidateRevisionSourceCheck(candidate),
       policyFingerprintCheck(candidate, policy),
     ) ++ stableProvenanceChecks(candidate.provenanceComponents, canonical.provenanceComponents) ++
       runSpecificPresenceChecks(candidate.provenanceComponents, canonical.provenanceComponents) ++
@@ -166,8 +156,6 @@ object BeautyQAcceptedBaselineVerifier {
       passed = checks.forall(_.passed),
       candidateManifestDigest = candidateDigest,
       canonicalManifestDigest = canonicalDigest,
-      candidateApplicationRevision = candidate.applicationRevision,
-      canonicalApplicationRevision = canonical.applicationRevision,
       protectedCorpusFingerprint = candidate.corpusFingerprint,
       evaluationPolicyVersion = candidate.evaluationPolicyVersion,
       protectedPolicyFingerprint = exactOne(candidate.provenanceComponents, "protected-policy-fingerprint").getOrElse("missing"),
@@ -179,19 +167,6 @@ object BeautyQAcceptedBaselineVerifier {
 
   private def equalityCheck(code: String, observed: String, expected: String): BeautyQAcceptedBaselineVerificationCheck =
     BeautyQAcceptedBaselineVerificationCheck.create(code, observed == expected, observed, expected)
-
-  private def candidateRevisionCheck(candidate: AcceptedEvaluationBaseline): BeautyQAcceptedBaselineVerificationCheck =
-    BeautyQAcceptedBaselineVerificationCheck.create(
-      "candidate-application-revision",
-      candidate.applicationRevision.nonEmpty && candidate.applicationRevision != "working-tree",
-      safeValue(candidate.applicationRevision),
-      "non-working-tree-committed-revision",
-    )
-
-  private def candidateRevisionSourceCheck(candidate: AcceptedEvaluationBaseline): BeautyQAcceptedBaselineVerificationCheck = {
-    val observed = exactOne(candidate.provenanceComponents, "application-revision-source").getOrElse("missing")
-    BeautyQAcceptedBaselineVerificationCheck.create("candidate-application-revision-source", observed == "system-property", observed, "system-property")
-  }
 
   private def policyFingerprintCheck(
     candidate: AcceptedEvaluationBaseline,

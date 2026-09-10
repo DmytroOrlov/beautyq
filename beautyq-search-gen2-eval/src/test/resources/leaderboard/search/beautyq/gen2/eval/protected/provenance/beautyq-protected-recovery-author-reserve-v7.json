@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "beautyq-protected-recovery-author-reserve-v7",
+  "authorPassId": "q2i8-recovery-rotation-8-fresh-reserve-author-v1",
+  "cases": [
+    {
+      "id": "q2i8_recovery_001",
+      "query": "gel-maniküre",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find a gel polish manicure via German phrasing",
+      "coverageBucket": "manicure",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_002",
+      "query": "pediküre shellac",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find a shellac pedicure via German phrasing",
+      "coverageBucket": "pedicure",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_003",
+      "query": "lash extensions 3d",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find noticeably fuller 3D volume lashes",
+      "coverageBucket": "lashes",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_004",
+      "query": "henna brows",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find a henna brow treatment",
+      "coverageBucket": "brows",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_005",
+      "query": "permanent eyeliner",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find permanent eyeliner make-up",
+      "coverageBucket": "pmu",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_006",
+      "query": "gesichtsreinigung",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find a facial cleansing treatment via German phrasing",
+      "coverageBucket": "facials",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_007",
+      "query": "ipl bikini",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find bikini-area hair removal with an IPL light method",
+      "coverageBucket": "hair-removal",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_008",
+      "query": "nagelmodellage acrylic",
+      "language": "de",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find an acrylic nail extension modeling",
+      "coverageBucket": "nail-modeling",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    }
+  ]
+}

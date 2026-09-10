@@ -13,11 +13,10 @@ object BeautyQAcceptedBaselineMain {
     val protectedCorpus: Path,
     val protectedPolicy: Path,
     val outputDir: Path,
-    val applicationRevision: String,
   )
 
   def parseArguments(args: Vector[String]): Either[String, Arguments] = {
-    val allowed = Set("--mode", "--protected-corpus", "--protected-policy", "--output-dir", "--application-revision")
+    val allowed = Set("--mode", "--protected-corpus", "--protected-policy", "--output-dir")
     if (args.isEmpty || args.size % 2 != 0) Left("INVALID_ARGUMENTS")
     else {
       val pairs = args.grouped(2).toVector
@@ -30,10 +29,10 @@ object BeautyQAcceptedBaselineMain {
       }) Left("INVALID_ARGUMENTS")
       else {
         val values = pairs.collect { case Vector(key, value) => key -> value }.toMap
-        (values.get("--mode"), values.get("--protected-corpus"), values.get("--protected-policy"), values.get("--output-dir"), values.get("--application-revision")) match {
-          case (Some(mode), Some(corpus), Some(policy), Some(output), Some(revision))
-              if (mode == "bootstrap" || mode == "verify") && BeautyQSearchGen2EvaluationResourceHarness.isValidApplicationRevision(revision) =>
-            Right(new Arguments(mode, Paths.get(corpus), Paths.get(policy), Paths.get(output), revision))
+        (values.get("--mode"), values.get("--protected-corpus"), values.get("--protected-policy"), values.get("--output-dir")) match {
+          case (Some(mode), Some(corpus), Some(policy), Some(output))
+              if mode == "bootstrap" || mode == "verify" =>
+            Right(new Arguments(mode, Paths.get(corpus), Paths.get(policy), Paths.get(output)))
           case _ => Left("INVALID_ARGUMENTS")
         }
       }
@@ -60,7 +59,7 @@ object BeautyQAcceptedBaselineMain {
         }
         Right(
           s"ACCEPTED_BASELINE_CANDIDATE_READY digest=${BeautyQAcceptedEvaluationBaseline.candidateDigest(candidate)} " +
-            s"applicationRevision=${candidate.applicationRevision} corpusFingerprint=${candidate.corpusFingerprint} " +
+            s"corpusFingerprint=${candidate.corpusFingerprint} " +
             s"protectedPolicyFingerprint=${policy.fingerprint} protectedReportDigest=$protectedReportDigest",
         )
       case "verify" =>
@@ -87,7 +86,6 @@ object BeautyQAcceptedBaselineMain {
       BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.protectedCorpus),
       BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.protectedPolicy),
       BeautyQProtectedPathResolution.resolveFrom(repositoryRoot, arguments.outputDir),
-      arguments.applicationRevision,
     )
 
   def main(args: Array[String]): Unit = {
@@ -101,7 +99,6 @@ object BeautyQAcceptedBaselineMain {
       resolved.protectedCorpus,
       resolved.protectedPolicy,
       resolved.outputDir,
-      resolved.applicationRevision,
     ) match {
       case Left(error) => throw new IllegalStateException(error)
       case Right(run) =>

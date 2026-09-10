@@ -39,8 +39,8 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 172 cases after all permanent break-glass migrations" in {
-      assert(corpus.cases.length == 172)
+    "have exactly 180 cases after all permanent break-glass migrations" in {
+      assert(corpus.cases.length == 180)
     }
 
     "have every case as Regression" in {

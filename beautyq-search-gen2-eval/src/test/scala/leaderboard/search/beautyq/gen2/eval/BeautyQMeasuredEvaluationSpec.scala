@@ -355,7 +355,7 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
     }
     corpus.cases match {
       case current +: _ =>
-        assert(corpus.cases.size == 172)
+        assert(corpus.cases.size == 180)
         assert(corpus.cases.forall(_.partition == EvaluationPartition.Regression))
         (corpus, current)
       case _ => fail("expected non-empty corpus")

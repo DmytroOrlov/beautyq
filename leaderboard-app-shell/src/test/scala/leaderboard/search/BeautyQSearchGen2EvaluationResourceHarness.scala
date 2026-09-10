@@ -30,7 +30,6 @@ import java.time.{Clock, Duration, Instant}
 
 /** Test-owned resource mechanics shared by visible and protected evaluation runners. */
 object BeautyQSearchGen2EvaluationResourceHarness {
-  private val ApplicationRevisionProperty = "search.gen2.eval.application-revision"
   private val PrivacySafeExcludedConstructorPrefixes = Set(
     "Some",
     "None",
@@ -60,9 +59,8 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
-    applicationRevision: String,
   ): String = {
-    executeProtectedAcceptance(protectedCorpusPath, protectedPolicyPath, outputDir, applicationRevision) match {
+    executeProtectedAcceptance(protectedCorpusPath, protectedPolicyPath, outputDir) match {
       case Right(_) => "PROTECTED_ACCEPTANCE_EVALUATION_GREEN"
       case Left(error) => error
     }
@@ -72,21 +70,15 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
-    applicationRevision: String,
   ): Either[String, ProtectedAcceptanceExecution] =
-    withApplicationRevision(applicationRevision) {
-      executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = false)
-    }
+    executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = false)
 
   private[search] def executeProtectedForBreakGlass(
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
-    applicationRevision: String,
   ): Either[String, ProtectedAcceptanceExecution] =
-    withApplicationRevision(applicationRevision) {
-      executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = true)
-    }
+    executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = true)
 
   private def executeProtectedEvaluation(
     protectedCorpusPath: Path,
@@ -173,23 +165,8 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     }
   }
 
-  private[search] def isValidApplicationRevision(value: String): Boolean =
-    value.nonEmpty && value.trim == value && value != "working-tree"
-
   private[search] def retainProtectedExecution(acceptancePassed: Boolean, retainRedExecution: Boolean): Boolean =
     acceptancePassed || retainRedExecution
-
-  private[search] def withApplicationRevision[A](applicationRevision: String)(operation: => A): A = {
-    val previous = Option(System.getProperty(ApplicationRevisionProperty))
-    System.setProperty(ApplicationRevisionProperty, applicationRevision)
-    try operation
-    finally {
-      previous match {
-        case Some(value) => System.setProperty(ApplicationRevisionProperty, value): Unit
-        case None        => System.clearProperty(ApplicationRevisionProperty): Unit
-      }
-    }
-  }
 
   def withManagedPorts[A](f: (ElasticsearchPortCfg, QdrantGen2PortCfg) => A): A = {
     BeautyQSearchGen2ResourceSupport.withExclusiveCanonicalNamespace {

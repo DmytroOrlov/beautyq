@@ -76,7 +76,7 @@ final class EvaluationReportSpec extends AnyWordSpec {
       val baselineObservation = AggregateMetricObservation.from(currentScope, BigDecimal("0.500000000000"), 1, 0)
       val candidateObservation = AggregateMetricObservation.from(currentScope, BigDecimal("0.750000000000"), 1, 0)
       val currentSchema = schema(scopes = Vector(currentScope))
-      val compared = EvaluationComparator.compare(currentSchema, currentSchema, "rev-1", Vector(surface("variants") -> section(Vector(candidateObservation))), Vector(surface("variants") -> section(Vector(baselineObservation))))
+      val compared = EvaluationComparator.compare(currentSchema, currentSchema, Vector(surface("variants") -> section(Vector(candidateObservation))), Vector(surface("variants") -> section(Vector(baselineObservation))))
       compared match {
         case Right(result) =>
           result.deltas match {
@@ -91,7 +91,7 @@ final class EvaluationReportSpec extends AnyWordSpec {
       val currentScope = scope("success")
       val schemaA = schema(scopes = Vector(currentScope))
       val schemaB = schema("b" * 64, scopes = Vector(currentScope))
-      EvaluationComparator.compare(schemaA, schemaB, "rev-1", Vector.empty, Vector.empty) match {
+      EvaluationComparator.compare(schemaA, schemaB, Vector.empty, Vector.empty) match {
         case Left(ComparisonError.CorpusFingerprintMismatch(expected, actual)) =>
           assert(expected == "b" * 64)
           assert(actual == "a" * 64)
@@ -104,11 +104,11 @@ final class EvaluationReportSpec extends AnyWordSpec {
       val base = schema(scopes = Vector(currentScope))
       val observation = AggregateMetricObservation.from(currentScope, BigDecimal("1.000000000000"), 1, 0)
       val rows = Vector(surface("variants") -> section(Vector(observation)))
-      EvaluationComparator.compare(schema(metricVersion = "metrics-v2", scopes = Vector(currentScope)), base, "rev-1", rows, rows) match {
+      EvaluationComparator.compare(schema(metricVersion = "metrics-v2", scopes = Vector(currentScope)), base, rows, rows) match {
         case Left(ComparisonError.SchemaMismatch("metrics-v1", "metrics-v2")) => ()
         case other => fail(s"expected metric schema mismatch, got $other")
       }
-      EvaluationComparator.compare(schema(policyVersion = "policy-v2", scopes = Vector(currentScope)), base, "rev-1", rows, rows) match {
+      EvaluationComparator.compare(schema(policyVersion = "policy-v2", scopes = Vector(currentScope)), base, rows, rows) match {
         case Left(ComparisonError.PolicyMismatch("policy-v1", "policy-v2")) => ()
         case other => fail(s"expected policy mismatch, got $other")
       }
@@ -123,15 +123,15 @@ final class EvaluationReportSpec extends AnyWordSpec {
       val mrrObservation = AggregateMetricObservation.from(mrr, BigDecimal("1.000000000000"), 1, 0)
       val normal = Vector(surface("variants") -> section(Vector(successObservation, mrrObservation)))
       val reversed = Vector(surface("variants") -> section(Vector(mrrObservation, successObservation)))
-      EvaluationComparator.compare(candidateSchema, baselineSchema, "rev-1", normal, normal) match {
+      EvaluationComparator.compare(candidateSchema, baselineSchema, normal, normal) match {
         case Left(ComparisonError.MetricKeyOrderMismatch(_, _)) => ()
         case other => fail(s"expected schema order mismatch, got $other")
       }
-      EvaluationComparator.compare(baselineSchema, baselineSchema, "rev-1", reversed, normal) match {
+      EvaluationComparator.compare(baselineSchema, baselineSchema, reversed, normal) match {
         case Left(ComparisonError.MetricKeyOrderMismatch(_, _)) => ()
         case other => fail(s"expected candidate observation order mismatch, got $other")
       }
-      EvaluationComparator.compare(baselineSchema, baselineSchema, "rev-1", normal, reversed) match {
+      EvaluationComparator.compare(baselineSchema, baselineSchema, normal, reversed) match {
         case Left(ComparisonError.MetricKeyOrderMismatch(_, _)) => ()
         case other => fail(s"expected baseline observation order mismatch, got $other")
       }
@@ -150,23 +150,23 @@ final class EvaluationReportSpec extends AnyWordSpec {
       val unexpected = Vector(surface("variants") -> section(Vector(successObservation, mrrObservation, extra)))
       val duplicate = Vector(surface("variants") -> section(Vector(successObservation, successObservation)))
       val mismatchedOuter = Vector(surface("providers") -> section(Vector(successObservation, mrrObservation)))
-      EvaluationComparator.compare(expected, expected, "rev-1", missing, baseline) match {
+      EvaluationComparator.compare(expected, expected, missing, baseline) match {
         case Left(ComparisonError.MetricKeyOrderMismatch(_, _)) => ()
         case other => fail(s"expected missing candidate observation, got $other")
       }
-      EvaluationComparator.compare(expected, expected, "rev-1", baseline, missing) match {
+      EvaluationComparator.compare(expected, expected, baseline, missing) match {
         case Left(ComparisonError.MetricKeyOrderMismatch(_, _)) => ()
         case other => fail(s"expected missing baseline observation, got $other")
       }
-      EvaluationComparator.compare(expected, expected, "rev-1", unexpected, baseline) match {
+      EvaluationComparator.compare(expected, expected, unexpected, baseline) match {
         case Left(ComparisonError.MetricKeyOrderMismatch(_, _)) => ()
         case other => fail(s"expected unexpected observation, got $other")
       }
-      EvaluationComparator.compare(expected, expected, "rev-1", duplicate, baseline) match {
+      EvaluationComparator.compare(expected, expected, duplicate, baseline) match {
         case Left(ComparisonError.DuplicateObservation(_, "candidate")) => ()
         case other => fail(s"expected duplicate observation, got $other")
       }
-      EvaluationComparator.compare(expected, expected, "rev-1", mismatchedOuter, baseline) match {
+      EvaluationComparator.compare(expected, expected, mismatchedOuter, baseline) match {
         case Left(ComparisonError.OuterSurfaceMismatch(_, _)) => ()
         case other => fail(s"expected outer surface mismatch, got $other")
       }

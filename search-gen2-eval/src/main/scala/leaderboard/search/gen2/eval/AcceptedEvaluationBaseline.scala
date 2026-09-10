@@ -7,7 +7,6 @@ final class AcceptedEvaluationBaseline private (
   val corpusFingerprint: String,
   val metricSchemaVersion: String,
   val evaluationPolicyVersion: String,
-  val applicationRevision: String,
   val provenanceComponents: Vector[ProvenanceComponent],
   val reportDigest: String,
   val aggregateObservations: Vector[(String, AggregateSection)],
@@ -16,11 +15,11 @@ final class AcceptedEvaluationBaseline private (
     case other: AcceptedEvaluationBaseline =>
       schemaVersion == other.schemaVersion && corpusFingerprint == other.corpusFingerprint &&
         metricSchemaVersion == other.metricSchemaVersion && evaluationPolicyVersion == other.evaluationPolicyVersion &&
-        applicationRevision == other.applicationRevision && provenanceComponents == other.provenanceComponents &&
+        provenanceComponents == other.provenanceComponents &&
         reportDigest == other.reportDigest && aggregateObservations == other.aggregateObservations
     case _ => false
   }
-  override def hashCode(): Int = (schemaVersion, corpusFingerprint, metricSchemaVersion, evaluationPolicyVersion, applicationRevision, provenanceComponents, reportDigest, aggregateObservations).hashCode
+  override def hashCode(): Int = (schemaVersion, corpusFingerprint, metricSchemaVersion, evaluationPolicyVersion, provenanceComponents, reportDigest, aggregateObservations).hashCode
 }
 
 object AcceptedEvaluationBaseline {
@@ -30,7 +29,6 @@ object AcceptedEvaluationBaseline {
     corpusFingerprint: String,
     metricSchemaVersion: String,
     evaluationPolicyVersion: String,
-    applicationRevision: String,
     provenanceComponents: Vector[ProvenanceComponent],
     reportDigest: String,
     aggregateObservations: Vector[(String, AggregateSection)],
@@ -41,10 +39,9 @@ object AcceptedEvaluationBaseline {
     else if (!isDigest(reportDigest)) Left("reportDigest must be 64 lowercase hexadecimal characters")
     else if (metricSchemaVersion.isEmpty || metricSchemaVersion.trim != metricSchemaVersion) Left("metricSchemaVersion must be non-empty and whitespace-free")
     else if (evaluationPolicyVersion.isEmpty || evaluationPolicyVersion.trim != evaluationPolicyVersion) Left("evaluationPolicyVersion must be non-empty and whitespace-free")
-    else if (applicationRevision.isEmpty || applicationRevision.trim != applicationRevision) Left("applicationRevision must be non-empty and whitespace-free")
     else if (ids.distinct.size != ids.size) Left("provenance IDs must be unique")
     else if (keys.exists(_.isEmpty) || keys.distinct.size != keys.size) Left("aggregate observation keys must be unique and non-empty")
-    else Right(new AcceptedEvaluationBaseline(CurrentSchemaVersion, corpusFingerprint, metricSchemaVersion, evaluationPolicyVersion, applicationRevision, provenanceComponents, reportDigest, aggregateObservations))
+    else Right(new AcceptedEvaluationBaseline(CurrentSchemaVersion, corpusFingerprint, metricSchemaVersion, evaluationPolicyVersion, provenanceComponents, reportDigest, aggregateObservations))
   }
 
   private def isDigest(value: String): Boolean = "^[0-9a-f]{64}$".r.matches(value)
@@ -69,7 +66,7 @@ object AcceptedBaselineDecodeError {
 }
 
 object AcceptedBaselineCodec {
-  private val RootFields = Set("schemaVersion", "corpusFingerprint", "metricSchemaVersion", "evaluationPolicyVersion", "applicationRevision", "provenance", "reportDigest", "aggregateObservations")
+  private val RootFields = Set("schemaVersion", "corpusFingerprint", "metricSchemaVersion", "evaluationPolicyVersion", "provenance", "reportDigest", "aggregateObservations")
   private val ProvenanceFields = Set("id", "value")
   private val ObservationFields = Set("key", "section")
   private val SectionFields = Set("structuralInvalidCount", "duplicateIdentityCount", "zeroResultCount", "forbiddenHitCount", "applicableMetricCount", "notApplicableMetricCount", "metricObservations")
@@ -81,7 +78,6 @@ object AcceptedBaselineCodec {
     "corpusFingerprint" -> Json.fromString(baseline.corpusFingerprint),
     "metricSchemaVersion" -> Json.fromString(baseline.metricSchemaVersion),
     "evaluationPolicyVersion" -> Json.fromString(baseline.evaluationPolicyVersion),
-    "applicationRevision" -> Json.fromString(baseline.applicationRevision),
     "provenance" -> Json.fromValues(baseline.provenanceComponents.map(pc => Json.obj("id" -> Json.fromString(pc.id.value), "value" -> Json.fromString(pc.value)))),
     "reportDigest" -> Json.fromString(baseline.reportDigest),
     "aggregateObservations" -> Json.fromValues(baseline.aggregateObservations.map { case (key, section) => Json.obj("key" -> Json.fromString(key), "section" -> encodeSection(section)) }),
@@ -95,13 +91,12 @@ object AcceptedBaselineCodec {
     fingerprint <- digest(root, "corpusFingerprint")
     metricSchema <- version(root, "metricSchemaVersion")
     policy <- version(root, "evaluationPolicyVersion")
-    revision <- version(root, "applicationRevision")
     provenance <- array(root, "provenance")
     provenanceComponents <- decodeProvenance(provenance)
     reportDigest <- digest(root, "reportDigest")
     observationJson <- array(root, "aggregateObservations")
     observations <- decodeObservations(observationJson)
-    result <- AcceptedEvaluationBaseline.create(fingerprint, metricSchema, policy, revision, provenanceComponents, reportDigest, observations)
+    result <- AcceptedEvaluationBaseline.create(fingerprint, metricSchema, policy, provenanceComponents, reportDigest, observations)
       .left.map(AcceptedBaselineDecodeError.ParseError.apply)
   } yield result
 
@@ -166,10 +161,10 @@ object AcceptedBaselineCodec {
           cutoffValue <- int(obj, "cutoff")
           cutoff <- EvaluationCutoff.from(cutoffValue).left.map(AcceptedBaselineDecodeError.ParseError.apply)
           average <- decimal(obj, "average")
-          _ <- validateScale(average, "average")
+          normalizedAverage <- normalizeScale(average, "average")
           applicable <- nonNegativeInt(obj, "applicableCount")
           notApplicable <- nonNegativeInt(obj, "notApplicableCount")
-          observation = AggregateMetricObservation.from(MetricKeyScope.from(surface, metric, cutoff), average, applicable, notApplicable)
+          observation = AggregateMetricObservation.from(MetricKeyScope.from(surface, metric, cutoff), normalizedAverage, applicable, notApplicable)
           _ <- Either.cond(!current.exists(_.scope == observation.scope), (), AcceptedBaselineDecodeError.DuplicateObservationKey(s"$surfaceText/$metricText/$cutoffValue"))
         } yield current :+ observation
       }
@@ -201,5 +196,7 @@ object AcceptedBaselineCodec {
   private def decimal(obj: JsonObject, name: String): Either[AcceptedBaselineDecodeError, BigDecimal] = obj(name).flatMap(_.asNumber).flatMap(_.toBigDecimal).toRight(AcceptedBaselineDecodeError.MissingOrInvalidField(name))
   private def digest(obj: JsonObject, name: String): Either[AcceptedBaselineDecodeError, String] = string(obj, name).flatMap(value => if ("^[0-9a-f]{64}$".r.matches(value)) Right(value) else Left(AcceptedBaselineDecodeError.InvalidFingerprintDigest(name, value)))
   private def version(obj: JsonObject, name: String): Either[AcceptedBaselineDecodeError, String] = string(obj, name).flatMap(value => if (value.isEmpty) Left(AcceptedBaselineDecodeError.EmptyVersionString(name)) else if (value.trim != value) Left(AcceptedBaselineDecodeError.WhitespaceVersionString(name)) else Right(value))
-  private def validateScale(value: BigDecimal, name: String): Either[AcceptedBaselineDecodeError, Unit] = if (value.scale == Scale) Right(()) else Left(AcceptedBaselineDecodeError.InvalidScale(name, value.toString))
+  private def normalizeScale(value: BigDecimal, name: String): Either[AcceptedBaselineDecodeError, BigDecimal] =
+    try Right(value.setScale(Scale, BigDecimal.RoundingMode.UNNECESSARY))
+    catch { case _: ArithmeticException => Left(AcceptedBaselineDecodeError.InvalidScale(name, value.toString)) }
 }

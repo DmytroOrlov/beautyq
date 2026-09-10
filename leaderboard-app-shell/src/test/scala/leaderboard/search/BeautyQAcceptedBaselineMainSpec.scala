@@ -11,13 +11,12 @@ import java.nio.file.{Files, Path, Paths}
 
 final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
   "BeautyQAcceptedBaselineMain" should {
-    "accept each valid mode and all four required input values" in {
+    "accept each valid mode and all required input values" in {
       val parsed = BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "bootstrap",
         "--protected-corpus", "private/corpus.json",
         "--protected-policy", "private/policy.json",
         "--output-dir", "target/out",
-        "--application-revision", "commit-visible-123",
       ))
       parsed match {
         case Right(arguments) =>
@@ -25,7 +24,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
           assert(arguments.protectedCorpus.toString == "private/corpus.json")
           assert(arguments.protectedPolicy.toString == "private/policy.json")
           assert(arguments.outputDir.toString == "target/out")
-          assert(arguments.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
       val verify = BeautyQAcceptedBaselineMain.parseArguments(Vector(
@@ -33,7 +31,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-corpus", "private/corpus.json",
         "--protected-policy", "private/policy.json",
         "--output-dir", "target/out",
-        "--application-revision", "commit-visible-123",
       ))
       verify match {
         case Right(arguments) => assert(arguments.mode == "verify")
@@ -41,14 +38,13 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
       }
     }
 
-    "reject unknown, duplicate, missing and unsupported mode arguments" in {
+    "reject unknown, duplicate and unsupported mode arguments" in {
       assert(BeautyQAcceptedBaselineMain.parseArguments(Vector.empty).isLeft)
       assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "other",
         "--protected-corpus", "c",
         "--protected-policy", "p",
         "--output-dir", "o",
-        "--application-revision", "commit-visible-123",
       )).isLeft)
       assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "verify",
@@ -63,42 +59,17 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-policy", "p",
         "--output-dir", "o",
         "--canonical-manifest", "manifest.json",
-        "--application-revision", "commit-visible-123",
       )).isLeft)
       assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "bootstrap",
         "--protected-corpus", "c",
         "--protected-policy", "p",
-        "--output-dir", "o",
+        "--output-dir", " ",
       )).isLeft)
       assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
         "--mode", "bootstrap",
         "--protected-corpus", "c",
         "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", " ",
-      )).isLeft)
-      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
-        "--mode", "bootstrap",
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", " commit-visible-123",
-      )).isLeft)
-      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
-        "--mode", "bootstrap",
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", "working-tree",
-      )).isLeft)
-      assert(BeautyQAcceptedBaselineMain.parseArguments(Vector(
-        "--mode", "bootstrap",
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", "commit-visible-123",
-        "--application-revision", "commit-visible-456",
       )).isLeft)
     }
 
@@ -198,7 +169,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         case Right(message) =>
           assert(message.startsWith("ACCEPTED_BASELINE_CANDIDATE_READY"))
           assert(message.contains(s"digest=${leaderboard.search.beautyq.gen2.eval.BeautyQAcceptedEvaluationBaseline.candidateDigest(candidate)}"))
-          assert(message.contains(s"applicationRevision=${candidate.applicationRevision}"))
           assert(message.contains(s"corpusFingerprint=${candidate.corpusFingerprint}"))
           assert(message.contains(s"protectedPolicyFingerprint=${policy.fingerprint}"))
           assert(message.contains("protectedReportDigest=" + ("f" * 64)))
@@ -216,7 +186,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-corpus",
         "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json",
         "--output-dir", "target/search-gen2/protected",
-        "--application-revision", "commit-visible-123",
       )) match {
         case Right(arguments) =>
           val resolved = BeautyQAcceptedBaselineMain.resolveArgumentsFrom(root, arguments)
@@ -231,7 +200,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
           assert(!resolved.protectedCorpus.toString.contains("leaderboard-app-shell"))
           assert(resolved.outputDir.toString.endsWith("target/search-gen2/protected"))
           assert(!resolved.outputDir.toString.contains("leaderboard-app-shell"))
-          assert(resolved.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
     }
@@ -244,14 +212,12 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-policy", absoluteDir + "/policy.json",
         "--protected-corpus", absoluteDir + "/corpus.json",
         "--output-dir", absoluteDir + "/output",
-        "--application-revision", "commit-visible-123",
       )) match {
         case Right(arguments) =>
           val resolved = BeautyQAcceptedBaselineMain.resolveArgumentsFrom(root, arguments)
           assert(resolved.protectedPolicy.isAbsolute)
           assert(resolved.protectedCorpus.isAbsolute)
           assert(resolved.outputDir.isAbsolute)
-          assert(resolved.applicationRevision == "commit-visible-123")
           assert(resolved.mode == "verify")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
@@ -275,7 +241,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
         "--protected-policy",
         "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json",
         "--output-dir", "target/search-gen2/protected",
-        "--application-revision", "commit-visible-123",
       )) match {
         case Right(arguments) =>
           val resolved = BeautyQAcceptedBaselineMain.resolveArgumentsFrom(root, arguments)
@@ -329,7 +294,7 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
   private def fixture(): AcceptedEvaluationBaseline = {
     val id = EvaluationProvenanceId.from("fixture").fold(error => fail(error), identity)
     val provenance = ProvenanceComponent.from(id, "value").fold(error => fail(error), identity)
-    AcceptedEvaluationBaseline.create("a" * 64, "metric-v1", "evaluation-v1", "commit-a", Vector(provenance), "b" * 64, Vector.empty)
+    AcceptedEvaluationBaseline.create("a" * 64, "metric-v1", "evaluation-v1", Vector(provenance), "b" * 64, Vector.empty)
       .fold(error => fail(error), identity)
   }
 
@@ -347,8 +312,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
       "embedding-text-format-version" -> "v1",
       "elasticsearch-version" -> "8",
       "qdrant-version" -> "1.18.3",
-      "application-revision" -> "commit-a",
-      "application-revision-source" -> "system-property",
       "elasticsearch-generation-reference" -> "es-a",
       "qdrant-generation-id" -> "q-a",
       "visible-report-digest" -> ("e" * 64),
@@ -363,7 +326,6 @@ final class BeautyQAcceptedBaselineMainSpec extends AnyWordSpec {
       "corpusFingerprint" -> Json.fromString("a" * 64),
       "metricSchemaVersion" -> Json.fromString("metric-v1"),
       "evaluationPolicyVersion" -> Json.fromString("evaluation-v1"),
-      "applicationRevision" -> Json.fromString("commit-a"),
       "provenance" -> Json.fromValues(provenance.map(component => Json.obj(
         "id" -> Json.fromString(component.id.value),
         "value" -> Json.fromString(component.value),

@@ -1,7 +1,6 @@
 {
   "schemaVersion": "beautyq-protected-author-draft-v1",
-  "sourceRevision": "6652582525071773fbc14d02b0e081e58e8ef2ac",
-  "authorPassId": "q2i7-recovery-rotation-7-fresh-reserve-author-v3",
+  "authorPassId": "q2i8-recovery-rotation-8-fresh-reserve-author-v1",
   "cases": [
     {
       "id": "q2i2_case_009",
@@ -180,91 +179,91 @@
       ]
     },
     {
-      "id": "q2i7_recovery_065",
-      "query": "Maniküre mit Shellac-Lack und Ablöse",
+      "id": "q2i8_recovery_001",
+      "query": "gel-maniküre",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Manicure with shellac polish including prior gel removal",
+      "userIntent": "Find a gel polish manicure via German phrasing",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_066",
-      "query": "Pedicure with gel polish",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Pedicure with gel polish coating",
-      "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_067",
-      "query": "Wimpernverlängerung Volumen 2D",
+      "id": "q2i8_recovery_002",
+      "query": "pediküre shellac",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Lash extension with 2D volume",
+      "userIntent": "Find a shellac pedicure via German phrasing",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_068",
-      "query": "Brow lamination with tinting",
+      "id": "q2i8_recovery_003",
+      "query": "lash extensions 3d",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Brow lamination including tinting",
+      "userIntent": "Find noticeably fuller 3D volume lashes",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_069",
-      "query": "Permanent Make-Up Lippen mit Korrektur",
+      "id": "q2i8_recovery_004",
+      "query": "henna brows",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find a henna brow treatment",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_005",
+      "query": "permanent eyeliner",
+      "language": "en",
+      "primarySlice": "exact-intent",
+      "additionalSlices": [],
+      "userIntent": "Find permanent eyeliner make-up",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ]
+    },
+    {
+      "id": "q2i8_recovery_006",
+      "query": "gesichtsreinigung",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "PMU lips with one included correction",
+      "userIntent": "Find a facial cleansing treatment via German phrasing",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_073",
-      "query": "Microneedling facial session for face",
+      "id": "q2i8_recovery_007",
+      "query": "ipl bikini",
       "language": "en",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Single microneedling facial treatment session covering the face",
+      "userIntent": "Find bikini-area hair removal with an IPL light method",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ]
     },
     {
-      "id": "q2i7_recovery_071",
-      "query": "Laser Haarentfernung Bikinizone",
+      "id": "q2i8_recovery_008",
+      "query": "nagelmodellage acrylic",
       "language": "de",
       "primarySlice": "exact-intent",
       "additionalSlices": [],
-      "userIntent": "Laser hair removal for the bikini area",
+      "userIntent": "Find an acrylic nail extension modeling",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
-      ]
-    },
-    {
-      "id": "q2i7_recovery_072",
-      "query": "Nail extension refill with correction",
-      "language": "en",
-      "primarySlice": "exact-intent",
-      "additionalSlices": [],
-      "userIntent": "Nail extension refill with correction",
-      "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ]
     }
   ]

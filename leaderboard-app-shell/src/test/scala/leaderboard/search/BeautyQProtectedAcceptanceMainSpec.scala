@@ -1,10 +1,8 @@
 package leaderboard.search
 
-import leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationEnvironment
 import org.scalatest.wordspec.AnyWordSpec
 import java.nio.file.{Files, Paths}
 import java.nio.charset.StandardCharsets
-import java.time.Instant
 
 final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
   private final case class SyntheticRoot(
@@ -26,19 +24,17 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
   private final case class Constructor9(sentinel: String)
 
   "BeautyQProtectedAcceptanceMain" should {
-    "parse exactly the four required option/value pairs" in {
+    "parse exactly the three required option/value pairs" in {
       val parsed = BeautyQProtectedAcceptanceMain.parseArguments(Vector(
         "--protected-policy", "policy.json",
         "--protected-corpus", "corpus.json",
         "--output-dir", "out",
-        "--application-revision", "commit-visible-123",
       ))
       parsed match {
         case Right(arguments) =>
           assert(arguments.protectedPolicy.toString == "policy.json")
           assert(arguments.protectedCorpus.toString == "corpus.json")
           assert(arguments.outputDir.toString == "out")
-          assert(arguments.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
     }
@@ -60,37 +56,10 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         "--protected-corpus", " ",
         "--protected-policy", "p",
         "--output-dir", "o",
-        "--application-revision", "commit-visible-123",
       )).isLeft)
       assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
         "--protected-corpus", "c",
         "--protected-policy", "p",
-        "--output-dir", "o",
-      )).isLeft)
-      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", " ",
-      )).isLeft)
-      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", " commit-visible-123",
-      )).isLeft)
-      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", "working-tree",
-      )).isLeft)
-      assert(BeautyQProtectedAcceptanceMain.parseArguments(Vector(
-        "--protected-corpus", "c",
-        "--protected-policy", "p",
-        "--output-dir", "o",
-        "--application-revision", "commit-visible-123",
-        "--application-revision", "commit-visible-456",
       )).isLeft)
     }
 
@@ -99,7 +68,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         Paths.get("target/search-gen2/private/missing-protected-corpus.json"),
         Paths.get("target/search-gen2/private/missing-protected-policy.json"),
         Paths.get("target/search-gen2/protected-test-output"),
-        "commit-visible-123",
       )
       assert(result.startsWith("PRODUCT_INPUT_REQUIRED"))
     }
@@ -113,7 +81,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         Paths.get("target/search-gen2/private/missing-protected-corpus.json"),
         policyPath,
         Paths.get("target/search-gen2/protected-test-output"),
-        "commit-visible-123",
       )
       val cleanup = () => {
         Files.deleteIfExists(policyPath): Unit
@@ -147,7 +114,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
           "--protected-corpus", absentPath.toString,
           "--protected-policy", absentPath.toString,
           "--output-dir", outputDir.toString,
-          "--application-revision", "commit-visible-123",
         ))
       }
       val message = exception.getMessage
@@ -230,47 +196,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
       assert(!path.contains("Constructor9"))
     }
 
-    "propagate and restore the application revision property around evaluation setup" in {
-      val property = "search.gen2.eval.application-revision"
-      val original = Option(System.getProperty(property))
-      try {
-        System.setProperty(property, "previous-visible-456")
-        val environment = BeautyQSearchGen2EvaluationResourceHarness.withApplicationRevision("commit-visible-123") {
-          BeautyQEvaluationEnvironment.fromSystem(Instant.EPOCH, "source", "elasticsearch", "qdrant") match {
-            case Right(value) => value
-            case Left(error) => fail(s"expected environment, got $error")
-          }
-        }
-        assert(environment.applicationRevision == "commit-visible-123")
-        assert(environment.applicationRevisionSource == "system-property")
-        assert(Option(System.getProperty(property)).contains("previous-visible-456"))
-
-        System.clearProperty(property)
-        val absentEnvironment = BeautyQSearchGen2EvaluationResourceHarness.withApplicationRevision("commit-visible-123") {
-          BeautyQEvaluationEnvironment.fromSystem(Instant.EPOCH, "source", "elasticsearch", "qdrant") match {
-            case Right(value) => value
-            case Left(error) => fail(s"expected environment, got $error")
-          }
-        }
-        assert(absentEnvironment.applicationRevision == "commit-visible-123")
-        assert(absentEnvironment.applicationRevisionSource == "system-property")
-        assert(Option(System.getProperty(property)).isEmpty)
-
-        System.setProperty(property, "previous-visible-456")
-        intercept[IllegalStateException] {
-          BeautyQSearchGen2EvaluationResourceHarness.withApplicationRevision("commit-visible-123") {
-            throw new IllegalStateException("synthetic evaluation failure")
-          }
-        }
-        assert(Option(System.getProperty(property)).contains("previous-visible-456"))
-      } finally {
-        original match {
-          case Some(value) => System.setProperty(property, value): Unit
-          case None        => System.clearProperty(property): Unit
-        }
-      }
-    }
-
     "resolve arguments from the repository root instead of the forked working directory" in {
       val root = BeautyQProtectedPathResolution.locateRepositoryRoot(Paths.get(".").toAbsolutePath.normalize)
       BeautyQProtectedAcceptanceMain.parseArguments(Vector(
@@ -279,7 +204,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         "--protected-corpus",
         "beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json",
         "--output-dir", "target/search-gen2/protected",
-        "--application-revision", "commit-visible-123",
       )) match {
         case Right(arguments) =>
           val resolved = BeautyQProtectedAcceptanceMain.resolveArgumentsFrom(root, arguments)
@@ -293,26 +217,23 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
           assert(!resolved.protectedCorpus.toString.contains("leaderboard-app-shell"))
           assert(resolved.outputDir.toString.endsWith("target/search-gen2/protected"))
           assert(!resolved.outputDir.toString.contains("leaderboard-app-shell"))
-          assert(resolved.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
     }
 
-    "preserve absolute paths and application revision during argument resolution" in {
+    "preserve absolute paths during argument resolution" in {
       val root = BeautyQProtectedPathResolution.locateRepositoryRoot(Paths.get(".").toAbsolutePath.normalize)
       val absoluteDir = Paths.get("/tmp/absolute-dir").toAbsolutePath.normalize.toString
       BeautyQProtectedAcceptanceMain.parseArguments(Vector(
         "--protected-policy", absoluteDir + "/policy.json",
         "--protected-corpus", absoluteDir + "/corpus.json",
         "--output-dir", absoluteDir + "/output",
-        "--application-revision", "commit-visible-123",
       )) match {
         case Right(arguments) =>
           val resolved = BeautyQProtectedAcceptanceMain.resolveArgumentsFrom(root, arguments)
           assert(resolved.protectedPolicy.isAbsolute)
           assert(resolved.protectedCorpus.isAbsolute)
           assert(resolved.outputDir.isAbsolute)
-          assert(resolved.applicationRevision == "commit-visible-123")
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
     }
@@ -323,7 +244,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
           "--protected-corpus", "target/codex-sbt/absent-protected-input.json",
           "--protected-policy", "target/codex-sbt/absent-protected-input.json",
           "--output-dir", "target/codex-sbt/protected-main-test-output",
-          "--application-revision", "commit-visible-123",
         ))
       }
       val message = exception.getMessage

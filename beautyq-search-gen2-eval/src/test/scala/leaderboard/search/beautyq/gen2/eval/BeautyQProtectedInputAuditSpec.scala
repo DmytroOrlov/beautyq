@@ -30,7 +30,7 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
     "reject unknown and missing fields" in {
       val json = validFixture().audit.toJson
       assert(BeautyQProtectedInputAudit.decode(json.mapObject(_.add("unexpected", Json.fromString("x")))).isLeft)
-      assert(BeautyQProtectedInputAudit.decode(json.mapObject(_.remove("sourceRevision"))).isLeft)
+      assert(BeautyQProtectedInputAudit.decode(json.mapObject(_.remove("authoringMethod"))).isLeft)
       assert(BeautyQProtectedInputAudit.decode(json.mapObject(_.add("schemaVersion", Json.fromString("beautyq-protected-input-audit-v1")))).isLeft)
     }
 
@@ -47,9 +47,8 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       assert(BeautyQProtectedInputAudit.decode(tooMany).left.exists(_.stableCode == "exact_intent_inventory_mismatch"))
     }
 
-    "reject invalid revision, hashes, pass identities and visible leakage" in {
+    "reject invalid hashes, pass identities and visible leakage" in {
       val fixture = validFixture()
-      assert(create(fixture, sourceRevision = "not-a-revision").isLeft)
       assert(create(fixture, corpusHash = "bad").isLeft)
       assert(create(fixture, policyHash = "bad").isLeft)
       assert(create(fixture, authorPassId = " ").isLeft)
@@ -97,8 +96,7 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
 
       val author = BeautyQProtectedAuthorDraft.decodeString(authorRaw).fold(error => fail(error), identity)
       assert(author.schemaVersion == BeautyQProtectedAuthorDraft.CurrentSchemaVersion)
-      assert(author.sourceRevision == "6652582525071773fbc14d02b0e081e58e8ef2ac")
-      assert(author.authorPassId == "q2i7-recovery-rotation-7-fresh-reserve-author-v3")
+      assert(author.authorPassId == "q2i8-recovery-rotation-8-fresh-reserve-author-v1")
       assert(author.cases.size == 24)
       assert(BeautyQProtectedAuthorDraft.correspondsTo(author, protectedCorpus).isRight)
       assert(authorRaw != judgedRaw)
@@ -111,10 +109,9 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       val audit = BeautyQProtectedInputAudit.decodeString(readResource(AuditResource)).fold(error => fail(error.stableCode), identity)
       val corpus = BeautyQEvaluationCorpus.loadCanonical().fold(error => fail(error.toString), identity)
       val policy = BeautyQProtectedAcceptancePolicy.load(resourcePath(PolicyResource)).fold(error => fail(error.toString), identity)
-      assert(audit.sourceRevision == "6652582525071773fbc14d02b0e081e58e8ef2ac")
-      assert(audit.authorPassId == "q2i7-recovery-rotation-7-fresh-reserve-author-v3")
-      assert(audit.judgePassId == "q2i7-recovery-rotation-7-fresh-reserve-judge-v3")
-      assert(audit.auditPassId == "q2i7-recovery-rotation-7-input-freeze-audit-v1")
+      assert(audit.authorPassId == "q2i8-recovery-rotation-8-fresh-reserve-author-v1")
+      assert(audit.judgePassId == "q2i8-recovery-rotation-8-fresh-reserve-judge-v1")
+      assert(audit.auditPassId == "q2i8-recovery-rotation-8-input-freeze-audit-v1")
       assert(Vector(audit.authorPassId, audit.judgePassId, audit.auditPassId).distinct.size == 3)
       assert(audit.protectedCaseCount == 24)
       assert(audit.orderedRequiredSliceCounts.map { case (slice, count) => slice.value -> count } == Vector(
@@ -145,15 +142,15 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       assert(audit.protectedCorpusFingerprint.length == 64)
       assert(audit.protectedPolicyFingerprint.length == 64)
       assert(audit.protectedCorpusFingerprint ==
-        "ce020b49d28d4c1c45ee6abfc0959678a920e2fb6e2dc676e7b72525a272ac50")
+        "c86815df77acecb6ea7797e7717f5acbc39d23e12495526c3e82df1742daff97")
       assert(audit.protectedPolicyFingerprint ==
-        "89189e9400b870a86b50acfeb90a10b8cd31e66b913867ba05427cb826619c73")
+        "7ed2fdf3cf2d4762d726f429f3c4a3315d803b6a02154efa6796a93e1e416fd5")
     }
 
     "close direct construction, copy and subclassing" in {
       assertDoesNotCompile("""
         new leaderboard.search.beautyq.gen2.eval.BeautyQProtectedInputAudit(
-          "beautyq-protected-input-audit-v2", "a" * 40,
+          "beautyq-protected-input-audit-v2",
           "model-assisted-separated-passes-v1", "author", "judge", "audit",
           "b" * 64, "c" * 64, "d" * 64, "e" * 64,
           "f" * 64, "g" * 64, "h" * 64, 2,
@@ -168,7 +165,7 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       """)
       assertDoesNotCompile("""
         final class Forged extends leaderboard.search.beautyq.gen2.eval.BeautyQProtectedInputAudit(
-          "beautyq-protected-input-audit-v2", "a" * 40,
+          "beautyq-protected-input-audit-v2",
           "model-assisted-separated-passes-v1", "author", "judge", "audit",
           "b" * 64, "c" * 64, "d" * 64, "e" * 64,
           "f" * 64, "g" * 64, "h" * 64, 2,
@@ -199,7 +196,6 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
       case Left(error) => fail(s"expected protected fixture, got $error")
     }
     val audit = BeautyQProtectedInputAudit.create(
-      "a" * 40,
       BeautyQProtectedInputAudit.CurrentAuthoringMethod,
       "q2i-author-v1",
       "q2i-judge-v1",
@@ -230,7 +226,6 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
 
   private def create(
     fixture: Fixture,
-    sourceRevision: String = "a" * 40,
     corpusHash: String = "b" * 64,
     policyHash: String = "c" * 64,
     authorPassId: String = "q2i-author-v1",
@@ -249,7 +244,6 @@ final class BeautyQProtectedInputAuditSpec extends AnyWordSpec {
     canonicalSourceFingerprint: String = "f" * 64,
   ): Either[BeautyQProtectedInputAuditError, BeautyQProtectedInputAudit] =
     BeautyQProtectedInputAudit.create(
-      sourceRevision,
       BeautyQProtectedInputAudit.CurrentAuthoringMethod,
       authorPassId,
       judgePassId,

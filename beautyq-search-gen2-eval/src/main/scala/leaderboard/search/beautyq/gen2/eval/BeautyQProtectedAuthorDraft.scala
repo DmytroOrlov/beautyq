@@ -9,7 +9,6 @@ import java.nio.file.{Files, Path}
 /** Strict author-only projection for a frozen protected query inventory. */
 final class BeautyQProtectedAuthorDraft private (
   val schemaVersion: String,
-  val sourceRevision: String,
   val authorPassId: String,
   val cases: Vector[BeautyQProtectedAuthorDraft.Case],
 ) {
@@ -28,8 +27,7 @@ object BeautyQProtectedAuthorDraft {
   )
 
   val CurrentSchemaVersion = "beautyq-protected-author-draft-v1"
-  private val RevisionPattern = "^[0-9a-f]{40}$".r
-  private val RootFields = Set("schemaVersion", "sourceRevision", "authorPassId", "cases")
+  private val RootFields = Set("schemaVersion", "authorPassId", "cases")
   private val CaseFields = Set("id", "query", "language", "primarySlice", "additionalSlices", "userIntent", "notes")
 
   def load(path: Path): Either[String, BeautyQProtectedAuthorDraft] =
@@ -47,8 +45,6 @@ object BeautyQProtectedAuthorDraft {
     _ <- exactFields(root, RootFields, "author_draft")
     schema <- string(root, "schemaVersion")
     _ <- Either.cond(schema == CurrentSchemaVersion, (), "author_draft_schema_mismatch")
-    revision <- string(root, "sourceRevision")
-    _ <- Either.cond(RevisionPattern.matches(revision), (), "author_draft_revision_invalid")
     authorPassId <- string(root, "authorPassId")
     _ <- nonBlank(authorPassId, "author_draft_pass_invalid")
     casesJson <- root("cases").flatMap(_.asArray).toRight("author_draft_cases_invalid")
@@ -58,7 +54,7 @@ object BeautyQProtectedAuthorDraft {
     _ <- Either.cond(cases.nonEmpty, (), "author_draft_cases_empty")
     _ <- Either.cond(cases.map(_.id).distinct.size == cases.size, (), "author_draft_duplicate_case_id")
     _ <- Either.cond(cases.map(_.query).distinct.size == cases.size, (), "author_draft_duplicate_query")
-  } yield new BeautyQProtectedAuthorDraft(schema, revision, authorPassId, cases)
+  } yield new BeautyQProtectedAuthorDraft(schema, authorPassId, cases)
 
   def correspondsTo(
     draft: BeautyQProtectedAuthorDraft,
@@ -112,7 +108,6 @@ object BeautyQProtectedAuthorDraft {
   private def encode(value: BeautyQProtectedAuthorDraft): Json =
     Json.obj(
       "schemaVersion" -> Json.fromString(value.schemaVersion),
-      "sourceRevision" -> Json.fromString(value.sourceRevision),
       "authorPassId" -> Json.fromString(value.authorPassId),
       "cases" -> Json.fromValues(value.cases.map { current =>
         Json.obj(

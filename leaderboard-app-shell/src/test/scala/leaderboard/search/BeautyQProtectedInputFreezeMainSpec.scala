@@ -16,14 +16,13 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
   private lazy val testRoot = repositoryRoot(Paths.get(".").toAbsolutePath.normalize)
 
   "BeautyQProtectedInputFreezeMain" should {
-    "parse the exact nine options" in {
+    "parse the exact eight options" in {
       parse(validArguments()) match {
         case Right(arguments) =>
           assert(arguments.protectedCorpus.toString == "target/codex-sbt/freeze-corpus.json")
           assert(arguments.protectedPolicy.toString == "target/codex-sbt/freeze-policy.json")
           assert(arguments.authorDraft.toString == "target/codex-sbt/freeze-author.json")
           assert(arguments.judgedDraft.toString == "target/codex-sbt/freeze-judged.json")
-          assert(arguments.sourceRevision == "a" * 40)
         case Left(error) => fail(s"expected valid arguments, got $error")
       }
     }
@@ -37,8 +36,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       assert(parse(validArguments().updated(1, " padded ")).isLeft)
     }
 
-    "reject invalid revision and identical pass identities" in {
-      assert(parse(replaceValue(validArguments(), "--source-revision", "bad")).isLeft)
+    "reject identical pass identities" in {
       assert(parse(replaceValue(validArguments(), "--judge-pass-id", "author-pass")).isLeft)
     }
 
@@ -59,7 +57,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       Files.writeString(fixture.audit, "existing", StandardCharsets.UTF_8)
       try {
         val arguments = parseOrFail(argumentsFor(fixture))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => throw new AssertionError("revision reader must not run")) == Left("audit_output_already_exists"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot) == Left("audit_output_already_exists"))
       } finally cleanup(fixture)
     }
 
@@ -68,7 +66,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       prepareFixture(fixture)
       try {
         val arguments = parseOrFail(argumentsFor(fixture))
-        BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right(arguments.sourceRevision)) match {
+        BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot) match {
           case Right(summary) =>
             assert(Files.isRegularFile(fixture.audit))
             assert(summary.protectedCaseCount == 1)
@@ -96,7 +94,7 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       try {
         Files.deleteIfExists(missing.authorDraft): Unit
         val arguments = parseOrFail(argumentsFor(missing))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right(arguments.sourceRevision)) == Left("author_draft_invalid"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot) == Left("author_draft_invalid"))
       } finally cleanup(missing)
 
       val empty = fixturePaths("empty-draft")
@@ -104,19 +102,8 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
       try {
         Files.writeString(empty.judgedDraft, "", StandardCharsets.UTF_8)
         val arguments = parseOrFail(argumentsFor(empty))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right(arguments.sourceRevision)) == Left("judged_draft_invalid"))
+        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot) == Left("judged_draft_invalid"))
       } finally cleanup(empty)
-    }
-
-    "require the declared revision to match the supplied current-revision seam" in {
-      val fixture = fixturePaths("revision")
-      prepareFixture(fixture)
-      try {
-        val arguments = parseOrFail(argumentsFor(fixture))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right("b" * 40)) == Left("source_revision_mismatch"))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Right("not-a-revision")) == Left("invalid_current_revision"))
-        assert(BeautyQProtectedInputFreezeMain.freezeAt(arguments, testRoot, () => Left("source_revision_unavailable")) == Left("source_revision_unavailable"))
-      } finally cleanup(fixture)
     }
 
     "bind each judgment surface to the canonical typed catalog" in {
@@ -255,7 +242,6 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
           authorDraftPath,
           judgedDraftPath,
           temporaryAudit,
-          audit.sourceRevision,
           audit.authorPassId,
           audit.judgePassId,
           audit.auditPassId,
@@ -263,7 +249,6 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
         BeautyQProtectedInputFreezeMain.freezeAt(
           arguments,
           root,
-          () => Right(audit.sourceRevision),
         ) match {
           case Right(summary) =>
             val expectedBytes = Files.readAllBytes(auditPath).toVector
@@ -361,7 +346,6 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
 
   private def authorDraftJson(): Json = Json.obj(
     "schemaVersion" -> Json.fromString("beautyq-protected-author-draft-v1"),
-    "sourceRevision" -> Json.fromString("a" * 40),
     "authorPassId" -> Json.fromString("author-pass"),
     "cases" -> Json.arr(Json.obj(
       "id" -> Json.fromString("private-freeze-sentinel-id"),
@@ -413,7 +397,6 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
     "--author-draft", "target/codex-sbt/freeze-author.json",
     "--judged-draft", "target/codex-sbt/freeze-judged.json",
     "--audit-output", "target/codex-sbt/freeze-audit.json",
-    "--source-revision", "a" * 40,
     "--author-pass-id", "author-pass",
     "--judge-pass-id", "judge-pass",
     "--audit-pass-id", "audit-pass",
@@ -425,7 +408,6 @@ final class BeautyQProtectedInputFreezeMainSpec extends AnyWordSpec {
     "--author-draft", paths.authorDraft.toString,
     "--judged-draft", paths.judgedDraft.toString,
     "--audit-output", paths.audit.toString,
-    "--source-revision", "a" * 40,
     "--author-pass-id", "author-pass",
     "--judge-pass-id", "judge-pass",
     "--audit-pass-id", "audit-pass",

@@ -1,6 +1,5 @@
 {
   "schemaVersion": "beautyq-protected-recovery-selection-audit-v8",
-  "sourceRevision": "6652582525071773fbc14d02b0e081e58e8ef2ac",
   "authorReservePassId": "q2i7-recovery-rotation-7-fresh-reserve-author-v3",
   "judgeReservePassId": "q2i7-recovery-rotation-7-fresh-reserve-judge-v3",
   "auditPassId": "q2i7-recovery-rotation-7-fresh-reserve-selection-audit-v1",

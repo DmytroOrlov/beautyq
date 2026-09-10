@@ -5,8 +5,10 @@ Scope: the sole search architecture in the repository
 Delivery rule: one final cutover completed; Gen1 search modules and routes are absent
 
 Sections explicitly labelled implemented describe current source. All backend/runtime sections
-are implemented; delivery closure is recorded below. Remaining approved work belongs to
-[BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md](BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md).
+are implemented; delivery closure is recorded below. Feature-specific delivery order and current
+remaining-work status belong to the active Spec Kit feature artifacts under `specs/` (Q2 closeout:
+`specs/002-beautyq-q2-closeout`); this specification owns current implemented architecture, not active
+feature chronology.
 
 ## 1. Goal
 
@@ -1992,8 +1994,10 @@ Distage activation adapter. The activation choice is applied before planning; Di
 before provisioning and its retained managed graph does not contain Qdrant or embedding resources.
 Immutable startup status owns the operator-facing status/event and persistent public warning;
 request-time supplement outcome independently owns transient failure warnings and counters. Neither
-owner mutates the other, and no mode promotes itself without restart. Exact judgment semantics,
-partial-activation runbook and delivery order belong to the post-cutover plan.
+owner mutates the other, and no mode promotes itself without restart. Exact judgment semantics belong to
+the executable evaluation owners and the active feature's acceptance contract, and delivery order belongs to
+the active Spec Kit feature artifacts under `specs/`; the partial-activation runbook belongs to the canonical
+[`BEAUTYQ_SEARCH_GEN2_OPERATIONS.md`](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md).
 
 ## 14. Native Gen2 application composition
 
@@ -2170,14 +2174,15 @@ provenance, deterministic selection, visible/protected disjointness and
 reproducible freeze/audit binding. Consumed candidates become visible
 Regression evidence; protected selection chooses the first eligible
 non-consumed candidate whose normalized query is not already visible.
-Current milestone status belongs to the post-cutover plan.
+Current milestone status belongs to the active Spec Kit feature artifacts under `specs/`
+(`specs/002-beautyq-q2-closeout` for Q2 closeout).
 
 `BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
 candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
 resource and compares ordered aggregate observations. The first accepted manifest must be
-bootstrapped only after a green protected gate carrying an explicit immutable application-source identity.
+bootstrapped only after a green protected gate carrying the verified tracked canonical inputs.
 The verifier reports but does not compare these run-specific audit fields as baseline identity:
-application revision, Elasticsearch generation reference, Qdrant generation ID, visible report
+Elasticsearch generation reference, Qdrant generation ID, visible report
 digest, protected report digest and top-level manifest report digest. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
 fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
 observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
@@ -2345,10 +2350,12 @@ completes seed insertion first.
 In provided composition, `BeautyQSeedReady.Noop` preserves externally owned database readiness while
 keeping the startup dependency explicit.
 
-The core architecture is frozen. Remaining approved work (BeautyQ protected acceptance, bootstrap,
-candidate review, promotion, verify and the eval-first second-domain vertical) is owned by
-[BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md](BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md). Anything beyond
-that plan still requires a product requirement or a source-confirmed defect.
+The core architecture is frozen. The remaining approved work (BeautyQ protected acceptance, bootstrap,
+candidate review, promotion, and verify) is delivered under `specs/002-beautyq-q2-closeout`; the eval-first
+second-domain vertical (D1) remains deferred and is not authorized current execution scope. Feature-specific
+delivery order and status belong to the active Spec Kit feature artifacts under `specs/`, not to this
+specification. Anything beyond that approved work still requires a product requirement or a
+source-confirmed defect.
 
 ### Verification ownership
 

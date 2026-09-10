@@ -1,20 +1,30 @@
 # BeautyQ Search Gen2 — post-Q2 simplification proposal
 
-**Status:** proposed; not yet an approved implementation plan.
+**Status:** non-normative proposal and research input; **not** current milestone/task authority.
 
-**Execution boundary:** this proposal starts only after Q2-C is complete and its accepted baseline has
-been independently verified. Any superseding decision must first update the canonical post-cutover
-owner; this proposal alone cannot bypass Q2. Until then, the
-[technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md),
-[post-cutover plan](BEAUTYQ_SEARCH_GEN2_POST_CUTOVER_PLAN.md),
+This document is a hypothesis set and proposed decomposition. G0–G7 (and the S0–S7 milestone table below)
+are proposal structure, not permission to execute and not the current execution plan for any milestone.
+
+**Feature ownership:** the framework leverage audit is
+`specs/003-beautyq-distage-izumi-leverage-audit`, and the actual post-closeout simplification
+disposition/decision is `specs/004-beautyq-post-closeout-simplification-decision`, dependent on
+`specs/002-beautyq-q2-closeout` closeout plus the 003 audit. 003 may use this document as audit/input
+context but must classify evidence independently; 004 owns the simplification decision, and nothing here
+pre-decides any 004 disposition. Accepted decisions must later be reflected into the durable `/docs`
+current owners. Once its useful conclusions have been absorbed by the decision and closeout owners, this
+proposal is intended to be retired rather than maintained as a second current-state plan.
+
+**Execution boundary:** Q2 closeout requirements, gates, and sequencing are owned by
+`specs/002-beautyq-q2-closeout`; this proposal cannot bypass Q2, and any work it describes can start only
+after the accepted baseline has been independently verified. Until an accepted decision updates the durable
+owners, the [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md),
 [operations runbook](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md), and
 [repository-wide domain-authoring principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md) remain the
-normative owners.
+normative current owners. Each accepted milestone must update its canonical owner after code and focused
+proofs stabilize. Until that update is merged, the existing canonical document wins.
 
 This document proposes later simplification work. It does not describe the current architecture, amend
-Q2, authorize a Qdrant rollout/removal, start D1, or relax any current search contract. Each accepted
-milestone must update its canonical owner after code and focused proofs stabilize. Until that update is
-merged, the existing canonical document wins.
+Q2, authorize a Qdrant rollout/removal, start D1, or relax any current search contract.
 
 **Relation to D1:** D1 remains deferred unless its product identity and source topology are supplied
 and the milestone is explicitly activated. While D1 is deferred, post-Q2 simplification may proceed.
@@ -146,7 +156,7 @@ Framework and domain boundaries remain:
 
 ### G0 — Close Q2 before structural surgery
 
-Complete Q2-B and Q2-C exactly as owned by the post-cutover plan. Preserve the accepted application
+Complete Q2-B and Q2-C exactly as owned by `specs/002-beautyq-q2-closeout`. Preserve the accepted application
 source identity for pre-promotion acceptance/bootstrap/review evidence, candidate review separation,
 the promotion commit boundary, and independent canonical-resource verify against the committed promoted
 resource.

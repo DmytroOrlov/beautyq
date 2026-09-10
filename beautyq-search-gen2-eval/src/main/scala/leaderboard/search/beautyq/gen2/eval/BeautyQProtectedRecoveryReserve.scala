@@ -12,14 +12,12 @@ object BeautyQProtectedRecoveryReserve {
 
   final class JudgedRecoveryReserve(
     val schemaVersion: String,
-    val sourceRevision: String,
     val judgePassId: String,
     val corpus: BeautyQEvaluationCorpus,
   )
 
   final class AuthorReserve(
     val schemaVersion: String,
-    val sourceRevision: String,
     val authorPassId: String,
     val cases: Vector[AuthorReserveCase],
   )
@@ -37,7 +35,6 @@ object BeautyQProtectedRecoveryReserve {
 
   final class SelectionAudit(
     val schemaVersion: String,
-    val sourceRevision: String,
     val authorReservePassId: String,
     val judgeReservePassId: String,
     val auditPassId: String,
@@ -55,11 +52,11 @@ object BeautyQProtectedRecoveryReserve {
   )
 
   private val AuthorReserveResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-author-reserve-v6.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-author-reserve-v7.json"
   private val JudgedReserveResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v6.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-judged-reserve-v7.json"
   private val SelectionAuditResource =
-    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v8.json"
+    "leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-recovery-selection-audit-v9.json"
   private val VisibleCorpusResource =
     "leaderboard/search/beautyq/gen2/eval/beautyq_evaluation_corpus_v2.json"
   private val FinalAuthorDraftResource =
@@ -71,23 +68,22 @@ object BeautyQProtectedRecoveryReserve {
   private val FinalProtectedPolicyResource =
     "leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json"
 
-  private val RevisionPattern = "^[0-9a-f]{40}$".r
   private val DigestPattern = "^[0-9a-f]{64}$".r
 
-  private val AuthorReserveRootFields = Set("schemaVersion", "sourceRevision", "authorPassId", "cases")
+  private val AuthorReserveRootFields = Set("schemaVersion", "authorPassId", "cases")
   private val AuthorReserveCaseFields = Set("id", "query", "language", "primarySlice", "additionalSlices", "userIntent", "notes", "coverageBucket")
-  private val CurrentAuthorSchema = "beautyq-protected-recovery-author-reserve-v6"
+  private val CurrentAuthorSchema = "beautyq-protected-recovery-author-reserve-v7"
 
-  private val JudgedReserveRootFields = Set("schemaVersion", "sourceRevision", "judgePassId", "corpus")
-  private val CurrentJudgedSchema = "beautyq-protected-recovery-judged-reserve-v6"
+  private val JudgedReserveRootFields = Set("schemaVersion", "judgePassId", "corpus")
+  private val CurrentJudgedSchema = "beautyq-protected-recovery-judged-reserve-v7"
 
   private val SelectionAuditRootFields = Set(
-    "schemaVersion", "sourceRevision", "authorReservePassId", "judgeReservePassId", "auditPassId",
+    "schemaVersion", "authorReservePassId", "judgeReservePassId", "auditPassId",
     "authorReserveSha256", "judgedReserveSha256", "candidateCount", "orderedBuckets", "consumedCaseIds", "selectedCaseIds",
     "finalAuthorDraftSha256", "finalJudgedHoldoutSha256", "finalProtectedCorpusFingerprint",
     "finalProtectedPolicyFingerprint", "canonicalCatalogFingerprint",
   )
-  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v8"
+  private val CurrentAuditSchema = "beautyq-protected-recovery-selection-audit-v9"
 
   def load(readResource: ResourceReader): Either[String, BeautyQProtectedRecoveryReserve] = for {
     authorRaw <- readResource(AuthorReserveResource)
@@ -101,7 +97,6 @@ object BeautyQProtectedRecoveryReserve {
       .flatMap(BeautyQEvaluationCorpus.decodeFromJson)
       .left.map(_ => "recovery_visible_corpus_decode_failed")
     _ <- validateHashes(authorRaw, judgedRaw, audit)
-    _ <- validateSourceRevisions(author, judged, audit)
     _ <- validatePassBinding(author, judged, audit)
     _ <- validatePassSeparation(author, judged, audit)
     _ <- validateInventories(author, judged.corpus, audit)
@@ -114,12 +109,6 @@ object BeautyQProtectedRecoveryReserve {
     _ <- validateConsumedVisibleProof(author, judged.corpus, audit, visible)
     _ <- validateFinalBindings(readResource, audit, author, judged.corpus)
   } yield new BeautyQProtectedRecoveryReserve(author, judged, audit)
-
-  private def validateSourceRevisions(author: AuthorReserve, judged: JudgedRecoveryReserve, audit: SelectionAudit): Either[String, Unit] = {
-    if (author.sourceRevision != audit.sourceRevision) Left("recovery_author_revision_mismatch")
-    else if (judged.sourceRevision != audit.sourceRevision) Left("recovery_judged_revision_mismatch")
-    else Right(())
-  }
 
   private def validatePassBinding(author: AuthorReserve, judged: JudgedRecoveryReserve, audit: SelectionAudit): Either[String, Unit] = {
     if (author.authorPassId != audit.authorReservePassId) Left("recovery_author_pass_binding_mismatch")
@@ -466,8 +455,6 @@ object BeautyQProtectedRecoveryReserve {
         _ <- exactFields(root, AuthorReserveRootFields, "recovery_author_reserve")
         schema <- string(root, "schemaVersion")
         _ <- Either.cond(schema == CurrentAuthorSchema, (), "recovery_author_reserve_schema_mismatch")
-        revision <- string(root, "sourceRevision")
-        _ <- Either.cond(RevisionPattern.matches(revision), (), "recovery_author_reserve_revision_invalid")
         authorPassId <- string(root, "authorPassId")
         _ <- nonBlank(authorPassId, "recovery_author_reserve_pass_invalid")
         casesJson <- root("cases").flatMap(_.asArray).toRight("recovery_author_reserve_cases_invalid")
@@ -476,7 +463,7 @@ object BeautyQProtectedRecoveryReserve {
           case (acc, (value, index)) => acc.flatMap(done => decodeAuthorCase(value, index).map(done :+ _))
         }
         _ <- Either.cond(cases.map(_.id).distinct.size == cases.size, (), "recovery_author_reserve_duplicate_case_id")
-      } yield new AuthorReserve(schema, revision, authorPassId, cases)
+      } yield new AuthorReserve(schema, authorPassId, cases)
     }
 
   private def decodeAuthorCase(json: Json, index: Int): Either[String, AuthorReserveCase] = for {
@@ -504,13 +491,11 @@ object BeautyQProtectedRecoveryReserve {
         _ <- exactFields(root, JudgedReserveRootFields, "recovery_judged_reserve")
         schema <- string(root, "schemaVersion")
         _ <- Either.cond(schema == CurrentJudgedSchema, (), "recovery_judged_reserve_schema_mismatch")
-        revision <- string(root, "sourceRevision")
-        _ <- Either.cond(RevisionPattern.matches(revision), (), "recovery_judged_reserve_revision_invalid")
         judgePassId <- string(root, "judgePassId")
         _ <- nonBlank(judgePassId, "recovery_judged_reserve_pass_invalid")
         corpusJson <- root("corpus").toRight("recovery_judged_reserve_corpus_missing")
         corpus <- BeautyQEvaluationCorpus.decodeFromJson(corpusJson).left.map(_ => "recovery_judged_reserve_decode_failed")
-      } yield new JudgedRecoveryReserve(schema, revision, judgePassId, corpus)
+      } yield new JudgedRecoveryReserve(schema, judgePassId, corpus)
     }
 
   private def decodeSelectionAudit(raw: String): Either[String, SelectionAudit] =
@@ -520,8 +505,6 @@ object BeautyQProtectedRecoveryReserve {
         _ <- exactFields(root, SelectionAuditRootFields, "recovery_selection_audit")
         schema <- string(root, "schemaVersion")
         _ <- Either.cond(schema == CurrentAuditSchema, (), "recovery_selection_audit_schema_mismatch")
-        revision <- string(root, "sourceRevision")
-        _ <- Either.cond(RevisionPattern.matches(revision), (), "recovery_selection_audit_revision_invalid")
         authorReservePassId <- string(root, "authorReservePassId")
         judgeReservePassId <- string(root, "judgeReservePassId")
         auditPassId <- string(root, "auditPassId")
@@ -553,7 +536,7 @@ object BeautyQProtectedRecoveryReserve {
         catalogFp <- string(root, "canonicalCatalogFingerprint")
         _ <- Either.cond(DigestPattern.matches(catalogFp), (), "recovery_selection_audit_catalog_fp_invalid")
       } yield new SelectionAudit(
-        schema, revision, authorReservePassId, judgeReservePassId, auditPassId,
+        schema, authorReservePassId, judgeReservePassId, auditPassId,
         authorSha, judgedSha, count, buckets, consumed, selected,
         finalAuthorSha, finalJudgedSha, finalCorpusFp, finalPolicyFp, catalogFp,
       )

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "beautyq-evaluation-corpus-v2",
-  "corpusId": "beautyq-protected-holdout-q2i-recovery-v8",
+  "corpusId": "beautyq-protected-holdout-q2i-recovery-v9",
   "dataset": "beautyq-protected-holdout",
-  "version": 8,
+  "version": 9,
   "defaultUserLocation": {
     "label": "Wandsbek Markt",
     "lat": 53.572,
@@ -585,23 +585,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_065",
+      "id": "q2i8_recovery_001",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Maniküre mit Shellac-Lack und Ablöse",
+      "query": "gel-maniküre",
       "language": "de",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Manicure with shellac polish including prior gel removal",
+      "userIntent": "Find a gel polish manicure via German phrasing",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "798c4326-e081-59a9-b659-98671f1fd656",
-            "677dd40f-9ebc-5566-bfc4-9249b7ac5503"
+            "1fcd6e17-c6bb-5901-9f63-205668897659",
+            "c82d90c3-d9e4-5f0b-8689-6476c5e7fe35"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -622,23 +622,58 @@
       }
     },
     {
-      "id": "q2i7_recovery_066",
+      "id": "q2i8_recovery_002",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Pedicure with gel polish",
+      "query": "pediküre shellac",
+      "language": "de",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "Find a shellac pedicure via German phrasing",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "7ce84040-4005-5796-89d6-e0a51e3fb369"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i8_recovery_003",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "lash extensions 3d",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Pedicure with gel polish coating",
+      "userIntent": "Find noticeably fuller 3D volume lashes",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "d850b4ca-0f64-5527-81cb-ae6fc212b102",
-            "083f3849-b865-5a7e-ac02-90b5945320f8"
+            "0642fde2-37fc-5977-81b4-0320d176f6b8"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -659,60 +694,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_067",
+      "id": "q2i8_recovery_004",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Wimpernverlängerung Volumen 2D",
-      "language": "de",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "Lash extension with 2D volume",
-      "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "507552fc-58b8-5614-844f-4e0f95acec1c",
-            "bdf51756-88bd-5218-8b1f-682a9660aa8a"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i7_recovery_068",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "Brow lamination with tinting",
+      "query": "henna brows",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Brow lamination including tinting",
+      "userIntent": "Find a henna brow treatment",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "4f5d8aa6-d826-50a5-bd06-f19eee2bd9c7",
-            "b64e24fe-567e-53ed-bb08-1aa217241e2c"
+            "406a7f7f-2fd2-5852-96a4-8a96891e1f89"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -733,61 +730,23 @@
       }
     },
     {
-      "id": "q2i7_recovery_069",
+      "id": "q2i8_recovery_005",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Permanent Make-Up Lippen mit Korrektur",
-      "language": "de",
-      "slices": [
-        "exact-intent"
-      ],
-      "userIntent": "PMU lips with one included correction",
-      "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
-      ],
-      "judgments": {
-        "variants": {
-          "acceptableIds": [
-            "6a53f1d6-c203-51cc-8adc-9fc634ecf7b6",
-            "b5ec4ac7-c364-512b-ab12-5e19d523284e",
-            "b93a0a59-9d85-5f6e-9d24-a7750b6efaf3",
-            "d7396477-8242-5086-9b6e-b60eeadcf3fc"
-          ],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "providers": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        },
-        "serviceIntents": {
-          "acceptableIds": [],
-          "forbiddenIds": [],
-          "neutralIds": [],
-          "gradedGains": []
-        }
-      }
-    },
-    {
-      "id": "q2i7_recovery_073",
-      "partition": "protected-holdout",
-      "judgmentMode": "partial",
-      "query": "Microneedling facial session for face",
+      "query": "permanent eyeliner",
       "language": "en",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Single microneedling facial treatment session covering the face",
+      "userIntent": "Find permanent eyeliner make-up",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "bf052e78-8be1-5267-93bb-fd92ff9b7f68"
+            "06c5fffa-1d89-5492-bdab-5a9c42333e20",
+            "af1c4586-deba-5c90-bf0f-6fb85abd76f7"
           ],
           "forbiddenIds": [],
           "neutralIds": [],
@@ -808,17 +767,53 @@
       }
     },
     {
-      "id": "q2i7_recovery_071",
+      "id": "q2i8_recovery_006",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Laser Haarentfernung Bikinizone",
+      "query": "gesichtsreinigung",
       "language": "de",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Laser hair removal for the bikini area",
+      "userIntent": "Find a facial cleansing treatment via German phrasing",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
+      ],
+      "judgments": {
+        "variants": {
+          "acceptableIds": [
+            "54568273-7762-5881-a027-0900965ddba4"
+          ],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "providers": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        },
+        "serviceIntents": {
+          "acceptableIds": [],
+          "forbiddenIds": [],
+          "neutralIds": [],
+          "gradedGains": []
+        }
+      }
+    },
+    {
+      "id": "q2i8_recovery_007",
+      "partition": "protected-holdout",
+      "judgmentMode": "partial",
+      "query": "ipl bikini",
+      "language": "en",
+      "slices": [
+        "exact-intent"
+      ],
+      "userIntent": "Find bikini-area hair removal with an IPL light method",
+      "notes": [
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ],
       "judgments": {
         "variants": {
@@ -845,22 +840,22 @@
       }
     },
     {
-      "id": "q2i7_recovery_072",
+      "id": "q2i8_recovery_008",
       "partition": "protected-holdout",
       "judgmentMode": "partial",
-      "query": "Nail extension refill with correction",
-      "language": "en",
+      "query": "nagelmodellage acrylic",
+      "language": "de",
       "slices": [
         "exact-intent"
       ],
-      "userIntent": "Nail extension refill with correction",
+      "userIntent": "Find an acrylic nail extension modeling",
       "notes": [
-        "Authored independently from the canonical BeautyQ typed seed catalog before any disclosure inspection."
+        "Authored independently from the canonical BeautyQ typed seed catalog for the rotation-8 fresh author pass before any disclosure inspection."
       ],
       "judgments": {
         "variants": {
           "acceptableIds": [
-            "51cc8284-3879-5bdb-8780-7b43e47f1251"
+            "693c3807-16f2-552a-ae5e-8ffdc638ed29"
           ],
           "forbiddenIds": [],
           "neutralIds": [],

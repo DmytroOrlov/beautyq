@@ -8,7 +8,6 @@ sealed trait BeautyQProtectedInputAuditError { def stableCode: String }
 
 object BeautyQProtectedInputAuditError {
   case object InvalidDocument extends BeautyQProtectedInputAuditError { val stableCode = "invalid_document" }
-  case object InvalidSourceRevision extends BeautyQProtectedInputAuditError { val stableCode = "invalid_source_revision" }
   case object InvalidAuthoringMethod extends BeautyQProtectedInputAuditError { val stableCode = "invalid_authoring_method" }
   case object InvalidPassIdentity extends BeautyQProtectedInputAuditError { val stableCode = "invalid_pass_identity" }
   case object DuplicatePassIdentity extends BeautyQProtectedInputAuditError { val stableCode = "duplicate_pass_identity" }
@@ -29,7 +28,6 @@ object BeautyQProtectedInputAuditError {
 
 final class BeautyQProtectedInputAudit private (
   val schemaVersion: String,
-  val sourceRevision: String,
   val authoringMethod: String,
   val authorPassId: String,
   val judgePassId: String,
@@ -74,10 +72,9 @@ object BeautyQProtectedInputAudit {
   val CurrentSchemaVersion: String = "beautyq-protected-input-audit-v2"
   val CurrentAuthoringMethod: String = "model-assisted-separated-passes-v1"
 
-  private val RevisionPattern = "^[0-9a-f]{40}$".r
   private val DigestPattern = "^[0-9a-f]{64}$".r
   private val RootFields = Set(
-    "schemaVersion", "sourceRevision", "authoringMethod", "authorPassId", "judgePassId", "auditPassId",
+    "schemaVersion", "authoringMethod", "authorPassId", "judgePassId", "auditPassId",
     "protectedCorpusSha256", "protectedPolicySha256", "authorDraftSha256", "judgedDraftSha256",
     "protectedCorpusFingerprint", "protectedPolicyFingerprint", "canonicalSourceFingerprint",
     "protectedCaseCount", "orderedRequiredSliceCounts", "exactVisibleQueryDuplicateCount",
@@ -90,7 +87,6 @@ object BeautyQProtectedInputAudit {
   private val SliceFields = Set("sliceId", "caseCount")
 
   def create(
-    sourceRevision: String,
     authoringMethod: String,
     authorPassId: String,
     judgePassId: String,
@@ -121,7 +117,7 @@ object BeautyQProtectedInputAudit {
           case ((sliceId, count), minimum) => sliceId == minimum.sliceId && count >= minimum.minimumCaseCount
         }
     createValidated(
-      CurrentSchemaVersion, sourceRevision, authoringMethod, authorPassId, judgePassId, auditPassId,
+      CurrentSchemaVersion, authoringMethod, authorPassId, judgePassId, auditPassId,
       protectedCorpusSha256, protectedPolicySha256, authorDraftSha256, judgedDraftSha256,
       protectedCorpus.corpusFingerprint, protectedPolicy.fingerprint, canonicalSourceFingerprint,
       protectedCorpus.caseCount, protectedCorpus.orderedRequiredSliceCounts,
@@ -140,7 +136,6 @@ object BeautyQProtectedInputAudit {
     root <- json.asObject.toRight(BeautyQProtectedInputAuditError.InvalidDocument)
     _ <- Either.cond(root.keys.toSet == RootFields, (), BeautyQProtectedInputAuditError.InvalidDocument)
     schemaVersion <- string(root, "schemaVersion")
-    sourceRevision <- string(root, "sourceRevision")
     authoringMethod <- string(root, "authoringMethod")
     authorPassId <- string(root, "authorPassId")
     judgePassId <- string(root, "judgePassId")
@@ -170,7 +165,7 @@ object BeautyQProtectedInputAudit {
     sliceValidationPassed <- boolean(root, "sliceValidationPassed")
     frozen <- boolean(root, "frozen")
     value <- createValidated(
-      schemaVersion, sourceRevision, authoringMethod, authorPassId, judgePassId, auditPassId,
+      schemaVersion, authoringMethod, authorPassId, judgePassId, auditPassId,
       protectedCorpusSha256, protectedPolicySha256, authorDraftSha256, judgedDraftSha256,
       protectedCorpusFingerprint, protectedPolicyFingerprint, canonicalSourceFingerprint,
       protectedCaseCount, orderedRequiredSliceCounts,
@@ -188,7 +183,6 @@ object BeautyQProtectedInputAudit {
 
   private def createValidated(
     schemaVersion: String,
-    sourceRevision: String,
     authoringMethod: String,
     authorPassId: String,
     judgePassId: String,
@@ -221,7 +215,6 @@ object BeautyQProtectedInputAudit {
   ): Either[BeautyQProtectedInputAuditError, BeautyQProtectedInputAudit] = {
     val passIds = Vector(authorPassId, judgePassId, auditPassId)
     if (schemaVersion != CurrentSchemaVersion) Left(BeautyQProtectedInputAuditError.InvalidDocument)
-    else if (!RevisionPattern.matches(sourceRevision)) Left(BeautyQProtectedInputAuditError.InvalidSourceRevision)
     else if (authoringMethod != CurrentAuthoringMethod) Left(BeautyQProtectedInputAuditError.InvalidAuthoringMethod)
     else if (passIds.exists(value => value.isEmpty || value.trim != value)) Left(BeautyQProtectedInputAuditError.InvalidPassIdentity)
     else if (passIds.distinct.size != passIds.size) Left(BeautyQProtectedInputAuditError.DuplicatePassIdentity)
@@ -238,7 +231,7 @@ object BeautyQProtectedInputAudit {
         case _ => true
       }) Left(BeautyQProtectedInputAuditError.ExactIntentInventoryMismatch)
       else validateRemaining(
-        schemaVersion, sourceRevision, authoringMethod, authorPassId, judgePassId, auditPassId,
+        schemaVersion, authoringMethod, authorPassId, judgePassId, auditPassId,
         protectedCorpusSha256, protectedPolicySha256, authorDraftSha256, judgedDraftSha256,
         protectedCorpusFingerprint, protectedPolicyFingerprint, canonicalSourceFingerprint,
         protectedCaseCount, orderedRequiredSliceCounts,
@@ -254,7 +247,6 @@ object BeautyQProtectedInputAudit {
 
   private def validateRemaining(
     schemaVersion: String,
-    sourceRevision: String,
     authoringMethod: String,
     authorPassId: String,
     judgePassId: String,
@@ -292,7 +284,7 @@ object BeautyQProtectedInputAudit {
     else if (!strictCorpusValidationPassed || !strictPolicyValidationPassed || !partitionValidationPassed || !sliceValidationPassed || !corpusMatchesPolicy) Left(BeautyQProtectedInputAuditError.ValidationFailed)
     else if (!frozen) Left(BeautyQProtectedInputAuditError.InputsNotFrozen)
     else Right(new BeautyQProtectedInputAudit(
-      schemaVersion, sourceRevision, authoringMethod, authorPassId, judgePassId, auditPassId,
+      schemaVersion, authoringMethod, authorPassId, judgePassId, auditPassId,
       protectedCorpusSha256, protectedPolicySha256, authorDraftSha256, judgedDraftSha256,
       protectedCorpusFingerprint, protectedPolicyFingerprint, canonicalSourceFingerprint,
       protectedCaseCount, orderedRequiredSliceCounts,
@@ -307,7 +299,6 @@ object BeautyQProtectedInputAudit {
 
   private def encode(value: BeautyQProtectedInputAudit): Json = Json.obj(
     "schemaVersion" -> Json.fromString(value.schemaVersion),
-    "sourceRevision" -> Json.fromString(value.sourceRevision),
     "authoringMethod" -> Json.fromString(value.authoringMethod),
     "authorPassId" -> Json.fromString(value.authorPassId),
     "judgePassId" -> Json.fromString(value.judgePassId),

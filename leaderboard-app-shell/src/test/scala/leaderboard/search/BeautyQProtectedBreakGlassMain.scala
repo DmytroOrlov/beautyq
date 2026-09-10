@@ -11,7 +11,6 @@ object BeautyQProtectedBreakGlassMain {
     val protectedCorpus: Path,
     val protectedPolicy: Path,
     val runRoot: Path,
-    val applicationRevision: String,
     val expectedFailedCheck: String,
     val authorizationId: String,
   ) {
@@ -23,7 +22,6 @@ object BeautyQProtectedBreakGlassMain {
     "--protected-corpus",
     "--protected-policy",
     "--run-root",
-    "--application-revision",
     "--expected-failed-check",
     "--authorization-id",
   )
@@ -48,14 +46,11 @@ object BeautyQProtectedBreakGlassMain {
           corpus <- byName.get("--protected-corpus").toRight("PRODUCT_INPUT_REQUIRED")
           policy <- byName.get("--protected-policy").toRight("PRODUCT_INPUT_REQUIRED")
           runRoot <- byName.get("--run-root").toRight("PRODUCT_INPUT_REQUIRED")
-          revision <- byName.get("--application-revision").toRight("PRODUCT_INPUT_REQUIRED")
           failed <- byName.get("--expected-failed-check").toRight("PRODUCT_INPUT_REQUIRED")
           authorization <- byName.get("--authorization-id").toRight("PRODUCT_INPUT_REQUIRED")
-          _ <- Either.cond(BeautyQSearchGen2EvaluationResourceHarness.isValidApplicationRevision(revision), (), "INVALID_ARGUMENTS")
           record <- BeautyQProtectedBreakGlassDisclosure.authorizationById(authorization).toRight("BREAK_GLASS_AUTHORIZATION_MISMATCH")
           _ <- Either.cond(failed == record.failedCheckCode, (), "BREAK_GLASS_AUTHORIZATION_MISMATCH")
-          _ <- Either.cond(revision == record.applicationRevision, (), "BREAK_GLASS_AUTHORIZATION_MISMATCH")
-        } yield new Arguments(Paths.get(corpus), Paths.get(policy), Paths.get(runRoot), revision, failed, authorization)
+        } yield new Arguments(Paths.get(corpus), Paths.get(policy), Paths.get(runRoot), failed, authorization)
       }
     }
   }
@@ -104,7 +99,6 @@ object BeautyQProtectedBreakGlassMain {
       resolveIfRelative(arguments.protectedCorpus, repositoryRoot),
       resolveIfRelative(arguments.protectedPolicy, repositoryRoot),
       resolveIfRelative(arguments.aggregateOutput, repositoryRoot),
-      arguments.applicationRevision,
     ) match {
       case Right(value) => value
       case Left(error) => throw new IllegalStateException(error)
@@ -114,7 +108,6 @@ object BeautyQProtectedBreakGlassMain {
       execution.protectedRun.report,
       execution.protectedCorpus.corpus,
       execution.protectedPolicy,
-      arguments.applicationRevision,
       arguments.authorizationId,
       arguments.expectedFailedCheck,
     ) match {
