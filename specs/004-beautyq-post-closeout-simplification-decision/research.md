@@ -214,3 +214,23 @@ Detailed trail (tracked feature-local):
 
 These conclusions are retained in the decision record's dispositions and in this index; the evidence files
 do not become normative owners and do not authorize any implementation or evidence follow-up.
+
+---
+
+## Post-Closeout Residual-Commitments Audit (evidence pointer)
+
+A repository-wide residual-commitments audit was performed **after** this Feature 004 closeout. It is
+tracked feature-local at
+[`evidence/residual-commitments-audit/README.md`](evidence/residual-commitments-audit/README.md), with
+the reconciled audit in `evidence/residual-commitments-audit/RESIDUAL-COMMITMENTS.md` and the RC-001
+forensic reconciliation in `evidence/residual-commitments-audit/RC-001-FEATURE-001-FORENSIC.md`.
+
+Durable conclusions only:
+
+- the repository-wide historical/current residual audit found **zero `CURRENT_REQUIRED_GAP`, zero
+  `APPROVED_NOT_IMPLEMENTED`, and zero `LOST_OBLIGATION`**;
+- `RC-001` was source/history-reconciled to **`DOCUMENTATION_STALE_ONLY`** because Feature 001
+  T039–T045 have durable completion evidence in its `WORKING.md` §O (`Status: COMPLETE`, 2026-09-08) and
+  only the `REPORT.md` framing stayed stale;
+- the remaining findings are intentionally deferred, optional, stale fossils, or evidence-limited;
+- this evidence **does not modify or reopen the Feature 004 decision**.
