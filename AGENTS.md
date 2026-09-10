@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Runtime tags: `[ALL]` every model, `[W]` weak/Qwen3.6, `[M]` medium/MiniMax-M3, `[S]` strong. Task tags are used only where behavior differs, such as `[CONTINUATION]` and `[DOCS]`. Untagged repository safety rules apply to all.
+Repository execution rules for agents. This file is intentionally role-neutral: it defines safe repository behavior, not who reviews the work, chooses a model, approves architecture, or invokes higher-level workflow phases.
 
 ## Core rules
 
@@ -9,13 +9,15 @@ Runtime tags: `[ALL]` every model, `[W]` weak/Qwen3.6, `[M]` medium/MiniMax-M3, 
 * Focused tests and route-level HTTP contract tests are the primary source of truth. If tests, docs, and implementation conflict, report it; do not guess.
 * Do not perform broad architecture, audit, or design work unless explicitly requested. Make bounded edits and focused checks only.
 * Reports are brief: focused result, deviations or compile fixes, and blocked verification.
-* `[W][CONTINUATION]` When exact current-state anchors or replacement hunks are supplied, read canonical docs only at the named ranges and update them after code and proofs stabilize.
-* `[M/S][DOCS]` A full read of the canonical owner is allowed for documentation deduplication, owner-map changes, or broad compatibility/cutover reconciliation.
-* `[W]` After a first read, use exact ranges, exact symbols, and `git diff`; do not broaden discovery unless the task explicitly requires it.
-* `[M/S]` A named dependency-frontier search is allowed when a public API, module edge, or complete diagnostic proves it necessary.
+* When exact current-state anchors or replacement hunks are supplied, start from them. For documentation deduplication, owner-map changes, or broad compatibility/cutover reconciliation, reading the full canonical owner is allowed.
+* After the initial bounded read, prefer exact ranges, exact symbols, and `git diff`. Broaden discovery only when the active task or a complete diagnostic proves it necessary.
+* A named dependency-frontier search is allowed when a public API, module edge, or complete diagnostic requires it; do not turn bounded repair into repository-wide exploration.
 * Batch coherent edits per file and avoid micro-edit loops. Make another pass only when a new complete diagnostic or source contradiction requires it.
-* `[W]` Use at most one compact checklist when the prompt requires it; do not rewrite the full checklist between edits. `[M/S]` Todo tooling is optional.
 * Keep temporary files and generated output inside the repository. Do not use explicit absolute scratch/device paths such as `/tmp`, `/var/tmp`, `/private/tmp`, `/dev`, or `/dev/null` unless the user provides one.
+* Git index, refs, branches, and history are human-owned. Do not commit, stage, unstage, stash, reset, clean, create/switch branches, or otherwise mutate index/history/refs. Materialize authorized edits in the worktree only, preserve existing staged/index state exactly as found, and use read-only Git inspection (`git status`, `git diff`, `git diff --cached`, `git show`, `git log`) when needed. Report actual `HEAD`/index/worktree state truthfully instead of normalizing it. A task asking to leave something staged, commit it, or stash it is answered by reporting the pending human action.
+* Spec Kit slash commands are user/operator-invoked workflow boundaries. In an ordinary repository task, do not self-initiate, chain, or emulate `/speckit.*`; command names appearing in task text are references unless the current invocation itself is already that Spec Kit phase.
+* A user-invoked Spec Kit phase may execute its own phase mechanics, but it must not invoke the next slash command on its own. Tracked artifacts produced by the phase do not change invocation ownership.
+* If the intended Spec Kit feature/phase is ambiguous, stop and report the ambiguity rather than guessing from a mutable current-feature pointer.
 ## Ownership and abstraction
 
 * Put behavior at its source of truth; reusable layers must not hard-code one app/domain.
@@ -39,8 +41,8 @@ Declarations state legitimately variable choices such as topology, identity sele
 Repeated name/type/path/semantic literals, parallel ordered field lists, manual document folds, and business-owned generic renderers are review red flags. Low-level constructors may remain escape hatches, but are not the canonical authoring example.
 ## Verification
 
-* Delegated agents run focused commands only; they never run an unscoped full repository suite.
-* If broader confidence is required, report the focused result and state the exact broader command for the user or an explicitly authorized primary/coordinator to run before committing.
+* Run focused commands only; never run an unscoped full repository suite.
+* If broader confidence is required, report the focused result and the exact broader command for separate user execution before committing.
 * Report verification in plain language: command, result, useful counts, blocked resources, and remaining uncertainty.
 * Do not use synthetic confidence labels in reports or commit messages.
 * Focused checks alone cannot prove unrelated modules, the entire production graph, lifecycle/readiness across every axis, or the full repository.
@@ -49,11 +51,11 @@ Repeated name/type/path/semantic literals, parallel ordered field lists, manual 
 * Use one chained sbt command; never run sbt in parallel.
 * Run a repository validation wrapper exactly unless it is full-suite. Otherwise run quoted focused tasks from the repository root with the sandbox options below.
 * Scope compile/tests to the owning subproject. Root aggregate `Test/compile` is not a prerequisite for one spec and may initialize unrelated graphs or socket checks.
-* A delegated agent asked for an unscoped full suite must decline and provide the exact command for the user or explicitly authorized primary/coordinator.
+* If asked for an unscoped full suite, decline and provide the exact command for separate user execution.
 * Do not run malformed forms such as `sbt Test/compile ...` or `sbt about`, and never pipe sbt through `tail`, `head`, `tee`, or grep. Use a repository-owned validation wrapper when one exists. Until then, run the ordinary unpiped focused command; do not hand-roll shell redirection or summary parsing that could lose sbt's exit status or diagnostics.
 * Do not run `Test/compile` before `testOnly` for the same project: `testOnly` already compiles. Use a separate compile task only when no final test task covers the changed source or when localizing a compile failure.
 * On compile failure, inspect all diagnostics from the complete output, group them by root cause, apply all source-confirmed fixes in one batch, then rerun. Never rerun after fixing only the last visible error.
-* Compiler diagnostics may authorize repair of direct retained callers inside the already named module frontier, but are not a deletion inventory. A retained contract, wiring, firewall, lifecycle, or resource proof is a repair target unless the task's exact manifest deletes its owner. Deleting an owner, adding a project edge, changing a public contract, or crossing into a new module frontier requires coordinator approval and an exact scope-expansion report.
+* Compiler diagnostics may authorize repair of direct retained callers inside the already named module frontier, but are not a deletion inventory. A retained contract, wiring, firewall, lifecycle, or resource proof is a repair target unless the task's exact manifest deletes its owner. Deleting an owner, adding a project edge, changing a public contract, or crossing into a new module frontier is a scope expansion: stop and report the exact expansion required.
 * Do not probe setup (`type/which sbt`, `java -version`, `$JAVA_HOME`, `$SBT_OPTS`, `.sbtopts`, `.jvmopts`), inspect launcher lines, or resolve tool paths outside the repository unless the exact command fails with a missing-command/setup error.
 * Before the first sandboxed sbt command, create `target/codex-sbt/ivy2` and use `-Dsbt.server.forcestart=true -Dsbt.ivy.home=target/codex-sbt/ivy2`; `-Dsbt.server=false` alone does not bypass the boot socket.
 * If the shared Coursier cache is read-only, rerun the same command with `COURSIER_CACHE=target/codex-sbt/coursier-cache`. Uncached artifacts may require network approval; never request home-cache writes.
@@ -89,7 +91,7 @@ docker rm -f $(docker ps -a -q -f "label=distage.type") || true
 * Startup follows dependency edges, not binding/module/memoization-root order.
 * Graph GC may remove unrooted bindings; inspect roots, axes/activation, and suite inheritance before production-module changes.
 * Disabled experiments must not construct heavy dependencies; use explicit axis/config, by-name/factory/resource boundaries, or separate modules.
-* Focused/unit specs must not include whole production plugins/apps unless production graph coverage is explicit; prefer targeted modules, existing app/role/testkit fixtures, or broader verification outside the delegated task.
+* Focused/unit specs must not include whole production plugins/apps unless production graph coverage is explicit; prefer targeted modules, existing app/role/testkit fixtures, or broader verification outside the agent task.
 
 ### Whole-plugin include hazard
 
@@ -98,7 +100,7 @@ docker rm -f $(docker ps -a -q -f "label=distage.type") || true
 * On either full-run signature, do not debug the first aborted suite as root cause. First find ad-hoc whole-plugin includes in tests and replace them with targeted modules, existing role/testkit fixtures, or explicit minimal bindings.
 * If none exist, stop and request the stack trace, module snippets, and grep output.
 * This is graph-construction evidence, not product-behavior evidence.
-* Changes to `LeaderboardPlugin.modules.api` or whole-plugin include tests require broader full-project verification by the user or an explicitly authorized primary/coordinator; delegated agents do not run it and must not imply that focused checks cover the whole graph.
+* Changes to `LeaderboardPlugin.modules.api` or whole-plugin include tests require broader full-project verification outside the focused agent task; report the exact broader command and do not imply that focused checks cover the whole graph.
 
 ### Intentional dependency edges
 
@@ -206,7 +208,7 @@ event match {
 * Do not add `@nowarn` first; never add `@nowarn("msg=Unreachable")`.
 * Fix unreachable matches. Any remaining `@nowarn` must be exact, narrow, intentional, and explained.
 * Prompt imports/helpers are candidates, not paste-all requirements. Keep only used symbols.
-* Before validation, remove unused imports, parameters, locals, helpers, and dead code; qualify/import nested members consistently. Unused diagnostics remain fatal—do not weaken compiler settings to reduce agent iterations.
+* Before validation, remove unused imports, parameters, locals, helpers, and dead code; qualify/import nested members consistently. Unused diagnostics remain fatal—do not weaken compiler settings to reduce iterations.
 * Report prompt-symbol pruning as compile safety, not behavior deviation.
 * In Scala 3 tests, Unit lambdas/callbacks/branches must explicitly return `Unit`; do not leave `assert(...)` as the discarded final value—append `(): Unit` or otherwise return Unit.
 * Enum `toString` is fine for incidental diagnostics. When source truth defines stable IDs/codes or explicit active order used by roots, traces, ledgers, wire, or public contracts, retain typed values and derive views; do not replace them with `toString`/`values` or generalize this exception.
@@ -229,6 +231,10 @@ event match {
 ## Eval failures
 
 Report case ID/name, input, parsed/decoded state when available, observed output, expected output, and failed assertion.
+
+* BeautyQ eval query additions are not simple JSON-only edits: an accepted query addition must update the known eval/count-lock chain coherently.
+* Eval and dirty catalog/runtime scorecard profiles are measurement-only: worse coverage in those profiles does not by itself authorize production Qdrant activation, fallback, fusion, rerank, or ES/Qdrant tuning.
+* Eval work must not opportunistically tune ES/Qdrant, parser, vocabulary, seed data, routes, or production search behavior unless that tuning is the explicit objective; scope expansion must be explicit and authorized, never inferred from a scorecard.
 
 ## Failure protocol
 

@@ -413,7 +413,7 @@ Elasticsearch owners without copying their policy. Follow its `contract` branch 
 `qdrant` for candidate policy/runtime/hydration.
 
 Before assuming a value type or document/snapshot shape is supported, check technical specification
-§§7.1 and 9.4. Delivery status is recorded in the technical specification.
+§§7.1 and 9.4. Delivery closure is recorded in the technical specification.
 
 **Authoring hazard when nesting a `Fields` object under a domain root:** if the enclosing root object
 also aliases `Fields.document`, keep every dependency either inside `Fields` or outside the enclosing
