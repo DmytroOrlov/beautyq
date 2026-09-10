@@ -17,7 +17,6 @@ object BeautyQSearchGen2BootstrapError {
 
 final class BeautyQSearchStartupEvidence private[gen2] (
   val snapshotCapturedAt: Instant,
-  val sourceRevision: Option[String],
   val materializationDurationNanos: Long,
   val activationDurationNanos: Long,
   val activatedAt: Instant,
@@ -71,7 +70,6 @@ final class BeautyQSearchGen2Bootstrap private (
       activatedAt <- Clock.instant
       evidence = new BeautyQSearchStartupEvidence(
         snapshotCapturedAt = materialized.sourceSnapshot.capturedAt,
-        sourceRevision = materialized.sourceSnapshot.sourceRevision.map(_.value),
         materializationDurationNanos = nonNegativeDuration(materializationStarted, materializationFinished),
         activationDurationNanos = nonNegativeDuration(activationStarted, activationFinished),
         activatedAt = activatedAt,

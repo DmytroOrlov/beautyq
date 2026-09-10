@@ -25,9 +25,9 @@ For local startup, status inspection, recovery, protected acceptance, and reques
 
 ## Eval and measurement guardrails
 
-BeautyQ eval query changes are not simple JSON-only edits. Accepted query additions must update
-the known eval/count-lock chain together and must not tune ES/Qdrant, parser, vocabulary, seed data,
-routes, or production search behavior unless that is the explicit objective.
+BeautyQ eval query changes require the corpus JSON plus review and focused behavioral validation.
+They must not tune ES/Qdrant, parser, vocabulary, seed data, routes, or production search behavior
+unless that is the explicit objective.
 
 Dirty catalog profiles in runtime scorecard tests are measurement-only. They may show worse coverage
 without failing the test and do not by themselves justify production Qdrant activation, fallback,

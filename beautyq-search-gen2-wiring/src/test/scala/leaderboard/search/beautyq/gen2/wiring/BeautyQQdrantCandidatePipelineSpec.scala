@@ -25,7 +25,6 @@ final class BeautyQQdrantCandidatePipelineSpec extends AnyWordSpec {
     VersionedSnapshot(
       BeautyQSearchSnapshot(Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty, Vector.empty),
       ContentFingerprint("empty-source"),
-      None,
       Instant.parse("2026-01-01T00:00:00Z"),
     ),
     Vector.empty,

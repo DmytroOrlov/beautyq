@@ -26,7 +26,7 @@ final class SearchMaterializerSpec extends AnyWordSpec {
   private val sampleFormatVersion = ProjectionFormatVersion("sample-projection-v1")
   private val sampleSnapshot = SampleSnapshot(Vector(1, 2, 3))
   private val sampleVersioned =
-    VersionedSnapshot(sampleSnapshot, ContentFingerprint("sample-fingerprint"), sourceRevision = None, capturedAt = capturedAt)
+    VersionedSnapshot(sampleSnapshot, ContentFingerprint("sample-fingerprint"), capturedAt = capturedAt)
 
   private def projectSuccessfully(snapshot: SampleSnapshot): Either[SampleProjectionError, Vector[SampleDocument]] =
     Right(snapshot.values.map(SampleDocument.apply))

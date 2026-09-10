@@ -42,7 +42,6 @@ object BeautyQEvaluationExecutionError {
 
 final class BeautyQEvaluationEnvironment private (
   val snapshotCapturedAt: Instant,
-  val sourceRevision: String,
   val elasticsearchVersion: String,
   val qdrantVersion: String,
   val osName: String,
@@ -56,12 +55,10 @@ final class BeautyQEvaluationEnvironment private (
 object BeautyQEvaluationEnvironment {
   def fromSystem(
     snapshotCapturedAt: Instant,
-    sourceRevision: String,
     elasticsearchVersion: String,
     qdrantVersion: String,
   ): Either[String, BeautyQEvaluationEnvironment] = {
     val required = Vector(
-      "sourceRevision" -> sourceRevision,
       "elasticsearchVersion" -> elasticsearchVersion,
       "qdrantVersion" -> qdrantVersion,
     )
@@ -70,7 +67,6 @@ object BeautyQEvaluationEnvironment {
       case None =>
         Right(new BeautyQEvaluationEnvironment(
           snapshotCapturedAt,
-          sourceRevision,
           elasticsearchVersion,
           qdrantVersion,
           systemProperty("os.name"),
@@ -598,7 +594,6 @@ object BeautyQMeasuredEvaluation {
             ),
             "snapshot" -> Json.obj(
               "capturedAt" -> Json.fromString(environment.snapshotCapturedAt.toString),
-              "sourceRevision" -> Json.fromString(environment.sourceRevision),
               "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
               "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
               "elasticsearchGenerationReference" -> Json.fromString(status.elasticsearchReference),

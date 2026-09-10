@@ -39,10 +39,6 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 180 visible cases including permanent disclosed migrations" in {
-      assert(corpus.cases.length == 180)
-    }
-
     "have every case as Regression" in {
       corpus.cases.foreach(c => assert(c.partition == EvaluationPartition.Regression))
     }

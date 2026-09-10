@@ -16,7 +16,7 @@ final class ElasticsearchGenerationLifecycleSpec extends AnyWordSpec {
 
   private def compiledGeneration(policy: ElasticsearchPolicy[BookDocument, String]): CompiledElasticsearchGeneration[BookDocument, String] = {
     val materialized = MaterializedSearchDocuments(
-      VersionedSnapshot((), ContentFingerprint("source"), None, Instant.parse("2026-01-01T00:00:00Z")),
+      VersionedSnapshot((), ContentFingerprint("source"), Instant.parse("2026-01-01T00:00:00Z")),
       Vector(bookA, bookA.copy(isbn = "978-1-11-111111-1")),
       ProjectedDocumentsFingerprint("projected"),
       ProjectionFormatVersion("projection-v1"),

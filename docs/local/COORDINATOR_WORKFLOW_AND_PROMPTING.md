@@ -615,7 +615,6 @@ Do not generalize that transport rule to feature-owned or owner-defined evidence
 
 - Agent scratch/build/generated work follows the repository execution rules that apply to the executing agent.
 - Feature-owned durable artifacts stay in their canonical repository owners.
-- Multi-iteration evidence workspaces use the location defined by their active evidence owner; when that owner currently defines `./.evidence-runs/<run-id>/`, preserve that contract rather than moving the evidence to OS temp.
 - A coordinator transport ZIP may contain copies/references needed for review, but the ZIP itself is never promoted into evidence authority merely because it exists.
 
 Evidence authority follows the active owner contract and exact identity semantics, not trackedness or transport location alone.

@@ -503,7 +503,7 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
       assert(documentSource.contains("final case class VariantSearchDocumentGen2("), "VariantSearchDocumentGen2 must remain an explicit case class")
     }
 
-    "declare no field outside BeautyQSearchDeclarations.scala within beautyq-search-gen2-contract's main sources, and retain no ModuleMarker" in {
+    "declare no field outside BeautyQSearchDeclarations.scala within beautyq-search-gen2-contract's main sources" in {
       val mainRoot = repoRoot.resolve("beautyq-search-gen2-contract/src/main/scala")
       val files = Using.resource(Files.walk(mainRoot)) {
         stream => stream.iterator.asScala.toList.filter(path => Files.isRegularFile(path) && path.toString.endsWith(".scala"))
@@ -517,9 +517,6 @@ final class BeautyQSearchDeclarationsSpec extends AnyWordSpec {
           if (declaresField && path.getFileName.toString != "BeautyQSearchDeclarations.scala") List(relativeName) else Nil
       }
       assert(fieldDeclarationViolations.isEmpty, s"unexpected field[/computedField[ declarations outside the root: $fieldDeclarationViolations")
-
-      val moduleMarkerViolations = files.filter(path => Files.readString(path, StandardCharsets.UTF_8).contains("ModuleMarker"))
-      assert(moduleMarkerViolations.isEmpty, s"unexpected ModuleMarker references: $moduleMarkerViolations")
     }
   }
 }

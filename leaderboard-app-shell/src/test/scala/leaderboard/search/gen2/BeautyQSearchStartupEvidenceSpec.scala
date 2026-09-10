@@ -12,7 +12,6 @@ final class BeautyQSearchStartupEvidenceSpec extends AnyWordSpec {
       val activatedAt = Instant.parse("2026-07-31T10:00:05Z")
       val evidence = new BeautyQSearchStartupEvidence(
         capturedAt,
-        Some("postgres-snapshot-42"),
         1200000L,
         3400000L,
         activatedAt,
@@ -26,7 +25,6 @@ final class BeautyQSearchStartupEvidenceSpec extends AnyWordSpec {
       assert(json.hcursor.get[String]("observedAt") == Right("2026-07-31T10:00:10Z"))
       val snapshot = json.hcursor.downField("snapshot")
       assert(snapshot.get[String]("capturedAt") == Right(capturedAt.toString))
-      assert(snapshot.get[String]("sourceRevision") == Right("postgres-snapshot-42"))
       assert(snapshot.get[Long]("ageSeconds") == Right(10L))
       val durations = json.hcursor.downField("startupDurations")
       assert(durations.get[Long]("materializationNanos") == Right(1200000L))

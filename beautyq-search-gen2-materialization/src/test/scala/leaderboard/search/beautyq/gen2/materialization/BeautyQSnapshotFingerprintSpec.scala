@@ -90,8 +90,8 @@ final class BeautyQSnapshotFingerprintSpec extends AnyWordSpec {
 
     "not be affected by different VersionedSnapshot.capturedAt values" in {
       val contentFingerprint = BeautyQSnapshotFingerprint.compute(snapshot)
-      val versionedEarly = VersionedSnapshot(snapshot, contentFingerprint, sourceRevision = None, capturedAt = Instant.parse("2020-01-01T00:00:00Z"))
-      val versionedLate = VersionedSnapshot(snapshot, contentFingerprint, sourceRevision = None, capturedAt = Instant.parse("2030-06-15T12:30:00Z"))
+      val versionedEarly = VersionedSnapshot(snapshot, contentFingerprint, capturedAt = Instant.parse("2020-01-01T00:00:00Z"))
+      val versionedLate = VersionedSnapshot(snapshot, contentFingerprint, capturedAt = Instant.parse("2030-06-15T12:30:00Z"))
 
       assert(versionedEarly.contentFingerprint == versionedLate.contentFingerprint)
       assert(versionedEarly.contentFingerprint == BeautyQSnapshotFingerprint.compute(snapshot))

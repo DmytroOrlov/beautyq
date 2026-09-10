@@ -3,7 +3,6 @@ package leaderboard.search.gen2.core.materialization
 import java.time.Instant
 
 final case class ContentFingerprint(value: String)
-final case class SourceRevision(value: String)
 
 final case class ProjectedDocumentsFingerprint(value: String)
 final case class ProjectionFormatVersion(value: String)
@@ -11,7 +10,6 @@ final case class ProjectionFormatVersion(value: String)
 final case class VersionedSnapshot[A](
   value: A,
   contentFingerprint: ContentFingerprint,
-  sourceRevision: Option[SourceRevision],
   capturedAt: Instant,
 )
 

@@ -42,7 +42,7 @@ final class CandidateHydrationSpec extends AnyWordSpec {
 
   private val metadata = Metadata("source", "projected", "projection-v1", 2)
   private val materialized = MaterializedSearchDocuments(
-    VersionedSnapshot(Vector(first, second), ContentFingerprint("source"), None, Instant.parse("2026-01-01T00:00:00Z")),
+    VersionedSnapshot(Vector(first, second), ContentFingerprint("source"), Instant.parse("2026-01-01T00:00:00Z")),
     Vector(second, first),
     ProjectedDocumentsFingerprint("projected"),
     ProjectionFormatVersion("projection-v1"),

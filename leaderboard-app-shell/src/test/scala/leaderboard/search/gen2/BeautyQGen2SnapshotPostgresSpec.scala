@@ -126,7 +126,6 @@ final class BeautyQGen2SnapshotPostgresSpec extends LeaderboardTest with ProdTes
           seedDocuments = documents.filter(document => expectedSeedVariantIds.contains(document.variantId))
           seedDocumentIds = seedDocuments.map(_.variantId)
 
-          _ <- assertIO(versioned.sourceRevision.isEmpty)
           _ <- assertIO(expectedSeedVariantIds.subsetOf(snapshotVariantIds))
           _ <- assertIO(seedDocuments.size == 66)
           _ <- assertIO(seedDocumentIds.toSet == expectedSeedVariantIds)

@@ -120,8 +120,9 @@ lazy val beautyqSearchRepositories = project
   .dependsOn(`leaderboard-core`, repoCore, beautyqModel)
 
 // --- BeautyQ Search Gen2 modules ---
-// Independent module DAG. No Gen2 project may depend on a Gen1 search project; enforced by
-// SearchGen2ModuleFirewallSpec.
+// Independent Gen2 module DAG. The module firewall in search-gen2-contract's tests covers the
+// remaining compiler-invisible properties (generic neutrality, aggregate coverage, eval isolation,
+// SQL confinement, and BeautyQ production package ownership).
 
 lazy val searchGen2Contract = project
   .in(file("search-gen2-contract"))

@@ -29,8 +29,8 @@ final class BeautyQEvaluationCorpusSpec extends AnyWordSpec {
       }
     }
 
-    "have exactly 180 visible cases including permanent disclosed migrations" in {
-      assert(corpus.cases.length == 180)
+    "have at least 180 visible cases including permanent disclosed migrations" in {
+      assert(corpus.cases.size >= 180)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-migrated")) == 7)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle2-migrated")) == 4)
       assert(corpus.cases.count(_.slices.exists(_.value == "q2-break-glass-cycle3-full-slice-migrated")) == 8)

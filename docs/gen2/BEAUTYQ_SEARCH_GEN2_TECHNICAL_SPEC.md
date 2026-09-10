@@ -363,20 +363,10 @@ Gen2 may depend on neutral/shared project foundations such as:
 - generic JSON/HTTP/effect/logging libraries already used by the repository;
 - a newly extracted neutral transport/client module.
 
-### 5.2 Forbidden Gen1 dependencies
+### 5.2 Gen1 search modules are absent
 
-No Gen2 module may depend on or import from:
-
-```text
-search-core
-search-elasticsearch
-search-qdrant
-beautyq-search-contract
-beautyq-search-materialization
-beautyq-search-wiring
-```
-
-The rule applies to main and test sources, except for an explicitly named comparison fixture module that is not on any Gen2 runtime classpath.
+The Gen1 search projects no longer exist. Gen2 modules compile without any Gen1 reference, and the sbt
+project graph plus compilation prevent reintroducing one. Git history owns the completed cutover.
 
 ### 5.3 Neutral clients
 
@@ -395,26 +385,27 @@ alias, waited-index/upsert, exact-count and `/points/query` paths; it accepts on
 segment and performs no lifecycle authorization. The Qdrant lifecycle owner binds an authorized physical target internally
 before invoking it; there is no second HTTP implementation.
 
-### 5.4 Gen1 references are classified, not dependencies
+### 5.4 Gen1 references are historical
 
-`BeautyQGen1SearchDeletionInventory` owns typed completed-cutover evidence; delivery closure is
-recorded in the delivery status section below. Historical Gen1 findings live in Git history.
+Historical Gen1 findings live in Git history, and no current Gen2 main or test source references Gen1.
 
-Being generic in Scala type parameters does not make a class reusable across the module firewall. A
-symbol located in `search-core`, `search-elasticsearch`, `search-qdrant` or a BeautyQ Gen1 search
-module remains forbidden until it is extracted into an approved neutral module. Tests and business
-fixtures may be ported as semantic evidence, but imports from Gen2 main/test source to those projects
-remain forbidden except for the explicitly isolated comparison fixture module described above.
+## 6. Compiler-invisible firewall
 
-## 6. Module/import firewall
+The Scala compiler and the sbt project graph enforce most coupling. A small firewall covers the
+remaining compiler-invisible properties. `search-gen2-contract`'s `SearchGen2ModuleFirewallSpec`
+covers five:
 
-The first Gen2 code change adds automated checks that:
+- generic Gen2 main sources stay free of BeautyQ-specific names;
+- the retained Gen2 and shared projects stay in the root aggregate;
+- serving Gen2 projects acquire no BeautyQ eval build dependency, and `leaderboard-app-shell` keeps its
+  eval edge in `test->test`;
+- direct `leaderboard.sql.SQL` usage is confined to BeautyQ materialization;
+- BeautyQ production modules declare no class under the generic `leaderboard.search.gen2` namespace.
 
-- inspect declared sbt project dependencies;
-- scan Gen2 imports for forbidden package prefixes;
-- reject BeautyQ symbols in generic Gen2 modules;
-- reject eval dependencies from serving modules;
-- reject cyclic dependencies in the Gen2 DAG.
+A companion `BeautyQGen2MaterializationFirewallSpec` covers the sixth: BeautyQ materialization must not
+locally redeclare the shared generic materialization-identity owners (`ContentFingerprint`,
+`ProjectedDocumentsFingerprint`, `ProjectionFormatVersion`, `VersionedSnapshot`, `SearchSnapshotSource`),
+which would otherwise fork the identity model the ES/Qdrant generation and hydration chain relies on.
 
 A firewall violation fails CI.
 
@@ -1231,7 +1222,6 @@ trait SearchSnapshotSource[Snapshot] {
 final case class VersionedSnapshot[A](
   value: A,
   contentFingerprint: ContentFingerprint,
-  sourceRevision: Option[SourceRevision],
   capturedAt: Instant,
 )
 ```
@@ -2124,8 +2114,7 @@ requested model identity: a missing, non-string or mismatched `model` field is a
 `InvalidResult(QdrantEmbeddingError.ModelMismatch)` and never degrades to `Unavailable`/`Timeout`.
 The four typed cutover fixtures executed through the native
 application graph. FullSearch readiness was established, the no-harm gate
-passed, and the deterministic cutover and Gen1 deletion-inventory reports were
-written under `target/search-gen2/`. The runner does not invoke the HTTP route, does not
+passed, and the deterministic cutover report was written under `target/search-gen2/`. The runner does not invoke the HTTP route, does not
 synthesise IDs, does not rebuild result IDs, does not execute a second baseline search for comparison,
 and reuses the existing test-owned Distage managed-resource support. Distage injects the managed
 Elasticsearch endpoint and the single Distage-managed Qdrant endpoint (canonical view

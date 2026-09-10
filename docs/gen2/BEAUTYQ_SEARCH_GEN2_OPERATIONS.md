@@ -59,7 +59,6 @@ Returns HTTP 200 whenever a startup object exists.
   "observedAt": "...",
   "snapshot": {
     "capturedAt": "...",
-    "sourceRevision": "...",
     "sourceContentFingerprint": "...",
     "projectedDocumentsFingerprint": "...",
     "ageSeconds": 0

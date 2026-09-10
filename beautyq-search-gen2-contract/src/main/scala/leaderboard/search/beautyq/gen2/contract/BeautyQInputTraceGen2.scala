@@ -41,12 +41,13 @@ object BeautyIntentTrace {
   private def escape(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
 }
 
-/** Deterministic generated view of one [[BeautyIntentRule]] declaration - independent evidence for
-  * BeautyQIntentVocabularyEvidenceSpec's Gen1 disposition ledger, never itself the source of truth for
-  * that ledger's expected content (the ledger's expected traces are a hand-verified literal vector, not
-  * derived from this renderer or from any other production traversal helper). Aliases render normalized
-  * (through the one shared [[BeautyQIntentTextGen2]] contract) so a normalization regression is visible
-  * here too, not only in parser behavior.
+/** Deterministic generated view of one [[BeautyIntentRule]] declaration. `render` supplies the
+  * rendering compared against the independently authored complete current vocabulary/declaration
+  * regression golden in `BeautyQIntentVocabularyEvidenceSpec`. The renderer is not itself the source
+  * of truth for that golden, whose expected traces are a hand-authored literal vector rather than a
+  * value derived from this renderer or any other production traversal helper. Aliases render
+  * normalized (through the one shared [[BeautyQIntentTextGen2]] contract) so a normalization
+  * regression is visible here too, not only in parser behavior.
   */
 object BeautyIntentRuleTrace {
   def render(rule: BeautyIntentRule): String =

@@ -11,12 +11,11 @@ import izumi.logstage.distage.LogIO2Module
 import logstage.LogIO2
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
 import leaderboard.plugins.{ElasticsearchDockerPlugin, QdrantGen2DockerPlugin}
-import leaderboard.seed.BeautyQSeedLoader
 import leaderboard.search.beautyq.gen2.eval.*
 import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshot, BeautyQVariantMaterializer, SnapshotLoadError}
 import leaderboard.search.beautyq.gen2.wiring.*
 import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
-import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, SourceRevision, VersionedSnapshot}
+import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, VersionedSnapshot}
 import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
@@ -113,7 +112,6 @@ object BeautyQSearchGen2EvaluationResourceHarness {
         })
         val environment = BeautyQEvaluationEnvironment.fromSystem(
           prepared.versioned.capturedAt,
-          prepared.versioned.sourceRevision.map(_.value).getOrElse(BeautyQSeedLoader.DefaultResourcePath),
           elasticsearchVersion,
           qdrantVersion,
         ) match {
@@ -254,7 +252,6 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     val versioned = VersionedSnapshot(
       catalog.snapshot,
       catalog.sourceFingerprint,
-      Some(SourceRevision(BeautyQSeedLoader.DefaultResourcePath)),
       Instant.now(),
     )
     val source = new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {

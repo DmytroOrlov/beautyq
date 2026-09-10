@@ -4,12 +4,12 @@ import io.circe.Json
 import izumi.logstage.api.IzLogger
 import logstage.LogIO2
 import leaderboard.config.{ElasticsearchPortCfg, QdrantGen2PortCfg}
-import leaderboard.search.beautyq.gen2.eval.{BeautyQCutoverGate, BeautyQCutoverQueryFixture, BeautyQCutoverQueryObservation, BeautyQEvaluationEnvironment, BeautyQEvaluationExecutionError, BeautyQGen1SearchDeletionInventory, BeautyQMeasuredEvaluation, BeautyQNoHarmSupplementEvidence}
+import leaderboard.search.beautyq.gen2.eval.{BeautyQCutoverGate, BeautyQCutoverQueryFixture, BeautyQCutoverQueryObservation, BeautyQEvaluationCorpus, BeautyQEvaluationEnvironment, BeautyQEvaluationExecutionError, BeautyQEvaluationPolicy, BeautyQMeasuredEvaluation, BeautyQNoHarmSupplementEvidence}
 import leaderboard.search.beautyq.gen2.materialization.{BeautyQSearchSnapshot, BeautyQSnapshotFingerprint, BeautyQVariantMaterializer, SnapshotLoadError}
 import leaderboard.seed.BeautyQSeedLoader
 import leaderboard.search.beautyq.gen2.wiring.*
 import leaderboard.search.embedding.LlamaCppEmbeddingClientConfig
-import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, SourceRevision, VersionedSnapshot}
+import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, VersionedSnapshot}
 import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
 import leaderboard.search.gen2.transport.*
@@ -29,8 +29,8 @@ import java.time.{Clock, Duration, Instant}
   * exactly once, requires its `startup.status` to be `FullSearch`, then projects
   * the four typed fixtures through the same application in declared order, derives
   * each observation via `fromExecution`, evaluates the readiness-aware gate, and
-  * writes the deterministic cutover and deletion-inventory reports to the
-  * ignored `target/search-gen2/` tree.
+  * writes the deterministic cutover report to the ignored `target/search-gen2/`
+  * tree.
   *
   * The spec never invokes the HTTP route, never synthesises IDs, never rebuilds
   * result IDs and never executes a second baseline search for comparison. */
@@ -80,10 +80,6 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
 
           val (gate, report) = runCutover(startup)
           writeArtifact("target/search-gen2/beautyq-cutover-report.json", report)
-          writeArtifact(
-            "target/search-gen2/beautyq-gen1-deletion-inventory.json",
-            BeautyQGen1SearchDeletionInventory.toJson,
-          )
           if (!gate.passed) {
             val failed = gate.checks.filterNot(_.passed).map(check => s"${check.id} observed=${check.observed} expected=${check.expected}")
             fail(s"cutover gate failed: ${failed.mkString("; ")}")
@@ -94,7 +90,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
       }
     }
 
-    "execute all 180 canonical regression cases through one Required startup and write measured correction evidence" in {
+    "execute the canonical regression corpus through one Required startup and write measured correction evidence" in {
       val embeddingConfig = LlamaCppEmbeddingClientConfig(
         baseUrl = sys.env.getOrElse("M18_QDRANT_EMBEDDING_ENDPOINT", "http://localhost:8081"),
         endpointPath = "/v1/embeddings",
@@ -103,7 +99,7 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
       if (!probeEmbeddingReachability(embeddingEndpoint)) {
         cancel(
           s"VERIFICATION BLOCKED: real BeautyQ Gen2 embedding endpoint is unreachable at $embeddingEndpoint; " +
-            s"cannot execute the 180-case Q2 evaluation."
+            s"cannot execute the canonical regression evaluation."
         )
       }
 
@@ -142,7 +138,6 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
 
           val environment = BeautyQEvaluationEnvironment.fromSystem(
             prepared.versioned.capturedAt,
-            prepared.versioned.sourceRevision.map(_.value).getOrElse(BeautyQSeedLoader.DefaultResourcePath),
             elasticsearchVersion,
             qdrantVersion,
           ) match {
@@ -163,8 +158,12 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
           writeArtifact("target/search-gen2/beautyq-evaluation-score-separation.json", measured.scoreSeparationJson)
           writeArtifact("target/search-gen2/beautyq-evaluation-correction-gate.json", measured.correctionGate.toJson)
 
-          assert(measured.warmupExecutions == 180)
-          assert(measured.measuredExecutions == 540)
+          val corpusSize = BeautyQEvaluationCorpus.loadCanonical() match {
+            case Right(corpus) => corpus.cases.size
+            case Left(error)   => fail(s"failed to load canonical evaluation corpus: $error")
+          }
+          assert(measured.warmupExecutions == corpusSize * BeautyQEvaluationPolicy.warmupPasses)
+          assert(measured.measuredExecutions == corpusSize * BeautyQEvaluationPolicy.measuredPasses)
           if (!measured.correctionGate.passed) {
             val failed = measured.correctionGate.checks.filterNot(_.passed)
             val separation = measured.correctionGate.supplementScoreSeparation
@@ -284,7 +283,6 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
     val versioned = VersionedSnapshot(
       value = BeautyQElasticsearchTestFixtures.snapshot,
       contentFingerprint = BeautyQSnapshotFingerprint.compute(BeautyQElasticsearchTestFixtures.snapshot),
-      sourceRevision = Some(SourceRevision("cutover-communication-spec")),
       capturedAt = Instant.now(),
     )
     buildStartupFromSnapshot(elasticsearchPort, qdrantClient, embedding, versioned)
@@ -338,7 +336,6 @@ final class BeautyQSearchGen2CutoverCommunicationSpec extends org.scalatest.word
     val versioned = VersionedSnapshot(
       value = snapshot,
       contentFingerprint = BeautyQSnapshotFingerprint.compute(snapshot),
-      sourceRevision = Some(SourceRevision(BeautyQSeedLoader.DefaultResourcePath)),
       capturedAt = Instant.now(),
     )
     val source = new SearchSnapshotSource[IO, SnapshotLoadError, BeautyQSearchSnapshot] {
