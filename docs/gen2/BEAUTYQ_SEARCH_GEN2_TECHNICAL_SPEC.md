@@ -6,9 +6,8 @@ Delivery rule: one final cutover completed; Gen1 search modules and routes are a
 
 Sections explicitly labelled implemented describe current source. All backend/runtime sections
 are implemented; delivery closure is recorded below. Feature-specific delivery order and current
-remaining-work status belong to the active Spec Kit feature artifacts under `specs/` (Q2 closeout:
-`specs/002-beautyq-q2-closeout`); this specification owns current implemented architecture, not active
-feature chronology.
+remaining-work status belong to the active Spec Kit feature artifacts under `specs/`; this
+specification owns current implemented architecture, not active feature chronology.
 
 ## 1. Goal
 
@@ -2144,7 +2143,7 @@ domain-owned corpus/request adapters and production application path to produce 
 and aggregate-only protected evidence.
 
 `beautyq-search-gen2-eval` owns the readiness-aware cutover gate, append-only no-harm evidence,
-deterministic report encoding, protected input codecs and audits, domain evaluation policy and adapters.
+deterministic report encoding, protected input codecs, domain evaluation policy and adapters.
 The Distage communication owner executes the canonical visible corpus through one
 Required/FullSearch native application and the real Elasticsearch, Qdrant and embedding paths. It runs
 one warmup pass followed by three measured passes at concurrency one. Only
@@ -2153,40 +2152,26 @@ Generated detailed reports remain artifacts and a red quality gate is never repo
 communication run.
 
 The domain-neutral `search-gen2-eval` project supplies stable evaluation identities, ranked metric
-mathematics, ordered scope/cutoff aggregation, comparison and deterministic report/manifest codecs.
+mathematics, ordered scope/cutoff aggregation and deterministic report codecs.
 Domain corpus schemas, request construction, labels, slices, thresholds and gates remain in each
 domain's eval project. Serving modules have no eval dependency.
 
 Mechanical one-token spelling, inflection and transliteration normalization is owned by
 `BeautyQIntentTextGen2`; multi-token service and attribute semantics are declared and traced by the
 typed `BeautyQIntentVocabulary`. Generic precedence, ranking and backend realization remain separate
-owners. Break-glass disclosure requires exact authorization binding. Every disclosed protected case
-moves permanently to visible Regression evidence and never returns to protected ownership.
+owners. Every disclosed protected case moves permanently to visible Regression evidence in the same
+reviewed commit and never returns to protected ownership.
 
-Protected-acceptance machinery strictly decodes an ordered holdout and separate acceptance policy,
-reuses the measured application path, emits aggregate-only report/measurement/gate artifacts, and
-permits candidate derivation only after a green protected gate. A reusable holdout requires canonical
-catalog identity validation, separate author and judge provenance, deterministic hash/fingerprint
-binding, visible/protected disjointness and reproducible freeze/audit evidence.
+Protected acceptance strictly decodes an ordered holdout and a separate acceptance policy, reuses the
+measured application path, and emits aggregate-only report/measurement/gate artifacts. Holdout
+integrity is proved in ordinary tests rather than generated evidence documents:
+`BeautyQProtectedHoldoutIntegritySpec` asserts strict policy and corpus loading, case-count and
+required-slice inventory, exact and NFKC-normalized query disjointness against the visible corpus,
+and canonical-catalog binding of every protected judgment identity.
 
-Q2 uses a catalog-bound recovery reserve with separate author and judge
-provenance, deterministic selection, visible/protected disjointness and
-reproducible freeze/audit binding. Consumed candidates become visible
-Regression evidence; protected selection chooses the first eligible
-non-consumed candidate whose normalized query is not already visible.
-Current milestone status belongs to the active Spec Kit feature artifacts under `specs/`
-(`specs/002-beautyq-q2-closeout` for Q2 closeout).
-
-`BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
-candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
-resource and compares ordered aggregate observations. The first accepted manifest must be
-bootstrapped only after a green protected gate carrying the verified tracked canonical inputs.
-The verifier reports but does not compare these run-specific audit fields as baseline identity:
-Elasticsearch generation reference, Qdrant generation ID, visible report
-digest, protected report digest and top-level manifest report digest. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
-fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
-observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
-without per-case or result identities.
+The canonical corpus codec accepts only the typed corpus shape (`notes` and judgment vectors are
+arrays) and preserves declared aggregate observation order rather than sorting map keys. Protected
+encoding retains aggregate/slice evidence without per-case or result identities.
 Full reports remain generated artifacts.
 
 The score-separation artifact records every visible returned identity with its query, projector-owned
@@ -2350,12 +2335,10 @@ completes seed insertion first.
 In provided composition, `BeautyQSeedReady.Noop` preserves externally owned database readiness while
 keeping the startup dependency explicit.
 
-The core architecture is frozen. The remaining approved work (BeautyQ protected acceptance, bootstrap,
-candidate review, promotion, and verify) is delivered under `specs/002-beautyq-q2-closeout`; the eval-first
-second-domain vertical (D1) remains deferred and is not authorized current execution scope. Feature-specific
-delivery order and status belong to the active Spec Kit feature artifacts under `specs/`, not to this
-specification. Anything beyond that approved work still requires a product requirement or a
-source-confirmed defect.
+The core architecture is frozen. The eval-first second-domain vertical (D1) remains deferred and is
+not authorized current execution scope. Feature-specific delivery order and status belong to the
+active Spec Kit feature artifacts under `specs/`, not to this specification. Anything beyond approved
+work requires a product requirement or a source-confirmed defect.
 
 ### Verification ownership
 

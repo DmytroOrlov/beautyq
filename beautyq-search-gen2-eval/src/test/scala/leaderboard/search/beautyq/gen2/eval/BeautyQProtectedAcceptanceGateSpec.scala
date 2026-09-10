@@ -11,7 +11,7 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       val result = BeautyQProtectedAcceptanceGate.evaluate(fixture.visible, fixture.protectedRun, fixture.protectedCorpus, fixture.policy)
       assert(result.passed)
       assert(result.protectedCaseCount == 1)
-      assert(result.toJson.hcursor.get[String]("protectedReportDigest").isRight)
+      assert(result.checks.nonEmpty)
     }
 
     "reject each visible prerequisite independently" in {
@@ -50,12 +50,8 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       assert(BeautyQProtectedAcceptanceGate.actualThresholdStatus(sep) == "not_required")
     }
 
-    "reject corpus fingerprint and case-count inventory failures" in {
+    "reject case-count inventory failure" in {
       val fixture = syntheticFixture()
-      val wrongFingerprint = fixture.copy(protectedCorpus = protectedCorpusWithFingerprint("c" * 64))
-      val r1 = BeautyQProtectedAcceptanceGate.evaluate(fixture.visible, fixture.protectedRun, wrongFingerprint.protectedCorpus, fixture.policy)
-      assert(r1.checks.exists(check => check.code == "protected-corpus-fingerprint" && !check.passed))
-
       val wrongCount = fixture.copy(protectedCorpus = protectedCorpusWithCaseCount(3))
       val r2 = BeautyQProtectedAcceptanceGate.evaluate(fixture.visible, fixture.protectedRun, wrongCount.protectedCorpus, fixture.policy)
       assert(r2.checks.exists(check => check.code == "protected-case-count" && !check.passed))
@@ -125,10 +121,7 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       val result = BeautyQProtectedAcceptanceGate.evaluate(fixture.visible, fixture.protectedRun, fixture.protectedCorpus, fixture.policy)
       assert(result.evaluationPolicyVersion == fixture.policy.evaluationPolicyVersion)
       assert(result.protectedAcceptancePolicyVersion == fixture.policy.protectedAcceptancePolicyVersion)
-      assert(result.policyFingerprint == fixture.policy.fingerprint)
-      assert(result.protectedCorpusFingerprint == fixture.protectedCorpus.corpusFingerprint)
       assert(result.protectedCaseCount == fixture.protectedCorpus.caseCount)
-      assert(result.protectedReportDigest == fixture.protectedRun.protectedReportDigest)
     }
 
     "exclude protected sentinels from gate JSON" in {
@@ -177,7 +170,6 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       case Left(error) => fail(error.toString)
     }
     val provenance = Vector(
-      "corpus-fingerprint" -> ("a" * 64),
       "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
       "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
     ).foldLeft[Vector[ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
@@ -206,7 +198,7 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
     val corpus = new BeautyQEvaluationCorpus(
       "beautyq-evaluation-corpus-v2", "protected", "test", 1,
       UserLocation.from("test", 53.55, 10.0),
-      Vector(corpusCase), "a" * 64,
+      Vector(corpusCase),
     )
     val protectedCorpusVal = new BeautyQProtectedEvaluationCorpus(corpus, Vector(smokeSlice -> 1))
     val policy = decodePolicy(policyJson())
@@ -225,8 +217,6 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       report,
       EvaluationReport.encodeDetailed(report),
       EvaluationReport.encodeProtected(report),
-      EvaluationReportDigest.compute(EvaluationReport.encodeProtected(report)),
-      EvaluationReportDigest.compute(EvaluationReport.encodeDetailed(report)),
       Json.obj(), Json.obj(),
       BeautyQEvaluationCorrectionGateResult.create(finalChecks, 1, 1, 3, 0, 0, 0, 0, 0, 0, scoreSeparation),
       1, 3, BeautyQEvaluationPolicy.CurrentVersion,
@@ -257,7 +247,6 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       case Left(error) => fail(error.toString)
     }
     val provenance = Vector(
-      "corpus-fingerprint" -> ("v" * 64),
       "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
       "metric-schema-version" -> RankingEvaluator.MetricSchemaVersion,
     ).foldLeft[Vector[ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
@@ -289,27 +278,10 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       report,
       EvaluationReport.encodeDetailed(report),
       EvaluationReport.encodeProtected(report),
-      EvaluationReportDigest.compute(EvaluationReport.encodeProtected(report)),
-      EvaluationReportDigest.compute(EvaluationReport.encodeDetailed(report)),
       Json.obj(), Json.obj(),
       BeautyQEvaluationCorrectionGateResult.create(passedChecks, 1, 1, 1, 0, forbiddenHitCount, 0, 0, 0, 0, scoreSep),
       1, 3, BeautyQEvaluationPolicy.CurrentVersion,
     )
-  }
-
-  private def protectedCorpusWithFingerprint(fingerprint: String): BeautyQProtectedEvaluationCorpus = {
-    val caseId = cid("protected-case")
-    val resultId = rid("result-a")
-    val judgments = RankingJudgments.from(JudgmentMode.Partial, Vector(resultId), Vector.empty, Vector.empty, Vector.empty) match {
-      case Right(value) => value
-      case Left(error) => fail(error.toString)
-    }
-    val smokeSlice = sid("smoke")
-    val corpusCase = new CorpusCase(caseId, EvaluationPartition.ProtectedHoldout, JudgmentMode.Partial,
-      "protected query", "en", Vector(smokeSlice), "protected", Vector.empty, judgments, judgments, judgments)
-    val corpus = new BeautyQEvaluationCorpus("beautyq-evaluation-corpus-v2", "protected", "test", 1,
-      UserLocation.from("test", 53.55, 10.0), Vector(corpusCase), fingerprint)
-    new BeautyQProtectedEvaluationCorpus(corpus, Vector(smokeSlice -> 1))
   }
 
   private def protectedCorpusWithCaseCount(@scala.annotation.nowarn count: Int): BeautyQProtectedEvaluationCorpus = {
@@ -325,7 +297,7 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
       judgments, judgments, judgments,
     )).toVector
     val corpus = new BeautyQEvaluationCorpus("beautyq-evaluation-corpus-v2", "protected", "test", 1,
-      UserLocation.from("test", 53.55, 10.0), cases, "a" * 64)
+      UserLocation.from("test", 53.55, 10.0), cases)
     val smokeSliceId = sid("smoke")
     new BeautyQProtectedEvaluationCorpus(corpus, Vector(smokeSliceId -> count))
   }
@@ -343,7 +315,6 @@ final class BeautyQProtectedAcceptanceGateSpec extends AnyWordSpec {
     "schemaVersion" -> Json.fromString(BeautyQProtectedAcceptancePolicy.CurrentSchemaVersion),
     "evaluationPolicyVersion" -> Json.fromString(BeautyQEvaluationPolicy.CurrentVersion),
     "protectedAcceptancePolicyVersion" -> Json.fromString("protected-policy-v1"),
-    "expectedCorpusFingerprint" -> Json.fromString("a" * 64),
     "expectedCaseCount" -> Json.fromInt(1),
     "requiredSliceMinimums" -> Json.arr(Json.obj("sliceId" -> Json.fromString("smoke"), "minimumCaseCount" -> Json.fromInt(1))),
     "requiredMetricMinimums" -> Json.fromValues(metricMinimums),

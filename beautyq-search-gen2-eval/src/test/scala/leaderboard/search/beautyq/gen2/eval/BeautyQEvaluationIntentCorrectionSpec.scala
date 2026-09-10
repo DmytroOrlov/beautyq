@@ -39,7 +39,7 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
   }
 
   "canonical corpus" should {
-    "have exactly 180 cases after all permanent break-glass migrations" in {
+    "have exactly 180 visible cases including permanent disclosed migrations" in {
       assert(corpus.cases.length == 180)
     }
 
@@ -51,9 +51,9 @@ final class BeautyQEvaluationIntentCorrectionSpec extends AnyWordSpec {
       assert(!corpus.cases.exists(_.partition == EvaluationPartition.ProtectedHoldout))
     }
 
-    "have a stable fingerprint across two loads" in {
+    "load identical corpus content on every load" in {
       val corpus2 = BeautyQEvaluationCorpus.loadCanonical().getOrElse(fail("failed to reload corpus"))
-      assert(corpus.corpusFingerprint == corpus2.corpusFingerprint)
+      assert(corpus == corpus2)
     }
 
     "contain all three correction regression cases" in {

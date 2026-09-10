@@ -70,21 +70,6 @@ object BeautyQSearchGen2EvaluationResourceHarness {
     protectedCorpusPath: Path,
     protectedPolicyPath: Path,
     outputDir: Path,
-  ): Either[String, ProtectedAcceptanceExecution] =
-    executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = false)
-
-  private[search] def executeProtectedForBreakGlass(
-    protectedCorpusPath: Path,
-    protectedPolicyPath: Path,
-    outputDir: Path,
-  ): Either[String, ProtectedAcceptanceExecution] =
-    executeProtectedEvaluation(protectedCorpusPath, protectedPolicyPath, outputDir, retainRedExecution = true)
-
-  private def executeProtectedEvaluation(
-    protectedCorpusPath: Path,
-    protectedPolicyPath: Path,
-    outputDir: Path,
-    retainRedExecution: Boolean,
   ): Either[String, ProtectedAcceptanceExecution] = {
     val visibleCorpus = BeautyQEvaluationCorpus.loadCanonical() match {
       case Right(value) => value
@@ -156,7 +141,7 @@ object BeautyQSearchGen2EvaluationResourceHarness {
         writeArtifact(outputDir.resolve("beautyq-protected-aggregate.json"), protectedRun.protectedReportJson)
         writeArtifact(outputDir.resolve("beautyq-protected-measurement.json"), protectedRun.measurementJson)
         writeArtifact(outputDir.resolve("beautyq-protected-acceptance-gate.json"), acceptance.toJson)
-        if (retainProtectedExecution(acceptance.passed, retainRedExecution))
+        if (acceptance.passed)
           Right(new ProtectedAcceptanceExecution(visible, protectedRun, protectedCorpus, protectedPolicy, acceptance))
         else Left("PROTECTED_ACCEPTANCE_RED")
       } finally {
@@ -164,9 +149,6 @@ object BeautyQSearchGen2EvaluationResourceHarness {
       }
     }
   }
-
-  private[search] def retainProtectedExecution(acceptancePassed: Boolean, retainRedExecution: Boolean): Boolean =
-    acceptancePassed || retainRedExecution
 
   def withManagedPorts[A](f: (ElasticsearchPortCfg, QdrantGen2PortCfg) => A): A = {
     BeautyQSearchGen2ResourceSupport.withExclusiveCanonicalNamespace {

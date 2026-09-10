@@ -71,19 +71,10 @@ final class BeautyQProtectedEvaluationCorpusSpec extends AnyWordSpec {
       assert(result == Left(BeautyQProtectedEvaluationCorpusError.ContainsNonProtectedCase))
     }
 
-    "reject fingerprint mismatch" in {
-      val visible = visibleCorpus()
-      val (corpus, _) = validProtectedCorpusAndPolicy()
-      val wrongPolicy = policyWithFingerprint("b" * 64, corpus.cases.size)
-      val json = BeautyQEvaluationCorpus.canonicalJson(corpus)
-      val result = BeautyQProtectedEvaluationCorpus.fromJson(json, visible, wrongPolicy)
-      assert(result == Left(BeautyQProtectedEvaluationCorpusError.FingerprintMismatch))
-    }
-
     "reject case-count mismatch" in {
       val visible = visibleCorpus()
       val (corpus, _) = validProtectedCorpusAndPolicy()
-      val wrongPolicy = policyWithFingerprint(corpus.corpusFingerprint, corpus.cases.size + 10)
+      val wrongPolicy = policyWithCaseCount(corpus.cases.size + 10)
       val json = BeautyQEvaluationCorpus.canonicalJson(corpus)
       val result = BeautyQProtectedEvaluationCorpus.fromJson(json, visible, wrongPolicy)
       assert(result == Left(BeautyQProtectedEvaluationCorpusError.CaseCountMismatch))
@@ -105,7 +96,7 @@ final class BeautyQProtectedEvaluationCorpusSpec extends AnyWordSpec {
         ),
         "cases" -> Json.arr(case1, case2),
       )
-      val policy = makePolicy("a" * 64, 2, slices = Vector(sid("smoke") -> 1))
+      val policy = makePolicy(2, slices = Vector(sid("smoke") -> 1))
       val result = BeautyQProtectedEvaluationCorpus.fromJson(json, visible, policy)
       result match {
         case Left(BeautyQProtectedEvaluationCorpusError.InvalidInput(msg)) => assert(msg.contains("not unique") || msg.contains("schema"))
@@ -130,8 +121,7 @@ final class BeautyQProtectedEvaluationCorpusSpec extends AnyWordSpec {
       ))
       val json = BeautyQEvaluationCorpus.canonicalJson(corpus)
       val policy = makePolicy(
-        corpusCorpusFingerprint(corpus), corpus.cases.size,
-        slices = Vector(sid("smoke") -> 1, sid("development") -> 1),
+        corpus.cases.size, slices = Vector(sid("smoke") -> 1, sid("development") -> 1),
       )
       val result = BeautyQProtectedEvaluationCorpus.fromJson(json, visible, policy)
       assert(result == Left(BeautyQProtectedEvaluationCorpusError.MissingRequiredSlice("development")))
@@ -145,8 +135,7 @@ final class BeautyQProtectedEvaluationCorpusSpec extends AnyWordSpec {
       ))
       val json = BeautyQEvaluationCorpus.canonicalJson(corpus)
       val policy = makePolicy(
-        corpusCorpusFingerprint(corpus), corpus.cases.size,
-        slices = Vector(sid("smoke") -> 1, sid("development") -> 2),
+        corpus.cases.size, slices = Vector(sid("smoke") -> 1, sid("development") -> 2),
       )
       val result = BeautyQProtectedEvaluationCorpus.fromJson(json, visible, policy)
       assert(result == Left(BeautyQProtectedEvaluationCorpusError.SliceCountTooSmall("development")))
@@ -234,30 +223,25 @@ final class BeautyQProtectedEvaluationCorpusSpec extends AnyWordSpec {
     Json.obj(base: _*)
   }
 
-  private def corpusCorpusFingerprint(corpus: BeautyQEvaluationCorpus): String = corpus.corpusFingerprint
-
   private def validProtectedCorpusAndPolicy(): (BeautyQEvaluationCorpus, BeautyQProtectedAcceptancePolicy) = {
     val corpus = buildCorpus(Vector(
       mkCase("case-1", EvaluationPartition.ProtectedHoldout, Vector(sid("smoke"), sid("development"))),
       mkCase("case-2", EvaluationPartition.ProtectedHoldout, Vector(sid("smoke"))),
     ))
-    val policy = makePolicy(corpus.corpusFingerprint, corpus.cases.size,
-      slices = Vector(sid("smoke") -> 2, sid("development") -> 1),
-    )
+    val policy = makePolicy(corpus.cases.size, slices = Vector(sid("smoke") -> 2, sid("development") -> 1))
     (corpus, policy)
   }
 
   private def policyForCorpus(corpus: BeautyQEvaluationCorpus): BeautyQProtectedAcceptancePolicy =
-    makePolicy(corpus.corpusFingerprint, corpus.cases.size, slices = Vector(sid("smoke") -> 1))
+    makePolicy(corpus.cases.size, slices = Vector(sid("smoke") -> 1))
 
-  private def policyWithFingerprint(fingerprint: String, caseCount: Int): BeautyQProtectedAcceptancePolicy =
-    makePolicy(fingerprint, caseCount, slices = Vector(sid("smoke") -> 1, sid("development") -> 1))
+  private def policyWithCaseCount(caseCount: Int): BeautyQProtectedAcceptancePolicy =
+    makePolicy(caseCount, slices = Vector(sid("smoke") -> 1, sid("development") -> 1))
 
   private def dummyPolicy(): BeautyQProtectedAcceptancePolicy =
-    makePolicy("a" * 64, 1, slices = Vector(sid("smoke") -> 1))
+    makePolicy(1, slices = Vector(sid("smoke") -> 1))
 
   private def makePolicy(
-    fingerprint: String,
     caseCount: Int,
     slices: Vector[(EvaluationSliceId, Int)],
   ): BeautyQProtectedAcceptancePolicy =
@@ -265,7 +249,6 @@ final class BeautyQProtectedEvaluationCorpusSpec extends AnyWordSpec {
       "schemaVersion" -> Json.fromString(BeautyQProtectedAcceptancePolicy.CurrentSchemaVersion),
       "evaluationPolicyVersion" -> Json.fromString(BeautyQEvaluationPolicy.CurrentVersion),
       "protectedAcceptancePolicyVersion" -> Json.fromString("protected-policy-v1"),
-      "expectedCorpusFingerprint" -> Json.fromString(fingerprint),
       "expectedCaseCount" -> Json.fromInt(caseCount),
       "requiredSliceMinimums" -> Json.fromValues(slices.map { case (id, count) =>
         Json.obj("sliceId" -> Json.fromString(id.value), "minimumCaseCount" -> Json.fromInt(count))

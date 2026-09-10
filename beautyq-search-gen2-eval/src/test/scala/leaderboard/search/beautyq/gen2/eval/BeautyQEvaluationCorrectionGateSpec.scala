@@ -25,7 +25,6 @@ final class BeautyQEvaluationCorrectionGateSpec extends AnyWordSpec {
       ))
       assert(gate.toJson.hcursor.get[String]("qualityThresholdStatus").contains("not_required"))
       assert(gate.toJson.hcursor.get[String]("protectedHoldoutStatus").contains("not_configured"))
-      assert(gate.toJson.hcursor.get[String]("acceptedBaselineStatus").contains("not_generated"))
     }
 
     "derive a threshold candidate only from strictly separated supplement scores" in {

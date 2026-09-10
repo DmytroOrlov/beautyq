@@ -9,7 +9,7 @@ Start here:
 
 * `AGENTS.md` for repository execution rules for agents
 * [BeautyQ Search Gen2 technical specification](docs/gen2/BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md) — current implemented Gen2 architecture, runtime ownership, supported shapes, accepted limits, and verification ownership
-* [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — launcher modes, operator status, response warnings, recovery, protected/evidence procedures, and partial-activation operations
+* [BeautyQ Search Gen2 operations runbook](docs/gen2/BEAUTYQ_SEARCH_GEN2_OPERATIONS.md) — launcher modes, operator status, response warnings, recovery, protected acceptance, and partial-activation operations
 * [Domain authoring principles](docs/search/DOMAIN_AUTHORING_PRINCIPLES.md) — repository-wide reusable domain/search ownership principles
 * [NEW_DOMAIN_ONBOARDING.md](docs/search/NEW_DOMAIN_ONBOARDING.md) — practical reusable guidance for domain authoring, lifecycle composition, proof selection, and focused validation
 * `docs/local/COORDINATOR_WORKFLOW_AND_PROMPTING.md` — coordinator workflow, phase-boundary, review, and anti-scope-drift rules
@@ -21,7 +21,7 @@ BeautyQ Search Gen2 is the native serving architecture.
 
 Do not reconstruct the current system by reading feature specs in chronological order. Source code and focused tests remain executable truth for implemented behavior; exact Git/evidence identities describe the precise states that were evaluated.
 
-For local startup, status inspection, recovery, protected evidence procedures, and request probes, use the BeautyQ Search Gen2 operations runbook.
+For local startup, status inspection, recovery, protected acceptance, and request probes, use the BeautyQ Search Gen2 operations runbook.
 
 ## Eval and measurement guardrails
 

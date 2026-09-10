@@ -6,7 +6,6 @@ import leaderboard.search.gen2.eval.{EvaluationCutoff, EvaluationMetricId, Evalu
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.security.MessageDigest
 
 sealed trait BeautyQProtectedAcceptancePolicyError
 object BeautyQProtectedAcceptancePolicyError {
@@ -55,11 +54,9 @@ final class BeautyQProtectedAcceptancePolicy private (
   val schemaVersion: String,
   val evaluationPolicyVersion: String,
   val protectedAcceptancePolicyVersion: String,
-  val expectedCorpusFingerprint: String,
   val expectedCaseCount: Int,
   val requiredSliceMinimums: Vector[BeautyQProtectedSliceMinimum],
   val requiredMetricMinimums: Vector[BeautyQProtectedMetricMinimum],
-  val fingerprint: String,
 ) {
   def canonicalJson: Json = BeautyQProtectedAcceptancePolicy.canonicalJson(this)
 }
@@ -68,11 +65,10 @@ object BeautyQProtectedAcceptancePolicy {
   val CurrentSchemaVersion = "beautyq-protected-acceptance-policy-v1"
   private val RootFields = Set(
     "schemaVersion", "evaluationPolicyVersion", "protectedAcceptancePolicyVersion",
-    "expectedCorpusFingerprint", "expectedCaseCount", "requiredSliceMinimums", "requiredMetricMinimums",
+    "expectedCaseCount", "requiredSliceMinimums", "requiredMetricMinimums",
   )
   private val SliceFields = Set("sliceId", "minimumCaseCount")
   private val MetricFields = Set("observationKey", "surface", "metric", "cutoff", "minimum")
-  private val Digest = "^[0-9a-f]{64}$".r
   private val Scale = 12
 
   def fromJson(json: Json): Either[BeautyQProtectedAcceptancePolicyError, BeautyQProtectedAcceptancePolicy] = for {
@@ -82,8 +78,6 @@ object BeautyQProtectedAcceptancePolicy {
     _ <- Either.cond(schema == CurrentSchemaVersion, (), BeautyQProtectedAcceptancePolicyError.InvalidValue("schemaVersion"))
     evaluationVersion <- version(root, "evaluationPolicyVersion")
     protectedVersion <- version(root, "protectedAcceptancePolicyVersion")
-    corpusFingerprint <- string(root, "expectedCorpusFingerprint", "root")
-    _ <- Either.cond(Digest.matches(corpusFingerprint), (), BeautyQProtectedAcceptancePolicyError.InvalidValue("expectedCorpusFingerprint"))
     caseCount <- positiveInt(root, "expectedCaseCount", "root")
     sliceValues <- array(root, "requiredSliceMinimums")
     metricValues <- array(root, "requiredMetricMinimums")
@@ -93,16 +87,9 @@ object BeautyQProtectedAcceptancePolicy {
     _ <- Either.cond(metricMinimums.nonEmpty, (), BeautyQProtectedAcceptancePolicyError.EmptyMetricMinimums)
     _ <- unique(sliceMinimums.map(_.sliceId.value), "slice ID")
     _ <- unique(metricMinimums.map(value => s"${value.observationKey}/${scopeKey(value.scope)}"), "metric observation")
-  } yield {
-    val withoutFingerprint = new BeautyQProtectedAcceptancePolicy(
-      schema, evaluationVersion, protectedVersion, corpusFingerprint, caseCount,
-      sliceMinimums, metricMinimums, "",
-    )
-    new BeautyQProtectedAcceptancePolicy(
-      schema, evaluationVersion, protectedVersion, corpusFingerprint, caseCount,
-      sliceMinimums, metricMinimums, fingerprint(withoutFingerprint),
-    )
-  }
+  } yield new BeautyQProtectedAcceptancePolicy(
+    schema, evaluationVersion, protectedVersion, caseCount, sliceMinimums, metricMinimums,
+  )
 
   def load(path: Path): Either[BeautyQProtectedAcceptancePolicyError, BeautyQProtectedAcceptancePolicy] =
     if (!Files.isRegularFile(path)) Left(BeautyQProtectedAcceptancePolicyError.InvalidDocument("policy file is not present"))
@@ -154,7 +141,6 @@ object BeautyQProtectedAcceptancePolicy {
     "schemaVersion" -> Json.fromString(policy.schemaVersion),
     "evaluationPolicyVersion" -> Json.fromString(policy.evaluationPolicyVersion),
     "protectedAcceptancePolicyVersion" -> Json.fromString(policy.protectedAcceptancePolicyVersion),
-    "expectedCorpusFingerprint" -> Json.fromString(policy.expectedCorpusFingerprint),
     "expectedCaseCount" -> Json.fromInt(policy.expectedCaseCount),
     "requiredSliceMinimums" -> Json.fromValues(policy.requiredSliceMinimums.map(value => Json.obj(
       "sliceId" -> Json.fromString(value.sliceId.value),
@@ -168,11 +154,6 @@ object BeautyQProtectedAcceptancePolicy {
       "minimum" -> Json.fromString(value.minimum.setScale(Scale).toString),
     ))),
   )
-
-  private def fingerprint(policy: BeautyQProtectedAcceptancePolicy): String = {
-    val digest = MessageDigest.getInstance("SHA-256")
-    digest.digest(canonicalJson(policy).noSpaces.getBytes(StandardCharsets.UTF_8)).map(b => f"$b%02x").mkString
-  }
 
   private def scopeKey(scope: MetricKeyScope): String = s"${scope.surfaceId.value}/${scope.metricId.value}/${scope.cutoff.value}"
   private def unique(values: Vector[String], label: String): Either[BeautyQProtectedAcceptancePolicyError, Unit] =

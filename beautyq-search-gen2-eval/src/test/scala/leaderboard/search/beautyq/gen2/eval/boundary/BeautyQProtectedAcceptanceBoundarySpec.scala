@@ -6,10 +6,10 @@ final class BeautyQProtectedAcceptanceBoundarySpec extends AnyWordSpec {
   "BeautyQ protected acceptance" should {
     "keep the green result constructor outside the external package" in {
       assertDoesNotCompile(
-        """new leaderboard.search.beautyq.gen2.eval.BeautyQProtectedAcceptanceResult("v", true, "evaluation", "policy", "a" * 64, "b" * 64, 1, "c" * 64, Vector.empty)"""
+        """new leaderboard.search.beautyq.gen2.eval.BeautyQProtectedAcceptanceResult("v", true, "evaluation", "policy", 1, Vector.empty)"""
       )
       assertDoesNotCompile(
-        """final class Forged extends leaderboard.search.beautyq.gen2.eval.BeautyQProtectedAcceptanceResult("v", true, "evaluation", "policy", "a" * 64, "b" * 64, 1, "c" * 64, Vector.empty)"""
+        """final class Forged extends leaderboard.search.beautyq.gen2.eval.BeautyQProtectedAcceptanceResult("v", true, "evaluation", "policy", 1, Vector.empty)"""
       )
     }
   }

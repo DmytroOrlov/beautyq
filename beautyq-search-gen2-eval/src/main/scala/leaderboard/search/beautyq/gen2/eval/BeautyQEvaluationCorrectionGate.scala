@@ -109,7 +109,6 @@ final class BeautyQEvaluationCorrectionGateResult private[BeautyQEvaluationCorre
     ),
     "supplementScoreSeparation" -> supplementScoreSeparation.toJson,
     "protectedHoldoutStatus" -> Json.fromString("not_configured"),
-    "acceptedBaselineStatus" -> Json.fromString("not_generated"),
   )
 }
 object BeautyQEvaluationCorrectionGateResult {

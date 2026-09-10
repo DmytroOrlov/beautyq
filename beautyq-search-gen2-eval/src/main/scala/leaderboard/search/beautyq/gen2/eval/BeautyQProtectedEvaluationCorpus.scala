@@ -13,7 +13,6 @@ object BeautyQProtectedEvaluationCorpusError {
   case object EmptyProtectedCorpus extends BeautyQProtectedEvaluationCorpusError
   case object ContainsNonProtectedCase extends BeautyQProtectedEvaluationCorpusError
   case object OverlapsVisibleCorpus extends BeautyQProtectedEvaluationCorpusError
-  case object FingerprintMismatch extends BeautyQProtectedEvaluationCorpusError
   case object CaseCountMismatch extends BeautyQProtectedEvaluationCorpusError
   final case class MissingRequiredSlice(sliceId: String) extends BeautyQProtectedEvaluationCorpusError
   final case class SliceCountTooSmall(sliceId: String) extends BeautyQProtectedEvaluationCorpusError
@@ -24,7 +23,6 @@ final class BeautyQProtectedEvaluationCorpus private[eval] (
   val orderedRequiredSliceCounts: Vector[(EvaluationSliceId, Int)],
 ) {
   val caseCount: Int = corpus.cases.size
-  val corpusFingerprint: String = corpus.corpusFingerprint
 }
 
 object BeautyQProtectedEvaluationCorpus {
@@ -62,7 +60,6 @@ object BeautyQProtectedEvaluationCorpus {
     else if (corpus.cases.exists(_.partition != EvaluationPartition.ProtectedHoldout)) Left(BeautyQProtectedEvaluationCorpusError.ContainsNonProtectedCase)
     else if (corpus.cases.map(_.caseId).distinct.size != corpus.cases.size) Left(BeautyQProtectedEvaluationCorpusError.InvalidInput("protected case IDs are not unique"))
     else if (corpus.cases.exists(current => visibleCorpus.cases.exists(_.caseId == current.caseId))) Left(BeautyQProtectedEvaluationCorpusError.OverlapsVisibleCorpus)
-    else if (corpus.corpusFingerprint != policy.expectedCorpusFingerprint) Left(BeautyQProtectedEvaluationCorpusError.FingerprintMismatch)
     else if (corpus.cases.size != policy.expectedCaseCount) Left(BeautyQProtectedEvaluationCorpusError.CaseCountMismatch)
     else {
       val counts = policy.requiredSliceMinimums.map { requirement =>

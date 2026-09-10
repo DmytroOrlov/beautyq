@@ -3,11 +3,11 @@ package leaderboard.search.beautyq.gen2.eval.boundary
 import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQEvaluationBoundarySpec extends AnyWordSpec {
-  "BeautyQ Q2 derived evidence" should {
+  "BeautyQ measured evaluation" should {
     "keep report and correction-gate construction outside their companions closed" in {
       assertDoesNotCompile(
         """new leaderboard.search.beautyq.gen2.eval.BeautyQMeasuredEvaluationResult(
-          |  ???, ???, "digest", ???, ???, 89, 267,
+          |  ???, ???, ???, ???, ???, ???, 89, 267, ???,
           |)""".stripMargin
       )
       assertDoesNotCompile(
@@ -26,7 +26,7 @@ final class BeautyQEvaluationBoundarySpec extends AnyWordSpec {
           |  json: io.circe.Json,
           |  gate: leaderboard.search.beautyq.gen2.eval.BeautyQEvaluationCorrectionGateResult,
           |) extends leaderboard.search.beautyq.gen2.eval.BeautyQMeasuredEvaluationResult(
-          |  report, json, "digest", json, gate, 89, 267,
+          |  report, json, json, json, json, gate, 89, 267, "policy",
           |)""".stripMargin
       )
     }

@@ -2,21 +2,19 @@
 
 **Status:** non-normative proposal and research input; **not** current milestone/task authority.
 
-This document is a hypothesis set and proposed decomposition. G0–G7 (and the S0–S7 milestone table below)
+This document is a hypothesis set and proposed decomposition. G1–G7 (and the S1–S7 milestone table below)
 are proposal structure, not permission to execute and not the current execution plan for any milestone.
 
 **Feature ownership:** the framework leverage audit is
 `specs/003-beautyq-distage-izumi-leverage-audit`, and the actual post-closeout simplification
 disposition/decision is `specs/004-beautyq-post-closeout-simplification-decision`, dependent on
-`specs/002-beautyq-q2-closeout` closeout plus the 003 audit. 003 may use this document as audit/input
+the 003 audit. 003 may use this document as audit/input
 context but must classify evidence independently; 004 owns the simplification decision, and nothing here
 pre-decides any 004 disposition. Accepted decisions must later be reflected into the durable `/docs`
 current owners. Once its useful conclusions have been absorbed by the decision and closeout owners, this
 proposal is intended to be retired rather than maintained as a second current-state plan.
 
-**Execution boundary:** Q2 closeout requirements, gates, and sequencing are owned by
-`specs/002-beautyq-q2-closeout`; this proposal cannot bypass Q2, and any work it describes can start only
-after the accepted baseline has been independently verified. Until an accepted decision updates the durable
+**Execution boundary:** this proposal authorizes nothing by itself. Until an accepted decision updates the durable
 owners, the [technical specification](BEAUTYQ_SEARCH_GEN2_TECHNICAL_SPEC.md),
 [operations runbook](BEAUTYQ_SEARCH_GEN2_OPERATIONS.md), and
 [repository-wide domain-authoring principles](../search/DOMAIN_AUTHORING_PRINCIPLES.md) remain the
@@ -154,18 +152,6 @@ Framework and domain boundaries remain:
 
 ## 5. Goals
 
-### G0 — Close Q2 before structural surgery
-
-Complete Q2-B and Q2-C exactly as owned by `specs/002-beautyq-q2-closeout`. Preserve the accepted application
-source identity for pre-promotion acceptance/bootstrap/review evidence, candidate review separation,
-the promotion commit boundary, and independent canonical-resource verify against the committed promoted
-resource.
-
-**Done when:** Q2 closeout is documented green with pre-promotion acceptance/bootstrap/review evidence
-still bound to its original application source revision, promotion recorded as its own tracked commit,
-and independent canonical-resource verify bound to the committed promoted resource. No simplification
-source patch starts before that closeout boundary.
-
 ### G1 — Remove completed history from executable ownership
 
 Delete production/test/report wiring whose only current meaning is the already-complete Gen1 cutover.
@@ -247,42 +233,9 @@ together.
 eval dependency; the retained backend(s), BeautyQ domain, and app edge remain independently owned; no
 test parses `build.sbt` or scans source text to restate the complete project graph.
 
-### G4 — Reduce Q2 machinery to a durable evaluation workflow
-
-After Q2 closeout, keep the evaluation properties needed for ongoing product work and remove ceremony
-specific to producing the first accepted baseline.
-
-The durable minimum is:
-
-- a visible development set;
-- a permanent regression set;
-- a small private holdout excluded from ordinary tuning;
-- canonical catalog validation for judged identities;
-- one deterministic runner over the production application path;
-- aggregate-only private-holdout output;
-- an immutable evaluated-source identity;
-- one domain-owned acceptance policy and one accepted-baseline comparison;
-- explicit review before any protected disclosure or relabeling.
-
-Recovery reserve, replenishment automation, separate author/judge draft codecs, break-glass tooling,
-freeze runners, and multi-stage manifest plumbing remain only when a current failure/recovery or review
-requirement justifies them. A useful rule may remain in documentation without requiring a standalone
-Scala ADT, codec, runner, and spec.
-
-This milestone must update `NEW_DOMAIN_ONBOARDING.md` with the simplified repository-wide minimum. It
-must not make the full historical BeautyQ Q2 ceremony the default D1 template. Domain-specific corpus,
-thresholds, request construction, and review policy remain domain-owned.
-
-**Done when:** one ordinary command produces deterministic visible/regression evidence, and one
-explicitly invoked acceptance command evaluates the private holdout for an immutable source identity
-with aggregate-only output. Both commands reuse the same production-path runner and domain-owned
-policy. The private holdout is not ordinary development feedback; output-driven tuning against it
-remains prohibited. Removed Q2-only stages have no source, resource, command, or documentation
-references.
-
 ### G5 — Decide Qdrant by marginal product value
 
-Run a controlled comparison after Q2 and evaluation simplification. Communication success and no-harm
+Run a controlled comparison after evaluation simplification. Communication success and no-harm
 remain prerequisites, not the value criterion.
 
 Before execution, BeautyQ policy must name:
@@ -374,10 +327,8 @@ behavior-empty project shell and dependency constitution intact; S6 performs the
 
 | Milestone | Scope | Required proof | Stop condition |
 |---|---|---|---|
-| S0 | Complete Q2-B/Q2-C | Pre-promotion evidence remains bound to its original revision; promotion is a separate tracked commit; independent verify is bound to the committed promoted resource | Q2 red/blocked, an evidence revision is reattributed, or the promotion/verify boundary changes |
 | S1 | Split live cutover proof; delete historical inventory/dead markers | Current communication and measured-eval owners compile/run unchanged | A deleted value still feeds current readiness/evaluation behavior |
 | S2 | Delete trace-only owners and historical ledger portions | Plan/candidate behavior, response projection, and stable identity proofs | A trace has a current operator/response/artifact consumer |
-| S3 | Simplify protected workflow and onboarding policy | Ordinary visible/regression command plus separately invoked aggregate-only private-holdout acceptance over the same runner/policy | Privacy, catalog identity, source identity, holdout separation, or no-tuning property is weakened |
 | S4 | Produce Qdrant baseline/full ablation and decision record | Same-source two-mode evidence with predeclared metric policy | Threshold/product decision missing or evidence identities differ |
 | S5-K | Qdrant KEEP simplification | Qdrant communication, no-harm, product gate, runtime/status contracts | Product gate or safety proof turns red |
 | S5-D | Remove Qdrant behavior while retaining its temporary sbt project shell, old edges, and firewall | ES-only route, lifecycle, status, evaluation, and operations proofs; old exact-DAG firewall remains green | Public baseline behavior changes or the pre-S6 project constitution changes |
