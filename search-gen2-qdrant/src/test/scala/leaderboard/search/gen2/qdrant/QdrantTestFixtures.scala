@@ -46,7 +46,7 @@ object QdrantTestFixtures {
   val second = first.copy(id = UUID.fromString("00000000-0000-0000-0000-000000000002"), title = "beta", count = 3)
 
   val materialized = MaterializedSearchDocuments(
-    VersionedSnapshot(Vector(first, second), ContentFingerprint("source"), None, Instant.parse("2025-01-01T00:00:00Z")),
+    VersionedSnapshot(Vector(first, second), ContentFingerprint("source"), Instant.parse("2025-01-01T00:00:00Z")),
     Vector(second, first),
     ProjectedDocumentsFingerprint("projected"),
     ProjectionFormatVersion("projection-v1"),

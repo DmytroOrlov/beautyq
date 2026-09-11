@@ -60,7 +60,6 @@ object BeautyQSearchSnapshotSource {
             VersionedSnapshot(
               value = snapshot,
               contentFingerprint = BeautyQSnapshotFingerprint.compute(snapshot),
-              sourceRevision = None,
               capturedAt = clock.instant(),
             )
         }

@@ -42,13 +42,17 @@
 - The five classifications (`WELL_USED`, `UNDERUSED`, `HARD_TO_DISCOVER`, `MISSING_GENERIC_PRIMITIVE`,
   `BEAUTYQ_SPECIFIC`) are kept distinct (FR-004, US-2), with `HARD_TO_DISCOVER` explicitly separated
   from `MISSING_GENERIC_PRIMITIVE` so discoverability is a first-class outcome (FR-005, FR-006, SC-003).
-- Execution is gated on the accepted BeautyQ delivery closeout reaching its verified boundary (FR-002,
-  Execution Gate), and the audit is not an implementation mandate (FR-001, FR-014, FR-017); framework-
-  primitive recommendations require the eight-condition genericity filter (FR-007, SC-004); existence /
-  non-existence claims require pinned-version source evidence (FR-008, SC-005).
-- No current milestone mechanics (gate names, rotation/case IDs, class names, counts) are copied into
+- The read-only research may be invoked against an explicitly selected current source state when the
+  human chooses (FR-002, Execution Invocation), and the audit is not an implementation mandate
+  (FR-001, FR-014, FR-017); framework-primitive recommendations require the eight-condition genericity
+  filter (FR-007, SC-004); existence / non-existence claims require pinned-version source evidence
+  (FR-008, SC-005).
+- No milestone mechanics (class names, counts) are copied into
   this durable contract; owners are navigated to, not restated (FR-018, Constitution Principle II).
 - **Dofix A2 (2026-09-08, coordinator review)**: the audit searches **symmetrically** but no final classification distribution is mandated and no quotas apply (FR-003, SC-002): all-supported, all-change, or any mixture are each valid when evidence-backed, and zero `WELL_USED`, zero `BEAUTYQ_SPECIFIC`, or zero change-oriented findings are each allowed. The defect condition is a **one-sided search/classification process**, not a one-sided evidence-supported outcome; any one-sided distribution requires an explicit calibration check proving the opposite outcome class was genuinely considered. The earlier "a set of only gaps is incomplete" framing was outcome bias and is retired. The single-accidental-site edge case now blocks only an unsupported `MISSING_GENERIC_PRIMITIVE` and never chooses among `HARD_TO_DISCOVER`/`UNDERUSED`/`BEAUTYQ_SPECIFIC` by itself (self-check E).
-- **Dofix A1 (2026-09-08, coordinator review)**: `004-beautyq-post-closeout-simplification-decision` is now materialized and names 003 completion as its own execution dependency `DEP-FRAMEWORK-AUDIT`. The "Relationship to Later Simplification" wording is corrected to an **asymmetric dependency**: 003 completes on its own synthesis and may be COMPLETE without 004 running; 003 does not authorize or perform simplification; but 003 completion is a required **input/dependency gate** for substantive execution of 004 — 004 cannot substantively execute before 003 is COMPLETE. 004 is not folded into 003's own completion gate (Constitution Principles III, IV, VIII; FR-017).
+- **Dofix A1 (2026-09-08, coordinator review; reconciled Wave B)**: findings from this audit may
+  inform a later simplification decision, but the audit neither authorizes, performs, nor gates it;
+  the audit completes on its own synthesis, independent of any downstream decision (Constitution
+  Principles III, IV, VIII; FR-017).
 - 0 [NEEDS CLARIFICATION] markers were needed: the feature description was self-contained. All checklist
   items reviewed and satisfied for requirements quality.

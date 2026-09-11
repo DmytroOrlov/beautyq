@@ -38,7 +38,6 @@ final class BeautyQVariantMaterializerSpec extends AnyWordSpec {
       val versioned = VersionedSnapshot(
         value = invalidSnapshot,
         contentFingerprint = BeautyQSnapshotFingerprint.compute(invalidSnapshot),
-        sourceRevision = None,
         capturedAt = capturedAt,
       )
       val materializer = materializerFor(Right(versioned))
@@ -55,7 +54,6 @@ final class BeautyQVariantMaterializerSpec extends AnyWordSpec {
       val versioned = VersionedSnapshot(
         value = snapshot,
         contentFingerprint = BeautyQSnapshotFingerprint.compute(snapshot),
-        sourceRevision = None,
         capturedAt = capturedAt,
       )
       val materializer = materializerFor(Right(versioned))
@@ -67,7 +65,7 @@ final class BeautyQVariantMaterializerSpec extends AnyWordSpec {
     }
 
     "return the projected documents on success" in {
-      val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), sourceRevision = None, capturedAt = capturedAt)
+      val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), capturedAt = capturedAt)
       val materializer = materializerFor(Right(versioned))
 
       val expectedDocuments = BeautyQVariantProjectionGen2.project(snapshot) match {
@@ -82,7 +80,7 @@ final class BeautyQVariantMaterializerSpec extends AnyWordSpec {
     }
 
     "compute the projected-documents fingerprint on success" in {
-      val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), sourceRevision = None, capturedAt = capturedAt)
+      val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), capturedAt = capturedAt)
       val materializer = materializerFor(Right(versioned))
 
       materializer.load match {
@@ -93,7 +91,7 @@ final class BeautyQVariantMaterializerSpec extends AnyWordSpec {
     }
 
     "expose the current projection format version on success" in {
-      val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), sourceRevision = None, capturedAt = capturedAt)
+      val versioned = VersionedSnapshot(snapshot, BeautyQSnapshotFingerprint.compute(snapshot), capturedAt = capturedAt)
       val materializer = materializerFor(Right(versioned))
 
       materializer.load match {
@@ -104,7 +102,7 @@ final class BeautyQVariantMaterializerSpec extends AnyWordSpec {
 
     "never recompute or replace the source content fingerprint" in {
       val deliberatelyWrongFingerprint = ContentFingerprint("not-the-real-fingerprint")
-      val versioned = VersionedSnapshot(snapshot, deliberatelyWrongFingerprint, sourceRevision = None, capturedAt = capturedAt)
+      val versioned = VersionedSnapshot(snapshot, deliberatelyWrongFingerprint, capturedAt = capturedAt)
       val materializer = materializerFor(Right(versioned))
 
       materializer.load match {

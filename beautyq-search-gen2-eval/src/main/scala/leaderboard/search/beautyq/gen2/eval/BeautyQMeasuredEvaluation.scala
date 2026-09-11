@@ -42,7 +42,6 @@ object BeautyQEvaluationExecutionError {
 
 final class BeautyQEvaluationEnvironment private (
   val snapshotCapturedAt: Instant,
-  val sourceRevision: String,
   val elasticsearchVersion: String,
   val qdrantVersion: String,
   val osName: String,
@@ -56,12 +55,10 @@ final class BeautyQEvaluationEnvironment private (
 object BeautyQEvaluationEnvironment {
   def fromSystem(
     snapshotCapturedAt: Instant,
-    sourceRevision: String,
     elasticsearchVersion: String,
     qdrantVersion: String,
   ): Either[String, BeautyQEvaluationEnvironment] = {
     val required = Vector(
-      "sourceRevision" -> sourceRevision,
       "elasticsearchVersion" -> elasticsearchVersion,
       "qdrantVersion" -> qdrantVersion,
     )
@@ -70,7 +67,6 @@ object BeautyQEvaluationEnvironment {
       case None =>
         Right(new BeautyQEvaluationEnvironment(
           snapshotCapturedAt,
-          sourceRevision,
           elasticsearchVersion,
           qdrantVersion,
           systemProperty("os.name"),
@@ -327,8 +323,6 @@ final class BeautyQMeasuredEvaluationResult private[BeautyQMeasuredEvaluationRes
   val report: EvaluationReport,
   val detailedJson: Json,
   val protectedReportJson: Json,
-  val protectedReportDigest: String,
-  val reportDigest: String,
   val measurementJson: Json,
   val scoreSeparationJson: Json,
   val correctionGate: BeautyQEvaluationCorrectionGateResult,
@@ -341,8 +335,6 @@ object BeautyQMeasuredEvaluationResult {
     report: EvaluationReport,
     detailedJson: Json,
     protectedReportJson: Json,
-    protectedReportDigest: String,
-    reportDigest: String,
     measurementJson: Json,
     scoreSeparationJson: Json,
     correctionGate: BeautyQEvaluationCorrectionGateResult,
@@ -354,8 +346,6 @@ object BeautyQMeasuredEvaluationResult {
       report,
       detailedJson,
       protectedReportJson,
-      protectedReportDigest,
-      reportDigest,
       measurementJson,
       scoreSeparationJson,
       correctionGate,
@@ -402,12 +392,10 @@ object BeautyQMeasuredEvaluation {
       }
       first <- measured.headOption.toRight(BeautyQEvaluationExecutionError.Environment("measured passes must be non-empty"))
       _ <- validateMeasuredDeterminism(first, measured)
-      provenance <- provenanceComponents(corpus, startupStatus, environment, evaluationPolicyVersion)
+      provenance <- provenanceComponents(startupStatus, environment, evaluationPolicyVersion)
       report = EvaluationReportBuilder.build(provenance, first.map(_.reportInput))
       detailed = EvaluationReport.encodeDetailed(report)
       protectedReport = EvaluationReport.encodeProtected(report)
-      protectedDigest = EvaluationReportDigest.compute(protectedReport)
-      digest = EvaluationReportDigest.compute(detailed)
       gate = BeautyQEvaluationCorrectionGate.evaluate(
         startupStatus.policy,
         startupStatus.servingMode,
@@ -416,14 +404,12 @@ object BeautyQMeasuredEvaluation {
         measured,
         deterministic = true,
       )
-      measurement <- measurementJson(corpus, startupStatus, environment, first, measured, digest)
+      measurement <- measurementJson(corpus, startupStatus, environment, first, measured)
       scoreSeparation = BeautyQScoreSeparationArtifact.encode(corpus, first)
     } yield BeautyQMeasuredEvaluationResult.create(
       report,
       detailed,
       protectedReport,
-      protectedDigest,
-      digest,
       measurement,
       scoreSeparation,
       gate,
@@ -509,14 +495,12 @@ object BeautyQMeasuredEvaluation {
   }
 
   private def provenanceComponents(
-    corpus: BeautyQEvaluationCorpus,
     status: StartupServingStatus,
     environment: BeautyQEvaluationEnvironment,
     evaluationPolicyVersion: String,
   ): Either[BeautyQEvaluationExecutionError, Vector[ProvenanceComponent]] = {
     val model = BeautyQQdrantPolicy.policy.embeddingModel
     val raw = Vector(
-      "corpus-fingerprint" -> corpus.corpusFingerprint,
       "source-content-fingerprint" -> status.sourceContentFingerprint,
       "projected-documents-fingerprint" -> status.projectedDocumentsFingerprint,
       "elasticsearch-generation-reference" -> status.elasticsearchReference,
@@ -547,7 +531,6 @@ object BeautyQMeasuredEvaluation {
     environment: BeautyQEvaluationEnvironment,
     firstMeasured: Vector[BeautyQMeasuredCase],
     measured: Vector[Vector[BeautyQMeasuredCase]],
-    digest: String,
   ): Either[BeautyQEvaluationExecutionError, Json] = {
     val allSamples = measured.flatten.map(_.durationNanos)
     val global = BeautyQLatencySummary.from(allSamples).left.map(BeautyQEvaluationExecutionError.Environment.apply)
@@ -588,7 +571,6 @@ object BeautyQMeasuredEvaluation {
             "corpus" -> Json.obj(
               "id" -> Json.fromString(corpus.corpusId),
               "version" -> Json.fromInt(corpus.version),
-              "fingerprint" -> Json.fromString(corpus.corpusFingerprint),
               "caseCount" -> Json.fromInt(corpus.cases.size),
               "partitionCounts" -> Json.fromValues(partitionCounts),
             ),
@@ -612,7 +594,6 @@ object BeautyQMeasuredEvaluation {
             ),
             "snapshot" -> Json.obj(
               "capturedAt" -> Json.fromString(environment.snapshotCapturedAt.toString),
-              "sourceRevision" -> Json.fromString(environment.sourceRevision),
               "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
               "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
               "elasticsearchGenerationReference" -> Json.fromString(status.elasticsearchReference),
@@ -635,7 +616,6 @@ object BeautyQMeasuredEvaluation {
               "javaVersion" -> Json.fromString(environment.javaVersion),
               "javaVendor" -> Json.fromString(environment.javaVendor),
             ),
-            "qualityReportDigest" -> Json.fromString(digest),
           )
         }
       }

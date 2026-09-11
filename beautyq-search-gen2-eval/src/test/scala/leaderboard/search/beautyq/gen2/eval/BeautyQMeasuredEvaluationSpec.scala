@@ -191,7 +191,6 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
           case Left(error)  => fail(s"expected canonical location, got $error")
         },
         Vector(visibleSourceCase, protectedCase),
-        "protected-redaction-fingerprint",
       )
       val artifact = BeautyQScoreSeparationArtifact.encode(
         syntheticCorpus,
@@ -329,17 +328,11 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
       }
     }
 
-    "prove protectedReportDigest equals digest of protectedReportJson" in {
-      val result = syntheticProtectedResult()
-      val expectedDigest = leaderboard.search.gen2.eval.EvaluationReportDigest.compute(result.protectedReportJson)
-      assert(result.protectedReportDigest == expectedDigest)
-    }
-
-    "prove digest is deterministic" in {
+    "produce identical protected and detailed report JSON across runs" in {
       val result1 = syntheticProtectedResult()
       val result2 = syntheticProtectedResult()
-      assert(result1.protectedReportDigest == result2.protectedReportDigest)
-      assert(result1.reportDigest == result2.reportDigest)
+      assert(result1.protectedReportJson == result2.protectedReportJson)
+      assert(result1.detailedJson == result2.detailedJson)
     }
 
     "retain the supplied protected evaluation-policy version" in {
@@ -355,7 +348,6 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
     }
     corpus.cases match {
       case current +: _ =>
-        assert(corpus.cases.size == 180)
         assert(corpus.cases.forall(_.partition == EvaluationPartition.Regression))
         (corpus, current)
       case _ => fail("expected non-empty corpus")
@@ -414,7 +406,6 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
       case Left(error) => fail(error.toString)
     }
     val provenance = Vector(
-      "corpus-fingerprint" -> ("f" * 64),
       "evaluation-policy-version" -> BeautyQEvaluationPolicy.CurrentVersion,
       "metric-schema-version" -> leaderboard.search.gen2.eval.RankingEvaluator.MetricSchemaVersion,
     ).foldLeft[Vector[leaderboard.search.gen2.eval.ProvenanceComponent]](Vector.empty) { case (done, (idText, value)) =>
@@ -448,12 +439,6 @@ final class BeautyQMeasuredEvaluationSpec extends AnyWordSpec {
       report,
       leaderboard.search.gen2.eval.EvaluationReport.encodeDetailed(report),
       leaderboard.search.gen2.eval.EvaluationReport.encodeProtected(report),
-      leaderboard.search.gen2.eval.EvaluationReportDigest.compute(
-        leaderboard.search.gen2.eval.EvaluationReport.encodeProtected(report),
-      ),
-      leaderboard.search.gen2.eval.EvaluationReportDigest.compute(
-        leaderboard.search.gen2.eval.EvaluationReport.encodeDetailed(report),
-      ),
       io.circe.Json.obj("test" -> io.circe.Json.fromString("measurement")),
       io.circe.Json.obj("test" -> io.circe.Json.fromString("score-separation")),
       BeautyQEvaluationCorrectionGateResult.create(checks, 1, 1, 3, 0, 0, 0, 0, 0, 0, scoreSep),

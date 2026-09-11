@@ -4,7 +4,6 @@ import leaderboard.search.gen2.eval.*
 import leaderboard.model.{MasterServiceOfferVariantId, MasterLocationId, ServiceId}
 import io.circe.{Json, JsonObject}
 import io.circe.parser.*
-import java.security.MessageDigest
 import java.util.UUID
 import scala.util.Try
 
@@ -98,14 +97,12 @@ final class BeautyQEvaluationCorpus private[beautyq] (
   val version: Int,
   val defaultUserLocation: UserLocation,
   val cases: Vector[CorpusCase],
-  val corpusFingerprint: String,
 ) {
   override def equals(obj: Any): Boolean = obj match {
     case other: BeautyQEvaluationCorpus =>
       schemaVersion == other.schemaVersion && corpusId == other.corpusId &&
         dataset == other.dataset && version == other.version &&
-        defaultUserLocation == other.defaultUserLocation && cases == other.cases &&
-        corpusFingerprint == other.corpusFingerprint
+        defaultUserLocation == other.defaultUserLocation && cases == other.cases
     case _ => false
   }
   override def hashCode(): Int = {
@@ -115,11 +112,10 @@ final class BeautyQEvaluationCorpus private[beautyq] (
     h = 31 * h + version.hashCode
     h = 31 * h + defaultUserLocation.hashCode
     h = 31 * h + cases.hashCode
-    h = 31 * h + corpusFingerprint.hashCode
     h
   }
   override def toString: String =
-    s"BeautyQEvaluationCorpus($corpusId, v$version, ${cases.size} cases, fingerprint=$corpusFingerprint)"
+    s"BeautyQEvaluationCorpus($corpusId, v$version, ${cases.size} cases)"
 }
 
 object BeautyQEvaluationCorpus {
@@ -163,10 +159,7 @@ object BeautyQEvaluationCorpus {
       _ <- Either.cond(casesJson.nonEmpty, (), CorpusLoadError.EmptyCorpus: CorpusLoadError)
       cases <- parseCases(casesJson)
       _ <- checkUniqueCaseIds(cases)
-    } yield {
-      val withoutFingerprint = new BeautyQEvaluationCorpus(schema, corpusId, dataset, version, location, cases, "")
-      new BeautyQEvaluationCorpus(schema, corpusId, dataset, version, location, cases, computeCorpusFingerprint(withoutFingerprint))
-    }
+    } yield new BeautyQEvaluationCorpus(schema, corpusId, dataset, version, location, cases)
 
   private def validateCorpusId(
     corpusId: String,
@@ -421,13 +414,6 @@ object BeautyQEvaluationCorpus {
       "id" -> Json.fromString(gain.id.value), "gain" -> Json.fromInt(gain.gain.value),
     ))),
   )
-
-  private def computeCorpusFingerprint(corpus: BeautyQEvaluationCorpus): String = {
-    val canonical = BeautyQEvaluationCorpus.canonicalJson(corpus).noSpaces
-    val digest = MessageDigest.getInstance("SHA-256")
-    val hash = digest.digest(canonical.getBytes("UTF-8"))
-    hash.map(b => f"$b%02x").mkString
-  }
 
   private def readResource(path: String): Either[CorpusLoadError, String] = {
     val stream = getClass.getClassLoader.getResourceAsStream(path)

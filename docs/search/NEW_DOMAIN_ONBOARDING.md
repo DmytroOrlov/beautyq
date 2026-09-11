@@ -668,35 +668,20 @@ from ordinary policy tuning and changed only through explicit label review, and 
 set containing every accepted real bug.
 
 Development/regression reports may name exact cases. Protected-holdout reports expose aggregate/slice
-verdicts by default. Revealing a protected case is a break-glass action: move it permanently into the
-regression set and replenish the protected holdout with independently authored, unused,
-operator-approved cases before using it for acceptance again.
+verdicts by default. Revealing a protected case for diagnosis is a reviewed human action: the disclosed
+cases move permanently into the regression set in the same commit, and the commit review is the
+authorization record. Replenish the holdout with independently authored, unused, operator-approved
+cases before using it for acceptance again.
 
 Reuse only neutral evaluation mechanics from `search-gen2-eval`: stable case identity, deterministic run
-order, declared-cutoff ranked metric mathematics, ordered aggregate/comparison and report encoding.
+order, declared-cutoff ranked metric mathematics, ordered aggregation and report encoding.
 Domains must supply their own typed
 corpus, policy, and adapters. Query text, request construction, entity expectations, language/intent
 slices, thresholds and stop conditions are domain policy and must not be copied from BeautyQ.
 For protected acceptance, keep the private corpus and protected-acceptance policy as separate
 domain-owned inputs. Decode both strictly with ordered arrays, execute visible and protected cases
-through the same startup/application path, redact protected identities from reports, and derive an
-accepted manifest only after a green protected gate carrying an explicit
-immutable application-source identity.
-
-Protected evidence must carry an explicit immutable identity for the
-evaluated application source. Evidence becomes stale when those source
-bytes change. Exact Git choreography belongs to the active project plan,
-not to generic domain onboarding.
-
-Missing private inputs block protected execution and bootstrap, but do not block the dedicated
-pre-execution input-authoring workflow. Machine-assisted authoring is allowed when it is separated from
-execution, cannot observe protected results, records provenance, and freezes inputs before use; a
-separately hired reviewer is not required. “Synthetic acceptance data” means labels or thresholds
-derived from search output, not source-grounded cases authored before execution. Bootstrap and verify
-must never author, relabel or modify the frozen inputs, and no default threshold may replace an absent
-operator-approved policy. The freeze must also bind every judgment identity to the canonical typed
-catalog, require an acceptable variant for each exact-intent case, prove zero exact/normalized query
-duplicates both against visible evidence and internally, bind author/judge draft hashes and the
-canonical source fingerprint, and bind the declared application-source identity to the exact evaluated
-source state.
-These are aggregate integrity checks; semantic-similarity duplicate detection is not claimed.
+through the same startup/application path, and redact protected identities from reports. Ordinary
+tests prove the durable holdout invariants directly from the tracked inputs: case-count and required
+slice inventory, visible/protected query disjointness (exact and normalized), and judgment identities
+bound to the canonical catalog. No default threshold may replace an absent operator-approved policy.
+Duplicate checks detect direct leakage only; semantic-similarity duplicate detection is not claimed.

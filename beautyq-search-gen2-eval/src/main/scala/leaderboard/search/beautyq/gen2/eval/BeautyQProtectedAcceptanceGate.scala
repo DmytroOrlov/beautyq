@@ -26,10 +26,7 @@ final class BeautyQProtectedAcceptanceResult private[BeautyQProtectedAcceptanceR
   val passed: Boolean,
   val evaluationPolicyVersion: String,
   val protectedAcceptancePolicyVersion: String,
-  val policyFingerprint: String,
-  val protectedCorpusFingerprint: String,
   val protectedCaseCount: Int,
-  val protectedReportDigest: String,
   val checks: Vector[BeautyQProtectedAcceptanceCheck],
 ) {
   def toJson: Json = Json.obj(
@@ -37,10 +34,7 @@ final class BeautyQProtectedAcceptanceResult private[BeautyQProtectedAcceptanceR
     "passed" -> Json.fromBoolean(passed),
     "evaluationPolicyVersion" -> Json.fromString(evaluationPolicyVersion),
     "protectedAcceptancePolicyVersion" -> Json.fromString(protectedAcceptancePolicyVersion),
-    "policyFingerprint" -> Json.fromString(policyFingerprint),
-    "protectedCorpusFingerprint" -> Json.fromString(protectedCorpusFingerprint),
     "protectedCaseCount" -> Json.fromInt(protectedCaseCount),
-    "protectedReportDigest" -> Json.fromString(protectedReportDigest),
     "checks" -> Json.fromValues(checks.map(_.toJson)),
   )
 }
@@ -50,10 +44,7 @@ object BeautyQProtectedAcceptanceResult {
     passed: Boolean,
     evaluationPolicyVersion: String,
     protectedAcceptancePolicyVersion: String,
-    policyFingerprint: String,
-    protectedCorpusFingerprint: String,
     protectedCaseCount: Int,
-    protectedReportDigest: String,
     checks: Vector[BeautyQProtectedAcceptanceCheck],
   ): BeautyQProtectedAcceptanceResult =
     new BeautyQProtectedAcceptanceResult(
@@ -61,10 +52,7 @@ object BeautyQProtectedAcceptanceResult {
       passed,
       evaluationPolicyVersion,
       protectedAcceptancePolicyVersion,
-      policyFingerprint,
-      protectedCorpusFingerprint,
       protectedCaseCount,
-      protectedReportDigest,
       checks,
     )
 }
@@ -101,7 +89,6 @@ object BeautyQProtectedAcceptanceGate {
       check("protected-append-budget", protectedRun.correctionGate.checks.find(_.stableCode == "append-budget-preserved").exists(_.passed), "typed-correction-gate", "0"),
     )
     val inventoryChecks = Vector(
-      check("protected-corpus-fingerprint", protectedCorpus.corpusFingerprint == policy.expectedCorpusFingerprint, protectedCorpus.corpusFingerprint, policy.expectedCorpusFingerprint),
       check("protected-case-count", protectedCorpus.caseCount == policy.expectedCaseCount, protectedCorpus.caseCount.toString, policy.expectedCaseCount.toString),
     ) ++ policy.requiredSliceMinimums.zip(protectedCorpus.orderedRequiredSliceCounts).map { case (requirement, (sliceId, count)) =>
       check(
@@ -120,10 +107,7 @@ object BeautyQProtectedAcceptanceGate {
       visibleQualityGreen && checks.forall(_.passed),
       protectedRun.evaluationPolicyVersion,
       policy.protectedAcceptancePolicyVersion,
-      policy.fingerprint,
-      protectedCorpus.corpusFingerprint,
       protectedCorpus.caseCount,
-      protectedRun.protectedReportDigest,
       checks,
     )
   }

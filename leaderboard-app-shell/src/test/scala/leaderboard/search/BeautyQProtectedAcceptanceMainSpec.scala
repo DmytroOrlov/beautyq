@@ -123,7 +123,6 @@ final class BeautyQProtectedAcceptanceMainSpec extends AnyWordSpec {
         "beautyq-protected-aggregate.json",
         "beautyq-protected-measurement.json",
         "beautyq-protected-acceptance-gate.json",
-        "beautyq-accepted-baseline-candidate.json",
       )
       if (Files.isDirectory(outputDir)) {
         val existing = protectedFiles.filter(name => Files.exists(outputDir.resolve(name)))

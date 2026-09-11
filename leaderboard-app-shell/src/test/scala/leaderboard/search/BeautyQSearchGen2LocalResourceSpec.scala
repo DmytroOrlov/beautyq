@@ -18,7 +18,7 @@ import leaderboard.search.beautyq.gen2.materialization.*
 import leaderboard.search.beautyq.gen2.wiring.*
 import leaderboard.search.beautyq.gen2.wiring.BeautyQElasticsearchTestFixtures
 import leaderboard.search.beautyq.gen2.wiring.testkit.BeautyQOrchestrationTestKit
-import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, SourceRevision, VersionedSnapshot}
+import leaderboard.search.gen2.core.materialization.{SearchSnapshotSource, VersionedSnapshot}
 import leaderboard.search.gen2.core.hydration.CandidateHydrationError
 import leaderboard.search.gen2.elasticsearch.*
 import leaderboard.search.gen2.qdrant.*
@@ -254,7 +254,6 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
             ZIO.succeed(VersionedSnapshot(
               value = BeautyQElasticsearchTestFixtures.snapshot,
               contentFingerprint = BeautyQSnapshotFingerprint.compute(BeautyQElasticsearchTestFixtures.snapshot),
-              sourceRevision = Some(SourceRevision("real-embedding-preflight")),
               capturedAt = Instant.now(),
             ))
         }),
@@ -300,7 +299,6 @@ final class BeautyQSearchGen2LocalResourceSpec extends org.scalatest.wordspec.An
     val versioned = VersionedSnapshot(
       value = sourceSnapshot,
       contentFingerprint = BeautyQSnapshotFingerprint.compute(sourceSnapshot),
-      sourceRevision = Some(SourceRevision("resource-derived-second-snapshot")),
       capturedAt = Instant.parse("2026-07-22T00:00:00Z"),
     )
     val source = new SearchSnapshotSource[Either, SnapshotLoadError, BeautyQSearchSnapshot] {

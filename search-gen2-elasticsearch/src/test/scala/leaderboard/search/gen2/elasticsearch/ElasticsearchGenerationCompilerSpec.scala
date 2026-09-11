@@ -12,7 +12,7 @@ final class ElasticsearchGenerationCompilerSpec extends AnyWordSpec {
   import ElasticsearchTestFixtures.*
 
   private val baseSnapshot =
-    VersionedSnapshot(value = "raw-snapshot-value", contentFingerprint = ContentFingerprint("content-fp-1"), sourceRevision = Some(SourceRevision("rev-1")), capturedAt = Instant.parse("2024-01-01T00:00:00Z"))
+    VersionedSnapshot(value = "raw-snapshot-value", contentFingerprint = ContentFingerprint("content-fp-1"), capturedAt = Instant.parse("2024-01-01T00:00:00Z"))
 
   private def materializedOf(
     sourceFingerprint: ContentFingerprint = ContentFingerprint("content-fp-1"),

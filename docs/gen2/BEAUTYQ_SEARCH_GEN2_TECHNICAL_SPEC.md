@@ -6,9 +6,8 @@ Delivery rule: one final cutover completed; Gen1 search modules and routes are a
 
 Sections explicitly labelled implemented describe current source. All backend/runtime sections
 are implemented; delivery closure is recorded below. Feature-specific delivery order and current
-remaining-work status belong to the active Spec Kit feature artifacts under `specs/` (Q2 closeout:
-`specs/002-beautyq-q2-closeout`); this specification owns current implemented architecture, not active
-feature chronology.
+remaining-work status belong to the active Spec Kit feature artifacts under `specs/`; this
+specification owns current implemented architecture, not active feature chronology.
 
 ## 1. Goal
 
@@ -364,20 +363,10 @@ Gen2 may depend on neutral/shared project foundations such as:
 - generic JSON/HTTP/effect/logging libraries already used by the repository;
 - a newly extracted neutral transport/client module.
 
-### 5.2 Forbidden Gen1 dependencies
+### 5.2 Gen1 search modules are absent
 
-No Gen2 module may depend on or import from:
-
-```text
-search-core
-search-elasticsearch
-search-qdrant
-beautyq-search-contract
-beautyq-search-materialization
-beautyq-search-wiring
-```
-
-The rule applies to main and test sources, except for an explicitly named comparison fixture module that is not on any Gen2 runtime classpath.
+The Gen1 search projects no longer exist. Gen2 modules compile without any Gen1 reference, and the sbt
+project graph plus compilation prevent reintroducing one. Git history owns the completed cutover.
 
 ### 5.3 Neutral clients
 
@@ -396,26 +385,27 @@ alias, waited-index/upsert, exact-count and `/points/query` paths; it accepts on
 segment and performs no lifecycle authorization. The Qdrant lifecycle owner binds an authorized physical target internally
 before invoking it; there is no second HTTP implementation.
 
-### 5.4 Gen1 references are classified, not dependencies
+### 5.4 Gen1 references are historical
 
-`BeautyQGen1SearchDeletionInventory` owns typed completed-cutover evidence; delivery closure is
-recorded in the delivery status section below. Historical Gen1 findings live in Git history.
+Historical Gen1 findings live in Git history, and no current Gen2 main or test source references Gen1.
 
-Being generic in Scala type parameters does not make a class reusable across the module firewall. A
-symbol located in `search-core`, `search-elasticsearch`, `search-qdrant` or a BeautyQ Gen1 search
-module remains forbidden until it is extracted into an approved neutral module. Tests and business
-fixtures may be ported as semantic evidence, but imports from Gen2 main/test source to those projects
-remain forbidden except for the explicitly isolated comparison fixture module described above.
+## 6. Compiler-invisible firewall
 
-## 6. Module/import firewall
+The Scala compiler and the sbt project graph enforce most coupling. A small firewall covers the
+remaining compiler-invisible properties. `search-gen2-contract`'s `SearchGen2ModuleFirewallSpec`
+covers five:
 
-The first Gen2 code change adds automated checks that:
+- generic Gen2 main sources stay free of BeautyQ-specific names;
+- the retained Gen2 and shared projects stay in the root aggregate;
+- serving Gen2 projects acquire no BeautyQ eval build dependency, and `leaderboard-app-shell` keeps its
+  eval edge in `test->test`;
+- direct `leaderboard.sql.SQL` usage is confined to BeautyQ materialization;
+- BeautyQ production modules declare no class under the generic `leaderboard.search.gen2` namespace.
 
-- inspect declared sbt project dependencies;
-- scan Gen2 imports for forbidden package prefixes;
-- reject BeautyQ symbols in generic Gen2 modules;
-- reject eval dependencies from serving modules;
-- reject cyclic dependencies in the Gen2 DAG.
+A companion `BeautyQGen2MaterializationFirewallSpec` covers the sixth: BeautyQ materialization must not
+locally redeclare the shared generic materialization-identity owners (`ContentFingerprint`,
+`ProjectedDocumentsFingerprint`, `ProjectionFormatVersion`, `VersionedSnapshot`, `SearchSnapshotSource`),
+which would otherwise fork the identity model the ES/Qdrant generation and hydration chain relies on.
 
 A firewall violation fails CI.
 
@@ -1232,7 +1222,6 @@ trait SearchSnapshotSource[Snapshot] {
 final case class VersionedSnapshot[A](
   value: A,
   contentFingerprint: ContentFingerprint,
-  sourceRevision: Option[SourceRevision],
   capturedAt: Instant,
 )
 ```
@@ -2125,8 +2114,7 @@ requested model identity: a missing, non-string or mismatched `model` field is a
 `InvalidResult(QdrantEmbeddingError.ModelMismatch)` and never degrades to `Unavailable`/`Timeout`.
 The four typed cutover fixtures executed through the native
 application graph. FullSearch readiness was established, the no-harm gate
-passed, and the deterministic cutover and Gen1 deletion-inventory reports were
-written under `target/search-gen2/`. The runner does not invoke the HTTP route, does not
+passed, and the deterministic cutover report was written under `target/search-gen2/`. The runner does not invoke the HTTP route, does not
 synthesise IDs, does not rebuild result IDs, does not execute a second baseline search for comparison,
 and reuses the existing test-owned Distage managed-resource support. Distage injects the managed
 Elasticsearch endpoint and the single Distage-managed Qdrant endpoint (canonical view
@@ -2144,7 +2132,7 @@ domain-owned corpus/request adapters and production application path to produce 
 and aggregate-only protected evidence.
 
 `beautyq-search-gen2-eval` owns the readiness-aware cutover gate, append-only no-harm evidence,
-deterministic report encoding, protected input codecs and audits, domain evaluation policy and adapters.
+deterministic report encoding, protected input codecs, domain evaluation policy and adapters.
 The Distage communication owner executes the canonical visible corpus through one
 Required/FullSearch native application and the real Elasticsearch, Qdrant and embedding paths. It runs
 one warmup pass followed by three measured passes at concurrency one. Only
@@ -2153,40 +2141,26 @@ Generated detailed reports remain artifacts and a red quality gate is never repo
 communication run.
 
 The domain-neutral `search-gen2-eval` project supplies stable evaluation identities, ranked metric
-mathematics, ordered scope/cutoff aggregation, comparison and deterministic report/manifest codecs.
+mathematics, ordered scope/cutoff aggregation and deterministic report codecs.
 Domain corpus schemas, request construction, labels, slices, thresholds and gates remain in each
 domain's eval project. Serving modules have no eval dependency.
 
 Mechanical one-token spelling, inflection and transliteration normalization is owned by
 `BeautyQIntentTextGen2`; multi-token service and attribute semantics are declared and traced by the
 typed `BeautyQIntentVocabulary`. Generic precedence, ranking and backend realization remain separate
-owners. Break-glass disclosure requires exact authorization binding. Every disclosed protected case
-moves permanently to visible Regression evidence and never returns to protected ownership.
+owners. Every disclosed protected case moves permanently to visible Regression evidence in the same
+reviewed commit and never returns to protected ownership.
 
-Protected-acceptance machinery strictly decodes an ordered holdout and separate acceptance policy,
-reuses the measured application path, emits aggregate-only report/measurement/gate artifacts, and
-permits candidate derivation only after a green protected gate. A reusable holdout requires canonical
-catalog identity validation, separate author and judge provenance, deterministic hash/fingerprint
-binding, visible/protected disjointness and reproducible freeze/audit evidence.
+Protected acceptance strictly decodes an ordered holdout and a separate acceptance policy, reuses the
+measured application path, and emits aggregate-only report/measurement/gate artifacts. Holdout
+integrity is proved in ordinary tests rather than generated evidence documents:
+`BeautyQProtectedHoldoutIntegritySpec` asserts strict policy and corpus loading, case-count and
+required-slice inventory, exact and NFKC-normalized query disjointness against the visible corpus,
+and canonical-catalog binding of every protected judgment identity.
 
-Q2 uses a catalog-bound recovery reserve with separate author and judge
-provenance, deterministic selection, visible/protected disjointness and
-reproducible freeze/audit binding. Consumed candidates become visible
-Regression evidence; protected selection chooses the first eligible
-non-consumed candidate whose normalized query is not already visible.
-Current milestone status belongs to the active Spec Kit feature artifacts under `specs/`
-(`specs/002-beautyq-q2-closeout` for Q2 closeout).
-
-`BeautyQAcceptedBaselineMain` provides manual `bootstrap` and `verify` modes. Bootstrap derives the
-candidate only through the existing BeautyQ adapter; verify loads one strict canonical classpath
-resource and compares ordered aggregate observations. The first accepted manifest must be
-bootstrapped only after a green protected gate carrying the verified tracked canonical inputs.
-The verifier reports but does not compare these run-specific audit fields as baseline identity:
-Elasticsearch generation reference, Qdrant generation ID, visible report
-digest, protected report digest and top-level manifest report digest. The Q1 codec accepts only the canonical typed corpus shape (`notes` and judgment vectors are arrays),
-fingerprints the decoded typed corpus through its canonical encoder, and preserves declared aggregate
-observation order rather than sorting map keys. Protected encoding retains aggregate/slice evidence
-without per-case or result identities.
+The canonical corpus codec accepts only the typed corpus shape (`notes` and judgment vectors are
+arrays) and preserves declared aggregate observation order rather than sorting map keys. Protected
+encoding retains aggregate/slice evidence without per-case or result identities.
 Full reports remain generated artifacts.
 
 The score-separation artifact records every visible returned identity with its query, projector-owned
@@ -2350,12 +2324,10 @@ completes seed insertion first.
 In provided composition, `BeautyQSeedReady.Noop` preserves externally owned database readiness while
 keeping the startup dependency explicit.
 
-The core architecture is frozen. The remaining approved work (BeautyQ protected acceptance, bootstrap,
-candidate review, promotion, and verify) is delivered under `specs/002-beautyq-q2-closeout`; the eval-first
-second-domain vertical (D1) remains deferred and is not authorized current execution scope. Feature-specific
-delivery order and status belong to the active Spec Kit feature artifacts under `specs/`, not to this
-specification. Anything beyond that approved work still requires a product requirement or a
-source-confirmed defect.
+The core architecture is frozen. The eval-first second-domain vertical (D1) remains deferred and is
+not authorized current execution scope. Feature-specific delivery order and status belong to the
+active Spec Kit feature artifacts under `specs/`, not to this specification. Anything beyond approved
+work requires a product requirement or a source-confirmed defect.
 
 ### Verification ownership
 

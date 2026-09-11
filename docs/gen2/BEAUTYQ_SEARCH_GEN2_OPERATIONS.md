@@ -2,8 +2,6 @@
 
 This document is the canonical operator runbook for the implemented BeautyQ Search Gen2 startup modes, status inspection, response-warning interpretation, restart-only recovery, and partial-activation handling. It owns HOW to execute an operation safely once that operation is authorized. It does not own architecture, business policy, feature authorization/sequencing, or historical rationale. Those remain with the technical specification, executable policy owners, the active Spec Kit feature artifacts under `specs/`, and Git history respectively.
 
-Current delivery status and operation authorization for Q2 closeout are owned by `specs/002-beautyq-q2-closeout`; this runbook never advances a feature gate.
-
 ## Supplement startup policy
 
 `SupplementStartupPolicy` is BeautyQ wiring-owned. The activation choice is applied before DI planning. Disabled is selected before provisioning and its retained managed graph does not contain Qdrant or embedding resources.
@@ -61,7 +59,6 @@ Returns HTTP 200 whenever a startup object exists.
   "observedAt": "...",
   "snapshot": {
     "capturedAt": "...",
-    "sourceRevision": "...",
     "sourceContentFingerprint": "...",
     "projectedDocumentsFingerprint": "...",
     "ageSeconds": 0
@@ -177,95 +174,37 @@ Database changes become visible after the coordinated restart; this is restart-o
 CDC lag. A failed or changed identity remains for a later fenced retry, and no online automatic
 cleaner is permitted.
 
-## Protected input authoring and freeze
+## Protected holdout rule
 
-The protected corpus and policy are created before protected execution through separated
-model-assisted author and judge passes, followed by an audit pass that alone may compare their query
-inventory with the visible corpus. No external employee is required; the checkout operator approves
-the first source-grounded set. The passes cannot inspect protected search output, and evaluation output
-must never be used to relabel or tune the same holdout.
+Protected cases are never tuned against: ordinary development must not use protected execution
+output to change labels, thresholds, vocabulary or search behavior. If a protected failure is
+deliberately disclosed for diagnosis and used for a fix, those cases permanently move into the
+visible regression corpus in the same reviewed commit; that commit and its review are the
+authorization record.
 
-The freeze runner executes no search and acquires no Elasticsearch, Qdrant, embedding, application or
-startup resource. It strictly validates the corpus and policy, checks every judgment identity against
-the canonical typed seed catalog, requires an acceptable variant for every exact-intent case, applies
-exact and deterministic NFKC query-leakage audits against visible and protected inputs, binds both
-input-file hashes plus both authoring-draft hashes and the canonical source fingerprint, and verifies
-the five versioned test resources (see
-[Canonical Q2-I evaluation resources](#canonical-q2-i-evaluation-resources)). “Protected” means
-excluded from output-driven tuning; it does not mean confidential or imply that the current bytes have
-passed freeze validation. Any protected-input change requires a newly reproduced and reviewed audit.
-The audit record is evidence about validation and freeze, contains no
-cases or judgments, and is not an acceptance-policy owner. Exact and normalized duplicate checks detect
-direct leakage only; they are not semantic-similarity or fuzzy-search claims. Bootstrap and verify
-consume only a reproducibly frozen corpus and policy and never author or modify them.
+Holdout replenishment is fresh, independently authored and judged, canonical-catalog-bound, and
+non-overlapping with visible cases. `BeautyQProtectedHoldoutIntegritySpec` proves those
+relationships on every ordinary test run: strict protected policy and corpus loading with
+case-count and required-slice inventory, exact and NFKC-normalized query disjointness against the
+visible corpus, and canonical-catalog binding of every protected judgment identity.
 
-The exact freeze invocation is:
+## Canonical protected evaluation resources
 
-```bash
-sbt --batch --no-global \
-  -Dsbt.server=false \
-  -Dsbt.server.forcestart=true \
-  -Dsbt.ivy.home=target/codex-sbt/ivy2 \
-  'leaderboard-app-shell/Test/runMain \
-    leaderboard.search.BeautyQProtectedInputFreezeMain \
-    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
-    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
-    --author-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json \
-    --judged-draft beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json \
-     --audit-output .evidence-runs/q2-freeze/<run-id>/beautyq-protected-input-audit-v2.json \
-    --author-pass-id <stable-author-pass-id> \
-    --judge-pass-id <stable-judge-pass-id> \
-    --audit-pass-id <stable-audit-pass-id>'
-```
-
-The command is valid only when the four source inputs already satisfy the author/judge separation,
-canonical catalog identity, disjointness and schema contracts. A generated audit is evidence only when
-strict decoding succeeds and its bytes reproduce the reviewed tracked audit. Invocation success from
-an earlier input generation must not be used to bless a later replenishment.
-
-## Canonical Q2-I evaluation resources
-
-Protected input owners are versioned under `beautyq-search-gen2-eval/src/test/resources` and are
-available after an ordinary checkout. The canonical paths are:
+Both protected inputs are versioned test resources under
+`beautyq-search-gen2-eval/src/test/resources`, available after an ordinary checkout:
 
 - `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json` — protected evaluation input;
-- `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json` — protected acceptance-gate input;
-- `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json` — canonical audit for the currently frozen protected inputs;
-- `leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-author-draft-v1.json` — author-pass provenance input;
-- `leaderboard/search/beautyq/gen2/eval/protected/provenance/beautyq-protected-judged-draft-v1.json` — judge-pass provenance input.
+- `leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json` — protected acceptance-gate input.
 
-All five paths are tracked test-resource owners in the BeautyQ evaluation module. They are not
-production `src/main/resources`, and no external restore or CI secret provisioning is required. Their
-presence does not prove that a particular replenishment is valid: author/judge separation, canonical
-catalog identity validation and deterministic audit reproduction must all pass for the same bytes.
-"Protected" is an evaluation-process classification: ordinary development must not tune labels,
-thresholds, vocabulary or search behavior from protected execution output.
+They are not production `src/main/resources` and need no secret provisioning. "Protected" is an
+evaluation-process classification: the files are tracked, and the protection is against
+output-driven tuning, not confidentiality.
 
-The freeze runner reads the four source inputs from these canonical test-resource paths and writes only
-a verification audit under `.evidence-runs/q2-freeze/<run-id>/beautyq-protected-input-audit-v2.json`. After
-freeze, the generated audit must compare byte-for-byte with the tracked canonical audit resource.
-Deleting `target` therefore removes only disposable generated output and never destroys the canonical
-Q2-I inputs.
+## Protected acceptance (manual, rare)
 
-## Protected acceptance and first baseline (manual only)
-
-### Protected acceptance and bootstrap candidate procedure
-
-Authorization and sequencing for this procedure come from the active feature owner
-(`specs/002-beautyq-q2-closeout` for Q2 closeout). Safety prerequisites before execution: the tracked
-protected inputs have passed canonical catalog validation and deterministic freeze/audit reproduction,
-and the coordinator has accepted root evidence for the exact verified tracked canonical inputs being
-evaluated.
-
-A fresh evaluation is identified by its actual inputs and results, not by a Git revision. Protected
-acceptance inputs are versioned evaluation resources, not production resources:
-
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json`
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json`
-- `beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-input-audit-v2.json`
-
-The test-owned runner is not an auto-discovered suite. Invoke it against the verified tracked canonical
-inputs:
+Run protected acceptance only when protected inputs or acceptance thresholds change. The runner
+loads both inputs strictly, proves the visible acceptance gate before executing any protected case,
+and uses the same startup/application path for visible and protected evidence:
 
 ```bash
 sbt --batch --no-global \
@@ -275,76 +214,16 @@ sbt --batch --no-global \
     --output-dir target/search-gen2/protected'
 ```
 
-The runner loads both inputs strictly, proves the visible acceptance gate before executing any
-protected case, and uses the same startup/application path for visible and protected evidence.
-The protected runner writes exactly three aggregate-only artifacts:
+It writes exactly three aggregate-only artifacts and never emits protected case IDs, queries or
+result IDs:
 
 - `beautyq-protected-aggregate.json`
 - `beautyq-protected-measurement.json`
 - `beautyq-protected-acceptance-gate.json`
 
-It never emits protected case IDs, queries or result IDs. Missing or malformed protected inputs and
-unavailable external resources are non-zero operational failures, not synthetic acceptance.
-
-### Protected workflow ownership
-
-This section owns the protected acceptance, bootstrap, promotion and verify procedures: the commands,
-required inputs, outputs, identity checks, safety conditions, and failure behavior for executing each one
-safely once authorized. It does not decide WHEN an operation is authorized, WHICH gate must be satisfied,
-or whether promotion/verify/closeout may advance; current Q2 sequencing and milestone state belong to
-`specs/002-beautyq-q2-closeout`, not to this runbook.
-
-After the protected runner is green, the accepted-baseline runner may bootstrap a candidate from the
-verified tracked canonical inputs:
-
-```bash
-sbt --batch --no-global \
-  'leaderboard-app-shell/Test/runMain leaderboard.search.BeautyQAcceptedBaselineMain \
-    --mode bootstrap \
-    --protected-corpus beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-holdout-v1.json \
-    --protected-policy beautyq-search-gen2-eval/src/test/resources/leaderboard/search/beautyq/gen2/eval/protected/beautyq-protected-acceptance-policy-v1.json \
-    --output-dir target/search-gen2/protected'
-```
-
-Bootstrap derives `beautyq-accepted-baseline-candidate.json` only after the existing protected gate is
-green. It never edits source resources. When it reports `ACCEPTED_BASELINE_CANDIDATE_READY`, preserve
-the aggregate artifacts and candidate, then stop for coordinator/operator review. Do not copy the
-candidate to the canonical resource in the same delegated task, and do not run verify yet.
-
-### Coordinator/operator candidate review
-
-Review only aggregate-safe evidence:
-
-- schema and policy versions;
-- corpus and policy fingerprints;
-- protected gate pass/fail codes;
-- provenance IDs;
-- ordered aggregate observation keys and counts;
-- candidate digest;
-- absence of identity-level protected fields.
-
-Do not publish metric values, queries, case IDs, result IDs, or judgments. Candidate generation does
-not authorize promotion.
-
-### Explicit promotion and verify procedure
-
-Authority to promote or verify comes from the active feature owner (`specs/002-beautyq-q2-closeout`),
-after explicit coordinator/operator approval of the preserved candidate from the acceptance/bootstrap
-procedure. Safety prerequisites: the same verified tracked canonical inputs, and the unchanged candidate.
-Copy it byte-for-byte to the single aggregate-only classpath resource:
-
-`beautyq-search-gen2-eval/src/main/resources/leaderboard/search/beautyq/gen2/eval/beautyq_accepted_evaluation_baseline_v1.json`
-
-Verify byte equality and digest before running focused canonical-resource tests. No search, evaluation-policy, lifecycle, route or corpus
-source may change after the acceptance/bootstrap procedure produced the candidate. Then run the existing accepted-baseline owner independently with
-`--mode verify` against the same verified tracked canonical inputs. Verify loads only the canonical resource, writes
-`beautyq-accepted-baseline-verification.json`, and compares ordered aggregate observations and stable
-provenance. It does not use these run-specific audit fields as equality requirements: Elasticsearch generation reference, Qdrant generation ID,
-visible report digest, protected
-report digest and top-level manifest report digest. It never overwrites the canonical resource. A red
-or blocked run produces no verification manifest. A green verify is this procedure's completion evidence;
-whether Q2 documentation closes on it is the active feature owner's decision under
-`specs/002-beautyq-q2-closeout`. No automated promotion service exists.
+Missing or malformed protected inputs and unavailable external resources are non-zero operational
+failures, not synthetic acceptance. A red gate stops there; diagnosing an individual failure is the
+human disclosure decision above, not a runner mode.
 
 ## Accepted limits
 

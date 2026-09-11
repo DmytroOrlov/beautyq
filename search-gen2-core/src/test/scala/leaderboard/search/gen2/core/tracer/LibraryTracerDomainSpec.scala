@@ -156,7 +156,6 @@ final class LibraryTracerDomainSpec extends AnyWordSpec {
         VersionedSnapshot(
           value = snapshot,
           contentFingerprint = sourceFingerprint(snapshot),
-          sourceRevision = None,
           capturedAt = Instant.parse("2026-01-01T00:00:00Z"),
         )
 
@@ -178,7 +177,6 @@ final class LibraryTracerDomainSpec extends AnyWordSpec {
         VersionedSnapshot(
           value = orphanSnapshot,
           contentFingerprint = sourceFingerprint(orphanSnapshot),
-          sourceRevision = None,
           capturedAt = Instant.parse("2026-01-01T00:00:00Z"),
         )
 

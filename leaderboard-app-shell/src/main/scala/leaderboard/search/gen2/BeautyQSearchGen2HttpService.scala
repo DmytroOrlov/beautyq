@@ -46,14 +46,12 @@ object BeautyQSearchGen2HttpService {
     val snapshotJson = evidence match {
       case Some(value) => Json.obj(
         "capturedAt" -> Json.fromString(value.snapshotCapturedAt.toString),
-        "sourceRevision" -> value.sourceRevision.map(Json.fromString).getOrElse(Json.Null),
         "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
         "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
         "ageSeconds" -> Json.fromLong(nonNegativeSeconds(value.snapshotCapturedAt, now)),
       )
       case None => Json.obj(
         "capturedAt" -> Json.Null,
-        "sourceRevision" -> Json.Null,
         "sourceContentFingerprint" -> Json.fromString(status.sourceContentFingerprint),
         "projectedDocumentsFingerprint" -> Json.fromString(status.projectedDocumentsFingerprint),
         "ageSeconds" -> Json.Null,

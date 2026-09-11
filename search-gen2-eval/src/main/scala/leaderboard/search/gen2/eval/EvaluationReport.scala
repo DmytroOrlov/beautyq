@@ -1,7 +1,6 @@
 package leaderboard.search.gen2.eval
 
 import io.circe.Json
-import java.security.MessageDigest
 import scala.collection.mutable
 
 final class ProvenanceComponent private (
@@ -433,36 +432,6 @@ object EvaluationReportBuilder {
   }
 }
 
-object EvaluationReportDigest {
-  def compute(reportJson: Json): String = {
-    val digest = MessageDigest.getInstance("SHA-256")
-    digest.update(reportJson.noSpaces.getBytes("UTF-8"))
-    digest.digest().map(b => f"$b%02x").mkString
-  }
-}
-
-final class ComparisonSchema private (
-  val corpusFingerprint: String,
-  val metricSchemaVersion: String,
-  val evaluationPolicyVersion: String,
-  val metricKeyScopes: Vector[MetricKeyScope],
-) {
-  override def equals(obj: Any): Boolean = obj match {
-    case other: ComparisonSchema => corpusFingerprint == other.corpusFingerprint && metricSchemaVersion == other.metricSchemaVersion && evaluationPolicyVersion == other.evaluationPolicyVersion && metricKeyScopes == other.metricKeyScopes
-    case _ => false
-  }
-  override def hashCode(): Int = (corpusFingerprint, metricSchemaVersion, evaluationPolicyVersion, metricKeyScopes).hashCode
-}
-object ComparisonSchema {
-  def from(corpusFingerprint: String, metricSchemaVersion: String, evaluationPolicyVersion: String, metricKeyScopes: Vector[MetricKeyScope]): Either[String, ComparisonSchema] =
-    if (corpusFingerprint.isEmpty) Left("corpusFingerprint must be non-empty")
-    else if (metricSchemaVersion.isEmpty) Left("metricSchemaVersion must be non-empty")
-    else if (evaluationPolicyVersion.isEmpty) Left("evaluationPolicyVersion must be non-empty")
-    else if (metricKeyScopes.isEmpty) Left("metricKeyScopes must be non-empty")
-    else if (metricKeyScopes.distinct.size != metricKeyScopes.size) Left("metricKeyScopes must be unique")
-    else Right(new ComparisonSchema(corpusFingerprint, metricSchemaVersion, evaluationPolicyVersion, metricKeyScopes))
-}
-
 final class MetricKeyScope private (
   val surfaceId: EvaluationSurfaceId,
   val metricId: EvaluationMetricId,
@@ -476,117 +445,4 @@ final class MetricKeyScope private (
 }
 object MetricKeyScope {
   def from(surfaceId: EvaluationSurfaceId, metricId: EvaluationMetricId, cutoff: EvaluationCutoff): MetricKeyScope = new MetricKeyScope(surfaceId, metricId, cutoff)
-}
-
-sealed trait ComparisonError
-object ComparisonError {
-  final case class SchemaMismatch(expected: String, actual: String) extends ComparisonError
-  final case class CorpusFingerprintMismatch(expected: String, actual: String) extends ComparisonError
-  final case class PolicyMismatch(expected: String, actual: String) extends ComparisonError
-  final case class MetricKeyMismatch(missing: Vector[MetricKeyScope], unexpected: Vector[MetricKeyScope]) extends ComparisonError
-  final case class MetricKeyOrderMismatch(expected: Vector[MetricKeyScope], actual: Vector[MetricKeyScope]) extends ComparisonError
-  final case class MissingObservation(scope: MetricKeyScope, side: String) extends ComparisonError
-  final case class DuplicateObservation(scope: MetricKeyScope, side: String) extends ComparisonError
-  final case class OuterSurfaceMismatch(expected: EvaluationSurfaceId, actual: EvaluationSurfaceId) extends ComparisonError
-}
-
-final class MetricDelta private (
-  val surfaceId: EvaluationSurfaceId,
-  val metricId: EvaluationMetricId,
-  val cutoff: EvaluationCutoff,
-  val candidateValue: BigDecimal,
-  val baselineValue: BigDecimal,
-  val delta: BigDecimal,
-) {
-  override def equals(obj: Any): Boolean = obj match {
-    case other: MetricDelta => surfaceId == other.surfaceId && metricId == other.metricId && cutoff == other.cutoff && candidateValue == other.candidateValue && baselineValue == other.baselineValue && delta == other.delta
-    case _ => false
-  }
-  override def hashCode(): Int = (surfaceId, metricId, cutoff, candidateValue, baselineValue, delta).hashCode
-}
-object MetricDelta {
-  private[eval] def create(
-    surfaceId: EvaluationSurfaceId,
-    metricId: EvaluationMetricId,
-    cutoff: EvaluationCutoff,
-    candidateValue: BigDecimal,
-    baselineValue: BigDecimal,
-    delta: BigDecimal,
-  ): MetricDelta = new MetricDelta(surfaceId, metricId, cutoff, candidateValue, baselineValue, delta)
-}
-
-final class ComparisonResult private (
-  val deltas: Vector[MetricDelta],
-) {
-  override def equals(obj: Any): Boolean = obj match {
-    case other: ComparisonResult => deltas == other.deltas
-    case _ => false
-  }
-  override def hashCode(): Int = deltas.hashCode
-}
-object ComparisonResult {
-  private[eval] def from(deltas: Vector[MetricDelta]): ComparisonResult = new ComparisonResult(deltas)
-}
-
-object EvaluationComparator {
-  private val scale = 12
-  private def normalize(value: BigDecimal): BigDecimal = value.setScale(scale, BigDecimal.RoundingMode.HALF_UP)
-
-  def compare(
-    candidateSchema: ComparisonSchema,
-    baselineSchema: ComparisonSchema,
-    candidateAggregates: Vector[(EvaluationSurfaceId, AggregateSection)],
-    baselineAggregates: Vector[(EvaluationSurfaceId, AggregateSection)],
-  ): Either[ComparisonError, ComparisonResult] = {
-    if (candidateSchema.metricSchemaVersion != baselineSchema.metricSchemaVersion) Left(ComparisonError.SchemaMismatch(baselineSchema.metricSchemaVersion, candidateSchema.metricSchemaVersion))
-    else if (candidateSchema.corpusFingerprint != baselineSchema.corpusFingerprint) Left(ComparisonError.CorpusFingerprintMismatch(baselineSchema.corpusFingerprint, candidateSchema.corpusFingerprint))
-    else if (candidateSchema.evaluationPolicyVersion != baselineSchema.evaluationPolicyVersion) Left(ComparisonError.PolicyMismatch(baselineSchema.evaluationPolicyVersion, candidateSchema.evaluationPolicyVersion))
-    else if (candidateSchema.metricKeyScopes != baselineSchema.metricKeyScopes && candidateSchema.metricKeyScopes.toSet == baselineSchema.metricKeyScopes.toSet) {
-      Left(ComparisonError.MetricKeyOrderMismatch(baselineSchema.metricKeyScopes, candidateSchema.metricKeyScopes))
-    } else if (candidateSchema.metricKeyScopes != baselineSchema.metricKeyScopes) {
-      val missing = baselineSchema.metricKeyScopes.filterNot(candidateSchema.metricKeyScopes.contains)
-      val unexpected = candidateSchema.metricKeyScopes.filterNot(baselineSchema.metricKeyScopes.contains)
-      Left(ComparisonError.MetricKeyMismatch(missing, unexpected))
-    } else {
-      val expectedScopes = baselineSchema.metricKeyScopes
-      def flatten(rows: Vector[(EvaluationSurfaceId, AggregateSection)]): Either[ComparisonError, Vector[MetricKeyScope]] =
-        rows.foldLeft[Either[ComparisonError, Vector[MetricKeyScope]]](Right(Vector.empty)) {
-          case (acc, (outerSurface, section)) => acc.flatMap { current =>
-            section.metricObservations.foldLeft[Either[ComparisonError, Vector[MetricKeyScope]]](Right(current)) {
-              case (innerAcc, observation) => innerAcc.flatMap { scopes =>
-                if (observation.scope.surfaceId != outerSurface) Left(ComparisonError.OuterSurfaceMismatch(outerSurface, observation.scope.surfaceId))
-                else Right(scopes :+ observation.scope)
-              }
-            }
-          }
-        }
-      val observations = for {
-        candidateObserved <- flatten(candidateAggregates)
-        baselineObserved <- flatten(baselineAggregates)
-        _ <- candidateObserved.find(scope => candidateObserved.count(_ == scope) > 1)
-          .map(scope => Left(ComparisonError.DuplicateObservation(scope, "candidate")))
-          .getOrElse(Right(()))
-        _ <- baselineObserved.find(scope => baselineObserved.count(_ == scope) > 1)
-          .map(scope => Left(ComparisonError.DuplicateObservation(scope, "baseline")))
-          .getOrElse(Right(()))
-      } yield (candidateObserved, baselineObserved)
-      observations.flatMap { case (candidateObserved, baselineObserved) =>
-        if (candidateObserved != expectedScopes) Left(ComparisonError.MetricKeyOrderMismatch(expectedScopes, candidateObserved))
-        else if (baselineObserved != expectedScopes) Left(ComparisonError.MetricKeyOrderMismatch(expectedScopes, baselineObserved))
-        else {
-      def find(rows: Vector[(EvaluationSurfaceId, AggregateSection)], scope: MetricKeyScope, side: String): Either[ComparisonError, AggregateMetricObservation] =
-        rows.find(_._1 == scope.surfaceId).flatMap(_._2.metricObservations.find(_.scope == scope))
-          .toRight(ComparisonError.MissingObservation(scope, side))
-      baselineSchema.metricKeyScopes.foldLeft[Either[ComparisonError, Vector[MetricDelta]]](Right(Vector.empty)) { (acc, scope) =>
-        acc.flatMap { deltas =>
-          for {
-            candidate <- find(candidateAggregates, scope, "candidate")
-            baseline <- find(baselineAggregates, scope, "baseline")
-          } yield deltas :+ MetricDelta.create(scope.surfaceId, scope.metricId, scope.cutoff, candidate.average, baseline.average, normalize(candidate.average - baseline.average))
-        }
-      }.map(deltas => ComparisonResult.from(deltas))
-      }
-      }
-    }
-  }
 }

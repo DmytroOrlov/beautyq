@@ -93,7 +93,7 @@ object BeautyQElasticsearchTestFixtures {
 
   val materialized: MaterializedBeautyQVariantDocuments =
     MaterializedSearchDocuments(
-      VersionedSnapshot(emptySnapshot, ContentFingerprint("content-fp-1"), Some(SourceRevision("rev-1")), Instant.parse("2024-01-01T00:00:00Z")),
+      VersionedSnapshot(emptySnapshot, ContentFingerprint("content-fp-1"), Instant.parse("2024-01-01T00:00:00Z")),
       Vector(document),
       ProjectedDocumentsFingerprint("projected-fp-1"),
       ProjectionFormatVersion("beautyq-projection-v1"),

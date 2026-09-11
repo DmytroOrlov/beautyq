@@ -218,7 +218,7 @@ final class SearchGen2ManagedResourceSpec extends org.scalatest.wordspec.AnyWord
 
   private def managedDocuments(documents: Vector[BookDocument], marker: String): MaterializedSearchDocuments[Unit, BookDocument] =
     MaterializedSearchDocuments(
-      VersionedSnapshot((), ContentFingerprint(s"source-$marker"), None, Instant.parse("2026-01-01T00:00:00Z")),
+      VersionedSnapshot((), ContentFingerprint(s"source-$marker"), Instant.parse("2026-01-01T00:00:00Z")),
       documents,
       ProjectedDocumentsFingerprint(s"projected-$marker"),
       ProjectionFormatVersion("projection-v1"),

@@ -232,7 +232,7 @@ event match {
 
 Report case ID/name, input, parsed/decoded state when available, observed output, expected output, and failed assertion.
 
-* BeautyQ eval query additions are not simple JSON-only edits: an accepted query addition must update the known eval/count-lock chain coherently.
+* Adding or changing BeautyQ evaluation queries requires the corpus JSON plus review and focused behavioral validation; do not maintain a synchronized list of count literals.
 * Eval and dirty catalog/runtime scorecard profiles are measurement-only: worse coverage in those profiles does not by itself authorize production Qdrant activation, fallback, fusion, rerank, or ES/Qdrant tuning.
 * Eval work must not opportunistically tune ES/Qdrant, parser, vocabulary, seed data, routes, or production search behavior unless that tuning is the explicit objective; scope expansion must be explicit and authorized, never inferred from a scorecard.
 

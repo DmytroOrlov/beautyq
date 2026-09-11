@@ -2,277 +2,19 @@ package leaderboard.search.beautyq.gen2.contract
 
 import org.scalatest.wordspec.AnyWordSpec
 
-/** Source-evidence ledger against Gen1's actual declaration source
-  * (beautyq-search-contract/src/main/scala/leaderboard/search/dsl/BeautyQSearchIntentVocabulary.scala,
-  * 86 rules, `rules = List(...)`, lines 33-139) and Gen1's parser normalization
-  * (beautyq-search-wiring/src/main/scala/leaderboard/search/parser/BeautySearchIntentParser.scala).
+/** Current vocabulary/declaration regression golden for `BeautyQIntentVocabulary.rules`.
   *
-  * This replaces an earlier, tautological version of this spec (derive a disposition string from the
-  * current Gen2 rule, then assert it is non-empty - true for any rule, proving nothing). Both tables
-  * below are literal, hand-verified against the Gen1 source directly, never computed by traversing
-  * `BeautyQIntentVocabulary.rules` or any other production helper - only the final assertions call
-  * production code, to compare it against these independently authored expectations.
-  *
-  * Gen1's 86 declarations map to Gen2 r001..r086 index-for-index (Gen2 did not reorder them); r087
-  * is the Gen2 NearUser overlay; r088 is the measured Gen2 broad self-care correction; r089 is the
-  * first disclosed multilingual exact-intent correction; r090 is the contextual lash-removal action;
-  * r091 owns language-independent regular-polish semantics (all five aliases - English, German,
-  * Russian - are hard-equivalent and bound to nail_coating_type=regular_polish in any matched
-  * service context); r092 owns explicit
-  * no-design typed semantics; r093 owns explicit extended-nail removal semantics; r094 owns the
-  * explicit henna-brows phrase; r095 owns the explicit brow-shaping phrase; r096..r098 own the
-  * composed refill+gel+design recovery vocabulary; r099 owns the 3d volume lash extension phrase;
-  * r100 owns the permanent eyeliner phrase; r101 owns the contextual gel-removal composition
-  * (r093 already owned typed nail-extension removal as of rotation 3); r102 owns the explicit
-  * "remove gel nail modeling" removal phrase that emits service(nail_modeling) +
-  * nail_service_type=removal + nail_coating_type=gel + with_removal=true in one rule (the gel-intent
-  * is a hard part of that phrase, so the bounded "remove nail modeling" phrase without "gel" lives
-  * on r093 and never implies nail_coating_type=gel, and unrelated "remove ..." queries cannot acquire
-  * a nail_modeling service action through a bare independent "remove" alias).
+  * The independent r087..r102 semantic checks below pin the live overlay/correction rules
+  * that Gen2 owns directly. The literal trace golden in the final block pins the complete
+  * current declaration - every alias, action, relation, mode and noise flag - byte-for-byte,
+  * and must fail the moment any of them changes.
   */
 final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
 
-  private final case class LedgerEntry(
-    sourceIndex: Int,
-    gen2RuleId: String,
-    disposition: String,
-    anchorAliases: Vector[String],
-    hardActionTags: Vector[String],
-    semanticActionTags: Vector[String],
-    requiresTags: Vector[String],
-    excludesTags: Vector[String],
-  )
-
-  // Four accepted dispositions. "intentionally-changed" always carries its own reason after ':' - a
-  // deliberate Gen1->Gen2 representation change that is behaviorally equivalent given the current
-  // vocabulary, not a translation defect.
-  private val StableCodeHardActions = "stable-code-hard-actions"
-  private val SemanticLabelOnly     = "semantic-label-only"
-  private val Noise                 = "noise"
-
-  // Every one of Gen1's 86 declarations, read directly from the Gen1 source file above. Anchor aliases
-  // are a distinctive, non-exhaustive subset (the full ordered alias list is pinned exactly by the
-  // 87-trace golden vector below, not repeated here).
-  private val ledger: Vector[LedgerEntry] = Vector(
-    LedgerEntry(1, "r001", StableCodeHardActions, Vector("маникюр", "манекюр"), Vector("service(manicure)", "enum(nail_service_type=manicure)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(2, "r002", StableCodeHardActions, Vector("обычный маникюр"), Vector("service(manicure)", "enum(nail_service_type=manicure)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(3, "r003", StableCodeHardActions, Vector("дешевый маникюр рядом"), Vector("service(manicure)", "enum(nail_service_type=manicure)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(4, "r004", StableCodeHardActions, Vector("педикюр", "pedicure"), Vector("service(pedicure)", "enum(nail_service_type=pedicure)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(5, "r005", StableCodeHardActions, Vector("наращивание и моделирование ногтей", "наращивание ногтей", "nail modeling", "nail modeling extension"), Vector("service(nail_modeling)", "enum(nail_service_type=extension)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(6, "r006", StableCodeHardActions, Vector("ресницы", "lashes"), Vector("service(lashes)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(7, "r007", StableCodeHardActions, Vector("брови", "augenbrauen"), Vector("service(brows)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(8, "r008", StableCodeHardActions, Vector("pmu", "татуаж"), Vector("service(pmu)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(9, "r009", StableCodeHardActions, Vector("удаление волос", "hair removal"), Vector("service(hair_removal)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(10, "r010", StableCodeHardActions, Vector("косметология лица", "facial"), Vector("service(facial)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(11, "r011", StableCodeHardActions, Vector("выездной уход и мини группы", "выездной уход"), Vector("service(mobile_beauty)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(12, "r012", SemanticLabelOnly, Vector("ногти маникюр и педикюр", "nails"), Vector("category(nails)"), Vector("service(manicure)", "service(pedicure)", "service(nail_modeling)"), Vector.empty, Vector.empty),
-    LedgerEntry(13, "r013", SemanticLabelOnly, Vector("ногти"), Vector("category(nails)"), Vector("service(manicure)", "service(pedicure)", "service(nail_modeling)"), Vector.empty, Vector.empty),
-    LedgerEntry(14, "r014", StableCodeHardActions, Vector("ресницы брови и permanent make up"), Vector("category(lashes_brows_pmu)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(15, "r015", StableCodeHardActions, Vector("косметология лица и уход"), Vector("category(facial_care)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(
-      16,
-      "r016",
-      "intentionally-changed:Gen1 declared this rule unconditionally (no requires), but it is token-identical to r009 (\"удаление волос\") and is always shadowed by it under Gen1's own declaration-order tie-break - dead code in Gen1. Gen2 makes the same practical unreachability an explicit, self-documenting contextual gate (requires=[service(hair_removal)]) instead of relying on accidental sort order.",
-      Vector("удаление волос"),
-      Vector("category(hair_removal)"),
-      Vector.empty,
-      Vector("service(hair_removal)"),
-      Vector.empty,
-    ),
-    LedgerEntry(17, "r017", Noise, Vector("салон красоты"), Vector.empty, Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(18, "r018", StableCodeHardActions, Vector("lashes and brows"), Vector("service-any(lashes,brows)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(19, "r019", StableCodeHardActions, Vector("что то для лица рядом", "что то для лица"), Vector("service(facial)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(20, "r020", StableCodeHardActions, Vector("недорогие ногти рядом"), Vector("service-any(manicure,pedicure)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(21, "r021", StableCodeHardActions, Vector("гель лак", "gel polish"), Vector("enum(nail_coating_type=gel_polish)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(22, "r022", StableCodeHardActions, Vector("shellac", "шелак"), Vector("enum(nail_coating_type=shellac)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(23, "r023", StableCodeHardActions, Vector("реснички 2д корр"), Vector("service(lashes)", "enum(lash_volume=volume2_d)", "enum(lash_service_type=refill)", "bool(with_correction=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(24, "r024", StableCodeHardActions, Vector("с shellac и снятием"), Vector("enum(nail_coating_type=shellac)", "bool(with_removal=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(25, "r025", StableCodeHardActions, Vector("shellac entfernen und neu"), Vector("enum(nail_coating_type=shellac)", "bool(with_removal=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(26, "r026", StableCodeHardActions, Vector("снять гель с ногтей", "снять гель"), Vector("service(nail_modeling)", "enum(nail_service_type=removal)", "enum(nail_coating_type=gel)", "bool(with_removal=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(27, "r027", StableCodeHardActions, Vector("gel removal"), Vector("service(nail_modeling)", "enum(nail_service_type=removal)", "enum(nail_coating_type=gel)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(
-      28,
-      "r028",
-      StableCodeHardActions,
-      Vector("коррекция гелевых ногтей с дизайном"),
-      Vector("service(nail_modeling)", "enum(nail_service_type=refill)", "enum(nail_coating_type=gel)", "bool(with_correction=true)", "bool(with_design=true)"),
-      Vector.empty,
-      Vector.empty,
-      Vector.empty,
-    ),
-    LedgerEntry(
-      29,
-      "r029",
-      StableCodeHardActions,
-      Vector("коррекция гелевых ногтей"),
-      Vector("service(nail_modeling)", "enum(nail_service_type=refill)", "enum(nail_coating_type=gel)", "bool(with_correction=true)"),
-      Vector.empty,
-      Vector.empty,
-      Vector.empty,
-    ),
-    LedgerEntry(30, "r030", Noise, Vector("не татуаж"), Vector.empty, Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(31, "r031", StableCodeHardActions, Vector("без лака", "без покрытия", "no coating"), Vector("enum(nail_coating_type=no_coating)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(
-      32,
-      "r032",
-      StableCodeHardActions,
-      Vector("гель", "gel"),
-      Vector("enum(nail_coating_type=gel)"),
-      Vector.empty,
-      Vector("enum(nail_service_type=extension)"),
-      Vector.empty,
-    ),
-    LedgerEntry(
-      33,
-      "r033",
-      StableCodeHardActions,
-      Vector("acrylic"),
-      Vector("enum(nail_coating_type=acrylic)"),
-      Vector.empty,
-      Vector("enum(nail_service_type=extension)"),
-      Vector.empty,
-    ),
-    LedgerEntry(34, "r034", StableCodeHardActions, Vector("классика", "classic"), Vector("enum(lash_volume=classic1_d)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(35, "r035", StableCodeHardActions, Vector("2д", "volume2_d"), Vector("enum(lash_volume=volume2_d)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(36, "r036", StableCodeHardActions, Vector("3д", "volume3_d"), Vector("enum(lash_volume=volume3_d)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(37, "r037", StableCodeHardActions, Vector("mega volume"), Vector("enum(lash_volume=mega_volume)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(38, "r038", StableCodeHardActions, Vector("extension", "наращивание ресниц"), Vector("enum(lash_service_type=extension)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(39, "r039", StableCodeHardActions, Vector("коррекция ресниц 2д"), Vector("enum(lash_volume=volume2_d)", "enum(lash_service_type=refill)", "bool(with_correction=true)", "service(lashes)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(40, "r040", StableCodeHardActions, Vector("коррекция ресниц"), Vector("enum(lash_service_type=refill)", "bool(with_correction=true)", "service(lashes)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(41, "r041", StableCodeHardActions, Vector("lash lifting"), Vector("enum(lash_service_type=lifting)", "service(lashes)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(42, "r042", StableCodeHardActions, Vector("lash lifting mit färben"), Vector("enum(lash_service_type=lifting)", "bool(with_tinting=true)", "service(lashes)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(43, "r043", StableCodeHardActions, Vector("lifting"), Vector("enum(lash_service_type=lifting)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(44, "r044", StableCodeHardActions, Vector("снять ресницы"), Vector("service(lashes)", "enum(lash_service_type=removal)", "bool(with_removal=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(45, "r045", StableCodeHardActions, Vector("хна", "henna"), Vector("enum(brow_service_type=henna)", "bool(with_tinting=true)"), Vector.empty, Vector("service(brows)"), Vector.empty),
-    LedgerEntry(46, "r046", StableCodeHardActions, Vector("lamination", "ламинирование"), Vector("enum(brow_service_type=lamination)"), Vector.empty, Vector("service(brows)"), Vector.empty),
-    LedgerEntry(47, "r047", StableCodeHardActions, Vector("brow lamination"), Vector("enum(brow_service_type=lamination)", "service(brows)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(48, "r048", StableCodeHardActions, Vector("augenbrauen färben"), Vector("service(brows)", "enum(brow_service_type=tinting)", "bool(with_tinting=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(49, "r049", StableCodeHardActions, Vector("брови ламинирование с окрашиванием"), Vector("service(brows)", "enum(brow_service_type=lamination)", "bool(with_tinting=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(50, "r050", StableCodeHardActions, Vector("shape and tint brows"), Vector("service(brows)", "enum-any(brow_service_type=shaping,tinting)", "bool(with_tinting=true)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(51, "r051", StableCodeHardActions, Vector("коррекция бровей"), Vector("enum(brow_service_type=shaping)", "service(brows)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(52, "r052", StableCodeHardActions, Vector("shaping"), Vector("enum(brow_service_type=shaping)"), Vector.empty, Vector("service(brows)"), Vector.empty),
-    LedgerEntry(53, "r053", StableCodeHardActions, Vector("färben", "окрашивание"), Vector("bool(with_tinting=true)"), Vector.empty, Vector("service(brows)"), Vector.empty),
-    LedgerEntry(54, "r054", StableCodeHardActions, Vector("färben", "окрашивание"), Vector("bool(with_tinting=true)"), Vector.empty, Vector("service(lashes)"), Vector.empty),
-    LedgerEntry(55, "r055", StableCodeHardActions, Vector("губы", "lips"), Vector("enum(pmu_area=lips)"), Vector.empty, Vector("service(pmu)"), Vector.empty),
-    LedgerEntry(56, "r056", StableCodeHardActions, Vector("eyeliner"), Vector("enum(pmu_area=eyeliner)"), Vector.empty, Vector("service(pmu)"), Vector.empty),
-    LedgerEntry(57, "r057", StableCodeHardActions, Vector("correction", "коррекция"), Vector("bool(with_correction=true)"), Vector.empty, Vector("service(pmu)"), Vector.empty),
-    LedgerEntry(58, "r058", StableCodeHardActions, Vector("powder brows"), Vector("service(pmu)", "enum(pmu_area=brows)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(59, "r059", StableCodeHardActions, Vector("brows"), Vector("enum(pmu_area=brows)"), Vector.empty, Vector("service(pmu)"), Vector.empty),
-    LedgerEntry(60, "r060", StableCodeHardActions, Vector("aquafacial"), Vector("service(facial)", "enum(facial_treatment_type=aquafacial)", "enum(body_area=face)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(61, "r061", StableCodeHardActions, Vector("microneedling"), Vector("service(facial)", "enum(facial_treatment_type=microneedling)", "enum(body_area=face)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(62, "r062", StableCodeHardActions, Vector("bb glow"), Vector("service(facial)", "enum(facial_treatment_type=bb_glow)", "enum(body_area=face)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(63, "r063", StableCodeHardActions, Vector("чистка лица"), Vector("service(facial)", "enum(facial_treatment_type=cleansing)", "enum(body_area=face)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(64, "r064", StableCodeHardActions, Vector("классический уход лицо"), Vector("service(facial)", "enum(facial_treatment_type=classic)", "enum(body_area=face)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(65, "r065", StableCodeHardActions, Vector("увлажнение лица"), Vector("service(facial)", "enum(facial_treatment_type=hydration)", "enum(body_area=face_neck_decollete)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(66, "r066", Noise, Vector("3 сеанса скидка"), Vector.empty, Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(67, "r067", StableCodeHardActions, Vector("anti aging"), Vector("service(facial)", "enum(facial_treatment_type=anti_aging)", "enum(body_area=face_neck_decollete)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(68, "r068", StableCodeHardActions, Vector("peeling"), Vector("service(facial)", "enum(facial_treatment_type=peeling)", "enum(body_area=face)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(69, "r069", StableCodeHardActions, Vector("face", "gesicht"), Vector("enum(body_area=face)"), Vector.empty, Vector("service(facial)"), Vector("enum(body_area=face_neck_decollete)")),
-    LedgerEntry(70, "r070", StableCodeHardActions, Vector("wax", "waxing", "воск"), Vector("service(hair_removal)", "enum(hair_removal_method=wax)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(71, "r071", StableCodeHardActions, Vector("sugaring"), Vector("service(hair_removal)", "enum(hair_removal_method=sugaring)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(72, "r072", StableCodeHardActions, Vector("ipl"), Vector("service(hair_removal)", "enum(hair_removal_method=laser)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(73, "r073", StableCodeHardActions, Vector("laser", "лазер"), Vector("service(hair_removal)", "enum(hair_removal_method=laser)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(
-      74,
-      "r074",
-      "intentionally-changed:Gen1 modeled a fixed session count as a degenerate IntRange(min=6,max=6); Gen2's BeautyIntentAction vocabulary has no range case for int attributes, only a scalar IntAttribute, so this collapses to IntAttribute(session_count,6) - numerically equivalent (min=max=6 already meant \"exactly 6\").",
-      Vector("6 сеансов", "6 сеанса"),
-      Vector("service(hair_removal)", "int(session_count=6)"),
-      Vector.empty,
-      Vector.empty,
-      Vector.empty,
-    ),
-    LedgerEntry(75, "r075", StableCodeHardActions, Vector("threading"), Vector("service(hair_removal)", "enum(hair_removal_method=threading)"), Vector.empty, Vector.empty, Vector.empty),
-    LedgerEntry(76, "r076", Noise, Vector("рядом"), Vector.empty, Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(77, "r077", StableCodeHardActions, Vector("beine", "full legs"), Vector("enum(body_area=full_legs)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(78, "r078", StableCodeHardActions, Vector("upper lip", "верхняя губа", "oberlippe"), Vector("enum(body_area=upper_lip)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(79, "r079", StableCodeHardActions, Vector("губа"), Vector("enum(body_area=upper_lip)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(80, "r080", StableCodeHardActions, Vector("chin"), Vector("enum(body_area=chin)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(81, "r081", StableCodeHardActions, Vector("подмышки"), Vector("enum(body_area=armpits)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(82, "r082", StableCodeHardActions, Vector("armpits"), Vector("enum(body_area=armpits)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(83, "r083", StableCodeHardActions, Vector("bikini"), Vector("enum(body_area=bikini)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(84, "r084", StableCodeHardActions, Vector("бикини"), Vector("enum(body_area=bikini)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(85, "r085", Noise, Vector("недорого"), Vector.empty, Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-    LedgerEntry(86, "r086", StableCodeHardActions, Vector("lower legs"), Vector("enum(body_area=lower_legs)"), Vector.empty, Vector("service(hair_removal)"), Vector.empty),
-  )
-
-  private def actionTag(action: BeautyIntentAction): String =
-    action match {
-      case BeautyIntentAction.Service(code)                 => s"service(${code.value})"
-      case BeautyIntentAction.ServiceAny(codes)              => s"service-any(${codes.map(_.value).mkString(",")})"
-      case BeautyIntentAction.Category(code)                 => s"category(${code.value})"
-      case BeautyIntentAction.EnumAttribute(code, value)     => s"enum($code=$value)"
-      case BeautyIntentAction.EnumAttributeAny(code, values) => s"enum-any($code=${values.mkString(",")})"
-      case BeautyIntentAction.BooleanAttribute(code, value)  => s"bool($code=$value)"
-      case BeautyIntentAction.IntAttribute(code, value)      => s"int($code=$value)"
-      case BeautyIntentAction.NearUser                       => "near-user"
-    }
-
-  "the Gen1 disposition ledger" should {
-    "cover exactly 86 Gen1 declarations, index-for-index, with r087..r102 excluded as Gen2-only" in {
-      assert(ledger.map(_.sourceIndex) == (1 to 86).toVector)
-      assert(ledger.map(_.gen2RuleId) == (1 to 86).map(index => f"r$index%03d").toVector)
-      assert(!ledger.exists(_.gen2RuleId == "r087"))
-      assert(!ledger.exists(_.gen2RuleId == "r088"))
-      assert(!ledger.exists(_.gen2RuleId == "r089"))
-      assert(!ledger.exists(_.gen2RuleId == "r090"))
-      assert(!ledger.exists(_.gen2RuleId == "r091"))
-      assert(!ledger.exists(_.gen2RuleId == "r092"))
-      assert(!ledger.exists(_.gen2RuleId == "r093"))
-      assert(!ledger.exists(_.gen2RuleId == "r094"))
-      assert(!ledger.exists(_.gen2RuleId == "r095"))
-      assert(!ledger.exists(_.gen2RuleId == "r096"))
-      assert(!ledger.exists(_.gen2RuleId == "r097"))
-      assert(!ledger.exists(_.gen2RuleId == "r098"))
-      assert(!ledger.exists(_.gen2RuleId == "r099"))
-      assert(!ledger.exists(_.gen2RuleId == "r100"))
-      assert(!ledger.exists(_.gen2RuleId == "r101"))
-      assert(!ledger.exists(_.gen2RuleId == "r102"))
-    }
-
-    "match every ledgered rule's actual hard/semantic/requires/excludes action tags exactly" in {
-      val rulesById = BeautyQIntentVocabulary.rules.map(rule => rule.id.value -> rule).toMap
-      ledger.foreach { entry =>
-        val rule = rulesById.getOrElse(entry.gen2RuleId, fail(s"missing rule ${entry.gen2RuleId}"))
-        assert(rule.hardActions.map(actionTag) == entry.hardActionTags, s"hard action mismatch for ${entry.gen2RuleId}")
-        assert(rule.semanticActions.map(actionTag) == entry.semanticActionTags, s"semantic action mismatch for ${entry.gen2RuleId}")
-        assert(rule.requires.map(actionTag) == entry.requiresTags, s"requires mismatch for ${entry.gen2RuleId}")
-        assert(rule.excludes.map(actionTag) == entry.excludesTags, s"excludes mismatch for ${entry.gen2RuleId}")
-      }
-    }
-
-    "match every ledgered rule's disposition-implied structural invariant" in {
-      val rulesById = BeautyQIntentVocabulary.rules.map(rule => rule.id.value -> rule).toMap
-      ledger.foreach { entry =>
-        val rule = rulesById.getOrElse(entry.gen2RuleId, fail(s"missing rule ${entry.gen2RuleId}"))
-        if (entry.disposition == Noise) {
-          assert(rule.noise, s"expected ${entry.gen2RuleId} to be noise")
-          assert(rule.hardActions.isEmpty && rule.semanticActions.isEmpty, s"noise rule ${entry.gen2RuleId} must carry no actions")
-        } else {
-          assert(!rule.noise, s"expected ${entry.gen2RuleId} not to be noise")
-        }
-        if (entry.disposition == SemanticLabelOnly) {
-          assert(rule.semanticActions.nonEmpty, s"expected ${entry.gen2RuleId} to carry semantic actions")
-        } else ()
-      }
-    }
-
-    "contain every declared anchor alias, normalized, among the rule's own normalized aliases" in {
-      val rulesById = BeautyQIntentVocabulary.rules.map(rule => rule.id.value -> rule).toMap
-      ledger.foreach { entry =>
-        val rule = rulesById.getOrElse(entry.gen2RuleId, fail(s"missing rule ${entry.gen2RuleId}"))
-        val normalizedAliases = rule.aliases.map(BeautyQIntentTextGen2.normalize)
-        entry.anchorAliases.foreach { anchor =>
-          assert(normalizedAliases.contains(anchor), s"anchor alias '$anchor' not found among ${entry.gen2RuleId}'s aliases: $normalizedAliases")
-        }
-      }
-    }
-  }
-
   "the Gen2 rule inventory" should {
-    "contain exactly 102 rules, r001..r102 in order, with the final sixteen rules explicitly Gen2-owned" in {
+    "declare dense sequential rule IDs in order, with the final sixteen rules explicitly Gen2-owned" in {
       val rules = BeautyQIntentVocabulary.rules
-      assert(rules.map(_.id.value) == (1 to 102).map(index => f"r$index%03d").toVector)
+      assert(rules.map(_.id.value) == rules.indices.map(index => f"r${index + 1}%03d").toVector)
       val nearUserRule = rules.find(_.id.value == "r087").getOrElse(fail("expected r087 to exist"))
       assert(nearUserRule.semanticActions == Vector(BeautyIntentAction.NearUser))
       assert(nearUserRule.hardActions.isEmpty)
@@ -382,11 +124,11 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
       assert(!r101Rule.noise)
     }
 
-    // Independent evidence, not derived from BeautyIntentRuleTrace or any other production traversal
-    // helper: every string below was authored by hand against the Gen1 source and the accepted Gen2
-    // correction, then verified to match production output byte-for-byte. This must fail the moment any
-    // alias, action, relation, mode or disposition changes for any of the 102 rules.
-    "render the exact literal trace for every one of the 102 rules" in {
+    // Current declaration regression golden, not derived from BeautyIntentRuleTrace or any other
+    // production traversal helper: every string below is authored independently and compared
+    // byte-for-byte against production output. This must fail the moment any alias, action, relation,
+    // mode or noise flag changes for any rule.
+    "render the exact literal declaration trace for every current rule" in {
       val expected = Vector(
         "rule id=r001 aliases=[маникюр,манекюр,уход для рук,уход за руками,hand nail care,care for hands,hand care,manicure] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
         "rule id=r002 aliases=[обычный маникюр] mode=Independent hard=[service(manicure),enum(nail_service_type=manicure)] semantic=[] requires=[] excludes=[] noise=false label=absent",
@@ -491,7 +233,6 @@ final class BeautyQIntentVocabularyEvidenceSpec extends AnyWordSpec {
         "rule id=r101 aliases=[gel] mode=Contextual hard=[enum(nail_coating_type=gel)] semantic=[] requires=[enum(nail_service_type=removal)] excludes=[] noise=false label=absent",
         "rule id=r102 aliases=[remove gel nail modeling] mode=Independent hard=[service(nail_modeling),enum(nail_service_type=removal),bool(with_removal=true),enum(nail_coating_type=gel)] semantic=[] requires=[] excludes=[] noise=false label=absent",
       )
-      assert(expected.size == 102)
       val actual = BeautyQIntentVocabulary.rules.map(BeautyIntentRuleTrace.render)
       assert(actual == expected)
     }

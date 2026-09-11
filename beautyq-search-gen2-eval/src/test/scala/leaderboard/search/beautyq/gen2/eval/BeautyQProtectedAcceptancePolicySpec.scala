@@ -6,7 +6,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 final class BeautyQProtectedAcceptancePolicySpec extends AnyWordSpec {
   "BeautyQ protected acceptance policy" should {
-    "decode strict ordered requirements and retain a canonical fingerprint" in {
+    "decode strict ordered requirements and round-trip canonical JSON" in {
       val policy = decode(policyJson())
       assert(policy.evaluationPolicyVersion == BeautyQEvaluationPolicy.CurrentVersion)
       assert(policy.protectedAcceptancePolicyVersion == "beautyq-protected-acceptance-policy-v1")
@@ -19,7 +19,6 @@ final class BeautyQProtectedAcceptancePolicySpec extends AnyWordSpec {
         case Left(error) => fail(s"expected canonical policy round trip, got $error")
       }
       assert(policy.canonicalJson == roundTripJson)
-      assert(policy.fingerprint.nonEmpty)
     }
 
     "preserve array declaration order" in {
@@ -98,11 +97,6 @@ final class BeautyQProtectedAcceptancePolicySpec extends AnyWordSpec {
       assert(BeautyQProtectedAcceptancePolicy.fromJson(json).isLeft)
     }
 
-    "reject invalid fingerprint" in {
-      val json = policyJson().mapObject(_.add("expectedCorpusFingerprint", Json.fromString("not-a-fingerprint")))
-      assert(BeautyQProtectedAcceptancePolicy.fromJson(json).isLeft)
-    }
-
     "reject non-positive case count" in {
       val json = policyJson().mapObject(_.add("expectedCaseCount", Json.fromInt(0)))
       assert(BeautyQProtectedAcceptancePolicy.fromJson(json).isLeft)
@@ -161,13 +155,11 @@ final class BeautyQProtectedAcceptancePolicySpec extends AnyWordSpec {
       metricObj("protected-global", "variants", "success", 1, "0.500000000000"),
       metricObj("protected-global", "variants", "mrr", 3, "0.250000000000"),
     ),
-    corpusFingerprint: String = "a" * 64,
     caseCount: Int = 2,
   ): Json = Json.obj(
     "schemaVersion" -> Json.fromString(BeautyQProtectedAcceptancePolicy.CurrentSchemaVersion),
     "evaluationPolicyVersion" -> Json.fromString(BeautyQEvaluationPolicy.CurrentVersion),
     "protectedAcceptancePolicyVersion" -> Json.fromString("beautyq-protected-acceptance-policy-v1"),
-    "expectedCorpusFingerprint" -> Json.fromString(corpusFingerprint),
     "expectedCaseCount" -> Json.fromInt(caseCount),
     "requiredSliceMinimums" -> Json.fromValues(slices),
     "requiredMetricMinimums" -> Json.fromValues(metrics),

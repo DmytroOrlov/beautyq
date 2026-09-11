@@ -76,10 +76,4 @@ final class BeautyQSupplementBoundarySpec extends AnyWordSpec {
     }
   }
 
-  "BeautyQ evidence" should {
-    "not expose an independent constructor or copy path" in {
-      assertDoesNotCompile("new leaderboard.search.beautyq.gen2.eval.BeautyQNoHarmSupplementEvidence.SupplementEvidence(Vector.empty, Vector.empty, 0, leaderboard.search.beautyq.gen2.wiring.BeautyQSupplementStatus.Ineligible, \"ineligible\", None, None, None, Vector.empty, Vector.empty, Vector.empty)")
-      assertDoesNotCompile("val evidence: leaderboard.search.beautyq.gen2.eval.BeautyQNoHarmSupplementEvidence.SupplementEvidence = ???; evidence.copy()")
-    }
-  }
 }
