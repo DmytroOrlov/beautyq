@@ -35,11 +35,12 @@ These labels are queue-management only. They never rewrite a Feature 004 disposi
 | Order | ID | Status | What would cause us to start it | Authorization |
 | ---: | --- | --- | --- | --- |
 | `—` | `FUP-01` | `COMPLETE` | Done — stale current-source comments corrected. | Completed hygiene outcome; no further authorization. |
-| 2 | `FUP-02` | `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION` | Explicit human authorization of the approved `SIMPLIFY_LOCALLY` transformation. | New explicit human implementation authorization is mandatory. |
-| 3 | `FUP-03` | `OPTIONAL_EVIDENCE` | Human wants further non-trace test consolidation after FUP-02. | Separate human decision to spend evidence/review effort. |
+| 2 | `FUP-08` | `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION` | FUP-06 demonstrated substantial marginal relevance value but one human-confirmed trust-breaking semantic mismatch remains. | New explicit human implementation authorization is mandatory. |
+| 3 | `FUP-02` | `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION` | Explicit human authorization of the approved `SIMPLIFY_LOCALLY` transformation. | New explicit human implementation authorization is mandatory. |
+| 4 | `FUP-03` | `OPTIONAL_EVIDENCE` | Human wants further non-trace test consolidation after FUP-02. | Separate human decision to spend evidence/review effort. |
 | `—` | `FUP-04` | `COMPLETE` | Done — Feature 003/004 completed-task checkboxes reconciled. | Completed hygiene outcome; no further authorization. |
 | `—` | `FUP-05` | `COMPLETE` | Done — Feature 001 stale pre-finalization framing superseded. | Completed hygiene outcome; no further authorization. |
-| 6 | `FUP-06` | `OPTIONAL_EVIDENCE` | Product owner wants to decide current BeautyQ Qdrant activation/default/value policy. | Separate product + evaluation decision. |
+| `—` | `FUP-06` | `COMPLETE` | Done — current Gen2 Qdrant marginal-value evidence produced; substantial relevance value, acceptance verdict `HARM`. | Completed evidence outcome; no runtime/default/rollout authorization. |
 | 7 | `FUP-07` | `NO_ACTION_UNLESS_NEEDED` | A future design decision actually depends on the framework answer. | None until then. |
 
 Parked, not part of the numbered queue: **D1 second production domain** (see below).
@@ -51,9 +52,11 @@ Parked, not part of the numbered queue: **D1 second production domain** (see bel
 This document **prioritizes possible work; it authorizes no work.**
 
 - `FUP-02` still needs **explicit human implementation authorization**.
-- `FUP-03` and `FUP-06` require separate human decisions to spend evidence effort.
-- `FUP-01`, `FUP-04` and `FUP-05` are completed hygiene outcomes; completion authorizes no further
-  work and changes no Feature 004 disposition.
+- `FUP-08` requires **new explicit human implementation authorization**; queueing it authorizes no
+  implementation and no Qdrant default/activation/rollout change.
+- `FUP-03` requires a separate human decision to spend evidence effort.
+- `FUP-01`, `FUP-04` and `FUP-05` are completed hygiene outcomes, and `FUP-06` is a completed
+  evidence outcome; none authorizes further work or changes any Feature 004 disposition.
 - D1 remains **human-deprioritized / `PARKED`**; no automatic reactivation.
 - This document does not reopen Feature 004. Feature 004 remains `CLOSED` / `APPROVE` /
   `explicitNoImplementation = true`.
@@ -77,7 +80,7 @@ This document **prioritizes possible work; it authorizes no work.**
 - **Origin**: `RC-002` = `INTENTIONALLY_DEFERRED`.
 - **Feature 004**: `C-TRACE-REDUNDANT-DIAGNOSTICS = SIMPLIFY_LOCALLY`.
 - **Queue status**: `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION`.
-- **Priority**: 2 — highest-value actual code simplification, **after** current misleading comments are
+- **Priority**: 3 — high-value actual code simplification, **after** current misleading comments are
   corrected.
 
 **Important**: the Feature 004 human `APPROVE` verdict accepted the disposition but explicitly did
@@ -117,7 +120,7 @@ runtime/data/lifecycle migration.**
 - **Origin**: `RC-004` = `OPTIONAL_FOLLOWUP`.
 - **Feature 004**: `C-TEST-COVERAGE = INSUFFICIENT_EVIDENCE`.
 - **Queue status**: `OPTIONAL_EVIDENCE`.
-- **Priority**: 3, but **only if** more test consolidation is desired after FUP-02.
+- **Priority**: 4, but **only if** more test consolidation is desired after FUP-02.
 
 Scope: produce a per-invariant primary-owner map for the remaining **non-trace** test corpus.
 
@@ -160,12 +163,17 @@ selection occurs; do **not** "clean it up" merely because 004 is closed.
 ## FUP-06 — Current Gen2 Qdrant marginal-value ablation
 
 - **Origin**: `RC-003` = `OPTIONAL_FOLLOWUP`.
-- **Feature 004**: `C-QDRANT-BEAUTYQ-VALUE = INSUFFICIENT_EVIDENCE`.
-- **Queue status**: `OPTIONAL_EVIDENCE`.
-- **Priority**: 6 — deliberately below cleanup work.
-
-This is **not required** merely because evidence is missing. Start only if the product owner wants to
-decide current BeautyQ Qdrant activation/default/value policy.
+- **Feature 004**: `C-QDRANT-BEAUTYQ-VALUE = INSUFFICIENT_EVIDENCE` (unchanged; not reopened here).
+- **Queue status**: `COMPLETE`.
+- **Outcome**: the accepted same-execution comparison (baseline-only projection vs actual FullSearch)
+  plus the actual human blind calibration was produced and durable-owned at
+  `evidence/fup-06-qdrant-marginal-value/README.md`:
+  - hard gates pass; 57 corpus-certified `acceptable` gains over an empty ES baseline; success/MRR +57;
+    no metric regressions;
+  - one human-confirmed `STRONG_HARM` remains (`q_holdout_hair_armpits_laser_course_001`: PMU lips as
+    the sole result for an armpit-hair-removal-course intent), so under the frozen V2 rule the
+    acceptance verdict is `HARM` while marginal relevance value is demonstrated;
+  - this changes no Feature 004 disposition and authorizes no runtime/default/rollout/activation change.
 
 Historical qualification (non-transferable):
 
@@ -176,13 +184,11 @@ Historical qualification (non-transferable):
 - that evidence is non-transferable to current Gen2;
 - QP18/QP19 are structural append/no-worsening evidence, **not** relevance/value evidence.
 
-Missing current evidence: same-state Gen2 `BaselineOnly` vs `Required/FullSearch` marginal comparison.
+The previously missing same-state Gen2 marginal comparison is now produced using the accepted
+same-execution baseline-only projection; source confirms that projection is sufficient, so no second
+`BaselineOnly` run was required. Results and verdict are owned by the tracked evidence pointer above.
 
-A future experiment must be predeclared and hold constant: application revision, source snapshot, ES
-generation, corpus/judgments, requests, page/ranking policy — and declare metrics, thresholds/cutoffs,
-minimum improvement, regression budget, and stop conditions.
-
-- **Authorization**: separate product + evaluation decision.
+- **Authorization**: completed evidence outcome; no further authorization.
 
 ---
 
@@ -198,6 +204,53 @@ trace/render primitive.
 Current relevance: **none required**. Feature 004 resolved the BeautyQ-local trace ownership problem
 independently. Do not spend work on this unless a future design decision actually depends on the
 framework answer.
+
+---
+
+## FUP-08 — Prevent trust-breaking semantic supplement mismatches
+
+- **Origin**: FUP-06 current Gen2 marginal-value evidence.
+- **Queue status**: `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION`.
+- **Priority**: 2 — highest-priority remaining substantive product-quality item.
+
+**Why it exists**: FUP-06 demonstrated substantial Qdrant marginal relevance value, but the frozen V2
+acceptance verdict is `HARM` because at least one human-confirmed `STRONG_HARM` remains:
+`q_holdout_hair_armpits_laser_course_001`.
+
+- **Intent**: course / durable removal of armpit hair.
+- **Observed sole semantic result over empty ES baseline**: PMU lips.
+- **Human blind judgment**: empty result clearly better; the mismatch would reduce trust in search.
+
+This follow-up must **not** be phrased as "Qdrant has no value", "disable Qdrant", "change
+rollout/defaults", or "implement a particular filter". The exact mitigation owner/design must be
+source-confirmed only after explicit human implementation authorization.
+
+### Authorization boundary
+
+- Starting FUP-08 requires **new explicit human implementation authorization**. Queueing it is **not**
+  implementation authorization.
+- It also does not authorize Qdrant default/activation changes, rollout changes, abandoning append-only
+  baseline preservation, weakening hard gates, or changing corpus judgments to make the result pass.
+
+### Future acceptance contract (record only — do not execute)
+
+A separately authorized FUP-08 implementation must:
+
+- source-confirm the exact current owner of semantic supplement acceptance/gating;
+- preserve baseline results, order, and baseline-owned components;
+- preserve all existing hard gates;
+- eliminate the demonstrated trust-breaking `STRONG_HARM` class, not merely special-case a query ID;
+- rerun the same FUP-06 comparison shape;
+- report whether any of the 57 corpus-acceptable empty-baseline rescues are lost;
+- report all human-calibrated cases whose classification changes;
+- keep protected acceptance green;
+- introduce no new human-confirmed `STRONG_HARM`.
+
+Important trade-off rule: if eliminating the strong harm requires losing corpus-certified relevance
+gains or creates a new material trade-off, **STOP for a human product decision**. Do not invent an
+allowed-loss percentage or numeric trade-off budget.
+
+- **Authorization**: new explicit human implementation authorization is mandatory.
 
 ---
 
@@ -258,6 +311,8 @@ them.
 - `research.md` — durable closeout conclusions + residual evidence pointer.
 - `evidence/residual-commitments-audit/` — reconciled audit and RC-001 forensic.
 - `evidence/history-archaeology/` — supporting archaeology.
+- `evidence/fup-06-qdrant-marginal-value/` — FUP-06 current Gen2 Qdrant marginal-value evidence and
+  verdict (no disposition/runtime authorization).
 - `post-closeout-followups.md` (this file) — the prioritized optional/deferred/hygiene queue.
 
 No item in this document authorizes implementation or evidence gathering.
