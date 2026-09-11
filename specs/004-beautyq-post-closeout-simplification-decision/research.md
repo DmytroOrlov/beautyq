@@ -234,3 +234,13 @@ Durable conclusions only:
   only the `REPORT.md` framing stayed stale;
 - the remaining findings are intentionally deferred, optional, stale fossils, or evidence-limited;
 - this evidence **does not modify or reopen the Feature 004 decision**.
+
+## Post-Closeout Follow-Up Queue (pointer)
+
+After the residual-commitments audit, the prioritized optional/deferred/hygiene queue is owned by
+[`post-closeout-followups.md`](post-closeout-followups.md).
+
+- the residual audit found **no mandatory forgotten work**;
+- the follow-up file owns the prioritized queue (hygiene, deferred, optional evidence, and parked items);
+- **D1 / second production domain is explicitly parked/deprioritized** and is not the next task;
+- the follow-up file **creates no authorization** and does not reopen Feature 004.
