@@ -2647,7 +2647,7 @@ T038 population checks: twenty sections populated, no population placeholders, c
 
 Current durable state: 534 evidence anchors (CD 490, RD 29, RJ 8, CM 4, HI 2, ND 1); A-001/A-002; eleven F-records, ten reportable and F-010 removed; reportable severities Medium 4 / Low 6 / High 0 / Critical 0, confidence High 9 / Medium 1 (F-003) / Low 0. Challenge performed remains 3 STRONGLY SUPPORTED / 8 PARTIALLY SUPPORTED / 3 NOT SUPPORTED / 0 DISPROVED / 2 INSUFFICIENT EVIDENCE. Corpus remains 587 = 551 + 36 and 551 = 385 + 136 + 10 + 20, with no post-BLIND candidate addition.
 
-Stop at the user-requested T038 substantive boundary. T039–T045 remain unstarted; §O remains unstarted. Next work is the permitted T039/T040 read-only pair, followed by T041–T045 under their live contracts. REPORT.md has not been finalized and completion is not claimed. Do not redo T033–T038 or reopen the sealed blind/challenge work merely to resume final checks.
+Stop at the user-requested T038 substantive boundary. T039–T045 remain unstarted; §O remains unstarted. Next work is the permitted T039/T040 read-only pair, followed by T041–T045 under their live contracts. REPORT.md has not been finalized and completion is not claimed. Do not redo T033–T038 or reopen the sealed blind/challenge work merely to resume final checks. (Superseded by §O below: T039–T045 completed 2026-09-08; T045 records `Status: COMPLETE`.)
 
 ## O. Final Mechanical Checks
 

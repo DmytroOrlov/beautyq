@@ -18,7 +18,7 @@ Constitution wins on governance. `AGENTS.md` wins on repository execution safety
 ## 0.1 Artifact first
 
 Put an immediately usable artifact before analysis:
-- accepted non-trivial patch → expanded commit message;
+- accepted non-trivial patch → history-oriented expanded commit message;
 - delegated next step → complete ready-to-copy prompt;
 - bundle → copy-paste script;
 - human terminal/Git/decision step → exact command/action;
@@ -229,7 +229,7 @@ Prompt detail by capability:
 
 ## 3.3 Continuation/checkpoints
 
-For true continuation preserve the same uncommitted patch.
+For true continuation preserve the same uncommitted patch. Bind expected continuation state by the **accepted patch content and scope**, not by whether the human has staged or unstaged it. Do not require a clean worktree or empty index unless the task materially depends on that condition. Preserve human-created staged state exactly as found; agents must not move accepted changes between index and worktree for coordinator convenience.
 
 Before risky handoff/compaction capture:
 - raw `git status --short`;
@@ -273,9 +273,42 @@ Reports say what ran, against which evaluated state, and what remains unknown. N
 
 ## 4.3 Commit message
 
-For accepted non-trivial patch work, first artifact is an expanded commit message covering subject, change/why, preserved boundaries/non-goals, user-visible effect when relevant, actual verification, and material limitations.
+For accepted non-trivial patch work, first artifact is a **history-oriented expanded commit message**. Its primary purpose is durable engineering archaeology: preserve the rationale and context a future reader cannot reliably recover from the diff alone.
 
-Preparing it means **commit-ready**, not **commit now**.
+Prefer content that answers:
+- **why this change exists** — the problem, decision, or obligation being closed and why this shape was chosen;
+- **historical context invisible in the diff** — superseded approaches, important prior state, evidence/constraints that drove the change, or why superficially plausible alternatives were rejected;
+- **preserved boundaries / non-goals** — contracts, behavior, ownership, or authorization intentionally left unchanged;
+- **future interpretation** — deferred/optional work, known limitation, or follow-up boundary when misunderstanding it would cause likely wrong work;
+- **user/operator effect** when material.
+
+Do **not** spend commit-message body budget on validation receipts or mechanically derivable facts merely because they were checked. Exact test commands, `git diff --check`, `git diff --cached --check`, file lists, staged/index state, and similar execution bookkeeping belong in the acceptance report, CI, or other evidence owner.
+
+Include verification in the commit message only when the result itself is historically material to understanding the change, for example:
+- a migration/promotion was proven against a particular immutable state;
+- a compatibility or no-regression property is part of the commit's durable claim;
+- a deferred validation obligation was explicitly discharged;
+- the absence/presence of a capability materially explains the chosen design.
+
+When included, summarize the **proof and its implication**, not the mechanical command transcript. Example: `Full repository validation discharged the cleanup wave's deferred verification obligation (1972 tests passed)` is useful history; `git diff --check passed` usually is not.
+
+A useful default shape is:
+
+```text
+<subject>
+
+<why / outcome>
+
+<historical context that the diff does not explain>
+
+<preserved boundaries, non-goals, or deferred work when material>
+
+<material proof only if it changes how the commit should be interpreted>
+```
+
+No headings are mandatory; optimize for future comprehension, not template completion.
+
+Preparing the message means **commit-ready**, not **commit now**.
 
 ## 4.4 Commit economy
 
@@ -385,15 +418,18 @@ Do not run broad archaeology merely because old plans exist. Audit when it can c
 
 # 9. Pre-send check
 
+Before sending any handoff, acceptance, commit, bundle, or Git/history response, apply this checklist as a **gate**. If any item fails, fix the response before sending it.
+
 - Actionable artifact first?
 - Correct execution label?
 - Context/model outside prompt?
 - User retains real `/speckit.*` ownership and feature is explicit?
 - Delegated task bounded/source-defined?
-- Accepted patch: commit message based only on actual verification?
+- Accepted patch: commit message preserves why / invisible historical context and avoids mechanical validation receipts?
 - Extra commit justified by a real committed-boundary need?
 - Bundle safe/outside repo/ends with `cpf "$OUT"`?
 - Git/history still human-owned?
+- Continuation preconditions describe the accepted patch/content rather than guessing staged/unstaged placement?
 - No worktree, broad rediscovery, duplicated durable state, or automatic phase chaining?
 - Expensive evidence not left only in `target/`/local scratch?
 - No artifact needed → answer normally?

@@ -5,7 +5,9 @@ import leaderboard.search.gen2.qdrant.*
 
 /** BeautyQ's small Qdrant policy surface. Payload/index mechanics are derived by [[QdrantPolicy]] from
   * the canonical variant document declaration; only the embedding source and retrieval/vector choices
-  * are visible here. Transport and physical lifecycle are deliberately later bricks. */
+  * are visible here. Transport and physical generation lifecycle now exist and are owned by the
+  * reusable `search-gen2-qdrant` module (JSON client/transport and `QdrantGenerationLifecycle`),
+  * not by this policy surface. */
 object BeautyQQdrantPolicy {
   private val declarations = BeautyQSearchDeclarations.variants
   private val fields       = declarations.Fields

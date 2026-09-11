@@ -37,7 +37,7 @@
 
 **Purpose**: Deterministically bind every later finding to the studied BeautyQ source state, and to the **actually resolved** Distage/Izumi version (not merely the declared coordinate). Must not require a clean repository; records the actual human-owned starting state truthfully.
 
-- [ ] T001 Record the run-start selected state, declared framework coordinates, and actually-resolved framework version in `specs/003-beautyq-distage-izumi-leverage-audit/research/00-selected-state.md`.
+- [x] T001 Record the run-start selected state, declared framework coordinates, and actually-resolved framework version in `specs/003-beautyq-distage-izumi-leverage-audit/research/00-selected-state.md`.
   - Source-state inputs (read-only): `git rev-parse HEAD`, `git status --short`, `git diff --stat`, `git diff --cached --stat`. Record `SourceStateRecord` fields per `data-model.md`: `headSha`, `worktreeClean`, `statusPorcelain`, `diffStat`, `cachedDiffStat`, `stateId` (`<short-sha>-clean` / `<short-sha>-dirty`), `recordedAt`. Do not require or force a clean worktree.
   - Declared coordinates: derive the declared/pinned `io.7mind.izumi` coordinates, version, and artifact set from `build.sbt` / `project/*.sbt` / `project/build.properties`. Declaration/override alone is not resolution proof.
   - Actually-resolved version: verify the **resolved** version with **one focused, read-only sbt dependency-resolution query/report appropriate to this build** (its exact form is not hard-coded here; use the build's existing focused dependency-report mechanism). Record the exact command/source and the observed resolved version. Do not run a broad compile or test campaign, and do not add a lockfile, dependency lock, or resolution subsystem.
@@ -54,24 +54,24 @@
 
 Each slice writes **only** its own predeclared `## Slice A<n> — <name>` section of `research/01-beautyq-candidate-map.md`. Each row follows the `CandidateArea` / `CandidateSite` schema in `data-model.md` (`areaId`, `areaStatus`, `areaBasis`, `candidateId`, `ownerModule`, `anchors`, `mechanicSummary`, `currentOwner?`, `recurrenceSites`, `stateId`). A slice MAY record `NO_CURRENT_MATERIAL_CANDIDATE` or `REJECTED` with a short basis. A slice MUST NOT assign any of the five classification labels and MUST NOT write recommendations. Deleted Wave-A/Wave-B machinery is not reconstructed.
 
-- [ ] T002 [P] Map app-shell / startup / composition mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A1`). LANE A entry; may start concurrently with T008.
+- [x] T002 [P] Map app-shell / startup / composition mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A1`). LANE A entry; may start concurrently with T008.
   - Inspect `leaderboard-app-shell/src/main/scala/**` read-only: plugin/role composition, module graph, startup/activation composition, plugin include.
   - Candidate areas to surface (or reject with basis): startup / activation composition; graph-boundary / construction-boundary proofs realized at the app shell.
-- [ ] T003 Map BeautyQ wiring / lifecycle mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A2`). Depends on T002 (same LANE A, sequential).
+- [x] T003 Map BeautyQ wiring / lifecycle mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A2`). Depends on T002 (same LANE A, sequential).
   - Inspect `beautyq-search-gen2-wiring/src/main/scala/**` read-only: lifecycle / readiness state, resource construction seams, readiness edges, weak sets.
   - Candidate areas: lifecycle / readiness state; optional dependency / resource construction at wiring seams.
-- [ ] T004 Map BeautyQ-owned backend/search/runtime adaptation and composition around reusable Gen2 mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A3`). Depends on T003 (same LANE A, sequential).
+- [x] T004 Map BeautyQ-owned backend/search/runtime adaptation and composition around reusable Gen2 mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A3`). Depends on T003 (same LANE A, sequential).
   - Inspect `search-gen2-*/src/main/scala/**` read-only **as ownership/boundary context** for BeautyQ-owned use, adapters, wrappers, composition, and runtime mechanics.
   - Scope guard: a generic `search-gen2-*` kernel/backend type is **not** itself a BeautyQ-local candidate merely because BeautyQ consumes it. Promote a candidate only when there is a **BeautyQ-owned** local mechanic/wrapper/composition/proof whose framework leverage is actually in question.
   - Candidate areas (restricted to BeautyQ-owned sites): reusable domain / kernel boundaries; optional dependency / resource construction; operator-visible degradation / status. Do not duplicate T003/T005 candidates.
-- [ ] T005 Map contract / materialization / kernel boundary mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A4`). Depends on T004 (same LANE A, sequential).
+- [x] T005 Map contract / materialization / kernel boundary mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A4`). Depends on T004 (same LANE A, sequential).
   - Inspect `beautyq-search-gen2-contract/src/main/scala/**` and `beautyq-search-gen2-materialization/src/main/scala/**` read-only: declaration/contract boundaries, materialization/lifecycle seams, boundary proofs.
   - Candidate areas: graph-boundary or construction-boundary proofs; generation / source identity; immutable evidence / source attribution.
-- [ ] T006 Map BeautyQ-specific project edges, dependency/firewall constraints, and boundary mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A5`). Depends on T005 (same LANE A, sequential).
+- [x] T006 Map BeautyQ-specific project edges, dependency/firewall constraints, and boundary mechanics in `research/01-beautyq-candidate-map.md` (section `## Slice A5`). Depends on T005 (same LANE A, sequential).
   - Inspect `build.sbt`, `project/*.sbt`, and the shared modules `repo-core`, `leaderboard-core`, `app-http`, `app-services` read-only **as graph endpoints/context**.
   - Scope guard: do **not** audit `repo-core`, `leaderboard-core`, `app-http`, or `app-services` generically; map only BeautyQ-specific project edges, dependency/firewall constraints, and boundary mechanics.
   - Candidate areas: ownership / firewall constraints; build/module boundary mechanics.
-- [ ] T007 Merge LANE A slices into the consolidated candidate index in `research/01-beautyq-candidate-map.md`.
+- [x] T007 Merge LANE A slices into the consolidated candidate index in `research/01-beautyq-candidate-map.md`.
   - Depends on T002–T006 (LANE A complete). Reconcile the five slice sections into one table; assign/validate unique stable `candidateId`s; ensure every spec candidate area is `MAPPED`, `NO_CURRENT_MATERIAL_CANDIDATE`, or `REJECTED` with a basis; verify anchors resolve at the `stateId` from T001.
   - Exit: every material candidate has a stable `candidateId`, an owner module, resolving `file:line` anchors, and recurrence sites. No classification labels present.
 
@@ -83,11 +83,11 @@ Each slice writes **only** its own predeclared `## Slice A<n> — <name>` sectio
 
 Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of `research/02-framework-capability-map.md`, using the `FrameworkTheme` / `FrameworkSurface` schema in `data-model.md` (`frameworkThemeId`, `surfaceId`, `surfaceSummary`, `apiNames`, `surfaceEvidence`, `versionRef`, `matchedNeedIds` left empty at B0). Every surface is grounded in a reference to the version verified in T001.
 
-- [ ] T008 [P] Inventory B0-a module / plugin / role composition and activation/axes surfaces in `research/02-framework-capability-map.md` (section `## B0a`). LANE B0 entry; may start concurrently with T002.
-- [ ] T009 Inventory B0-b lifecycle / resource construction and optional-dependency surfaces in `research/02-framework-capability-map.md` (section `## B0b`). Depends on T008 (same LANE B0, sequential).
+- [x] T008 [P] Inventory B0-a module / plugin / role composition and activation/axes surfaces in `research/02-framework-capability-map.md` (section `## B0a`). LANE B0 entry; may start concurrently with T002.
+- [x] T009 Inventory B0-b lifecycle / resource construction and optional-dependency surfaces in `research/02-framework-capability-map.md` (section `## B0b`). Depends on T008 (same LANE B0, sequential).
   - Cover `fromResource` / `Lifecycle` / `Resource` and optional dependency construction.
-- [ ] T010 Inventory B0-c weak sets / roots / graph GC, graph/construction boundary proofs, and integration checks / readiness surfaces in `research/02-framework-capability-map.md` (section `## B0c`). Depends on T009 (same LANE B0, sequential).
-- [ ] T011 Inventory B0-d config, docker framework, testkit, BIO/effect abstractions, and package/ownership helpers in `research/02-framework-capability-map.md` (section `## B0d`). Depends on T010 (same LANE B0, sequential).
+- [x] T010 Inventory B0-c weak sets / roots / graph GC, graph/construction boundary proofs, and integration checks / readiness surfaces in `research/02-framework-capability-map.md` (section `## B0c`). Depends on T009 (same LANE B0, sequential).
+- [x] T011 Inventory B0-d config, docker framework, testkit, BIO/effect abstractions, and package/ownership helpers in `research/02-framework-capability-map.md` (section `## B0d`). Depends on T010 (same LANE B0, sequential).
   - Themes: `distage-extension-config`, `distage-framework-docker`, `distage-testkit-scalatest`, BIO/effect/lifecycle abstractions, package/ownership helpers.
 
 ---
@@ -96,7 +96,7 @@ Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of
 
 **Purpose**: Reconcile A's actual material needs against B0 and fill only the missing focused pinned-version lookups. This is NOT a second broad framework inventory.
 
-- [ ] T012 Reconcile A needs against B0 and append bounded gap-fill evidence to `research/02-framework-capability-map.md`.
+- [x] T012 Reconcile A needs against B0 and append bounded gap-fill evidence to `research/02-framework-capability-map.md`.
   - Depends on T007 (LANE A merged) and T011 (LANE B0 complete).
   - For each material candidate's need: populate `matchedNeedIds` where a B0 surface already covers it; where uncovered, perform only the missing focused pinned-version lookup and record either the matching surface or a search-bounded `absenceBasis`; normalize `surfaceId` references.
   - No-op/skip for needs already covered by B0. Do not expand into framework-wide archaeology.
@@ -108,9 +108,9 @@ Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of
 
 **Purpose**: Compare each local mechanic to its nearest pinned-version surface at source/API level. C records `DIRECT_USE` / `LOCAL_DUPLICATION_OR_BYPASS` / `MISSING_COMPOSITION` / `NO_RELEVANT_PRIMITIVE` (per `data-model.md` `ComparisonRecord`) but does NOT assign the five-way headline label. One writer context; T013 and T014 are sequential.
 
-- [ ] T013 Write the C1 comparison section in `research/03-comparison-and-discoverability.md` (section `## C1`).
+- [x] T013 Write the C1 comparison section in `research/03-comparison-and-discoverability.md` (section `## C1`).
   - Depends on T012. Consumes candidates from A slices A1–A3 and the B0/B1 surfaces from `research/02-*`.
-- [ ] T014 Write the C2 comparison section in `research/03-comparison-and-discoverability.md` (section `## C2`). Depends on T013 (sequential, same file).
+- [x] T014 Write the C2 comparison section in `research/03-comparison-and-discoverability.md` (section `## C2`). Depends on T013 (sequential, same file).
   - Consumes candidates from A slices A4–A5 and the B0/B1 surfaces from `research/02-*`.
   - Exit (T013+T014): every promoted candidate has a nearest-surface finding with evidence refs, or a documented search-bounded absence.
 
@@ -120,7 +120,7 @@ Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of
 
 **Purpose**: Where a real pinned-version surface exists, judge whether a competent developer or agent could discover and compose it correctly from current API names, docs, examples, and tests. `HARD_TO_DISCOVER` is never evidence of `MISSING_GENERIC_PRIMITIVE`.
 
-- [ ] T015 Write the discoverability section in `research/03-comparison-and-discoverability.md` (section `## D`). Depends on T014.
+- [x] T015 Write the discoverability section in `research/03-comparison-and-discoverability.md` (section `## D`). Depends on T014.
   - Consumes the C comparison sections plus pinned-version docs/examples/tests.
   - Record `discoverability` (`DISCOVERABLE` / `HARD_TO_DISCOVER` / `INDETERMINATE` / `N_A`), `discoverabilityBasis`, and `remedyCandidates` (`DOCS` / `EXAMPLES` / `NAMING` / `HELPER_FACADE` / `NONE`) per candidate.
   - Do not turn "hard to find" into "primitive missing".
@@ -131,13 +131,13 @@ Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of
 
 **Purpose**: Assign every current material candidate an explicit current research state, after actively hunting counterexamples to the tempting label. This group stays central; it is not split into many cheap classification tasks.
 
-- [ ] T016 Assign the current research state and single headline label per material candidate in `research/04-classified-findings.md`.
+- [x] T016 Assign the current research state and single headline label per material candidate in `research/04-classified-findings.md`.
   - Depends on T015. Consume only the compact A/B/C/D artifacts.
   - Per `data-model.md` `Classification`: `status` ∈ `CLASSIFIED` | `BLOCKED_NEED_EVIDENCE` | `INDETERMINATE` | (`SUPERSEDED` where applicable). `CLASSIFIED` carries exactly one of `WELL_USED` / `UNDERUSED` / `HARD_TO_DISCOVER` / `MISSING_GENERIC_PRIMITIVE` / `BEAUTYQ_SPECIFIC`; `BLOCKED_NEED_EVIDENCE` and `INDETERMINATE` carry no headline label and name the exact missing/required evidence.
   - For each tempting label, run the counterexample search from `plan.md` (WELL_USED ↔ bypass/duplication; UNDERUSED ↔ documented local reason; HARD_TO_DISCOVER ↔ confirm a real surface exists; MISSING_GENERIC_PRIMITIVE ↔ equivalent composition + all eight genericity conditions + recurrence + second consumer; BEAUTYQ_SPECIFIC ↔ de-named reusability test).
   - Apply the eight-condition genericity filter (`genericityResult`) to every `MISSING_GENERIC_PRIMITIVE`; otherwise downgrade naming the failing condition. Record `secondarySignal` without double-counting headline labels.
   - No recommendation is emitted here.
-- [ ] T017 Add the symmetric-search calibration and downgrade check to `research/04-classified-findings.md` (section `## Calibration`). Depends on T016.
+- [x] T017 Add the symmetric-search calibration and downgrade check to `research/04-classified-findings.md` (section `## Calibration`). Depends on T016.
   - For any one-sided distribution (zero `WELL_USED`, zero `BEAUTYQ_SPECIFIC`, or zero change-oriented), record an explicit calibration check showing the opposite outcome class was genuinely investigated, not skipped.
   - Verify no candidate holds two headline labels or none while `CLASSIFIED`; verify blocked/indeterminate rows carry no label; retain prior labels only as historical evidence for `SUPERSEDED` and do not consume them as current.
 
@@ -147,11 +147,11 @@ Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of
 
 **Purpose**: Produce the primary human deliverable. Recommendations are materialized **before** the synthesis so the synthesis answers the recommendation-oriented standing questions from an actual recommendation set, not by predicting it.
 
-- [ ] T018 Write the evidence-graded `## Recommendations` section in `research/05-synthesis-and-recommendations.md`. Depends on T017.
+- [x] T018 Write the evidence-graded `## Recommendations` section in `research/05-synthesis-and-recommendations.md`. Depends on T017.
   - Derive recommendations from the current classified findings in `research/04-*`; emit only after counterexamples and the genericity filter were considered in Group E.
   - Follow the `Recommendation` schema in `data-model.md`: `recommendationId`, `candidateId`, `kind` (`DOCS_EXAMPLES` / `FRAMEWORK_API_CODE`), `statement`, `evidenceRefs`, `confidence`, `secondConsumer?`, `genericityResult?`, `nonAuthoritative=true`.
   - Distinguish docs/examples remedies from framework API/code recommendations; every primitive proposal names a second consumer; every recommendation states evidence/confidence/uncertainty and remains visibly non-authoritative. Opens no work item.
-- [ ] T019 Write the primary `## Synthesis` section in `research/05-synthesis-and-recommendations.md`. Depends on T018.
+- [x] T019 Write the primary `## Synthesis` section in `research/05-synthesis-and-recommendations.md`. Depends on T018.
   - Consume classifications from `research/04-*` plus the now-materialized Recommendations section; avoid raw whole-repository context.
   - Answer, in prose, all eight standing questions from `spec.md` (what the framework already provided; what BeautyQ used well; what BeautyQ rebuilt unnecessarily, if anything; which misses were discoverability; which generic primitives are actually missing, if any; what should remain BeautyQ-specific; which recommendations are docs/examples vs framework API/code; which have enough evidence for a separately authorized follow-up).
   - Because recommendations already exist, questions 7 and 8 summarize the actual recommendation set (kind and evidence grade) rather than prefiguring it.
@@ -163,13 +163,13 @@ Each slice writes **only** its own predeclared `## B0<x> — <theme>` section of
 
 **Purpose**: Validate research-output properties only. No full test suite, no product CI campaign, no implementation validation. A tiny read-only dependency query is allowed only as framework evidence. Single writer context; T020→T021→T022→T023 are strictly sequential.
 
-- [ ] T020 Validate source anchors, framework-version binding, and negative-claim coverage; write `## Validation: Evidence` in `research/05-synthesis-and-recommendations.md`. Depends on T019.
+- [x] T020 Validate source anchors, framework-version binding, and negative-claim coverage; write `## Validation: Evidence` in `research/05-synthesis-and-recommendations.md`. Depends on T019.
   - Check: every cited BeautyQ anchor resolves at the `stateId` in `research/00-selected-state.md`; every framework claim cites the actually-resolved pinned version (no latest upstream/memory); every documented-absence or `MISSING_GENERIC_PRIMITIVE` claim records a search/counterexample basis; unresolved absence is `BLOCKED_NEED_EVIDENCE`, not "missing"; a lone accidental site did not yield `MISSING_GENERIC_PRIMITIVE`.
-- [ ] T021 Validate classification-state integrity; write `## Validation: Classification` in `research/05-synthesis-and-recommendations.md`. Depends on T020 (sequential, same file).
+- [x] T021 Validate classification-state integrity; write `## Validation: Classification` in `research/05-synthesis-and-recommendations.md`. Depends on T020 (sequential, same file).
   - Check: every current material candidate has an explicit research state; every `CLASSIFIED` row has exactly one headline label with BeautyQ-usage + framework-version-anchored evidence; `BLOCKED_NEED_EVIDENCE`/`INDETERMINATE` rows carry no headline label and name missing/required evidence; `SUPERSEDED` labels are historical only; `HARD_TO_DISCOVER` rows have a real pinned surface; the genericity filter is applied to all `MISSING_GENERIC_PRIMITIVE` rows.
-- [ ] T022 Validate calibration, synthesis completeness, and recommendation discipline; write `## Validation: Synthesis` in `research/05-synthesis-and-recommendations.md`. Depends on T021 (sequential, same file).
+- [x] T022 Validate calibration, synthesis completeness, and recommendation discipline; write `## Validation: Synthesis` in `research/05-synthesis-and-recommendations.md`. Depends on T021 (sequential, same file).
   - Check: one-sided distributions carry the calibration check; `research/05-*` alone answers all eight standing questions; recommendations are non-authoritative and kind-tagged; primitive proposals name a second consumer; none is phrased as accepted/implemented or opens a work item.
-- [ ] T023 Validate final Git/source/index/ref state against the run-start record; write `## Validation: State Integrity` in `research/05-synthesis-and-recommendations.md`. Depends on T022 (sequential, same file, final check).
+- [x] T023 Validate final Git/source/index/ref state against the run-start record; write `## Validation: State Integrity` in `research/05-synthesis-and-recommendations.md`. Depends on T022 (sequential, same file, final check).
   - Read-only `git rev-parse HEAD`, `git status --short`, `git diff --stat`, `git diff --cached --stat`, `git diff --check`; compare to `research/00-selected-state.md`.
   - Pass: no source/build/framework/index/history/ref mutation attributable to the audit; pre-existing human-owned state unchanged and still classified as pre-existing; the intended `research/00..05` writes are the only research-owned changes.
 

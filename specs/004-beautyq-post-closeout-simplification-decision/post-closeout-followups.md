@@ -24,6 +24,7 @@ create implementation authorization.
 | `OPTIONAL_HYGIENE` | Cosmetic/documentary consistency work whose omission leaves no product/runtime gap. |
 | `PARKED` | Deliberately deprioritized by the human; no automatic reactivation. |
 | `NO_ACTION_UNLESS_NEEDED` | Unresolved question with no current reason to spend work on it. |
+| `COMPLETE` | Accepted hygiene outcome landed; retained for traceability only. |
 
 These labels are queue-management only. They never rewrite a Feature 004 disposition.
 
@@ -33,11 +34,11 @@ These labels are queue-management only. They never rewrite a Feature 004 disposi
 
 | Order | ID | Status | What would cause us to start it | Authorization |
 | ---: | --- | --- | --- | --- |
-| 1 | `FUP-01` | `READY_HYGIENE` | Any next bounded cleanup pass; corrects current-tree misinformation. | Ordinary source-comment hygiene; no product decision. |
+| `—` | `FUP-01` | `COMPLETE` | Done — stale current-source comments corrected. | Completed hygiene outcome; no further authorization. |
 | 2 | `FUP-02` | `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION` | Explicit human authorization of the approved `SIMPLIFY_LOCALLY` transformation. | New explicit human implementation authorization is mandatory. |
 | 3 | `FUP-03` | `OPTIONAL_EVIDENCE` | Human wants further non-trace test consolidation after FUP-02. | Separate human decision to spend evidence/review effort. |
-| 4 | `FUP-04` | `OPTIONAL_HYGIENE` | Records are next touched for bookkeeping. | None beyond edit discipline. |
-| 5 | `FUP-05` | `OPTIONAL_HYGIENE` | Someone wants the frozen historical report to read consistently. | None; default is no action. |
+| `—` | `FUP-04` | `COMPLETE` | Done — Feature 003/004 completed-task checkboxes reconciled. | Completed hygiene outcome; no further authorization. |
+| `—` | `FUP-05` | `COMPLETE` | Done — Feature 001 stale pre-finalization framing superseded. | Completed hygiene outcome; no further authorization. |
 | 6 | `FUP-06` | `OPTIONAL_EVIDENCE` | Product owner wants to decide current BeautyQ Qdrant activation/default/value policy. | Separate product + evaluation decision. |
 | 7 | `FUP-07` | `NO_ACTION_UNLESS_NEEDED` | A future design decision actually depends on the framework answer. | None until then. |
 
@@ -51,6 +52,8 @@ This document **prioritizes possible work; it authorizes no work.**
 
 - `FUP-02` still needs **explicit human implementation authorization**.
 - `FUP-03` and `FUP-06` require separate human decisions to spend evidence effort.
+- `FUP-01`, `FUP-04` and `FUP-05` are completed hygiene outcomes; completion authorizes no further
+  work and changes no Feature 004 disposition.
 - D1 remains **human-deprioritized / `PARKED`**; no automatic reactivation.
 - This document does not reopen Feature 004. Feature 004 remains `CLOSED` / `APPROVE` /
   `explicitNoImplementation = true`.
@@ -60,35 +63,12 @@ This document **prioritizes possible work; it authorizes no work.**
 ## FUP-01 — Correct stale current-source comments
 
 - **Origin**: `RC-005` = `STALE_FOSSIL`.
-- **Queue status**: `READY_HYGIENE`.
-- **Priority**: 1 — next sensible cleanup.
-- **Scope**:
-  - `beautyq-search-gen2-eval/src/main/scala/leaderboard/search/beautyq/gen2/eval/BeautyQEvaluationPolicy.scala:27`
-  - `beautyq-search-gen2-wiring/src/main/scala/leaderboard/search/beautyq/gen2/wiring/BeautyQQdrantPolicy.scala:8`
-
-### A. `BeautyQEvaluationPolicy.scala:27`
-
-The comment currently overstates that no protected holdout has been accepted. A protected holdout
-(`beautyq-protected-holdout-v1.json`) and a protected acceptance policy
-(`beautyq-protected-acceptance-policy-v1.json`) exist and are current.
-
-The still-true part: **no accepted relevance thresholds exist.**
-
-A future patch should distinguish:
-
-- protected holdout / protected acceptance machinery **exists**;
-- **no accepted relevance thresholds** currently establish Qdrant marginal product value.
-
-### B. `BeautyQQdrantPolicy.scala:8`
-
-The comment still calls transport/physical lifecycle "later bricks", although current
-`search-gen2-qdrant` owns the client/transport/lifecycle implementation (`QdrantGenerationLifecycle`,
-`QdrantGen2JsonClient`, `QdrantGenerationCompiler`).
-
-Future patch: comment/scaladoc only unless source inspection proves otherwise. **No behavior change.**
-
-- **Why first**: tiny, current-tree misinformation can directly mislead future audits/reviews.
-- **Authorization**: ordinary bounded source-comment hygiene; no product decision.
+- **Queue status**: `COMPLETE`.
+- **Outcome**: Comment/scaladoc-only correction, no behavior change. `BeautyQEvaluationPolicy.scala` now
+  distinguishes the existing protected holdout / protected-acceptance machinery from the still-absent
+  accepted relevance thresholds; `BeautyQQdrantPolicy.scala` no longer calls the already-owned Qdrant
+  transport/physical lifecycle "later bricks". Durable owner: the corrected source comments in
+  `beautyq-search-gen2-eval` and `beautyq-search-gen2-wiring`.
 
 ---
 
@@ -155,33 +135,25 @@ This is **not required** for FUP-02. **No deletion is authorized** merely by doc
 ## FUP-04 — Completed-feature Spec Kit checkbox housekeeping
 
 - **Origin**: `RC-006` = `STALE_FOSSIL`.
-- **Queue status**: `OPTIONAL_HYGIENE`.
-- **Priority**: 4.
+- **Queue status**: `COMPLETE`.
+- **Outcome**: Feature 003 / Feature 004 `tasks.md` completed-task checkboxes reconciled to `[x]`,
+  preserving task text, order, IDs and conclusions. Bookkeeping only, not product/runtime work.
 
-Scope: completed Feature 003 / Feature 004 `tasks.md` checkbox state only.
-
-**Important**: `.specify/feature.json` is **NOT** part of this finding. The feature pointer
-intentionally remains on the last human-selected feature until another human feature selection occurs.
-Do **not** "clean it up" merely because 004 is closed.
-
-This is bookkeeping only, not product/runtime work.
+**Important**: `.specify/feature.json` is **NOT** part of this finding and was intentionally left
+untouched. The feature pointer remains on the last human-selected feature until another human feature
+selection occurs; do **not** "clean it up" merely because 004 is closed.
 
 ---
 
 ## FUP-05 — Feature 001 stale REPORT self-description
 
 - **Origin**: `RC-001` = `DOCUMENTATION_STALE_ONLY`.
-- **Queue status**: `OPTIONAL_HYGIENE`.
-- **Priority**: 5.
-
-Facts: T039–T045 **did run**. Durable evidence is in Feature 001 `WORKING.md` §O. T045 records
-`Status: COMPLETE` (2026-09-08). The stale defect is only `REPORT.md`/pre-§O wording that still
-describes the final gates as pending.
-
-Default recommendation: prefer **NO ACTION** unless someone wants the frozen historical report itself to
-read consistently. If changed: make the smallest explicit closing/supersession note pointing to
-`WORKING.md` §O. Do **not** rewrite the substantive historical report. Do **not** characterize Feature
-001 as unfinished.
+- **Queue status**: `COMPLETE`.
+- **Outcome**: `REPORT.md` now carries one finalization/supersession note stating that the body was
+  substantively populated before T039–T045 and that those gates completed 2026-09-08, with durable
+  results in Feature 001 `WORKING.md` §O (`T045 Status: COMPLETE`); the superseded pre-§O checkpoint
+  carries a minimal "superseded by §O" annotation. Substantive findings, counts and conclusions are
+  unchanged; the historical report was not rewritten.
 
 ---
 

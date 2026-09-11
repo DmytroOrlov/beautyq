@@ -24,5 +24,7 @@ object BeautyQEvaluationPolicy {
   val measuredPasses: Int = 3
   val concurrency: Int = 1
 
-  // No relevance thresholds or protected holdout have been accepted.
+  // Protected holdout and protected acceptance machinery exist and are tracked, but the gate
+  // checks aggregate protected quality, not Qdrant marginal product value; no accepted relevance
+  // thresholds currently establish that marginal value.
 }

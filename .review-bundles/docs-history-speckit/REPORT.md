@@ -2,6 +2,13 @@
 
 Substantive report populated through T038 on 2026-09-08. Final verification gates are pending; the report is not finalized.
 
+> **Finalization/supersession note.** The report body was substantively populated before T039–T045.
+> Those finalization gates subsequently completed on **2026-09-08**; their durable results live in
+> [WORKING §O](/Users/do/git/sandbox/distage-example/.review-bundles/docs-history-speckit/WORKING.md:2652),
+> whose T045 record states `Status: COMPLETE`. Older phrases in this report describing finalization as
+> pending or unstarted are historical pre-finalization framing superseded by that closeout record. The
+> substantive findings, counts, conclusions and corpus accounting below are unchanged.
+
 Evidence notation: CD — contemporaneous documentary content; RD — retrospective documentary content; ND — current normative documentary reread; CM — commit-message evidence; HI — historical inference; RJ — reviewer judgment. Classes attach to claims and individual anchors. An E-ID resolves to its exact commit, date, path and section in [WORKING §E](/Users/do/git/sandbox/distage-example/.review-bundles/docs-history-speckit/WORKING.md:923). Decision, thread, retrospective, transfer, absence and finding IDs resolve in the corresponding WORKING ledgers. Documentary claims about source, tests or runtime are not independently validated here.
 
 ## 1. Executive Summary
