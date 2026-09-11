@@ -35,7 +35,8 @@ These labels are queue-management only. They never rewrite a Feature 004 disposi
 | Order | ID | Status | What would cause us to start it | Authorization |
 | ---: | --- | --- | --- | --- |
 | `—` | `FUP-01` | `COMPLETE` | Done — stale current-source comments corrected. | Completed hygiene outcome; no further authorization. |
-| 2 | `FUP-08` | `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION` | FUP-06 demonstrated substantial marginal relevance value but one human-confirmed trust-breaking semantic mismatch remains. | New explicit human implementation authorization is mandatory. |
+| `—` | `FUP-08` | `COMPLETE` | Done — human product decision: declared-family suppression rejected after measurement; demonstrated semantic value preserved; residual relevance mismatch accepted as a soft product trade-off. | Completed product decision; no implementation/runtime/default/rollout change. |
+| `—` | `FUP-09` | `COMPLETE` | Done — architecture + offline feasibility completed; generic query-side semantic-label inference is credible and worth specifying, with no measured reranking win claimed. | Completed evidence outcome; separate human decision required to start/specify an implementation feature; no production implementation. |
 | 3 | `FUP-02` | `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION` | Explicit human authorization of the approved `SIMPLIFY_LOCALLY` transformation. | New explicit human implementation authorization is mandatory. |
 | 4 | `FUP-03` | `OPTIONAL_EVIDENCE` | Human wants further non-trace test consolidation after FUP-02. | Separate human decision to spend evidence/review effort. |
 | `—` | `FUP-04` | `COMPLETE` | Done — Feature 003/004 completed-task checkboxes reconciled. | Completed hygiene outcome; no further authorization. |
@@ -52,9 +53,13 @@ Parked, not part of the numbered queue: **D1 second production domain** (see bel
 This document **prioritizes possible work; it authorizes no work.**
 
 - `FUP-02` still needs **explicit human implementation authorization**.
-- `FUP-08` requires **new explicit human implementation authorization**; queueing it authorizes no
-  implementation and no Qdrant default/activation/rollout change.
+- `FUP-08` is a completed product decision: the measured declared-family mitigation is rejected and the
+  residual semantic relevance mismatch is accepted; no implementation and no Qdrant
+  default/activation/rollout change is authorized or required.
 - `FUP-03` requires a separate human decision to spend evidence effort.
+- `FUP-09` is a completed evidence outcome: its `GO_TO_SPEC_KIT_FEATURE` verdict means a separate human
+  decision is required to start/specify an implementation feature, and it authorizes no production
+  implementation.
 - `FUP-01`, `FUP-04` and `FUP-05` are completed hygiene outcomes, and `FUP-06` is a completed
   evidence outcome; none authorizes further work or changes any Feature 004 disposition.
 - D1 remains **human-deprioritized / `PARKED`**; no automatic reactivation.
@@ -210,47 +215,114 @@ framework answer.
 ## FUP-08 — Prevent trust-breaking semantic supplement mismatches
 
 - **Origin**: FUP-06 current Gen2 marginal-value evidence.
-- **Queue status**: `READY_BUT_REQUIRES_IMPLEMENTATION_AUTHORIZATION`.
-- **Priority**: 2 — highest-priority remaining substantive product-quality item.
+- **Queue status**: `COMPLETE`.
+- **Outcome**: human product decision completed; no implementation.
+- **Evidence owner**: `evidence/fup-08-declared-family-counterfactual/README.md`.
 
-**Why it exists**: FUP-06 demonstrated substantial Qdrant marginal relevance value, but the frozen V2
-acceptance verdict is `HARM` because at least one human-confirmed `STRONG_HARM` remains:
-`q_holdout_hair_armpits_laser_course_001`.
+**Why it existed**: FUP-06 showed substantial Qdrant marginal relevance value but a human-confirmed
+`STRONG_HARM` relevance-quality mismatch (`q_holdout_hair_armpits_laser_course_001`: PMU lips as the sole
+semantic result for an armpit-hair-removal intent over an empty ES baseline).
 
-- **Intent**: course / durable removal of armpit hair.
-- **Observed sole semantic result over empty ES baseline**: PMU lips.
-- **Human blind judgment**: empty result clearly better; the mismatch would reduce trust in search.
+**Human product decision**: this is a low-stakes search product and relevance is not safety-critical. The
+observed mismatch is a soft relevance/UX cost, not a safety event or a zero-tolerance release blocker.
+Preserving semantic recall/value is more valuable than suppressing every strongly irrelevant semantic
+result. Therefore the declared-family gate is **rejected** and **not implemented**, the residual
+semantic mismatch is **accepted**, and no new semantic classifier will be introduced solely to remove it.
 
-This follow-up must **not** be phrased as "Qdrant has no value", "disable Qdrant", "change
-rollout/defaults", or "implement a particular filter". The exact mitigation owner/design must be
-source-confirmed only after explicit human implementation authorization.
+- all 57 demonstrated corpus-certified semantic rescues preserved by not implementing the gate (the
+  rejected gate would have lost 4 of them, plus 4 / 18 automated weak gains and 2 neutral additions);
+- declared-family suppression rejected after measurement;
+- residual relevance mismatch accepted as a product trade-off;
+- no implementation/runtime/default/rollout change; no numeric error budget and no requirement that a
+  specific bad result later be fixed.
 
-### Authorization boundary
+The V2 rule "any `STRONG_HARM` ⇒ `HARM`" remains the historical FUP-06 experiment verdict but is **not**
+the current ongoing product acceptance policy after this decision. Existing true hard invariants
+(forbidden constraints, baseline loss/reordering, duplicates, degradation, baseline-owned component
+corruption, append-budget violations) are unchanged and are not covered by this relevance-quality
+decision.
 
-- Starting FUP-08 requires **new explicit human implementation authorization**. Queueing it is **not**
-  implementation authorization.
-- It also does not authorize Qdrant default/activation changes, rollout changes, abandoning append-only
-  baseline preservation, weakening hard gates, or changing corpus judgments to make the result pass.
+A future narrower precision improvement may be pursued if it can improve relevance without materially
+sacrificing retrieval value, but it is not a current obligation and is not added as a follow-up item.
 
-### Future acceptance contract (record only — do not execute)
+---
 
-A separately authorized FUP-08 implementation must:
+## FUP-09 — Generic query-side semantic label inference feasibility
 
-- source-confirm the exact current owner of semantic supplement acceptance/gating;
-- preserve baseline results, order, and baseline-owned components;
-- preserve all existing hard gates;
-- eliminate the demonstrated trust-breaking `STRONG_HARM` class, not merely special-case a query ID;
-- rerun the same FUP-06 comparison shape;
-- report whether any of the 57 corpus-acceptable empty-baseline rescues are lost;
-- report all human-calibrated cases whose classification changes;
-- keep protected acceptance green;
-- introduce no new human-confirmed `STRONG_HARM`.
+- **Origin**: FUP-08 human product decision; FUP-06 no-family mismatch analysis.
+- **Queue status**: `COMPLETE`.
+- **Outcome**: `GO_TO_SPEC_KIT_FEATURE` (completed architecture + offline feasibility investigation; no
+  measured reranking win claimed and no implementation authorized). Evidence owner:
+  `evidence/fup-09-semantic-label-inference-feasibility/README.md`. A separate human decision is required
+  to start/specify an implementation feature; this does **not** authorize one.
+- **Mode**: read-only architecture + offline feasibility spike. **Not** production implementation
+  authorization.
 
-Important trade-off rule: if eliminating the strong harm requires losing corpus-certified relevance
-gains or creates a new material trade-off, **STOP for a human product decision**. Do not invent an
-allowed-loss percentage or numeric trade-off budget.
+**Purpose**: investigate whether Search Gen2 can cheaply complement lexical intent parsing with a
+reusable, domain-neutral semantic-label inference mechanism over domain-owned service/category
+declarations, so a no-family query can still carry query-side semantic evidence.
 
-- **Authorization**: new explicit human implementation authorization is mandatory.
+**Why**: FUP-08 established that the same no-family mechanism produces both a useful rescue
+(`q_semantic_010`) and a strongly irrelevant case (`q_holdout_hair_armpits_laser_course_001`); blunt
+suppression cannot distinguish them, and the declared-family gate was rejected because it would lose
+useful recall. FUP-09 asks whether a cheaper, precision-improving query-side signal can be derived
+without a blanket recall trade-off. No result is assumed or authorized.
+
+**Human-decided design direction (constraints for the future pass)**:
+
+- **First production use, if ever**: soft preference / reranking / selection evidence for Qdrant
+  supplements only; initially **not** a hard family constraint (occasional semantic junk is acceptable;
+  preserving recall matters).
+- **LLM role**: **offline only** — teacher/judge, first seed, multilingual paraphrase generation,
+  hard-negative generation, offline calibration/evaluation. No runtime LLM dependency is currently
+  desired (a future different decision is not precluded, but FUP-09 must not be designed around runtime
+  LLM inference).
+- **Domain authoring burden**: domain authors declare canonical meaning through the existing
+  business-facing declaration path; they must **not** maintain a second semantic ontology or duplicated
+  registry. Preferred direction: existing domain service/category declarations → generic derived
+  semantic material/prototypes/evidence, with multilingual paraphrases/prototypes derived
+  mechanically/offline where possible.
+- **Hierarchy**: if the current service/category declarations already provide a reusable hierarchy
+  without duplication, the generic mechanism may use it; otherwise v1 stays flat rather than introducing
+  a second hierarchy.
+- **Mode**: begin with a read-only architecture + offline feasibility spike that cheaply proves or kills
+  the idea before any production implementation.
+
+**Hypothesis to validate (not accepted architecture)**: a generic mechanism operating over opaque
+domain-owned keys, conceptually `SemanticLabelInference[K]`, where `K` is supplied by the domain. Generic
+code must know nothing about HairRemoval, Facial, PMU, Manicure, bicycles, or any other domain concept;
+BeautyQ keeps owning its service/category keys and a future domain supplies its own keys without Search
+Gen2 generic source changes. Preferred direction: existing domain declarations → derived semantic label
+universe/prototypes → generic inference evidence over opaque keys → domain-specific policy decides how
+that evidence affects search. Do **not** introduce a new BeautyQ `SemanticFamily` ontology for this.
+
+**Design gates**: the completed pass evaluated any proposed API against the canonical Domain Authoring
+Principles in `docs/search/DOMAIN_AUTHORING_PRINCIPLES.md` — one readable declaration path; business
+declares policy while the framework derives mechanics; compose reusable domain-neutral components proven
+with a neutral fixture; one executable source of truth. Reference that normative doc; do not restate it.
+
+**Questions the completed pass answered** (the durable evidence owner records the answers):
+
+- Can the label universe be derived from existing service/category declarations without a second source
+  of truth?
+- Does the current hierarchy already support generic derivation, or should v1 remain flat?
+- What is the smallest credible generic API, and what remains domain-owned?
+- Can generic behavior be proven with a neutral fixture?
+- How should offline LLM teacher material remain derived rather than become a business truth owner?
+- How well can a cheap embedding-based classifier infer known lexical families, and recover no-family
+  useful rescues?
+- Does it help distinguish useful semantic supplements from known bad/weak cases?
+- Compare at least: (1) declaration text only; (2) declaration + child/service-derived material;
+  (3) declaration + offline LLM-generated examples.
+- What is the measured code-size impact: generic production LOC, domain integration LOC, tests, offline
+  tooling, and share relative to the actual relevant Search Gen2 codebase/slice?
+- Does the idea deserve implementation / a full Spec Kit feature after the spike?
+
+**Authorization boundary**: FUP-09 creation authorizes no production implementation and no semantic
+reranking, new framework API, LLM integration, parser/vocabulary change, prototype registry, runtime
+threshold, new Qdrant behavior, Feature 004 disposition change, or FUP-02 implementation. The pass is
+complete; a separate later explicit human action is still required to start/specify an implementation
+feature.
 
 ---
 
@@ -313,6 +385,11 @@ them.
 - `evidence/history-archaeology/` — supporting archaeology.
 - `evidence/fup-06-qdrant-marginal-value/` — FUP-06 current Gen2 Qdrant marginal-value evidence and
   verdict (no disposition/runtime authorization).
+- `evidence/fup-08-declared-family-counterfactual/` — FUP-08 declared-family counterfactual and the human
+  product decision rejecting the gate (no implementation/rollout authorization).
+- `evidence/fup-09-semantic-label-inference-feasibility/` — FUP-09 generic query-side semantic-label
+  inference architecture + offline feasibility evidence, strategy comparison, and `GO_TO_SPEC_KIT_FEATURE`
+  outcome (no implementation authorization).
 - `post-closeout-followups.md` (this file) — the prioritized optional/deferred/hygiene queue.
 
 No item in this document authorizes implementation or evidence gathering.

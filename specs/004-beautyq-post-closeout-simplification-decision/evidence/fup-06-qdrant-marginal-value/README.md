@@ -11,6 +11,12 @@ source, tests, and normative documents remain current truth.
 - It preserves the decision-critical conclusions so a later review does not depend on the gitignored local
   run, an agent transcript, or another review bundle.
 
+**Subsequent product decision (supersedes for ongoing acceptance).** FUP-08 measured and rejected the
+declared-family mitigation and recorded that the V2 `HARM` verdict below is a **historical
+relevance-quality result, not a current acceptance rule or safety blocker**. The measurements and
+frozen V2 verdict below are retained unchanged; see
+`../fup-08-declared-family-counterfactual/README.md`.
+
 ## Question answered
 
 Does Qdrant supplementation add enough useful search value to say it has demonstrated marginal relevance
